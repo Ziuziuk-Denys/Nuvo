@@ -1,0 +1,83 @@
+.panel {
+  position: fixed;
+  top: 60px;
+  right: 8px;
+  bottom: calc(76px + 8px);
+  z-index: 40;
+  display: flex;
+  width: var(--queue-width);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--queue-radius);
+  background: var(--n-pop-solid);
+  color: var(--n-ink);
+  box-shadow: var(--n-sheet-shadow);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 12px 8px 18px;
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 6px 8px;
+}
+
+.list {
+  position: relative;
+}
+
+.item[data-dragging] {
+  opacity: 0.4;
+}
+
+.item[data-drop] {
+  box-shadow: inset 0 2px 0 var(--n-accent);
+}
+
+.then {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 4px;
+  color: var(--n-ink-3);
+  font-size: 13px;
+}
+
+.then span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 24px 18px;
+  color: var(--n-ink-3);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel {
+    animation: rise 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}

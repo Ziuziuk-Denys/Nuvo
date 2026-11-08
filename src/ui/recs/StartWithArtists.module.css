@@ -1,0 +1,72 @@
+/* The empty Home's type centred over the playlist's search field and track rows, in one 560 px column. */
+.start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(560px, 100%);
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: var(--n-ink);
+  font: var(--n-type-heading);
+  text-wrap: balance;
+}
+
+.message {
+  max-width: 44ch;
+  margin: var(--n-s-2) 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+/* as wide as the rows and the foot, so the count and Listen line up under it */
+.field {
+  width: 100%;
+  margin-top: var(--n-s-4);
+  text-align: start;
+}
+
+/* rows pad 8 px; pulling them out by 8 puts the covers on the title's edge */
+.rows {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  margin: var(--n-s-2) -8px 0;
+  text-align: start;
+}
+
+.rows .note {
+  padding: var(--n-s-2) 8px 0;
+}
+
+.mark {
+  color: var(--n-ink-2);
+}
+
+[aria-current="true"] .mark {
+  color: var(--n-ink);
+}
+
+/* three are picked: the rest stay readable but take no more */
+.spare {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.note {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  justify-content: space-between;
+  gap: var(--n-s-3);
+  margin-top: var(--n-s-4);
+}

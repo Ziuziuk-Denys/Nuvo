@@ -1,0 +1,8 @@
+{
+  "uuid": "nuvo-panel@nuvo.quest",
+  "name": "Nuvo",
+  "description": "The playing song from Nuvo in the top bar: cover, title and artist, play and pause, next and previous, like and dislike, the progress and the current lyrics line. Click the cover to open Nuvo.",
+  "shell-version": ["47", "48", "49", "50"],
+  "url": "https://github.com/Ziuziuk-Denys/nuvo",
+  "version-name": "1.0"
+}

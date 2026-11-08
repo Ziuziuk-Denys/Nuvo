@@ -1,0 +1,139 @@
+/* A mix card: a 240 px lead or 175 px daily cover, captioned below. The display type is the system UI face at its largest optical size. */
+.card {
+  flex: none;
+  width: 175px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.lead {
+  width: 240px;
+}
+
+.cover {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--n-fill);
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  transition: filter 300ms var(--n-ease-out);
+}
+
+.art[data-mosaic] {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+}
+
+.art > * {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.card:hover .art,
+.card:focus-visible .art {
+  filter: brightness(1.15);
+}
+
+.card:focus-visible .cover {
+  outline: 3px solid var(--n-focus-halo);
+  outline-offset: 2px;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mark {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+}
+
+.word,
+.number {
+  position: absolute;
+  bottom: 8px;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  line-height: 0.8;
+  pointer-events: none;
+}
+
+.word {
+  left: 10px;
+  font-size: 44px;
+  font-weight: 650;
+  font-variation-settings:
+    "wdth" 151,
+    "opsz" 144;
+  letter-spacing: -0.04em;
+}
+
+.number {
+  right: 10px;
+  font-size: 46px;
+  font-weight: 520;
+  font-variation-settings:
+    "wdth" 121,
+    "opsz" 144;
+  letter-spacing: -0.02em;
+}
+
+.caption,
+.leadCaption {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.caption {
+  margin-top: 8px;
+}
+
+.leadCaption {
+  margin-top: 10px;
+}
+
+.leadTitle {
+  margin: 0;
+  color: var(--n-ink);
+  font-family: system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 564;
+  font-variation-settings:
+    "wdth" 134,
+    "opsz" 144;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.title {
+  overflow: hidden;
+  color: var(--n-ink);
+  font: 500 14px/1.4 var(--n-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.subtitle {
+  overflow: hidden;
+  color: var(--n-ink-2);
+  font: 400 13px/1.4 var(--n-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.leadCaption .subtitle {
+  margin-top: 4px;
+}

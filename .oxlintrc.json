@@ -1,0 +1,71 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "unicorn", "oxc"],
+  "env": {
+    "browser": true
+  },
+  "overrides": [
+    {
+      "files": ["src/ui/**/*.ts", "src/ui/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/app/**",
+                  "@/assets/**",
+                  "@/entities/**",
+                  "@/features/**",
+                  "@/languages",
+                  "@/languages/**",
+                  "@/notch/**",
+                  "@/shared/**",
+                  "@/widgets/**"
+                ],
+                "message": "src/ui reaches app code only through src/ui/ports."
+              },
+              {
+                "group": ["@mingcute/*", "@solar-icons/*", "morphicons", "morphicons/*"],
+                "message": "Icons come from src/ui/icons only."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/ui/ports/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["src/ui/icons/**/*.ts", "src/ui/icons/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/app/**",
+                  "@/assets/**",
+                  "@/entities/**",
+                  "@/features/**",
+                  "@/languages",
+                  "@/languages/**",
+                  "@/notch/**",
+                  "@/shared/**",
+                  "@/widgets/**"
+                ],
+                "message": "src/ui reaches app code only through src/ui/ports."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

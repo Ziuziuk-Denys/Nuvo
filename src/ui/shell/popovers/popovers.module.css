@@ -1,0 +1,471 @@
+/* The player panels: the sound popovers' spacing (12 px between groups, 4 px between chips). */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--n-ink);
+  user-select: none;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* The five sleep lengths always keep one row: the Russian labels run a few px past 340, and the chips give
+   those px up from their padding instead of wrapping. */
+.lengths {
+  display: flex;
+  gap: 4px;
+}
+
+.lengths > button {
+  min-width: 0;
+  flex-shrink: 1;
+  justify-content: center;
+}
+
+/* the speed panel's Custom chip holds its place while hidden, so the height never jumps */
+.customChip {
+  composes: chip from "./controls.module.css";
+  visibility: hidden;
+}
+
+.customChip[data-shown] {
+  visibility: visible;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.reveal {
+  animation: reveal 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.remember {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+/* Sleep: the armed line in the header, then the typed length with Start and Cancel */
+.status {
+  color: var(--n-accent);
+  font: 600 11px/1 var(--n-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.customRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minutes {
+  display: block;
+  box-sizing: border-box;
+  width: 96px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--n-ink) 15%, transparent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--n-ink);
+  font: 500 11px/1 var(--n-font);
+  outline: none;
+}
+
+.minutes::placeholder {
+  color: var(--n-ink-3);
+}
+
+.minutes:focus {
+  border-color: var(--n-ink-3);
+}
+
+.plainChip {
+  composes: chip from "./controls.module.css";
+  color: var(--n-ink);
+}
+
+.end {
+  margin-left: auto;
+}
+
+/* Moments: a chip that plays from the mark, then its small cross */
+.moment {
+  display: inline-flex;
+  align-items: center;
+}
+
+.note {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-label);
+}
+
+/* Volume: a 46 px column over its button in the popover glass */
+.volumeShell {
+  position: fixed;
+  z-index: 900;
+  box-sizing: border-box;
+  width: 46px;
+  padding: 4px;
+  border-radius: 11px;
+  background: var(--n-pop);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  outline: none;
+  animation: volume-in 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.volumeShell[data-state="out"] {
+  animation: volume-out 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+
+@keyframes volume-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+@keyframes volume-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+}
+
+.column {
+  position: relative;
+  width: 38px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  cursor: pointer;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+
+.column:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--n-ink) 30%, transparent);
+}
+
+.fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: color-mix(in srgb, var(--n-ink) 85%, transparent);
+  transition: height 100ms ease-out;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  color: var(--n-ink);
+  pointer-events: none;
+}
+
+.faceOnFill {
+  color: var(--n-field);
+  transition: clip-path 100ms ease-out;
+}
+
+.column[data-dragging] .fill,
+.column[data-dragging] .faceOnFill {
+  transition: none;
+}
+
+.mute {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.faceOnFill .mute {
+  pointer-events: none;
+}
+
+.percent {
+  font: 700 10px/1 var(--n-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Add to playlist: the track, the search well, 44 px cover rows and New playlist */
+.addBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trackCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+}
+
+.trackText,
+.pickText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.trackTitle,
+.pickTitle {
+  overflow: hidden;
+  color: var(--n-ink);
+  font: 500 13px/18px var(--n-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trackArtist,
+.pickMeta {
+  overflow: hidden;
+  color: var(--n-ink-3);
+  font: 400 12px/16px var(--n-font);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  color: var(--n-ink-3);
+}
+
+.search input {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  font: 400 13px/18px var(--n-font);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--n-ink-3);
+}
+
+.clear {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: var(--n-ink);
+}
+
+.list {
+  display: flex;
+  max-height: 300px;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 -8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.list[data-busy] {
+  pointer-events: none;
+}
+
+.pick {
+  display: flex;
+  width: 100%;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 150ms ease;
+}
+
+.pick:hover,
+.pick:focus-visible {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+.pick:active {
+  background: color-mix(in srgb, var(--n-ink) 9%, transparent);
+}
+
+.pick[data-done] .pickMeta {
+  color: var(--n-accent);
+}
+
+.plus {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--n-ink-3);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.pick:hover .plus {
+  background: color-mix(in srgb, var(--n-ink) 7%, transparent);
+  color: var(--n-ink);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  box-sizing: border-box;
+  border: 2px solid var(--n-ink-3);
+  border-top-color: var(--n-ink);
+  border-radius: 999px;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ghostRow {
+  height: 60px;
+  flex: none;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: 400 13px/18px var(--n-font);
+}
+
+.emptyIcon {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink-3);
+}
+
+.newButton {
+  display: flex;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--n-ink);
+  font: 500 14px/1 var(--n-font);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.newButton:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="dark"] .newButton {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .newButton:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .volumeShell,
+  .volumeShell[data-state="out"] {
+    animation-duration: 1ms;
+  }
+
+  .fill,
+  .faceOnFill,
+  .pick,
+  .plus {
+    transition: none;
+  }
+}

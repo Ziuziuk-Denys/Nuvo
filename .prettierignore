@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-electron
+release
+core/target
+e2e/artifacts
+pnpm-lock.yaml
+core/
+.github/readme
+README.md
+CONTRIBUTING.md
+SECURITY.md
+CODE_OF_CONDUCT.md
+DESIGN-NOTES.md
+.github/SUPPORT.md
+.github/ISSUE_TEMPLATE
+bench-results

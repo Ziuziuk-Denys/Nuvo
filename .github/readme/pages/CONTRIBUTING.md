@@ -1,0 +1,61 @@
+{{head}}
+
+# Contributing
+
+Thanks for helping. Small, focused changes get reviewed fastest.
+
+Open an issue before anything larger than a bug fix, so we agree on the approach first. [The architecture overview]({{site}}/docs/architecture/overview) shows how the app and the daemon fit together.
+
+## Setup
+
+Requirements: Node 22 with pnpm, a stable Rust toolchain, SQLCipher, and a Secret Service keyring (GNOME Keyring, KWallet or similar).
+
+    pnpm install
+    pnpm dev
+    pnpm check
+
+`pnpm check` runs lint, format check, build, the unused-dependency check and all tests. The daemon has its own checks: `pnpm core:test` runs `cargo test` and `cargo clippy` with warnings as errors.
+
+## Rules
+
+- One change per pull request, with tests for new behavior.
+- Commit messages are plain and say what changed.
+- Do not add a dependency that 20 lines of your own code or the standard library can replace. Give a one-line reason for every new dependency and name its licence. It must be compatible with the AGPL-3.0-or-later.
+- Do not paste code or assets from projects whose licence does not allow it.
+
+## Sign-off (DCO)
+
+Every commit needs a `Signed-off-by` line. Add it with `git commit -s`. It certifies the Developer Certificate of Origin 1.1.
+
+<details>
+<summary><b>Developer Certificate of Origin 1.1</b></summary>
+
+<br>
+
+    By making a contribution to this project, I certify that:
+
+    (a) The contribution was created in whole or in part by me and I have the
+        right to submit it under the open source license indicated in the file; or
+    (b) The contribution is based upon previous work that, to the best of my
+        knowledge, is covered under an appropriate open source license and I have
+        the right under that license to submit that work with modifications,
+        whether created in whole or in part by me, under the same open source
+        license (unless I am permitted to submit under a different license), as
+        indicated in the file; or
+    (c) The contribution was provided directly to me by some other person who
+        certified (a), (b) or (c) and I have not modified it.
+    (d) I understand and agree that this project and the contribution are public
+        and that a record of the contribution (including all personal information
+        I submit with it, including my sign-off) is maintained indefinitely and
+        may be redistributed consistent with this project or the open source
+        license(s) involved.
+
+</details>
+
+You also agree that the author may distribute your contribution under the AGPL-3.0-or-later and under a separate commercial licence (see [LICENSING.md](LICENSING.md)). Do not sign off work you are not allowed to relicense this way.
+
+## Security problems
+
+Do not open a public issue. Follow [SECURITY.md](SECURITY.md).
+
+{{nav}}

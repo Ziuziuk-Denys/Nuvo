@@ -1,0 +1,4 @@
+/* a quiet line at the foot of Home, on the content's left edge; the page sets the space above it */
+.link {
+  align-self: flex-start;
+}

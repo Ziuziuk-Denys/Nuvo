@@ -1,0 +1,134 @@
+/* Columns of at least 165 px sharing the width, 24 px apart; a tile is its cover, 8 px, then two lines. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 24px;
+}
+
+.virtual {
+  position: relative;
+}
+
+.row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+/* the 24 px under the text matches the room the old card kept for its menu */
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 24px;
+  border: 0;
+  background: none;
+  color: var(--n-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tile:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--n-ink) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.art {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.tile[data-kind="artist"] .art {
+  border-radius: 50%;
+}
+
+/* the cover fills its column; it is drawn once at 200 px */
+.art > span {
+  width: 100% !important;
+  height: 100% !important;
+  transition: filter 300ms;
+}
+
+.tile:hover .art > span,
+.tile[data-selected] .art > span {
+  filter: brightness(1.15);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tile[data-kind="liked"] .text {
+  gap: 4px;
+}
+
+.tile[data-kind="artist"] .text {
+  align-items: center;
+  text-align: center;
+}
+
+.title,
+.subtitle {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title {
+  color: var(--n-ink);
+  font: 500 14px/1.5 var(--n-font);
+}
+
+.tile[data-playing] .title {
+  color: var(--n-accent);
+}
+
+.subtitle {
+  color: var(--n-ink-3);
+  font: 400 13px/1.5 var(--n-font);
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.box {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+.bar {
+  width: 78%;
+  height: 13px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--n-ink) 14%, transparent);
+}
+
+.short {
+  width: 56%;
+  height: 11px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art > span {
+    transition: none;
+  }
+}

@@ -1,0 +1,130 @@
+/* Library: a 26 px title, one bar of tab pills and tools, then covers or rows in the page's own scroll. */
+/* the original title sits up in the top row, 20 px above the shell's page origin */
+.page {
+  display: flex;
+  flex-direction: column;
+  margin-top: -20px;
+}
+
+.title {
+  margin: 0;
+  color: var(--n-ink);
+  font: 700 26px/1.25 var(--n-font);
+  letter-spacing: -0.025em;
+}
+
+/* one row: when the Russian tabs leave too little room, the search field gives up width before anything wraps */
+.bar {
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* at 1100 the five tabs and the tools share one row only with New playlist as a square like the view buttons */
+@container (max-width: 1059px) {
+  .create {
+    width: 52px;
+    padding: 0;
+  }
+
+  .createLabel {
+    display: none;
+  }
+
+  /* the sort button takes its room from the filter, so long tab names still fit beside the tools */
+  .tools .filter {
+    min-width: 120px;
+  }
+}
+
+.tabs,
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* on a narrow window the filter gives way first, then the tabs scroll sideways instead of running under the tools;
+   the padding keeps the focus ring inside the scroll box */
+.tabs {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+  margin: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tools {
+  flex: 0 100 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.filter {
+  flex: 0 1 220px;
+  min-width: 140px;
+}
+
+/* over the field's own fixed width */
+.tools .filter > * {
+  width: 100%;
+}
+
+.content {
+  margin-top: 14px;
+  padding-bottom: 20px;
+}
+
+.line {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: 400 14px/1.4 var(--n-font);
+}
+
+/* a line and its one text action: no match, or a refresh that failed above rows still shown */
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--n-s-3);
+}
+
+.inline .line {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.notice {
+  margin-top: 10px;
+}
+
+/* rows pad 8 px inside; pulling the list out by 8 puts every cover on the title's edge */
+.list,
+.placeholders {
+  position: relative;
+  margin-inline: -8px;
+}
+
+.placeholders {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.entry[data-importing] {
+  cursor: progress;
+}

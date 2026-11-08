@@ -1,0 +1,42 @@
+/* What's new and Report a problem: quiet lines in a Sheet, the diagnostics in a scrolling box to read before sending. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-3);
+}
+
+.line {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.notes {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+}
+
+.notes li + li {
+  margin-top: var(--n-s-2);
+}
+
+.diagnostics {
+  box-sizing: border-box;
+  width: 100%;
+  height: 180px;
+  margin: 0;
+  padding: var(--n-s-3);
+  border: 0;
+  border-radius: var(--n-r-m);
+  background: var(--n-fill);
+  color: var(--n-ink-2);
+  font:
+    400 12px/1.5 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  resize: none;
+}

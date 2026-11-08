@@ -1,0 +1,641 @@
+/* The tour layer: a soft dim with a rounded cut-out over the real window, a callout card, the dock, and the cards
+   before and after. Cards use the dialog material (near-opaque page grey over a blur), the motion of the popover family. */
+.root {
+  --tour-dim: rgba(0, 0, 0, 0.4);
+  --tour-ring: #fff;
+  position: fixed;
+  z-index: 2000;
+  inset: 0;
+  /* the blocker and the cards take presses; the root itself lets an interactive step's outline through */
+  pointer-events: none;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  /* backwards only: a fade kept filled after the entrance makes the layer the cards' backdrop root, so their blur
+     would stop at the dim and the page would show through sharp */
+  animation: tour-in var(--n-t-base) var(--n-ease-out) backwards;
+}
+
+:root[data-theme="dark"] .root {
+  --tour-dim: rgba(0, 0, 0, 0.56);
+}
+
+.root[data-away] {
+  visibility: hidden;
+}
+
+.root[data-state="out"] {
+  animation: tour-out var(--n-t-quick) var(--n-ease-in) both;
+  pointer-events: none;
+}
+
+@keyframes tour-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes tour-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Takes every press while the tour is on; an interactive step cuts the outline out of it with clip-path */
+.blocker {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+
+/* The cut-out: its own box is the hole, the shadow around it is the dim. With no target it shrinks to the
+   middle of the window, so the first outline opens out of it. */
+.hole {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.22),
+    0 0 0 2px var(--tour-ring),
+    0 0 0 200vmax var(--tour-dim);
+  transition:
+    transform var(--n-t-page) var(--n-ease-inout),
+    width var(--n-t-page) var(--n-ease-inout),
+    height var(--n-t-page) var(--n-ease-inout),
+    border-radius var(--n-t-page) var(--n-ease-inout),
+    box-shadow var(--n-t-base) var(--n-ease-out);
+}
+
+.hole[data-empty] {
+  box-shadow:
+    inset 0 0 0 0 transparent,
+    0 0 0 0 transparent,
+    0 0 0 200vmax var(--tour-dim);
+}
+
+/* The line from the outline to its card */
+.line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  stroke: var(--tour-ring);
+  stroke-width: 1.5;
+  fill: var(--tour-ring);
+  animation: tour-in var(--n-t-base) var(--n-ease-out) 120ms both;
+}
+
+/* Shared card material */
+.card {
+  pointer-events: auto;
+  box-sizing: border-box;
+  border-radius: var(--n-r-l);
+  background: var(--n-sheet);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  box-shadow: var(--n-shadow-raised);
+  color: var(--n-ink);
+}
+
+.callout {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.calloutCard {
+  margin: 0;
+  padding: 12px 14px;
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+/* The dock and the skip prompt over it, at the bottom of the window or under the top row */
+/* left comes from the layer: centred, or clear of an outline in the dock's band */
+.dockWrap {
+  position: absolute;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(560px, calc(100% - 32px));
+  transition: left var(--n-t-page) var(--n-ease-inout);
+}
+
+.dockWrap[data-top] {
+  top: 14px;
+  bottom: auto;
+  flex-direction: column-reverse;
+}
+
+.dock {
+  width: 100%;
+  padding: 12px 12px 12px 16px;
+}
+
+.segments {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.segment {
+  flex: 1;
+  height: 3px;
+  overflow: hidden;
+  border-radius: var(--n-r-pill);
+  background: color-mix(in srgb, var(--n-ink) 14%, transparent);
+}
+
+.segmentFill {
+  display: block;
+  height: 100%;
+  background: var(--n-accent);
+  transform-origin: left center;
+  transition: transform var(--n-t-base) var(--n-ease-out);
+}
+
+.dockRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dockText {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dockTitle {
+  overflow: hidden;
+  margin: 0;
+  font: 600 15px/20px var(--n-font);
+  letter-spacing: var(--n-track-title);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.counter {
+  flex-shrink: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.dockActions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The read gate: a grey button with a darker fill growing across it */
+.gate {
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.gate:active {
+  transform: none;
+}
+
+.gateFill {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--n-ink) 10%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.gateLabel {
+  position: relative;
+}
+
+/* Skip prompt: three ways out, each a full-width row with a quiet line under it */
+.prompt {
+  width: 100%;
+  padding: 14px;
+}
+
+.promptTitle {
+  margin: 0 0 8px 2px;
+  font: 600 15px/20px var(--n-font);
+  letter-spacing: var(--n-track-title);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--n-r-m);
+  background: var(--n-fill);
+  color: var(--n-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms var(--n-ease-out);
+}
+
+.choice:hover {
+  background: var(--n-fill-hover);
+}
+
+.choice b {
+  font: var(--n-type-label);
+}
+
+.choice span {
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}
+
+.promptFoot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* Poster and short version: centred cards over the dim */
+.center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.poster {
+  width: min(420px, 100%);
+  padding: 28px 28px 20px;
+}
+
+.mark {
+  display: block;
+  margin-bottom: 18px;
+  color: var(--n-ink);
+}
+
+/* the mark at poster size: the icon set stops at 26 px */
+.mark svg {
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+
+.posterTitle {
+  margin: 0;
+  font: var(--n-type-title);
+  letter-spacing: var(--n-track-title);
+  text-wrap: balance;
+}
+
+.posterText {
+  margin: 8px 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.actions > :first-child {
+  margin-right: auto;
+}
+
+.brief {
+  width: min(460px, 100%);
+  padding: 24px 24px 20px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  column-gap: 12px;
+  align-items: start;
+}
+
+.rowIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--n-r-s);
+  background: var(--n-fill);
+  color: var(--n-ink);
+}
+
+.rowText b {
+  display: block;
+  font: var(--n-type-label);
+}
+
+.rowText span {
+  display: block;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  text-wrap: pretty;
+}
+
+.live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The start step: the welcome over an empty Home, with two ways to give it music */
+/* the cards that hold reading stay near-opaque over a busy page */
+.start,
+.brief {
+  background: color-mix(in srgb, var(--n-raised) 94%, transparent);
+}
+
+.start {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 28px 28px 20px;
+}
+
+.startPanels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+  border-radius: var(--n-r-l);
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+}
+
+.panelTitle {
+  margin: 0;
+  font: 600 15px/20px var(--n-font);
+  letter-spacing: var(--n-track-title);
+}
+
+.panelText {
+  margin: 2px 0 12px;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  text-wrap: pretty;
+}
+
+/* One service a row: two columns cut every subtitle to "From a playlist l..." */
+.sources {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.source,
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--n-r-m);
+  background: transparent;
+  color: var(--n-ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 150ms var(--n-ease-out),
+    transform 150ms var(--n-ease-out);
+}
+
+.source:hover,
+.suggestion:hover {
+  background: var(--n-hover);
+}
+
+.source:active,
+.suggestion:active {
+  transform: scale(0.98);
+}
+
+.source > svg {
+  flex: none;
+}
+
+.sourceText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sourceText b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceText b {
+  font: var(--n-type-label);
+}
+
+.sourceText span {
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}
+
+.tasteField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: var(--n-fill);
+  color: var(--n-ink-2);
+}
+
+.tasteField:focus-within {
+  background: var(--n-focus);
+}
+
+.tasteField input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  outline: none;
+}
+
+.tasteField input::placeholder {
+  color: var(--n-ink-2);
+}
+
+.tasteBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 148px;
+  margin-top: 8px;
+}
+
+.suggestions {
+  margin: 0 -6px;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestion {
+  padding: 6px;
+}
+
+.suggestion > svg {
+  flex: none;
+  color: var(--n-ink-2);
+}
+
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 4px 0 12px;
+  border-radius: var(--n-r-pill);
+  background: var(--n-select);
+  font: var(--n-type-label);
+  animation: tour-pick var(--n-t-base) var(--n-ease-out) both;
+}
+
+.pick > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pick button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--n-ink-2);
+  cursor: pointer;
+}
+
+.pick button:hover {
+  background: var(--n-hover);
+  color: var(--n-ink);
+}
+
+@keyframes tour-pick {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.pickFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.panelNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}
+
+.pickFoot .panelNote {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .startPanels {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hole,
+  .dockWrap,
+  .segmentFill,
+  .source,
+  .suggestion {
+    transition: none;
+  }
+
+  .root {
+    animation: tour-in var(--n-t-quick) linear backwards;
+  }
+
+  .line,
+  .pick {
+    animation: tour-in var(--n-t-quick) linear both;
+  }
+}

@@ -1,0 +1,37 @@
+# cargo deny check: known advisories, licences that fit AGPL-3.0-or-later, and crates only from crates.io
+[graph]
+all-features = false
+
+[advisories]
+version = 2
+yanked = "deny"
+# an unmaintained notice fails the check only for crates Nuvo depends on directly
+unmaintained = "workspace"
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+allow = [
+  "AGPL-3.0-or-later",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "Unicode-3.0",
+  "Zlib",
+]
+# SQLite's public-domain blessing and libtomcrypt's WTFPL, bundled by SQLCipher
+exceptions = [{ crate = "sqlcipher-src", allow = ["blessing", "WTFPL"] }]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

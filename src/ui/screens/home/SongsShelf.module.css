@@ -1,0 +1,7 @@
+/* As many columns of song rows as the window holds, 28 px apart like the shelves' covers. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  column-gap: 28px;
+  margin-top: 12px;
+}

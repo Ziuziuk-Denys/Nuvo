@@ -1,0 +1,34 @@
+.scroller,
+.plain {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 82%, transparent 100%);
+}
+
+.lines {
+  display: block;
+}
+
+.plain p {
+  margin: 0 0 0.6em;
+  font-family: var(--n-font-lyrics, var(--n-font));
+  font-size: calc(22px * var(--n-lyrics-scale, 1));
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.message {
+  display: grid;
+  place-items: center start;
+  height: 100%;
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* the romanized text under a plain line: smaller and quieter */
+.romanized {
+  display: block;
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.5);
+}

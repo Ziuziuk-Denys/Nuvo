@@ -1,0 +1,610 @@
+/* The look tools inside Settings: saved themes, the docked theme editor, the colour picker, fonts and custom CSS.
+   Same language as the sections around them: soft ink fills, 10 px corners, 13 px controls, colours from tokens only. */
+
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A saved theme in the preset tile frame: its background, a card and an accent dot */
+.themeIcon {
+  position: relative;
+  overflow: hidden;
+}
+
+.themeIcon > span {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  left: 10px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.themeIcon > i {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.actions svg {
+  flex: none;
+}
+
+.primary {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  cursor: pointer;
+  font: 500 13px var(--n-font);
+  white-space: nowrap;
+}
+
+.primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.button {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink);
+  cursor: pointer;
+  font: 500 13px var(--n-font);
+  white-space: nowrap;
+}
+
+.button:hover {
+  background: color-mix(in srgb, var(--n-ink) 16%, transparent);
+}
+
+.textAction {
+  display: inline-flex;
+  height: 26px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--n-ink);
+  cursor: pointer;
+  font: 500 12.5px var(--n-font);
+  white-space: nowrap;
+}
+
+.textAction:hover {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.iconAction {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.iconAction:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink);
+}
+
+.iconAction:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--n-ink-2);
+  font: 400 13px/1.4 var(--n-font);
+}
+
+.note {
+  margin: 0;
+  color: var(--n-ink-3);
+  font: 400 12px/1.45 var(--n-font);
+}
+
+.problem {
+  display: flex;
+  margin: 0;
+  color: var(--n-ink);
+  font: 500 12.5px/1.45 var(--n-font);
+}
+
+.draft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  color: var(--n-ink-2);
+  font: 400 12.5px/1.45 var(--n-font);
+}
+
+.pending {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+}
+
+.pendingText {
+  margin: 0;
+  color: var(--n-ink);
+  font: 400 13px/1.45 var(--n-font);
+}
+
+.code,
+.cssText,
+.gutter,
+.hooks {
+  font:
+    400 12px/18px ui-monospace,
+    "SF Mono",
+    "JetBrains Mono",
+    "DejaVu Sans Mono",
+    monospace;
+}
+
+.code {
+  overflow: auto;
+  max-height: 200px;
+  margin: 0;
+  color: var(--n-ink);
+  white-space: pre;
+}
+
+/* Docked editor: right side, 360 px, between the top bar and the window edge, in the settings panel's frost */
+.editor {
+  position: fixed;
+  z-index: 150;
+  top: 52px;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  width: 360px;
+  max-width: calc(100vw - 12px);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--n-raised) 70%, transparent);
+  -webkit-backdrop-filter: blur(60px) saturate(1.5);
+  backdrop-filter: blur(60px) saturate(1.5);
+  box-shadow: var(--n-sheet-shadow);
+  color: var(--n-ink);
+  font-family: var(--n-font);
+  animation: editor-in 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+:global(:root[data-theme="dark"]) .editor {
+  background: color-mix(in srgb, var(--n-raised) 50%, transparent);
+}
+
+@keyframes editor-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor {
+    animation: none;
+  }
+}
+
+.editorHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 8px 20px;
+}
+
+.editorTitle {
+  color: var(--n-ink);
+  font: 600 17px/1.3 var(--n-font);
+}
+
+.close {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink);
+}
+
+.editorBody {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 16px 16px;
+  overflow-y: auto;
+}
+
+.editorFoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 16px;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 8px;
+}
+
+.swatch {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.swatchButton {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  color: var(--n-ink);
+  cursor: pointer;
+  text-align: start;
+  transition: background-color 0.15s;
+}
+
+.swatchButton:hover,
+.swatchButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--n-ink) 10%, transparent);
+}
+
+.colour {
+  height: 36px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 10%, transparent);
+}
+
+.roleName {
+  padding-inline: 2px;
+  font: 500 12.5px/1.3 var(--n-font);
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  padding-inline: 2px;
+  color: var(--n-ink-3);
+  font: 400 11px/1.3 var(--n-font);
+}
+
+.contrast {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding-inline: 4px;
+  color: var(--n-ink);
+  font: 500 11px/1.3 var(--n-font);
+}
+
+.contrast svg {
+  flex: none;
+  margin-top: -1px;
+}
+
+.contrast[data-pass] {
+  color: var(--n-ink-3);
+  font-weight: 400;
+}
+
+/* Colour picker in its popover */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 16px 16px;
+}
+
+.area {
+  position: relative;
+  height: 156px;
+  border-radius: 10px;
+  background:
+    linear-gradient(to bottom, #fff, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0) 50%, #000),
+    linear-gradient(to right, hsl(var(--hue) 0% 50%), hsl(var(--hue) 100% 50%));
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* A full-size layer moved by transform: its size equals the area's, so percentages place the knob without layout */
+.knobTrack {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translate(var(--x), var(--y));
+}
+
+.knob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.pickerField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--n-ink-2);
+  font: 400 12px var(--n-font);
+}
+
+.pickerRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.pickerRow > :first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Fonts */
+.fontControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fontName {
+  display: inline-flex;
+  width: 180px;
+  height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 10px 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink);
+  cursor: pointer;
+  font-size: 13.5px;
+  text-align: start;
+}
+
+.fontName:hover {
+  background: color-mix(in srgb, var(--n-ink) 14%, transparent);
+}
+
+.fontName > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fontName > svg {
+  flex: none;
+  color: var(--n-ink-3);
+}
+
+.sample {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+  color: var(--n-ink-2);
+  font: 400 13px/1.45 var(--n-font);
+}
+
+.lyricSample {
+  color: var(--n-ink);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fileRow {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--n-ink);
+  font-size: 14px;
+}
+
+.fontPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 10px 10px;
+}
+
+.fontList {
+  position: relative;
+  height: 288px;
+  overflow-y: auto;
+  outline: none;
+}
+
+.fontOption {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--n-ink);
+  contain: content;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.fontOption > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fontOption:hover {
+  background: var(--n-hover);
+}
+
+.fontOption[aria-selected="true"] {
+  background: var(--n-select);
+}
+
+.fontList:focus-visible .fontOption[aria-selected="true"] {
+  background: var(--n-focus);
+}
+
+/* Custom CSS */
+.cssHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cssToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--n-ink-2);
+  font: 400 13px var(--n-font);
+}
+
+.cssEditor {
+  display: flex;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+}
+
+.gutter {
+  margin: 0;
+  padding: 10px 8px 10px 12px;
+  color: var(--n-ink-3);
+  text-align: right;
+  user-select: none;
+}
+
+.cssText {
+  min-width: 0;
+  min-height: 200px;
+  flex: 1;
+  padding: 10px 12px 10px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  outline: none;
+  resize: vertical;
+  white-space: pre;
+}
+
+.cssEditor:has(.cssText:focus-visible) {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.reference {
+  color: var(--n-ink-2);
+  font: 400 12.5px/1.5 var(--n-font);
+}
+
+.reference summary {
+  width: fit-content;
+  color: var(--n-ink);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.reference p {
+  margin: 6px 0;
+}
+
+.hooks {
+  display: block;
+  color: var(--n-ink);
+  overflow-wrap: anywhere;
+}

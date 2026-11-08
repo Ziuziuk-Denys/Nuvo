@@ -1,0 +1,150 @@
+/* Settings rows: soft grey cards, 46 px tall, 14 px titles and 12 px muted descriptions; the controls they hold. */
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.groupLabel {
+  margin: 0;
+  padding: 4px 0 10px;
+  color: var(--n-ink-2);
+  font: 500 14px/1.5 var(--n-font);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row,
+.block {
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+}
+
+.row {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-block: 13px;
+}
+
+:global(:root[data-theme="dark"]) .row,
+:global(:root[data-theme="dark"]) .block {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.rowIcon {
+  display: flex;
+  flex: none;
+  color: var(--n-ink);
+}
+
+.text,
+.blockHead {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The title keeps a third of the row; a wide control wraps its options instead of squeezing the title to a letter. */
+.text {
+  min-width: 33%;
+  flex: 1;
+}
+
+.blockHead {
+  max-width: 460px;
+}
+
+.title {
+  overflow: hidden;
+  color: var(--n-ink);
+  font: 500 14px/1.375 var(--n-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blockHead .title {
+  white-space: normal;
+}
+
+.description {
+  max-width: 420px;
+  color: var(--n-ink-3);
+  font: 400 12px/1.4 var(--n-font);
+}
+
+.blockDescription {
+  color: var(--n-ink-3);
+  font: 400 12px/1.45 var(--n-font);
+}
+
+.control {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.segmented {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The shared Chip in the settings' size: 32 px, 10 px corners, a softer pressed fill. */
+.segmented > .segment {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+.segmented > .segment:not([aria-pressed="true"]):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--n-ink) 10%, transparent);
+}
+
+:global(:root[data-theme="dark"]) .segmented > .segment {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+:global(:root[data-theme="dark"]) .segmented > .segment:not([aria-pressed="true"]):hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.segmented > .segment[aria-pressed="true"],
+:global(:root[data-theme="dark"]) .segmented > .segment[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--n-ink) 70%, transparent);
+  color: var(--n-field);
+  font-weight: 500;
+}
+
+.segmented > .segment:disabled {
+  color: var(--n-ink-3);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.segmented > .segment[aria-pressed="true"]:disabled {
+  background: color-mix(in srgb, var(--n-ink) 40%, transparent);
+  color: color-mix(in srgb, var(--n-field) 80%, transparent);
+}
+
+/* Groups that follow one another in a section, such as Appearance's theme, fonts and language */
+.group + .group {
+  margin-top: 20px;
+}

@@ -1,0 +1,13 @@
+/* The duplicate list inside the sheet: quiet rows, scrolls past ten groups. */
+.groups {
+  display: flex;
+  max-height: 320px;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  color: var(--n-ink-2);
+  font: 400 13px/1.5 var(--n-font);
+  list-style: none;
+}

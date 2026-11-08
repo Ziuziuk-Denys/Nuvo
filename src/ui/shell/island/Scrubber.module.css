@@ -1,0 +1,32 @@
+/* Behind the bar's content, clipped to its corners. */
+.scrubber {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.scrubber:focus-visible {
+  outline: 2px solid var(--n-focus-halo);
+  outline-offset: -2px;
+}
+
+/* scaled, not resized: a position update (about four a second) recomposites the layer instead of laying the bar
+   out again. No transition: a glide between updates kept the bar's glass blur redrawn every frame. */
+.fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+}
+
+/* The A-B loop: a faint band in the cover's tint with a firm edge at A and at B; only the edge at A until B is set. */
+.loop {
+  position: absolute;
+  inset-block: 0;
+  box-sizing: border-box;
+  border-inline: 2px solid currentColor;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+  pointer-events: none;
+}

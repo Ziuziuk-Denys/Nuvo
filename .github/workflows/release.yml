@@ -1,0 +1,315 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: v
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$version" != "$pkg" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $pkg" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          case "$version" in *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;; *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;; esac
+      - name: Extract release notes from the changelog
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '$1=="##" && $2==v {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "CHANGELOG.md has no section named '## $VERSION'" >&2
+            exit 1
+          fi
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      # CycloneDX bills of materials: every npm package in the lockfile (the renderer bundles devDependencies)
+      # and every crate the daemon links
+      - name: SBOM
+        run: |
+          pnpm sbom --sbom-format cyclonedx --lockfile-only > nuvo-npm.cdx.json
+          cargo install cargo-cyclonedx --version 0.5.10 --locked
+          cargo cyclonedx --manifest-path core/crates/server/Cargo.toml --format json --override-filename nuvo-cargo.cdx
+          mv core/crates/server/nuvo-cargo.cdx.json .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: notes
+          path: |
+            notes.md
+            nuvo-npm.cdx.json
+            nuvo-cargo.cdx.json
+
+  build:
+    name: build (${{ matrix.name }})
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    # Windows and macOS are not tested on real machines yet; their jobs may fail without blocking Linux.
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu 22.04 links the daemon against glibc 2.35, so it runs on Debian 12 (ChromeOS Linux) and newer
+          - name: linux-x64
+            os: linux
+            runner: ubuntu-22.04
+            targets: x86_64-unknown-linux-gnu
+            builder: --linux AppImage deb rpm --x64
+            experimental: false
+          - name: linux-arm64
+            os: linux
+            runner: ubuntu-22.04-arm
+            targets: aarch64-unknown-linux-gnu
+            builder: --linux AppImage deb rpm --arm64
+            experimental: false
+          - name: windows-x64
+            os: windows
+            runner: windows-2025
+            targets: x86_64-pc-windows-msvc
+            builder: --win nsis zip --x64
+            experimental: true
+          - name: windows-arm64
+            os: windows
+            runner: windows-11-arm
+            targets: aarch64-pc-windows-msvc
+            builder: --win nsis zip --arm64
+            experimental: true
+          # One job for both Macs, so electron-builder writes a single latest-mac.yml with both zips
+          - name: macos
+            os: macos
+            runner: macos-14
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+            builder: --mac dmg zip --arm64 --x64
+            experimental: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.targets }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: core
+          key: release-${{ matrix.name }}
+
+      # rpm for rpmbuild; fpm from RubyGems because electron-builder's bundled fpm is x86_64 only
+      - name: Linux packaging tools
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config rpm ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+          echo "USE_SYSTEM_FPM=true" >> "$GITHUB_ENV"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Build the daemon for each target
+        shell: bash
+        env:
+          TARGETS: ${{ matrix.targets }}
+        run: |
+          for triple in ${TARGETS//,/ }; do
+            cargo build --release --locked --manifest-path core/Cargo.toml -p nuvo-server --target "$triple"
+            node scripts/stage-core.mjs "$triple"
+          done
+
+      - name: Panel widgets
+        if: matrix.os == 'linux'
+        run: pnpm panel:pack
+
+      - name: Package (Linux)
+        if: matrix.os == 'linux'
+        env:
+          BUILDER: ${{ matrix.builder }}
+        run: pnpm exec electron-builder $BUILDER --publish never
+
+      # Signing is on only when the secrets exist. Without them the build is unsigned.
+      - name: Package (Windows)
+        if: matrix.os == 'windows'
+        shell: bash
+        env:
+          BUILDER: ${{ matrix.builder }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGN_ENDPOINT: ${{ secrets.AZURE_SIGN_ENDPOINT }}
+          AZURE_SIGN_ACCOUNT: ${{ secrets.AZURE_SIGN_ACCOUNT }}
+          AZURE_SIGN_PROFILE: ${{ secrets.AZURE_SIGN_PROFILE }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          extra=()
+          if [ -n "$AZURE_TENANT_ID" ] && [ -n "$AZURE_SIGN_ENDPOINT" ]; then
+            extra+=(
+              "-c.win.azureSignOptions.endpoint=$AZURE_SIGN_ENDPOINT"
+              "-c.win.azureSignOptions.codeSigningAccountName=$AZURE_SIGN_ACCOUNT"
+              "-c.win.azureSignOptions.certificateProfileName=$AZURE_SIGN_PROFILE"
+            )
+          else
+            unset AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET
+          fi
+          [ -z "$WIN_CSC_LINK" ] && unset WIN_CSC_LINK WIN_CSC_KEY_PASSWORD
+          # shellcheck disable=SC2086
+          pnpm exec electron-builder $BUILDER --publish never "${extra[@]}"
+
+      - name: Package (macOS)
+        if: matrix.os == 'macos'
+        shell: bash
+        env:
+          BUILDER: ${{ matrix.builder }}
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+        run: |
+          if [ -n "$MAC_CSC_LINK" ]; then
+            export CSC_LINK="$MAC_CSC_LINK" CSC_KEY_PASSWORD="$MAC_CSC_KEY_PASSWORD"
+          else
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+          fi
+          # shellcheck disable=SC2086
+          pnpm exec electron-builder $BUILDER --publish never
+
+      - name: Check notarization secrets
+        id: notary
+        if: matrix.os == 'macos'
+        shell: bash
+        env:
+          KEY: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: '[ -n "$KEY" ] && echo "on=true" >> "$GITHUB_OUTPUT" || true'
+
+      - name: Notarize the dmg
+        if: steps.notary.outputs.on == 'true'
+        shell: bash
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          key="$RUNNER_TEMP/AuthKey.p8"
+          printf '%s' "$APPLE_API_KEY_P8" > "$key"
+          for dmg in release/*.dmg; do
+            xcrun notarytool submit "$dmg" --key "$key" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER" --wait
+            xcrun stapler staple "$dmg"
+          done
+          rm -f "$key"
+
+      # Installers, their blockmaps and the update feeds. Both Windows jobs write latest.yml,
+      # so each keeps its own name here and the publish job joins them.
+      - name: Collect files
+        shell: bash
+        env:
+          OS: ${{ matrix.os }}
+          NAME: ${{ matrix.name }}
+        run: |
+          shopt -s nullglob
+          mkdir -p out
+          for f in release/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/latest*.yml; do cp "$f" out/; done
+          if [ "$OS" = "windows" ]; then mv out/latest.yml "out/latest-${NAME}.yml"; fi
+          ls -l out
+          ls out/latest*.yml > /dev/null
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist-${{ matrix.name }}
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: dist-*
+          path: assets
+          merge-multiple: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: notes
+          path: notes
+
+      # electron-updater asks for latest.yml (Windows, both arches in one file), latest-mac.yml,
+      # latest-linux.yml (x64) and latest-linux-arm64.yml
+      - name: Update feeds
+        shell: bash
+        run: |
+          shopt -s nullglob
+          parts=(assets/latest-windows-x64.yml assets/latest-windows-arm64.yml)
+          present=()
+          for f in "${parts[@]}"; do [ -f "$f" ] && present+=("$f"); done
+          if [ "${#present[@]}" -gt 0 ]; then
+            node scripts/merge-update-feed.mjs assets/latest.yml "${present[@]}"
+            [ -s assets/latest.yml ] || { echo "the Windows feeds were not joined" >&2; exit 1; }
+            rm -f "${parts[@]}"
+          fi
+          for required in latest-linux.yml latest-linux-arm64.yml; do
+            [ -f "assets/$required" ] || { echo "missing $required" >&2; exit 1; }
+          done
+          for feed in assets/latest*.yml; do
+            while read -r file; do
+              [ -f "assets/$file" ] || { echo "$feed lists $file, which is not in the release" >&2; exit 1; }
+            done < <(sed -n 's/^  - url: //p' "$feed")
+          done
+          ls -l assets
+
+      - name: Checksums and release notes
+        run: |
+          cp notes/nuvo-npm.cdx.json notes/nuvo-cargo.cdx.json assets/
+          (cd assets && sha256sum -- * > SHA256SUMS)
+          python3 .github/readme/release_notes.py "$GITHUB_REF_NAME" assets notes/notes.md > release-notes.md
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: assets/*
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          flag=()
+          [ "$PRERELEASE" = "true" ] && flag+=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Nuvo ${GITHUB_REF_NAME#v}" \
+            --notes-file release-notes.md \
+            --draft "${flag[@]}"

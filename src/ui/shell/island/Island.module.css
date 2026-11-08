@@ -1,0 +1,224 @@
+/*
+ * The bottom player: 64 px tall, right of the rail, 6 px off the window's right and bottom edges, 12 px corners.
+ * Three columns: 312 px for the track, the middle, 260 px for the tools; the transport floats in the exact centre.
+ * The plain page colour, or the preset glass over a 48 px blur while a cover lights the page.
+ */
+.bar {
+  position: absolute;
+  z-index: 60;
+  left: 70px;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  grid-template-columns: 312px minmax(0, 1fr) 260px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--n-field);
+  color: var(--n-ink);
+  font-family: var(--n-font);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* a notice borrows the free space beside the transport; the transport never moves, it is centred on the whole bar */
+.bar[data-notice] {
+  grid-template-columns: 430px minmax(0, 1fr) 260px;
+}
+
+.bar[data-lit] {
+  background: var(--n-glass);
+  -webkit-backdrop-filter: var(--n-glass-thick);
+  backdrop-filter: var(--n-glass-thick);
+}
+
+/* Columns let presses through to the seek layer; only their controls take them. */
+.now,
+.actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.now > *,
+.well {
+  pointer-events: auto;
+}
+
+.now {
+  gap: 16px;
+  padding: 1px 18px 0;
+}
+
+.open {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title,
+.artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title {
+  font: 400 16px/18px var(--n-font);
+  letter-spacing: 0;
+}
+
+.artist {
+  margin-top: 4px;
+  color: var(--n-ink-3);
+  font: 300 13px/15px var(--n-font);
+}
+
+.rate {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.like {
+  flex: none;
+}
+
+.like > svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* The transport sits in the exact centre of the whole bar. */
+.centre {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  pointer-events: auto;
+}
+
+.play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--btn-primary-bg);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  color: var(--btn-primary-text);
+  cursor: pointer;
+  transition: transform 150ms var(--n-ease-out);
+}
+
+.play:hover {
+  transform: scale(1.05);
+}
+
+.play:active {
+  transform: scale(0.96);
+}
+
+.glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.glyph[data-play] {
+  transform: translateX(0.5px);
+}
+
+.actions {
+  grid-column: 3;
+  justify-content: flex-end;
+  padding: 0 18px 0 10px;
+}
+
+/* The tools: 30 px buttons 2 px apart in a grey well, 3 px of padding. */
+.well {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--n-well);
+  cursor: default;
+}
+
+.bar[data-lit] .well {
+  background: var(--n-well-glass);
+}
+
+.on,
+.on:hover:not(:disabled) {
+  background: var(--n-well-on);
+  color: var(--n-ink);
+}
+
+.bar[data-lit] .on,
+.bar[data-lit] .on:hover:not(:disabled) {
+  background: var(--n-well-glass-on);
+}
+
+.divider {
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--border-toolbox-divider);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play:hover,
+  .play:active {
+    transform: none;
+  }
+}
+
+/* The announcement region for the notice: always mounted, read aloud, never drawn. */
+.live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The mixer's mute is lifted from here: one quiet word beside the line that names it. */
+.unmute {
+  flex: none;
+  white-space: nowrap;
+}

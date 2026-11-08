@@ -1,0 +1,711 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.notch-stage {
+  --ink: #fff;
+  --ink-2: rgba(255, 255, 255, 0.55);
+  --ink-3: rgba(255, 255, 255, 0.5);
+  --wash: rgba(255, 255, 255, 0.1);
+  --rail: rgba(255, 255, 255, 0.2);
+  --placeholder: #1c1c1e;
+  --fade-ms: 250ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  position: fixed;
+  inset: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "Segoe UI",
+    Roboto,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+:where(.notch-stage button) {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+}
+
+.notch-stage button:focus-visible,
+.scrubber-track:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* Island: box and silhouette morph together on the same spring */
+
+.island {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  contain: strict;
+  transition:
+    width var(--morph-ms) var(--morph-ease),
+    height var(--morph-ms) var(--morph-ease);
+}
+
+.island-shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.island-shape path {
+  fill: #000;
+  transition: d var(--morph-ms) var(--morph-ease);
+}
+
+.island-body {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  transition: border-radius var(--morph-ms) var(--morph-ease);
+}
+
+/* Faces crossfade; the incoming one settles out of a slight blur and scale */
+
+.compact,
+.expanded {
+  transition:
+    opacity var(--fade-ms) var(--ease-out),
+    filter var(--fade-ms) var(--ease-out),
+    transform var(--morph-ms) var(--morph-ease),
+    visibility 0s;
+}
+
+.compact {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+
+.island[data-mode="expanded"] .compact {
+  opacity: 0;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.compact-idle {
+  justify-content: center;
+}
+
+.idle-glyph {
+  color: var(--ink);
+  opacity: 0.4;
+}
+
+.compact-cover {
+  flex: none;
+  border-radius: 5px;
+}
+
+.compact-gap {
+  flex: 1;
+}
+
+.compact-title {
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  animation: rise var(--fade-ms) var(--ease-out) 80ms both;
+}
+
+.compact-bars {
+  flex: none;
+  width: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.expanded {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 440px;
+  height: 184px;
+  box-sizing: border-box;
+  padding: 12px 18px 6px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  filter: blur(6px);
+  transform: translateX(-50%) scale(0.94);
+  transform-origin: 50% 0;
+  transition-delay: 0s, 0s, 0s, var(--fade-ms);
+}
+
+.island[data-mode="expanded"] .expanded {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  filter: none;
+  transform: translateX(-50%);
+  transition-delay: 60ms, 60ms, 0s, 0s;
+}
+
+/* Covers */
+
+.cover {
+  display: block;
+  flex: none;
+  object-fit: cover;
+  background: var(--placeholder);
+}
+
+.cover-placeholder {
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Visualizer: CSS only, frozen whenever nothing plays or the bars are hidden */
+
+.bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 12px;
+}
+
+.bars i {
+  width: 2.5px;
+  height: 12px;
+  border-radius: 1.25px;
+  background: currentColor;
+  transform: scaleY(0.3);
+  animation: bar 0.9s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+
+.bars i:nth-child(1) {
+  animation-duration: 0.74s;
+  animation-delay: -0.3s;
+}
+.bars i:nth-child(2) {
+  animation-duration: 1.06s;
+  animation-delay: -0.7s;
+}
+.bars i:nth-child(3) {
+  animation-duration: 0.86s;
+  animation-delay: -0.1s;
+}
+.bars i:nth-child(4) {
+  animation-duration: 0.98s;
+  animation-delay: -0.5s;
+}
+
+.bars[data-playing="true"] i {
+  animation-play-state: running;
+}
+
+@keyframes bar {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Marquee */
+
+.marquee {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  mask-image: linear-gradient(90deg, #000 calc(100% - 14px), transparent);
+}
+
+.marquee[data-scrolling="true"] {
+  mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 14px), transparent);
+}
+
+.marquee-track {
+  display: inline-flex;
+}
+
+.marquee[data-scrolling="true"] .marquee-track {
+  animation: marquee linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(var(--marquee-shift));
+  }
+}
+
+/* Expanded: now playing */
+
+.view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  animation: appear var(--fade-ms) var(--ease-out) both;
+}
+
+.now {
+  display: flex;
+  flex-direction: column;
+}
+
+.now-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+}
+
+.now-cover {
+  flex: none;
+  border-radius: 12px;
+}
+
+.now-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notch-stage .now-title,
+.now-artist {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.now-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.01em;
+}
+
+.now-artist {
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--ink-2);
+}
+
+.icon-button {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition:
+    background-color 160ms var(--ease-out),
+    transform 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+}
+
+.icon-button:hover {
+  background-color: var(--wash);
+}
+
+.icon-button:active {
+  transform: scale(0.9);
+}
+
+.like {
+  color: var(--ink-2);
+}
+
+.like[aria-pressed="true"] {
+  animation: pop 320ms var(--morph-ease);
+}
+
+.icon-button.play {
+  width: 40px;
+  height: 40px;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  height: 40px;
+}
+
+/* Scrubber */
+
+.scrubber {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  height: 16px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.scrubber-time {
+  flex: none;
+  min-width: 34px;
+}
+
+.scrubber-time:last-child {
+  text-align: right;
+}
+
+.scrubber-track {
+  flex: 1;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+}
+
+.scrubber-rail {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rail);
+  overflow: hidden;
+  transition: transform 160ms var(--ease-out);
+}
+
+.scrubber-track:hover .scrubber-rail,
+.scrubber-track[data-dragging="true"] .scrubber-rail {
+  transform: scaleY(1.5);
+}
+
+.scrubber-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+}
+
+/* Lyric strip under the transport */
+
+.lyric-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2px;
+  text-align: center;
+}
+
+.lyric-current,
+.lyric-next {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  animation: appear var(--fade-ms) var(--ease-out) both;
+}
+
+.lyric-current {
+  font-size: 15px;
+  line-height: 18px;
+  font-weight: 600;
+  min-height: 18px;
+}
+
+.lyric-next {
+  font-size: 13px;
+  line-height: 16px;
+  min-height: 16px;
+  color: var(--ink-3);
+}
+
+/* Expanded: lyrics */
+
+.lyrics-window {
+  height: 96px;
+  overflow: hidden;
+  mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+}
+
+.lyrics-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: transform var(--fade-ms) var(--ease-out);
+}
+
+.lyrics-line {
+  height: 32px;
+  line-height: 32px;
+  font-size: 15px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--ink-3);
+  transition: color var(--fade-ms) var(--ease-out);
+}
+
+/* Scaled inside the row with a max width, so a long current line keeps its ellipsis. */
+.lyrics-text {
+  display: inline-block;
+  vertical-align: top;
+  max-width: calc(100% / 1.12);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform var(--fade-ms) var(--ease-out);
+}
+
+.lyrics-line[data-state="current"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.lyrics-line[data-state="current"] .lyrics-text {
+  transform: scale(1.12);
+}
+
+/* Expanded: up next */
+
+.up-next {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notch-stage .up-next-row {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 12px;
+  height: 40px;
+  padding: 0 6px;
+  border-radius: 10px;
+  transition: background-color 160ms var(--ease-out);
+}
+
+.up-next-row:hover {
+  background-color: var(--wash);
+}
+
+.up-next-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.up-next-title,
+.up-next-artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.up-next-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 17px;
+}
+
+.up-next-artist {
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--ink-2);
+}
+
+.empty {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* View dots */
+
+.dots {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  height: 12px;
+}
+
+/* 24 px hit cells around a 5 px dot; the negative margin keeps the row 12 px tall. */
+.dot {
+  width: 24px;
+  height: 24px;
+  margin-block: -6px;
+}
+
+.dot::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.38);
+  transition:
+    background-color 200ms var(--ease-out),
+    width 200ms var(--ease-out);
+}
+
+.dot[aria-pressed="true"]::after {
+  width: 12px;
+  border-radius: 2.5px;
+  background: var(--ink);
+}
+
+/* Volume: thin bar at the top, nudged towards the change */
+
+.volume {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 56px;
+  height: 3px;
+  margin-left: -28px;
+  border-radius: 1.5px;
+  background: var(--rail);
+  overflow: hidden;
+  animation: appear 160ms var(--ease-out) both;
+}
+
+.volume-nudge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  border-radius: inherit;
+  animation: nudge-up 600ms var(--ease-out) both;
+}
+
+.volume[data-direction="down"] .volume-nudge {
+  animation-name: nudge-down;
+}
+
+@keyframes nudge-up {
+  from {
+    left: 30%;
+  }
+  to {
+    left: 60%;
+  }
+}
+
+@keyframes nudge-down {
+  from {
+    left: 30%;
+  }
+  to {
+    left: 0%;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+@keyframes pop {
+  40% {
+    transform: scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island,
+  .island-body,
+  .island-shape path {
+    transition: none;
+  }
+
+  .island[data-mode] .compact,
+  .island[data-mode] .expanded {
+    filter: none;
+    transition:
+      opacity var(--fade-ms) var(--ease-out),
+      visibility 0s;
+  }
+
+  .island .expanded {
+    transform: translateX(-50%);
+  }
+
+  .lyrics-list,
+  .lyrics-line,
+  .lyrics-text,
+  .scrubber-rail,
+  .dot::after {
+    transition: none;
+  }
+
+  .icon-button {
+    transition: background-color 160ms var(--ease-out);
+  }
+
+  .icon-button:active,
+  .scrubber-track:hover .scrubber-rail,
+  .scrubber-track[data-dragging="true"] .scrubber-rail {
+    transform: none;
+  }
+
+  .volume-nudge,
+  .volume[data-direction="down"] .volume-nudge {
+    animation: none;
+    left: 60%;
+  }
+
+  .volume[data-direction="down"] .volume-nudge {
+    left: 0;
+  }
+
+  .marquee[data-scrolling="true"] .marquee-track,
+  .bars i,
+  .like[aria-pressed="true"],
+  .compact-title {
+    animation: none;
+  }
+}

@@ -1,0 +1,61 @@
+.list {
+  position: relative;
+}
+
+/* a moved row glides to its new place, the way the queue moves; a lifted row follows the pointer exactly */
+.slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transition: transform var(--n-t-base) var(--n-ease-out);
+}
+
+.slot[data-lifted] {
+  z-index: 1;
+  border-radius: var(--n-r-m);
+  background: var(--n-field);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--n-ink) 14%, transparent);
+  transition: none;
+  cursor: grabbing;
+}
+
+.index {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.index[data-current] .number {
+  color: var(--n-accent);
+}
+
+/* the current row's number turns into pause (or play) under the pointer */
+.glyph {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-accent);
+  cursor: pointer;
+}
+
+.row:hover .index[data-current] .number {
+  visibility: hidden;
+}
+
+.row:hover .glyph {
+  display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot {
+    transition: none;
+  }
+}

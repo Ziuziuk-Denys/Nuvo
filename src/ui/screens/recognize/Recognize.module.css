@@ -1,0 +1,208 @@
+/* Recognize: the Library's title, then one panel and the history, both 660 px wide and centred like Search. */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+  margin-top: -20px;
+}
+
+.page > * {
+  width: min(660px, 100%);
+}
+
+.title {
+  margin: 0 0 14px;
+  color: var(--n-ink);
+  font: 700 26px/1.25 var(--n-font);
+  letter-spacing: -0.025em;
+}
+
+/* the Search panel's tone; a file over it deepens the tone, never a line */
+.panel {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  transition: background-color 150ms var(--n-ease-out);
+}
+
+.panel[data-dragging] {
+  background: color-mix(in srgb, var(--n-ink) 11%, transparent);
+}
+
+.listener {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 300px;
+  padding: 36px 24px 32px;
+  text-align: center;
+}
+
+.wave {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  height: 72px;
+}
+
+.wave i {
+  display: block;
+  width: 4px;
+  height: calc(var(--peak) * 100%);
+  border-radius: 2px;
+  background: var(--n-ink);
+  opacity: 0.22;
+  transition:
+    height 350ms var(--n-ease-out),
+    opacity 350ms var(--n-ease-out);
+}
+
+/* audio is being read: the bars breathe in a slow run from the left */
+.wave[data-live] i {
+  opacity: 0.5;
+  animation: breathe 1400ms var(--n-ease-out) infinite alternate;
+  animation-delay: calc(var(--bar) * 24ms);
+}
+
+@keyframes breathe {
+  from {
+    transform: scaleY(0.55);
+  }
+
+  to {
+    transform: scaleY(1.15);
+  }
+}
+
+.panel[data-recognize="listening"] .wave:not([data-live]) i {
+  opacity: 0.7;
+}
+
+.words {
+  max-width: 460px;
+  margin: 20px 0 22px;
+}
+
+.state {
+  margin: 0;
+  color: var(--n-ink);
+  font: 500 22px/1.25 var(--n-font);
+}
+
+.line {
+  min-height: 21px;
+  margin: 6px 0 0;
+  color: var(--n-ink-2);
+  font: 400 14px/1.5 var(--n-font);
+  overflow-wrap: anywhere;
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* the link form takes the buttons' place: the field grows, the two buttons keep their size */
+.linkForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(520px, 100%);
+  margin-top: 4px;
+}
+
+.linkField {
+  flex: 1;
+  min-width: 0;
+}
+
+.result {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+}
+
+.about {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.song {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--n-ink);
+  font: 700 26px/1.25 var(--n-font);
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.artist {
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--n-ink);
+  font: 400 16px/1.3 var(--n-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.facts {
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--n-ink-3);
+  font: 400 14px/1.4 var(--n-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+/*
+ * The quieter actions get a line of their own under Play, so longer labels (Russian) never run out of the card.
+ * Text buttons pad 16 px; pulling the line out by 16 starts the first label on the column's edge.
+ */
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 0 -16px;
+}
+
+.note {
+  margin: 8px 0 0;
+  color: var(--n-ink-3);
+  font: 400 13px/1.4 var(--n-font);
+}
+
+.history {
+  margin-top: 32px;
+}
+
+/* rows pad 8 px; pulling them out by 8 puts the covers on the title's edge */
+.rows {
+  margin: -8px -8px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .wave i {
+    transition: none;
+  }
+
+  .wave[data-live] i {
+    animation: none;
+  }
+}

@@ -1,0 +1,987 @@
+{
+  "repo": "https://github.com/Ziuziuk-Denys/nuvo",
+  "version": "0.2.10",
+  "site": "https://nuvo.quest",
+  "unsigned": "Builds are unsigned for now. Code signing costs money every year and Nuvo is free, so your system may warn you the first time:\n\n- **Windows:** in SmartScreen, choose **More info**, then **Run anyway**.\n- **macOS:** open Nuvo once, go to **System Settings**, **Privacy & Security**, and press **Open Anyway**.\n- **Linux:** make the AppImage executable and run it.",
+  "pendingLabel": "not measured",
+  "tagline": "The local-first music player.",
+  "build": {
+    "date": "2026-11-07",
+    "label": "packaged build, Nuvo 0.2.10, linux-unpacked",
+    "short": "packaged build",
+    "machine": "AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, GNOME on Wayland, Electron 44.0.0",
+    "runs": 5
+  },
+  "metrics": {
+    "windowText": {
+      "label": "Window with text visible",
+      "p50": 421,
+      "high": 462,
+      "unit": "ms",
+      "how": "Spawn call to the first frame with text, empty profile"
+    },
+    "home": {
+      "label": "Home shown",
+      "p50": 452,
+      "high": 484,
+      "unit": "ms",
+      "how": "Spawn call to Home, empty profile"
+    },
+    "statsFirst": {
+      "label": "Statistics page, first open after a restart",
+      "p50": 79,
+      "high": 79,
+      "unit": "ms",
+      "how": "171,429 plays, one open"
+    },
+    "statsRange": {
+      "label": "Statistics page, switch to all plays",
+      "p50": 68,
+      "high": 73,
+      "unit": "ms",
+      "how": "171,429 plays, 5 opens"
+    },
+    "memIdle": {
+      "label": "Memory at idle",
+      "p50": 381.1,
+      "high": 386.2,
+      "unit": "MB",
+      "how": "PSS of the whole tree with the daemon, 30 s after Home, empty profile"
+    },
+    "memPlaying": {
+      "label": "Memory while playing",
+      "p50": 443.8,
+      "high": 453.3,
+      "unit": "MB",
+      "how": "PSS at 60 s, cached tone, playlist open"
+    },
+    "cpuIdle": {
+      "label": "CPU at idle",
+      "p50": 0.2,
+      "high": 0.23,
+      "unit": "%",
+      "how": "One core, whole tree, 30 s, empty profile"
+    },
+    "cpuPlaying": {
+      "label": "CPU while playing",
+      "p50": 2.7,
+      "high": 2.75,
+      "unit": "%",
+      "how": "One core, whole tree, seconds 40 to 60, volume 0"
+    }
+  },
+  "comparison": {
+    "date": "2026-11-07",
+    "claim": "Lighter at idle than every other app on a web engine that we measured. Strawberry, a native Qt player, uses about a third of Nuvo's memory.",
+    "method": "- **Machine and build.** AMD Ryzen 9 PRO 7945, 30 GB, Fedora, Linux 7.2.11, GNOME on Wayland. Measured on 2026-11-07. Nuvo is the 0.2.10 `linux-unpacked` package. Other programs were running on the machine all day.\n- **Runs and labels.** 5 runs per figure, 6 for Spotify. Every app had its own empty profile and no login. Nuvo: empty profile, Home reached. Liner: sign-in screen. Riff 44.2.0: logged out. Spotify: logged-out client (flatpak). Strawberry 1.2.31: flatpak, empty library. YouTube Music and Apple Music: web tab, logged out, fresh Chrome 156 profile. Each run started a fresh process; the page cache was not dropped.\n- **Idle.** Memory is PSS summed over the whole process tree (Nuvo includes its daemon), read 30 s after the window appeared. CPU is user plus system time of the tree over the next 30 s, in percent of one core.\n- **Cold start.** The definitions differ, so read it as a rough guide. Nuvo, Liner, Riff and the web tabs: first frame with the window visible and text, read over the DevTools protocol. The web-tab figure includes the network. Spotify and Strawberry have no such hook: first mapped window of at least 200 by 200 pixels. Spotify's 435 to 447 ms window is probably a splash, so we give no start figure for it.\n- **Playing.** Nuvo played a cached 90 s tone at volume 0 from a seeded playlist, CPU over seconds 40 to 60. Strawberry played a 240 s tone with its stream volume at 0, measured 30 s after the start. Different players and different moments, both whole-tree. Liner, Spotify, Riff and the web tabs are not measured: playback needs an account, and we did not attempt one.\n- **Load.** One-minute load average under 1.2 at every sample for the other apps. Nuvo's late set had a median of 0.19 and a maximum of 0.29.\n- **Nuvo's spread.** Idle memory moved between two sessions on the same build with no change: 336 MB in an earlier session, 381 MB in the later one, which is the figure above. The same shift of 40 to 45 MB showed in every Nuvo scenario, and we have not found the cause. Every other web-engine app still uses more memory than either figure.\n- **Where Nuvo loses.** Strawberry uses less memory at idle (129 against 381 MB) and less CPU while playing (1.3 against 2.7 %). It is a native Qt player; Nuvo is Electron with a Rust daemon. Strawberry's installed size depends on a shared runtime of about 1.1 GB. Riff's start is bimodal and we have not found why.\n- **Published, not measured by us.** Riff's README claims about 180 MB during playback, with no method given ([source](https://github.com/rootscripts/riff#memory-usage), read 2026-11-07). We measured 422 MB at idle on the AppImage. Other published figures, such as download sizes, are in `.github/readme/published.json`.\n- **Not measured.** Installed size of the web tabs, a start with a dropped page cache, other machines. Nothing here is estimated.",
+    "columns": [
+      {
+        "key": "idleMemoryMb",
+        "label": "Idle memory",
+        "unit": "MB"
+      },
+      {
+        "key": "processes",
+        "label": "Processes",
+        "unit": ""
+      },
+      {
+        "key": "idleCpu",
+        "label": "Idle CPU",
+        "unit": "%"
+      },
+      {
+        "key": "windowMs",
+        "label": "Cold start",
+        "unit": "ms"
+      },
+      {
+        "key": "playingCpu",
+        "label": "Playing CPU",
+        "unit": "%"
+      },
+      {
+        "key": "playingMemoryMb",
+        "label": "Playing memory",
+        "unit": "MB",
+        "chart": false
+      },
+      {
+        "key": "installMb",
+        "label": "Installed size",
+        "unit": "MB",
+        "chart": false
+      }
+    ],
+    "apps": [
+      {
+        "name": "Nuvo",
+        "idleMemoryMb": 381.1,
+        "processes": 6,
+        "idleCpu": 0.2,
+        "windowMs": 421,
+        "playingCpu": 2.7,
+        "playingMemoryMb": 443.8,
+        "installMb": 319.4,
+        "spread": {
+          "idleMemoryMb": [
+            379.6,
+            386.2
+          ],
+          "idleCpu": [
+            0.17,
+            0.23
+          ],
+          "windowMs": [
+            411,
+            462
+          ],
+          "playingCpu": [
+            2.6,
+            2.75
+          ],
+          "playingMemoryMb": [
+            443,
+            453.3
+          ]
+        },
+        "display": {
+          "installMb": {
+            "table": "319.4 MB unpacked (AppImage 133.5, .deb 105.8)",
+            "chart": "319 MB"
+          }
+        }
+      },
+      {
+        "name": "Liner",
+        "idleMemoryMb": 504.3,
+        "processes": 8,
+        "idleCpu": 1.2,
+        "windowMs": 1053,
+        "playingCpu": null,
+        "playingMemoryMb": null,
+        "installMb": 549.1,
+        "spread": {
+          "idleMemoryMb": [
+            502.2,
+            505.1
+          ],
+          "idleCpu": [
+            1.17,
+            1.23
+          ],
+          "windowMs": [
+            966,
+            1404
+          ]
+        }
+      },
+      {
+        "name": "Riff",
+        "idleMemoryMb": 422.1,
+        "processes": 7,
+        "idleCpu": 10.87,
+        "windowMs": 9215,
+        "playingCpu": null,
+        "playingMemoryMb": null,
+        "installMb": 366.3,
+        "spread": {
+          "idleMemoryMb": [
+            421.4,
+            422.6
+          ],
+          "idleCpu": [
+            10.67,
+            11.2
+          ]
+        },
+        "display": {
+          "windowMs": {
+            "table": "bimodal: 1628 to 9873 ms, median 9215 ms",
+            "chart": "bimodal"
+          },
+          "installMb": {
+            "table": "366.3 MB extracted (AppImage 132.8)",
+            "chart": "366 MB"
+          }
+        }
+      },
+      {
+        "name": "Spotify",
+        "idleMemoryMb": 567.0,
+        "processes": 9,
+        "idleCpu": 1.5,
+        "windowMs": null,
+        "playingCpu": null,
+        "playingMemoryMb": null,
+        "installMb": null,
+        "spread": {
+          "idleMemoryMb": [
+            558.4,
+            568.6
+          ],
+          "idleCpu": [
+            0.43,
+            2.07
+          ]
+        },
+        "display": {
+          "windowMs": {
+            "table": "no usable-window figure: first window at 435 to 447 ms, probably a splash",
+            "chart": "no figure"
+          },
+          "installMb": {
+            "table": "14.1 MB flatpak app, plus a shared runtime; first-run download not measured",
+            "chart": "14.1 + runtime"
+          }
+        }
+      },
+      {
+        "name": "YouTube Music",
+        "idleMemoryMb": 544.5,
+        "processes": 17,
+        "idleCpu": 0.6,
+        "windowMs": 2999,
+        "playingCpu": null,
+        "playingMemoryMb": null,
+        "installMb": null,
+        "spread": {
+          "idleMemoryMb": [
+            533.1,
+            547.9
+          ],
+          "idleCpu": [
+            0.3,
+            3.23
+          ],
+          "windowMs": [
+            2108,
+            4405
+          ]
+        },
+        "display": {
+          "windowMs": {
+            "table": "2999 ms (2108 to 4405), includes network",
+            "chart": "2999 ms"
+          }
+        }
+      },
+      {
+        "name": "Apple Music",
+        "idleMemoryMb": 673.7,
+        "processes": 17,
+        "idleCpu": 0.8,
+        "windowMs": 3157,
+        "playingCpu": null,
+        "playingMemoryMb": null,
+        "installMb": null,
+        "spread": {
+          "idleMemoryMb": [
+            664,
+            676.8
+          ],
+          "idleCpu": [
+            0.53,
+            3.03
+          ],
+          "windowMs": [
+            2173,
+            3741
+          ]
+        },
+        "display": {
+          "windowMs": {
+            "table": "3157 ms (2173 to 3741), includes network",
+            "chart": "3157 ms"
+          }
+        }
+      },
+      {
+        "name": "Strawberry",
+        "idleMemoryMb": 128.7,
+        "processes": 2,
+        "idleCpu": 0.37,
+        "windowMs": 1132,
+        "playingCpu": 1.3,
+        "playingMemoryMb": 136.8,
+        "installMb": 22.6,
+        "spread": {
+          "idleMemoryMb": [
+            128.6,
+            129.6
+          ],
+          "idleCpu": [
+            0.3,
+            0.37
+          ],
+          "windowMs": [
+            834,
+            1342
+          ],
+          "playingCpu": [
+            1.27,
+            1.37
+          ],
+          "playingMemoryMb": [
+            136.7,
+            136.9
+          ]
+        },
+        "display": {
+          "installMb": {
+            "table": "22.6 MB flatpak app, plus the KDE runtime (about 1.1 GB, shared)",
+            "chart": "22.6 + runtime"
+          }
+        }
+      }
+    ]
+  },
+  "matrix": {
+    "checked": "2026-11-07",
+    "apps": [
+      "Nuvo",
+      "Liner",
+      "Riff",
+      "Spotify",
+      "YouTube Music",
+      "Apple Music",
+      "Strawberry"
+    ],
+    "notes": [
+      "Unknown means we found no source we could cite. It does not mean the app lacks the feature, and it is never counted as a no.",
+      "Yes and Partly cells have a source in .github/readme/comparison-sources.json. No cells rest on a repository we read or a limit the product's own docs state.",
+      "Riff cells come from its README and settings page at commit 33fa5ff. Liner cells come from its README, docs and source at commit eea9a6a. Both may have changed since.",
+      "Spotify, YouTube Music and Apple Music cells come from their help pages, except three cells sourced from SlashGear. Several rows carry over from an earlier pass whose source was not recorded; they are marked in the sources file.",
+      "Nuvo: the Windows and macOS builds exist and are untested. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.",
+      "The rows are the features of the Nuvo app, so they favour Nuvo by construction. A feature another app has and Nuvo lacks is not listed here."
+    ],
+    "sources": [
+      {
+        "name": "Riff",
+        "url": "https://github.com/rootscripts/riff"
+      },
+      {
+        "name": "Liner",
+        "url": "https://github.com/tryliner/desktop"
+      },
+      {
+        "name": "Strawberry",
+        "url": "https://github.com/strawberrymusicplayer/strawberry"
+      },
+      {
+        "name": "Spotify help",
+        "url": "https://support.spotify.com/"
+      },
+      {
+        "name": "YouTube Music help",
+        "url": "https://support.google.com/youtubemusic"
+      },
+      {
+        "name": "Apple Music guide",
+        "url": "https://support.apple.com/guide/music-windows/"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Playback and sound",
+        "rows": [
+          {
+            "label": "Now-playing bar with seek, volume and track info",
+            "cells": "yyyyuuy"
+          },
+          {
+            "label": "Queue panel (play next, add to queue)",
+            "cells": "yyyyuyu"
+          },
+          {
+            "label": "Shuffle and repeat (off, all, one)",
+            "cells": "yyyyuyu"
+          },
+          {
+            "label": "Radio from a song or artist",
+            "cells": "yyyuupu"
+          },
+          {
+            "label": "Autoplay similar songs",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Crossfade and gapless transitions",
+            "cells": "ynpyuyu"
+          },
+          {
+            "label": "Loudness normalization and auto gain",
+            "cells": "ynyyuyy"
+          },
+          {
+            "label": "Output device choice",
+            "cells": "yuyuuuu"
+          },
+          {
+            "label": "Best quality switch",
+            "cells": "yuyuuuu"
+          },
+          {
+            "label": "10-band equalizer with 12 presets",
+            "cells": "ypypuuy"
+          },
+          {
+            "label": "Speed, pitch and reverb presets (slowed, nightcore, daycore)",
+            "cells": "yyypuuu"
+          },
+          {
+            "label": "Sleep timer",
+            "cells": "ynypyuu"
+          },
+          {
+            "label": "A-B loop (set start, set end, clear)",
+            "cells": "ynnuuuu"
+          },
+          {
+            "label": "Pause on device change",
+            "cells": "yyuuuuu"
+          },
+          {
+            "label": "Double-click and default playback context options",
+            "cells": "yyuuuuu"
+          },
+          {
+            "label": "Offline mode",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Saved audio with a cache size limit",
+            "cells": "yyypppy"
+          },
+          {
+            "label": "Keep this version / Not this one (fix a wrong match)",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Media keys and MPRIS",
+            "cells": "yppuuuy"
+          },
+          {
+            "label": "Moments: mark a place in a song and jump back to it",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Trim a song's start and end",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Choose which source a song plays from",
+            "cells": "yuuuuuu"
+          }
+        ]
+      },
+      {
+        "name": "Lyrics",
+        "rows": [
+          {
+            "label": "Synced lyrics pane",
+            "cells": "yyyyyyu"
+          },
+          {
+            "label": "Karaoke view",
+            "cells": "yyyuuyu"
+          },
+          {
+            "label": "Lyrics timing offset",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Romanized lyrics",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Lyrics editor: paste and time your own lyrics",
+            "cells": "ynyuuuu"
+          },
+          {
+            "label": "Lyrics translation on your machine",
+            "cells": "ynpuuuu"
+          },
+          {
+            "label": "Lyrics version choice (plain, line, word)",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Karaoke highlight modes (line, word, fill, step)",
+            "cells": "yppuuuu"
+          }
+        ]
+      },
+      {
+        "name": "Discovery",
+        "rows": [
+          {
+            "label": "Mixes on Home (for you, something new, artist mixes)",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Recently liked and most saved shelves",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Pin to Home",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Reasons shown for recommendations",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Not interested controls (exact song, any version, artist for a while or always)",
+            "cells": "ynpppuu"
+          },
+          {
+            "label": "Hidden music list with Show again",
+            "cells": "yuypuuu"
+          },
+          {
+            "label": "Start with a few artists you like",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Playlist suggestions",
+            "cells": "yuyuuuu"
+          },
+          {
+            "label": "Recognize a song (microphone, this computer or a file) with history",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Statistics page: story, charts, top lists and drill-downs",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Export, delete and pause your statistics",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Dislike button on every song",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Listening history with filters",
+            "cells": "yuuuuuu"
+          }
+        ]
+      },
+      {
+        "name": "Search, links and sharing",
+        "rows": [
+          {
+            "label": "Search for songs, albums, artists and playlists",
+            "cells": "yyyyuuu"
+          },
+          {
+            "label": "Search history",
+            "cells": "yyuuuuu"
+          },
+          {
+            "label": "Paste a link to play or import (YouTube Music, Apple Music, Deezer, SoundCloud)",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Song from a TikTok link or video, found by listening",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Share links and copy list",
+            "cells": "yyyyuyu"
+          },
+          {
+            "label": "Command palette",
+            "cells": "yuuuuuu"
+          }
+        ]
+      },
+      {
+        "name": "Library and files",
+        "rows": [
+          {
+            "label": "Library tabs: playlists, albums, artists, on this computer",
+            "cells": "yyyyuuu"
+          },
+          {
+            "label": "Grid and list view with filter",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Liked songs",
+            "cells": "yyyyyuu"
+          },
+          {
+            "label": "Create and delete playlists",
+            "cells": "yyyuuyy"
+          },
+          {
+            "label": "Change playlist cover",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Duplicate finder and tidy with undo",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Sort tracks by title or length",
+            "cells": "yyyyuyu"
+          },
+          {
+            "label": "Select several songs for bulk actions",
+            "cells": "yuyuuuu"
+          },
+          {
+            "label": "Local music folders with watching and .lrc files",
+            "cells": "ypypppy"
+          },
+          {
+            "label": "Import a playlist from a link",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Import SoundCloud likes",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Import a Spotify export file (CSV)",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Import report with match review",
+            "cells": "yyuuuuu"
+          },
+          {
+            "label": "Export playlists as CSV, JSON or M3U8",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Export the library as CSV or JSON",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Save songs as files",
+            "cells": "ypyuuuu"
+          },
+          {
+            "label": "Artist page",
+            "cells": "yypuuuu"
+          },
+          {
+            "label": "Album page",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "YouTube account sign-in, playback and playlist sync",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Import a Spotify playlist or album from its link",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Keep a playlist offline",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Merge playlists and move songs between them, with undo",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Recently deleted playlists with Restore",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Save format: original or MP3",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Pin a playlist, album or artist to the sidebar",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Explicit mark on songs their source calls explicit",
+            "cells": "yuuuuuu"
+          }
+        ]
+      },
+      {
+        "name": "Look and feel",
+        "rows": [
+          {
+            "label": "Theme presets (nine)",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Accent from the cover",
+            "cells": "yuyuuuu"
+          },
+          {
+            "label": "Cover glow",
+            "cells": "yppuuuu"
+          },
+          {
+            "label": "Language choice (English, Russian)",
+            "cells": "yyyyuuy"
+          },
+          {
+            "label": "Fonts and interface size",
+            "cells": "yuyuuuu"
+          },
+          {
+            "label": "Theme editor with colour roles",
+            "cells": "ynyuuuu"
+          },
+          {
+            "label": "Theme import and export",
+            "cells": "yupuuuu"
+          },
+          {
+            "label": "Custom CSS",
+            "cells": "ynyuuuu"
+          },
+          {
+            "label": "Wallpaper with blur and dimming",
+            "cells": "ypyuuuu"
+          },
+          {
+            "label": "Reset customization and safe mode",
+            "cells": "yppuuuu"
+          },
+          {
+            "label": "The Notch (mini player with lyrics and pulse)",
+            "cells": "yppuupu"
+          },
+          {
+            "label": "Keep running in the tray",
+            "cells": "ynyuuuu"
+          },
+          {
+            "label": "Rebindable shortcuts, in the app and global",
+            "cells": "yyyuuup"
+          },
+          {
+            "label": "Guided first-run tour",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Reduce effects",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Window zoom from the keyboard",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Panel widget for GNOME, Plasma and Waybar",
+            "cells": "yuuuuuu"
+          }
+        ]
+      },
+      {
+        "name": "Privacy and system",
+        "rows": [
+          {
+            "label": "Encrypted library with recovery phrase unlock",
+            "cells": "ynnuuuu"
+          },
+          {
+            "label": "Passphrase protection when no system keyring exists",
+            "cells": "ynuuuuu"
+          },
+          {
+            "label": "Proxy setting",
+            "cells": "ynpuuuu"
+          },
+          {
+            "label": "Connection check and report",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Helper tools download (yt-dlp, ffmpeg)",
+            "cells": "yuyuuuu"
+          },
+          {
+            "label": "Automatic updates",
+            "cells": "yyyuuuu"
+          },
+          {
+            "label": "Last.fm scrobbling",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Discord status switch",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "What's new after an update",
+            "cells": "yuuuuuu"
+          },
+          {
+            "label": "Report a problem with a filled GitHub issue",
+            "cells": "yuuuuuu"
+          }
+        ]
+      }
+    ],
+    "total": 102
+  },
+  "badges": [
+    {
+      "icon": "linux",
+      "text": "Linux"
+    },
+    {
+      "icon": "cog",
+      "text": "Rust core"
+    },
+    {
+      "icon": "window",
+      "text": "Electron 44"
+    },
+    {
+      "icon": "lock",
+      "text": "SQLCipher"
+    },
+    {
+      "icon": "user",
+      "text": "No account"
+    },
+    {
+      "icon": "eye",
+      "text": "No telemetry"
+    },
+    {
+      "icon": "scale",
+      "text": "AGPL-3.0-or-later"
+    }
+  ],
+  "themes": [
+    [
+      "#101320",
+      "#AFC8F7"
+    ],
+    [
+      "#F3EFE6",
+      "#C4122F"
+    ],
+    [
+      "#10162B",
+      "#FF4B5C"
+    ],
+    [
+      "#17130C",
+      "#E2B552"
+    ],
+    [
+      "#0E1230",
+      "#A99CFF"
+    ],
+    [
+      "#FFE9DC",
+      "#CF3317"
+    ],
+    [
+      "#1B1426",
+      "#C995FF"
+    ],
+    [
+      "#EAF2FB",
+      "#5B3DF5"
+    ],
+    [
+      "#1C1610",
+      "#F28C28"
+    ]
+  ],
+  "roadmap": {
+    "note": "What is next, not a promise or a schedule.",
+    "stages": [
+      {
+        "title": "Today",
+        "items": [
+          "Encrypted library and audio cache",
+          "Playback, EQ, karaoke, mixes",
+          "Imports, local files, statistics",
+          "Themes, the Notch, panel widgets",
+          "Last.fm, Discord, English and Russian"
+        ]
+      },
+      {
+        "title": "Planned",
+        "items": [
+          "Whisper-based lyric alignment",
+          "Search by a lyric line",
+          "Music map and year recap",
+          "Genre mixes and mood mixes",
+          "Tested and signed Windows and macOS builds"
+        ]
+      },
+      {
+        "title": "Weighing",
+        "items": [
+          "Device sync with no Nuvo account",
+          "Jellyfin and Plex",
+          "Plugins, phone remote and a CLI",
+          "Room correction",
+          "Per-device output routing"
+        ]
+      },
+      {
+        "title": "Never",
+        "items": [
+          "A Nuvo account or server",
+          "Hosting or selling music",
+          "Telemetry"
+        ]
+      }
+    ]
+  },
+  "coreJobs": "Library, playlists, history, ranking, imports, local files, lyrics, caches",
+  "memoryNote": "at idle, whole app with its daemon, empty profile. An earlier session on this build read 336 MB.",
+  "memoryBars": [
+    [
+      "Idle, empty profile",
+      381.1,
+      386.2
+    ],
+    [
+      "Idle, 5,000-track profile",
+      390.9,
+      404.2
+    ],
+    [
+      "Playing, playlist open",
+      443.8,
+      453.3
+    ],
+    [
+      "Karaoke, Fill mode",
+      463.9,
+      468.5
+    ]
+  ],
+  "karaoke": {
+    "note": "Word-timed fixture song at volume 0, seconds 40 to 60, whole tree. 5 runs per mode, 6 for Fill. Playing without karaoke is 2.7 %.",
+    "rows": [
+      {
+        "value": "4.9 %",
+        "label": "Line mode"
+      },
+      {
+        "value": "6 %",
+        "label": "Word mode"
+      },
+      {
+        "value": "7.17 %",
+        "label": "Fill mode"
+      },
+      {
+        "value": "5.2 %",
+        "label": "Step mode"
+      }
+    ]
+  }
+}

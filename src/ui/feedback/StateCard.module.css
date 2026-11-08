@@ -1,0 +1,111 @@
+/* The state card: the window behind dims and softly blurs, one sheet of the dialog glass floats in the middle.
+   Above the sheets (900), under the toast slot (1000), so a status line can still speak over it. */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: grid;
+  place-items: center;
+  padding: var(--n-s-5);
+  overflow-y: auto;
+  color: var(--n-ink);
+  font-family: var(--n-font);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--n-dim);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  animation: state-dim var(--n-t-page) var(--n-ease-out) both;
+}
+
+:root[data-theme="dark"] .backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* the strip the top bar drags by, with the window buttons drawn sharp over the dim */
+.top {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  display: flex;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  height: 56px;
+  padding: 12px 12px 0 0;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 400px;
+  padding: 28px 24px 20px;
+  border-radius: 22px;
+  /* surfaces come from the preset's inline tokens, which the crashed window keeps while it loses the theme attribute */
+  background: color-mix(in srgb, var(--n-raised) 90%, transparent);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  box-shadow: var(--n-sheet-shadow);
+  text-align: center;
+  outline: none;
+  animation: state-rise var(--n-t-entrance) var(--n-ease-out) both;
+  animation-delay: 60ms;
+}
+
+/* a neutral halo: the accent is red in the default look, and a red ring on this card reads as one more error */
+.card :focus-visible {
+  outline-color: color-mix(in srgb, var(--n-ink) 28%, transparent);
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background: var(--border-white-alpha-14);
+  color: var(--n-ink);
+}
+
+.title {
+  margin: 0;
+  font: 600 20px/26px var(--n-font);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.line {
+  max-width: 36ch;
+  margin: 6px 0 20px;
+  color: var(--n-ink-3);
+  font: 400 13.5px/1.45 var(--n-font);
+  text-wrap: pretty;
+}
+
+@keyframes state-dim {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes state-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .card {
+    animation: state-dim var(--n-t-quick) linear both;
+    animation-delay: 0s;
+  }
+}

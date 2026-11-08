@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: {{site}}/docs
+    about: Install steps, features and troubleshooting.
+  - name: Question or idea to talk through
+    url: https://github.com/Ziuziuk-Denys/nuvo/discussions
+    about: Use Discussions for questions and open-ended ideas.
+  - name: Security vulnerability
+    url: https://github.com/Ziuziuk-Denys/nuvo/blob/main/SECURITY.md
+    about: Report privately by email. Do not open a public issue.

@@ -1,0 +1,167 @@
+{
+  "nuvo": {
+    "modes": ["light", "dark"],
+    "tokens": {
+      "light": {
+        "n-field": "#f4f7ff",
+        "n-deep": "#e9eefb",
+        "n-raised": "#ffffff",
+        "n-ink": "#101320",
+        "n-ink-2": "rgba(16, 19, 32, 0.7)",
+        "n-ink-3": "#5a6584",
+        "n-hair": "rgba(16, 19, 32, 0.1)",
+        "n-tint": "rgba(16, 19, 32, 0.05)",
+        "n-accent": "#4a69b0",
+        "n-ring": "#4a69b0"
+      },
+      "dark": {
+        "n-field": "#101320",
+        "n-deep": "#0b0e1a",
+        "n-raised": "#171c31",
+        "n-ink": "#f4f7ff",
+        "n-ink-2": "rgba(244, 247, 255, 0.72)",
+        "n-ink-3": "rgba(244, 247, 255, 0.56)",
+        "n-hair": "rgba(244, 247, 255, 0.1)",
+        "n-tint": "rgba(244, 247, 255, 0.06)",
+        "n-accent": "#afc8f7",
+        "n-ring": "#afc8f7"
+      }
+    }
+  },
+  "editor": {
+    "modes": ["light"],
+    "tokens": {
+      "light": {
+        "n-field": "#f6f1e5",
+        "n-deep": "#e9e3d5",
+        "n-raised": "#fcf9f2",
+        "n-ink": "#15120e",
+        "n-ink-2": "rgba(21, 18, 14, 0.7)",
+        "n-ink-3": "rgba(21, 18, 14, 0.62)",
+        "n-hair": "rgba(21, 18, 14, 0.1)",
+        "n-tint": "rgba(21, 18, 14, 0.05)",
+        "n-accent": "#c4122f",
+        "n-ring": "#c4122f"
+      }
+    }
+  },
+  "orbit": {
+    "modes": ["dark"],
+    "tokens": {
+      "dark": {
+        "n-field": "#091430",
+        "n-deep": "#040a18",
+        "n-raised": "#101f45",
+        "n-ink": "#f2f5ff",
+        "n-ink-2": "rgba(242, 245, 255, 0.72)",
+        "n-ink-3": "rgba(242, 245, 255, 0.56)",
+        "n-hair": "rgba(242, 245, 255, 0.1)",
+        "n-tint": "rgba(242, 245, 255, 0.06)",
+        "n-accent": "#ff4b5c",
+        "n-ring": "#ff4b5c"
+      }
+    }
+  },
+  "vinyl": {
+    "modes": ["dark"],
+    "tokens": {
+      "dark": {
+        "n-field": "#0e0d0b",
+        "n-deep": "#000000",
+        "n-raised": "#181612",
+        "n-ink": "#f6efe0",
+        "n-ink-2": "rgba(246, 239, 224, 0.72)",
+        "n-ink-3": "rgba(246, 239, 224, 0.56)",
+        "n-hair": "rgba(246, 239, 224, 0.1)",
+        "n-tint": "rgba(246, 239, 224, 0.06)",
+        "n-accent": "#e2b552",
+        "n-ring": "#e2b552"
+      }
+    }
+  },
+  "cosmos": {
+    "modes": ["dark"],
+    "tokens": {
+      "dark": {
+        "n-field": "#090d2c",
+        "n-deep": "#03051a",
+        "n-raised": "#11163d",
+        "n-ink": "#eef0ff",
+        "n-ink-2": "rgba(238, 240, 255, 0.72)",
+        "n-ink-3": "rgba(238, 240, 255, 0.56)",
+        "n-hair": "rgba(238, 240, 255, 0.1)",
+        "n-tint": "rgba(238, 240, 255, 0.06)",
+        "n-accent": "#a99cff",
+        "n-ring": "#a99cff"
+      }
+    }
+  },
+  "sunset": {
+    "modes": ["light"],
+    "tokens": {
+      "light": {
+        "n-field": "#fff3e8",
+        "n-deep": "#f4e1d0",
+        "n-raised": "#fffaf5",
+        "n-ink": "#2a150e",
+        "n-ink-2": "rgba(42, 21, 14, 0.7)",
+        "n-ink-3": "rgba(42, 21, 14, 0.66)",
+        "n-hair": "rgba(42, 21, 14, 0.1)",
+        "n-tint": "rgba(42, 21, 14, 0.05)",
+        "n-accent": "#cf3317",
+        "n-ring": "#cf3317"
+      }
+    }
+  },
+  "amethyst": {
+    "modes": ["dark"],
+    "tokens": {
+      "dark": {
+        "n-field": "#160b22",
+        "n-deep": "#0c0513",
+        "n-raised": "#211232",
+        "n-ink": "#f7efff",
+        "n-ink-2": "rgba(247, 239, 255, 0.72)",
+        "n-ink-3": "rgba(247, 239, 255, 0.56)",
+        "n-hair": "rgba(247, 239, 255, 0.1)",
+        "n-tint": "rgba(247, 239, 255, 0.06)",
+        "n-accent": "#c995ff",
+        "n-ring": "#c995ff"
+      }
+    }
+  },
+  "y2k": {
+    "modes": ["light"],
+    "tokens": {
+      "light": {
+        "n-field": "#f1f4f8",
+        "n-deep": "#dbe1e9",
+        "n-raised": "#ffffff",
+        "n-ink": "#0f141b",
+        "n-ink-2": "rgba(15, 20, 27, 0.7)",
+        "n-ink-3": "rgba(15, 20, 27, 0.62)",
+        "n-hair": "rgba(15, 20, 27, 0.1)",
+        "n-tint": "rgba(15, 20, 27, 0.05)",
+        "n-accent": "#5b3df5",
+        "n-ring": "#5b3df5"
+      }
+    }
+  },
+  "cassette": {
+    "modes": ["dark"],
+    "tokens": {
+      "dark": {
+        "n-field": "#1d1109",
+        "n-deep": "#110904",
+        "n-raised": "#29190e",
+        "n-ink": "#f6e7cd",
+        "n-ink-2": "rgba(246, 231, 205, 0.72)",
+        "n-ink-3": "rgba(246, 231, 205, 0.56)",
+        "n-hair": "rgba(246, 231, 205, 0.1)",
+        "n-tint": "rgba(246, 231, 205, 0.06)",
+        "n-accent": "#f28c28",
+        "n-ring": "#f28c28"
+      }
+    }
+  }
+}

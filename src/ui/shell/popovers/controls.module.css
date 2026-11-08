@@ -1,0 +1,285 @@
+/* The player panels' control language: 26 px chips, the 40 x 22 switch, option rows and the tick ruler. */
+
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink-2);
+  font: 600 11px/1 var(--n-font);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.chip:hover:not(:disabled) {
+  color: var(--n-ink);
+}
+
+.chip[aria-pressed="true"],
+.chip[data-pressed] {
+  background: color-mix(in srgb, var(--n-ink) 80%, transparent);
+  color: var(--n-field);
+}
+
+.chip:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--n-accent) 40%, transparent);
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.switch:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.switch[aria-checked="true"],
+.switch[aria-checked="true"]:hover:not(:disabled) {
+  background: var(--n-ink);
+}
+
+.switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  transform: translateX(3px);
+  transition:
+    transform 200ms ease-out,
+    background-color 200ms ease-out;
+}
+
+.switch[aria-checked="true"] .knob {
+  background: var(--n-field);
+  transform: translateX(21px);
+}
+
+:root[data-theme="dark"] .switch {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+:root[data-theme="dark"] .switch:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+:root[data-theme="dark"] .switch[aria-checked="true"] {
+  background: var(--n-ink);
+}
+
+.labeled {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--n-ink-2);
+  font: 500 12px/16px var(--n-font);
+}
+
+.labeled[data-disabled] {
+  color: var(--n-ink-3);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.optionText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--n-ink);
+  font: 500 13px/18px var(--n-font);
+}
+
+.optionHint {
+  color: var(--n-ink-3);
+  font: 400 11px/1.35 var(--n-font);
+}
+
+.ruler {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rulerLabel {
+  color: var(--n-ink);
+  font: 500 13px/18px var(--n-font);
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 6px;
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.ticks[data-dragging] {
+  cursor: grabbing;
+}
+
+.ticks:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--n-ink) 30%, transparent);
+}
+
+.pointer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 16px;
+  height: 12px;
+  color: var(--n-ink);
+  opacity: 0.45;
+  transform: translateX(-50%);
+}
+
+.pointer polygon {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.tickWindow {
+  position: absolute;
+  inset: 17px 0 4px;
+  mask-image: linear-gradient(to right, transparent 0, black 22%, black 78%, transparent 100%);
+}
+
+.tickStrip {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  display: flex;
+  height: 100%;
+  align-items: flex-end;
+  gap: 5px;
+  transform: translateX(calc(var(--notch, 0) * -8px - 1.5px));
+  transition: transform 200ms ease-out;
+}
+
+.ticks[data-dragging] .tickStrip {
+  transition: none;
+}
+
+.tick {
+  flex: none;
+  width: 3px;
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--n-ink) 35%, transparent);
+  transition: background-color 200ms ease;
+}
+
+.tick[data-on] {
+  background: var(--n-ink);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.step,
+.value {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--n-ink);
+  transition: background-color 150ms ease;
+}
+
+.step {
+  width: 36px;
+  cursor: pointer;
+}
+
+.step:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.value {
+  min-width: 64px;
+  padding: 0 10px;
+  font: 600 13px/1 var(--n-font);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.value:disabled {
+  cursor: default;
+}
+
+:root[data-theme="dark"] .step,
+:root[data-theme="dark"] .value {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme="dark"] .step:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip,
+  .switch,
+  .knob,
+  .tickStrip,
+  .tick {
+    transition: none;
+  }
+}

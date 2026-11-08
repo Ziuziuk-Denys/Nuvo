@@ -1,0 +1,126 @@
+/*
+ * The rail: 58 px of the preset's glass, 6 px off the window's left and bottom edges, from 12 px under the top row
+ * to the bottom frame. No border, rim or shadow.
+ */
+.rail {
+  position: absolute;
+  z-index: 41;
+  top: 62px;
+  bottom: 6px;
+  left: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 58px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--n-glass);
+  -webkit-backdrop-filter: var(--n-glass-blur);
+  backdrop-filter: var(--n-glass-blur);
+  user-select: none;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Pinned lists under a hairline; they give way to the glyphs above when the window is short. */
+.pins {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 6px;
+  padding-top: 6px;
+  overflow: hidden;
+  border-top: 1px solid color-mix(in srgb, var(--n-ink) 10%, transparent);
+}
+
+.pins > .item {
+  flex: none;
+}
+
+.pins > .item > span {
+  opacity: 0.85;
+  transition: opacity 150ms var(--n-ease-out);
+}
+
+.pins > .item:hover > span {
+  opacity: 1;
+}
+
+/* 46 px cells, no gap: one 26 px glyph every 46 px. Nothing but the glyph ever shows. */
+.item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--n-ink);
+  cursor: pointer;
+  transition: transform 100ms var(--n-ease-out);
+}
+
+.item > svg {
+  display: block;
+  opacity: 0.55;
+  transition: opacity 150ms var(--n-ease-out);
+}
+
+.item:hover > svg {
+  opacity: 0.9;
+}
+
+.item[aria-current="page"] > svg,
+.item[aria-pressed="true"] > svg {
+  opacity: 1;
+}
+
+.item:active {
+  transform: scale(0.96);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--n-focus-halo);
+  outline-offset: -6px;
+}
+
+.item:focus-visible > svg {
+  opacity: 1;
+}
+
+/* Running imports: a 2 px line under the Library glyph, filled in the accent as songs land. */
+.progress {
+  position: absolute;
+  bottom: 5px;
+  left: 13px;
+  width: 20px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--n-ink) 12%, transparent);
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  background: var(--n-accent);
+  transform-origin: left;
+  transition: transform var(--n-t-base) var(--n-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item:active {
+    transform: none;
+  }
+
+  .progress > span {
+    transition: none;
+  }
+}

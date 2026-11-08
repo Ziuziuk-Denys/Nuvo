@@ -1,0 +1,93 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "AGPL-3.0-or-later"
+
+[workspace.dependencies]
+nuvo-crypto = { path = "crates/crypto" }
+nuvo-contracts = { path = "crates/contracts" }
+nuvo-store = { path = "crates/store" }
+nuvo-cache = { path = "crates/cache" }
+nuvo-covers = { path = "crates/covers" }
+nuvo-lyrics = { path = "crates/lyrics" }
+nuvo-match = { path = "crates/match" }
+nuvo-recs = { path = "crates/recs" }
+nuvo-recognize = { path = "crates/recognize" }
+nuvo-fetch = { path = "crates/fetch" }
+nuvo-lastfm = { path = "crates/lastfm" }
+nuvo-net = { path = "crates/net" }
+nuvo-soundcloud = { path = "crates/soundcloud" }
+nuvo-import = { path = "crates/import" }
+nuvo-local = { path = "crates/local" }
+axum = "0.8"
+bip39 = "3"
+chacha20poly1305 = "0.11"
+deunicode = "1.6"
+futures = "0.3"
+hkdf = "0.13"
+http-body-util = "0.1"
+# Covers are cropped and downscaled at display size; the standard library has no image codecs.
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+keyring = "4"
+# Tags, properties and embedded covers of local files (ID3v2, Vorbis comments, MP4, FLAC, RIFF).
+# MIT OR Apache-2.0. Default features stay on: 0.25.5 does not compile without
+# id3v2_compression_support (a missing import in its no-flate2 path).
+lofty = "0.25"
+# Last.fm signs every call with md5 (`api_sig`); same RustCrypto family as sha2.
+md-5 = "0.11"
+# Watches music folders (inotify on Linux). CC0-1.0; Linux deps are ISC, MIT and Unlicense/MIT.
+notify = { version = "8.2", default-features = false }
+rand = "0.10"
+# `socks`: SOCKS5 proxies for the daemon (adds no crate in reqwest 0.13).
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json", "query", "form", "socks"] }
+# `functions`: `nuvo_fold`, a Unicode lowercase for filters (SQLite folds ASCII only); adds no crate.
+rusqlite = { version = "0.41", features = ["bundled-sqlcipher", "functions"] }
+rustfft = "6.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11"
+strsim = "0.11"
+tempfile = "3"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "fs", "io-util", "io-std", "process", "signal", "sync", "time"] }
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt"] }
+# NFC before every text rule (already in the lockfile through bip39).
+unicode-normalization = "0.1"
+
+# Smaller debug info keeps target/ small; optimised crypto keeps cache tests fast.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package.chacha20]
+opt-level = 3
+
+[profile.dev.package.poly1305]
+opt-level = 3
+
+[profile.dev.package.chacha20poly1305]
+opt-level = 3
+
+# The signature runs a 2048-point FFT every 8 ms of audio; unoptimised it takes seconds per window.
+[profile.dev.package.rustfft]
+opt-level = 3
+
+[profile.dev.package.nuvo-recognize]
+opt-level = 3
+
+# Cover tests decode and scale 3000 px images; unoptimised codecs take seconds per image.
+[profile.dev.package.image]
+opt-level = 3
+
+[profile.dev.package.zune-jpeg]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+strip = true

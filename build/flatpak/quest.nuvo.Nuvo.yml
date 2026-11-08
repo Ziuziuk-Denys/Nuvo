@@ -1,0 +1,67 @@
+# Flatpak manifest for Flathub, built from the deb of a GitHub release.
+# Before a submission: set the release URLs and sha256 below (flatpak-external-data-checker
+# fills them from x-checker-data), then test with
+#   flatpak run org.flatpak.Builder --user --install --force-clean build-dir quest.nuvo.Nuvo.yml
+id: quest.nuvo.Nuvo
+runtime: org.freedesktop.Platform
+runtime-version: "25.08"
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: "25.08"
+command: nuvo
+separate-locales: false
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  # the daemon keeps the library key in the Secret Service keyring
+  - --talk-name=org.freedesktop.secrets
+  # media keys and the GNOME and KDE media controls (MPRIS, as Chromium names it)
+  - --own-name=org.mpris.MediaPlayer2.chromium.*
+  # the tray icon
+  - --talk-name=org.kde.StatusNotifierWatcher
+  # local music folders and saved tracks; other folders go through the file chooser portal
+  - --filesystem=xdg-music
+  - --filesystem=xdg-download
+  - --env=ELECTRON_TRASH=gio
+modules:
+  - name: nuvo
+    buildsystem: simple
+    sources:
+      - type: file
+        dest-filename: nuvo.deb
+        only-arches: [x86_64]
+        url: https://github.com/Ziuziuk-Denys/nuvo/releases/download/v0.2.10/Nuvo-0.2.10-linux-amd64.deb
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/Ziuziuk-Denys/nuvo/releases/latest
+          version-query: .tag_name | sub("^v"; "")
+          url-query: '"https://github.com/Ziuziuk-Denys/nuvo/releases/download/v" + $version + "/Nuvo-" + $version + "-linux-amd64.deb"'
+      - type: file
+        dest-filename: nuvo.deb
+        only-arches: [aarch64]
+        url: https://github.com/Ziuziuk-Denys/nuvo/releases/download/v0.2.10/Nuvo-0.2.10-linux-arm64.deb
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/Ziuziuk-Denys/nuvo/releases/latest
+          version-query: .tag_name | sub("^v"; "")
+          url-query: '"https://github.com/Ziuziuk-Denys/nuvo/releases/download/v" + $version + "/Nuvo-" + $version + "-linux-arm64.deb"'
+      - type: file
+        path: nuvo.sh
+    build-commands:
+      - ar x nuvo.deb
+      - tar -xf data.tar.xz
+      - cp -a opt/Nuvo /app/nuvo
+      # zypak replaces the setuid sandbox; Flathub ships the updates, so the app gets no update feed
+      - rm -f /app/nuvo/chrome-sandbox /app/nuvo/resources/app-update.yml /app/nuvo/resources/package-type /app/nuvo/resources/apparmor-profile
+      - install -Dm755 nuvo.sh /app/bin/nuvo
+      - install -Dm644 usr/share/metainfo/quest.nuvo.Nuvo.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 usr/share/applications/quest.nuvo.Nuvo.desktop -t /app/share/applications
+      - desktop-file-edit --set-icon=quest.nuvo.Nuvo --set-key=Exec --set-value="nuvo %U" /app/share/applications/quest.nuvo.Nuvo.desktop
+      - for size in 16 32 48 64 128 256 512; do install -Dm644 usr/share/icons/hicolor/${size}x${size}/apps/nuvo.png /app/share/icons/hicolor/${size}x${size}/apps/quest.nuvo.Nuvo.png; done
+      - install -Dm644 usr/share/icons/hicolor/scalable/apps/nuvo.svg /app/share/icons/hicolor/scalable/apps/quest.nuvo.Nuvo.svg

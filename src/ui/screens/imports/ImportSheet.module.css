@@ -1,0 +1,54 @@
+/* The import dialog: one column inside the Sheet, quiet type, no cards. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-4);
+}
+
+.line {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.heading {
+  margin: 0;
+  color: var(--n-ink);
+  font: var(--n-type-heading);
+  overflow-wrap: anywhere;
+}
+
+.caption {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rows li {
+  overflow: hidden;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--n-s-2);
+}
+
+.file {
+  display: none;
+}

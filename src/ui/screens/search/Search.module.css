@@ -1,0 +1,264 @@
+/* Search: a 54 px field and one panel under it, both 660 px wide and centred, on the panel tone. */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page > * {
+  width: min(660px, 100%);
+}
+
+.field,
+.panel {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--n-ink) 9%, var(--n-field));
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-sizing: border-box;
+  height: 54px;
+  padding: 0 18px;
+  color: var(--n-ink-3);
+}
+
+.field > svg {
+  flex: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  font: 400 16px/normal var(--n-font);
+  letter-spacing: -0.025em;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--n-ink-3);
+}
+
+.clear {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink-3);
+  cursor: pointer;
+  transition: color 150ms ease-out;
+}
+
+.clear:hover {
+  color: var(--n-ink);
+}
+
+.panel {
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+/*
+ * Slow request: a 2 px accent line under the field, a 30 % segment travelling across it. It sits in
+ * the 8 px gap above the subline, inset by the field's radius so it reads as part of the field.
+ */
+.progress {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 8px;
+  left: 8px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: var(--n-r-pill);
+  animation: appear var(--n-t-base) var(--n-ease-out) both;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+.segment {
+  display: block;
+  width: 30%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--n-accent);
+  animation: travel 1.2s linear infinite;
+}
+
+/* -100 % starts the segment just off the left edge; 100 / 30 of its own width carries it off the right */
+@keyframes travel {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(333.34%);
+  }
+}
+
+.subline {
+  margin: 0;
+  padding: 12px 22px 0;
+  color: var(--n-ink-3);
+  font: 400 12px/normal var(--n-font);
+}
+
+/* filter pills: the chosen one keeps a soft fill and a medium weight */
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 14px 6px;
+  overflow-x: auto;
+}
+
+.tab {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--n-ink-2);
+  font: 400 13.5px/normal var(--n-font);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.tab svg {
+  width: 15px;
+  height: 15px;
+}
+
+.tab:hover {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink);
+}
+
+.tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink);
+  font-weight: 500;
+}
+
+:global(:root[data-theme="dark"]) .tab:hover,
+:global(:root[data-theme="dark"]) .tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.results {
+  padding: 8px 14px 14px;
+}
+
+/* a tab change or a new kind of content (history, placeholders, results) settles in quickly */
+.swap {
+  animation: swap var(--n-t-base) var(--n-ease-out) both;
+}
+
+@keyframes swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.placeholders {
+  display: flex;
+  flex-direction: column;
+}
+
+/* a group's label: the quiet 12 px line the result list has always used */
+.heading {
+  margin: 0;
+  padding: 6px 8px;
+  color: var(--n-ink-3);
+  font: 400 12px/normal var(--n-font);
+}
+
+.group + .group {
+  margin-top: 6px;
+}
+
+.more {
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  color: var(--n-ink-3);
+  font: 400 12px/normal var(--n-font);
+  cursor: pointer;
+}
+
+.more:hover {
+  color: var(--n-ink);
+}
+
+.queryMark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink-2);
+}
+
+.remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.remove:hover {
+  color: var(--n-ink);
+}
+
+/* nothing found, or nothing searched yet: one quiet centred line */
+.line {
+  margin: 0;
+  padding: 40px 20px;
+  color: var(--n-ink-3);
+  font: 400 12px/1.4 var(--n-font);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    animation: none;
+  }
+
+  .swap {
+    animation: appear var(--n-t-quick) linear both;
+  }
+
+  .segment {
+    width: 100%;
+    opacity: 0.4;
+    animation: none;
+  }
+}

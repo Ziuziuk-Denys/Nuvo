@@ -1,0 +1,26 @@
+{
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "playCount": 3,
+      "rank": 1,
+      "score": 3.0,
+      "track": {
+        "artists": [
+          {
+            "id": "a1",
+            "name": "Artist"
+          }
+        ],
+        "durationMs": 1000,
+        "id": "dQw4w9WgXcQ",
+        "title": "Song"
+      },
+      "uniqueListeners": 1,
+      "viewer": {
+        "liked": false
+      }
+    }
+  ],
+  "window": "7d"
+}

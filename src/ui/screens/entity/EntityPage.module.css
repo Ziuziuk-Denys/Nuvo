@@ -1,0 +1,100 @@
+/* the head sits 8 px lower and 4 px further in than the shell's page origin */
+.page {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: 8px 0 0 4px;
+}
+
+/* the tracks sit on a sheet 20 px under the head, 12 px wider than it on the left and 8 on the right */
+/* the sheet reaches down to the player even when it holds few rows: top bar, head and gaps take 264 px, the player 96 */
+.tracks {
+  flex: 1;
+  box-sizing: border-box;
+  min-height: calc(100vh - 360px);
+  margin: 20px -8px 0 -12px;
+  padding: 8px 8px 24px;
+  border-radius: 14px 14px 0 0;
+  background: rgb(0 0 0 / 0.03);
+}
+
+:global(:root[data-theme="dark"]) .tracks {
+  background: rgb(255 255 255 / 0.04);
+}
+
+.page[data-entity="artist"] .tracks {
+  min-height: 0;
+  margin: 28px 0 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+/* one quiet line and its action: an empty list, no match, a load that failed */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: calc(100vh - 380px);
+  margin: 0;
+  color: var(--n-ink-3);
+  font: 400 13px/1.4 var(--n-font);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* the empty line: a dark 28 px glyph, a 14 px title and a small grey line under it */
+.stateTitle {
+  margin: 8px 0 0;
+  color: var(--n-ink);
+  font: 500 14px/1.4 var(--n-font);
+}
+
+.stateIcon {
+  width: 28px;
+  height: 28px;
+  color: var(--n-ink);
+}
+
+.stateAction {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink-3);
+  font: 400 12px/1.4 var(--n-font);
+  cursor: pointer;
+}
+
+.stateAction:hover {
+  color: var(--n-ink-2);
+}
+
+/* loading: the cover's box in tint, so the real head replaces it without a shift */
+.placeholderHead {
+  display: flex;
+  height: 168px;
+}
+
+.placeholderCover {
+  width: 168px;
+  height: 168px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+.placeholderCover[data-shape="circle"] {
+  width: 144px;
+  height: 144px;
+  border-radius: 50%;
+}
+
+/* a fallback cover: the kind's glyph on the tint */
+.glyph {
+  width: 48px !important;
+  height: 48px !important;
+  color: var(--n-ink);
+}

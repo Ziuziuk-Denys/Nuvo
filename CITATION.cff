@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: If you use Nuvo in research or a publication, please cite it as below.
+title: Nuvo
+type: software
+abstract: A local-first desktop music player with an encrypted library on your machine, no account and no server.
+authors:
+  - family-names: Ziuziuk
+    given-names: Denys
+version: 0.2.10
+license: AGPL-3.0-or-later
+repository-code: https://github.com/Ziuziuk-Denys/nuvo

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Hardened runtime for Nuvo, its Electron helpers and nuvo-core. Not sandboxed (not a Mac App Store build). -->
+<plist version="1.0">
+  <dict>
+    <!-- V8 and WebAssembly generate code at run time -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <!-- song recognition listens through the microphone -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+  </dict>
+</plist>

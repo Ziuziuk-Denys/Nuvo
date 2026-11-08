@@ -1,0 +1,130 @@
+/* Two faces of one control. Tabs: a soft well with one pill that slides to the chosen item.
+   Navigation: text links 24 px apart with one 2 px accent line 6 px under the active label. */
+.tabs {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+
+.tab {
+  position: relative;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink-3);
+  font: var(--n-type-label);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--n-t-quick) var(--n-ease-out);
+}
+
+.tab:hover {
+  color: var(--n-ink-2);
+}
+
+.tab[aria-selected="true"],
+a.tab[aria-current="page"] {
+  color: var(--n-ink);
+}
+
+.tab:focus-visible {
+  outline: none;
+  color: var(--n-ink);
+}
+
+.line {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+}
+
+/* Tabs: separate 32 px buttons 8 px apart on a soft fill; the chosen one is the primary button, its fill slides. */
+.tabs[role="tablist"] {
+  align-self: flex-start;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.tabs[role="tablist"] .tab {
+  z-index: 1;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 9px;
+  background: var(--n-fill);
+  color: var(--n-ink);
+  font: 400 14px/32px var(--n-font);
+  transition:
+    color var(--n-t-quick) var(--n-ease-out),
+    background-color 150ms var(--n-ease-out);
+}
+
+.tabs[role="tablist"] .tab:hover {
+  background: var(--n-fill-hover);
+}
+
+.tabs[role="tablist"] .tab[aria-selected="true"] {
+  background: transparent;
+  color: var(--btn-primary-text);
+}
+
+.tabs[role="tablist"] .line {
+  top: 0;
+  height: 32px;
+  width: calc(var(--w) * 1px);
+  border-radius: 9px;
+  background: var(--btn-primary-bg);
+  transform: translateX(var(--x));
+  transition:
+    transform var(--n-t-page) var(--n-ease-out),
+    width var(--n-t-page) var(--n-ease-out);
+}
+
+.tabs[role="tablist"]:has(.tab:focus-visible) .line {
+  outline: 2px solid var(--n-focus-halo);
+  outline-offset: 1px;
+}
+
+/* Navigation: links, the underline drawn 100 px wide and scaled, so the move animates transform only. */
+nav.tabs {
+  gap: var(--n-s-5);
+  padding-bottom: 8px;
+}
+
+a.tab {
+  border-radius: var(--n-r-s);
+  text-decoration: none;
+  isolation: isolate;
+}
+
+/* a taller, wider hit area than the 18 px line box; neighbours meet in the 24 px gap, and focus fills it */
+a.tab::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -9px -12px;
+  border-radius: var(--n-r-s);
+  transition: background-color var(--n-t-instant) var(--n-ease-out);
+}
+
+a.tab:focus-visible::after {
+  background: var(--n-focus);
+}
+
+nav.tabs .line {
+  bottom: 0;
+  width: 100px;
+  height: 2px;
+  background: var(--n-accent);
+  transform: translateX(var(--x)) scaleX(calc(var(--w) / 100));
+  transform-origin: 0 0;
+  transition: transform var(--n-t-base) var(--n-ease-inout);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabs .line {
+    transition: none;
+  }
+}

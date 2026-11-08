@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata: GNOME Software, KDE Discover and Flathub read it. Copyright 2026 Denys Ziuziuk -->
+<component type="desktop-application">
+  <id>quest.nuvo.Nuvo</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+
+  <name>Nuvo</name>
+  <summary>Local-first music player</summary>
+  <developer id="quest.nuvo">
+    <name>Denys Ziuziuk</name>
+  </developer>
+
+  <description>
+    <p>
+      Nuvo plays your music from your own folders and from the streams you link to it. Your library, likes,
+      play history and cache stay on your computer, encrypted, and nothing needs an account.
+    </p>
+    <ul>
+      <li>Gapless playback with crossfade, an equalizer, normalization, speed and pitch</li>
+      <li>Synced lyrics, a karaoke view and your own lyrics</li>
+      <li>Recommendations worked out on your computer: mixes, radio and starter artists</li>
+      <li>Imports from links and from CSV, JSON and M3U files, exports of everything you keep</li>
+      <li>Local music folders with tags, covers and watching</li>
+      <li>Nine themes, a colour editor, fonts and ten interface languages</li>
+    </ul>
+    <p>Nuvo stores its library key in the Secret Service keyring, such as GNOME Keyring or KWallet.</p>
+  </description>
+
+  <launchable type="desktop-id">quest.nuvo.Nuvo.desktop</launchable>
+  <provides>
+    <binary>nuvo</binary>
+  </provides>
+
+  <url type="homepage">https://nuvo.quest</url>
+  <url type="help">https://nuvo.quest/docs</url>
+  <url type="bugtracker">https://github.com/Ziuziuk-Denys/nuvo/issues</url>
+  <url type="vcs-browser">https://github.com/Ziuziuk-Denys/nuvo</url>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Player</category>
+  </categories>
+  <keywords>
+    <keyword>music</keyword>
+    <keyword>player</keyword>
+    <keyword>lyrics</keyword>
+    <keyword>playlist</keyword>
+  </keywords>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#e4eaf8</color>
+    <color type="primary" scheme_preference="dark">#101320</color>
+  </branding>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Home with your mixes and playlists</caption>
+      <image type="source" width="1672" height="1126">https://raw.githubusercontent.com/Ziuziuk-Denys/nuvo/main/build/linux/screenshots/home-light.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The same screen in the dark theme</caption>
+      <image type="source" width="1672" height="1126">https://raw.githubusercontent.com/Ziuziuk-Denys/nuvo/main/build/linux/screenshots/home-dark.png</image>
+    </screenshot>
+  </screenshots>
+
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.2.10" date="2026-11-07">
+      <description>
+        <p>The first public version of Nuvo.</p>
+        <ul>
+          <li>The Rust daemon with an encrypted library, an encrypted audio cache and a recovery phrase</li>
+          <li>Gapless playback, crossfade, equalizer, normalization, speed, pitch, reverb, sleep timer and A-B loop</li>
+          <li>Synced lyrics, a karaoke view, your own lyrics, offsets and local translation</li>
+          <li>Local recommendations, imports from links and files, local music folders and exports</li>
+          <li>Nine themes, the colour editor, fonts, wallpaper and ten interface languages</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+</component>

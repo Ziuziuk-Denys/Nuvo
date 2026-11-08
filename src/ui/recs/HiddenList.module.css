@@ -1,0 +1,38 @@
+/* The settings rows' own look: a quiet state line, and Show again in the unpressed segment's fill. */
+.line {
+  margin: 0;
+  padding: 4px 0;
+  color: var(--n-ink-2);
+  font: 400 14px/1.5 var(--n-font);
+}
+
+.undo {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink);
+  font: 400 13px/1 var(--n-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.undo:hover {
+  background: color-mix(in srgb, var(--n-ink) 10%, transparent);
+}
+
+:global(:root[data-theme="dark"]) .undo {
+  background: rgb(0 0 0 / 0.3);
+}
+
+:global(:root[data-theme="dark"]) .undo:hover {
+  background: rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .undo {
+    transition: none;
+  }
+}

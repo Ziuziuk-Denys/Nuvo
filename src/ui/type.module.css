@@ -1,0 +1,42 @@
+.display {
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
+  text-wrap: balance;
+}
+
+.title {
+  font: var(--n-type-title);
+  letter-spacing: var(--n-track-title);
+  text-wrap: balance;
+}
+
+.heading {
+  font: var(--n-type-heading);
+}
+
+.body {
+  font: var(--n-type-body);
+}
+
+.label {
+  font: var(--n-type-label);
+}
+
+.caption {
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+.numeral {
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+}
+
+.selectable {
+  user-select: text;
+  cursor: text;
+}
+
+.measure {
+  max-width: var(--n-measure);
+}

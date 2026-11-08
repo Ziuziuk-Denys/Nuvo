@@ -1,0 +1,61 @@
+/* A glyph on a 30 px square: secondary ink, a soft grey under the pointer, a small press. */
+.button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform 150ms var(--n-ease-out),
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out);
+}
+
+.s {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.button > svg {
+  display: block;
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.field,
+.island {
+  color: var(--n-ink-2);
+}
+
+.field:hover:not(:disabled),
+.island:hover:not(:disabled) {
+  background: var(--n-hover);
+  color: var(--n-ink);
+}
+
+.field[data-active],
+.field[data-active]:hover:not(:disabled),
+.island[data-active],
+.island[data-active]:hover:not(:disabled) {
+  background: var(--bg-toolbox-active);
+  color: var(--n-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+}

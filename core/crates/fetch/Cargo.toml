@@ -1,0 +1,22 @@
+[package]
+name = "nuvo-fetch"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+nuvo-crypto.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+tempfile.workspace = true
+
+# killpg for the tool's process group; already compiled as a tokio dependency
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

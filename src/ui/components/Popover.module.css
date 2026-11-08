@@ -1,0 +1,195 @@
+/* The frame carries the position (left by transform) and the width; the panel carries the motion and the height.
+   Both morph only once settled, so the first placement never slides in. */
+.frame {
+  position: fixed;
+  left: 0;
+  z-index: 900;
+}
+
+.frame[data-settled] {
+  transition:
+    transform var(--n-t-base) var(--n-ease-inout),
+    width var(--n-t-base) var(--n-ease-inout);
+}
+
+/* The family's motion, shared by Sheet and Menu: rise and pop in from the anchor side, the reverse out.
+   --shift is the 4 px translate, signed toward the anchor. */
+.pop {
+  animation: pop-in var(--n-t-base) var(--n-ease-out) both;
+}
+
+.pop[data-state="out"] {
+  animation: pop-out var(--n-t-quick) var(--n-ease-in) both;
+  pointer-events: none;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift, 0)) scale(0.96);
+  }
+}
+
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    transform: translateY(var(--shift, 0)) scale(0.96);
+  }
+}
+
+/* The panel pours out of its anchor: --from is a 44 px sliver on the anchor side, centred on --nx.
+   Floating glass: a faint wash over a 40 px blur, no rim and no shadow. */
+.panel {
+  overflow: hidden;
+  border-radius: var(--n-r-l);
+  background: var(--n-pop);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  color: var(--n-ink);
+  outline: none;
+  animation: shell-in var(--n-t-entrance) var(--n-ease-out) both;
+}
+
+/* The Sound panel: a near-opaque surface instead of the glass. */
+.panel[data-solid] {
+  background: var(--n-pop-solid);
+}
+
+.panel[data-state="out"] {
+  animation: shell-out var(--n-t-quick) var(--n-ease-in) both;
+  pointer-events: none;
+}
+
+@keyframes shell-in {
+  from {
+    clip-path: inset(var(--from) round var(--n-r-l));
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(0 round var(--n-r-l));
+  }
+}
+
+@keyframes shell-out {
+  from {
+    clip-path: inset(0 round var(--n-r-l));
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(var(--from) round var(--n-r-l));
+    opacity: 0;
+  }
+}
+
+/* The content follows the reveal: the header, then each block of the body, 45 ms apart. Only on opening. */
+.panel[data-fresh] .header,
+.panel[data-fresh] .body > * > * {
+  animation: shell-rise var(--n-t-entrance) var(--n-ease-out) both;
+  animation-delay: calc(200ms + var(--i, 0) * 45ms);
+}
+
+.panel[data-fresh] .body > * > :nth-child(1) {
+  --i: 1;
+}
+
+.panel[data-fresh] .body > * > :nth-child(2) {
+  --i: 2;
+}
+
+.panel[data-fresh] .body > * > :nth-child(3) {
+  --i: 3;
+}
+
+.panel[data-fresh] .body > * > :nth-child(n + 4) {
+  --i: 4;
+}
+
+@keyframes shell-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.panel[data-settled] {
+  transition: height var(--n-t-base) var(--n-ease-inout);
+}
+
+/* The panel's height is capped at the room on its side of the anchor; taller content scrolls here. */
+.scroller {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Laid out at the target width at once, so its height is final while the panel morphs around it. */
+.content {
+  box-sizing: border-box;
+  padding: 16px;
+}
+
+/* The panel head: a 15 px semibold title on the baseline with its trailing control, 12 px above the body. */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 20px;
+  margin-bottom: 12px;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: 600 15px/20px var(--n-font);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: pop-fade-in var(--n-t-quick) linear both;
+  }
+
+  .panel[data-state="out"] {
+    animation: pop-fade-out var(--n-t-quick) linear both;
+  }
+
+  .panel[data-fresh] .header,
+  .panel[data-fresh] .body > * > * {
+    animation: none;
+  }
+
+  .pop {
+    animation: pop-fade-in var(--n-t-quick) linear both;
+  }
+
+  .pop[data-state="out"] {
+    animation: pop-fade-out var(--n-t-quick) linear both;
+  }
+
+  .frame[data-settled],
+  .panel[data-settled] {
+    transition: none;
+  }
+}
+
+@keyframes pop-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-fade-out {
+  to {
+    opacity: 0;
+  }
+}

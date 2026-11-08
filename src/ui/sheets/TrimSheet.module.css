@@ -1,0 +1,58 @@
+/* One 4 px track with two knobs, in the Slider's look: the kept part in ink between them. */
+.range {
+  position: relative;
+  height: 20px;
+  margin: 8px 7px 4px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.track {
+  position: absolute;
+  top: 8px;
+  right: -7px;
+  left: -7px;
+  height: 4px;
+  border-radius: var(--n-r-pill);
+  background: var(--n-switch);
+}
+
+.kept {
+  position: absolute;
+  top: 8px;
+  left: var(--from);
+  width: calc(var(--to) - var(--from));
+  height: 4px;
+  background: var(--n-ink);
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: var(--at);
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.knob:focus-visible {
+  outline: 2px solid var(--n-focus-halo);
+  outline-offset: 2px;
+}
+
+.times {
+  display: flex;
+  justify-content: space-between;
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+}
+
+.lead {
+  margin: 0 0 12px;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+}

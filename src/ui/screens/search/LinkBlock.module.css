@@ -1,0 +1,66 @@
+/*
+ * The link block: a source label, then the stage line or the answer. It rises in with the standard
+ * entrance; stage changes cross-fade the text only. The progress line is the field's own.
+ */
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-2);
+}
+
+.source {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+.stage {
+  min-height: 1lh;
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  animation: stage-in var(--n-t-base) var(--n-ease-out) both;
+}
+
+.message {
+  max-width: 66ch;
+  margin: 0;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  overflow-wrap: anywhere;
+}
+
+/* the "how it was found" line sits close under its row */
+.caption {
+  margin: calc(-1 * var(--n-s-1)) 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+/* text buttons pad 16 px; pulling them out by 16 puts each label on the field's left edge */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--n-s-2);
+  margin-left: calc(-1 * var(--n-s-4));
+}
+
+.others {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-1);
+}
+
+@keyframes stage-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage {
+    animation: none;
+  }
+}

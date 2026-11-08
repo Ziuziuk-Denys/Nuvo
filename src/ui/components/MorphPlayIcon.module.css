@@ -1,0 +1,9 @@
+.icon path {
+  transition: d var(--n-t-quick, 160ms) cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon path {
+    transition: none;
+  }
+}

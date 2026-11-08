@@ -1,0 +1,16 @@
+/*
+ * The artist ask on an empty Home, centred in the page's area like the empty states. Its top is fixed where the
+ * idle ask sits centred (about 220 px tall), so the rows that come with typing grow down and never move the title.
+ */
+.ask {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: max(240px, 100cqh - 240px);
+  padding-top: max(0px, (100cqh - 460px) / 2);
+}
+
+.import {
+  margin-top: var(--n-s-3);
+}

@@ -1,0 +1,72 @@
+/* The match report inside the Sheet: a summary line, chips, then one quiet block per song. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-3);
+}
+
+.line {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.caption {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+.chips,
+.bulk,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--n-s-2);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  gap: var(--n-s-1);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-1);
+  padding: var(--n-s-3) 0;
+}
+
+.title {
+  overflow: hidden;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match {
+  overflow: hidden;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--n-s-1);
+  margin: 0;
+  padding: 0 0 0 var(--n-s-3);
+  list-style: none;
+}

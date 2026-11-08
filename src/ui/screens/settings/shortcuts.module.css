@@ -1,0 +1,351 @@
+/* Shortcuts: scope pills and a small search on top, then wrapping cards with keycaps. */
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+}
+
+.bar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 6px;
+}
+
+.scopes {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.scope {
+  display: inline-flex;
+  height: 34px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  color: var(--n-ink);
+  cursor: pointer;
+  font: 500 13px/1 var(--n-font);
+  transition: background-color 0.15s;
+}
+
+.scope:hover {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+:global(:root[data-theme="dark"]) .scope {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+:global(:root[data-theme="dark"]) .scope:hover {
+  background: color-mix(in srgb, var(--n-ink) 12%, transparent);
+}
+
+.scope[aria-selected="true"],
+:global(:root[data-theme="dark"]) .scope[aria-selected="true"] {
+  background: color-mix(in srgb, var(--n-ink) 70%, transparent);
+  color: var(--n-field);
+}
+
+.count {
+  color: var(--n-ink-3);
+  font: 400 12px/1 var(--n-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.scope[aria-selected="true"] .count {
+  color: color-mix(in srgb, var(--n-field) 60%, transparent);
+}
+
+.tools {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.find {
+  display: flex;
+  width: 100%;
+  min-width: 130px;
+  max-width: 220px;
+  height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  color: var(--n-ink-3);
+}
+
+:global(:root[data-theme="dark"]) .find,
+:global(:root[data-theme="dark"]) .resetAll {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.find svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.find input {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--n-ink);
+  font: 400 13px var(--n-font);
+}
+
+.find input::placeholder {
+  color: var(--n-ink-3);
+}
+
+.findClear {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.resetAll {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  color: var(--n-ink-2);
+  cursor: pointer;
+}
+
+.resetAll:hover {
+  background: color-mix(in srgb, var(--n-ink) 10%, transparent);
+  color: var(--n-ink);
+}
+
+.resetAll svg {
+  width: 14.5px;
+  height: 14.5px;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+  animation: list-in 0.12s ease-out both;
+}
+
+.empty {
+  width: 100%;
+  margin: 0;
+  padding: 32px 0;
+  color: var(--n-ink-3);
+  font: 400 13px var(--n-font);
+  text-align: center;
+}
+
+.row {
+  position: relative;
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 14px;
+  outline: none;
+  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  user-select: none;
+}
+
+.row:hover,
+.row:focus-visible {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+:global(:root[data-theme="dark"]) .row {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+:global(:root[data-theme="dark"]) .row:hover,
+:global(:root[data-theme="dark"]) .row:focus-visible {
+  background: color-mix(in srgb, var(--n-ink) 12%, transparent);
+}
+
+.rowLabel {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.rowIcon {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--n-ink);
+}
+
+.rowText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowTitle {
+  overflow: hidden;
+  color: var(--n-ink);
+  font: 500 13.5px/1.25 var(--n-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  color: var(--n-ink-3);
+  font: 500 11px/1 var(--n-font);
+}
+
+.tag[data-scope="global"] {
+  color: #fcd34d;
+}
+
+:global(:root[data-theme="light"]) .tag[data-scope="global"] {
+  color: #b45309;
+}
+
+.recorder {
+  position: relative;
+  display: flex;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.keycap {
+  display: inline-flex;
+  min-width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink);
+  font: 500 13px/1 var(--n-font);
+  transition: background-color 0.15s;
+}
+
+.row:hover .keycap {
+  background: color-mix(in srgb, var(--n-ink) 12%, transparent);
+}
+
+:global(:root[data-theme="dark"]) .keycap {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+:global(:root[data-theme="dark"]) .row:hover .keycap {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.waiting {
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink-2);
+  font: 500 13px/1 var(--n-font);
+}
+
+:global(:root[data-theme="dark"]) .waiting {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.waiting[data-held] {
+  background: color-mix(in srgb, var(--n-ink) 12%, transparent);
+  color: var(--n-ink);
+}
+
+.waiting[data-error],
+:global(:root[data-theme="dark"]) .waiting[data-error] {
+  background: rgba(190, 18, 60, 0.9);
+  color: #fff;
+}
+
+.error {
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #e11d48;
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: 500 12px var(--n-font);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.reset {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--n-ink) 7%, transparent);
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.reset:hover {
+  color: var(--n-ink);
+}
+
+.reset svg {
+  width: 12.5px;
+  height: 12.5px;
+}
+
+@keyframes list-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list {
+    animation: none;
+  }
+}

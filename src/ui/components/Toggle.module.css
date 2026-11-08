@@ -1,0 +1,88 @@
+/* A row: the label, then a 40 x 22 pill whose 16 px knob slides 18 px. */
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--n-s-3);
+  min-height: 36px;
+}
+
+.label {
+  min-width: 0;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  cursor: pointer;
+  user-select: none;
+}
+
+.track {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--n-r-pill);
+  background: var(--n-switch);
+  cursor: pointer;
+  transition:
+    transform var(--n-t-quick) var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out);
+}
+
+.track:hover:not(:disabled) {
+  background: var(--n-switch-hover);
+}
+
+.track[aria-checked="true"],
+.track[aria-checked="true"]:hover:not(:disabled) {
+  background: var(--n-ink);
+}
+
+.track:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: var(--n-t-instant), var(--n-t-quick);
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--n-r-pill);
+  background: #fff;
+  transition:
+    transform var(--n-t-quick) var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out);
+}
+
+.track[aria-checked="true"] .knob {
+  background: var(--n-field);
+  transform: translateX(18px);
+}
+
+.toggle[data-disabled] {
+  opacity: 0.4;
+}
+
+/* a switch shown without its label dims on its own */
+.track:disabled:not(.toggle .track) {
+  opacity: 0.4;
+}
+
+.toggle[data-disabled] .label,
+.track:disabled {
+  cursor: default;
+}
+
+/* No slide or press: the knob jumps and the colours fade. */
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    transition: background-color var(--n-t-quick) linear;
+  }
+
+  .track:active:not(:disabled) {
+    transform: none;
+  }
+}

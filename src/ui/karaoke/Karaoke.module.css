@@ -1,0 +1,425 @@
+/* Geometry: a 340 x 589 block centred in height, the lyric column right of it. */
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #fff;
+  background: rgb(16, 19, 32);
+  user-select: none;
+}
+
+.root :where(button) {
+  display: grid;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color 150ms var(--n-ease-out),
+    background-color 150ms var(--n-ease-out),
+    transform 150ms var(--n-ease-out);
+}
+
+.root :where(button):active {
+  transform: scale(0.95);
+}
+
+.root :where(button):focus-visible,
+.bar:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* top row: Close fullscreen at the left, the lyrics offset over the column (on hover), the window buttons at the right */
+.top {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  z-index: 2;
+  height: 44px;
+}
+
+.pill {
+  position: absolute;
+  top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.closePill {
+  left: 6px;
+  padding: 0;
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.windowPill {
+  right: 6px;
+}
+
+.window,
+.small {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.window > svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.5;
+}
+
+.close:hover,
+.window:hover,
+.small:hover,
+.offset:hover,
+.words:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.window.quit:hover {
+  background: #e81123;
+}
+
+.sourceRow {
+  position: absolute;
+  top: 0;
+  left: var(--k-lyrics);
+  right: 40px;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* quiet like the window controls: there on hover or keyboard focus */
+.top:hover .sourceRow,
+.sourceRow:focus-within {
+  opacity: 1;
+}
+
+/* the menu opens over the always-dark view in either app theme: the pill's dark glass and white text */
+.versionMenu {
+  --n-pop: rgba(0, 0, 0, 0.5);
+  --n-pop-hover: rgba(255, 255, 255, 0.14);
+  --n-ink: #fff;
+  --n-ink-2: rgba(255, 255, 255, 0.7);
+}
+
+.sourceRow .pill {
+  position: relative;
+}
+
+.offset {
+  height: 26px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.offset {
+  min-width: 53px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.words {
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.words[data-on] {
+  color: #fff;
+}
+
+.modes {
+  display: flex;
+  gap: 2px;
+}
+
+.lineOnly {
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* the player block */
+.left {
+  position: absolute;
+  left: var(--k-left);
+  top: max(44px, calc(50% - 294.6px));
+  width: 340px;
+  height: 589.2px;
+}
+
+.title,
+.artist {
+  position: absolute;
+  left: 0;
+  width: 240px;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title {
+  top: 364px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 24px;
+}
+
+.artist {
+  top: 392px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.25px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.like {
+  position: absolute;
+  top: 367.6px;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(51, 51, 51, 0.5);
+}
+
+.like:hover {
+  background: rgba(80, 80, 80, 0.6);
+}
+
+.dislike {
+  right: 48px;
+}
+
+.bar {
+  position: relative;
+  height: 24px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* a 6 px line in the middle of the 24 px box: a faint track, the played or set part in white */
+.bar::before,
+.fill {
+  position: absolute;
+  top: 9px;
+  left: 0;
+  height: 6px;
+  border-radius: 3px;
+  content: "";
+}
+
+.bar::before {
+  right: 0;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.fill {
+  width: calc(var(--fraction) * 100%);
+  background: #fff;
+}
+
+.seek {
+  position: absolute;
+  top: 433.2px;
+  left: 0;
+  width: 340px;
+}
+
+.times {
+  position: absolute;
+  top: 461.2px;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  width: 340px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.transport {
+  position: absolute;
+  top: 499.2px;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 340px;
+  height: 44px;
+}
+
+.side {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.side > svg {
+  width: 22px;
+  height: 22px;
+}
+
+.mode {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.mode > svg {
+  width: 24px;
+  height: 24px;
+}
+
+.side:hover,
+.mode[data-on] {
+  color: #fff;
+}
+
+.play {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  /* opaque: the glyph's fill and stroke overlap, a translucent ink would show the seam */
+  color: rgb(243, 243, 243);
+}
+
+.play:hover {
+  color: #fff;
+}
+
+.volume {
+  position: absolute;
+  top: 565.2px;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 340px;
+  height: 24px;
+}
+
+.mute {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mute:hover {
+  color: #fff;
+}
+
+.level {
+  width: 170px;
+}
+
+/* the lyric column: the lines, or one quiet line centred in it */
+.lines {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--k-lyrics);
+  width: var(--k-lines);
+}
+
+.quiet {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--k-lyrics);
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.quiet p {
+  max-width: 250px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 21px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.addLyrics {
+  height: 32px;
+  margin-top: 4px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.addLyrics:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root :where(button):active {
+    transform: none;
+  }
+}
+
+/* the romanization switch: quiet text in the pill, full ink while on */
+.romaji {
+  height: 26px;
+  min-width: 30px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.romaji[data-on] {
+  color: #fff;
+}
+
+.romaji:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}

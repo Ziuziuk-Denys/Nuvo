@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "completed": false,
+      "completionRate": 0.5,
+      "context": {
+        "id": "p1",
+        "type": "playlist"
+      },
+      "hasSeekBackward": false,
+      "id": "1",
+      "listenedAt": "1970-01-01T00:00:00.000Z",
+      "listeningSessionId": "s",
+      "loopCount": 0,
+      "playbackSessionId": "1",
+      "playedDurationMs": 500,
+      "skipped": true,
+      "track": {
+        "artists": [
+          {
+            "id": "a1",
+            "name": "Artist"
+          }
+        ],
+        "durationMs": 1000,
+        "id": "dQw4w9WgXcQ",
+        "title": "Song"
+      }
+    }
+  ],
+  "nextCursor": "1"
+}

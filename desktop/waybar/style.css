@@ -1,0 +1,128 @@
+/* Nuvo for Waybar. Import it at the end of your style.css: @import "nuvo/style.css";
+   Nuvo spacing (4, 8, 12) and radii; colours follow your bar, the line and the like use the Nuvo accent (dark preset). */
+
+@define-color nuvo-accent #afc8f7;
+
+#nuvo {
+  padding: 0 4px;
+}
+
+#image.nuvo-cover {
+  margin: 0 8px 0 4px;
+  border-radius: 4px;
+}
+
+#custom-nuvo {
+  padding: 0 8px 0 0;
+  font-weight: 500;
+  background-image: linear-gradient(@nuvo-accent, @nuvo-accent);
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 0% 2px;
+}
+
+#custom-nuvo.paused {
+  opacity: 0.6;
+}
+
+#custom-nuvo-dislike,
+#custom-nuvo-previous,
+#custom-nuvo-play,
+#custom-nuvo-next,
+#custom-nuvo-like {
+  padding: 0 4px;
+  border-radius: 8px;
+}
+
+#custom-nuvo-dislike:hover,
+#custom-nuvo-previous:hover,
+#custom-nuvo-play:hover,
+#custom-nuvo-next:hover,
+#custom-nuvo-like:hover {
+  background-color: alpha(@nuvo-accent, 0.15);
+}
+
+#custom-nuvo-like.liked {
+  color: @nuvo-accent;
+}
+
+/* the progress line: the follower adds p0 to p100 in steps of 5 */
+#custom-nuvo.p5 {
+  background-size: 5% 2px;
+}
+
+#custom-nuvo.p10 {
+  background-size: 10% 2px;
+}
+
+#custom-nuvo.p15 {
+  background-size: 15% 2px;
+}
+
+#custom-nuvo.p20 {
+  background-size: 20% 2px;
+}
+
+#custom-nuvo.p25 {
+  background-size: 25% 2px;
+}
+
+#custom-nuvo.p30 {
+  background-size: 30% 2px;
+}
+
+#custom-nuvo.p35 {
+  background-size: 35% 2px;
+}
+
+#custom-nuvo.p40 {
+  background-size: 40% 2px;
+}
+
+#custom-nuvo.p45 {
+  background-size: 45% 2px;
+}
+
+#custom-nuvo.p50 {
+  background-size: 50% 2px;
+}
+
+#custom-nuvo.p55 {
+  background-size: 55% 2px;
+}
+
+#custom-nuvo.p60 {
+  background-size: 60% 2px;
+}
+
+#custom-nuvo.p65 {
+  background-size: 65% 2px;
+}
+
+#custom-nuvo.p70 {
+  background-size: 70% 2px;
+}
+
+#custom-nuvo.p75 {
+  background-size: 75% 2px;
+}
+
+#custom-nuvo.p80 {
+  background-size: 80% 2px;
+}
+
+#custom-nuvo.p85 {
+  background-size: 85% 2px;
+}
+
+#custom-nuvo.p90 {
+  background-size: 90% 2px;
+}
+
+#custom-nuvo.p95 {
+  background-size: 95% 2px;
+}
+
+#custom-nuvo.p100 {
+  background-size: 100% 2px;
+}

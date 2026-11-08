@@ -1,0 +1,73 @@
+/* Lyrics tools: the text well of the fields, quiet notes, and the sync list with the current line in full ink. */
+.text {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(var(--n-s-8) * 4);
+  margin: 0;
+  padding: var(--n-s-3);
+  border: 0;
+  border-radius: var(--n-r-m);
+  background: var(--n-fill);
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  caret-color: var(--n-accent);
+  resize: vertical;
+  transition: background-color var(--n-t-quick) var(--n-ease-out);
+}
+
+.text:hover,
+.text:focus-visible {
+  background: var(--n-fill-hover);
+  outline: none;
+}
+
+.text::placeholder {
+  color: var(--n-ink-3);
+  opacity: 1;
+}
+
+.note {
+  margin: var(--n-s-2) 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}
+
+.lines {
+  max-height: calc(var(--n-s-8) * 5);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  list-style: none;
+  outline: none;
+}
+
+.lines li {
+  padding: var(--n-s-1) 0;
+}
+
+.lines li[aria-current="true"] {
+  color: var(--n-ink);
+  font-weight: 600;
+}
+
+.stamp {
+  display: inline-block;
+  width: calc(var(--n-s-8) + var(--n-s-3));
+  font-variant-numeric: tabular-nums;
+}
+
+.pair {
+  display: flex;
+  flex-direction: column;
+}
+
+.original {
+  color: var(--n-ink);
+}
+
+.translated {
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}

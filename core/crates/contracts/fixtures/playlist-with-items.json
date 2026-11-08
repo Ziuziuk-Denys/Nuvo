@@ -1,0 +1,33 @@
+{
+  "items": [
+    {
+      "addedAt": "1970-01-01T00:00:00.000Z",
+      "id": "i1",
+      "position": 1.0,
+      "track": {
+        "artists": [
+          {
+            "id": "a1",
+            "name": "Artist"
+          }
+        ],
+        "durationMs": 1000,
+        "id": "dQw4w9WgXcQ",
+        "title": "Song"
+      }
+    }
+  ],
+  "playlist": {
+    "coverUrl": "nuvo-core://local/v1/me/playlists/p1/cover?v=0",
+    "createdAt": "1970-01-01T00:00:00.000Z",
+    "id": "p1",
+    "isPublic": false,
+    "ownerId": "local",
+    "pinnedOffline": false,
+    "revision": 1,
+    "sortDesc": false,
+    "sortMode": "manual",
+    "title": "Mine",
+    "updatedAt": "1970-01-01T00:00:00.000Z"
+  }
+}

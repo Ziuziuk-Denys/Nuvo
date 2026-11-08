@@ -1,0 +1,86 @@
+/* A centred dialog. The window behind dims by 15 % under a 2 px blur. */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: var(--n-s-5);
+}
+
+.layer[data-state="out"] {
+  pointer-events: none;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--n-dim);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  animation: dim-in var(--n-t-base) var(--n-ease-out) both;
+}
+
+.backdrop[data-state="out"] {
+  animation: dim-out var(--n-t-quick) var(--n-ease-in) both;
+}
+
+@keyframes dim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dim-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* The popover motion, scaled from the centre */
+.panel {
+  composes: pop from "./Popover.module.css";
+  --shift: 4px;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--n-sheet);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  box-shadow: var(--n-sheet-shadow);
+  color: var(--n-ink);
+  transform-origin: 50% 50%;
+  outline: none;
+}
+
+.title {
+  margin: 0;
+  font: 600 18px/1.2 var(--n-font);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.body {
+  margin-top: 4px;
+  color: var(--n-ink-3);
+  font: 400 13px/1.45 var(--n-font);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .backdrop[data-state="out"] {
+    animation-duration: var(--n-t-quick);
+    animation-timing-function: linear;
+  }
+}

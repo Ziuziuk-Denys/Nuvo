@@ -1,0 +1,134 @@
+#!/bin/sh
+# Nuvo for Waybar (Hyprland, Sway and other wlroots desktops). Needs busctl (systemd) and jq.
+# Playback and metadata come from Nuvo's MPRIS player; like, dislike, the lyrics line and "open"
+# from quest.nuvo.Nuvo.Player on the session bus.
+#
+#   nuvo-waybar follow                 the title module: one JSON line per change (Waybar custom, return-type json)
+#   nuvo-waybar button NAME            one control: previous, play, next, like or dislike (signal-driven)
+#   nuvo-waybar cover                  the cover path for the Waybar image module
+#   nuvo-waybar ACTION                 play-pause, next, previous, like, dislike or open
+#
+# The follower sends SIGRTMIN+N to Waybar when the song, the play state or the like changes, so the
+# buttons and the cover refresh at once. N is 8, or NUVO_WAYBAR_SIGNAL.
+set -u
+
+NUVO=quest.nuvo.Nuvo.Player
+NUVO_PATH=/quest/nuvo/Nuvo/Player
+MPRIS_PATH=/org/mpris/MediaPlayer2
+PLAYER=org.mpris.MediaPlayer2.Player
+PROPS=org.freedesktop.DBus.Properties
+SIGNAL=${NUVO_WAYBAR_SIGNAL:-8}
+
+# The whole state as one flat object; status "Stopped" when Nuvo is not running.
+snapshot() {
+  nuvo=$(busctl --user --json=short call "$NUVO" "$NUVO_PATH" "$PROPS" GetAll s "$NUVO" 2>/dev/null) || nuvo='{"data":[{}]}'
+  name=$(printf '%s' "$nuvo" | jq -r '.data[0].MprisName.data // empty')
+  player='{"data":[{}]}'
+  if [ -n "$name" ]; then
+    player=$(busctl --user --json=short call "$name" "$MPRIS_PATH" "$PROPS" GetAll s "$PLAYER" 2>/dev/null) || player='{"data":[{}]}'
+  fi
+  # shortcut: a file:// cover URL is used as a path without percent-decoding; Nuvo's covers never need it
+  jq -cn --argjson n "$nuvo" --argjson p "$player" --arg name "$name" '
+    ($n.data[0]) as $x | ($p.data[0]) as $y | ($y.Metadata.data // {}) as $m |
+    {
+      mpris: $name,
+      title: ($m["xesam:title"].data // ""),
+      artist: (($m["xesam:artist"].data // []) | join(", ")),
+      art: (($m["mpris:artUrl"].data // "") | if startswith("file://") then .[7:] else "" end),
+      length: ($m["mpris:length"].data // 0),
+      position: ($y.Position.data // 0),
+      status: ($y.PlaybackStatus.data // "Stopped"),
+      liked: ($x.Liked.data // false),
+      lyrics: ($x.LyricsLine.data // "")
+    }
+    | .live = (.title != "" and .status != "Stopped")'
+}
+
+# The title module: text, tooltip with lyrics and a progress line, and a pN class (0 to 100 in steps of 5)
+# that style.css turns into a thin progress line under the module.
+# shellcheck disable=SC2016 # a jq program, not shell
+render='
+  def clock: (. / 1000000 | floor) as $s | "\($s / 60 | floor):\($s % 60 | tostring | if length < 2 then "0" + . else . end)";
+  def bar($n; $c): if $n > 0 then $c * $n else "" end;
+  if .live | not then {text: "", class: "stopped"} else
+    (if .length > 0 then [20, (.position / .length * 20 | floor)] | min else 0 end) as $p
+    | {
+        text: (.title + (if .artist != "" then "  ·  " + .artist else "" end)),
+        alt: (.status | ascii_downcase),
+        class: [(.status | ascii_downcase), (if .liked then "liked" else empty end), "p\($p * 5)"],
+        percentage: ($p * 5),
+        tooltip: ([.title, .artist] + (if .lyrics != "" then ["", .lyrics] else [] end)
+          + ["", bar($p; "━") + bar(20 - $p; "─") + "  " + (.position | clock) + " / " + (.length | clock)]
+          | join("\n"))
+      }
+  end'
+
+follow() {
+  last=""
+  last_key=""
+  while :; do
+    state=$(snapshot)
+    out=$(printf '%s' "$state" | jq -c "$render")
+    key=$(printf '%s' "$state" | jq -r '[.live, .status, .liked, .art] | @tsv')
+    if [ "$out" != "$last" ]; then
+      printf '%s\n' "$out"
+      last=$out
+    fi
+    if [ "$key" != "$last_key" ]; then
+      pkill -RTMIN+"$SIGNAL" -x waybar 2>/dev/null
+      last_key=$key
+    fi
+    case $state in
+      *'"status":"Playing"'*) sleep 1 ;;
+      *) sleep 2 ;;
+    esac
+  done
+}
+
+button() {
+  snapshot | jq -c --arg button "$1" '
+    if .live | not then {text: ""} else
+      {
+        previous: {text: "⏮︎", tooltip: "Previous"},
+        next: {text: "⏭︎", tooltip: "Next"},
+        play: (if .status == "Playing" then {text: "⏸︎", tooltip: "Pause"} else {text: "▶︎", tooltip: "Play"} end),
+        like: (if .liked then {text: "♥︎", tooltip: "Remove like", class: "liked"} else {text: "♡", tooltip: "Like"} end),
+        dislike: {text: "⊘", tooltip: "Not interested"}
+      }[$button] // {text: ""}
+    end'
+}
+
+nuvo_call() {
+  busctl --user call "$NUVO" "$NUVO_PATH" "$NUVO" "$1" >/dev/null 2>&1
+}
+
+player_call() {
+  name=$(busctl --user --json=short get-property "$NUVO" "$NUVO_PATH" "$NUVO" MprisName 2>/dev/null | jq -r '.data // empty')
+  [ -n "$name" ] && busctl --user call "$name" "$MPRIS_PATH" "$PLAYER" "$1" >/dev/null 2>&1
+}
+
+if ! command -v jq >/dev/null 2>&1 || ! command -v busctl >/dev/null 2>&1; then
+  echo '{"text": "Nuvo needs jq and busctl", "class": "error"}'
+  exit 1
+fi
+
+case ${1:-} in
+  follow) follow ;;
+  button) button "${2:-}" ;;
+  cover) snapshot | jq -r 'if .live and .art != "" then .art, .title else empty end' ;;
+  play-pause) player_call PlayPause ;;
+  next) player_call Next ;;
+  previous) player_call Previous ;;
+  like) nuvo_call ToggleLike ;;
+  dislike) nuvo_call Dislike ;;
+  open) nuvo_call Show ;;
+  *)
+    echo "usage: nuvo-waybar follow | button NAME | cover | play-pause | next | previous | like | dislike | open" >&2
+    exit 2
+    ;;
+esac
+
+case ${1:-} in
+  play-pause | next | previous | like | dislike) pkill -RTMIN+"$SIGNAL" -x waybar 2>/dev/null ;;
+esac
+exit 0

@@ -1,0 +1,66 @@
+/* Two columns of 68 px rows: a 56 px cover, the name and a quiet count. */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+  margin: 0 -6px;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 6px;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+  user-select: none;
+  transition: background-color 150ms ease-out;
+}
+
+.pick:hover {
+  background: var(--n-hover);
+}
+
+.pick:focus-visible {
+  background: var(--n-focus);
+}
+
+/* the presets keep accent and page colour apart, so the heart takes the page colour */
+.liked {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+  color: var(--bg-primary);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title,
+.subtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title {
+  color: var(--n-ink);
+  font: 500 15px/1.25 var(--n-font);
+}
+
+.subtitle {
+  color: var(--n-ink-2);
+  font: 400 13px/1.25 var(--n-font);
+}

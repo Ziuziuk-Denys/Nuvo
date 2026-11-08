@@ -1,0 +1,214 @@
+/* Controls shared by the screens: 32 px pills on a soft tint, one solid pill for the main action. */
+.pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-sizing: border-box;
+  height: 32px;
+  margin: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--n-ink);
+  font: 400 14px/normal var(--n-font);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out,
+    transform 150ms ease-out;
+}
+
+.pill:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.pill:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pill:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--n-ink) 70%, transparent);
+  outline-offset: 1px;
+}
+
+.wide {
+  padding: 0 22px;
+}
+
+.square {
+  width: 52px;
+  padding: 0;
+}
+
+/* the preset's main button colour, so vinyl's Play all is its yellow like the player's play */
+.solid {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.solid:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.glass {
+  background: rgb(0 0 0 / 0.05);
+}
+
+.glass:hover:not(:disabled) {
+  background: rgb(0 0 0 / 0.09);
+}
+
+:global(:root[data-theme="dark"]) .glass {
+  background: rgb(255 255 255 / 0.1);
+}
+
+:global(:root[data-theme="dark"]) .glass:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.16);
+}
+
+/* an off view toggle reads quieter until hovered */
+.quiet {
+  color: var(--n-ink-3);
+}
+
+.quiet:hover {
+  color: var(--n-ink);
+}
+
+/* a fact chip in the head: 26 px, the same tint as the pills */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 9px;
+  background: rgb(0 0 0 / 0.05);
+  color: var(--n-ink);
+  font: 400 12px/normal var(--n-font);
+  white-space: nowrap;
+  user-select: none;
+}
+
+:global(:root[data-theme="dark"]) .chip {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.chip svg {
+  flex: none;
+  color: var(--n-ink-2);
+}
+
+.dot {
+  flex: none;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--n-ink-2) 50%, transparent);
+}
+
+/* a 220 px search field on the tint */
+.field {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 220px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: rgb(0 0 0 / 0.05);
+  color: var(--n-ink);
+}
+
+:global(:root[data-theme="dark"]) .field {
+  background: rgb(255 255 255 / 0.09);
+}
+
+.field > svg {
+  flex: none;
+  color: var(--n-ink-2);
+}
+
+.fieldInput {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  font: 400 14px/32px var(--n-font);
+  outline: none;
+}
+
+.fieldInput::placeholder {
+  color: var(--n-ink-2);
+}
+
+.fieldInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.fieldClear {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin: 0 -2px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.fieldClear:hover {
+  color: var(--n-ink);
+}
+
+/* a section title over a shelf or a list, with an optional quiet link on the right */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--n-ink);
+  font: 500 22px/1.25 var(--n-font);
+}
+
+.sectionLink {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink-2);
+  font: 500 13px/normal var(--n-font);
+  cursor: pointer;
+  transition: color 150ms ease-out;
+}
+
+.sectionLink:hover {
+  color: var(--n-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill {
+    transition: none;
+  }
+
+  .pill:active:not(:disabled) {
+    transform: none;
+  }
+}

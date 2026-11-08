@@ -1,0 +1,29 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.line,
+.hint {
+  margin: 0;
+  font-size: var(--n-type-body, 14px);
+}
+
+.hint {
+  color: var(--n-ink-3);
+  font-size: 12px;
+}
+
+.link {
+  color: var(--n-accent);
+  word-break: break-all;
+}
+
+.code {
+  margin: 4px 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}

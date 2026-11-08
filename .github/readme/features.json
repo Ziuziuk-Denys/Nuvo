@@ -1,0 +1,521 @@
+{
+  "counted": "2026-11-08",
+  "sources": [
+    "Nuvo 0.2.10"
+  ],
+  "method": "User-visible items found in src/ui/screens, routes, Settings and the English strings of the release. Daemon routes without a screen are not counted. Related controls on one screen are merged.",
+  "total": 102,
+  "notMergedYet": 0,
+  "features": [
+    {
+      "name": "Now-playing bar with seek, volume and track info",
+      "category": "Playback and sound",
+      "where": "Now-playing bar"
+    },
+    {
+      "name": "Queue panel (play next, add to queue)",
+      "category": "Playback and sound",
+      "where": "Now-playing bar, queue button"
+    },
+    {
+      "name": "Shuffle and repeat (off, all, one)",
+      "category": "Playback and sound",
+      "where": "Now-playing bar"
+    },
+    {
+      "name": "Radio from a song or artist",
+      "category": "Playback and sound",
+      "where": "Song menu, now-playing bar"
+    },
+    {
+      "name": "Autoplay similar songs",
+      "category": "Playback and sound",
+      "where": "Settings > Playback"
+    },
+    {
+      "name": "Crossfade and gapless transitions",
+      "category": "Playback and sound",
+      "where": "Settings > Sound"
+    },
+    {
+      "name": "Loudness normalization and auto gain",
+      "category": "Playback and sound",
+      "where": "Settings > Sound"
+    },
+    {
+      "name": "Output device choice",
+      "category": "Playback and sound",
+      "where": "Settings > Sound"
+    },
+    {
+      "name": "Best quality switch",
+      "category": "Playback and sound",
+      "where": "Settings > Sound"
+    },
+    {
+      "name": "10-band equalizer with 12 presets",
+      "category": "Playback and sound",
+      "where": "Now-playing bar > Sound"
+    },
+    {
+      "name": "Speed, pitch and reverb presets (slowed, nightcore, daycore)",
+      "category": "Playback and sound",
+      "where": "Now-playing bar > Sound"
+    },
+    {
+      "name": "Sleep timer",
+      "category": "Playback and sound",
+      "where": "Now-playing bar > Sound"
+    },
+    {
+      "name": "A-B loop (set start, set end, clear)",
+      "category": "Playback and sound",
+      "where": "Settings > Shortcuts, player scrubber"
+    },
+    {
+      "name": "Pause on device change",
+      "category": "Playback and sound",
+      "where": "Settings > Playback"
+    },
+    {
+      "name": "Double-click and default playback context options",
+      "category": "Playback and sound",
+      "where": "Settings > Playback"
+    },
+    {
+      "name": "Offline mode",
+      "category": "Playback and sound",
+      "where": "Settings > Network"
+    },
+    {
+      "name": "Saved audio with a cache size limit",
+      "category": "Playback and sound",
+      "where": "Now-playing bar, Settings > Storage"
+    },
+    {
+      "name": "Keep this version / Not this one (fix a wrong match)",
+      "category": "Playback and sound",
+      "where": "Now-playing bar"
+    },
+    {
+      "name": "Media keys and MPRIS",
+      "category": "Playback and sound",
+      "where": "Operating system"
+    },
+    {
+      "name": "Moments: mark a place in a song and jump back to it",
+      "category": "Playback and sound",
+      "where": "Now-playing bar > Sound > Moments"
+    },
+    {
+      "name": "Trim a song's start and end",
+      "category": "Playback and sound",
+      "where": "Song menu"
+    },
+    {
+      "name": "Choose which source a song plays from",
+      "category": "Playback and sound",
+      "where": "Song menu"
+    },
+    {
+      "name": "Synced lyrics pane",
+      "category": "Lyrics",
+      "where": "Now-playing bar > Lyrics"
+    },
+    {
+      "name": "Karaoke view",
+      "category": "Lyrics",
+      "where": "Lyrics button, fullscreen"
+    },
+    {
+      "name": "Lyrics timing offset",
+      "category": "Lyrics",
+      "where": "Lyrics button, fullscreen"
+    },
+    {
+      "name": "Romanized lyrics",
+      "category": "Lyrics",
+      "where": "Lyrics button, fullscreen"
+    },
+    {
+      "name": "Lyrics editor: paste and time your own lyrics",
+      "category": "Lyrics",
+      "where": "Lyrics button, fullscreen"
+    },
+    {
+      "name": "Lyrics translation on your machine",
+      "category": "Lyrics",
+      "where": "Lyrics button, fullscreen"
+    },
+    {
+      "name": "Lyrics version choice (plain, line, word)",
+      "category": "Lyrics",
+      "where": "Lyrics button, fullscreen"
+    },
+    {
+      "name": "Karaoke highlight modes (line, word, fill, step)",
+      "category": "Lyrics",
+      "where": "Karaoke view, Settings"
+    },
+    {
+      "name": "Mixes on Home (for you, something new, artist mixes)",
+      "category": "Discovery",
+      "where": "Home"
+    },
+    {
+      "name": "Recently liked and most saved shelves",
+      "category": "Discovery",
+      "where": "Home"
+    },
+    {
+      "name": "Pin to Home",
+      "category": "Discovery",
+      "where": "Home"
+    },
+    {
+      "name": "Reasons shown for recommendations",
+      "category": "Discovery",
+      "where": "Home, song rows"
+    },
+    {
+      "name": "Not interested controls (exact song, any version, artist for a while or always)",
+      "category": "Discovery",
+      "where": "Song menu"
+    },
+    {
+      "name": "Hidden music list with Show again",
+      "category": "Discovery",
+      "where": "Settings > Hidden"
+    },
+    {
+      "name": "Start with a few artists you like",
+      "category": "Discovery",
+      "where": "Home, first run"
+    },
+    {
+      "name": "Playlist suggestions",
+      "category": "Discovery",
+      "where": "Playlist page"
+    },
+    {
+      "name": "Recognize a song (microphone, this computer or a file) with history",
+      "category": "Discovery",
+      "where": "Rail, drop a file anywhere, Ctrl+Shift+R"
+    },
+    {
+      "name": "Statistics page: story, charts, top lists and drill-downs",
+      "category": "Discovery",
+      "where": "Rail"
+    },
+    {
+      "name": "Export, delete and pause your statistics",
+      "category": "Discovery",
+      "where": "Statistics page, Settings > Playback"
+    },
+    {
+      "name": "Dislike button on every song",
+      "category": "Discovery",
+      "where": "Song rows, now-playing bar, karaoke view"
+    },
+    {
+      "name": "Listening history with filters",
+      "category": "Discovery",
+      "where": "Statistics page, Library menu"
+    },
+    {
+      "name": "Search for songs, albums, artists and playlists",
+      "category": "Search, links and sharing",
+      "where": "Search"
+    },
+    {
+      "name": "Search history",
+      "category": "Search, links and sharing",
+      "where": "Search"
+    },
+    {
+      "name": "Paste a link to play or import (YouTube Music, Apple Music, Deezer, SoundCloud)",
+      "category": "Search, links and sharing",
+      "where": "Search box"
+    },
+    {
+      "name": "Song from a TikTok link or video, found by listening",
+      "category": "Search, links and sharing",
+      "where": "Search box, Recognize"
+    },
+    {
+      "name": "Share links and copy list",
+      "category": "Search, links and sharing",
+      "where": "Song and playlist menus"
+    },
+    {
+      "name": "Command palette",
+      "category": "Search, links and sharing",
+      "where": "Keyboard"
+    },
+    {
+      "name": "Library tabs: playlists, albums, artists, on this computer",
+      "category": "Library and files",
+      "where": "Library"
+    },
+    {
+      "name": "Grid and list view with filter",
+      "category": "Library and files",
+      "where": "Library"
+    },
+    {
+      "name": "Liked songs",
+      "category": "Library and files",
+      "where": "Library"
+    },
+    {
+      "name": "Create and delete playlists",
+      "category": "Library and files",
+      "where": "Library"
+    },
+    {
+      "name": "Change playlist cover",
+      "category": "Library and files",
+      "where": "Playlist page"
+    },
+    {
+      "name": "Duplicate finder and tidy with undo",
+      "category": "Library and files",
+      "where": "Playlist page"
+    },
+    {
+      "name": "Sort tracks by title or length",
+      "category": "Library and files",
+      "where": "Playlist page, sort menu (six orders)"
+    },
+    {
+      "name": "Select several songs for bulk actions",
+      "category": "Library and files",
+      "where": "Playlist page"
+    },
+    {
+      "name": "Local music folders with watching and .lrc files",
+      "category": "Library and files",
+      "where": "Library > On this computer"
+    },
+    {
+      "name": "Import a playlist from a link",
+      "category": "Library and files",
+      "where": "Library > Import"
+    },
+    {
+      "name": "Import SoundCloud likes",
+      "category": "Library and files",
+      "where": "Library > Import"
+    },
+    {
+      "name": "Import a Spotify export file (CSV)",
+      "category": "Library and files",
+      "where": "Library > Import"
+    },
+    {
+      "name": "Import report with match review",
+      "category": "Library and files",
+      "where": "Library > Import"
+    },
+    {
+      "name": "Export playlists as CSV, JSON or M3U8",
+      "category": "Library and files",
+      "where": "Playlist menu, Library menu"
+    },
+    {
+      "name": "Export the library as CSV or JSON",
+      "category": "Library and files",
+      "where": "Playlist menu, Library menu"
+    },
+    {
+      "name": "Save songs as files",
+      "category": "Library and files",
+      "where": "Playlist menu, Library menu"
+    },
+    {
+      "name": "Artist page",
+      "category": "Library and files",
+      "where": "Artist and album pages"
+    },
+    {
+      "name": "Album page",
+      "category": "Library and files",
+      "where": "Artist and album pages"
+    },
+    {
+      "name": "YouTube account sign-in, playback and playlist sync",
+      "category": "Library and files",
+      "where": "Settings > YouTube"
+    },
+    {
+      "name": "Import a Spotify playlist or album from its link",
+      "category": "Library and files",
+      "where": "Library > Import, Search box"
+    },
+    {
+      "name": "Keep a playlist offline",
+      "category": "Library and files",
+      "where": "Playlist menu"
+    },
+    {
+      "name": "Merge playlists and move songs between them, with undo",
+      "category": "Library and files",
+      "where": "Playlist menu, song selection bar"
+    },
+    {
+      "name": "Recently deleted playlists with Restore",
+      "category": "Library and files",
+      "where": "Library menu"
+    },
+    {
+      "name": "Save format: original or MP3",
+      "category": "Library and files",
+      "where": "Settings > Storage"
+    },
+    {
+      "name": "Pin a playlist, album or artist to the sidebar",
+      "category": "Library and files",
+      "where": "Playlist, album and artist menus"
+    },
+    {
+      "name": "Explicit mark on songs their source calls explicit",
+      "category": "Library and files",
+      "where": "Track lists, search, queue"
+    },
+    {
+      "name": "Theme presets (nine)",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Accent from the cover",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Cover glow",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Language choice (English, Russian)",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Fonts and interface size",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Theme editor with colour roles",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Theme import and export",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Custom CSS",
+      "category": "Look and feel",
+      "where": "Settings > Customization"
+    },
+    {
+      "name": "Wallpaper with blur and dimming",
+      "category": "Look and feel",
+      "where": "Settings > Customization"
+    },
+    {
+      "name": "Reset customization and safe mode",
+      "category": "Look and feel",
+      "where": "Settings > Customization"
+    },
+    {
+      "name": "The Notch (mini player with lyrics and pulse)",
+      "category": "Look and feel",
+      "where": "Settings > Notch, screen cutout"
+    },
+    {
+      "name": "Keep running in the tray",
+      "category": "Look and feel",
+      "where": "Settings > Playback, window"
+    },
+    {
+      "name": "Rebindable shortcuts, in the app and global",
+      "category": "Look and feel",
+      "where": "Settings > Shortcuts"
+    },
+    {
+      "name": "Guided first-run tour",
+      "category": "Look and feel",
+      "where": "First run, Settings > About, command palette"
+    },
+    {
+      "name": "Reduce effects",
+      "category": "Look and feel",
+      "where": "Settings > Appearance"
+    },
+    {
+      "name": "Window zoom from the keyboard",
+      "category": "Look and feel",
+      "where": "Ctrl+Plus, Ctrl+Minus, Ctrl+0"
+    },
+    {
+      "name": "Panel widget for GNOME, Plasma and Waybar",
+      "category": "Look and feel",
+      "where": "Settings > Notch"
+    },
+    {
+      "name": "Encrypted library with recovery phrase unlock",
+      "category": "Privacy and system",
+      "where": "Launch"
+    },
+    {
+      "name": "Passphrase protection when no system keyring exists",
+      "category": "Privacy and system",
+      "where": "Settings > Network"
+    },
+    {
+      "name": "Proxy setting",
+      "category": "Privacy and system",
+      "where": "Settings > Network"
+    },
+    {
+      "name": "Connection check and report",
+      "category": "Privacy and system",
+      "where": "Settings > Network"
+    },
+    {
+      "name": "Helper tools download (yt-dlp, ffmpeg)",
+      "category": "Privacy and system",
+      "where": "Settings > Network"
+    },
+    {
+      "name": "Automatic updates",
+      "category": "Privacy and system",
+      "where": "Settings > About"
+    },
+    {
+      "name": "Last.fm scrobbling",
+      "category": "Privacy and system",
+      "where": "Settings > Last.fm"
+    },
+    {
+      "name": "Discord status switch",
+      "category": "Privacy and system",
+      "where": "Settings > Discord"
+    },
+    {
+      "name": "What's new after an update",
+      "category": "Privacy and system",
+      "where": "Settings > About"
+    },
+    {
+      "name": "Report a problem with a filled GitHub issue",
+      "category": "Privacy and system",
+      "where": "Settings > About"
+    }
+  ]
+}

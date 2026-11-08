@@ -1,0 +1,184 @@
+/* One line per item, fixed height so a virtual list can place rows without measuring them.
+   Hover and focus only tint; nothing in the row changes size. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0 var(--n-s-2);
+  border-radius: 8px;
+  color: var(--n-ink);
+  cursor: default;
+  user-select: none;
+  contain: content;
+  transition: background-color var(--n-t-quick) var(--n-ease-out);
+}
+
+.list {
+  height: 56px;
+}
+
+.track {
+  height: 48px;
+}
+
+.compact {
+  height: 36px;
+}
+
+.row:not(.placeholder):hover,
+.row:not(.placeholder):focus-within {
+  background: var(--border-white-alpha-14);
+}
+
+.row[data-selected],
+.row[role="button"]:not([aria-disabled]):active {
+  background: var(--bg-toolbox-active);
+}
+
+/* keyboard focus is a fill too, never a ring */
+.row:not(.placeholder):focus-visible {
+  outline: none;
+  background: var(--bg-toolbox-active);
+}
+
+.row[data-unavailable] {
+  opacity: 0.4;
+}
+
+.leading {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+.index {
+  flex: none;
+  width: 24px;
+  color: var(--n-ink-3);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.title,
+.subtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title {
+  color: var(--n-ink);
+  font: var(--n-type-body);
+}
+
+.titleLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.title[data-size="heading"] {
+  font: var(--n-type-heading);
+}
+
+.row[data-active] .title {
+  color: var(--n-accent);
+}
+
+.subtitle {
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+.column {
+  flex: 0 0 28%;
+  overflow: hidden;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1179px) {
+  .column {
+    display: none;
+  }
+}
+
+/* hidden, not removed: the meta column keeps its place when the actions appear */
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--n-s-1);
+  visibility: hidden;
+}
+
+.row:hover .actions,
+.row:focus-within .actions {
+  visibility: visible;
+}
+
+/* the song that is playing keeps its dislike in view */
+.row[data-active] [data-row-action] {
+  visibility: visible;
+}
+
+.meta {
+  flex: none;
+  min-width: 40px;
+  color: var(--n-ink-3);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Loading: the same boxes in tint, sized to the lines they stand for */
+.placeholder .leading {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--n-r-s);
+  background: var(--border-white-alpha-14);
+}
+
+.placeholder.compact .leading {
+  width: 24px;
+  height: 24px;
+}
+
+.placeholder .index {
+  height: 16px;
+}
+
+/* each bar is centred in the line box of the text it stands for: 20 px title, 16 px subtitle */
+.bar {
+  display: block;
+  width: 44%;
+  max-width: 280px;
+  height: 10px;
+  margin: 5px 0;
+  border-radius: var(--n-r-pill);
+  background: var(--border-white-alpha-14);
+}
+
+.short {
+  width: 28%;
+  max-width: 180px;
+  height: 8px;
+  margin: 4px 0;
+}

@@ -1,0 +1,20 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Authors": [
+      {
+        "Email": "denys.ziuziuk.w@gmail.com",
+        "Name": "Denys Ziuziuk"
+      }
+    ],
+    "Category": "Multimedia",
+    "Description": "The playing song from Nuvo in your panel: cover, title and artist, play and pause, next and previous, like and dislike, the progress and the current lyrics line.",
+    "Icon": "quest.nuvo.Nuvo",
+    "Id": "quest.nuvo.panel",
+    "License": "AGPL-3.0-or-later",
+    "Name": "Nuvo",
+    "Version": "1.0",
+    "Website": "https://github.com/Ziuziuk-Denys/nuvo"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

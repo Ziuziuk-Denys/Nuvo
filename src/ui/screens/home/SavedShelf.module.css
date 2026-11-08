@@ -1,0 +1,115 @@
+/* A shelf: a 24 px heading with its glyph, then 175 px covers 28 px apart in a row that scrolls sideways. */
+.shelf {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--n-ink);
+}
+
+.title {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 564;
+  font-variation-settings:
+    "wdth" 134,
+    "opsz" 144;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.row {
+  display: flex;
+  gap: 28px;
+  margin: 12px calc(-1 * var(--n-gutter, 12px)) 0;
+  padding: 0 var(--n-gutter, 12px) 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 175px;
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+  user-select: none;
+}
+
+.card img {
+  transition: filter 300ms var(--n-ease-out);
+}
+
+.card:hover img,
+.card:focus-visible img {
+  filter: brightness(1.15);
+}
+
+.name,
+.subtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.name {
+  margin-top: 8px;
+  color: var(--n-ink);
+  font: 500 14px/1.4 var(--n-font);
+}
+
+.subtitle {
+  color: var(--n-ink-2);
+  font: 400 13px/1.4 var(--n-font);
+}
+
+/* the heading's refresh sits at its far end; it turns while new items are on their way */
+.refresh {
+  margin-inline-start: auto;
+}
+
+.refresh[data-busy] svg {
+  animation: turn 900ms linear infinite;
+}
+
+/* items a refresh or a late answer brings rise into place one after another */
+.arrive > * {
+  animation: arrive var(--n-t-page) var(--n-ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 11) * 24ms);
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh[data-busy] svg {
+    animation: none;
+  }
+
+  .arrive > * {
+    animation: appear var(--n-t-quick) linear both;
+  }
+}

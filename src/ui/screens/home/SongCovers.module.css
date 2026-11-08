@@ -1,0 +1,91 @@
+/* Song covers as buttons: the shelf card's look without a button's own chrome. */
+.card {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+
+.covers {
+  display: flex;
+  gap: 28px;
+}
+
+/* the artist a shelf starts from, set apart from the songs by a hairline */
+.lead {
+  padding-inline-end: 28px;
+  border-inline-end: 1px solid var(--n-hair);
+  box-sizing: content-box;
+}
+
+.lead > span {
+  text-align: center;
+}
+
+/* the shuffle: one calm card, the covers stacked at its start and its words beside them */
+.shuffle {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  margin-top: 12px;
+  padding: 24px 28px;
+  border-radius: var(--n-r-l, 14px);
+  background: var(--n-fill);
+}
+
+.stack {
+  position: relative;
+  flex: none;
+}
+
+/* each cover behind is smaller, so the stack reads from the front one */
+.stacked {
+  position: absolute;
+  top: 50%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  translate: 0 -50%;
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.16));
+  transition: translate var(--n-t-base) var(--n-ease-out);
+}
+
+.stacked:hover {
+  translate: 0 calc(-50% - 4px);
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 4px;
+}
+
+.from {
+  color: var(--n-ink-2);
+  font: 400 13px/1.4 var(--n-font);
+}
+
+.names {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--n-ink);
+  font: 500 17px/1.35 var(--n-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.play {
+  margin-top: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stacked,
+  .stacked:hover {
+    transition: none;
+  }
+}

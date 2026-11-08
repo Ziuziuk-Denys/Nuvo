@@ -1,0 +1,16 @@
+/* Under the playlist's last row, on the same sheet: 40 px above, the title 16 px over rows that line up with it. */
+.suggestions {
+  margin-top: 40px;
+  padding: 0 8px;
+}
+
+/* rows pad 8 px; pulling them out by 8 puts the covers on the title's edge, 2 px under the heading row */
+.rows {
+  margin: -14px -8px 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

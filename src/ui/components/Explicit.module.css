@@ -1,0 +1,12 @@
+.mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--n-ink) 14%, transparent);
+  color: var(--n-ink-2);
+  font: 600 10px/1 var(--n-font);
+  user-select: none;
+}

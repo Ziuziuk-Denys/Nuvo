@@ -1,0 +1,24 @@
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: rgb(16, 19, 32);
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.layer[data-hidden] {
+  visibility: hidden;
+}
+
+/* the view's shade over the field: it keeps white text readable on any cover */
+.shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}

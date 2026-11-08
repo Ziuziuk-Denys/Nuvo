@@ -1,0 +1,60 @@
+// Nuvo for Waybar: add "group/nuvo" to modules-left, modules-center or modules-right,
+// and paste these module definitions into your config. The path assumes Nuvo's one-click
+// setup, which copies this folder to ~/.config/waybar/nuvo.
+{
+  "group/nuvo": {
+    "orientation": "horizontal",
+    "modules": ["image#nuvo-cover", "custom/nuvo", "custom/nuvo-dislike", "custom/nuvo-previous", "custom/nuvo-play", "custom/nuvo-next", "custom/nuvo-like"],
+  },
+  "image#nuvo-cover": {
+    "exec": "~/.config/waybar/nuvo/nuvo-waybar cover",
+    "size": 20,
+    "signal": 8,
+    "on-click": "~/.config/waybar/nuvo/nuvo-waybar open",
+  },
+  "custom/nuvo": {
+    "exec": "~/.config/waybar/nuvo/nuvo-waybar follow",
+    "return-type": "json",
+    "escape": true,
+    "max-length": 48,
+    "on-click": "~/.config/waybar/nuvo/nuvo-waybar open",
+    "on-click-middle": "~/.config/waybar/nuvo/nuvo-waybar play-pause",
+    "on-scroll-up": "~/.config/waybar/nuvo/nuvo-waybar previous",
+    "on-scroll-down": "~/.config/waybar/nuvo/nuvo-waybar next",
+  },
+  "custom/nuvo-dislike": {
+    "exec": "~/.config/waybar/nuvo/nuvo-waybar button dislike",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "on-click": "~/.config/waybar/nuvo/nuvo-waybar dislike",
+  },
+  "custom/nuvo-previous": {
+    "exec": "~/.config/waybar/nuvo/nuvo-waybar button previous",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "on-click": "~/.config/waybar/nuvo/nuvo-waybar previous",
+  },
+  "custom/nuvo-play": {
+    "exec": "~/.config/waybar/nuvo/nuvo-waybar button play",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "on-click": "~/.config/waybar/nuvo/nuvo-waybar play-pause",
+  },
+  "custom/nuvo-next": {
+    "exec": "~/.config/waybar/nuvo/nuvo-waybar button next",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "on-click": "~/.config/waybar/nuvo/nuvo-waybar next",
+  },
+  "custom/nuvo-like": {
+    "exec": "~/.config/waybar/nuvo/nuvo-waybar button like",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "on-click": "~/.config/waybar/nuvo/nuvo-waybar like",
+  },
+}

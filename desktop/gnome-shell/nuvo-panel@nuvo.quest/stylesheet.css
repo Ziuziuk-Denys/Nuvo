@@ -1,0 +1,129 @@
+/* Nuvo spacing (4, 8, 12, 16) and radii (8, 10, 14); colours follow the shell theme, the glow follows the cover. */
+
+.nuvo-panel-box {
+  spacing: 8px;
+}
+
+.nuvo-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background-size: cover;
+}
+
+.nuvo-thumb-icon {
+  icon-size: 16px;
+}
+
+.nuvo-panel-label {
+  max-width: 220px;
+  font-weight: 500;
+}
+
+.nuvo-card-item {
+  padding: 4px;
+}
+
+.nuvo-card-item:hover,
+.nuvo-card-item:focus {
+  background-color: transparent;
+}
+
+.nuvo-card {
+  width: 320px;
+  spacing: 12px;
+  padding: 8px;
+}
+
+.nuvo-head {
+  spacing: 14px;
+}
+
+.nuvo-cover {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  background-color: rgba(127, 127, 127, 0.2);
+  background-size: cover;
+}
+
+.nuvo-text {
+  spacing: 2px;
+}
+
+.nuvo-text-button {
+  padding: 0;
+  border-radius: 8px;
+}
+
+.nuvo-title {
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+.nuvo-artist {
+  font-weight: 500;
+  color: rgba(127, 127, 127, 1);
+}
+
+.nuvo-lyrics {
+  padding-top: 4px;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.nuvo-progress {
+  spacing: 6px;
+}
+
+.nuvo-rail {
+  height: 4px;
+  border-radius: 2px;
+  background-color: rgba(127, 127, 127, 0.25);
+}
+
+.nuvo-fill {
+  height: 4px;
+  border-radius: 2px;
+}
+
+.nuvo-time {
+  font-size: 0.8em;
+  font-feature-settings: "tnum";
+  color: rgba(127, 127, 127, 1);
+}
+
+.nuvo-controls {
+  spacing: 12px;
+}
+
+.nuvo-button {
+  border-radius: 999px;
+  padding: 8px;
+  transition-duration: 150ms;
+}
+
+.nuvo-button:hover {
+  background-color: rgba(127, 127, 127, 0.18);
+}
+
+.nuvo-button:active {
+  background-color: rgba(127, 127, 127, 0.3);
+}
+
+.nuvo-button-icon {
+  icon-size: 18px;
+}
+
+.nuvo-play {
+  padding: 12px;
+  background-color: rgba(127, 127, 127, 0.16);
+}
+
+.nuvo-play .nuvo-button-icon {
+  icon-size: 22px;
+}
+
+.nuvo-side .nuvo-button-icon {
+  icon-size: 16px;
+}

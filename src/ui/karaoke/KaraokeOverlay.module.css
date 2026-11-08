@@ -1,0 +1,21 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  border-radius: inherit;
+  background: #000;
+  transform: translateY(100%);
+  transition-property: transform;
+  will-change: transform;
+}
+
+.overlay[data-phase="open"] {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    transition: none;
+  }
+}

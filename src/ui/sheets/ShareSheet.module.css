@@ -1,0 +1,53 @@
+/* The share sheet: one column inside the Sheet, as the import dialog lays it out; quiet type, no cards. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-4);
+}
+
+/* what is shared, in body type under the sheet's title */
+.heading {
+  margin: 0;
+  color: var(--n-ink);
+  font: var(--n-type-body);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.preview {
+  margin: var(--n-s-2) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+}
+
+.preview li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  max-width: var(--n-measure);
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--n-s-2);
+}
+
+/* "Link copied" sits after the buttons, so it never moves the sheet */
+.status {
+  margin: 0 0 0 var(--n-s-2);
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}

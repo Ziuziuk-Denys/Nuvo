@@ -1,0 +1,19 @@
+[package]
+name = "nuvo-local"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+nuvo-crypto.workspace = true
+lofty.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+# O_NOFOLLOW and O_NONBLOCK have different values per CPU; already in the lock through nuvo-fetch
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile.workspace = true

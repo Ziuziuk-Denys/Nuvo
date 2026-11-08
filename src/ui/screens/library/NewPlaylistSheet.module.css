@@ -1,0 +1,98 @@
+/* The create dialog's fields: a 44 px tinted well with its count, a 12 px link that opens the description. */
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lead {
+  margin: -6px 0 6px;
+  color: var(--n-ink-3);
+  font: 400 13px/1.45 var(--n-font);
+}
+
+.well {
+  display: flex;
+  height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  transition: background-color 150ms ease;
+}
+
+.well input {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  font: 400 14px/20px var(--n-font);
+  outline: none;
+}
+
+.well input::placeholder,
+.description::placeholder {
+  color: var(--n-ink-3);
+}
+
+.count {
+  flex: none;
+  color: var(--n-ink-3);
+  font: 400 11px/1 var(--n-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.description {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--n-ink);
+  font: 400 14px/20px var(--n-font);
+  outline: none;
+  resize: none;
+  transition: background-color 150ms ease;
+}
+
+.description:focus {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+:root[data-theme="dark"] .well,
+:root[data-theme="dark"] .description {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+:root[data-theme="dark"] .description:focus {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.addDescription {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink-3);
+  font: 400 12px/16px var(--n-font);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.addDescription:hover {
+  color: var(--n-ink);
+}
+
+.error {
+  margin: 0;
+  color: var(--n-accent);
+  font: 400 12px/16px var(--n-font);
+}
+
+.error:empty {
+  display: none;
+}

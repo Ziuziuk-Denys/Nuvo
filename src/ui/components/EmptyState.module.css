@@ -1,0 +1,44 @@
+/*
+ * Centred in the page's area: the area reaches from where it starts to about the foot of the scroll area
+ * (240 px covers the top band, a page title with its toolbar and the column's foot), and its type sits in the middle.
+ */
+.area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: max(240px, 100cqh - 240px);
+  padding-bottom: var(--n-s-6);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: var(--n-ink);
+  font: var(--n-type-heading);
+  text-wrap: balance;
+}
+
+.message {
+  max-width: 44ch;
+  margin: var(--n-s-2) 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--n-s-2);
+  margin-top: var(--n-s-5);
+}

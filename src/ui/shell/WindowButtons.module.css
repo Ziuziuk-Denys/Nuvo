@@ -1,0 +1,61 @@
+/* A 102 x 38 pill of the rail's glass at the right end of the top row: three 30 px buttons, 2 px apart. */
+.buttons {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 38px;
+  margin-inline-start: auto;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--n-glass);
+  -webkit-backdrop-filter: var(--n-glass-blur);
+  backdrop-filter: var(--n-glass-blur);
+}
+
+.buttons .button {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--n-ink);
+  opacity: 0.55;
+  transition:
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out),
+    opacity 150ms var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
+}
+
+/* 14 px glyphs with a 1.5 px line: the drawing is scaled 24/14 inside, so 1.5 units stay 1.5 px */
+.buttons .button > svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.5;
+}
+
+.buttons .button:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--border-white-alpha-14);
+  color: var(--n-ink);
+}
+
+.buttons .close:hover:not(:disabled) {
+  background: #e81123;
+  color: #fff;
+}
+
+.buttons .button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.buttons .button:disabled {
+  opacity: 0.25;
+}
+
+/* After a minimize the pointer never left the button; drop its hover until the pointer moves. */
+:global(html[data-hover-reset]) .buttons .button:hover {
+  opacity: 0.55;
+  background: transparent;
+  color: var(--n-ink);
+}

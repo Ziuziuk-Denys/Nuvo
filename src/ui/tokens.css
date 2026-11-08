@@ -1,0 +1,155 @@
+/* Static Nuvo tokens. The nine colour roles (--n-field ... --n-accent) are written inline on :root
+   for the active preset and mode by applyPresetTokens. */
+
+:root[data-ui="nuvo"] {
+  --n-font-stack: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Cantarell, Ubuntu, sans-serif;
+  /* --n-font-ui and --n-scale are written inline on :root by applyFontSettings */
+  --n-font: var(--n-font-ui, var(--n-font-stack));
+
+  /* the text size slider (90-120%) scales every role; body never under 13px, captions never under 11px */
+  --n-type-display: 700 calc(40px * var(--n-scale, 1)) / calc(44px * var(--n-scale, 1)) var(--n-font);
+  --n-type-title: 600 calc(24px * var(--n-scale, 1)) / calc(30px * var(--n-scale, 1)) var(--n-font);
+  --n-type-heading: 600 calc(17px * var(--n-scale, 1)) / calc(22px * var(--n-scale, 1)) var(--n-font);
+  --n-type-body: 400 max(13px, calc(14px * var(--n-scale, 1))) / max(19px, calc(20px * var(--n-scale, 1))) var(--n-font);
+  --n-type-label: 500 max(12px, calc(13px * var(--n-scale, 1))) / max(17px, calc(18px * var(--n-scale, 1))) var(--n-font);
+  --n-type-caption: 500 max(11px, calc(12px * var(--n-scale, 1))) / max(15px, calc(16px * var(--n-scale, 1))) var(--n-font);
+  --n-type-numeral: 500 max(11px, calc(12px * var(--n-scale, 1))) / max(15px, calc(16px * var(--n-scale, 1))) var(--n-font);
+  --n-track-display: -0.02em;
+  --n-track-title: -0.01em;
+  --n-track-caption: 0.01em;
+
+  --n-s-1: 4px;
+  --n-s-2: 8px;
+  --n-s-3: 12px;
+  --n-s-4: 16px;
+  --n-s-5: 24px;
+  --n-s-6: 32px;
+  --n-s-7: 48px;
+  --n-s-8: 64px;
+
+  --n-r-s: 8px;
+  --n-r-m: 10px;
+  --n-r-l: 14px;
+  --n-r-pill: 999px;
+
+  --n-shadow-raised: 0 12px 32px -12px rgba(16, 19, 32, 0.18);
+  --n-dim: rgba(0, 0, 0, 0.15);
+
+  --n-island: #000;
+  --n-island-ink: #fff;
+  --n-island-ink-2: rgba(255, 255, 255, 0.55);
+  --n-island-wash: rgba(255, 255, 255, 0.1);
+  --n-island-rail: rgba(255, 255, 255, 0.2);
+
+  /* Glass: the preset's translucent surface over a 20 px blur, flat, no rim, sheen or shadow.
+     The bottom player thickens it to 48 px and halves the saturation behind it. */
+  --n-glass: var(--bg-glass);
+  --n-glass-blur: blur(20px);
+  --n-glass-thick: blur(48px) saturate(0.5);
+  --n-glass-edge: transparent;
+  --n-glass-sheen: transparent;
+  --n-glass-rim: transparent;
+  --n-glass-shade: transparent;
+  --n-glass-shadow: none;
+  /* the grey well behind the player's tool buttons when no cover lights the page */
+  --n-well: #ebebed;
+  --n-well-glass: rgba(0, 0, 0, 0.04);
+  --n-well-on: #dfdfe1;
+  --n-well-glass-on: rgba(0, 0, 0, 0.08);
+
+  /* Floating material for popovers and menus: a faint ink wash over a 40 px blur. */
+  --n-pop: rgba(0, 0, 0, 0.05);
+  --n-pop-blur: blur(40px) saturate(1.5);
+  --n-pop-hover: rgba(0, 0, 0, 0.05);
+  /* The Sound panel's own material: the preset's raised grey, near opaque, so the cover never muddies the curve. */
+  --n-pop-solid: color-mix(in srgb, var(--bg-elevated) 97%, transparent);
+  /* Dialogs: the near-opaque page grey over the same blur, one deep shadow. */
+  --n-sheet: rgba(245, 245, 247, 0.92);
+  --n-sheet-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  /* Filled secondary controls: buttons, chips and fields. */
+  --n-fill: rgba(0, 0, 0, 0.05);
+  --n-fill-hover: rgba(0, 0, 0, 0.09);
+  --n-switch: rgba(0, 0, 0, 0.12);
+  --n-switch-hover: rgba(0, 0, 0, 0.16);
+
+  --n-measure: 66ch;
+
+  /* Focus and selection: every state is an amount of soft fill, never a line.
+     Rest, hover (a grey breath), selected (a faint accent), focus (a deeper accent). */
+  --n-hover: rgba(0, 0, 0, 0.05);
+  --n-press: color-mix(in srgb, var(--n-ink) 9%, transparent);
+  --n-select: color-mix(in srgb, var(--n-accent) 13%, transparent);
+  --n-focus: color-mix(in srgb, var(--n-accent) 20%, transparent);
+  /* the halo a control without its own focus fill gets from the keyboard */
+  --n-focus-halo: color-mix(in srgb, var(--n-ring, var(--n-accent)) 38%, transparent);
+  /* the sliding pill of a segmented control */
+  --n-lens: var(--n-raised);
+  --n-lens-shadow: 0 1px 2px rgba(16, 19, 32, 0.08), 0 6px 14px -8px rgba(16, 19, 32, 0.25);
+}
+
+:root[data-ui="nuvo"][data-theme="dark"] {
+  --n-shadow-raised: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+  --n-lens: color-mix(in srgb, var(--n-ink) 13%, transparent);
+  --n-lens-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.6);
+  --n-hover: rgba(255, 255, 255, 0.09);
+  --n-well: #141414;
+  --n-well-glass: rgba(255, 255, 255, 0.06);
+  --n-well-on: #292929;
+  --n-well-glass-on: rgba(255, 255, 255, 0.14);
+  --n-pop: rgba(255, 255, 255, 0.07);
+  --n-pop-hover: rgba(255, 255, 255, 0.08);
+  --n-pop-solid: color-mix(in srgb, color-mix(in srgb, var(--bg-panel), #fff 4%) 97%, transparent);
+  --n-sheet: rgba(22, 22, 24, 0.9);
+  --n-fill: rgba(255, 255, 255, 0.1);
+  --n-fill-hover: rgba(255, 255, 255, 0.16);
+  --n-switch: rgba(255, 255, 255, 0.07);
+  --n-switch-hover: rgba(255, 255, 255, 0.11);
+}
+
+/* Browser surfaces */
+
+:root[data-ui="nuvo"] ::selection {
+  background: color-mix(in srgb, var(--n-accent) 30%, transparent);
+  color: var(--n-ink);
+}
+
+/* A soft halo, not a hard ring. Zero specificity, so any component selector can move or replace it. In the base layer,
+   so legacy controls that opt out with Tailwind's outline-none keep their own focus look. */
+@layer base {
+  :where(:root[data-ui="nuvo"] :focus-visible) {
+    outline: 3px solid var(--n-focus-halo);
+    outline-offset: 1px;
+  }
+}
+
+:root[data-ui="nuvo"] :where(input, textarea, [contenteditable="true"]) {
+  caret-color: var(--n-accent);
+}
+
+/* While a colour is dragged in the theme editor: no colour transitions, so every frame shows the value at once. */
+:root[data-theme-editing] * {
+  transition: none !important;
+}
+
+/* Overlay scrollbar for Nuvo scroll containers; useScrollActivity sets data-scrolling. */
+.n-scroll::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.n-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.n-scroll::-webkit-scrollbar-thumb {
+  border-radius: var(--n-r-pill);
+  background: transparent;
+}
+
+.n-scroll[data-scrolling]::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--n-ink) 20%, transparent);
+}
+
+.n-scroll[data-scrolling]::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--n-ink) 35%, transparent);
+}

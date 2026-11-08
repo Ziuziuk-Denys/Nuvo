@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "likedAt": "1970-01-01T00:00:00.000Z",
+      "track": {
+        "artists": [
+          {
+            "id": "a1",
+            "name": "Artist"
+          }
+        ],
+        "durationMs": 1000,
+        "id": "dQw4w9WgXcQ",
+        "title": "Song",
+        "viewer": {
+          "liked": true
+        }
+      }
+    }
+  ],
+  "nextCursor": null
+}

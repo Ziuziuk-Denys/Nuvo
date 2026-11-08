@@ -1,0 +1,71 @@
+/* The button language: 32 px, 9 px corners, 14 px text; colour changes on hover, a small press. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  font: 400 14px/normal var(--n-font);
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 150ms var(--n-ease-out),
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out),
+    opacity 150ms var(--n-ease-out);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.s {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.secondary {
+  background: var(--n-fill);
+  color: var(--n-ink);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--n-fill-hover);
+}
+
+.text {
+  background: transparent;
+  color: var(--n-ink-2);
+}
+
+.text:hover:not(:disabled) {
+  background: var(--border-white-alpha-14);
+  color: var(--n-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+}

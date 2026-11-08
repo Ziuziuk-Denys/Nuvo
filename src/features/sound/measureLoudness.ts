@@ -1,0 +1,74 @@
+import { loudnessGain } from "./lib/loudness";
+import { useSoundStore } from "./store/soundStore";
+
+const MAX_DURATION_MS = 20 * 60 * 1000;
+const IDLE_TIMEOUT_MS = 10_000;
+const DECODE_RATE = 44100;
+
+type Decoder = (data: ArrayBuffer) => Promise<AudioBuffer>;
+
+function decodeWithOfflineContext(data: ArrayBuffer): Promise<AudioBuffer> {
+  return new OfflineAudioContext(2, 1, DECODE_RATE).decodeAudioData(data);
+}
+
+/** Weighs the channels in a module worker. The buffers are transferred, not copied, and die with the worker. */
+function analyseInWorker(channels: Float32Array[], sampleRate: number): Promise<number> {
+  // shortcut: without Worker (unit tests) the estimate runs inline on this thread
+  if (typeof Worker === "undefined") return Promise.resolve(loudnessGain(channels, sampleRate));
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("./loudness.worker.ts", import.meta.url), { type: "module" });
+    worker.onmessage = (event: MessageEvent<number>) => {
+      worker.terminate();
+      resolve(event.data);
+    };
+    worker.onerror = (event) => {
+      worker.terminate();
+      reject(new Error(event.message || "loudness worker failed"));
+    };
+    // Channels may share one buffer, and a buffer can appear only once in the transfer list
+    const buffers = [...new Set(channels.map((channel) => channel.buffer as ArrayBuffer))];
+    try {
+      worker.postMessage({ channels, sampleRate }, buffers);
+    } catch (error) {
+      worker.terminate();
+      reject(error);
+    }
+  });
+}
+
+/** Normalization gain in dB for an audio blob. Uses all decoded channels, not a mono mixdown. */
+export async function measureLoudness(blob: Blob, decode: Decoder = decodeWithOfflineContext): Promise<number> {
+  const buffer = await decode(await blob.arrayBuffer());
+  const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+  return analyseInWorker(channels, buffer.sampleRate);
+}
+
+// One measurement at a time: each one holds a whole decoded track in memory
+let queue: Promise<unknown> = Promise.resolve();
+
+function enqueue<T>(job: () => Promise<T>): Promise<T> {
+  const result = queue.then(job);
+  queue = result.catch(() => undefined);
+  return result;
+}
+
+function whenIdle(task: () => void): void {
+  if (typeof requestIdleCallback === "function") requestIdleCallback(task, { timeout: IDLE_TIMEOUT_MS });
+  else setTimeout(task, 0);
+}
+
+const pending = new Set<string>();
+
+/** `audio` may be a loader, so a track played from the core cache is fetched only when its turn comes. */
+export function scheduleLoudness(trackId: string, audio: Blob | (() => Promise<Blob>), durationMs: number): void {
+  if (durationMs > MAX_DURATION_MS) return;
+  if (useSoundStore.getState().loudness[trackId] || pending.has(trackId)) return;
+  pending.add(trackId);
+  whenIdle(() => {
+    // useSoundSync applies the stored value the next time this track starts, never mid-track
+    enqueue(async () => measureLoudness(typeof audio === "function" ? await audio() : audio))
+      .then((db) => useSoundStore.getState().setLoudness(trackId, db))
+      .catch(() => undefined)
+      .finally(() => pending.delete(trackId));
+  });
+}

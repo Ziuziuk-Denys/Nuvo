@@ -1,0 +1,20 @@
+[
+  {"title": "Song Name (Official Video)", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": null, "tags": []},
+  {"title": "Song Name (Skrillex Remix)", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": {"type": "remix", "by": "skrillex"}, "tags": ["remix"]},
+  {"title": "Artist - Song Name [Live at Wembley]", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": {"type": "live", "by": null}, "tags": ["live"]},
+  {"title": "Song Name (feat. Other)", "artist": "Artist - Topic", "workKey": "song name", "artistKey": "artist", "variant": null, "tags": []},
+  {"title": "Song Name ft. Other & Third", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": null, "tags": []},
+  {"title": "Song Name - Slowed + Reverb", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": {"type": "slowed", "by": null}, "tags": ["slowed", "reverb"]},
+  {"title": "Song Name (Sped Up)", "artist": "ArtistVEVO", "workKey": "song name", "artistKey": "artist", "variant": {"type": "sped_up", "by": null}, "tags": ["sped_up"]},
+  {"title": "Song Name (Acoustic Version) [Prod. Someone]", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": {"type": "acoustic", "by": null}, "tags": ["acoustic"]},
+  {"title": "Song Name (V.I.P.)", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": {"type": "vip", "by": null}, "tags": ["vip"]},
+  {"title": "Song Name (Instrumental)", "artist": "Artist", "workKey": "song name", "artistKey": "artist", "variant": {"type": "instrumental", "by": null}, "tags": ["instrumental"]},
+  {"title": "Other Song - Radio Edit", "artist": "Artist", "workKey": "other song", "artistKey": "artist", "variant": {"type": "edit", "by": "radio"}, "tags": ["edit"]},
+  {"title": "Credit Where Due", "artist": "Artist", "workKey": "credit where due", "artistKey": "artist", "variant": null, "tags": []},
+  {"title": "Alive", "artist": "Artist", "workKey": "alive", "artistKey": "artist", "variant": null, "tags": []},
+  {"title": "ＦＵＬＬＷＩＤＴＨ Café", "artist": "Björk", "workKey": "fullwidth cafe", "artistKey": "bjork", "variant": null, "tags": []},
+  {"title": "Песня (Ремикс)", "artist": "Кино", "workKey": "pesnia", "artistKey": "kino", "variant": {"type": "remix", "by": null}, "tags": ["remix"]},
+  {"title": "Pesnia - Live", "artist": "Kino", "workKey": "pesnia", "artistKey": "kino", "variant": {"type": "live", "by": null}, "tags": ["live"]},
+  {"title": "Песня (Кавер)", "artist": "Кто-то", "workKey": "pesnia", "artistKey": "kto to", "variant": {"type": "cover", "by": null}, "tags": ["cover"]},
+  {"title": "Звезда по имени Солнце", "artist": "Кино", "workKey": "zvezda po imeni solntse", "artistKey": "kino", "variant": null, "tags": []}
+]

@@ -1,0 +1,112 @@
+/* On this computer: folder chips and their two tools in one row, one quiet status line, then the track rows. */
+.local {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-3);
+}
+
+.empty {
+  padding-top: var(--n-s-5);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--n-s-2);
+}
+
+.folders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--n-s-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* the shared fact chip, a little taller so the remove button has room */
+.folder {
+  height: 32px;
+  max-width: 100%;
+  padding: 0 var(--n-s-1) 0 var(--n-s-3);
+}
+
+.folder[data-missing] {
+  color: var(--n-ink-2);
+}
+
+.missing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--n-s-1);
+  font: var(--n-type-caption);
+}
+
+.path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* long paths keep their last folder visible */
+  direction: rtl;
+  text-align: left;
+  unicode-bidi: plaintext;
+  max-width: 320px;
+}
+
+.count {
+  color: var(--n-ink-2);
+}
+
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--n-r-s);
+  background: transparent;
+  color: var(--n-ink-2);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.remove:hover,
+.remove:focus-visible {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink);
+  outline: none;
+}
+
+:global(:root[data-theme="dark"]) .remove:hover,
+:global(:root[data-theme="dark"]) .remove:focus-visible {
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-2);
+}
+
+.line {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  overflow-wrap: anywhere;
+}
+
+/* rows pad 8 px inside; pulling them out by 8 puts every cover on the title's edge */
+.rows[aria-busy="true"] {
+  opacity: 0.6;
+  transition: opacity 150ms ease-out;
+}
+
+.rows {
+  margin-inline: calc(-1 * var(--n-s-2));
+}

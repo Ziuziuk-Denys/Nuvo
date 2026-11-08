@@ -1,0 +1,50 @@
+[
+  {
+    "offsetMs": 0,
+    "track": {
+      "artists": [
+        {
+          "id": "a",
+          "name": "A"
+        }
+      ],
+      "durationMs": 1000,
+      "id": "x",
+      "title": "T"
+    },
+    "type": "metadata"
+  },
+  {
+    "candidate": {
+      "contentKind": "line_synced",
+      "lyrics": {
+        "content": "[00:01.00] hi",
+        "format": "lrc"
+      },
+      "provider": "lrclib",
+      "quality": {
+        "content": 1.0,
+        "match": 1.0,
+        "reasons": [],
+        "source": 0.7,
+        "sync": 0.6,
+        "total": 0.8
+      },
+      "syncLevel": "line_level"
+    },
+    "durationMs": 12,
+    "provider": "lrclib",
+    "status": "found",
+    "syncLevel": "line_level",
+    "type": "provider"
+  },
+  {
+    "best": {
+      "provider": "lrclib",
+      "quality": 0.8,
+      "syncLevel": "line_level"
+    },
+    "cached": false,
+    "type": "done"
+  }
+]

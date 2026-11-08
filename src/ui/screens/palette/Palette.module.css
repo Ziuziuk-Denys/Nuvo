@@ -1,0 +1,58 @@
+/* The command palette: a raised panel near the top, no dim, so the page stays in view.
+   It pours down from a sliver at its top centre, the popover family's motion, and lifts back up into it. */
+/* centred by auto margins between left 0 (from the popover frame) and right 0 */
+.frame {
+  composes: frame from "../../components/Popover.module.css";
+  top: 96px;
+  right: 0;
+  width: min(560px, calc(100vw - 24px));
+  margin: 0 auto;
+}
+
+.panel {
+  composes: panel from "../../components/Popover.module.css";
+  --nx: 50%;
+  --from: 0 calc(50% - 22px) calc(100% - 1px) calc(50% - 22px);
+  box-sizing: border-box;
+  padding: var(--n-s-2);
+}
+
+/* The field sits on the panel itself; a hairline divides it from the commands. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-2);
+  /* rows inset 12 px, so row text lines up with the field's text 20 px in */
+  margin: var(--n-s-2) calc(-1 * var(--n-s-2)) 0;
+  padding: var(--n-s-2) var(--n-s-3) var(--n-s-1);
+  border-top: 1px solid var(--n-hair);
+}
+
+.label {
+  padding: var(--n-s-1) var(--n-s-2);
+  color: var(--n-ink-3);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+.keys {
+  display: inline-flex;
+  gap: var(--n-s-1);
+}
+
+.key {
+  padding: 2px 6px;
+  border-radius: var(--n-r-s);
+  background: var(--n-tint);
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+}
+
+.none {
+  margin: var(--n-s-2) calc(-1 * var(--n-s-2)) 0;
+  padding: var(--n-s-3) 20px var(--n-s-1);
+  border-top: 1px solid var(--n-hair);
+  color: var(--n-ink-3);
+  font: var(--n-type-body);
+}

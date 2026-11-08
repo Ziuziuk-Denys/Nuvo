@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" data-ui="nuvo">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Nuvo</title>
+    <style>
+      :root {
+        /* font names the stylesheets use, all pointing at the system stack so nothing is fetched at launch */
+        --font-inter: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Cantarell, Ubuntu, sans-serif;
+        --font-geist-mono: ui-monospace, "SF Mono", "Cascadia Mono", "DejaVu Sans Mono", monospace;
+        --font-roboto-flex: var(--font-inter);
+        --font-montserrat-family: var(--font-inter);
+      }
+      html,
+      body,
+      #root {
+        width: 100%;
+        height: 100%;
+      }
+      html,
+      body {
+        background: transparent;
+      }
+      body {
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

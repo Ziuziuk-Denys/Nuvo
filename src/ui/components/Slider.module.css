@@ -1,0 +1,75 @@
+.slider {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-2);
+  min-width: 0;
+}
+
+/* a 20 px hit area around the 4 px track */
+.control {
+  position: relative;
+  flex: 1;
+  height: 20px;
+  min-width: 0;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.control:focus-visible {
+  outline: none;
+}
+
+.track {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  left: 0;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--n-r-pill);
+  background: var(--n-switch);
+}
+
+/* The rail spans the knob centre's travel (7 px in from each end); --p moves its left edge along it. */
+.rail {
+  position: absolute;
+  inset: 0 7px;
+  transform: translateX(calc(var(--p) * 100%));
+  pointer-events: none;
+}
+
+/* ends at the knob centre and reaches back past the track start; the track clips it */
+.fill {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  bottom: 0;
+  width: 100vw;
+  background: var(--n-ink);
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.control:focus-visible .knob {
+  outline: 2px solid var(--n-focus-halo);
+  outline-offset: 2px;
+}
+
+.value {
+  flex: none;
+  min-width: 40px;
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}

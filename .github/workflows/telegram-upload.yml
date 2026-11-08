@@ -1,0 +1,78 @@
+name: Release files to the Telegram bot
+
+# Optional. Uploads each release file to @NuvoAppBot (up to 2 GB) so the bot can send it to anyone.
+# The bot logs in over MTProto with its own token, uploads into the maintainer's private chat,
+# then takes the Bot API file id from a forwarded copy and records it through the bot's /upload route.
+# No second bot, no channel, no user account.
+#
+# Copy into the app repository:
+#   bot/ci/telegram-upload.yml -> .github/workflows/telegram-upload.yml
+#   bot/ci/upload.py           -> .github/telegram/upload.py
+#   bot/ci/requirements.txt    -> .github/telegram/requirements.txt
+#
+# Does nothing unless all six repository secrets are set:
+#   BOT_TOKEN, TG_API_ID, TG_API_HASH, ADMIN_ID, UPLOAD_SECRET, WORKER_URL
+# Optional repository variable: ADMIN_LANG (en or ru) for the bot's receipts.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to upload
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-upload
+  cancel-in-progress: false
+
+jobs:
+  telegram:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      READY: ${{ secrets.BOT_TOKEN != '' && secrets.TG_API_ID != '' && secrets.TG_API_HASH != '' && secrets.ADMIN_ID != '' && secrets.UPLOAD_SECRET != '' && secrets.WORKER_URL != '' }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Skip without secrets
+        if: env.READY != 'true'
+        run: echo "Telegram secrets are not set, nothing to upload."
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.READY == 'true'
+        with:
+          sparse-checkout: .github/telegram
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        if: env.READY == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned client
+        if: env.READY == 'true'
+        run: pip install --require-hashes -r .github/telegram/requirements.txt
+
+      - name: Download the release files
+        if: env.READY == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir upload \
+            --pattern '*.AppImage' --pattern '*amd64.deb' --pattern '*.exe' --pattern '*arm64.dmg'
+
+      - name: Upload to the bot
+        if: env.READY == 'true'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
+          UPLOAD_SECRET: ${{ secrets.UPLOAD_SECRET }}
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          ADMIN_LANG: ${{ vars.ADMIN_LANG }}
+        run: python .github/telegram/upload.py "$TAG" upload/*

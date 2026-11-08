@@ -1,0 +1,126 @@
+/* The phrase well in the filled-field language: a soft ink fill, 12 px corners, no border;
+   only a wrong phrase draws a line around it. The word count sits inside it, bottom right, and turns to ink when the phrase is whole. */
+.well {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 12px;
+  background: var(--border-white-alpha-14);
+  transition:
+    background-color var(--n-t-quick) var(--n-ease-out),
+    box-shadow var(--n-t-quick) var(--n-ease-out);
+}
+
+.well:hover {
+  background: var(--border-white-alpha-33);
+}
+
+/* focus is a deeper fill, never a ring: the accent is red in the default look and would read as an error */
+.well:focus-within {
+  background: var(--border-white-alpha-33);
+}
+
+.well[data-invalid] {
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, #ea4335 70%, transparent);
+}
+
+.field {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  /* grows with the phrase, so all 24 words stay in view above the count */
+  field-sizing: content;
+  min-height: 92px;
+  max-height: 200px;
+  padding: 12px 14px 30px;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  font: 400 14px/1.5 var(--n-font);
+  text-align: left;
+  resize: none;
+  outline: none;
+}
+
+.field:focus-visible {
+  outline: none;
+}
+
+.field::placeholder {
+  color: var(--n-ink-3);
+}
+
+.count {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  color: var(--n-ink-3);
+  font: 500 12px/16px var(--n-font);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  transition: color var(--n-t-quick) var(--n-ease-out);
+}
+
+.count[data-full] {
+  color: var(--n-ink);
+}
+
+.error {
+  margin: 10px 0 0;
+  color: var(--n-ink);
+  font: 500 13px/18px var(--n-font);
+  text-wrap: balance;
+}
+
+.unlock {
+  width: 100%;
+  height: 38px;
+  margin-top: 16px;
+  border-radius: 11px;
+  font-weight: 500;
+}
+
+.spinner {
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: lock-spin 0.8s linear infinite;
+}
+
+.lost {
+  margin-top: 8px;
+}
+
+.lostText {
+  max-width: 34ch;
+  margin-top: 4px;
+  color: var(--n-ink-3);
+  font: 400 13px/1.45 var(--n-font);
+  animation: lock-open var(--n-t-base) var(--n-ease-out) both;
+}
+
+@keyframes lock-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lock-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+
+  .lostText {
+    animation: none;
+  }
+}

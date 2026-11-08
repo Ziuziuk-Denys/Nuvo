@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "artist": "B",
+      "coverUrl": null,
+      "id": "al",
+      "playCount": 1,
+      "score": 1.0,
+      "title": "A",
+      "trackCount": 5,
+      "uniqueListeners": 1
+    }
+  ],
+  "window": "7d"
+}
