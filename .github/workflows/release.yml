@@ -100,7 +100,7 @@ jobs:
           # One job for both Macs, so electron-builder writes a single latest-mac.yml with both zips
           - name: macos
             os: macos
-            runner: macos-14
+            runner: macos-15
             targets: aarch64-apple-darwin,x86_64-apple-darwin
             builder: --mac dmg zip --arm64 --x64
             experimental: true
@@ -248,6 +248,7 @@ jobs:
 
   publish:
     needs: [prepare, build]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write

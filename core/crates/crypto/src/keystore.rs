@@ -1,5 +1,6 @@
 use std::fs::OpenOptions;
 use std::io::Write;
+#[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -195,7 +196,11 @@ impl FileKeyStore {
         let dir = self.path.parent().ok_or_else(|| KeyStoreError::Unavailable("no directory".into()))?;
         std::fs::create_dir_all(dir).map_err(failed)?;
         let partial = self.path.with_extension("partial");
-        let mut file = OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(&partial).map_err(failed)?;
+        let mut options = OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        options.mode(0o600);
+        let mut file = options.open(&partial).map_err(failed)?;
         file.write_all(bytes).and_then(|()| file.sync_all()).map_err(failed)?;
         std::fs::rename(&partial, &self.path).map_err(failed)
     }
