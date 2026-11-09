@@ -3,7 +3,6 @@ name: release
 on:
   push:
     tags: ["v*"]
-    branches: ["fix/windows-macos"]
   # Builds every platform without publishing; the publish job runs for tags only.
   workflow_dispatch:
 
