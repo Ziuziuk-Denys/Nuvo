@@ -84,7 +84,7 @@ const PROXY_PUT_TIMEOUT_MS = 3000;
 /** execFile that shutdown can reach: gtk-update-icon-cache, swaymsg and the tray probe are killed if still running. */
 const trackedExec: Exec = (file, args, timeoutMs) =>
   new Promise((resolve, reject) => {
-    const child = execFile(file, args, { timeout: timeoutMs }, (error, stdout) => {
+    const child = execFile(file, args, { timeout: timeoutMs, windowsHide: true }, (error, stdout) => {
       children.delete(child);
       if (error) reject(error);
       else resolve(stdout);
@@ -110,7 +110,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   const systemFonts = new SystemFonts(
     () =>
       new Promise((resolve) =>
-        execFile("fc-list", ["--format", "%{family}\n"], { timeout: 5000, maxBuffer: FC_LIST_MAX_BYTES }, (error, stdout) => {
+        execFile("fc-list", ["--format", "%{family}\n"], { timeout: 5000, maxBuffer: FC_LIST_MAX_BYTES, windowsHide: true }, (error, stdout) => {
           // a missing fc-list, a timeout or output over the cap: no list
           resolve(error ? { ok: false } : { ok: true, families: parseFcList(stdout) });
         }),

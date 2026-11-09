@@ -120,6 +120,8 @@ export function createCoreHost(options: CoreHostOptions): CoreHost {
         },
         // stdin stays open as a lifeline: when Electron dies the pipe closes and the daemon exits
         stdio: ["pipe", "ignore", "inherit"],
+        windowsHide: true,
+        detached: false,
       });
     } catch (err) {
       console.error("[core] failed to spawn nuvo-core:", err);
