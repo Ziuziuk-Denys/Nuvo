@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.11-beta.1
+
+A beta for testers: the first Windows and macOS builds of Nuvo, plus Linux and Chromebook.
+
+- **Windows** x64 and arm64: installer and portable zip. **macOS** Apple silicon and Intel: dmg and zip. These builds have not been tried on real machines yet, and they are not signed.
+- **Chromebook:** turn on Linux in ChromeOS settings, then install the Linux .deb for your processor.
+- Fixes since 0.2.10: the key store builds on Windows, folder watching works on macOS, and file permissions are set only where the system supports them.
+
+Please report what works and what breaks in [the chat](https://t.me/getnuvo_chat) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
 ## 0.2.10
 
 The first public release of Nuvo: a desktop music player that keeps your library encrypted on your own computer, with no account and no server of its own.
