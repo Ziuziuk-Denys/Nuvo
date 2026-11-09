@@ -92,8 +92,8 @@ async fn decodes_files_whole_and_by_range() {
     assert_eq!(probe(&ffmpeg, &wav).await, Ok(Some(3_000)));
     let whole = decode(&ffmpeg, &Input::File(&wav), 0, None, None).await.unwrap();
     assert!((whole.len() as i64 - 96_000).abs() <= 64, "3 s of 16 kHz stereo, got {}", whole.len());
-    assert!(whole.chunks_exact(2).any(|lr| lr[0].abs() > 5_000), "left carries the tone");
-    assert!(whole.chunks_exact(2).all(|lr| lr[1].abs() < 50), "right stays silent");
+    assert!(whole.as_chunks::<2>().0.iter().any(|lr| lr[0].abs() > 5_000), "left carries the tone");
+    assert!(whole.as_chunks::<2>().0.iter().all(|lr| lr[1].abs() < 50), "right stays silent");
 
     let window = decode(&ffmpeg, &Input::File(&wav), 1_000, Some(1_000), None).await.unwrap();
     assert!((window.len() as i64 - 32_000).abs() <= 64, "1 s window, got {}", window.len());

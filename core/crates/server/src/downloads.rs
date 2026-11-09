@@ -75,7 +75,7 @@ async fn record(state: &AppState, data: &Unlocked, item: &Ready, result: Result<
     let mut result = result;
     for attempt in 1..=FINISH_TRIES {
         let (id, position, outcome) = (item.download_id.clone(), item.position, result.clone());
-        let injected = state.test.finish_failures.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1)).is_ok();
+        let injected = state.test.finish_failures.try_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1)).is_ok();
         let written = if injected { None } else { data.db.call(move |c| downloads::finish(c, &id, position, outcome)).await.ok() };
         if let Some(closed) = written {
             return Ok(closed);
