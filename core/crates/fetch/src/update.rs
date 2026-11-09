@@ -137,12 +137,23 @@ pub async fn update_yt_dlp(client: &Client, base: &str, asset: &'static str, dir
     result.map(|()| Outcome::Installed)
 }
 
-async fn install(client: &Client, url: String, partial: &Path, installed: &Path, expected: &str, progress: &(dyn Fn(u64, Option<u64>) + Send + Sync)) -> Result<(), UpdateError> {
+#[cfg(unix)]
+async fn make_executable(path: &Path) -> std::io::Result<()> {
     use std::os::unix::fs::PermissionsExt;
+    tokio::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).await
+}
+
+// Windows runs a file by its extension; there is no executable bit.
+#[cfg(windows)]
+async fn make_executable(_path: &Path) -> std::io::Result<()> {
+    Ok(())
+}
+
+async fn install(client: &Client, url: String, partial: &Path, installed: &Path, expected: &str, progress: &(dyn Fn(u64, Option<u64>) + Send + Sync)) -> Result<(), UpdateError> {
     if download(client, url, partial, progress).await? != expected {
         return Err(UpdateError::Checksum);
     }
-    tokio::fs::set_permissions(partial, std::fs::Permissions::from_mode(0o755)).await?;
+    make_executable(partial).await?;
     if version(partial).await.is_none() {
         return Err(UpdateError::Broken);
     }
@@ -194,7 +205,6 @@ pub async fn install_ffmpeg(client: &Client, build: &FfmpegBuild, dir: &Path, pr
 }
 
 async fn unpack_ffmpeg(client: &Client, build: &FfmpegBuild, archive: &Path, staging: &Path, installed: &Path, progress: &(dyn Fn(u64, Option<u64>) + Send + Sync)) -> Result<(), UpdateError> {
-    use std::os::unix::fs::PermissionsExt;
     if download(client, build.url.to_string(), archive, progress).await? != build.sha256 {
         return Err(UpdateError::Checksum);
     }
@@ -205,7 +215,7 @@ async fn unpack_ffmpeg(client: &Client, build: &FfmpegBuild, archive: &Path, sta
     if !status.success() || !unpacked.is_file() {
         return Err(UpdateError::Broken);
     }
-    tokio::fs::set_permissions(&unpacked, std::fs::Permissions::from_mode(0o755)).await?;
+    make_executable(&unpacked).await?;
     if version(&unpacked).await.is_none() {
         return Err(UpdateError::Broken);
     }

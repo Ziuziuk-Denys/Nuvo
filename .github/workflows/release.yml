@@ -3,6 +3,8 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # Builds every platform without publishing; the publish job runs for tags only.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,6 +26,7 @@ jobs:
       - id: v
         run: |
           version="${GITHUB_REF_NAME#v}"
+          [ "$GITHUB_REF_TYPE" = "tag" ] || version="$(node -p "require('./package.json').version")"
           pkg="$(node -p "require('./package.json').version")"
           if [ "$version" != "$pkg" ]; then
             echo "Tag $GITHUB_REF_NAME does not match package.json version $pkg" >&2
@@ -141,6 +144,8 @@ jobs:
         env:
           TARGETS: ${{ matrix.targets }}
         run: |
+          # Git's perl lacks modules that OpenSSL's Configure needs; Strawberry Perl has them.
+          if [ "$RUNNER_OS" = "Windows" ] && [ -d /c/Strawberry/perl/bin ]; then export PATH="/c/Strawberry/perl/bin:$PATH"; fi
           for triple in ${TARGETS//,/ }; do
             cargo build --release --locked --manifest-path core/Cargo.toml -p nuvo-server --target "$triple"
             node scripts/stage-core.mjs "$triple"
@@ -248,7 +253,7 @@ jobs:
 
   publish:
     needs: [prepare, build]
-    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && github.ref_type == 'tag' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
