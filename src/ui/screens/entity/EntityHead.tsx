@@ -6,35 +6,25 @@ import look from "../look.module.css";
 import styles from "./EntityHead.module.css";
 
 export interface EntityHeadProps {
-  /** The artwork, drawn to fill the 168 px box (144 px and round for an artist). */
   cover: ReactNode;
   shape?: "square" | "circle";
   title: string;
-  /** Beside the title, such as a verified mark. */
   badge?: ReactNode;
   subtitle?: ReactNode;
-  /** The small line under the title: a playlist's description. */
   description?: ReactNode;
-  /** Fact chips under the title: a year, the count and the length. */
   chips?: ReactNode;
   onPlay?: () => void;
   onShuffle?: () => void;
-  /** Replaces Play and Shuffle: an entity with nothing to list but one way to start. */
   actions?: ReactNode;
-  /** The Save toggle, for what you do not own. */
   saved?: boolean;
   onSave?: () => void;
   onQueue?: () => void;
-  /** The entity menu; no more button when it is empty. */
   menu?: MenuItem[];
-  /** Right of the action row: the in-page search before Add to queue, the sort after it. */
   search?: ReactNode;
   sort?: ReactNode;
-  /** No tracks to play yet. */
   idle?: boolean;
 }
 
-/** The entity head: the cover, and beside it the title, a line, fact chips and one row of pill actions. */
 export function EntityHead({
   cover,
   shape = "square",
@@ -130,7 +120,6 @@ export function EntityHead({
   );
 }
 
-/** The head's fact chips: an optional year, then the count and the total length in one chip. */
 export function Facts({ year, count, length, updated }: { year?: string; count: string; length?: string; updated?: string }): JSX.Element {
   return (
     <>

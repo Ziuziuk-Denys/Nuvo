@@ -38,10 +38,6 @@ const CONTENT: Record<SectionId, () => JSX.Element | null> = {
   About: AboutSection,
 };
 
-/**
- * Settings: a panel over the dimmed window with a searchable section list on the left and the open
- * section on the right. The rail, the palette and `#/settings?section=` open it through the modal store.
- */
 export function Settings(): JSX.Element | null {
   const { t } = useTranslation();
   const open = useModalStore((state) => state.settingsOpen);
@@ -54,7 +50,6 @@ export function Settings(): JSX.Element | null {
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
 
-  // a requested section is adopted once per opening; later picks in the list win
   const [adopted, setAdopted] = useState<string | null>(null);
   const wanted = open ? requested : null;
   if (wanted !== adopted) {
@@ -70,7 +65,6 @@ export function Settings(): JSX.Element | null {
   const closeRef = useRef(close);
   closeRef.current = close;
 
-  // Escape closes from the top of the overlay stack; focus starts on the open section and returns on close
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -82,7 +76,6 @@ export function Settings(): JSX.Element | null {
     };
   }, [open]);
 
-  // search matches every locale, which loads on demand
   useEffect(() => {
     if (open) void loadAllLocales();
   }, [open]);
@@ -94,7 +87,6 @@ export function Settings(): JSX.Element | null {
   );
   const active = matches && !matches.has(chosen) ? (SECTION_ORDER.find((id) => matches.has(id)) ?? chosen) : chosen;
   const visible = groups.flatMap((group) => group.ids);
-  // a section found by its own name shows all its rows
   const rowQuery = matchesQuery(query, [SECTIONS[active].labelKey, SECTIONS[active].descKey]) ? "" : query;
 
   const onNavKey = (event: KeyboardEvent<HTMLElement>) => {

@@ -1,5 +1,3 @@
-/* The frame carries the position (left by transform) and the width; the panel carries the motion and the height.
-   Both morph only once settled, so the first placement never slides in. */
 .frame {
   position: fixed;
   left: 0;
@@ -12,8 +10,6 @@
     width var(--n-t-base) var(--n-ease-inout);
 }
 
-/* The family's motion, shared by Sheet and Menu: rise and pop in from the anchor side, the reverse out.
-   --shift is the 4 px translate, signed toward the anchor. */
 .pop {
   animation: pop-in var(--n-t-base) var(--n-ease-out) both;
 }
@@ -37,8 +33,6 @@
   }
 }
 
-/* The panel pours out of its anchor: --from is a 44 px sliver on the anchor side, centred on --nx.
-   Floating glass: a faint wash over a 40 px blur, no rim and no shadow. */
 .panel {
   overflow: hidden;
   border-radius: var(--n-r-l);
@@ -50,7 +44,6 @@
   animation: shell-in var(--n-t-entrance) var(--n-ease-out) both;
 }
 
-/* The Sound panel: a near-opaque surface instead of the glass. */
 .panel[data-solid] {
   background: var(--n-pop-solid);
 }
@@ -86,7 +79,6 @@
   }
 }
 
-/* The content follows the reveal: the header, then each block of the body, 45 ms apart. Only on opening. */
 .panel[data-fresh] .header,
 .panel[data-fresh] .body > * > * {
   animation: shell-rise var(--n-t-entrance) var(--n-ease-out) both;
@@ -120,7 +112,6 @@
   transition: height var(--n-t-base) var(--n-ease-inout);
 }
 
-/* The panel's height is capped at the room on its side of the anchor; taller content scrolls here. */
 .scroller {
   height: 100%;
   overflow-x: hidden;
@@ -128,13 +119,11 @@
   overscroll-behavior: contain;
 }
 
-/* Laid out at the target width at once, so its height is final while the panel morphs around it. */
 .content {
   box-sizing: border-box;
   padding: 16px;
 }
 
-/* The panel head: a 15 px semibold title on the baseline with its trailing control, 12 px above the body. */
 .header {
   display: flex;
   align-items: baseline;

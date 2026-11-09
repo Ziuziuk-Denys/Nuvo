@@ -1,6 +1,3 @@
-//! `POST /v1/recognize` streams one recognition job; history and tool status routes.
-//! `POST /v1/fs/recognize/file` is Electron main's: pages name a granted file, never a path.
-
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::path::{Path as FsPath, PathBuf};
@@ -31,15 +28,12 @@ use crate::extract::JsonBody;
 use crate::links::Inspected;
 use crate::state::{AppState, Unlocked};
 
-/// Media up to this long is decoded once; longer media window by window.
 const DECODE_ONCE_MS: u64 = 60_000;
 const HISTORY_DEFAULT: i64 = 50;
 /// Long enough for "try another part" after the first run.
 const GRANT_TTL: Duration = Duration::from_secs(600);
-/// Files arrive one at a time; this only bounds a burst.
 const MAX_GRANTS: usize = 32;
 
-/// Files Electron main vouched for, by opaque id.
 #[derive(Default)]
 pub struct FileGrants(Mutex<HashMap<String, (Instant, PathBuf)>>);
 
@@ -76,27 +70,23 @@ pub fn routes() -> Router<AppState> {
 #[serde(deny_unknown_fields)]
 struct Body {
     url: Option<String>,
-    /// An id from `POST /v1/fs/recognize/file`.
     file: Option<String>,
     #[serde(default)]
     system: bool,
     #[serde(default)]
     microphone: bool,
-    /// 0 for the first run, 1 for "try another part".
     #[serde(default)]
     part: u8,
 }
 
 enum Job {
     Link(String),
-    /// Unknown or expired grants hold no path.
     File(Option<PathBuf>),
     System,
     Microphone,
 }
 
-/// Aborts the job when the response stream is dropped, which happens when the client closes it.
-/// Dropping the job drops its child processes, which are `kill_on_drop`.
+// Dropping the job drops its child processes, which are kill_on_drop
 struct AbortOnDrop(JoinHandle<()>);
 
 impl Drop for AbortOnDrop {
@@ -142,14 +132,12 @@ fn emit(tx: &UnboundedSender<Event>, value: Value) {
     let _ = tx.send(Event::default().data(value.to_string()));
 }
 
-/// Everything the plan needs, decided before listening starts.
 struct Prepared {
     source: Source,
     main_ms: Option<u64>,
     clean_ms: Option<u64>,
     mix: Via,
     input: InputInfo,
-    /// A named TikTok sound, offered when nothing matches.
     hint: Option<(String, String)>,
 }
 
@@ -207,7 +195,6 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
             emit(tx, json!({"type": "stage", "name": "resolving"}));
             let link = parse_link(&url)?;
             let mut hint = None;
-            // A link the renderer just inspected is not fetched again.
             let (seen_post, seen_media) = match state.links.get(&link.url, Instant::now()) {
                 Some(Inspected::TikTok(post)) => (Some(post), None),
                 Some(Inspected::Media(resolved, _)) => (None, Some(resolved)),
@@ -265,7 +252,6 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
             // The history keeps no credentials or query string from the link.
             let label = resolved.title.clone().unwrap_or_else(|| nuvo_fetch::link::bare_url(&link.url));
             emit(tx, json!({"type": "stage", "name": "fetching", "detail": label}));
-            // Unknown length (live streams): listen from the start.
             let main_ms = resolved.duration_ms.unwrap_or(WINDOW_MS);
             Ok(Prepared {
                 source: Source { ffmpeg, proxy, main: Some(Origin::new(Owned::Remote(remote), main_ms)), clean: None },
@@ -405,7 +391,6 @@ async fn remove(State(state): State<AppState>, Path(id): Path<String>) -> Result
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Looked up per job, so installing a tool needs no restart; a build Nuvo keeps current comes first.
 fn found_tools(state: &AppState) -> Tools {
     Tools::from_env(&ToolEnv { managed: state.env.managed.clone(), ..ToolEnv::from_process() })
 }

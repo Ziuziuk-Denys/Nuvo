@@ -1,5 +1,3 @@
-//! Turning a track into something playable: a signed progressive URL, or assembled HLS audio.
-
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use nuvo_net::Url;
@@ -11,9 +9,7 @@ use crate::{Reason, ScError, ids};
 
 const PREVIEW_TOLERANCE_MS: i64 = 5_000;
 const UNSIGNED_LIFETIME_MS: i64 = 4 * 60_000;
-/// A cached `direct` answer is reused until this long before it expires.
 const DIRECT_REUSE_MARGIN_MS: i64 = 30_000;
-/// Direct cache entry limit.
 const DIRECT_CACHE_LIMIT: usize = 500;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,7 +31,6 @@ pub struct Transcoding {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Playable {
     Direct { url: String, expires_ms: i64, format: Format },
-    /// HLS audio written to the sink; `bytes` is its length.
     Assembled { bytes: u64, format: Format },
 }
 
@@ -43,7 +38,6 @@ pub fn now_ms() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis() as i64)
 }
 
-/// The number before a `k` in a preset name (`aac_160k` is 160 kbps).
 fn preset_kbps(preset: &str) -> Option<u32> {
     let bytes = preset.as_bytes();
     (1..bytes.len()).find_map(|k| {
@@ -82,7 +76,6 @@ pub fn transcodings(record: &Value) -> Vec<Transcoding> {
         .collect()
 }
 
-/// `policy` BLOCK, then preview, then `streamable: false`.
 pub fn availability(record: &Value) -> Result<(), Reason> {
     let policy = record.get("policy").and_then(Value::as_str).unwrap_or("ALLOW").to_ascii_uppercase();
     if policy == "BLOCK" {
@@ -101,7 +94,6 @@ pub fn availability(record: &Value) -> Result<(), Reason> {
     Ok(())
 }
 
-/// Usable transcodings in preference order: progressive MP3, other progressive, HLS MP3, HLS AAC, other HLS.
 pub fn candidates(record: &Value) -> Vec<Transcoding> {
     let mut usable: Vec<Transcoding> = transcodings(record)
         .into_iter()
@@ -142,7 +134,6 @@ fn base64_decode(text: &str) -> Option<Vec<u8>> {
     Some(out)
 }
 
-/// Expiry of a signed media URL in Unix milliseconds: `Expires`, else CloudFront `Policy`, else now + 4 minutes.
 pub fn expiry_ms(url: &str, now: i64) -> i64 {
     let fallback = now + UNSIGNED_LIFETIME_MS;
     let Ok(url) = Url::parse(url) else { return fallback };
@@ -167,8 +158,6 @@ impl SoundCloud {
         answer.get("url").and_then(Value::as_str).filter(|u| !u.is_empty()).map(str::to_string).ok_or_else(|| ScError::Upstream("SoundCloud gave no media URL".into()))
     }
 
-    /// Resolves `id` to a playable form, trying transcodings in preference order. HLS audio is
-    /// written to `sink`. Dropping the returned future cancels every outstanding request.
     pub async fn resolve(&self, id: &str, sink: &mut impl AudioSink) -> Result<Playable, ScError> {
         let num = ids::track_num(id).ok_or(ScError::Unplayable(Reason::Gone))?;
         if let Some(cached) = self.cached_direct(num) {

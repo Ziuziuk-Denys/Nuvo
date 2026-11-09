@@ -15,7 +15,6 @@ const CHALLENGED: &str = "7000000000000000002";
 const PREFIX: &[u8] = b"nuvo-test-prefix";
 const ANSWER: u32 = 4321;
 
-/// A challenge page built the way TikTok's looks: the puzzle and cookie names sit in `class` attributes.
 fn challenge_page() -> String {
     let digest = Sha256::digest([PREFIX, ANSWER.to_string().as_bytes()].concat());
     let puzzle = json!({"v": {"a": base64_encode(PREFIX), "c": base64_encode(&digest)}, "s": "server-state"});

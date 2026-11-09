@@ -2,14 +2,10 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type JSX, type K
 import styles from "./Tabs.module.css";
 
 export interface TabsProps<T extends string> {
-  /** href is used in navigation mode, where items are links. */
   items: { id: T; label: string; href?: string }[];
-  /** null marks no item (a route outside the navigation). */
   value: T | null;
   onChange: (id: T) => void;
-  /** Names the tab list or the navigation for assistive tech. */
   label: string;
-  /** "nav" renders a nav of links with aria-current on the active one instead of a tablist. */
   as?: "tabs" | "nav";
 }
 
@@ -18,7 +14,6 @@ export function Tabs<T extends string>({ items, value, onChange, label, as = "ta
   const tabRefs = useRef(new Map<T, HTMLElement>());
   const [line, setLine] = useState<{ x: number; width: number } | null>(null);
 
-  // re-measured when the value changes and when the list resizes (locale switch, late font metrics)
   useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
@@ -54,12 +49,10 @@ export function Tabs<T extends string>({ items, value, onChange, label, as = "ta
     else tabRefs.current.delete(id);
   };
 
-  // one indicator under the active item: a sliding pill in tabs, an underline in navigation
   const indicator = line ? <span className={styles.line} aria-hidden="true" style={{ "--x": `${line.x}px`, "--w": line.width } as CSSProperties} /> : null;
 
   if (as === "nav") {
     const follow = (event: MouseEvent<HTMLAnchorElement>, id: T) => {
-      // modified clicks keep the browser's own link behaviour
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       onChange(id);

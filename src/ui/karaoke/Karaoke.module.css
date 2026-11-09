@@ -1,4 +1,3 @@
-/* Geometry: a 340 x 589 block centred in height, the lyric column right of it. */
 .root {
   position: absolute;
   inset: 0;
@@ -34,7 +33,6 @@
   outline-offset: 2px;
 }
 
-/* top row: Close fullscreen at the left, the lyrics offset over the column (on hover), the window buttons at the right */
 .top {
   position: absolute;
   top: 0;
@@ -110,13 +108,11 @@
   transition: opacity 0.2s ease;
 }
 
-/* quiet like the window controls: there on hover or keyboard focus */
 .top:hover .sourceRow,
 .sourceRow:focus-within {
   opacity: 1;
 }
 
-/* the menu opens over the always-dark view in either app theme: the pill's dark glass and white text */
 .versionMenu {
   --n-pop: rgba(0, 0, 0, 0.5);
   --n-pop-hover: rgba(255, 255, 255, 0.14);
@@ -170,7 +166,6 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* the player block */
 .left {
   position: absolute;
   left: var(--k-left);
@@ -231,7 +226,6 @@
   touch-action: none;
 }
 
-/* a 6 px line in the middle of the 24 px box: a faint track, the played or set part in white */
 .bar::before,
 .fill {
   position: absolute;
@@ -350,7 +344,6 @@
   width: 170px;
 }
 
-/* the lyric column: the lines, or one quiet line centred in it */
 .lines {
   position: absolute;
   top: 0;
@@ -405,7 +398,6 @@
   }
 }
 
-/* the romanization switch: quiet text in the pill, full ink while on */
 .romaji {
   height: 26px;
   min-width: 30px;

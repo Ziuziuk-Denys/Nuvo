@@ -15,13 +15,10 @@ import styles from "./PlaylistSuggestions.module.css";
 
 export interface PlaylistSuggestionsProps {
   playlistId: string;
-  /** The playlist's track ids in order; a pick the playlist already has never shows. */
   trackIds: readonly string[];
-  /** Adds one pick to the playlist. */
   onAdd(track: Suggested): Promise<void>;
 }
 
-/** Ten suggestions under an own playlist, in its own track rows: add, play, Not interested, Refresh. */
 export function PlaylistSuggestions({ playlistId, trackIds, onAdd }: PlaylistSuggestionsProps): JSX.Element | null {
   const { t } = useTranslation();
   const [items, setItems] = useState<Suggested[]>([]);

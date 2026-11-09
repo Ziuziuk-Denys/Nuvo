@@ -3,25 +3,18 @@ import type { Track } from "../../ports/recs";
 
 export interface Shelf {
   songs: Track[];
-  /** Counts the refreshes; a new value draws the songs in again. */
   round: number;
-  /** The songs came after Home's first paint or by a refresh, so they ease in. */
   arrived: boolean;
-  /** A refresh is on its way. */
   busy: boolean;
-  /** Asks for other songs; the ones shown stay while it waits, and when nothing new comes. */
   refresh(): void;
 }
 
-/** What each mounted shelf shows, so two shelves on Home never show the same song. */
 const shown = new Map<string, Set<string>>();
 
-/** The ids every other shelf shows; read after an answer comes, so a shelf that answered earlier counts. */
 function takenBy(others: string): Set<string> {
   return new Set([...shown].flatMap(([key, ids]) => (key === others ? [] : [...ids])));
 }
 
-/** `shown` is what the shelf shows now (nothing on the first load), `round` the refresh it is for (0 first). */
 export type ShelfLoad = (shown: Track[], taken: () => Set<string>, round: number) => Promise<Track[]>;
 
 interface State {
@@ -30,10 +23,6 @@ interface State {
   round: number;
 }
 
-/**
- * A shelf's songs: `first` when the caller has them at once, else the first answer of `load` once it comes,
- * so a shelf that needs the daemon or the network never holds Home back. A new `key` starts over.
- */
 export function useShelf(key: string, load: ShelfLoad, first?: Track[]): Shelf {
   const [state, setState] = useState<State>({ key, songs: null, round: 0 });
   const [busy, setBusy] = useState(false);

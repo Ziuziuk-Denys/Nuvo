@@ -3,7 +3,6 @@ import { offlineMode } from "@/engine/offlineMode";
 
 export { useStreamingReachable } from "@/features/network";
 
-/** The offline switch: on means only saved, cached and local tracks play. */
 export const setOfflineMode = (on: boolean): void => offlineMode.set(on);
 export const useOfflineMode = (): boolean => useSyncExternalStore(offlineMode.subscribe, offlineMode.isOn);
 
@@ -16,5 +15,4 @@ function subscribeOnline(onChange: () => void): () => void {
   };
 }
 
-/** Whether the machine has a network at all, whichever services that network blocks. */
 export const useOnline = (): boolean => useSyncExternalStore(subscribeOnline, () => navigator.onLine);

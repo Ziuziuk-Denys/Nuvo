@@ -1,9 +1,4 @@
 #!/usr/bin/env node
-// Runs the whole Nuvo benchmark suite on the current app (M1 start and idle, M2 track start,
-// playing memory and CPU, UI speed), one script after the other so they never overlap, then writes
-// one JSON and appends a dated section with a table to the bench doc.
-// Uncached track start needs the network: NUVO_BENCH_LIVE=1 turns it on, it is skipped otherwise.
-// usage: node scripts/bench/suite.mjs [--exe path/to/nuvo] [--runs 5] [--json out.json] [--doc bench.md]
 import { execFileSync, spawnSync } from "node:child_process";
 import { default as fs } from "node:fs";
 import { default as os } from "node:os";

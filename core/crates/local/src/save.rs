@@ -1,5 +1,3 @@
-//! Saved copies: a safe file name, the extension of a cached format, tags written into the copy.
-
 use std::path::Path;
 
 use lofty::config::WriteOptions;
@@ -70,11 +68,9 @@ pub struct SaveTags<'a> {
     pub title: &'a str,
     pub artists: &'a str,
     pub album: Option<&'a str>,
-    /// Image bytes and their MIME type; only JPEG and PNG are embedded.
     pub cover: Option<(&'a [u8], &'a str)>,
 }
 
-/// Writes the tags in the container's own format (ID3v2, Vorbis comments, MP4, RIFF INFO).
 pub fn write_tags(path: &Path, tags: &SaveTags) -> Result<(), TagError> {
     crate::tags::cap_allocations(crate::tags::MAX_TAG_ITEM_BYTES);
     // by content, not by extension: the part file being tagged has none

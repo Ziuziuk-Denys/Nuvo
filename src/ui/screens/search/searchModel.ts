@@ -15,7 +15,6 @@ export const GROUP_KIND: Record<GroupKey, SearchKind> = {
   playlists: "playlist",
 };
 
-/** How many rows each group shows under All; a filter tab shows its whole group. */
 export const ALL_CAPS: Record<GroupKey, number> = { songs: 6, albums: 4, artists: 4, playlists: 4 };
 
 export interface SearchGroups {
@@ -26,10 +25,6 @@ export interface SearchGroups {
   playlists: SearchResult[];
 }
 
-/**
- * All: the first hit is the top result and the rest fill capped groups, the top result left out of
- * its own group. A filter: that group only, uncapped.
- */
 export function groupResults(all: readonly SearchResult[], filter: SearchFilter): SearchGroups {
   const groups: SearchGroups = { songs: [], albums: [], artists: [], playlists: [] };
   const top = filter === "all" ? all[0] : undefined;
@@ -44,7 +39,6 @@ export function groupResults(all: readonly SearchResult[], filter: SearchFilter)
 
 export const LOCAL_SEARCH_LIMIT = 6;
 
-/** The same song streamed and as a file: folded title without a bracketed tag, and the first artist. */
 function songKey(result: SearchResult): string {
   const title = normalizeForSearch(result.title.replace(/[([][^)\]]*[)\]]/g, " "))
     .replace(/[^\p{L}\p{N}]+/gu, " ")
@@ -55,7 +49,6 @@ function songKey(result: SearchResult): string {
   return `${title}|${artist}`;
 }
 
-/** 0 for the exact title, 1 for a title that starts with the query, 2 for the rest. */
 function matchRank(result: SearchResult, query: string): number {
   const title = normalizeForSearch(result.title);
   const wanted = normalizeForSearch(query);
@@ -64,11 +57,6 @@ function matchRank(result: SearchResult, query: string): number {
   return title.startsWith(wanted) ? 1 : 2;
 }
 
-/**
- * Files on this computer join the songs once each: a streamed copy of a song the user has as a file
- * is dropped, and the songs are ordered by how well the title matches, a file first only on a tie.
- * A leading artist, album or playlist stays where it was.
- */
 export function withLocalFiles(results: readonly SearchResult[], files: readonly SearchResult[], filter: SearchFilter, query = ""): SearchResult[] {
   if (files.length === 0 || (filter !== "all" && filter !== "songs")) return [...results];
   const ids = new Set(files.map((file) => file.id));
@@ -93,7 +81,6 @@ export interface LocalPlaylist {
   coverUrl: string;
 }
 
-/** Offline search: liked songs by title, artist or album, and your playlists by name, with the same folding. */
 export function localResults(query: string, liked: readonly Track[], playlists: readonly LocalPlaylist[]): SearchResult[] {
   const words = normalizeForSearch(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];

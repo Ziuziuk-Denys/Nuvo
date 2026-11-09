@@ -7,23 +7,17 @@ export interface TextFieldProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  /** The accessible name; kept off screen, the placeholder shows the intent. */
   label: string;
   size?: "m" | "l";
   autoFocus?: boolean;
   maxLength?: number;
-  /** Given, a clear button appears while there is a value. */
   onClear?: () => void;
-  /** Extra controls at the right end, after the clear button. */
   trailing?: ReactNode;
-  /** Called on Enter. */
   onSubmit?: () => void;
-  /** No tint of its own, for a field whose panel is the surface: the command palette. */
   bare?: boolean;
   type?: "text" | "password";
 }
 
-/** A borderless tint field. The focus ring wraps the whole field, the clear button included. */
 export function TextField({
   value,
   onChange,

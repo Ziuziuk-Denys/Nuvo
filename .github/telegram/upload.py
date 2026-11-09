@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""
-Upload Nuvo release files to Telegram as the main bot, up to 2 GB each, and record them in the bot.
-
-For each file:
-1. Upload it over MTProto, logged in as the bot itself, into the maintainer's private chat.
-   No second bot, no channel, no logOut: the Bot API webhook keeps running.
-2. Forward that message with the Bot API. The forwarded copy carries the file id in Bot API form,
-   which MTProto does not give.
-3. Delete the forwarded copy. The original stays in the chat as the maintainer's archive.
-4. Post the file id to the bot's /upload route, which stores it like a file sent by hand.
-
-Environment: BOT_TOKEN, TG_API_ID, TG_API_HASH, ADMIN_ID, UPLOAD_SECRET, WORKER_URL, optional ADMIN_LANG (en or ru).
-Usage: python upload.py <tag> <file>...
-"""
+"""Usage: upload.py <tag> <file>..."""
 
 import asyncio
 import hashlib
@@ -24,8 +11,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-# The same reading as bot/src/release.ts: release names Nuvo-<version>-<os>-<arch>.<ext>, where Linux spells the
-# processor per format (x86_64, amd64, aarch64), plus the older Nuvo-<version>.AppImage and nuvo_<version>_amd64.deb
+# Must match bot/src/release.ts: Nuvo-<version>-<os>-<arch>.<ext> plus older AppImage and deb
 NAME = re.compile(
     r"^Nuvo-(\d+\.\d+\.\d+(?:-(?:alpha|beta|rc|pre|dev)(?:\.?\d+)*)?)-(linux|win|mac)-(x64|x86_64|amd64|arm64|aarch64|ia32|armv7l|universal)\.(AppImage|deb|rpm|exe|dmg|zip)$",
     re.IGNORECASE,
@@ -76,12 +62,10 @@ def post_json(url, payload, headers, opener):
     try:
         return status, json.loads(raw or b"null")
     except ValueError:
-        # Not JSON, for example an error page in front of the Worker: keep the start of it for the log
         return status, {"ok": False, "description": raw[:200].decode("utf-8", "replace")}
 
 
 class BotApi:
-    """The HTTP Bot API. Errors name the method, never the token."""
 
     def __init__(self, token, opener=urllib.request.urlopen):
         self.token = token
@@ -122,8 +106,7 @@ async def run(client, bot, record, admin_id, tag, paths, lang="en"):
         raise SystemExit("No release files matched")
 
     notice = bot.call("sendMessage", chat_id=admin_id, text=f"Uploading Nuvo {tag}: {len(files)} files", disable_notification=True)
-    # A fresh session has no access hash for the maintainer. Reading the bot's own notice by id
-    # (messages.getMessages, allowed for bots, needs no peer in private chats) returns the user with it
+    # A fresh session has no access hash for the maintainer; fetching the notice by id returns it
     await client.get_messages(None, ids=[notice["message_id"]])
     peer = await client.get_input_entity(admin_id)
 

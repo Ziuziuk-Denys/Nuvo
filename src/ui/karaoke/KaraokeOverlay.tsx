@@ -3,7 +3,6 @@ import { Karaoke } from "./Karaoke";
 import { RISE_EASING, RISE_MS } from "./rise";
 import styles from "./KaraokeOverlay.module.css";
 
-/** Mounts the view below the window, lets it rise, and keeps it mounted until it has gone back down. */
 export function KaraokeOverlay({ open, onClose }: { open: boolean; onClose(): void }): JSX.Element | null {
   const [mounted, setMounted] = useState(open);
   const [raised, setRaised] = useState(open);

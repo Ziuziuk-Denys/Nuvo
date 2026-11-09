@@ -12,7 +12,6 @@ fn api(path: &str) -> String {
     format!("https://api-v2.soundcloud.com/{path}")
 }
 
-/// SoundCloud with a discoverable client id; `search` answers every track search.
 async fn soundcloud(search: Value) -> Fixture {
     let fx = Fixture::start().await;
     fx.on("https://soundcloud.com/", Reply::bytes("text/html", "<script src=\"https://a-v2.sndcdn.com/assets/app.js\"></script>"));
@@ -25,7 +24,6 @@ fn record(id: u64, title: &str, user: u64, artist: &str, duration: i64) -> Value
     json!({"id": id, "kind": "track", "title": title, "duration": duration, "user": {"id": user, "username": artist}})
 }
 
-/// Six related tracks by six different artists, ids `<from>00`..`<from>05`.
 fn related(from: u64) -> Value {
     json!({"collection": (0..6).map(|i| record(from * 100 + i, &format!("Near {i}"), 500 + i, &format!("Artist {i}"), 200_000)).collect::<Vec<_>>()})
 }

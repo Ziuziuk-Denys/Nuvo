@@ -3,8 +3,6 @@ import { soundActions, usePlayerSnapshot as usePlayerStore } from "./engineLink"
 import { autoPreamp, resolveProfile } from "./lib/eq";
 import { profileGains, useSoundStore } from "./store/soundStore";
 
-/** Artist key for profiles: the first listed artist. */
-// Structural so it fits both the mirrored snapshot and the old store
 export function selectArtist(state: { currentTrack: { artists?: string; artistList?: Array<{ name: string }> } | null }): string | null {
   const track = state.currentTrack;
   return track?.artistList?.[0]?.name ?? track?.artists?.split(",")[0]?.trim() ?? null;

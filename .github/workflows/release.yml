@@ -3,7 +3,6 @@ name: release
 on:
   push:
     tags: ["v*"]
-  # Builds every platform without publishing; the publish job runs for tags only.
   workflow_dispatch:
 
 permissions:
@@ -49,8 +48,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           toolchain: stable
-      # CycloneDX bills of materials: every npm package in the lockfile (the renderer bundles devDependencies)
-      # and every crate the daemon links
+      # Covers every npm package in the lockfile: the renderer bundles devDependencies
       - name: SBOM
         run: |
           pnpm sbom --sbom-format cyclonedx --lockfile-only > nuvo-npm.cdx.json
@@ -69,7 +67,7 @@ jobs:
     name: build (${{ matrix.name }})
     needs: prepare
     runs-on: ${{ matrix.runner }}
-    # Windows and macOS are not tested on real machines yet; their jobs may fail without blocking Linux.
+    # Windows and macOS are untested on real machines, so their jobs must not block Linux
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
@@ -161,7 +159,6 @@ jobs:
           BUILDER: ${{ matrix.builder }}
         run: pnpm exec electron-builder $BUILDER --publish never
 
-      # Signing is on only when the secrets exist. Without them the build is unsigned.
       - name: Package (Windows)
         if: matrix.os == 'windows'
         shell: bash
@@ -230,8 +227,7 @@ jobs:
           done
           rm -f "$key"
 
-      # Installers, their blockmaps and the update feeds. Both Windows jobs write latest.yml,
-      # so each keeps its own name here and the publish job joins them.
+      # Both Windows jobs write latest.yml, so each keeps its own name and publish joins them
       - name: Collect files
         shell: bash
         env:
@@ -273,8 +269,7 @@ jobs:
           name: notes
           path: notes
 
-      # electron-updater asks for latest.yml (Windows, both arches in one file), latest-mac.yml,
-      # latest-linux.yml (x64) and latest-linux-arm64.yml
+      # electron-updater reads latest.yml, latest-mac.yml, latest-linux.yml and latest-linux-arm64.yml
       - name: Update feeds
         shell: bash
         run: |

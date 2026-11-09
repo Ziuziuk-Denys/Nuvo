@@ -22,14 +22,10 @@ export interface ImportSheetProps {
   open: boolean;
   onClose(): void;
   actions: ImportActions;
-  /** A link handed over by search or the Add to playlist sheet: read at once. */
   initialLink?: string;
-  /** The tab to open on, such as File for "Import a file" next to a Spotify link. */
   initialMode?: ImportMode;
-  /** A fixed target, such as "Import into this playlist"; otherwise the person picks one. */
   target?: ImportTarget;
   onStarted?(summaries: ImportSummary[]): void;
-  /** A line under the started state, such as "Added to playlist: {title}". */
   note?: string | null;
   onOpenReport(importId: string): void;
 }
@@ -37,11 +33,9 @@ export interface ImportSheetProps {
 const PREVIEW_ROWS = 5;
 const FILE_TYPES = ".csv,.json,.m3u,.m3u8";
 
-/** Import from a link, SoundCloud likes or a file: read, preview, then post. */
 export function ImportSheet({ open, onClose, actions, initialLink, initialMode, target, onStarted, note, onOpenReport }: ImportSheetProps): JSX.Element | null {
   const { t } = useTranslation();
   const [mode, setMode] = useState<ImportMode>(initialMode ?? "link");
-  // the link and the likes name are different things: each tab keeps its own text
   const [texts, setTexts] = useState<Record<"link" | "likes", string>>({
     link: initialLink ?? "",
     likes: "",
@@ -59,7 +53,6 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
     reading.current = null;
   };
 
-  /** Starts a listing; the caller has already shown the listing state. */
   const start = (value: string, as: ImportMode) => {
     stopReading();
     const controller = new AbortController();

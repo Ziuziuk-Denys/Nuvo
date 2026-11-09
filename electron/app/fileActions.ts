@@ -1,7 +1,4 @@
-/**
- * What the folder, reveal, save, export and recognize channels do once a payload passed its check. Paths come from native
- * dialogs, or from the preload reading a File the user picked or dropped; a page never names one.
- */
+// Paths come from native dialogs or user-picked files read by the preload; a page never names one
 import path from "node:path";
 import type { AddFolderResult } from "../../src/shell/nuvoShell";
 import { type CoreAnswer, coreError } from "./coreCall";
@@ -10,9 +7,7 @@ import { documentName, LOCAL_ID, validateSaveDocument, validateSaveFiles } from 
 
 export interface FileActionDeps {
   call(method: string, route: string, body?: unknown): Promise<CoreAnswer>;
-  /** An open-folder dialog; null when the user closed it. */
   pickFolder(title: string, defaultPath: string): Promise<string | null>;
-  /** A save dialog; null when the user closed it. */
   pickSavePath(title: string, defaultPath: string): Promise<string | null>;
   musicDir(): string;
   documentsDir(): string;
@@ -25,7 +20,6 @@ export interface FileActionDeps {
 const DOWN = "nuvo-core is not running";
 
 export function createFileActions(deps: FileActionDeps) {
-  // the daemon being down or answering oddly is a message for the page, never an unhandled rejection
   const ask = async (method: string, route: string, body?: unknown): Promise<CoreAnswer | null> => {
     try {
       return await (body === undefined ? deps.call(method, route) : deps.call(method, route, body));

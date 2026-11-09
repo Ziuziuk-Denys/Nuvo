@@ -1,4 +1,3 @@
-/** The Statistics page's pure rules: ranges, buckets, words for time, and when a chart has enough to show. */
 import type { TFunction } from "../../ports/i18n";
 import type { StatsDay, StatsDays, StatsOverview } from "../../ports/stats";
 
@@ -8,7 +7,6 @@ export const RANGE_KEYS: readonly RangeKey[] = ["week", "month", "year", "all", 
 const ROLLING_DAYS: Partial<Record<RangeKey, number>> = { week: 7, month: 30, year: 365 };
 const DAY_MS = 86_400_000;
 const CALENDAR_WEEKS = 53;
-/** A chart needs this much to say something; with less the page says it in words. */
 export const MIN_CHART_DAYS = 3;
 export const MIN_CHART_BUCKETS = 3;
 export const MIN_CALENDAR_DAYS = 7;
@@ -23,7 +21,6 @@ export const DAY_PARTS: readonly { part: DayPart; from: number; to: number }[] =
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
-/** `YYYY-MM-DD` of a local date. */
 export function isoDate(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
@@ -44,7 +41,6 @@ export function daysBetween(from: string, to: string): number {
   return Math.round((dateOf(to).getTime() - dateOf(from).getTime()) / DAY_MS);
 }
 
-/** The days a range asks the daemon for; rolling ranges end today, so the previous period is the same length. */
 export function rangeDays(key: RangeKey, today: string, custom: { from: string; to: string } | null): StatsDays {
   if (key === "custom") return custom ?? {};
   const days = ROLLING_DAYS[key];
@@ -73,7 +69,6 @@ export function formatInstant(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
 }
 
-/** Percent change, whole; null when there is nothing to compare with. */
 export function change(now: number, before: number | undefined): number | null {
   if (before === undefined || before <= 0) return null;
   return Math.round(((now - before) / before) * 100);
@@ -82,13 +77,11 @@ export function change(now: number, before: number | undefined): number | null {
 export interface Bucket {
   key: string;
   label: string;
-  /** What the readout says about this bucket. */
   title: string;
   listenedMs: number;
   plays: number;
 }
 
-/** Up to about 60 columns: days for a month, weeks for a season, months for years. */
 export function buckets(days: readonly StatsDay[], from: string, to: string, locale: string): Bucket[] {
   const span = daysBetween(from, to) + 1;
   const byDay = new Map(days.map((day) => [day.day, day]));
@@ -136,7 +129,6 @@ export function buckets(days: readonly StatsDay[], from: string, to: string, loc
   return [...months.values()];
 }
 
-/** Sunday in English, Monday in Russian. */
 export function firstWeekday(locale: string): number {
   return locale === "ru" ? 1 : 0;
 }
@@ -145,12 +137,10 @@ export interface CalendarCell {
   day: string;
   listenedMs: number;
   plays: number;
-  /** 0 is silence; 1 to 4 are quartiles of the listening days. */
   level: number;
   inRange: boolean;
 }
 
-/** Columns of seven days, up to the week holding `to`. */
 export function calendarWeeks(days: readonly StatsDay[], to: string, from: string | null, locale: string): CalendarCell[][] {
   const byDay = new Map(days.map((day) => [day.day, day]));
   const sorted = days
@@ -182,7 +172,6 @@ export function calendarWeeks(days: readonly StatsDay[], to: string, from: strin
   return weeks;
 }
 
-/** Share of the time in each part of the day, 0 to 1. */
 export function dayProfile(byHour: readonly number[]): { part: DayPart; share: number; ms: number }[] {
   const total = byHour.reduce((sum, ms) => sum + ms, 0);
   return DAY_PARTS.map(({ part, from, to }) => {
@@ -199,14 +188,12 @@ export const filled = (values: readonly number[]): number => values.filter((valu
 
 export type Fullness = "never" | "silent" | "first" | "full";
 
-/** Never played; a range with nothing in it; the first days; a history. */
 export function fullness(stats: StatsOverview): Fullness {
   if (!stats.firstPlayedAt) return "never";
   if (stats.totals.listenedMs === 0) return "silent";
   return stats.calendar.filter((day) => day.plays > 0).length < MIN_CALENDAR_DAYS ? "first" : "full";
 }
 
-/** Weekday names in a locale's order, as `[weekday index, name]`. */
 export function weekdays(locale: string): [number, string][] {
   const first = firstWeekday(locale);
   // 2 January 2028 is a Sunday

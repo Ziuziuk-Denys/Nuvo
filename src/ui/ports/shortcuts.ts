@@ -1,4 +1,3 @@
-/** The command registry for the UI: in-app keys, global keys from main, Escape order, and the bindings the settings screen edits. */
 import { useSyncExternalStore } from "react";
 import { CORE_BASE_URL } from "@/data/core/request";
 import { formatKeycaps, type Keycap } from "@/data/shortcuts/accelerator";
@@ -15,7 +14,6 @@ import { isEscapeGuarded } from "./escape";
 
 export type { ShellShortcutOptions } from "@/data/shortcuts/useShellShortcuts";
 
-// without the engine every player command is disabled
 function engine() {
   try {
     return player();
@@ -80,7 +78,6 @@ export const shortcuts = createShortcuts({
 
 const hasTrack = () => playerControls.hasTrack();
 
-/** Shell keys: search, queue and lyrics commands, Escape order and the in-app key listener. */
 export function useAppShortcuts(options: ShellShortcutOptions): void {
   useShellShortcuts(shortcuts, options, hasTrack);
 }
@@ -95,7 +92,6 @@ shortcuts.registry.subscribe(() => {
 const watchBindings = (listener: () => void) => shortcuts.registry.subscribe(listener);
 const readVersion = () => bindingsVersion;
 
-/** Re-renders on every binding change and returns the effective binding of a command, null when it has none. */
 export function useShortcutBindings(): (id: string, scope: Scope) => string | null {
   useSyncExternalStore(watchBindings, readVersion, readVersion);
   return (id, scope) => shortcuts.registry.bindingFor(id, scope);
@@ -111,15 +107,12 @@ export const resetAllShortcuts = () => shortcuts.registry.resetAllBindings();
 const watchRecorder = (listener: () => void) => shortcuts.recorder.subscribe(listener);
 const readRecorder = () => shortcuts.recorder.state;
 
-/** Idle, or the command being recorded with the held modifiers and the last refusal. */
 export function useRecorderState(): RecorderState {
   return useSyncExternalStore(watchRecorder, readRecorder, readRecorder);
 }
 
-/** While recording, app keys are off; recording a global binding also releases main's grabs. */
 export const startRecording = (id: string, scope: Scope) => shortcuts.recorder.start(id, scope);
 export const stopRecording = () => shortcuts.recorder.stop();
-/** A key while recording: Escape cancels, a valid free combination is saved, anything else is refused with a reason. True while still recording. */
 export function recordKey(event: KeyboardEvent): boolean {
   shortcuts.recorder.key(event);
   return shortcuts.recorder.recording;
@@ -127,7 +120,6 @@ export function recordKey(event: KeyboardEvent): boolean {
 
 const platform = typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent) ? "mac" : "other";
 
-/** Ctrl, Alt, Shift, Super on Linux and Windows; the symbols on macOS. */
 export function shortcutKeycaps(accelerator: string): Keycap[] {
   return formatKeycaps(accelerator, platform);
 }

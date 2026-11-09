@@ -3,7 +3,7 @@ import { CUSTOM_PREFIX, useAppearanceStore } from "../../ports/appearance";
 import { useTranslation } from "../../ports/i18n";
 import { useModalStore } from "../../ports/navigation";
 
-/** Inline styles from constants: custom CSS is off in safe mode, and the banner must not depend on any sheet it could reach. Colours are the built-in preset's tokens, which safe mode always uses. */
+// Inline styles: custom CSS is off in safe mode, so the banner must not depend on any sheet
 const BANNER: CSSProperties = {
   position: "fixed",
   insetInline: 0,
@@ -37,12 +37,10 @@ const BUTTON: CSSProperties = {
 
 const PRIMARY: CSSProperties = { ...BUTTON, background: "var(--n-ink)", color: "var(--n-field)" };
 
-/** Shown while safe mode keeps a saved custom look switched off (customization 6.1). Mounted once, next to Settings. */
 export function SafeModeBanner(): JSX.Element | null {
   const { t } = useTranslation();
   const safe = useAppearanceStore((s) => s.safe);
   const saved = useAppearanceStore((s) => s.saved);
-  // Settings says the same in its reset row; a floating banner there would cover its header
   const settingsOpen = useModalStore((s) => s.settingsOpen);
   const custom =
     saved.active.presetId.startsWith(CUSTOM_PREFIX) || saved.customCss.enabled || saved.fonts.ui.kind !== "default" || saved.fonts.lyrics.kind !== "default";

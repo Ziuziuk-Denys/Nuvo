@@ -1,4 +1,3 @@
-/** Signed-in TV playback over SABR. */
 import { COBALT_UA, TVHTML5, UA_HEADER } from "../constants";
 import type { FetchLike, Innertube } from "../http";
 import { YtError, abortError } from "../types";
@@ -9,7 +8,6 @@ import { raceAbort, type WorkerBridge } from "./worker";
 
 const CPN_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-/** A client playback nonce: 16 characters from the URL-safe alphabet. */
 export function newCpn(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   return Array.from(bytes, (byte) => CPN_ALPHABET[byte & 63]).join("");
@@ -38,7 +36,6 @@ export interface SabrHandle {
 
 export type StartSabr = (config: SabrConfig) => Promise<SabrHandle>;
 
-/** https on a *.googlevideo.com host, default port, no credentials. */
 export function isGooglevideoUrl(url: URL): boolean {
   return url.protocol === "https:" && url.hostname.endsWith(".googlevideo.com") && url.port === "" && url.username === "" && url.password === "";
 }
@@ -54,7 +51,6 @@ const STREAMER_CLIENT = {
   osName: "Unknown_0",
 };
 
-/** Fetch for SABR: every request body gets the TV device fields merged into its client info, and the Cobalt agent. */
 export function sabrFetch(
   fetchFn: FetchLike,
   codec: {
@@ -95,7 +91,6 @@ async function followWithinGooglevideo(fetchFn: FetchLike, input: string, init: 
   }
 }
 
-/** googlevideo's `SabrStream`, loaded on the first signed-in track only. */
 export const startSabr: StartSabr = async (config) => {
   const [{ SabrStream }, { buildSabrFormat, EnabledTrackTypes }, { VideoPlaybackAbrRequest }, { base64ToU8 }] = await Promise.all([
     import("googlevideo/sabr-stream"),

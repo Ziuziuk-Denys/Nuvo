@@ -1,6 +1,3 @@
-//! The SoundCloud API client: public `client_id` discovery (single flight, retried once on 401 or
-//! 403), at most 4 API requests at a time, `Retry-After` honoured once, and a 10-minute record cache.
-
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -20,7 +17,6 @@ const RECORD_CAP: usize = 500;
 const API_MAX_BYTES: usize = 5 * 1024 * 1024;
 const SCRIPT_MAX_BYTES: usize = 8 * 1024 * 1024;
 
-/// Every host the module contacts; anything else is refused, redirects included.
 pub fn host_allowed(host: &str) -> bool {
     matches!(
         host,
@@ -121,7 +117,6 @@ impl SoundCloud {
         }
     }
 
-    /// A previously stored id; used until SoundCloud rejects it.
     pub fn set_client_id(&self, id: Option<String>) {
         *self.inner.client_id.lock().unwrap() = id;
     }
@@ -130,7 +125,6 @@ impl SoundCloud {
         self.inner.client_id.lock().unwrap().clone()
     }
 
-    /// Called with every newly discovered id, so the daemon can store it.
     pub fn on_client_id(&self, persist: impl Fn(&str) + Send + Sync + 'static) {
         *self.inner.persist.lock().unwrap() = Some(Arc::new(persist));
     }
@@ -150,8 +144,7 @@ impl SoundCloud {
         self.rediscover(None).await
     }
 
-    /// Single flight: concurrent callers wait for one discovery. `rejected` is the id SoundCloud
-    /// just refused; it is forgotten only if it is still the current one.
+    // rejected is forgotten only if it is still the current id
     async fn rediscover(&self, rejected: Option<&str>) -> Result<String, ScError> {
         let _flight = self.inner.discovery.lock().await;
         if let Some(last) = *self.inner.last_failure.lock().unwrap()
@@ -201,7 +194,6 @@ impl SoundCloud {
         None
     }
 
-    /// One API GET. `path` is relative to the API base or an absolute URL (`next_href`).
     pub(crate) async fn api(&self, path: &str, params: &[(&str, String)]) -> Result<Value, ScError> {
         let base = Url::parse(API_URL).unwrap();
         let url = base.join(path).map_err(|e| ScError::Upstream(e.to_string()))?;
@@ -231,7 +223,6 @@ impl SoundCloud {
                 429 => return Err(ScError::RateLimited),
                 status if !(200..300).contains(&status) => return Err(ScError::Status(status)),
                 _ => {
-                    // A success confirms the id it used.
                     *self.inner.client_id.lock().unwrap() = Some(id);
                     let value: Value = serde_json::from_slice(&response.body).unwrap_or(Value::Null);
                     if !(value.is_object() || value.is_array()) {
@@ -248,7 +239,6 @@ impl SoundCloud {
         self.inner.net.get(url, &self.fetch(API_MAX_BYTES, self.inner.limits.api_timeout, "application/json")).await.map_err(ScError::from)
     }
 
-    /// A record read through the 10-minute cache.
     pub(crate) async fn record(&self, path: &str, params: &[(&str, String)]) -> Result<Value, ScError> {
         let key = format!("{path}?{params:?}");
         if let Some(hit) = self.inner.records.lock().unwrap().get(&key) {
@@ -260,7 +250,6 @@ impl SoundCloud {
     }
 }
 
-/// Sets `params` (replacing existing values) and then `client_id`, last.
 fn with_params(url: &Url, params: &[(&str, String)], client_id: &str) -> Url {
     let mut url = url.clone();
     let kept: Vec<(String, String)> = url
@@ -282,7 +271,6 @@ fn with_params(url: &Url, params: &[(&str, String)], client_id: &str) -> Url {
     url
 }
 
-/// Script URLs on the asset host, in page order; `//host/...` becomes `https://host/...`.
 pub fn script_urls(html: &str) -> Vec<String> {
     let mut found: Vec<String> = Vec::new();
     let mut from = 0;
@@ -303,7 +291,6 @@ pub fn script_urls(html: &str) -> Vec<String> {
     found
 }
 
-/// `client_id:"<32 alphanumerics>"` or `client_id="..."`, spaces allowed around the operator.
 pub fn find_client_id(script: &str) -> Option<String> {
     let mut from = 0;
     while let Some(at) = script[from..].find("client_id").map(|i| from + i) {

@@ -25,7 +25,6 @@ async fn evaluate_decides_without_the_network() {
     assert_eq!(answer, json!({"status": "pending", "reason": "low_confidence_match"}));
 }
 
-/// The blank-title rule.
 #[tokio::test]
 async fn oversized_and_blank_requests_are_refused() {
     let core = common::core();
@@ -48,7 +47,6 @@ async fn next_asks_for_the_third_search() {
     assert_eq!((status, answer), (StatusCode::OK, json!({"status": "search", "query": "Teardrop", "filter": "songs"})));
 }
 
-/// A remembered source answers at step 1 without asking for a search.
 #[tokio::test]
 async fn a_matched_source_is_remembered() {
     let core = common::core();

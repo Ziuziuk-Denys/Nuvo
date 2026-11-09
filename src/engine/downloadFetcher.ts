@@ -1,4 +1,3 @@
-/** Saves wait for audio the cache does not hold: this caches it, one track at a time, while a save runs. No polling when idle. */
 import { fromSnapshot } from "./snapshot";
 import type { Track } from "./types";
 
@@ -18,7 +17,6 @@ export class DownloadFetcher {
 
   constructor(private readonly deps: DownloadFetcherDeps) {}
 
-  /** After a save starts, and once at boot to resume saves from the last session. */
   kick(): void {
     if (this.disposed || this.running) return;
     this.running = this.loop().finally(() => {
@@ -38,7 +36,6 @@ export class DownloadFetcher {
     return body.items?.length ? fromSnapshot(body.items[0]) : null;
   }
 
-  /** True when the daemon took the give-up; false ends the loop so a broken daemon is not hammered. */
   private async giveUp(id: string): Promise<boolean> {
     const response = await this.deps.fetch(`${this.deps.base}/v1/downloads/items/${encodeURIComponent(id)}/failed`, {
       method: "POST",
@@ -51,7 +48,6 @@ export class DownloadFetcher {
     try {
       let last: string | null = null;
       for (let item = await this.next(); item && !this.disposed; item = await this.next()) {
-        // listed again right after it was cached: the daemon cannot use it, so stop trying
         const again = item.id === last;
         last = item.id;
         let cached = false;
@@ -63,7 +59,6 @@ export class DownloadFetcher {
           });
         }
         if (this.disposed) return;
-        // the daemon writes cached tracks itself; one that cannot be fetched is given up so the save finishes
         if (!cached && !(await this.giveUp(item.id))) return;
       }
     } catch (error) {

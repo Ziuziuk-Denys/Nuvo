@@ -25,7 +25,6 @@ fn seeks_before_the_input_and_writes_raw_stereo_16k() {
     let args = strings(decode_args(&Input::Remote(&remote), 1_500, Some(12_000), None));
     assert_eq!(args[4..16], ["-headers", "Referer: https://www.tiktok.com/\r\n", "-ss", "1.500", "-t", "12.000", "-protocol_whitelist", "http,https,tcp,tls,crypto", "-max_redirects", "0", "-i", "https://cdn/a.m4a"]);
 
-    // Proxy is passed via environment, not in argv
     let proxied = strings(decode_args(&Input::Remote(&remote), 0, None, Some("http://user:pass@10.0.0.2:3128")));
     assert_eq!(proxied[8..12], ["-protocol_whitelist", "http,https,tcp,tls,crypto", "-max_redirects", "0"]);
     assert!(!proxied.contains(&"user".to_string()), "no credentials in argv");
@@ -54,7 +53,6 @@ fn ffmpeg() -> Option<PathBuf> {
     Tools::discover().ffmpeg
 }
 
-/// 16-bit PCM WAV: `left` and `right` as functions of the sample index.
 fn write_wav(path: &Path, rate: u32, seconds: u32, left: impl Fn(u32) -> i16, right: impl Fn(u32) -> i16) {
     let frames = rate * seconds;
     let mut bytes = Vec::with_capacity(44 + frames as usize * 4);

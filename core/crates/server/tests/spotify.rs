@@ -29,7 +29,6 @@ async fn list(core: &common::TestCore, url: &str) -> (StatusCode, Value) {
     common::call(&core.app, "GET", &format!("{}?{}", route.path(), route.query().unwrap()), None).await
 }
 
-/// A recorded embed page with its first song repeated up to `count` entries.
 fn long_embed(page: &str, count: usize) -> String {
     let open = page.find("application/json\">").unwrap() + "application/json\">".len();
     let close = page.rfind("</script>").unwrap();
@@ -43,7 +42,6 @@ fn long_playlist(count: usize) -> String {
     long_embed(PLAYLIST, count)
 }
 
-/// The page the request asked for, cut from a recorded query answer for a list of `total` entries.
 fn query_page(hit: &Hit, total: usize) -> Reply {
     let asked: Value = serde_json::from_slice(&hit.body).unwrap();
     let offset = asked["variables"]["offset"].as_u64().unwrap() as usize;
@@ -74,7 +72,6 @@ async fn a_playlist_link_lists_its_songs_from_the_embed_page() {
     assert_eq!(body["rows"][0], json!({"title": "Dreams - 2004 Remaster", "artists": ["Fleetwood Mac"], "durationMs": 257800}));
     assert_eq!(body["rows"][3]["artists"], json!(["Queen", "David Bowie"]));
     assert!(body.get("partial").is_none());
-    // a short playlist never needs the page with the count
     assert_eq!(fx.log(), [format!("open.spotify.com/embed/playlist/{ID}")]);
 }
 
@@ -200,7 +197,6 @@ async fn a_long_playlist_is_read_to_the_end_with_the_embed_token() {
     assert_eq!(header("authorization"), "Bearer redacted");
     assert!(header("user-agent").starts_with("Mozilla/5.0"));
     assert!(header("cookie").is_empty());
-    // a complete list never needs the page with the count
     assert_eq!(fx.count(&format!("https://open.spotify.com/playlist/{ID}")), 0);
     assert!(fx.hits(&embed("playlist", ID))[0].headers["user-agent"].to_str().unwrap().starts_with("Mozilla/5.0"));
 }
@@ -264,7 +260,6 @@ async fn any_failure_past_the_embed_keeps_its_songs_with_the_notice() {
         assert_eq!(status, StatusCode::OK, "{case}");
         assert_eq!(body["rows"].as_array().unwrap().len(), 100, "{case}");
         assert_eq!((body["partial"].as_bool(), body["total"].as_u64()), (Some(true), Some(200)), "{case}");
-        // a 429 is asked again three times before giving up; nothing else is retried or followed
         assert_eq!(fx.count(QUERY_URL), if case == "limited" { 4 } else { 1 }, "{case}");
         assert_eq!(fx.count("https://api-partner.spotify.com/elsewhere"), 0, "{case}");
     }
@@ -297,7 +292,6 @@ async fn an_embed_without_a_token_or_an_album_that_fails_still_imports() {
     let (_, body) = list(&core, &format!("https://open.spotify.com/playlist/{ID}")).await;
     assert_eq!((body["rows"].as_array().unwrap().len(), body["partial"].as_bool()), (100, Some(true)));
     assert_eq!(fx.count(QUERY_URL), 0);
-    // an album page names no count, so a full album embed warns without one
     let (status, body) = list(&core, &format!("https://open.spotify.com/album/{ALBUM_ID}")).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!((body["rows"].as_array().unwrap().len(), body["partial"].as_bool(), body.get("total")), (100, Some(true), None));

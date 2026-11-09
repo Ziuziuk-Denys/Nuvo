@@ -11,7 +11,6 @@ use nuvo_store::StoreError;
 pub enum ApiError {
     NotFound(String),
     Invalid(String),
-    /// A cover address on a host off the allow-list.
     Forbidden(String),
     Conflict(String),
     Locked,
@@ -19,17 +18,12 @@ pub enum ApiError {
     Unauthorized,
     TooLarge,
     TooManyRequests,
-    /// A third-party service (Last.fm) failed or could not be reached.
     Upstream(String),
     UpstreamTimeout,
-    /// A service page no longer has the shape Nuvo reads.
     SourceChanged,
     RateLimited,
-    /// SoundCloud's web client id cannot be discovered.
     ScUnavailable,
-    /// The track exists but cannot be played; the reason lets the player fall back.
     Unplayable(&'static str),
-    /// A local file the player cannot decode (ALAC, an exotic WAV, an unreadable file).
     Unsupported(String),
     Internal(String),
 }

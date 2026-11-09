@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 export type CoreStatus = "starting" | "ready" | "restarting" | "failed";
 
-/** Daemon state reported by Electron main. Outside Electron (tests) there is nothing to wait for. */
 export function useCoreStatus(): CoreStatus {
   const [status, setStatus] = useState<CoreStatus>(() => (window.nuvoElectron?.onCoreStatus ? "starting" : "ready"));
 

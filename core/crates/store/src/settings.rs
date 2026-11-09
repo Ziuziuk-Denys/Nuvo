@@ -12,21 +12,15 @@ pub const LASTFM_SESSION_KEY: &str = "lastfm_session_key";
 pub const LASTFM_USER: &str = "lastfm_user";
 pub const LASTFM_ENABLED: &str = "lastfm_enabled";
 pub const LASTFM_LAST_ERROR: &str = "lastfm_last_error";
-/// The song an "Add to playlist from a link" import still has to add; null once done.
 pub const IMPORT_PENDING_TRACK: &str = "import.pendingTrack";
 pub const YOUTUBE_SESSION: &str = "youtube_session";
 pub const YOUTUBE_PREFERENCES: &str = "youtube_preferences";
-/// `{ "id": <client_id>, "foundAt": <unix ms> }`, the discovered SoundCloud web client id.
 pub const SOUNDCLOUD_CLIENT_ID: &str = "soundcloud_client_id";
-/// The user's key bindings: only the differences from the defaults.
 pub const SHORTCUTS: &str = "shortcuts";
-/// `{ "endpoint": "http://127.0.0.1:<port>", "model": <name> }`, the local model that translates lyrics.
 pub const LYRICS_TRANSLATOR: &str = "lyrics_translator";
 
-/// True while Statistics collects nothing: new plays are not stored.
 pub const STATS_PAUSED: &str = "stats.paused";
 
-/// Customization (fonts and theme editor design 3); shapes in `nuvo_contracts::Appearance`.
 pub const APPEARANCE_THEMES: &str = "appearance.themes";
 pub const APPEARANCE_ACTIVE: &str = "appearance.active";
 pub const APPEARANCE_FONTS: &str = "appearance.fonts";

@@ -1,4 +1,3 @@
-/* Recognize: the Library's title, then one panel and the history, both 660 px wide and centred like Search. */
 .page {
   display: flex;
   flex-direction: column;
@@ -18,7 +17,6 @@
   letter-spacing: -0.025em;
 }
 
-/* the Search panel's tone; a file over it deepens the tone, never a line */
 .panel {
   border-radius: 12px;
   background: color-mix(in srgb, var(--n-ink) 5%, transparent);
@@ -59,7 +57,6 @@
     opacity 350ms var(--n-ease-out);
 }
 
-/* audio is being read: the bars breathe in a slow run from the left */
 .wave[data-live] i {
   opacity: 0.5;
   animation: breathe 1400ms var(--n-ease-out) infinite alternate;
@@ -107,7 +104,6 @@
   margin-top: 4px;
 }
 
-/* the link form takes the buttons' place: the field grows, the two buttons keep their size */
 .linkForm {
   display: flex;
   align-items: center;
@@ -170,10 +166,7 @@
   padding-top: 16px;
 }
 
-/*
- * The quieter actions get a line of their own under Play, so longer labels (Russian) never run out of the card.
- * Text buttons pad 16 px; pulling the line out by 16 starts the first label on the column's edge.
- */
+/* Text buttons pad 16 px; pulling the line out by 16 starts the first label on the edge */
 .links {
   display: flex;
   flex-wrap: wrap;

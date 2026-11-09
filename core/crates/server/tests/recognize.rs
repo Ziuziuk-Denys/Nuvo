@@ -22,7 +22,6 @@ struct Mock {
     delay: Duration,
 }
 
-/// Local Shazam: answers `replies` in order, then "no match"; each answer takes `delay`.
 async fn mock_shazam(replies: Vec<Value>, delay: Duration) -> (String, Arc<AtomicUsize>) {
     let mock = Mock { replies: Arc::new(Mutex::new(replies.into())), hits: Arc::default(), delay };
     let hits = mock.hits.clone();
@@ -51,7 +50,6 @@ fn found() -> Value {
     })
 }
 
-/// Stereo WAV at 16 kHz: a pulsed 1 kHz tone on the left, a pulsed 2.5 kHz tone on the right.
 fn write_wav(path: &Path, seconds: u32) {
     let rate = 16_000u32;
     let frames = rate * seconds;
@@ -79,7 +77,6 @@ fn write_wav(path: &Path, seconds: u32) {
     std::fs::write(path, bytes).unwrap();
 }
 
-/// A core whose "system audio" is a generated clip of `seconds`, with Shazam at `shazam`.
 fn boot_clip(shazam: &str, seconds: u32) -> common::TestCore {
     let dir = tempfile::tempdir().unwrap();
     let wav = dir.path().join("clip.wav");
@@ -90,7 +87,6 @@ fn boot_clip(shazam: &str, seconds: u32) -> common::TestCore {
     })
 }
 
-/// Splits an SSE body on "\n\n" and keeps the JSON of `data:` lines, as the renderer will.
 fn events(body: &[u8]) -> Vec<Value> {
     String::from_utf8(body.to_vec())
         .unwrap()
@@ -260,8 +256,7 @@ async fn tools_route_reports_versions_or_null() {
     assert!(tools["ytDlp"].is_string() || tools["ytDlp"].is_null());
 }
 
-/// Real network, real Shazam, real yt-dlp. Run by hand:
-/// `cargo test -p nuvo-server --test recognize -- --ignored --nocapture`
+// Run by hand: cargo test -p nuvo-server --test recognize -- --ignored --nocapture
 #[tokio::test]
 #[ignore = "needs the network, yt-dlp and Shazam"]
 async fn live_youtube_link_is_recognized() {

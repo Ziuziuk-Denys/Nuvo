@@ -1,6 +1,3 @@
-//! Music folders: one loop scans them (only new and changed files are read with lofty), and
-//! inotify watchers ask it to rescan a folder once changes settle.
-
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock, RwLock, Weak};
@@ -28,7 +25,6 @@ const POLL_EVERY: Duration = Duration::from_secs(15 * 60);
 pub enum Msg {
     All,
     Root(i64),
-    /// From a watcher: waits for the burst of changes to settle.
     Changed(i64),
 }
 
@@ -49,7 +45,6 @@ impl LocalService {
     }
 }
 
-/// Queues work for the loop and starts the loop on first use.
 pub fn poke(state: &AppState, msg: Msg) {
     let tx = state.local.tx.get_or_init(|| {
         let (tx, rx) = mpsc::unbounded_channel();
@@ -86,7 +81,7 @@ async fn run(weak: Weak<Inner>, mut rx: mpsc::UnboundedReceiver<Msg>) {
         let settle = matches!(first, Msg::Changed(_));
         take(first);
         if settle {
-            // quiet time, but never more than five times it in all: a steady storm still gets scanned
+            // Wait for quiet time, but at most five times it: a steady storm still gets scanned
             let give_up = tokio::time::Instant::now() + debounce * 5;
             while let Ok(Some(msg)) = tokio::time::timeout(debounce.min(give_up.saturating_duration_since(tokio::time::Instant::now())), rx.recv()).await {
                 take(msg);
@@ -174,7 +169,6 @@ async fn scan_files(state: &AppState, data: &Unlocked, root_id: i64, path: PathB
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pending {
     pub found: Found,
-    /// The id the file keeps: its old one when it changed or moved, `None` for a new file.
     pub track_id: Option<String>,
 }
 
@@ -185,8 +179,7 @@ pub struct Plan {
     pub removed: Vec<String>,
 }
 
-/// Read new and changed files, drop vanished ones. A vanished file and a new one with the same
-/// size and modification time are one file that moved (`mv` keeps the time): it keeps its id.
+// A vanished file and a new one with the same size and mtime are one move (mv keeps the time)
 pub fn plan(known: &[KnownFile], found: &[Found]) -> Plan {
     let by_path: HashMap<&str, &KnownFile> = known.iter().map(|k| (k.path.as_str(), k)).collect();
     let present: HashSet<String> = found.iter().map(|f| f.path.to_string_lossy().into_owned()).collect();
@@ -210,7 +203,6 @@ pub fn plan(known: &[KnownFile], found: &[Found]) -> Plan {
     out
 }
 
-/// A file lofty cannot read is kept by its name and marked unreadable, so the user sees why.
 pub fn file_and_snapshot(found: &Found, track_id: Option<String>) -> (FileRow, Value, bool) {
     let path = found.path.to_string_lossy().into_owned();
     let is_new = track_id.is_none();

@@ -6,7 +6,6 @@ import styles from "./tour.module.css";
 
 const GUESS_HEIGHT = 64;
 
-/* Toward the outline: the card rises out of the side it points from */
 const SHIFT: Record<Side, string> = { below: "-4px", above: "4px", right: "0px", left: "0px" };
 
 interface CalloutProps {
@@ -15,11 +14,9 @@ interface CalloutProps {
   area: Area;
   side?: Side;
   text: string;
-  /** A new key replays the entrance, one per step */
   stepKey: string;
 }
 
-/** The step's card beside its outline, with a thin line to it. Placed from its measured height */
 export function Callout({ ring, panel, area, side, text, stepKey }: CalloutProps): JSX.Element {
   const cardRef = useRef<HTMLParagraphElement>(null);
   const [height, setHeight] = useState(GUESS_HEIGHT);

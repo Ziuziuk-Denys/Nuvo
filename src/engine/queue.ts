@@ -1,10 +1,8 @@
-/** The queue as immutable values: entries, an index, and the moves of transport 4.2 and 4.3. Pure. */
 import { firstArtist, spacedShuffle, WRAP_SHARE, type Random } from "./shuffle";
 import type { Origin, QueueEntry, RankReason, RepeatMode, Track } from "./types";
 
 export interface QueueState {
   entries: QueueEntry[];
-  /** -1 when empty. */
   index: number;
 }
 
@@ -26,7 +24,6 @@ function shuffled(entries: QueueEntry[], before: QueueEntry[], random: Random, a
   return spacedShuffle(entries, artistKey, random, { recentArtists: before.slice(-2).map(artistKey), avoidEarly });
 }
 
-/** `playList` without `shuffled`: entries keep list order; with shuffle on, the part after `startAt` is shuffled. */
 export function fromList(tracks: Track[], startAt: number, shuffle: boolean, random: Random, newId: NewId): QueueState {
   if (tracks.length === 0) return EMPTY_QUEUE;
   const index = Math.min(Math.max(0, startAt), tracks.length - 1);
@@ -36,7 +33,6 @@ export function fromList(tracks: Track[], startAt: number, shuffle: boolean, ran
   return { entries: [...head, ...shuffled(entries.slice(index + 1), head, random)], index };
 }
 
-/** `playList` with `shuffled: true`: the chosen (or a random) entry first, all others shuffled after it. */
 export function fromListShuffled(tracks: Track[], startAt: number | undefined, random: Random, newId: NewId): QueueState {
   if (tracks.length === 0) return EMPTY_QUEUE;
   const entries = tracks.map((track, order) => entry(track, "list", order, newId));
@@ -46,7 +42,6 @@ export function fromListShuffled(tracks: Track[], startAt: number | undefined, r
   return { entries: [entries[first], ...shuffled(rest, [entries[first]], random)], index: 0 };
 }
 
-/** Order value strictly between the current entry and the next larger order, so Play next sorts right after it. */
 function orderAfterCurrent(state: QueueState): number {
   const here = current(state);
   if (!here) return maxOrder(state) + 1;
@@ -72,7 +67,6 @@ export function append(state: QueueState, track: Track, newId: NewId): QueueStat
   return { entries: [...state.entries, added], index: state.index < 0 ? 0 : state.index };
 }
 
-/** Continuation batch: drops tracks already queued; shuffled among themselves when shuffle is on. `reasons` by track id. */
 export function appendBatch(
   state: QueueState,
   tracks: Track[],
@@ -96,7 +90,6 @@ export function appendBatch(
   return { entries: [...state.entries, ...ordered], index: state.index < 0 ? 0 : state.index };
 }
 
-/** Removing the current entry is refused (null). */
 export function remove(state: QueueState, entryId: string): QueueState | null {
   const at = state.entries.findIndex((e) => e.entryId === entryId);
   if (at < 0 || at === state.index) return null;
@@ -113,7 +106,6 @@ export function restore(state: QueueState, removed: QueueEntry, index: number): 
   return { entries, index: state.index < 0 ? 0 : shifted };
 }
 
-/** Out-of-range targets and moves to the same place return null (nothing changes). */
 export function move(state: QueueState, entryId: string, target: number): QueueState | null {
   const from = state.entries.findIndex((e) => e.entryId === entryId);
   if (from < 0 || target < 0 || target >= state.entries.length || target === from) return null;
@@ -129,20 +121,17 @@ export function trimToCurrent(state: QueueState): QueueState {
   return here ? { entries: [here], index: 0 } : EMPTY_QUEUE;
 }
 
-/** Shuffle on: only the entries after the current one move. */
 export function shuffleUpcoming(state: QueueState, random: Random): QueueState {
   const head = state.entries.slice(0, state.index + 1);
   return { entries: [...head, ...shuffled(state.entries.slice(state.index + 1), head, random)], index: state.index };
 }
 
-/** Shuffle off: the entries after the current one go back to ascending order. */
 export function unshuffleUpcoming(state: QueueState): QueueState {
   const head = state.entries.slice(0, state.index + 1);
   const upcoming = [...state.entries.slice(state.index + 1)].sort((a, b) => a.order - b.order);
   return { entries: [...head, ...upcoming], index: state.index };
 }
 
-/** A repeat-all wrap with shuffle on: a new pass whose start avoids the last 20 % of the old one. */
 export function reshuffleForWrap(state: QueueState, random: Random): QueueState {
   const tailSize = Math.ceil(state.entries.length * WRAP_SHARE);
   const avoid = new Set(state.entries.slice(state.entries.length - tailSize));
@@ -151,10 +140,6 @@ export function reshuffleForWrap(state: QueueState, random: Random): QueueState 
 
 export type NextStep = { kind: "index"; index: number } | { kind: "wrap" } | { kind: "more" } | { kind: "none" };
 
-/**
- * What comes after the current entry. `natural` is a natural end (repeat-one replays); a manual next
- * ignores repeat-one. "more" asks continuation (station or repeat off); "wrap" starts a new pass.
- */
 export function nextStep(state: QueueState, repeat: RepeatMode, station: boolean, natural: boolean): NextStep {
   if (state.index < 0) return { kind: "none" };
   if (natural && repeat === "one") return { kind: "index", index: state.index };
@@ -164,7 +149,6 @@ export function nextStep(state: QueueState, repeat: RepeatMode, station: boolean
   return { kind: "more" };
 }
 
-/** Entry after the current one for deck preparation and prefetch: wraps with repeat-all, repeats with repeat-one. */
 export function candidateAfter(state: QueueState, repeat: RepeatMode, station: boolean): QueueEntry | null {
   const step = nextStep(state, repeat, station, true);
   if (step.kind === "index") return state.entries[step.index] ?? null;
@@ -172,12 +156,10 @@ export function candidateAfter(state: QueueState, repeat: RepeatMode, station: b
   return null;
 }
 
-/** Play history of entry ids for `previous()`. */
 export class PlayHistory {
   private ids: string[] = [];
   private at = -1;
 
-  /** An entry started any way but through history. */
   started(entryId: string): void {
     if (this.ids[this.at] === entryId) return;
     this.ids = this.ids.slice(0, this.at + 1);
@@ -185,7 +167,6 @@ export class PlayHistory {
     this.at = this.ids.length - 1;
   }
 
-  /** The newest earlier entry still in the queue; moves the cursor there without adding a step. */
   back(state: QueueState): number | null {
     for (let i = this.at - 1; i >= 0; i--) {
       const index = state.entries.findIndex((e) => e.entryId === this.ids[i]);
@@ -217,7 +198,6 @@ export function previousStep(state: QueueState, history: PlayHistory, positionMs
   return { kind: "restart" };
 }
 
-/** Upcoming entries after the current one. */
 export function upcoming(state: QueueState): QueueEntry[] {
   return state.entries.slice(state.index + 1);
 }

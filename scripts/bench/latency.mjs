@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-// M2 track start: a double click on a track row to the first audio frame, read from the engine
-// (the e2e handle `window.__nuvoPlayer`), not from the DOM. Two moments are taken per start:
-//   audioMs   first animation frame where the deck clock position is above 0 (sound is moving)
-//   playingMs the deck's `playing` event
-// Cached: each launch plays row 0 (first start of the session) and then rows 1-4 from tones put in
-// the daemon's audio cache. Uncached needs the network and is off unless NUVO_BENCH_LIVE=1: it searches
-// real queries and plays the first song hit.
-// usage: node scripts/bench/latency.mjs [--exe path/to/nuvo] [--runs 5] [--json out.json]
 import fs from "node:fs";
 import { close, createProfile, enableHandle, homeReady, launch, openPlaylist, option, putTone, seedProfile, sleep } from "./lib.mjs";
 import { summarize } from "./stats.mjs";
@@ -17,7 +9,6 @@ const live = process.env.NUVO_BENCH_LIVE === "1";
 const WARM_ROWS = 4;
 const QUERIES = ["Queen Bohemian Rhapsody", "Daft Punk Get Lucky", "Adele Hello", "Radiohead Creep", "Nirvana Smells Like Teen Spirit"];
 
-// Arms the probes in the page; `armed.clickAt` is set by the next double click
 function arm(page) {
   return page.evaluate(() => {
     const state = { clickAt: 0, playingAt: 0, audioAt: 0 };

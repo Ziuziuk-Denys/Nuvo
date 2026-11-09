@@ -1,7 +1,4 @@
-/*
- * Centred in the page's area: the area reaches from where it starts to about the foot of the scroll area
- * (240 px covers the top band, a page title with its toolbar and the column's foot), and its type sits in the middle.
- */
+/* 240 px covers the top band, a page title with its toolbar and the column's foot */
 .area {
   display: flex;
   flex-direction: column;

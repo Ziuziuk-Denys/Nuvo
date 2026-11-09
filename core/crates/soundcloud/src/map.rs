@@ -1,5 +1,3 @@
-//! SoundCloud records (raw JSON) to Nuvo catalog types.
-
 use nuvo_contracts::catalog::{AlbumDetails, ArtistRef, ArtistSummary, Cover, PlaylistDetails, SetSummary, Track, TrackDetails};
 use serde_json::Value;
 
@@ -13,8 +11,6 @@ pub fn num(record: &Value) -> Option<u64> {
     record.get("id")?.as_u64()
 }
 
-/// Replaces the size token before the extension (`-large`, `-t<W>x<H>`, `-crop`, `-original`)
-/// with `-t500x500`; other URLs are returned unchanged.
 pub fn sized_500(url: &str) -> String {
     let (path, query) = url.split_once('?').map_or((url, None), |(p, q)| (p, Some(q)));
     let file_start = path.rfind('/').map_or(0, |i| i + 1);
@@ -42,7 +38,6 @@ pub fn cover(url: Option<&str>) -> Option<Cover> {
     Some(Cover { url: sized_500(url), width: 500, height: 500, fallback_url: Some(url.to_string()) })
 }
 
-/// First four characters of the first date present; kept only above 1900.
 pub fn year(record: &Value) -> Option<i32> {
     let date = ["release_date", "display_date", "created_at"].iter().find_map(|key| text(record, key))?;
     date.get(..4)?.parse::<i32>().ok().filter(|y| *y > 1900)
@@ -79,7 +74,6 @@ pub fn track_details(record: &Value) -> Option<TrackDetails> {
     })
 }
 
-/// The parts both set views share.
 struct SetCore {
     id: String,
     title: String,
@@ -128,7 +122,6 @@ pub fn playlist(set: &Value, track_records: &[Value]) -> Option<PlaylistDetails>
     })
 }
 
-/// `single` and `ep` sets are singles; every other `set_type` (or none) is an album.
 pub fn release_type(set: &Value) -> Option<&'static str> {
     match set.get("set_type").and_then(Value::as_str).map(|t| t.trim().to_ascii_lowercase()).as_deref() {
         Some("single") => Some("single"),
@@ -159,7 +152,6 @@ pub fn artist_summary(user: &Value) -> Option<ArtistSummary> {
     Some(ArtistSummary { id: artist.id, name: text(user, "full_name").unwrap_or(artist.name), cover: cover(avatar(user)) })
 }
 
-/// A looked-up set is an album when `is_album` is true or `set_type` is non-empty.
 pub fn is_album(set: &Value) -> bool {
     set.get("is_album") == Some(&Value::Bool(true)) || set.get("set_type").and_then(Value::as_str).is_some_and(|t| !t.trim().is_empty())
 }

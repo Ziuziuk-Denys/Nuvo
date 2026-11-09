@@ -6,7 +6,6 @@ const UI_DIR = path.resolve(__dirname);
 const SRC_DIR = path.resolve(UI_DIR, "..");
 const importPattern = /(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\sfrom\s+)?["']([^"']+)["']|import\(\s*["']([^"']+)["']\s*\)/g;
 
-/** Packages the UI layer may use directly. Everything app-specific comes through ports. */
 const PACKAGES = new Set([
   "react",
   "react-dom",
@@ -17,9 +16,7 @@ const PACKAGES = new Set([
   "@tanstack/react-virtual",
   "@braccato/core",
 ]);
-/** The interim icon set lives behind src/ui/icons only, so the icon sub-project swaps one folder. */
 const ICON_PACKAGES = new Set(["@mingcute/react"]);
-/** Packages a port may wrap so screens never import them: useLook reads next-themes. */
 const PORT_PACKAGES = new Set(["next-themes"]);
 const LEGACY_UI = [/^@\/features\/[^/]+\/ui(\/|$)/, /^@\/shared\/ui(\/|$)/, /^@\/widgets(\/|$)/];
 
@@ -40,7 +37,6 @@ function inside(dir: string, file: string): boolean {
   return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
 }
 
-/** Returns why `spec` imported from `file` breaks the boundary, or null when it is allowed. */
 function boundaryViolation(file: string, spec: string): string | null {
   const area = path.relative(UI_DIR, file).split(path.sep)[0];
   if (spec.startsWith(".")) {

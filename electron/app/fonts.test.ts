@@ -16,7 +16,6 @@ import {
   sniffFont,
 } from "./fonts";
 
-/** A one-table sfnt whose `name` table holds `family` as Windows UTF-16BE name id 1, padded to `size` bytes. */
 function ttf(family = "Test Sans", magic = [0, 1, 0, 0], size = 0): Buffer {
   const text = Buffer.from(family, "utf16le").swap16();
   const name = Buffer.alloc(18 + text.length);
@@ -165,7 +164,7 @@ describe("fonts", () => {
 
   it("an odd-length name record is skipped, not thrown", () => {
     const font = ttf("Test Sans");
-    font.writeUInt16BE(17, 28 + 6 + 8); // record length 17
+    font.writeUInt16BE(17, 28 + 6 + 8);
     expect(familyFromNameTable(font)).toBeNull();
   });
 
@@ -178,7 +177,6 @@ describe("fonts", () => {
   it("a write failure is its own error, not a damaged font", () => {
     const dir = fs.mkdtempSync(path.join(tmpdir(), "nuvo-fonts-"));
     dirs.push(dir);
-    // the store folder is a file, so nothing can be written under it
     const blocked = path.join(dir, "fonts");
     fs.writeFileSync(blocked, "x");
     expect(new FontStore(blocked).import(ttf(), "a.ttf")).toEqual({ ok: false, error: "write" });

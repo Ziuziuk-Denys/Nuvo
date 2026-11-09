@@ -30,7 +30,6 @@ function setup() {
   return { ...h, worker, resolver: new StreamResolver(deps) };
 }
 
-/** Every client answers UNPLAYABLE unless a test adds its own route afterwards. */
 function allUnplayable(fake: ReturnType<typeof harness>["fake"]) {
   const no = json(playerResponse({ status: "UNPLAYABLE", reason: "nope" }));
   fake.innertube("player", no);
@@ -435,7 +434,6 @@ describe("player script", () => {
 });
 
 describe("early start", () => {
-  /** WEB_REMIX and TVHTML5 refuse; VISIONOS and ANDROID_VR answer with their own stream URLs. */
   function chain() {
     const s = setup();
     allUnplayable(s.fake);
@@ -482,7 +480,6 @@ describe("early start", () => {
     expect(verified.servedBy).toBe("ANDROID_VR");
     expect(verified.verify).toBeUndefined();
     expect(probesOf(fake, "vr")).toBe(1);
-    // ANDROID_VR is now the last good client and its probe passed: the next start is early with it.
     const third = await resolver.resolve({ id: "vidCCCCCCC3" }, { progressive: true, early: true }, signal());
     expect([third.servedBy, third.verify !== undefined]).toEqual(["ANDROID_VR", true]);
   });
@@ -508,7 +505,6 @@ describe("early start", () => {
 });
 
 describe("cold worker", () => {
-  /** WEB_REMIX and VISIONOS both answer with their own stream; only the worker readiness differs. */
   function cold() {
     const h = harness();
     streamRoutes(h.fake);

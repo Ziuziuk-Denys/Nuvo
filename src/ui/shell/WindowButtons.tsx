@@ -4,7 +4,6 @@ import { useTranslation } from "../ports/i18n";
 import { canMinimizeWindow, closeWindow, minimizeWindow, toggleMaximizeWindow, useWindowState } from "../ports/navigation";
 import styles from "./WindowButtons.module.css";
 
-/** Minimize, maximize or restore, close in a small pill of the rail's glass; close turns red under the pointer. */
 export function WindowButtons(): JSX.Element {
   const { t } = useTranslation();
   const { isFullScreen, isMaximized } = useWindowState();

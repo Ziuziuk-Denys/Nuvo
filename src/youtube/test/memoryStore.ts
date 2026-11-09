@@ -1,4 +1,3 @@
-/** In-memory account store for the account tests. */
 import { DEFAULT_PREFERENCES, type AccountStore, type Preferences, type StoredSession } from "../account/store";
 
 export class MemoryStore implements AccountStore {

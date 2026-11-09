@@ -22,7 +22,6 @@ function setTrack(id: string, artists: string) {
 }
 
 const rate = () => usePlayerStore.getState().playbackRate;
-/** A user rate change, linked as the speed control does it. */
 const setRate = (value: number) =>
   usePlayerStore.setState({ playbackRate: value, pitchSemitones: Number((12 * Math.log2(value)).toFixed(1)), isPitchLinked: true });
 
@@ -30,7 +29,6 @@ describe("useTempoSync", () => {
   let root: ReturnType<typeof createRoot>;
 
   beforeEach(() => {
-    // The engine stand-in: a tempo set lands in the mirrored store, as the real engine view would.
     vi.spyOn(soundActions, "setTempo").mockImplementation((t: TempoSettings) =>
       usePlayerStore.setState({
         playbackRate: t.rate,

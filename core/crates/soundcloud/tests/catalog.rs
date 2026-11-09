@@ -47,7 +47,6 @@ async fn release_sets_are_split_into_albums_and_singles() {
     assert_eq!(ids(&page.singles), [("sc_playlist_2".to_string(), Some("ep")), ("sc_playlist_3".to_string(), Some("single"))]);
 }
 
-/// A failing user read.
 #[tokio::test]
 async fn failed_listings_leave_their_part_empty() {
     let (fx, sc) = setup().await;

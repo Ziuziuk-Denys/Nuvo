@@ -11,7 +11,6 @@ export interface CoreHostOptions {
   env: NodeJS.ProcessEnv;
   onStatus: (status: CoreStatus) => void;
   spawn?: (command: string, args: string[], options: SpawnOptions) => ChildProcess;
-  /** the `status` field of /health ("starting" or "ok"), or null when the daemon does not answer */
   checkHealth?: (socketPath: string, token: string) => Promise<string | null>;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
@@ -21,7 +20,6 @@ export interface CoreHost {
   /** per-launch bearer token; only main ever sees it */
   readonly token: string;
   start(): Promise<void>;
-  /** resolves true once /health says "ok", false if supervision gave up */
   whenReady(): Promise<boolean>;
   getStatus(): CoreStatus;
   stop(): Promise<void>;
@@ -61,9 +59,6 @@ export function checkCoreHealth(socketPath: string, token: string): Promise<stri
   });
 }
 
-// Spawns nuvo-core, waits for /health to say "ok" (5 s for a first answer, 2 min while it answers
-// "starting"), restarts it after a crash (0.5 s, 2 s, 5 s) and gives up after a fourth crash
-// inside one minute. The renderer keeps playing without it.
 export function createCoreHost(options: CoreHostOptions): CoreHost {
   const spawn = options.spawn ?? nodeSpawn;
   const checkHealth = options.checkHealth ?? checkCoreHealth;

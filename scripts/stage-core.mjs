@@ -1,12 +1,3 @@
-/**
- * Copies a release build of nuvo-core to core/target/dist/<os>-<arch>/, the folder electron-builder packs
- * for that target (build.<os>.extraResources). Run after cargo:
- *
- *   node scripts/stage-core.mjs                            the host build in <target>/release
- *   node scripts/stage-core.mjs aarch64-unknown-linux-gnu  a --target build in <target>/<triple>/release
- *
- * <target> is CARGO_TARGET_DIR when set, else core/target.
- */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +5,6 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OS = { linux: "linux", win32: "win", darwin: "mac" };
 
-/** electron-builder's ${os}-${arch} for a Rust target triple, or for the host when none is given. */
 export function slot(triple, host = { platform: process.platform, arch: process.arch }) {
   if (!triple) return `${OS[host.platform]}-${host.arch}`;
   const arch = { x86_64: "x64", aarch64: "arm64" }[triple.split("-")[0]];

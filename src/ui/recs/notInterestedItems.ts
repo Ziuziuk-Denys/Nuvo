@@ -7,12 +7,10 @@ interface Credited {
   artistList?: ReadonlyArray<{ name: string }>;
 }
 
-/** The first credited artist, the one "Not interested in ..." and the hide offer name. */
 export function firstArtist(track: Credited): string {
   return track.artistList?.[0]?.name ?? track.artists.split(",")[0]?.trim() ?? "";
 }
 
-/** The three "Not interested" scopes as menu items; every song menu and the bar's own menu use these. */
 export function notInterestedItems<T extends Credited>(track: T, t: TFunction, mark: (track: T, scope: NotInterestedScope) => void): MenuItem[] {
   const artist = firstArtist(track);
   const items: MenuItem[] = [

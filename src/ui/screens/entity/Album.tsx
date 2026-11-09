@@ -23,7 +23,6 @@ import { EntityTracks, entityPlayback, useUnavailable } from "./EntityTracks";
 const NO_TRACKS: Track[] = [];
 const SORTS: TrackOrder[] = ["default", "title", "duration"];
 
-/** /collection?type=album|playlist&id=: a catalog album, a playlist from the catalog (not your own), or a Home mix. */
 export function Album(): JSX.Element {
   const [params] = useSearchParams();
   const kind = params.get("type") === "playlist" ? "playlist" : "album";
@@ -123,7 +122,6 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
       <Icon name="sort-lines" size={16} />
     </button>
   );
-  // one artist made every track: the rows drop the artist line and keep the numbers
   const oneArtist = kind === "album" && tracks.every((track) => track.artists === by);
 
   return (

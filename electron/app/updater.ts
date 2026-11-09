@@ -1,7 +1,4 @@
-/** Background updates: check on start and every few hours, download quietly, install only when the user asks. */
-
 export type UpdatePhase = "off" | "idle" | "downloading" | "ready" | "available";
-/** install: download and replace; notify: only tell and link to the release page; off: no updates here. */
 export type UpdateMode = "install" | "notify" | "off";
 
 export interface UpdateView {
@@ -14,10 +11,7 @@ export interface UpdateView {
 export const FIRST_CHECK_MS = 15_000;
 export const CHECK_EVERY_MS = 4 * 60 * 60 * 1000;
 
-/**
- * Unsigned macOS builds cannot be replaced by Squirrel.Mac, and a deb install would need root, so
- * only Windows and AppImage install themselves. A development run never updates.
- */
+// Unsigned macOS builds cannot be replaced by Squirrel.Mac and a deb install would need root
 export function updateMode(input: { platform: NodeJS.Platform; packaged: boolean; appImage: boolean }): UpdateMode {
   if (!input.packaged) return "off";
   if (input.platform === "win32" || (input.platform === "linux" && input.appImage)) return "install";
@@ -26,7 +20,6 @@ export function updateMode(input: { platform: NodeJS.Platform; packaged: boolean
 
 const SLUG = /^[A-Za-z0-9._-]{1,100}$/;
 
-/** `owner` and `repo` of the GitHub feed in the `app-update.yml` that electron-builder writes from the build config. */
 export function parseFeed(yaml: string): { owner: string; repo: string } | null {
   const value = (key: string) => yaml.match(new RegExp(`^${key}:[ \\t]*['"]?([^'"\\r\\n]*?)['"]?[ \\t]*$`, "m"))?.[1];
   const provider = value("provider");
@@ -44,7 +37,6 @@ export function validVersion(value: unknown): value is string {
 }
 
 export interface UpdateBackend {
-  /** The newer version on the feed, or null. Rejects when the feed cannot be reached. */
   check(): Promise<{ version: string } | null>;
   download(onProgress: (percent: number) => void): Promise<void>;
   quitAndInstall(): void;
@@ -53,7 +45,6 @@ export interface UpdateBackend {
 export interface UpdaterDeps {
   backend: UpdateBackend;
   mode: UpdateMode;
-  /** the Settings switch, read at every check */
   enabled: () => boolean;
   emit: (view: UpdateView) => void;
   log: (message: string, error?: unknown) => void;
@@ -100,7 +91,6 @@ export class Updater {
     }
   }
 
-  /** Restarts into the new version; only after the user pressed the control and only when it is downloaded. */
   install(): boolean {
     if (this.phase !== "ready" || this.deps.mode !== "install") return false;
     this.deps.backend.quitAndInstall();
@@ -125,7 +115,6 @@ export class Updater {
       });
       if (epoch === this.epoch) this.set("ready");
     } catch (error) {
-      // offline or a bad feed: stay quiet and try again at the next interval
       if (epoch !== this.epoch) return;
       this.deps.log("[update] check failed", error);
       this.version = this.percent = undefined;
@@ -162,7 +151,6 @@ export class Updater {
   }
 }
 
-/** The part of electron-updater's `autoUpdater` this module uses. */
 export interface AutoUpdaterLike {
   autoDownload: boolean;
   autoInstallOnAppQuit: boolean;

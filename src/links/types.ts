@@ -1,7 +1,4 @@
-/**
- * Daemon wire shapes the link features read and write.
- * shortcut: declared here until the phase-5 typed client exports them; then import them from there.
- */
+// shortcut: declared here until the typed client exports them, then import from there
 
 import type { Cover as YtCover } from "@/youtube/types";
 
@@ -10,7 +7,6 @@ export interface ArtistRef {
   name: string;
 }
 
-/** A catalog cover, with the thumbnail to fall back on when it does not load. */
 export interface Cover extends YtCover {
   fallbackUrl?: string;
 }
@@ -22,7 +18,6 @@ export interface CatalogTrack {
   durationMs: number;
   cover?: Cover;
   explicit?: true;
-  /** Kept from a Deezer lookup; the daemon stores the snapshot as given. */
   isrc?: string;
 }
 
@@ -53,7 +48,6 @@ export type MatchAnswer =
     }
   | { status: "search"; query: string; filter: MatchFilter };
 
-/** One row of `POST /v1/imports`. `track` makes the row Exact. */
 export interface ImportRow {
   title: string;
   artists: string[];

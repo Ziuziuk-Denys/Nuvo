@@ -1,7 +1,3 @@
-//! Serving a cover: cache first, one CDN fetch per cover and bucket however many ask, a
-//! 10-minute negative cache, any other cached bucket when the CDN fails, and an encrypted disk
-//! store (memory only while the library is locked).
-
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -35,7 +31,6 @@ impl Limits {
     pub const COVERS: Limits = Limits { timeout: Duration::from_secs(10), negative_ttl: Duration::from_secs(600) };
 }
 
-/// Where covers persist while the library is unlocked.
 #[derive(Clone)]
 pub struct Disk {
     pub db: Db,
@@ -49,7 +44,6 @@ pub struct Cover {
     pub etag: String,
 }
 
-/// A validated request: what to fetch and under which cache key.
 #[derive(Debug, Clone)]
 pub struct Prepared {
     pub plan: Plan,
@@ -78,7 +72,6 @@ fn parse(url: &str, field: &str) -> Result<Url, CoverError> {
     Ok(parsed)
 }
 
-/// Checks `src`, `alt` and `size` without touching the network.
 pub fn prepare(src: Option<&str>, alt: Option<&str>, size: Option<&str>) -> Result<Prepared, CoverError> {
     let src = src.map(str::trim).filter(|s| !s.is_empty()).ok_or_else(|| CoverError::Invalid("src is required".into()))?;
     let src = parse(src, "src")?;
@@ -246,7 +239,6 @@ impl Covers {
         negative.insert(key.to_string(), Instant::now());
     }
 
-    /// Another cached bucket of the same cover: the smallest at least as large as asked, else the largest.
     async fn other_bucket(&self, req: &Prepared, disk: Option<&Disk>) -> Option<Cover> {
         let pick = |buckets: &[u32]| buckets.iter().copied().filter(|b| *b >= req.bucket).min().or_else(|| buckets.iter().copied().max());
         match disk {
@@ -264,7 +256,6 @@ impl Covers {
         }
     }
 
-    /// Forgets every cover, on disk and in memory.
     pub async fn clear(&self, disk: Option<&Disk>) -> Result<(), CoverError> {
         *self.inner.memory.lock().unwrap() = Memory::default();
         self.inner.negative.lock().unwrap().clear();

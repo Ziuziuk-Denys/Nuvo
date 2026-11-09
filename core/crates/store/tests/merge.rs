@@ -52,7 +52,6 @@ fn delete_and_restore_bring_back_everything() {
     assert!(matches!(playlists::get(&conn, &source), Err(StoreError::NotFound(_))));
     assert!(flags::list(&conn).unwrap().is_empty(), "the deleted playlist's pin goes with it");
 
-    // Undo: remove what was added, then restore the source.
     playlists::remove_items(&conn, &target, &result.added_item_ids, 11).unwrap();
     let restored = playlists::restore(&conn, &result.snapshots, 12).unwrap();
     assert_eq!(restored[0].id, source);

@@ -53,7 +53,6 @@ describe("writeTextAtomic", () => {
     const folder = dir();
     const target = path.join(folder, "r.csv");
     fs.writeFileSync(target, "old");
-    // a directory in the way of the rename makes the final step fail
     const blocked = path.join(folder, "blocked.csv");
     fs.mkdirSync(blocked);
     await expect(writeTextAtomic(blocked, "new")).rejects.toThrow();

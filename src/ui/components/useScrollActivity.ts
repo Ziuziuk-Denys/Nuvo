@@ -1,7 +1,6 @@
 import { useEffect, type RefObject } from "react";
 import { SCROLLBAR_FADE_MS } from "../motion";
 
-/** Sets data-scrolling on the element while it scrolls, so the .n-scroll thumb shows, and clears it after the fade delay. */
 export function useScrollActivity(ref: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const element = ref.current;

@@ -1,5 +1,3 @@
-//! Song recognition: Shazam signatures, the Shazam client and the listening plan.
-
 pub mod client;
 pub mod limiter;
 pub mod plan;

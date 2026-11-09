@@ -1,7 +1,3 @@
-/**
- * Translation keys for everything the link block and the sheets say. Pure: the UI passes the result to
- * `t(key, vars)`. Service names are brands and stay untranslated.
- */
 import type { FoundVia, LinkResult, Stage } from "./resolve";
 import type { Service } from "./router";
 
@@ -22,7 +18,6 @@ const SERVICE_NAMES: Partial<Record<Service, string>> = {
   shazam: "Shazam",
 };
 
-/** The source label above the block; `null` means "use the translated `ui.links.service.<id>`". */
 export function serviceName(service: Service): string | null {
   return SERVICE_NAMES[service] ?? null;
 }
@@ -63,7 +58,6 @@ const ERROR_CODES = new Set([
   "failed",
 ]);
 
-/** An unknown code reads as `unavailable`. `service` is the display name, `host` the link's host. */
 export function errorMessage(code: string, service: string, host?: string): Message {
   const known = ERROR_CODES.has(code) ? code : "unavailable";
   return {

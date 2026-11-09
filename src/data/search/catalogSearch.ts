@@ -1,4 +1,3 @@
-/** Catalog search for the search page: debounced, one request per settled query, older answers never shown as current. */
 import { useEffect, useMemo, useState } from "react";
 import type { SearchItem, SearchKind } from "@/youtube";
 import { isAbortError } from "@/youtube/types";
@@ -15,13 +14,11 @@ export interface SearchOptions {
 
 export interface CatalogSearch {
   items: SearchItem[];
-  /** True from the first keystroke until the answer for this exact query arrives. */
   loading: boolean;
   hasLoaded: boolean;
   runNow(): void;
 }
 
-/** Shorter queries are not sent; the page's "searching" and "no results" lines start at two characters too. */
 export const MIN_QUERY = 2;
 const DEFAULT_LIMIT = 20;
 const DEFAULT_DEBOUNCE_MS = 300;
@@ -61,7 +58,6 @@ export function useCatalogSearch(query: string, kind: SearchKind, options: Searc
     };
   }, [active, text, kind, limit, debounceMs, urgent]);
 
-  // the last answer stays on screen while the next query runs; `loading` says it is not this query's
   return {
     items: active && result ? result.items : NONE,
     loading: active && result?.query !== text,

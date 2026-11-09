@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { version } from "../../../package.json";
 
-/** The version this bundle was built from. */
 export const APP_VERSION: string = version;
 
-/** Starts with the build version and switches to the one main reports. */
 export function useAppVersion(): string {
   const [current, setCurrent] = useState(APP_VERSION);
   useEffect(() => {

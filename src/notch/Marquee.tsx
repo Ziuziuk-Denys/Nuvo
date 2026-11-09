@@ -4,7 +4,6 @@ const DWELL_MS = 1800;
 const SPEED_PX_PER_S = 32;
 const GAP_PX = 32;
 
-/** Single-line text that, after a dwell, scrolls at constant speed only if it overflows. */
 export function Marquee({ text }: { text: string }) {
   const boxRef = useRef<HTMLSpanElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);

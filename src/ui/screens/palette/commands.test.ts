@@ -131,7 +131,6 @@ describe("rankCommands", () => {
   });
 
   it("ranks substring matches after word-prefix matches, stable within a rank", () => {
-    // only "radio" starts with "ra"; "Library", "track" and "tracks" contain it, in the order the commands were built
     expect(titles("ra")).toEqual(["Start radio from this track", "Go to Library", "Next track", "Previous track", "Settings: Autoplay similar tracks"]);
     expect(titles("ous")).toEqual(["Previous track"]);
     expect(titles("open s")).toEqual(["Open Settings"]);

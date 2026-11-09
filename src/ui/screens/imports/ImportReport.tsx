@@ -22,12 +22,9 @@ import {
 import styles from "./ImportReport.module.css";
 
 export interface ReportPorts extends Pick<ImportsDaemon, "rows" | "decide" | "bulk"> {
-  /** A song search by hand for one row; absent where the catalog cannot be asked. */
   search?(query: string): Promise<CatalogTrack[]>;
   refresh(importId: string): Promise<void>;
-  /** "Done": the report goes away, the playlist stays. */
   dismiss(importId: string): Promise<void>;
-  /** Absent when this build cannot save files. */
   saveCsv?(importId: string): Promise<void>;
 }
 
@@ -45,14 +42,12 @@ interface Page {
   failed: boolean;
 }
 
-/** Rendered rows stop here; the person narrows the list with the chips for the rest. */
 export const MAX_RENDERED_ROWS = 400;
 
 const names = (artists: { name: string }[] | string[]) => artists.map((a) => (typeof a === "string" ? a : a.name)).join(", ");
 
 const trackLabel = (track: CatalogTrack) => `${track.title} · ${names(track.artists)}${track.durationMs ? ` · ${formatDuration(track.durationMs)}` : ""}`;
 
-/** The row's own search: a few words, Enter, and the hits become choices. */
 function RowSearch({ search, onPick }: { search: (query: string) => Promise<CatalogTrack[]>; onPick: (track: CatalogTrack) => void }): JSX.Element {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -96,7 +91,6 @@ function RowSearch({ search, onPick }: { search: (query: string) => Promise<Cata
   );
 }
 
-/** The match report: every row, what it matched, why, and one click to fix it. */
 export function ImportReport({ open, onClose, summary, ports }: ImportReportProps): JSX.Element | null {
   const { t } = useTranslation();
   const [chip, setChip] = useState<RowsFilter>("review");
@@ -110,7 +104,6 @@ export function ImportReport({ open, onClose, summary, ports }: ImportReportProp
   // every fetch takes a ticket; only the newest ticket may change the list
   const ticket = useRef(0);
 
-  /** Fetches a page; the caller has already shown the loading state. */
   const fetchRows = (filter: RowsFilter, cursor?: string) => {
     ticket.current += 1;
     const mine = ticket.current;

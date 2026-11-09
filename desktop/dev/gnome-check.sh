@@ -1,8 +1,4 @@
 #!/bin/sh
-# Loads the GNOME extension in a headless GNOME Shell on a private session bus, next to the fake Nuvo,
-# and leaves screenshots and result.json in the output directory. Touches neither the running desktop
-# nor its settings: the test tool uses its own XDG dirs and a keyfile settings backend.
-# Usage: desktop/dev/gnome-check.sh [output-dir]
 set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)

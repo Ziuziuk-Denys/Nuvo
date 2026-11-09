@@ -1,5 +1,4 @@
 #!/bin/sh
-# Screenshots of the harness in light and dark: run serve.mjs first
 out="$(dirname "$0")/../artifacts/sound"
 mkdir -p "$out"
 profile="$out/.chrome-profile"

@@ -1,4 +1,3 @@
-/** A sound or video file dropped anywhere in the window goes to Recognize, unless the spot it fell on took it. */
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
 
@@ -17,7 +16,6 @@ export function isRecognizable(file: { type: string }): boolean {
 
 const carriesFiles = (event: DragEvent) => event.dataTransfer?.types.includes("Files") === true;
 
-/** Listens on the window; `open` shows the Recognize screen, which takes the file from `useDroppedFile`. */
 export function useRecognizeDrop(open: () => void): void {
   const latest = useRef(open);
   useEffect(() => {

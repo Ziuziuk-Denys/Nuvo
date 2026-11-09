@@ -31,16 +31,12 @@ const eyeDropper = () => (window as unknown as { EyeDropper?: EyeDropperCtor }).
 
 export interface ColorPickerProps {
   value: string;
-  /** ink-2, ink-3, hair and tint only: shows the opacity slider. */
   translucent: boolean;
   label: string;
-  /** While dragging; the editor batches these to one per frame. */
   onInput: (value: string) => void;
-  /** Pointer up, a key, the code field, a slider step. */
   onCommit: (value: string) => void;
 }
 
-/** Saturation and lightness area, hue, optional opacity, a colour code field and the eyedropper where Chromium has one. Arrows move 1, Shift+arrows 10. */
 export function ColorPicker({ value, translucent, label, onInput, onCommit }: ColorPickerProps): JSX.Element {
   const { t } = useTranslation();
   const [hsla, setHsla] = useState(() => toHsla(value));

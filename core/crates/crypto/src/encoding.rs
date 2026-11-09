@@ -1,6 +1,5 @@
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-/// Standard base64 (RFC 4648) with padding.
 pub fn base64_encode(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for group in bytes.chunks(3) {
@@ -16,7 +15,6 @@ pub fn base64_encode(bytes: &[u8]) -> String {
     out
 }
 
-/// Standard base64; trailing padding is optional. `None` for any character outside the alphabet.
 pub fn base64_decode(text: &str) -> Option<Vec<u8>> {
     let mut out = Vec::with_capacity(text.len() * 3 / 4);
     let mut acc = 0u32;

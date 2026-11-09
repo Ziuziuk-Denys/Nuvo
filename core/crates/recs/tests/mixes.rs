@@ -151,7 +151,6 @@ fn moods_need_200_analysed_tracks_and_drive_mood_radio() {
         assert!(mix_ids(mix).iter().all(|id| moods[id] == key), "{key} mix is mood-consistent");
     }
 
-    // Mood radio: 10 energy and 10 calm candidates, all analysed; the batch stays energetic.
     let mut candidates = Vec::new();
     for n in 0..20 {
         let (mood, energy, bright) = if n % 2 == 0 { ("energy", 0.8, -0.5) } else { ("calm", -0.8, 0.5) };
@@ -171,7 +170,6 @@ fn moods_need_200_analysed_tracks_and_drive_mood_radio() {
 #[test]
 fn small_library_all_shown_yesterday_still_has_for_you() {
     let (_dir, conn) = common::open();
-    // One finished play per artist: a positive taste (about 0.36) smaller than the repeat penalty (0.5).
     for i in 0..5 {
         play(&conn, &format!("t{i}"), &format!("artist{i}"), "s", NOW - 3 * DAY + i, json!({}));
     }

@@ -1,4 +1,3 @@
-/** Fakes for engine tests: one deck port, a daemon behind `fetch`, YouTube, matching and continuation ports. */
 import { vi } from "vitest";
 import type { ContinuationRequest, Suggested } from "../continuation";
 import type { DeckCandidate, DeckEvent, DeckLoad, DeckPort } from "../deckPort";
@@ -19,7 +18,6 @@ export function track(id: string, extra: Partial<Track> = {}): Track {
   return { id, title: `Title ${id}`, artists: `Artist ${id}`, coverUrl: "", durationMs: 200_000, ...extra };
 }
 
-/** 11-character YouTube-shaped ids: y("a") -> "aaaaaaaaaaa". */
 export const y = (letter: string) => letter.repeat(11).slice(0, 11);
 
 export class MemoryStorage implements KeyValue {
@@ -44,11 +42,8 @@ export class FakeDeck implements DeckPort {
   position = 0;
   duration = 0;
   error = false;
-  /** Rejects the next `play()` (load or resume) with this DOMException name. */
   rejectNext: string | null = null;
-  /** When false, load() does not emit `playing` by itself. */
   autoPlaying = true;
-  /** The next load() never settles, like `element.play()` on a stream that never answers. */
   hangNext = false;
   candidate: DeckCandidate | null = null;
   candidates: Array<DeckCandidate | null> = [];
@@ -153,7 +148,6 @@ export class FakeDeck implements DeckPort {
   claim(token: number) {
     if (this.active) this.active = { ...this.active, token };
   }
-  /** The prepared deck takes over by itself. */
   fireSwitch(entryId: string, token: number) {
     for (const listener of this.switchListeners) listener(entryId);
     void token;
@@ -176,7 +170,6 @@ export class FakeDeck implements DeckPort {
 
 type Handler = (request: Request, url: URL) => Response | Promise<Response>;
 
-/** Daemon behind `fetch`, keyed by "METHOD /path". An unmatched request throws, failing the test. */
 export class FakeDaemon {
   readonly calls: Array<{ method: string; path: string; body: string | null; headers: Headers }> = [];
   private readonly routes = new Map<string, Handler>();
@@ -244,7 +237,6 @@ export class FakeYoutube implements YoutubePort {
     this.avoided.push(options.avoid ?? []);
     const scripted = this.script.get(target.id);
     if (scripted) return scripted(signal);
-    // One client by default: asking around it finds nothing.
     if (options.avoid?.length) return Promise.reject({ code: "all-failed" });
     return Promise.resolve(urlSource(`https://rr1.googlevideo.com/${target.id}`));
   }
@@ -264,7 +256,6 @@ export class FakeYoutube implements YoutubePort {
       resolve = res;
       reject = rej;
     });
-    // An aborted start may never call the script; its late rejection is then expected.
     promise.catch(() => undefined);
     this.script.set(
       id,
@@ -414,12 +405,10 @@ export function createHarness(options: HarnessOptions = {}): Harness {
   });
 }
 
-/** Lets resolved promises and their continuations run (fake timers do not cover microtasks). */
 export async function flush(rounds = 100): Promise<void> {
   for (let i = 0; i < rounds; i++) await Promise.resolve();
 }
 
-/** Advances fake timers and flushes microtasks in between, so timer-started promise chains complete. */
 export async function advance(ms: number, step = 50): Promise<void> {
   let left = ms;
   while (left > 0) {

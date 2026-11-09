@@ -199,7 +199,6 @@ describe("core host", () => {
       children[0].stdin.end = vi.fn();
       children[0].kill = vi.fn();
       const stopped = host.stop();
-      // EOF first, SIGTERM at 1.5 s, SIGKILL 1 s later: the whole stop fits the shutdown's daemon budget
       await vi.advanceTimersByTimeAsync(1499);
       expect(children[0].kill).not.toHaveBeenCalled();
       await vi.advanceTimersByTimeAsync(1);

@@ -1,4 +1,3 @@
-/** The daemon's lyrics routes: the renderer's only lyrics network path. */
 import type { Track } from "@/engine/types";
 import type { RawLyrics, StreamEvent } from "./types";
 
@@ -6,7 +5,6 @@ export const CORE_URL = "nuvo-core://local";
 
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
-/** Title, the first non-empty artist name, and the duration when positive. */
 export function streamUrl(track: Track): string {
   const fromList = (track.artistList ?? []).map((artist) => artist.name.trim()).find((name) => name !== "");
   const artist = fromList ?? (track.artists.split(",")[0] ?? "").trim();
@@ -50,7 +48,6 @@ function checked(block: string): StreamEvent | null {
   return toEvent(block);
 }
 
-/** One connection; returns true when the daemon sent its `done` event. */
 async function* readOnce(fetcher: Fetch, url: string, signal: AbortSignal): AsyncGenerator<StreamEvent, boolean> {
   const response = await fetcher(url, { signal, headers: { Accept: "text/event-stream" } });
   if (!response.ok || !response.body) throw new StreamStatusError(response.status);
@@ -81,7 +78,6 @@ async function* readOnce(fetcher: Fetch, url: string, signal: AbortSignal): Asyn
     }
     return finished;
   } finally {
-    // the consumer stopped early (track change): drop the daemon connection too
     void reader.cancel().catch(() => undefined);
   }
 }
@@ -100,12 +96,7 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-/**
- * Server-sent events: one JSON object per `data:` line, events split by a blank line.
- * A dropped stream (network error, 5xx, end without `done`) reconnects up to 3 times with growing delays.
- * The daemon replays its events on a new connection, so a consumer may see an early event twice.
- * An abort, a 4xx answer or a size-limit error ends the stream at once.
- */
+// The daemon replays its events on reconnect, so a consumer may see an early event twice
 export async function* readLyricsStream(fetcher: Fetch, url: string, signal: AbortSignal): AsyncGenerator<StreamEvent> {
   for (let attempt = 0; ; attempt += 1) {
     let failure: Error;
@@ -135,7 +126,6 @@ export function putOffset(fetcher: Fetch, trackId: string, offsetMs: number): Pr
   return put(fetcher, `/v1/tracks/${encodeURIComponent(trackId)}/lyrics/offset`, { offsetMs });
 }
 
-/** The one-time import of the legacy renderer map. */
 export function putOffsets(fetcher: Fetch, offsets: Record<string, number>): Promise<void> {
   return put(fetcher, "/v1/lyrics/offsets", { offsets });
 }
@@ -151,7 +141,6 @@ export async function deleteUserLyrics(fetcher: Fetch, trackId: string): Promise
   if (!response.ok) throw new Error(`user lyrics delete answered ${response.status}`);
 }
 
-/** The text the editor starts from: the user's own lyrics, else a synced version, else plain. */
 export async function editableLyrics(fetcher: Fetch, track: Track, signal: AbortSignal): Promise<RawLyrics | null> {
   let best: { lyrics: RawLyrics; rank: number } | null = null;
   for await (const event of readLyricsStream(fetcher, streamUrl(track), signal)) {
@@ -162,10 +151,8 @@ export async function editableLyrics(fetcher: Fetch, track: Track, signal: Abort
   return best?.lyrics ?? null;
 }
 
-/** No local model answers on the configured loopback address. */
 export class NoTranslatorError extends Error {}
 
-/** The daemon holds the translator's address; a request carries only the language and the lines. */
 export async function translateLines(fetcher: Fetch, request: { lang: string; lines: string[] }, signal?: AbortSignal): Promise<string[]> {
   const response = await fetcher(`${CORE_URL}/v1/lyrics/translate`, {
     method: "POST",
@@ -178,7 +165,6 @@ export async function translateLines(fetcher: Fetch, request: { lang: string; li
   return ((await response.json()) as { lines: string[] }).lines;
 }
 
-/** Stores the default local model through the daemon's validated settings route, once. */
 export async function ensureTranslator(fetcher: Fetch, defaults: { endpoint: string; model: string }): Promise<void> {
   const response = await fetcher(`${CORE_URL}/v1/lyrics/translator`);
   if (!response.ok) throw new Error(`translator settings answered ${response.status}`);

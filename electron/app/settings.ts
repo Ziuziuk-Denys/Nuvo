@@ -18,10 +18,8 @@ export interface MainSettings {
   discord: { enabled: boolean };
   trackChangeNotice: boolean;
   autoUpdate: boolean;
-  /** AppImage only: Nuvo's own entry and icons in the applications menu. */
   menuEntry: boolean;
   appearance: AppearanceFlags;
-  /** The main window's zoom level, 0 for 100 %; changed only by the zoom keys. */
   zoomLevel: number;
 }
 
@@ -50,7 +48,6 @@ export const DEFAULT_MAIN_SETTINGS: MainSettings = {
 const MAX_USERNAME = 256;
 const BOOLEAN_KEYS = ["closeToTray", "trayHintShown", "trackChangeNotice", "autoUpdate", "menuEntry"] as const;
 
-/** The proxy rule: http, https, socks5, socks5h with a host and a port 1..65535. */
 export function validProxyUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -131,7 +128,6 @@ export class MainSettingsStore {
     return { ...this.settings, proxy: { ...proxy, hasPassword: Boolean(passwordEnc), passwordStorable: this.safeStorage.isEncryptionAvailable() } };
   }
 
-  /** The stored proxy password; undefined when none is stored or it no longer decrypts. Main only. */
   proxyPassword(): string | undefined {
     const stored = this.settings.proxy.passwordEnc;
     if (!stored) return undefined;
@@ -182,21 +178,18 @@ export class MainSettingsStore {
     return { ok: true };
   }
 
-  /** Main's own write of the zoom level, from the zoom keys. */
   setZoom(level: number): void {
     const next = { ...structuredClone(this.settings), zoomLevel: validZoom(level) };
     this.write(next);
     this.settings = next;
   }
 
-  /** Main's own write of the safe-mode flags (StartWatch). */
   setAppearance(flags: AppearanceFlags): void {
     const next = { ...structuredClone(this.settings), appearance: { ...flags } };
     this.write(next);
     this.settings = next;
   }
 
-  /** Atomic: temporary file in the same directory, fsync, rename. */
   private write(settings: MainSettings): void {
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
     const temporary = `${this.file}.${process.pid}.tmp`;

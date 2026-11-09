@@ -1,13 +1,4 @@
-/**
- * Streaming pitch shifter: phase-vocoder time stretch with identity phase locking, then resampling
- * back to the original duration.
- * Algorithm: J. Laroche and M. Dolson, "Improved phase vocoder time-scale modification of audio",
- * IEEE Transactions on Speech and Audio Processing 7(3), 1999. Stretch by a = 2^(semitones/12) with
- * analysis hop Ha and synthesis hop Hs = a * Ha, then read the stretched signal at rate a.
- * Each analysis hop consumes Ha input samples and yields Ha output samples, so it streams 1:1.
- *
- * All buffers are preallocated rings, so process() never allocates.
- */
+// Phase vocoder per Laroche and Dolson, IEEE Trans. Speech Audio Proc. 7(3), 1999
 
 export const PV_FRAME = 2048;
 export const PV_HOP = 512;
@@ -43,7 +34,6 @@ function twiddlesFor(n: number): Twiddles {
   return table;
 }
 
-/** In-place iterative radix-2 FFT with cached twiddles; `inverse` scales by 1/n. */
 export function fft(re: Float64Array, im: Float64Array, inverse: boolean): void {
   const n = re.length;
   const { cos, sin, reverse } = twiddlesFor(n);
@@ -89,20 +79,16 @@ function wrap(phase: number): number {
   return phase - TWO_PI * Math.round(phase / TWO_PI);
 }
 
-/** Positions are rebased by this multiple of every ring size before they lose precision. */
 const REBASE = 1 << 24;
 
 class Channel {
-  /** Input ring; `inputStart` is the oldest unconsumed sample. */
   readonly input: Float32Array;
   inputStart = 0;
   inputCount = 0;
-  /** Overlap-add ring addressed by absolute position, zeroed ahead of the write front. */
   readonly stretch: Float64Array;
   stretchWrite = 0;
   zeroedUpTo = 0;
   readPos = 0;
-  /** Output FIFO ring. */
   readonly output: Float32Array;
   outputStart = 0;
   outputCount = 0;
@@ -160,7 +146,6 @@ export class PhaseVocoderShifter {
     this.ratio = 2 ** (semitones / 12);
   }
 
-  /** `input` and `output` hold one array per channel, all of the same length. */
   process(input: Float32Array[], output: Float32Array[]): void {
     while (this.channels.length < input.length) {
       this.channels.push(new Channel(this.frame, this.stretchMask + 1, this.outputMask + 1));
@@ -169,7 +154,6 @@ export class PhaseVocoderShifter {
       const channel = this.channels[c];
       const samples = input[c];
       for (let i = 0; i < samples.length; i++) {
-        // An overfull ring would mean the caller never drains it; drop the oldest sample.
         if (channel.inputCount === channel.input.length) {
           channel.inputStart = (channel.inputStart + 1) & this.inputMask;
           channel.inputCount--;
@@ -204,7 +188,6 @@ export class PhaseVocoderShifter {
       magnitude[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
       phase[k] = Math.atan2(im[k], re[k]);
     }
-    // Peaks: local maxima over two bins each side.
     let peakCount = 0;
     for (let k = 2; k < bins - 2; k++) {
       const m = magnitude[k];
@@ -224,7 +207,6 @@ export class PhaseVocoderShifter {
         const trueFrequency = (TWO_PI * p) / frame + deviation / hop;
         synthPhase[p] = wrap(synthPhase[p] + trueFrequency * synthHop);
       }
-      // Identity phase locking: every bin keeps its phase offset to the peak whose region it is in.
       let region = 0;
       for (let k = 0; k < bins && peakCount > 0; k++) {
         while (region < peakCount - 1 && Math.abs(peaks[region + 1] - k) < Math.abs(peaks[region] - k)) region++;
@@ -257,7 +239,6 @@ export class PhaseVocoderShifter {
     channel.inputStart = (channel.inputStart + hop) & this.inputMask;
     channel.inputCount -= hop;
 
-    // Samples before the next frame's start are final; read them at the stretch ratio.
     const final = Math.round(channel.stretchWrite);
     for (let produced = 0; produced < hop && channel.readPos + 1 < final; produced++) {
       const i = Math.floor(channel.readPos);

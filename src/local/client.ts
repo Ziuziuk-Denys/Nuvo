@@ -1,4 +1,3 @@
-/** The renderer's view of music folders and saves: daemon routes only, never a filesystem path. */
 import { fromSnapshot } from "@/engine/snapshot";
 import type { Track } from "@/engine/types";
 
@@ -84,7 +83,6 @@ export function createLocalClient(base: string, doFetch: typeof fetch = (input, 
     rescan: () => send("POST", "/v1/local/rescan"),
     status: () => get<LocalScanView>("/v1/local/status"),
     tracks,
-    /** Every page; a library of 20 000 files is about 40 requests of 500. */
     async allTracks(q?: string, signal?: AbortSignal): Promise<LocalTrackView[]> {
       const all: LocalTrackView[] = [];
       let cursor: string | undefined;
@@ -102,7 +100,6 @@ export function createLocalClient(base: string, doFetch: typeof fetch = (input, 
 
 export type LocalClient = ReturnType<typeof createLocalClient>;
 
-/** The one status line under the folder chips, most urgent first; null when there is nothing to say. */
 export function scanLine(status: LocalScanView | null, roots: readonly LocalRootView[]): { key: string; vars?: Record<string, string | number> } | null {
   if (status?.scanning) return { key: "ui.local.scan_reading", vars: { read: status.read, total: status.total } };
   const missing = roots.filter((root) => root.status === "missing");

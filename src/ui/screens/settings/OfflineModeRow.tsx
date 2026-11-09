@@ -6,7 +6,6 @@ import { SettingRow, Switch } from "./controls";
 const TITLE = "ui.settings.offline_mode.title";
 const DESCRIPTION = "ui.settings.offline_mode.description";
 
-/** Offline mode: songs that are saved, cached or local play; nothing else is asked of the network. */
 export function OfflineModeRow(): JSX.Element {
   const { t } = useTranslation();
   const on = useOfflineMode();

@@ -5,7 +5,6 @@ fn word(bytes: &[u8], at: usize) -> u32 {
     u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap())
 }
 
-/// Reads the binary layout back into peaks, so the encoder can be checked against a real request.
 fn decode(bytes: &[u8]) -> Signature {
     let samples = word(bytes, 40) - 3840;
     let mut bands: [Vec<Peak>; 4] = Default::default();

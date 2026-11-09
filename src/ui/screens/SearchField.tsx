@@ -10,7 +10,6 @@ export interface SearchFieldProps {
   className?: string;
 }
 
-/** The 220 px tinted search field: a glass, the input, and a clear button while it holds text. Escape clears. */
 export function SearchField({ value, onChange, placeholder, clearLabel, className }: SearchFieldProps): JSX.Element {
   return (
     <div role="search" className={className ? `${look.field} ${className}` : look.field}>

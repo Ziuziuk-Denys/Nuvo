@@ -6,11 +6,9 @@ export { ROLE_KEYS, type NuvoTheme, type RoleKey, type ThemeMode, type ThemeRole
 
 export const THEME_VERSION = 1;
 export const MAX_CSS_BYTES = 32 * 1024;
-/** 16 KB of colours plus the optional CSS a shared theme may carry. */
 export const MAX_THEME_FILE_BYTES = 16 * 1024 + MAX_CSS_BYTES;
 export const OPAQUE_ROLES: readonly RoleKey[] = ["field", "deep", "raised", "ink", "accent"];
 
-/** `error` is an i18n key under `appearance.errors`. */
 export type Checked<T> = { ok: true; value: T } | { ok: false; error: string };
 
 type Raw = Record<string, unknown>;
@@ -20,7 +18,6 @@ const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/;
 const RGB = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+|1\.0+)\s*)?\)$/;
 const ID = /^[A-Za-z0-9-]{1,64}$/;
 
-/** `#rgb`, `#rrggbb`, `rgb()` or `rgba()` with channels 0-255, lower-cased; anything else is null. */
 export function normalizeColour(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const v = value.trim().toLowerCase();
@@ -29,7 +26,6 @@ export function normalizeColour(value: unknown): string | null {
   return [r, g, b].every((c) => c >= 0 && c <= 255) && a >= 0 && a <= 1 ? v : null;
 }
 
-/** Control characters out, trimmed, at most `max` characters; empty is null. */
 export function cleanText(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
   // eslint-disable-next-line no-control-regex
@@ -51,10 +47,8 @@ function checkRoles(raw: unknown): Checked<ThemeRoles> {
 
 export type Migration = (raw: Raw) => Raw;
 
-/** Version n to n + 1. Empty while only version 1 exists; the first format change adds `0: ...` style steps here with a test. */
 export const MIGRATIONS: Record<number, Migration> = {};
 
-/** Runs every step from the file's version up to the current one; a version above it is refused. */
 export function migrateTheme(raw: Raw, steps: Record<number, Migration> = MIGRATIONS): Checked<Raw> {
   let version = raw.version;
   if (typeof version !== "number" || !Number.isInteger(version) || version < 0) return { ok: false, error: "theme_shape" };
@@ -69,7 +63,6 @@ export function migrateTheme(raw: Raw, steps: Record<number, Migration> = MIGRAT
   return { ok: true, value: { ...current, version: THEME_VERSION } };
 }
 
-/** Validates a current-version theme; unknown keys are dropped, a bad id is replaced. */
 export function validateTheme(raw: unknown, newId: () => string = () => crypto.randomUUID()): Checked<NuvoTheme> {
   if (!isObject(raw) || raw.format !== "nuvo-theme" || raw.version !== THEME_VERSION || !isObject(raw.modes)) {
     return { ok: false, error: "theme_shape" };
@@ -108,7 +101,6 @@ export function validateTheme(raw: unknown, newId: () => string = () => crypto.r
   };
 }
 
-/** A `.nuvotheme.json` file's text: size, JSON, migration, validation; an id already in `takenIds` is regenerated. */
 export function parseThemeFile(text: string, takenIds: ReadonlySet<string> = new Set(), newId: () => string = () => crypto.randomUUID()): Checked<NuvoTheme> {
   if (new TextEncoder().encode(text).length > MAX_THEME_FILE_BYTES) return { ok: false, error: "theme_size" };
   let raw: unknown;
@@ -125,13 +117,11 @@ export function parseThemeFile(text: string, takenIds: ReadonlySet<string> = new
   return theme;
 }
 
-/** The file text for Export: known keys only, stable order. */
 export function serializeTheme(theme: NuvoTheme): string {
   const { format, version, id, name, author, modes, defaultMode, css } = theme;
   return JSON.stringify({ format, version, id, name, ...(author ? { author } : {}), modes, defaultMode, ...(css ? { css } : {}) }, null, 2);
 }
 
-/** A theme with one mode uses it for both. */
 export function rolesFor(theme: NuvoTheme, mode: ThemeMode): ThemeRoles {
   return (theme.modes[mode] ?? theme.modes[mode === "light" ? "dark" : "light"])!;
 }

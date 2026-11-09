@@ -10,7 +10,6 @@ pub const ID_A: &str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1";
 pub const ID_B: &str = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB2";
 pub const HOME: &str = "https://soundcloud.com/";
 
-/// Short timeouts so failure tests stay fast; `max_retry_wait` keeps the real 10 s.
 pub const FAST: Limits = Limits {
     api_timeout: Duration::from_millis(500),
     discovery_timeout: Duration::from_secs(2),
@@ -26,7 +25,6 @@ pub fn script_url(name: &str) -> String {
     format!("https://a-v2.sndcdn.com/assets/{name}")
 }
 
-/// A homepage that references `scripts` (protocol-relative, like the real page), in order.
 pub fn homepage(fx: &Fixture, scripts: &[&str]) {
     let tags: String = scripts.iter().map(|s| format!("<script crossorigin src=\"//a-v2.sndcdn.com/assets/{s}\"></script>\n")).collect();
     fx.on(HOME, Reply::bytes("text/html", format!("<html><body>{tags}</body></html>")));
@@ -40,7 +38,6 @@ pub fn script(fx: &Fixture, name: &str, client_id: Option<&str>) {
     fx.on(&script_url(name), Reply::bytes("application/javascript", body));
 }
 
-/// A fixture whose homepage exposes `ID_A` and a client using it.
 pub async fn setup() -> (Fixture, SoundCloud) {
     let fx = Fixture::start().await;
     homepage(&fx, &["0-a.js", "49-b.js"]);

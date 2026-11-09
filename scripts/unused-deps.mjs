@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-// Declared packages nothing references: a source import, a CSS import, a config file, or the tool list below.
 import { default as fs } from "node:fs";
 import { default as path } from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** Used by command line or by name in config, not by import. */
 export const TOOLS = [
   "typescript",
   "vite",

@@ -1,6 +1,4 @@
-//! A local stand-in for the internet in tests. A [`Net`] from [`Fixture::net`] sends
-//! `https://host/path?q` here; replies are registered per `https://host/path` (query ignored) and
-//! every request is logged, so tests can count what reached a "host".
+// Replies are registered per https://host/path with the query ignored; every request is logged
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -44,7 +42,6 @@ impl Reply {
         Self::bytes("text/plain", body.into())
     }
 
-    /// `body` is usually a `serde_json::Value`.
     pub fn json(body: impl ToString) -> Self {
         Self::bytes("application/json", body.to_string())
     }
@@ -147,7 +144,6 @@ impl Fixture {
         self.hits(url).len()
     }
 
-    /// Every request so far as `host/path`, in arrival order.
     pub fn log(&self) -> Vec<String> {
         self.inner.hits.lock().unwrap().iter().map(|h| format!("{}{}", h.host, h.path)).collect()
     }

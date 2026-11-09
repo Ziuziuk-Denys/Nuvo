@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 
-/** Drag to reorder rows of equal height, with auto-scroll near the scroller's edges. */
 export const DRAG_SLOP_PX = 4;
 export const EDGE_PX = 48;
 export const MAX_SCROLL_STEP_PX = 18;

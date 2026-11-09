@@ -1,4 +1,3 @@
-/** Last.fm scrobbling: the daemon keeps the key, the session and the queue, and scrobbles from the plays it records. */
 import { coreRequest } from "@/data/core/request";
 import { CoreError } from "@/imports/core";
 
@@ -6,7 +5,6 @@ export interface LastfmStatus {
   hasCredentials: boolean;
   connected: boolean;
   user: string | null;
-  /** False while the user paused scrobbling. */
   enabled: boolean;
   queued: number;
   lastError: string | null;
@@ -14,7 +12,6 @@ export interface LastfmStatus {
 
 export interface LastfmToken {
   token: string;
-  /** The Last.fm page where the user approves Nuvo. */
   authUrl: string;
 }
 
@@ -32,7 +29,6 @@ export const finishLastfmAuth = (token: string): Promise<LastfmStatus> => coreRe
 
 export const disconnectLastfm = (): Promise<LastfmStatus> => coreRequest("DELETE", "/v1/lastfm/session");
 
-/** The text key for a failed call: not approved yet, refused key, or Last.fm out of reach. */
 export function lastfmErrorKey(error: unknown): string {
   if (error instanceof CoreError && error.status === 409) return "settings.lastfm.not_approved";
   if (error instanceof CoreError && error.status === 400) return "settings.lastfm.refused";

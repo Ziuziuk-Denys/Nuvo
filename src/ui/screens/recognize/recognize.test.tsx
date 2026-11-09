@@ -219,7 +219,6 @@ describe("Recognize", () => {
     expect(mocks.seek).toHaveBeenCalledWith(83_400);
     await press("ui.recognize.apple_music");
     expect(mocks.open).toHaveBeenCalledWith(url);
-    // the text actions keep a line of their own under Play, so long labels never push past the card
     const byText = (label: string) => [...host.querySelectorAll("button")].find((node) => node.textContent === label)!;
     const links = byText("ui.recognize.again").parentElement;
     expect(byText("ui.recognize.apple_music").parentElement).toBe(links);

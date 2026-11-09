@@ -123,7 +123,7 @@ describe("Popover", () => {
       .mockReturnValue({ left: 400, width: 40, top: 700, bottom: 740, right: 440, height: 40, x: 400, y: 700, toJSON: () => ({}) });
     mount(<PopoverHarness width={320} />);
     const panel = dialogs()[0];
-    // centred on the anchor at 420: the panel starts at 260, so the sliver is 138 px in from each side, at the bottom
+    // 160 = anchor centre (420) minus panel start (260)
     expect(panel.style.getPropertyValue("--nx")).toBe("160px");
     expect(panel.style.getPropertyValue("--from")).toBe("calc(100% - 1px) 138px 0 138px");
     expect(panel.hasAttribute("data-below")).toBe(false);
@@ -160,7 +160,6 @@ describe("Popover", () => {
   });
 
   it("fails to wrap tab if trapTab is disabled", () => {
-    // Mock trapTab to be a no-op by rendering without the onKeyDown handler
     function PopoverWithoutTrapTab() {
       const [open, setOpen] = useState(true);
       const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
@@ -245,12 +244,9 @@ describe("Sheet", () => {
     expect(dialogs()).toHaveLength(1);
     const dialogFocusedElement = document.activeElement;
     expect(dialogs()[0].contains(dialogFocusedElement)).toBe(true);
-    // Escape closes the sheet
     key("Escape");
     settle();
     expect(dialogs()).toHaveLength(0);
-    // Focus should move away from body after close (restored to previous)
-    // Just verify it's not still in a dialog
     expect(document.activeElement?.closest('[role="dialog"]')).toBeNull();
   });
 
@@ -360,7 +356,6 @@ describe("Menu", () => {
     const menu = document.querySelector('[role="menu"]') as HTMLElement;
     const rect = anchor.getBoundingClientRect() as any;
 
-    // Position anchor at bottom-right
     rect.left = 350;
     rect.right = 380;
     rect.top = 250;
@@ -369,10 +364,8 @@ describe("Menu", () => {
 
     settle();
 
-    // Check that menu flipped (flipY should be true since bottom + gap + height > viewHeight)
     const menuStyle = window.getComputedStyle(menu);
     const transformOrigin = menuStyle.transformOrigin;
-    // When flipped, transformOrigin should use "100%" for flipX or values that indicate flip
     expect(transformOrigin).toBeDefined();
 
     Object.defineProperty(window, "innerWidth", { value: origInnerWidth, configurable: true });

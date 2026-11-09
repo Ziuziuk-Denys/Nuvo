@@ -5,12 +5,10 @@ export interface DisplayBounds {
   height: number;
 }
 
-/** Top-center of the display, flush with its top edge (over panels, like a hardware notch). */
 export function notchOrigin(display: DisplayBounds, windowWidth: number): { x: number; y: number } {
   return { x: Math.round(display.x + (display.width - windowWidth) / 2), y: display.y };
 }
 
-/** KWin script that pins the window titled `title` at the given geometry on every desktop. */
 export function kwinScript(title: string, geometry: DisplayBounds): string {
   return `const geometry = ${JSON.stringify(geometry)};
 function pin(window) {

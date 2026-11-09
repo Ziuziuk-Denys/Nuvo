@@ -1,7 +1,3 @@
-//! Co-occurrence similarity, computed per request for its anchors (seeds, recent plays, session
-//! feedback) against its candidates only. Two sources: the candidate lists of seeds (two tracks
-//! in one list) and own sessions (counted plays within 3 positions). Freed after the response.
-
 use std::collections::{HashMap, HashSet};
 
 use nuvo_store::StoreError;
@@ -11,7 +7,6 @@ const SESSION_WINDOW: usize = 3;
 const COUNTED: &str = "(end_reason = 'complete' OR played_ms >= 30000)";
 const SESSION_DAYS: i64 = 180 * 86_400_000;
 
-/// Normalised PMI clamped to [0, 1]; negative association counts as none.
 pub fn npmi(co: f64, a: f64, b: f64, n: f64) -> f64 {
     if co <= 0.0 || a <= 0.0 || b <= 0.0 || n <= 0.0 {
         return 0.0;
@@ -45,8 +40,7 @@ fn counts(conn: &Connection, sql: &str, ids: &str) -> Result<HashMap<String, f64
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
-// shortcut: the candidate-list part scans candidate_edges on every request; fine for a personal
-// library (thousands of seeds), move to per-seed baskets if a rank takes over 100 ms.
+// shortcut: scans candidate_edges per request, move to per-seed baskets if a rank takes over 100 ms
 pub fn compute(conn: &Connection, anchors: &[String], candidates: &[String]) -> Result<Pmi, StoreError> {
     let mut pmi = Pmi::default();
     if anchors.is_empty() || candidates.is_empty() {
@@ -59,7 +53,6 @@ pub fn compute(conn: &Connection, anchors: &[String], candidates: &[String]) -> 
     both.dedup();
     let both_json = serde_json::to_string(&both)?;
 
-    // Candidate lists: each seed's list plus the seed itself is one basket.
     let baskets = "b(seed, x) AS (SELECT seed_id, track_id FROM candidate_edges UNION SELECT DISTINCT seed_id, seed_id FROM candidate_edges)";
     let n: f64 = conn.query_row("SELECT count(DISTINCT seed_id) FROM candidate_edges", [], |r| r.get(0))?;
     let in_baskets = counts(conn, &format!("WITH {baskets} SELECT x, count(*) FROM b WHERE x IN (SELECT value FROM json_each(?1)) GROUP BY x"), &both_json)?;
@@ -76,7 +69,6 @@ pub fn compute(conn: &Connection, anchors: &[String], candidates: &[String]) -> 
         pmi.keep_max(&a, &c, value);
     }
 
-    // Own sessions: counted plays within 3 positions of each other.
     let anchors_set: HashSet<&str> = anchors.iter().map(|s| s.as_str()).collect();
     let candidates_set: HashSet<&str> = candidates.iter().map(|s| s.as_str()).collect();
     let total: f64 = conn.query_row(&format!("SELECT count(*) FROM play_events WHERE {COUNTED}"), [], |r| r.get(0))?;

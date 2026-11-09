@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { watchLinks, type DeeplinkTarget } from "../ports/app";
 import { deliverShareLink, playTrackById } from "../ports/links";
 
-/** Where a nuvo:// link lands; a track plays instead of opening a page. */
 export function linkPath(target: DeeplinkTarget): string | null {
   const id = encodeURIComponent(target.id);
   if (target.type === "artist") return `/artist?id=${id}`;

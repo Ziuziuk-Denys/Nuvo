@@ -1,6 +1,4 @@
-//! Pre-cache: the daemon downloads one upcoming track's stream into the encrypted cache, so the
-//! renderer never holds the whole track. Only `https` URLs on the playback hosts are fetched,
-//! in ranges of at most 10 MB (googlevideo throttles unranged reads), through the proxy.
+// Ranges of at most 10 MB: googlevideo throttles unranged reads
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -21,13 +19,9 @@ use crate::state::{AppState, Unlocked};
 pub const RANGE_BYTES: u64 = 10 * 1024 * 1024;
 /// shortcut: a whole 10 MB range must arrive within this; an idle-read timeout would suit slow links better.
 const RANGE_TIMEOUT: Duration = Duration::from_secs(120);
-/// Overall timeout per job to prevent indefinite hangs.
 const JOB_TIMEOUT: Duration = Duration::from_secs(600);
-/// Maximum concurrent fetches; extras return 429 until one completes.
 const MAX_CONCURRENT_FETCHES: usize = 2;
-/// Redirects followed per job.
 const MAX_REDIRECTS: usize = 3;
-/// Finished jobs kept for status reads; older ones are forgotten first.
 const KEEP_FINISHED: usize = 50;
 
 pub struct Job {
@@ -43,9 +37,7 @@ pub struct Jobs {
     next_gen: AtomicU64,
 }
 
-/// What `reserve` decided, all under one lock.
 enum Reservation {
-    /// The track already has a running job.
     Running(FetchStatus),
     Full,
     Started(u64, watch::Receiver<bool>),
@@ -63,7 +55,6 @@ impl Jobs {
         }
     }
 
-    /// Ends a job unless it was cancelled or replaced meanwhile.
     fn finish(&self, track_id: &str, generation: u64, state: &'static str, code: Option<&'static str>) {
         let mut jobs = self.inner.lock().expect("fetch jobs");
         if let Some(job) = jobs.get_mut(track_id) && job.generation == generation {
@@ -81,8 +72,6 @@ impl Jobs {
         }
     }
 
-    /// Joins a running job of the track, or inserts a new one (replacing a finished entry) when a slot is
-    /// free. The running count is read from the map, so it cannot drift.
     fn reserve(&self, track_id: &str) -> Reservation {
         let mut jobs = self.inner.lock().expect("fetch jobs");
         if let Some(job) = jobs.get(track_id) && job.finished_at.is_none() {
@@ -98,7 +87,6 @@ impl Jobs {
         Reservation::Started(generation, cancelled)
     }
 
-    /// Stops a fetch and forgets it; a running job removes its partial file itself.
     pub fn cancel(&self, track_id: &str) {
         let mut jobs = self.inner.lock().expect("fetch jobs");
         if let Some(job) = jobs.remove(track_id) && let Some(cancel) = job.cancel {
@@ -107,13 +95,10 @@ impl Jobs {
     }
 }
 
-/// The playback hosts, plus hosts a test allows (those may use `http` and private addresses).
 pub fn allowed_host(host: &str, test_hosts: &[String]) -> bool {
     host.ends_with(".googlevideo.com") || host.ends_with(".sndcdn.com") || host == "playback.media-streaming.soundcloud.cloud" || test_hosts.iter().any(|h| h == host)
 }
 
-/// A redirect target must be https on the default port, on the host list, without userinfo
-/// (a test host may use plain http). Its addresses are checked when the client is built.
 fn redirect_allowed(url: &Url, test_hosts: &[String]) -> bool {
     let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
     if test_hosts.contains(&host) {
@@ -122,8 +107,6 @@ fn redirect_allowed(url: &Url, test_hosts: &[String]) -> bool {
     allowed_host(&host, test_hosts) && url.scheme() == "https" && url.port().is_none() && url.username().is_empty() && url.password().is_none()
 }
 
-/// Deny by default: `https`, no credentials, no port, a host name on the list, and every address
-/// it resolves to public.
 pub async fn check_url(text: &str, test_hosts: &[String]) -> Result<Url, ApiError> {
     let refuse = || ApiError::Invalid("only stream URLs of the playback hosts can be fetched".into());
     let url = Url::parse(text).map_err(|_| refuse())?;
@@ -142,7 +125,6 @@ pub async fn check_url(text: &str, test_hosts: &[String]) -> Result<Url, ApiErro
     Ok(url)
 }
 
-/// Starts a fetch unless the track is cached or already being fetched; answers the status.
 pub async fn start(state: &AppState, data: Unlocked, request: FetchRequest) -> Result<(bool, FetchStatus), ApiError> {
     if request.content_length.is_some_and(|len| len > MAX_UPLOAD_BYTES) {
         return Err(ApiError::TooLarge);
@@ -160,7 +142,6 @@ pub async fn start(state: &AppState, data: Unlocked, request: FetchRequest) -> R
 
     let (generation, cancelled) = match state.fetches.reserve(&request.track_id) {
         Reservation::Running(status) => return Ok((true, status)),
-        // Spec S3 has no 429 code; CONFLICT is the nearest existing one.
         Reservation::Full => return Err(ApiError::TooManyRequests),
         Reservation::Started(generation, cancelled) => (generation, cancelled),
     };
@@ -195,15 +176,13 @@ async fn run(state: AppState, data: Unlocked, request: FetchRequest, mime: Strin
     }
 }
 
-/// `Content-Range: bytes first-last/size` as `(first, last, size)`.
 fn parse_content_range(text: &str) -> Option<(u64, u64, u64)> {
     let (range, size) = text.strip_prefix("bytes ")?.split_once('/')?;
     let (first, last) = range.split_once('-')?;
     Some((first.parse().ok()?, last.parse().ok()?, size.parse().ok()?))
 }
 
-/// A client for one hop. Outside the test hosts and without a proxy it connects to the addresses
-/// just checked as public, so a second DNS answer cannot point it elsewhere; a proxy resolves by itself.
+// Connects to the addresses just checked as public, so a second DNS answer cannot redirect it
 async fn client_for(state: &AppState, url: &Url, test_hosts: &[String]) -> Result<reqwest::Client, &'static str> {
     let mut builder = reqwest::Client::builder().redirect(reqwest::redirect::Policy::none()).connect_timeout(Duration::from_secs(10)).proxy(state.proxy_hook());
     let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
@@ -220,8 +199,6 @@ async fn client_for(state: &AppState, url: &Url, test_hosts: &[String]) -> Resul
     builder.build().map_err(|_| "io")
 }
 
-/// `Ok(None)` when cancelled; `Err` carries the S3 code (plus `too_large`, `io` and `timeout`). Refused
-/// redirects are `blocked`; a response that breaks the range protocol is `server_error`.
 async fn download(state: &AppState, data: &Unlocked, id: &str, url: &Url, cancelled: &mut watch::Receiver<bool>, generation: u64) -> Result<Option<(String, u64)>, &'static str> {
     let test_hosts = state.test.fetch_hosts.clone();
     let mut writer = data.cache.begin(id).await.map_err(|_| "io")?;

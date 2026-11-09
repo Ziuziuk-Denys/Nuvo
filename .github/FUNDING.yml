@@ -1,3 +1,1 @@
-# GitHub shows the Sponsor button only when a key below has a value, so an empty key shows nothing.
-# Set it when the donate destination is chosen, for example: custom: ["https://nuvo.quest/donate"]
 custom:

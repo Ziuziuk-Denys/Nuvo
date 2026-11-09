@@ -34,7 +34,6 @@ pub fn snapshot(conn: &Connection, id: &str) -> Result<Option<Value>, StoreError
     Ok(raw.map(|s| serde_json::from_str(&s)).transpose()?)
 }
 
-/// Stores `snapshot` when given (its id must equal `id`), otherwise requires the track to exist.
 pub fn ensure(conn: &Connection, id: &str, snapshot: Option<&Value>, now: i64) -> Result<(), StoreError> {
     match snapshot {
         Some(snapshot) => {

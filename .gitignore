@@ -18,7 +18,6 @@ __pycache__/
 bench-results/
 scratch/
 
-# build/ holds only packaging sources: icons, the dmg window, entitlements, Linux metadata and the Flatpak manifest
 /build/*
 !/build/icons/
 !/build/background.png

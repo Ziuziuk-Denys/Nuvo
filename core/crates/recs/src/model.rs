@@ -1,10 +1,7 @@
-//! Score weights: fixed until enough recommendation outcomes exist, then learned.
-
 use nuvo_store::StoreError;
 use rusqlite::{Connection, OptionalExtension, params};
 
-/// Track affinity, artist affinity, time-bucket affinity, PMI to anchors, audio similarity to
-/// seeds, novelty, source rank.
+// Feature order: track, artist, time-bucket, PMI, audio similarity, novelty, source rank
 pub const FEATURES: usize = 7;
 /// The last weight is the bias.
 pub const FIXED: [f64; FEATURES + 1] = [1.0, 0.8, 0.3, 1.2, 0.8, 0.2, 0.6, 0.0];
@@ -19,8 +16,6 @@ pub struct Model {
 }
 
 impl Model {
-    /// Learned weights once 500 outcomes were seen, the fixed ones before.
-    /// Corrupt or wrong-length weights fall back to fixed.
     pub fn load(conn: &Connection) -> Result<Self, StoreError> {
         let row: Option<(String, i64)> = conn
             .query_row("SELECT weights_json, events_seen FROM rec_model WHERE key = ?1", [MODEL_KEY], |r| Ok((r.get(0)?, r.get(1)?)))
@@ -41,8 +36,6 @@ impl Model {
     }
 }
 
-/// One step of online logistic regression (label: the play's reward was positive), starting from
-/// the fixed weights so the learned model takes over close to them.
 pub fn learn(conn: &Connection, x: &[f64; FEATURES], label: bool, now: i64) -> Result<(), StoreError> {
     let row: Option<(String, i64)> = conn
         .query_row("SELECT weights_json, events_seen FROM rec_model WHERE key = ?1", [MODEL_KEY], |r| Ok((r.get(0)?, r.get(1)?)))

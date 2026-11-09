@@ -1,6 +1,5 @@
 import { coreRequest } from "@/data/core/request";
 
-/** What the old renderer left in the window's storage, moved to the daemon or cleared once. */
 export const LEGACY_LIMIT_KEY = "nuvo_audio_cache_limit_bytes";
 export const LEGACY_CLEANUP_KEY = "nuvo.storage.legacy-cleanup";
 
@@ -25,9 +24,7 @@ export function browserLegacyEnv(): LegacyStorageEnv {
   let storage: Storage | null = null;
   try {
     storage = localStorage;
-  } catch {
-    // storage blocked: nothing to clean
-  }
+  } catch {}
   return {
     storage,
     setLimit: (bytes) => coreRequest<unknown>("PATCH", "/v1/cache/settings", { limitBytes: bytes }).then(() => undefined),
@@ -36,7 +33,6 @@ export function browserLegacyEnv(): LegacyStorageEnv {
   };
 }
 
-/** The user's audio cache limit goes to the daemon once; the key stays until the daemon has it. */
 async function moveCacheLimit(env: LegacyStorageEnv, storage: Storage): Promise<void> {
   const raw = storage.getItem(LEGACY_LIMIT_KEY);
   if (raw === null) return;
@@ -48,21 +44,16 @@ async function moveCacheLimit(env: LegacyStorageEnv, storage: Storage): Promise<
   try {
     await env.setLimit(bytes);
     storage.removeItem(LEGACY_LIMIT_KEY);
-  } catch {
-    // the daemon is down or locked: next start
-  }
+  } catch {}
 }
 
-/** The old renderer's caches; Nuvo's own code keeps no IndexedDB database. */
 async function dropDatabases(env: LegacyStorageEnv, storage: Storage): Promise<void> {
   if (storage.getItem(LEGACY_CLEANUP_KEY) === "1") return;
   try {
     const names = (await env.databases()).flatMap((database) => (database.name ? [database.name] : []));
     for (const name of names) await env.deleteDatabase(name);
     storage.setItem(LEGACY_CLEANUP_KEY, "1");
-  } catch {
-    // next start
-  }
+  } catch {}
 }
 
 export async function cleanupLegacyStorage(env: LegacyStorageEnv = browserLegacyEnv()): Promise<void> {

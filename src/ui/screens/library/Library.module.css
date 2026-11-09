@@ -1,5 +1,3 @@
-/* Library: a 26 px title, one bar of tab pills and tools, then covers or rows in the page's own scroll. */
-/* the original title sits up in the top row, 20 px above the shell's page origin */
 .page {
   display: flex;
   flex-direction: column;
@@ -13,7 +11,6 @@
   letter-spacing: -0.025em;
 }
 
-/* one row: when the Russian tabs leave too little room, the search field gives up width before anything wraps */
 .bar {
   container-type: inline-size;
   display: flex;
@@ -23,7 +20,7 @@
   margin-top: 10px;
 }
 
-/* at 1100 the five tabs and the tools share one row only with New playlist as a square like the view buttons */
+/* At 1100 px the tabs and tools share one row only with New playlist as a square button */
 @container (max-width: 1059px) {
   .create {
     width: 52px;
@@ -34,7 +31,6 @@
     display: none;
   }
 
-  /* the sort button takes its room from the filter, so long tab names still fit beside the tools */
   .tools .filter {
     min-width: 120px;
   }
@@ -48,8 +44,7 @@
   gap: 8px;
 }
 
-/* on a narrow window the filter gives way first, then the tabs scroll sideways instead of running under the tools;
-   the padding keeps the focus ring inside the scroll box */
+/* The padding keeps the focus ring inside the scroll box */
 .tabs {
   flex: 0 1 auto;
   flex-wrap: nowrap;
@@ -72,7 +67,6 @@
   min-width: 140px;
 }
 
-/* over the field's own fixed width */
 .tools .filter > * {
   width: 100%;
 }
@@ -88,7 +82,6 @@
   font: 400 14px/1.4 var(--n-font);
 }
 
-/* a line and its one text action: no match, or a refresh that failed above rows still shown */
 .inline {
   display: flex;
   flex-wrap: wrap;

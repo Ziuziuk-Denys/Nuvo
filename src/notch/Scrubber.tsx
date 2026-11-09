@@ -3,7 +3,6 @@ import { formatTime, positionAt, type PositionSample } from "./lib/playback";
 
 interface ScrubberProps {
   sample: PositionSample;
-  /** Only while expanded and playing: drives one rAF loop. */
   live: boolean;
   accent: string;
   onSeek: (positionMs: number) => void;
@@ -12,7 +11,6 @@ interface ScrubberProps {
 
 export function Scrubber({ sample, live, accent, onSeek, onHold }: ScrubberProps) {
   const [now, setNow] = useState(() => Date.now());
-  // The sample a drag started on: a released drag keeps its value until the player answers.
   const [drag, setDrag] = useState<{ ms: number; sample: PositionSample } | null>(null);
   const [dragging, setDragging] = useState(false);
 

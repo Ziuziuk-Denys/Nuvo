@@ -1,6 +1,3 @@
-//! Pins and hides for playlists, albums and artists. No cap on pins; a hidden item leaves Home and
-//! the Library lists but stays playable by link, in search and in history.
-
 use std::collections::HashSet;
 
 use nuvo_contracts::{FlagKey, LibraryFlag, SetFlag, iso_from_ms};
@@ -12,7 +9,6 @@ pub const KINDS: [&str; 3] = ["playlist", "album", "artist"];
 const MAX_ID_LEN: usize = 256;
 const MAX_SNAPSHOT_BYTES: usize = 16 * 1024;
 
-/// A row before its snapshot JSON is parsed.
 struct Raw {
     kind: String,
     id: String,
@@ -54,7 +50,6 @@ fn check_key(kind: &str, id: &str) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Pinned items first in pin order, then hidden ones, newest change first.
 pub fn list(conn: &Connection) -> Result<Vec<LibraryFlag>, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT * FROM library_flags ORDER BY pinned_position IS NULL, pinned_position, updated_at DESC, kind, id",
@@ -68,8 +63,6 @@ fn get(conn: &Connection, kind: &str, id: &str) -> Result<Option<LibraryFlag>, S
     raw.map(to_flag).transpose()
 }
 
-/// Pinning appends to the end and unhides; hiding unpins. A row left neither pinned nor hidden
-/// is removed. Returns the item's state afterwards.
 pub fn set(conn: &Connection, kind: &str, id: &str, input: &SetFlag, now: i64) -> Result<LibraryFlag, StoreError> {
     check_key(kind, id)?;
     if input.pinned == Some(true) && input.hidden == Some(true) {
@@ -126,8 +119,6 @@ pub fn delete(conn: &Connection, kind: &str, id: &str) -> Result<(), StoreError>
     Ok(())
 }
 
-/// Puts `items` first, in this order; pinned items not listed follow in their old order.
-/// Every listed item must be pinned, and none may repeat.
 pub fn pin_order(conn: &Connection, items: &[FlagKey]) -> Result<Vec<LibraryFlag>, StoreError> {
     let mut seen = HashSet::new();
     if !items.iter().all(|key| seen.insert((key.kind.as_str(), key.id.as_str()))) {

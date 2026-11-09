@@ -11,7 +11,6 @@ export type { ImportSummary } from "@/links/core";
 export type { Share } from "@/links/shareCodec";
 export type { CatalogTrack, ImportTarget } from "@/links/types";
 
-/** A nuvo://track link: looks the video up and plays it alone; a gone video does nothing. */
 export async function playTrackById(id: string): Promise<void> {
   const { youtubeCatalog } = await import("@/links/youtubeCatalog");
   const { toPlayerTrack } = await import("@/links/playerTrack");

@@ -8,7 +8,6 @@ import { ENTRY_SORTS, LIBRARY_TABS, LOCAL_SORTS } from "../ui/screens/library/li
 import { flattenTexts } from "./text";
 
 const SRC = path.resolve(__dirname, "..");
-/** Nuvo's own code. Legacy screens read the old files through legacy.ts until they are deleted. */
 const ROOTS = [
   "ui",
   "engine",
@@ -26,10 +25,8 @@ const ROOTS = [
   "youtubeBoot.ts",
 ];
 const NAMESPACES = "ui|sound|common|import|artist|core|library|player|playlist|search|settings|track_search";
-/** Owned by the appearance screen and checked by appearanceKeys.test.ts; its Look screen is still to come. */
 const EXEMPT = "appearance.";
 
-/** Keys the code builds at run time, with every value it can put in. Empty: built, but no screen shows it yet. */
 const DYNAMIC: Record<string, string[]> = {
   "library.search_": LIBRARY_TABS,
   "player.repeat_": ["off", "all", "one"],
@@ -155,7 +152,6 @@ const DYNAMIC: Record<string, string[]> = {
   "ui.imports.notice.": ["capped", "cut"],
   "ui.imports.search.": ["none", "failed"],
   "ui.imports.source.": ["youtube-music", "soundcloud", "apple-music", "deezer", "spotify"],
-  // the Local tab draws its own empty state
   "ui.library.empty_": LIBRARY_TABS.filter((tab) => tab !== "local"),
   "ui.library.tab_": LIBRARY_TABS,
   "ui.library.sort.": [...new Set([...ENTRY_SORTS, ...LOCAL_SORTS])],
@@ -192,7 +188,6 @@ const DYNAMIC: Record<string, string[]> = {
   "ui.search.tab_": ["all", "songs", "albums", "artists", "playlists"],
 };
 
-/** Keys the Customization section joins from a prefix constant and a name. */
 const JOINED = [
   "change_button",
   "dark_theme_only",
@@ -209,14 +204,11 @@ const JOINED = [
 const LITERAL = new RegExp(`["'\`]((?:${NAMESPACES})\\.[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_-]+)*)["'\`]`, "g");
 const TEMPLATE = new RegExp(`\`((?:${NAMESPACES})\\.[A-Za-z0-9_.-]*)\\$\\{`, "g");
 const PLURAL = /_(?:zero|one|two|few|many|other|plural)$/;
-/** A key glued with `+` hides from both scans above, so its texts can go missing unseen. */
 const CONCAT = new RegExp(`["'](?:${NAMESPACES})\\.[A-Za-z0-9_.-]*\\.["']\\s*\\+`);
-/** Counts with no noun to agree with, a count that arrives already written out ("1.2M"), or one that is always two or more. */
 const COUNT_WITHOUT_FORMS = ["ui.local.scan_missing_many", "ui.recs.hidden.fades", "ui.bulk.selected", "artist.monthly_audience", "settings.lastfm.queued"];
 const EN_FORMS = ["_one", "_other"];
 const RU_FORMS = ["_one", "_few", "_many", "_other"];
 
-/** Command ids such as player.toggle look like keys but are not texts. */
 const IDS_ONLY = ["data/shortcuts"];
 
 function sourceFiles(entry: string): string[] {
@@ -232,7 +224,6 @@ function scan(): { literals: Set<string>; templates: Set<string> } {
   const literals = new Set<string>();
   const templates = new Set<string>();
   for (const file of ROOTS.flatMap(sourceFiles)) {
-    // keys named in comments are documentation, not use
     const code = fs
       .readFileSync(file, "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -249,12 +240,10 @@ const used = new Set([...literals, ...JOINED, ...Object.entries(DYNAMIC).flatMap
 const EN = flattenTexts(en);
 const RU = flattenTexts(ru);
 
-/** `x_one` is a plural form only when its family has an `_other` (or `_plural`); `repeat_one` alone is a plain key. */
 const isPluralForm = (table: Map<string, string>, key: string) =>
   PLURAL.test(key) && (table.has(key.replace(PLURAL, "_other")) || table.has(key.replace(PLURAL, "_plural")));
 const baseOf = (table: Map<string, string>, key: string) => (isPluralForm(table, key) ? key.replace(PLURAL, "") : key);
 const bases = (table: Map<string, string>) => new Set([...table.keys()].map((key) => baseOf(table, key)));
-/** A key used as a base (`base + ".title"`) resolves through its children. */
 const resolves = (table: Map<string, string>, key: string, forms: string[]) =>
   table.has(key) || forms.every((form) => table.has(key + form)) || [...table.keys()].some((name) => name.startsWith(`${key}.`));
 const placeholders = (table: Map<string, string>, base: string) =>

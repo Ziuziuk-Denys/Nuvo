@@ -1,8 +1,3 @@
-//! Outbound HTTP to catalog and artwork hosts: https only, a deny-by-default host list checked on
-//! every hop, redirects followed by hand, one timeout for connect plus body, a body size cap, no
-//! cookies and no referrer. Direct requests connect only to the public addresses a lookup returned;
-//! a proxy resolves names itself. Tests send every request to one local fixture server instead.
-
 #[cfg(feature = "fixture")]
 pub mod fixture;
 
@@ -32,7 +27,6 @@ pub enum NetError {
     Http(String),
 }
 
-/// What one fetch may do. `allow` sees the lower-case host name of every hop.
 pub struct Fetch {
     pub allow: fn(&str) -> bool,
     pub max_bytes: usize,
@@ -60,7 +54,6 @@ impl Fetched {
     }
 }
 
-/// Name lookup, injectable so tests can count and fake it.
 type Lookup = Arc<dyn Fn(String) -> Pin<Box<dyn Future<Output = std::io::Result<Vec<IpAddr>>> + Send>> + Send + Sync>;
 
 fn system_lookup() -> Lookup {
@@ -87,7 +80,7 @@ impl Net {
         Self::with_proxy(rewrite, None)
     }
 
-    /// `proxy` is the owner's proxy setting; without it requests go direct and ignore the environment.
+    // Without a proxy, requests go direct and ignore proxy environment variables
     pub fn with_proxy(rewrite: Option<String>, proxy: Option<reqwest::Proxy>) -> Self {
         Self::build(rewrite, proxy, system_lookup())
     }
@@ -106,8 +99,7 @@ impl Net {
         self.send(url, fetch, &[], None).await
     }
 
-    /// A request with extra headers, a POST when it has a body. A POST never follows a redirect: the
-    /// 3xx answer comes back as it is.
+    // A POST never follows a redirect: the 3xx answer comes back as is
     pub async fn send(&self, url: &Url, fetch: &Fetch, headers: &[(&str, &str)], body: Option<&[u8]>) -> Result<Fetched, NetError> {
         match tokio::time::timeout(fetch.timeout, self.follow(url.clone(), fetch, headers, body)).await {
             Ok(result) => result,
@@ -154,8 +146,7 @@ impl Net {
         }
     }
 
-    /// Direct requests connect only to the addresses just approved as public, so a second DNS answer
-    /// cannot redirect them. A proxy resolves by itself, and the test rewrite never leaves the machine.
+    // Direct requests connect only to just-approved addresses, so a second DNS answer cannot rebind
     async fn client_for(&self, host: &str) -> Result<reqwest::Client, NetError> {
         if self.proxied || self.rewrite.is_some() {
             return Ok(self.client.clone());
@@ -175,7 +166,6 @@ impl Net {
     }
 }
 
-/// The lower-case host of an allowed https URL; the rest of the address checks happen at connect time.
 fn check(url: &Url, allow: fn(&str) -> bool) -> Result<String, NetError> {
     let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
     if url.scheme() != "https" || url.port().is_some() {
@@ -190,7 +180,6 @@ fn check(url: &Url, allow: fn(&str) -> bool) -> Result<String, NetError> {
     Ok(host)
 }
 
-/// The public addresses of `host`; non-public answers are dropped and never connected to.
 async fn approved_addresses(host: &str, lookup: &Lookup) -> Result<Vec<SocketAddr>, NetError> {
     let ips = lookup(host.to_string()).await.map_err(|e| NetError::Forbidden(format!("DNS resolution failed: {e}")))?;
     if ips.is_empty() {

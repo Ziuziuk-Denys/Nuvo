@@ -1,17 +1,9 @@
-/**
- * Import workers: loops on `POST /v1/imports/{id}/next`, run
- * the search the daemon asks for, post the candidates with the same step. One import runs at a
- * time with up to eight loops; the rest wait in order. The daemon leases rows, so a loop that dies
- * mid-search costs one lease, never a row.
- */
 import { CoreError, type ImportsDaemon } from "./core";
 import { sleep as realSleep, type Sleep } from "./http";
 import type { CatalogTrack, ImportSearch } from "./types";
 
 export interface SearchPorts {
-  /** YouTube search; `songs`, `any` and `videos` as the daemon names them. */
   youtube(query: string, filter: ImportSearch["filter"], signal: AbortSignal): Promise<CatalogTrack[]>;
-  /** SoundCloud search (`GET /v1/sc/search`), the cascade's last step. */
   soundcloud(query: string, signal: AbortSignal): Promise<CatalogTrack[]>;
 }
 
@@ -20,7 +12,6 @@ export type StopReason = "done" | "gone" | "locked" | "error";
 export interface RunnerOptions {
   workers?: number;
   sleep?: Sleep;
-  /** After each posted row, so the screen can refresh the summary. */
   onRow?(importId: string): void;
   onStopped?(importId: string, reason: StopReason): void;
 }
@@ -30,9 +21,7 @@ export const MAX_WORKERS = 8;
 export const MAX_CANDIDATES = 25;
 export const MAX_WAIT_MS = 60_000;
 export const RETRY_MS = 2_000;
-/** Consecutive daemon failures before a loop gives up. */
 export const MAX_FAILURES = 5;
-/** How long a daemon that is still starting (503) is waited for. */
 export const MAX_STARTING_MS = 60_000;
 
 /** Retries of a rate-limited search (2, 4 and 8 s), well inside the row's one-minute lease. */
@@ -51,10 +40,8 @@ export class ImportRunner {
     private readonly options: RunnerOptions = {},
   ) {}
 
-  /** Queues imports; one already queued or running is not added twice. */
   add(ids: string[]): void {
     for (const id of ids) {
-      // an import that was just stopped still drains; adding it again queues a restart
       const running = this.active?.id === id && !this.active.controller.signal.aborted;
       if (!running && !this.queue.includes(id)) this.queue.push(id);
     }
@@ -92,7 +79,6 @@ export class ImportRunner {
           this.options.onStopped?.(id, reason);
         }
       } catch {
-        // a broken listener must not stall the queue
       } finally {
         this.pump();
       }
@@ -107,7 +93,6 @@ export class ImportRunner {
     return search.source === "youtube" ? this.search.youtube(search.query, search.filter, signal) : this.search.soundcloud(search.query, signal);
   }
 
-  /** One worker. Resolves with why it stopped; rejects only on abort. */
   private async loop(id: string, signal: AbortSignal): Promise<StopReason> {
     let failures = 0;
     let conflicts = 0;
@@ -118,7 +103,6 @@ export class ImportRunner {
       if (error instanceof CoreError && error.status === 404) return "gone";
       if (error instanceof CoreError && error.status === 423) return "locked";
       if (error instanceof CoreError && error.status === 503) {
-        // the daemon is still starting: back off for up to a minute
         if (startingMs >= MAX_STARTING_MS) return "error";
         const delay = Math.min(RETRY_MS * 2 ** startingSteps, 10_000);
         startingSteps += 1;
@@ -142,13 +126,11 @@ export class ImportRunner {
         continue;
       }
       if (!answer || typeof answer !== "object") {
-        // an unreadable answer counts as a daemon failure
         const stop = await failed(new CoreError(200, "UPSTREAM"));
         if (stop) return stop;
         continue;
       }
       if ("done" in answer) return "done";
-      // any good answer shows the daemon is up: earlier trouble no longer counts
       failures = 0;
       startingMs = 0;
       startingSteps = 0;
@@ -165,7 +147,6 @@ export class ImportRunner {
           break;
         } catch (error) {
           if (isAbort(error, signal)) throw error;
-          // a rate limit asks for a pause, it is not a miss: the same search again after a growing wait
           if (isRateLimit(error) && tries < RATE_LIMIT_RETRIES) {
             await this.wait(RETRY_MS * 2 ** tries, signal);
             continue;
@@ -190,8 +171,7 @@ export class ImportRunner {
         startingMs = 0;
         startingSteps = 0;
       } catch (error) {
-        // 409: the lease expired and another worker answered this step; take the next row,
-        // but a daemon that keeps saying so is not healthy
+        // 409: lease expired and another worker answered; repeated 409s mean an unhealthy daemon
         if (error instanceof CoreError && error.status === 409) {
           conflicts += 1;
           if (conflicts >= MAX_FAILURES) return "error";
@@ -204,9 +184,7 @@ export class ImportRunner {
       }
       try {
         this.options.onRow?.(id);
-      } catch {
-        // the screen's trouble, not the daemon's
-      }
+      } catch {}
     }
   }
 }

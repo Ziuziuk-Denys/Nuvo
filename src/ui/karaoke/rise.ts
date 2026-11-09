@@ -1,11 +1,9 @@
 import look from "./look.json";
 
-/** The overlay's rise: duration measured from the running view, curve checked against its samples. */
 export const RISE_CURVE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 export const RISE_EASING = `cubic-bezier(${RISE_CURVE.join(", ")})`;
 export const RISE_MS = look.overlay.durationMs;
 
-/** y of a CSS cubic-bezier at progress t, solving x(s) = t by bisection. */
 export function bezierY(t: number, [x1, y1, x2, y2]: [number, number, number, number]): number {
   const at = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3;
   let low = 0;

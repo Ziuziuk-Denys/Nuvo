@@ -1,4 +1,3 @@
-/** The daemon's recommendation routes the UI uses: "Not interested" with undo, and the Home mixes. */
 import type { ContinuationRequest } from "./continuation";
 import { fromSnapshot, toSnapshot } from "./snapshot";
 import type { PlayerView, Track } from "./types";
@@ -10,7 +9,6 @@ export interface NotInterestedResult {
   offerHideArtist: boolean;
 }
 
-/** Why a save failed: the vault is locked (423), or the daemon is starting, down or refused. */
 export type RecsFailure = "locked" | "unavailable";
 
 export interface HomeMix {
@@ -20,15 +18,11 @@ export interface HomeMix {
   tracks: Track[];
 }
 
-/** One "Not interested" entry as the hidden list shows it. */
 export interface Suppression {
   id: number;
   scope: NotInterestedScope;
-  /** `user`, or `scrub_skip` when the daemon added it after a scrub-then-skip. */
   origin: string;
-  /** The track it was made on; null when the daemon no longer has it. */
   track: Track | null;
-  /** Unix ms when it stops mattering; null for entries that never fade. */
   fadesAt: number | null;
 }
 
@@ -38,22 +32,16 @@ const SCOPES: readonly string[] = ["exact", "work", "artist", "artist_forever"];
 export const SUGGEST_SEEDS = 50;
 export const MAX_RANK_IDS = 200;
 
-/** Ten suggestions for a playlist: its newest tracks as seeds, its last 200 as tracks never to repeat. */
 export function suggestRequest(playlistId: string, trackIds: readonly string[]): ContinuationRequest {
   return { context: `suggest:${playlistId}`, seeds: trackIds.slice(-SUGGEST_SEEDS), recent: trackIds.slice(-MAX_RANK_IDS), sessionId: null, limit: 10 };
 }
 
 export interface RecsClient {
   notInterested(track: Track, scope: NotInterestedScope): Promise<NotInterestedResult | RecsFailure>;
-  /** True when the suppression is gone, also when it already was (404); otherwise why not. */
   undo(suppressionId: number): Promise<true | RecsFailure>;
-  /** `GET /v1/me/recommendations/daily-mixes`; empty on any failure. */
   homeMixes(): Promise<HomeMix[]>;
-  /** `GET /v1/recs/suppressions`; entries with an unknown scope are left out. */
   suppressions(): Promise<Suppression[] | RecsFailure>;
-  /** `GET /v1/recs/start`: true only when the daemon says nothing tells the taste yet; false on any failure. */
   coldStart(): Promise<boolean>;
-  /** `PUT /v1/recs/starters` with the top tracks of the artists the owner named (at most 15). */
   saveStarters(tracks: Track[]): Promise<true | RecsFailure>;
 }
 
@@ -156,7 +144,6 @@ export function createRecsClient(base: string, doFetch: typeof fetch): RecsClien
   };
 }
 
-/** "Not interested" on the playing track skips it, wherever it came from. */
 export function skipsOnDislike(view: Pick<PlayerView, "current">, trackId: string): boolean {
   return view.current?.track.id === trackId;
 }

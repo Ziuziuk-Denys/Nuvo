@@ -13,17 +13,14 @@ import styles from "./TrimSheet.module.css";
 
 const VERSIONS = 8;
 
-/** The one source picker of the window: the track menu opens it, the shell hosts it. */
 export const useSourceSheet = create<{ track: Track | null; open(track: Track): void; close(): void }>((set) => ({
   track: null,
   open: (track) => set({ track }),
   close: () => set({ track: null }),
 }));
 
-/** The song's own source first, then other versions the catalog finds for it; the one that plays is ticked. */
 function SourcePicker({ track, onClose }: { track: Track; onClose(): void }): JSX.Element {
   const { t } = useTranslation();
-  // undefined while the daemon answers, null for the original
   const [chosen, setChosen] = useState<string | null | undefined>(undefined);
   const { tracks, loading } = useSearchTracks(`${track.artists} ${track.title}`, { limit: VERSIONS + 1 });
   const versions = tracks.filter((version) => version.id !== track.id).slice(0, VERSIONS);

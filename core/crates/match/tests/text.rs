@@ -1,7 +1,6 @@
 use nuvo_match::text::{artist_and_title, base_title, compare_form, markers, normalize, remove_junk, same_artist, search_query, similarity, translit};
 use serde_json::Value;
 
-/// The strings of 3.1.
 #[test]
 fn normalised_words() {
     assert_eq!(normalize("  Hello,  WORLD!! ёж "), "hello world ёж");
@@ -9,7 +8,6 @@ fn normalised_words() {
     assert_eq!(compare_form("Song.FLAC (live)"), "song live");
 }
 
-/// 3.2 and 3.3.
 #[test]
 fn junk_and_base_titles() {
     assert_eq!(remove_junk("Track (Official Audio) @someone"), "Track");
@@ -34,7 +32,6 @@ fn junk_and_base_titles() {
     assert_eq!(base_title("Song - Ремастеринг 2009"), "song");
 }
 
-/// 3.4.
 #[test]
 fn artist_and_title_parsing() {
     let pair = |s: &str| artist_and_title(s);
@@ -45,7 +42,6 @@ fn artist_and_title_parsing() {
     assert_eq!(pair("Just A Title"), (None, "Just A Title".into()));
 }
 
-/// 3.6.
 #[test]
 fn search_queries() {
     let q = search_query("Burial - Archangel (Kode9 Flip) [FREE DL] (prod. by Burial)", &["hyperdub_fan".into()]);
@@ -57,7 +53,6 @@ fn search_queries() {
     assert_eq!(search_query("Levels", &[]).query, "Levels");
 }
 
-/// Review focus 1: a title made only of junk is searched as written, never as an empty query.
 #[test]
 fn junk_only_titles_are_kept() {
     assert_eq!(search_query("(Official Video)", &["Artist".into()]).query, "Artist (Official Video)");
@@ -87,7 +82,6 @@ fn version_markers() {
     assert!(markers("Credit Where Due").is_empty() && markers("Alive").is_empty());
 }
 
-/// Similarity properties.
 #[test]
 fn similarity_properties() {
     assert_eq!(similarity("Звери Районы", "Районы Звери"), 100.0);
@@ -100,7 +94,6 @@ fn similarity_properties() {
     assert!(typo > 85.0 && typo < 100.0, "{typo}");
 }
 
-/// Tag words only match as whole words.
 #[test]
 fn social_tags_need_word_boundaries() {
     assert_eq!(remove_junk("Instant Crush"), "Instant Crush");
@@ -108,7 +101,6 @@ fn social_tags_need_word_boundaries() {
     assert_eq!(remove_junk("Tiger X Lion"), "Tiger X Lion");
 }
 
-/// Only a bracketed "with" is a featuring clause.
 #[test]
 fn unbracketed_with_stays() {
     assert_eq!(base_title("Stay With Me"), "stay with me");
@@ -116,7 +108,6 @@ fn unbracketed_with_stays() {
     assert_eq!(base_title("Song (with Artist)"), "song");
 }
 
-/// A hyphen inside a name does not split.
 #[test]
 fn hyphenated_artists() {
     assert_eq!(artist_and_title("Jay-Z - Encore"), (Some("Jay-Z".into()), "Encore".into()));
@@ -137,7 +128,6 @@ fn shared_fixture_tags_match() {
     }
 }
 
-/// Version markers inside promo brackets survive; only the promo words go.
 #[test]
 fn markers_survive_promo_brackets() {
     assert_eq!(markers("Song (Remastered Remix)"), ["remix"]);
@@ -151,7 +141,6 @@ fn markers_survive_promo_brackets() {
     assert_eq!(remove_junk("Song (Remastered)"), "Song");
 }
 
-/// Nested, mixed and unmatched brackets.
 #[test]
 fn bracket_stripping_is_robust() {
     assert_eq!(remove_junk("Song (Official Video (HD))"), "Song");
@@ -163,7 +152,6 @@ fn bracket_stripping_is_robust() {
     assert_eq!(remove_junk("Song ((((("), "Song (((((");
 }
 
-/// 3.2 link prefixes and handles, also bracketed and in any case.
 #[test]
 fn links_and_handles() {
     for tail in ["vk.com/artist", "soundcloud.com/x/y", "INSTAGRAM.COM/foo", "x.com/foo", "twitter.com/foo", "T.ME/chan", "@someone", "(t.me/chan)", "[VK.com/x]"] {
@@ -173,14 +161,12 @@ fn links_and_handles() {
     assert_eq!(remove_junk("mail me@home"), "mail me@home");
 }
 
-/// Lowercasing that changes byte lengths must not misalign offsets.
 #[test]
 fn offsets_survive_special_case_mapping() {
     assert_eq!(remove_junk("İẞ x T.ME/chan"), "İẞ x");
     assert_eq!(remove_junk("İİİ vk.com/a Song"), "İİİ Song");
 }
 
-/// Composed and decomposed text are the same text.
 #[test]
 fn unicode_is_normalised() {
     let (nfd, nfc) = ("Che\u{308}rny Beyonce\u{301}", "Ch\u{eb}rny Beyonc\u{e9}");
@@ -193,7 +179,6 @@ fn unicode_is_normalised() {
     assert_eq!(base_title("Beyonce\u{301} - Halo (Remix)"), base_title("Beyonc\u{e9} - Halo (Remix)"));
 }
 
-/// 3.1 folds: ё to е, and й in both spellings.
 #[test]
 fn cyrillic_folds() {
     assert_eq!(compare_form("Чёрный"), compare_form("Черный"));
@@ -204,7 +189,6 @@ fn cyrillic_folds() {
     assert_eq!(translit("Майк"), translit("Maik"));
 }
 
-/// A "by" credit is only a credit after prod, produced or beat.
 #[test]
 fn by_credits() {
     assert_eq!(remove_junk("Feel the Beat by Beat"), "Feel the Beat by Beat");
@@ -217,7 +201,6 @@ fn by_credits() {
     assert_eq!(remove_junk("Song (beat by X)"), "Song");
 }
 
-/// 3.4 in full: three parts, rejoin, length limits, every separator.
 #[test]
 fn artist_and_title_split_rules() {
     let pair = |s: &str| artist_and_title(s);
@@ -234,7 +217,6 @@ fn artist_and_title_split_rules() {
     assert_eq!(pair("Jay-Z"), (None, "Jay-Z".into()));
 }
 
-/// 3.3 trailing dash qualifiers with and without years, and the Russian remaster word.
 #[test]
 fn dash_qualifiers_and_years() {
     for tail in ["2011 Remaster", "Remastered 2011", "Remaster", "Live at Wembley", "Live", "Acoustic", "Instrumental", "Radio Edit", "Single Version", "Original Mix", "Album Version", "Stereo", "Mono", "Ремастеринг 2009", "Ремастированная версия 2011", "Ремастер"] {
@@ -252,7 +234,6 @@ fn dash_qualifiers_and_years() {
     assert_eq!(base_title("Live"), "");
 }
 
-/// Alias table: every listed fact, every pair inside a group.
 #[test]
 fn alias_groups() {
     let groups: [&[&str]; 4] = [
@@ -272,7 +253,6 @@ fn alias_groups() {
     assert!(!same_artist("Скриптонит", "Pharaoh"));
 }
 
-/// Empty and blank input never panics and never matches.
 #[test]
 fn empty_and_blank_input() {
     assert_eq!(remove_junk("()"), "");
@@ -292,7 +272,6 @@ fn empty_and_blank_input() {
     }
 }
 
-/// Hostile input is capped: nothing is quadratic in the raw length.
 #[test]
 fn long_input_is_bounded() {
     let inputs = [
@@ -328,7 +307,6 @@ fn long_input_is_bounded() {
     assert!(start.elapsed() < std::time::Duration::from_secs(1));
 }
 
-/// 3.9: the score does not depend on the argument order.
 #[test]
 fn similarity_is_symmetric() {
     let texts = ["alpha beta", "alpha alpha", "alpha", "beta alpha gamma", "alphb beta", "самый дорогой человек", "самый дорогой человек на свете", "levels", "levels avicii", "a b", "b a c"];

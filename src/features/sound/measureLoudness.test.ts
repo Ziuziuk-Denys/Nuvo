@@ -59,7 +59,6 @@ describe("measureLoudness in a worker", () => {
     expect(workers).toHaveLength(1);
     expect(workers[0].options).toEqual({ type: "module" });
     expect(String(workers[0].url)).toMatch(/loudness\.worker\.ts/);
-    // both channels share one buffer in the fake, so it is listed once
     expect(workers[0].transfer).toEqual([buffer.getChannelData(0).buffer]);
     expect(workers[0].terminate).toHaveBeenCalledTimes(1);
   });

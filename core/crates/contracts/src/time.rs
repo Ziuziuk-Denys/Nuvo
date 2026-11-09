@@ -47,18 +47,15 @@ pub fn local_hour_weekday(utc_ms: i64, tz_offset_min: i64) -> (i64, i64) {
     (hour, weekday)
 }
 
-/// Days since 1970-01-01 of the local day an instant falls on.
 pub fn local_day(utc_ms: i64, tz_offset_min: i64) -> i64 {
     (utc_ms - tz_offset_min * 60_000).div_euclid(86_400_000)
 }
 
-/// `YYYY-MM-DD` of a day number.
 pub fn iso_day(day: i64) -> String {
     let (year, month, date) = civil_from_days(day);
     format!("{year:04}-{month:02}-{date:02}")
 }
 
-/// Inverse of `iso_day`; any other shape, or a date that does not exist, is `None`.
 pub fn day_from_iso(text: &str) -> Option<i64> {
     let b = text.as_bytes();
     if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
@@ -83,7 +80,7 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     era * 146_097 + doe - 719_468
 }
 
-// Howard Hinnant's days-to-civil algorithm, valid for the whole i64 day range we use.
+// Howard Hinnant's days-to-civil algorithm, valid for the whole i64 day range used here
 fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let z = days + 719_468;
     let era = z.div_euclid(146_097);

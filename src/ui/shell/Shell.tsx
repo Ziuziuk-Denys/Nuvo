@@ -36,13 +36,11 @@ import { TourLayer } from "../tour/TourLayer";
 
 export interface ShellProps {
   children: ReactNode;
-  /** Sheets, banners and panels hosted above the page. */
   overlays?: ReactNode;
 }
 
 const KARAOKE_PATH = "/player";
 const STAY_IN_PLACE = { replace: true } as const;
-/** Legacy pages keep their own scroll boxes, found by the Tailwind class they use. */
 const LEGACY_SCROLLERS = ".overflow-y-auto";
 
 const CHROME = { hidden: { opacity: 0 } };
@@ -55,7 +53,6 @@ function pinWindow(event: UIEvent<HTMLDivElement>): void {
   event.currentTarget.scrollTo(0, 0);
 }
 
-/** The window: the field, the top bar and the rail, one scrolling content column, legacy overlays and the karaoke view. */
 export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const { t } = useTranslation();
   useLookSync();
@@ -65,7 +62,6 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   bootImports(t);
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
-  // a shared link that opened Nuvo, or arrived while it ran, opens in search
   useEffect(() => onShareLink((link) => void navigate(`/search?link=1&q=${encodeURIComponent(link)}`)), [navigate]);
   const edgeToEdge = useWindowState().isEdgeToEdge;
 
@@ -86,14 +82,12 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const karaokeShown = fullscreen || onKaraokeRoute;
   useUndoToast(trackLoaded && !karaokeShown && !gated);
 
-  // #/player is drawn over the page that was open before it, so that page stays mounted below
   const [underlay, setUnderlay] = useState<ReactNode>(children);
   if (!onKaraokeRoute && underlay !== children) setUnderlay(children);
 
   const scroller = useRef<HTMLDivElement>(null);
   useScrollActivity(scroller);
 
-  // #/settings?section=about is a deep link: open that settings section over Home
   const settingsLink = pathname === "/settings" ? (new URLSearchParams(search).get("section") ?? "") : null;
   const { showSettings } = modal;
   useEffect(() => {
@@ -102,7 +96,6 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     void navigate("/", STAY_IN_PLACE);
   }, [settingsLink, showSettings, navigate]);
 
-  // every new location opens at its top, including legacy pages that scroll inside themselves
   const location = pathname + search;
   useLayoutEffect(() => {
     const box = scroller.current;
@@ -115,13 +108,11 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     else if (onKaraokeRoute) void navigate("/", STAY_IN_PLACE);
   }, [fullscreen, onKaraokeRoute, navigate, setFullscreen]);
 
-  // karaoke without a track has nothing to show
   const emptyKaraoke = karaokeShown && !trackLoaded;
   useEffect(() => {
     if (emptyKaraoke) leaveKaraoke();
   }, [emptyKaraoke, leaveKaraoke]);
 
-  // karaoke covers everything, so the queue and the search popup make way for it
   const { closeSearch } = modal;
   useEffect(() => {
     if (!karaokeShown) return;
@@ -129,7 +120,6 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     setQueueOpen(false);
   }, [karaokeShown, setQueueOpen, closeSearch]);
 
-  // Escape on an album, artist or playlist page with nothing open over it goes back; an open sheet or menu takes it first
   const onEntityPage = isEntityRoute(pathname);
   const escapeBack = useCallback(() => {
     const covered = karaokeShown || queueOpen || modal.searchOpen || hasOpenLayer();
@@ -138,7 +128,6 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     return true;
   }, [karaokeShown, queueOpen, modal.searchOpen, onEntityPage, navigate]);
 
-  // the shortcut arrives like the rail's Search: the page rises in
   const openSearch = () => {
     if (pathname !== "/search") navigateWithTransition(navigate, "/search");
   };
@@ -149,7 +138,6 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   };
 
   useDisableButtonFocus();
-  // while the library is locked the keys still play and pause, but nothing opens or navigates
   const unlocked =
     <T,>(action: () => T, otherwise: T) =>
     () =>

@@ -1,4 +1,3 @@
-/** One recognition as the screen follows it: the daemon's stream folded into a state. */
 import type { ListenVia, RecognizeEvent } from "@/links/core";
 
 export type RecognizeInput = "microphone" | "system" | "file" | "link";
@@ -10,7 +9,6 @@ export interface RecognizedSong {
   released?: string;
   genre?: string;
   coverUrl?: string;
-  /** Where in the song the heard part starts. */
   offsetMs?: number;
   appleMusicUrl?: string;
   via: ListenVia | "system";
@@ -22,13 +20,11 @@ export type Session =
   | {
       phase: "listening";
       input: RecognizeInput;
-      /** capture: the audio is being read; check: a part is with the service; wait: the service asked for a pause. */
       step: "capture" | "check" | "wait";
       detail?: string;
       attempt: number;
       of: number;
       voiceRemoved: boolean;
-      /** The real peaks of the part being checked; empty until there is one. */
       peaks: number[];
       seconds: number;
     }
@@ -42,7 +38,6 @@ export function listening(input: RecognizeInput): Session {
   return { phase: "listening", input, step: "capture", attempt: 0, of: 0, voiceRemoved: false, peaks: [], seconds: 0 };
 }
 
-/** The session after one stream event; events that say nothing new leave it as it is. */
 export function advance(session: Session, event: RecognizeEvent): Session {
   if (session.phase !== "listening") return session;
   if (event.type === "stage" && event.name === "fetching") return { ...session, step: "capture", detail: event.detail };
@@ -63,7 +58,6 @@ export function advance(session: Session, event: RecognizeEvent): Session {
   return session;
 }
 
-/** "Album · 1978 · Pop": what is known of a song, in that order. */
 export function songFacts(song: Pick<RecognizedSong, "album" | "released" | "genre">): string {
   return [song.album, song.released, song.genre].filter(Boolean).join(" · ");
 }
@@ -74,7 +68,6 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["minute", 60_000],
 ];
 
-/** "5 minutes ago"; anything under a minute reads as now. */
 export function timeAgo(iso: string, now: number, locale: string): string {
   const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const elapsed = now - Date.parse(iso);

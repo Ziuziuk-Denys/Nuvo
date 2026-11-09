@@ -1,5 +1,3 @@
-//! Saved-file jobs. An item is ready once its audio is cached or it is a playable local file.
-
 use nuvo_contracts::DownloadSummary;
 use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::Value;
@@ -32,7 +30,6 @@ pub struct Ready {
 const READY: &str = "(EXISTS (SELECT 1 FROM cache_entries c WHERE c.track_id = i.track_id)
   OR EXISTS (SELECT 1 FROM local_files f JOIN local_roots r ON r.id = f.root_id AND r.status = 'ok' WHERE f.track_id = i.track_id))";
 
-/// The ids to save, in order, without repeats: a playlist's items, the likes (newest first) or a list.
 pub fn track_ids_for(conn: &Connection, playlist_id: Option<&str>, liked: bool, ids: &[String]) -> Result<Vec<String>, StoreError> {
     let mut found: Vec<String> = if let Some(pid) = playlist_id {
         let mut stmt = conn.prepare("SELECT track_id FROM playlist_items WHERE playlist_id = ?1 ORDER BY position")?;
@@ -90,7 +87,6 @@ fn summary(conn: &Connection, id: &str) -> Result<DownloadSummary, StoreError> {
     .ok_or(StoreError::NotFound("download"))
 }
 
-/// The newest 20 jobs.
 pub fn list(conn: &Connection) -> Result<Vec<DownloadSummary>, StoreError> {
     let mut stmt = conn.prepare("SELECT id FROM downloads ORDER BY created_at DESC LIMIT 20")?;
     let ids: Vec<String> = stmt.query_map([], |r| r.get(0))?.collect::<Result<_, _>>()?;
@@ -116,7 +112,6 @@ pub fn next(conn: &Connection) -> Result<Option<Ready>, StoreError> {
     .transpose()
 }
 
-/// Snapshots of queued tracks whose audio is not cached yet, for the renderer to fetch.
 pub fn waiting(conn: &Connection, limit: usize) -> Result<Vec<Value>, StoreError> {
     let sql = format!(
         "SELECT DISTINCT t.snapshot_json FROM download_items i JOIN downloads d ON d.id = i.download_id AND d.status = 'running'
@@ -136,7 +131,6 @@ fn close_if_finished(conn: &Connection, download_id: &str) -> Result<bool, Store
     Ok(closed > 0)
 }
 
-/// Records one item; true when that closed the job.
 pub fn finish(conn: &Connection, download_id: &str, position: i64, result: Result<String, String>) -> Result<bool, StoreError> {
     let (state, file_name, error) = match result {
         Ok(name) => ("done", Some(name), None),
@@ -149,7 +143,6 @@ pub fn finish(conn: &Connection, download_id: &str, position: i64, result: Resul
     close_if_finished(conn, download_id)
 }
 
-/// The renderer could not fetch this track: every queued item of it fails.
 pub fn fail_track(conn: &Connection, track_id: &str, reason: &str) -> Result<usize, StoreError> {
     let mut stmt = conn.prepare("SELECT DISTINCT download_id FROM download_items WHERE track_id = ?1 AND state = 'queued'")?;
     let jobs: Vec<String> = stmt.query_map([track_id], |r| r.get(0))?.collect::<Result<_, _>>()?;
@@ -178,13 +171,11 @@ pub fn saved_files(conn: &Connection, id: &str) -> Result<(String, String, bool,
     Ok((label, dir, playlist_file, files))
 }
 
-/// Every folder a job ever saved into.
 pub fn dirs(conn: &Connection) -> Result<Vec<String>, StoreError> {
     let mut stmt = conn.prepare("SELECT DISTINCT dir FROM downloads")?;
     Ok(stmt.query_map([], |r| r.get(0))?.collect::<Result<_, _>>()?)
 }
 
-/// Folder and track snapshot of every item still waiting in a running job.
 pub fn queued(conn: &Connection) -> Result<Vec<(String, Value)>, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT d.dir, t.snapshot_json FROM download_items i JOIN downloads d ON d.id = i.download_id AND d.status = 'running'

@@ -1,6 +1,3 @@
-//! Shazam audio signature: spectral peaks of 16 kHz mono audio, encoded in the
-//! binary layout the recognition endpoint expects.
-
 use std::sync::Arc;
 
 use nuvo_crypto::base64_encode;
@@ -148,7 +145,6 @@ fn log_magnitude(x: f32) -> f32 {
     x.ln().max(1.0 / 64.0) * 1477.3 + 6144.0
 }
 
-/// Signature of 16 kHz mono samples; a trailing partial hop is ignored.
 pub fn generate(samples: &[i16]) -> Signature {
     let mut generator = Generator::new();
     let chunks = samples.as_chunks::<HOP>().0;
@@ -160,7 +156,6 @@ pub fn generate(samples: &[i16]) -> Signature {
 }
 
 impl Signature {
-    /// No peaks at all: silence or near silence, which Shazam can never match.
     pub fn is_silent(&self) -> bool {
         self.bands.iter().all(Vec::is_empty)
     }

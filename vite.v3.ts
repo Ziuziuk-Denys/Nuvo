@@ -10,7 +10,7 @@ export function v3CspPlugin(): Plugin {
       devServer = config.command === "serve" ? `http://localhost:${config.server.port ?? 5173}` : undefined;
     },
     transformIndexHtml() {
-      // wasm stays allowed until the YouTube client is confirmed to need no WebAssembly in the renderer
+      // wasm stays allowed: the YouTube client may still need WebAssembly in the renderer
       return [
         {
           tag: "meta",

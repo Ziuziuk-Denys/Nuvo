@@ -1,4 +1,3 @@
-/** The player engine: one state machine and one load token per start (transport 4.1-4.10). */
 import { BATCH_SIZE, MAX_SEED_IDS, Refill, type ContinuationPort, type ContinuationRequest, type Suggested } from "./continuation";
 import type { DeckCandidate, DeckEvent, DeckPort } from "./deckPort";
 import { MediaSessionMirror } from "./mediaSession";
@@ -48,31 +47,23 @@ export const EXPIRY_MARGIN_MS = 15_000;
 export const NETWORK_STREAK_LIMIT = 3;
 export const RETRY_REFILL_MS = 3000;
 export const STALL_MS = 8000;
-/** A resolve that has not produced a stream by then moves to the next source. */
 export const RESOLVE_MS = 10_000;
-/** Play request to first audio, every source included; the same again for each mid-track recovery. */
 export const START_BUDGET_MS = 25_000;
-/** A failed track gets its one retry at the end of the queue, not before this long has passed. */
 export const RETRY_AFTER_MS = 60_000;
 
 export interface ResolverLike {
   resolve(track: Track, options: ResolveOptions): Promise<Resolved>;
   fallback(track: Track, cause: TriggerCause, failedSource: SourceKind, options: Omit<ResolveOptions, "bypassCache">): Promise<Resolved>;
   confirm(track: Track, resolved: Resolved): Promise<void>;
-  /** Rejects the alternative; without `altId` the remembered one. */
   reject(trackId: string, altId?: string): Promise<void>;
   forgetCached(trackId?: string): void;
-  /** The network or the proxy changed: what was learned about blocked sources no longer holds. */
   networkChanged(): void;
-  /** Keeps the playing stand-in for this track; false when nothing pinnable plays. */
   pin(track: Track, resolved: Resolved): Promise<boolean>;
-  /** Deletes an unreadable cache entry. */
   dropCached(trackId: string): Promise<void>;
 }
 
 export interface PrecacheLike {
   setNext(track: Track | null): void;
-  /** `steadyFromMs`: where steady play began (the start position or the last seek target). */
   tick(entryId: string, positionMs: number, playing: boolean, steadyFromMs: number): void;
   statusChanged(status: Status): void;
   started(track: Track, resolved: Resolved): void;
@@ -106,7 +97,6 @@ export interface PlayListOptions {
   shuffled?: boolean;
 }
 
-/** The kept part of a song, null when it plays whole. */
 export type SpanLookup = (trackId: string) => { startMs: number; endMs: number } | null;
 export type TempoResolver = (track: Track) => { rate: number; semitones: number; linked: boolean; reverb: number | null };
 
@@ -117,27 +107,20 @@ interface LoadState {
   resolved: Resolved | null;
   retryUsed: boolean;
   recoveredAtMs: number;
-  /** Seek requested before the element knew its duration. */
   pendingSeekMs: number | null;
-  /** The user paused while the play was on its way. */
   pausedMeanwhile: boolean;
   confirmed: boolean;
   playStartedAt: number | null;
   lastProgressMs: number;
-  /** Early start: its probe runs once the stream answered, or after a deck error. */
   verify: "waiting" | "running" | null;
-  /** A deck error while the probe ran; handled once the probe settled. */
   errorWhileVerifying: { cause: TriggerCause; code?: number } | null;
-  /** Alternatives and YouTube clients this start already failed on: none is tried twice. */
   failedAlts: Set<string>;
   failedClients: string[];
-  /** The last reason a source failed, for the skip when the budget ends. */
   lastCause: TriggerCause | null;
 }
 
 type Listener = (view: PlayerView) => void;
 
-/** Longest a refill waits for the last play report. */
 const REPORT_WAIT_MS = 3000;
 
 export class Engine {
@@ -161,12 +144,10 @@ export class Engine {
   private readonly outbox: ReportOutbox;
   private readonly refill: Refill;
   private readonly writer: SessionWriter;
-  /** The queue as last written in full; while it stays, only the position is written. */
   private written: { queue: Q.QueueState; context: string | null; listCover: string | null } | null = null;
   private waitTimer: ReturnType<typeof setTimeout> | null = null;
   private stallTimer: ReturnType<typeof setTimeout> | null = null;
   private budgetTimer: ReturnType<typeof setTimeout> | null = null;
-  /** Skipped entries still owed their one retry, with the time they failed. */
   private readonly retryOwed = new Map<string, number>();
   private readonly retried = new Set<string>();
   private networkStreak = 0;
@@ -214,7 +195,6 @@ export class Engine {
     this.view = this.buildView();
   }
 
-  /** Releases the engine's own listeners, timers, load and media session mirror; whoever built the decks and the pre-cache disposes them. */
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -233,8 +213,6 @@ export class Engine {
     this.commandListeners.clear();
   }
 
-  // state
-
   getView(): PlayerView {
     return this.view;
   }
@@ -244,7 +222,6 @@ export class Engine {
     return () => this.listeners.delete(listener);
   }
 
-  /** Fires on every user or remote command (device auto-resume is cancelled by any command). */
   onCommand(listener: () => void): () => void {
     this.commandListeners.add(listener);
     return () => this.commandListeners.delete(listener);
@@ -262,10 +239,6 @@ export class Engine {
     this.tempoResolver = resolver;
   }
 
-  /**
-   * The part of each song that plays (a trim). A new entry starts at its start, and its end is the song's end:
-   * the prepared deck crossfades or joins there, repeat one loops there, and the play counts as complete.
-   */
   setSpans(lookup: SpanLookup | null): void {
     this.spans = lookup;
     this.deps.decks.setSpanResolver?.(
@@ -277,7 +250,6 @@ export class Engine {
     );
   }
 
-  /** Where a trimmed song stops early; null when it plays to its own end. */
   private spanEndMs(track: Track): number | null {
     const end = this.spans?.(track.id)?.endMs;
     const duration = this.durationMs > 0 ? this.durationMs : track.durationMs;
@@ -341,8 +313,6 @@ export class Engine {
     this.deps.precache?.statusChanged(status);
   }
 
-  // playback commands
-
   playList(tracks: Track[], options: PlayListOptions = {}): void {
     if (this.disposed) return;
     if (tracks.length === 0) return;
@@ -395,7 +365,6 @@ export class Engine {
     this.pauseWith("user");
   }
 
-  /** Pause for a reason other than the user (sleep timer, lost output device). */
   pauseFor(reason: "sleep" | "device_lost"): void {
     if (this.disposed) return;
     if (this.status !== "playing" && this.status !== "loading") return;
@@ -405,7 +374,6 @@ export class Engine {
   private pauseWith(reason: PauseReason): void {
     const load = this.load;
     if (this.status === "loading" && load && !this.deps.decks.holds(load.token)) {
-      // pause during a load: the pending load is cancelled and the deck released, position kept
       load.controller.abort();
       load.resolved?.source.release();
       this.load = null;
@@ -429,13 +397,11 @@ export class Engine {
     this.resume();
   }
 
-  /** Resume without counting as a command (device return). */
   resume(): void {
     if (this.disposed) return;
     if (this.status === "playing" || this.status === "loading") return;
     const entry = Q.current(this.queue);
     if (!entry) return;
-    // after a network pause, play() tries again with a fresh streak
     if (this.pauseReason === "network") this.networkStreak = 0;
     if (this.status === "idle" || this.needsReload()) {
       this.startEntry(this.queue.index, { positionMs: this.status === "idle" ? undefined : this.positionMs, keepPlay: this.status !== "idle" });
@@ -523,7 +489,6 @@ export class Engine {
   previous(): void {
     if (this.disposed) return;
     const current = Q.current(this.queue);
-    // a trimmed song restarts at its kept start, and the restart window counts from there
     const startMs = (current && this.spans?.(current.track.id)?.startMs) || 0;
     const step = Q.previousStep(this.queue, this.history, this.livePositionMs() - startMs, this.prefs.repeat, this.station);
     if (!step) return;
@@ -534,8 +499,6 @@ export class Engine {
     }
     this.startEntry(step.index, { viaHistory: true });
   }
-
-  // queue commands
 
   append(track: Track): void {
     if (this.disposed) return;
@@ -590,8 +553,6 @@ export class Engine {
     this.publish();
     this.writer.changed();
   }
-
-  // modes
 
   setRepeat(mode: RepeatMode): void {
     if (this.disposed) return;
@@ -699,7 +660,6 @@ export class Engine {
     return this.prefs.crossfadeSeconds;
   }
 
-  /** "Keep this version". */
   async keepVersion(): Promise<boolean> {
     const entry = Q.current(this.queue);
     const resolved = this.load?.resolved;
@@ -710,13 +670,11 @@ export class Engine {
     return pinned;
   }
 
-  /** "Don't use this version": the playing alternative when it is current, else the remembered one. */
   async rejectAlternative(trackId: string): Promise<void> {
     const playing = Q.current(this.queue)?.track.id === trackId ? this.load?.resolved?.altId : undefined;
     await this.deps.resolver.reject(trackId, playing);
   }
 
-  /** Sign-out and profile reset: report and wait, clear the session, keep preferences (transport 4.10). */
   async forgetSession(): Promise<void> {
     const report = this.endPlay("stop");
     this.refill.cancel();
@@ -743,7 +701,6 @@ export class Engine {
     await report;
   }
 
-  /** Main announced the quit: flush the last report and the session. */
   async beforeQuit(): Promise<void> {
     this.positionMs = this.livePositionMs();
     const report = this.endPlay("stop");
@@ -755,8 +712,6 @@ export class Engine {
     this.deps.resolver.forgetCached();
     this.deps.precache?.cancelAll();
   }
-
-  // starts
 
   private startEntry(index: number, options: { positionMs?: number; viaHistory?: boolean; keepPlay?: boolean; bypassCache?: boolean } = {}): void {
     const entry = this.queue.entries[index];
@@ -807,7 +762,6 @@ export class Engine {
     void this.attach(this.load, entry, this.positionMs, options.bypassCache ?? false);
   }
 
-  /** Keep tempo off: a new entry resets speed and pitch, unless tempo memory decides. */
   private applyTrackTempo(track: Track): void {
     if (this.tempoResolver) {
       const memory = this.tempoResolver(track);
@@ -867,7 +821,6 @@ export class Engine {
     load.resolved = resolved;
     load.pendingSeekMs = null;
     load.lastProgressMs = startMs;
-    // An early start is reported once its probe passed.
     this.stream = resolved.verify ? null : resolved.stream;
     load.verify = resolved.verify ? "waiting" : null;
     load.errorWhileVerifying = null;
@@ -895,11 +848,7 @@ export class Engine {
     if (this.load === load) load.playStartedAt = this.deps.now();
   }
 
-  /**
-   * Early start: runs the probe once the stream answered (googlevideo serves one request after the other), or at
-   * once after a deck error. Reports the verified source, swaps a replacement in at the same position (a fresh load
-   * after a deck error), and recovers like a media error when nothing plays. False when nothing is to verify.
-   */
+  // The probe waits for the stream's answer: googlevideo serves one request after the other
   private verifyEarly(load: LoadState, error?: { cause: TriggerCause; code?: number }): boolean {
     if (load.verify === "running") {
       if (error) load.errorWhileVerifying = error;
@@ -943,7 +892,6 @@ export class Engine {
     return true;
   }
 
-  /** Progressive overflow: switch to the whole file at the same position, status unchanged. */
   private watchProgressive(load: LoadState, source: AttachedSource): void {
     if (source.kind !== "progressive" || !source.whole) return;
     source.whole.then(
@@ -977,7 +925,6 @@ export class Engine {
     this.skipFailed(load, entry, failure.cause, failure.detail.original);
   }
 
-  /** A start that failed after recovery and fallback is skipped (transport 4.6). */
   private skipFailed(load: LoadState, entry: QueueEntry, cause: Cause, reportReason: string = cause): void {
     if (this.load !== load) return;
     this.notice = { kind: "skipped", title: entry.track.title, cause };
@@ -1018,7 +965,6 @@ export class Engine {
     this.writer.flush();
   }
 
-  /** Once per cause until the network changes. */
   private checkNetwork(cause: Cause | "http_403"): void {
     if (this.checkedCauses.has(cause)) return;
     this.checkedCauses.add(cause);
@@ -1048,10 +994,8 @@ export class Engine {
     }
   }
 
-  /** Real end: wait for the shared continuation request; advance when it grew the queue, else idle. */
   private async waitForMore(afterFailure: boolean): Promise<void> {
     const before = this.queue.entries.length;
-    // The start that asked stays current while waiting, so its batch is still valid.
     const token = this.token;
     this.setStatus("loading");
     this.publish();
@@ -1068,7 +1012,6 @@ export class Engine {
     this.endState();
   }
 
-  /** The oldest skipped entry whose wait is over goes last in line and plays once more. False when none is due. */
   private retryFailed(ignoreWait = false): boolean {
     const now = this.deps.now();
     for (const [entryId, failedAt] of this.retryOwed) {
@@ -1083,7 +1026,6 @@ export class Engine {
     return false;
   }
 
-  /** The network or the proxy changed: a stop caused by the network ends by itself, a user's pause stays. */
   networkChanged(): void {
     if (this.disposed) return;
     this.deps.resolver.networkChanged();
@@ -1101,7 +1043,6 @@ export class Engine {
     }
   }
 
-  /** The last entry stays current at 0 so the island still shows it and play starts it again. */
   private endState(): void {
     this.endPlay("change");
     this.deps.decks.reset();
@@ -1111,8 +1052,6 @@ export class Engine {
     this.publish();
     this.writer.flush();
   }
-
-  // deck events
 
   private onDeckEvent(event: DeckEvent): void {
     const load = this.load;
@@ -1214,7 +1153,6 @@ export class Engine {
     this.writer.changed();
   }
 
-  /** No audio progress for 8 s, at the start or mid-track: next source, or wait for the network when offline. */
   private armStall(load: LoadState): void {
     if (this.stallTimer) clearTimeout(this.stallTimer);
     this.stallTimer = setTimeout(() => {
@@ -1228,7 +1166,6 @@ export class Engine {
     }, STALL_MS);
   }
 
-  /** The hard limit on one start or recovery: when it ends with no audio the track is skipped, whatever still runs. */
   private armBudget(load: LoadState): void {
     this.clearBudget();
     this.budgetTimer = setTimeout(() => {
@@ -1261,11 +1198,7 @@ export class Engine {
     this.advance(step);
   }
 
-  /**
-   * The kept part of a trimmed song ran out. The prepared deck normally took over before this, at the seam the policy chose;
-   * when its timer came late it takes over now, else the song ends as it would at its own end.
-   * shortcut: without a prepared deck the end is noticed on a timeupdate, up to a quarter second late; a deck-side end timer would make it exact.
-   */
+  // shortcut: without a prepared deck the end is up to 250 ms late (timeupdate); a deck end timer fixes it
   private trimmedEnd(): void {
     const step = Q.nextStep(this.queue, this.prefs.repeat, this.station, true);
     if (step.kind === "index" && step.index !== this.queue.index && this.deps.decks.switchNow(this.queue.entries[step.index].entryId, this.token + 1)) {
@@ -1276,7 +1209,6 @@ export class Engine {
     this.naturalEnd();
   }
 
-  /** The prepared deck took over on its own. */
   private onPreparedSwitch(entryId: string): void {
     const index = this.queue.entries.findIndex((e) => e.entryId === entryId);
     if (index < 0) return;
@@ -1284,7 +1216,6 @@ export class Engine {
     this.adoptSwitch(index, true);
   }
 
-  /** `completed`: the outgoing play finished (natural switch); a repeat-one loop stays the same play. */
   private adoptSwitch(index: number, completed: boolean): void {
     const entry = this.queue.entries[index];
     const previousTrack = Q.current(this.queue)?.track.id;
@@ -1292,7 +1223,6 @@ export class Engine {
       this.endPlay("change");
       this.tracker.begin(entry, this.context);
     }
-    // a prepared deck plays what is on the device: a local file, or a stream's cached copy
     this.tracker.setSource(primarySource(entry.track.id) === "local" ? "local" : "cache");
     if (previousTrack !== entry.track.id) this.applyTrackTempo(entry.track);
     this.load?.controller.abort();
@@ -1337,9 +1267,6 @@ export class Engine {
     this.writer.flush();
   }
 
-  // recovery and fallback
-
-  /** One retry on the same track, then fallback. */
   private recover(load: LoadState, cause: TriggerCause, mediaCode?: number): void {
     if (this.load !== load) return;
     const entry = Q.current(this.queue);
@@ -1404,8 +1331,6 @@ export class Engine {
     }
   }
 
-  // continuation
-
   private evaluateRefill(): void {
     const left = this.queue.entries.length - 1 - this.queue.index;
     if (this.station ? left <= 1 : left <= 0 && this.prefs.repeat === "off") this.refill.trigger();
@@ -1444,8 +1369,6 @@ export class Engine {
     };
   }
 
-  // neighbours
-
   private evaluateNext(): void {
     const here = Q.current(this.queue);
     const next = Q.candidateAfter(this.queue, this.prefs.repeat, this.station);
@@ -1460,7 +1383,6 @@ export class Engine {
     if (this.status !== "loading") this.prefetchNeighbour();
   }
 
-  /** Cover warm and lyrics prefetch for the single next entry, once per pair. */
   private prefetchNeighbour(): void {
     const pair = this.nextPair;
     if (!pair || pair === this.prefetchedFor) return;
@@ -1488,9 +1410,7 @@ export class Engine {
     return this.prefs.keepTempo ? this.tempo : { rate: 1, semitones: 0, linked: this.prefs.linked };
   }
 
-  // reports and persistence
-
-  /** Waits for the newest play report, including one that starts meanwhile, but never longer than REPORT_WAIT_MS: a hung daemon must not stall the music. */
+  // Capped at REPORT_WAIT_MS: a hung daemon must not stall the music
   private async settledReports(): Promise<void> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<void>((resolve) => (timer = setTimeout(resolve, REPORT_WAIT_MS)));
@@ -1515,7 +1435,6 @@ export class Engine {
     return this.lastReport;
   }
 
-  /** Reports a previous run left behind; the daemon drops any it already has. */
   flushReports(): Promise<void> {
     return this.outbox.flush();
   }

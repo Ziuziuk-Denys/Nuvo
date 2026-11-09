@@ -1,18 +1,14 @@
-//! Recent searches: typed queries and picked results, in the encrypted library with its backups.
-
 use nuvo_contracts::{AddSearch, SearchEntry, iso_from_ms};
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::{StoreError, new_id, tracks};
 
-/// Rows kept; the renderer shows 30.
 pub const KEEP: usize = 50;
 pub const KINDS: [&str; 5] = ["query", "track", "artist", "album", "playlist"];
 const MAX_QUERY_CHARS: usize = 200;
 const MAX_ITEM_BYTES: usize = 8 * 1024;
 const MAX_ID_LEN: usize = 256;
 
-/// A row before its item JSON is parsed, which rusqlite's row closure cannot do.
 struct Raw {
     id: String,
     kind: String,
@@ -29,13 +25,10 @@ fn to_entry(raw: Raw) -> Result<SearchEntry, StoreError> {
     Ok(SearchEntry { id: raw.id, kind: raw.kind, query: raw.query, item: raw.item_json.as_deref().map(tracks::parse).transpose()?, at: iso_from_ms(raw.at) })
 }
 
-/// Lowercase, trimmed, inner whitespace collapsed: "  Daft  PUNK " and "daft punk" are one entry.
 fn normalise(query: &str) -> String {
     query.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
 }
 
-/// Adds a search or moves an existing one to the top. A query is keyed by its normalised text,
-/// a picked result by its kind and id. The oldest rows beyond `KEEP` are dropped.
 pub fn add(conn: &Connection, input: &AddSearch, now: i64) -> Result<SearchEntry, StoreError> {
     if !KINDS.contains(&input.kind.as_str()) {
         return Err(StoreError::Invalid(format!("kind must be one of: {}", KINDS.join(", "))));
@@ -77,7 +70,6 @@ pub fn add(conn: &Connection, input: &AddSearch, now: i64) -> Result<SearchEntry
     to_entry(row)
 }
 
-/// Newest first, at most `KEEP`.
 pub fn list(conn: &Connection, limit: usize) -> Result<Vec<SearchEntry>, StoreError> {
     let mut stmt = conn.prepare("SELECT * FROM search_history ORDER BY at DESC LIMIT ?1")?;
     let rows = stmt.query_map([limit.clamp(1, KEEP) as i64], entry_from_row)?.collect::<Result<Vec<_>, _>>()?;

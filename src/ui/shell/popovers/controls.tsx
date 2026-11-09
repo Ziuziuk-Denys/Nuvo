@@ -3,7 +3,6 @@ import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
 import styles from "./controls.module.css";
 
-/** The panels' small pill choice: ink when pressed, a faint tint otherwise. */
 export function PanelChip({
   pressed,
   disabled,
@@ -24,7 +23,6 @@ export function PanelChip({
   );
 }
 
-/** A 40 x 22 switch: ink track and a field-coloured knob when on. */
 export function Switch({
   checked,
   label,
@@ -51,7 +49,6 @@ export function Switch({
   );
 }
 
-/** The switch first, then its words: the remember row of the equalizer and the speed panel. */
 export function LabeledSwitch({
   label,
   checked,
@@ -71,7 +68,6 @@ export function LabeledSwitch({
   );
 }
 
-/** A title with a one-line hint on the left, the switch on the right. */
 export function OptionRow({
   title,
   hint,
@@ -96,9 +92,8 @@ export function OptionRow({
   );
 }
 
-/** Bars drawn beyond each end of the range, so the masked window is full even at min or max. */
 const OVERHANG = 24;
-/** Distance between bar centres; bar width and gap live in controls.module.css. */
+// Distance between bar centres; must match bar width plus gap in controls.module.css
 const PITCH_PX = 8;
 
 const NUDGE: Partial<Record<string, 1 | -1>> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
@@ -106,11 +101,9 @@ const NUDGE: Partial<Record<string, 1 | -1>> = { ArrowRight: 1, ArrowUp: 1, Arro
 interface RulerProps {
   label: string;
   value: number;
-  /** Lowest setting, the first bar. */
   min: number;
   step: number;
   max: number;
-  /** What the centre pill puts back on click; leave it out and the pill is read-only. */
   neutral?: number;
   format(value: number): string;
   onChange(value: number): void;
@@ -118,10 +111,6 @@ interface RulerProps {
 
 type Grab = { pointerX: number; notch: number };
 
-/**
- * One setting on a bar ruler. The bars slide under a fixed caret while dragged; the minus and plus
- * buttons around the pill move one notch, and the pill restores the neutral value.
- */
 export function Ruler({ label, value, min, max, step, neutral, format, onChange }: RulerProps): JSX.Element {
   const { t } = useTranslation();
   const notchAt = (setting: number) => (setting - min) / step;
@@ -131,7 +120,6 @@ export function Ruler({ label, value, min, max, step, neutral, format, onChange 
   const shown = format(value);
   const barCount = lastNotch + 1 + 2 * OVERHANG;
 
-  // all moves go through notch numbers; the result is rounded to 3 decimals to drop float noise
   const goTo = (notch: number) => {
     const bounded = Math.min(lastNotch, Math.max(0, Math.round(notch)));
     const setting = Math.min(Math.round((min + bounded * step) * 1000) / 1000, max);

@@ -1,4 +1,4 @@
-/* The window: the preset canvas inside a 6 px frame. --n-gutter mirrors contentGutter() in geometry.ts. */
+/* --n-gutter mirrors contentGutter() in geometry.ts: keep them in step */
 .shell {
   --n-gutter: 12px;
   position: relative;
@@ -16,11 +16,7 @@
   border-radius: 0;
 }
 
-/*
- * The page area: right of the rail and its 6 px gap to the frame, from the top frame down, with 12 px corners.
- * Pages scroll under the top row. Without a cover behind the page the player sits on its own below it;
- * with one the page runs on under the glass player. Size containment lets legacy pages measure it in cqh.
- */
+/* Size containment lets legacy pages measure the page area in cqh */
 .content {
   position: absolute;
   top: 6px;
@@ -41,9 +37,7 @@
   overflow-y: hidden;
 }
 
-/* Pages start under the 56 px top band and 12 px in from the page edge; the foot keeps the last row clear of the player. */
 .column {
-  /* legacy pages pad for the old header and mini player themselves; the column does it now */
   --page-inset-top: 0px;
   --page-inset-bottom: 70px;
   --floating-inset-bottom: 0px;
@@ -61,10 +55,7 @@
   view-transition-name: n-page;
 }
 
-/*
- * shortcut: legacy pages are h-full boxes that scroll inside themselves, so they get the page area's full height
- * under the top band and pad for the player themselves; drop this rule once the last legacy page is rebuilt.
- */
+/* Legacy h-full pages scroll inside themselves: full height under the top band, own player padding */
 .column:has(> :global(.h-full)) {
   padding-inline: 0;
   padding-bottom: 0;
@@ -74,8 +65,7 @@
   height: calc(100cqh - 56px);
 }
 
-/* Karaoke's own dark layer over the whole window, above every overlay. */
-/* over the whole window: the body's 4 px gutter would move the measured column edges */
+/* Over the whole window: the body's 4 px gutter would move the measured column edges */
 .karaoke {
   position: fixed;
   inset: 0;

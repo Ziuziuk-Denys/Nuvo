@@ -1,5 +1,4 @@
-//! Finds yt-dlp and ffmpeg. Electron may start the daemon without `~/.local/bin` on `PATH`,
-//! where `pip install --user yt-dlp` puts it, so that directory is searched too.
+// Electron may start the daemon without ~/.local/bin on PATH, where pip --user puts yt-dlp
 
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
@@ -16,12 +15,10 @@ pub struct Tools {
     pub ffmpeg: Option<PathBuf>,
 }
 
-/// Where tools are looked up: the kept-current directory, the `PATH` directories, then `~/.local/bin`.
 #[derive(Debug, Clone, Default)]
 pub struct ToolEnv {
     pub path: Option<OsString>,
     pub home: Option<PathBuf>,
-    /// Builds Nuvo keeps current itself; they beat an older system copy.
     pub managed: Option<PathBuf>,
 }
 
@@ -55,7 +52,6 @@ impl Tools {
     }
 }
 
-/// First executable `name` in the `PATH` directories, then in `~/.local/bin`.
 pub fn find(name: &str, path: Option<&OsStr>, home: Option<&Path>) -> Option<PathBuf> {
     let mut dirs: Vec<PathBuf> = path.map(|p| std::env::split_paths(p).collect()).unwrap_or_default();
     dirs.extend(home.map(|h| h.join(".local/bin")));
@@ -99,8 +95,7 @@ pub async fn version(tool: &Path) -> Option<String> {
     (output.status.success() && !version.is_empty()).then(|| version.to_string())
 }
 
-/// One row of the dependency check. `status` is `ok`, `missing` or `broken`; the daemon adds
-/// `outdated` for an old yt-dlp, because that rule needs the clock.
+// The daemon adds `outdated` for an old yt-dlp, because that rule needs the clock
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToolCheck {
     pub name: &'static str,
@@ -113,7 +108,6 @@ pub struct ToolCheck {
 /// yt-dlp needs one of these to solve YouTube's JavaScript challenges.
 pub const JS_RUNTIMES: [&str; 3] = ["deno", "node", "bun"];
 
-/// Stdout of `tool args` when it exits 0 within `timeout`; `None` when it fails, hangs or cannot start.
 async fn stdout_of(tool: &Path, args: &[&str], timeout: Duration) -> Option<String> {
     let mut command = Command::new(tool);
     command.args(args);
@@ -121,8 +115,7 @@ async fn stdout_of(tool: &Path, args: &[&str], timeout: Duration) -> Option<Stri
     output.status.success().then(|| String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
-/// `ffmpeg -hide_banner -devices` lists one device per line as `<flags> <name> <description>`;
-/// `D` in the flags marks an input (demuxing) device.
+// ffmpeg -devices lists <flags> <name> <description>; D in the flags marks an input device
 pub fn has_pulse_input(devices: &str) -> bool {
     devices.lines().any(|line| {
         let mut words = line.split_whitespace();
@@ -130,7 +123,7 @@ pub fn has_pulse_input(devices: &str) -> bool {
     })
 }
 
-/// Runs every check at once, each bounded by `timeout`. Never fails: a problem is a status.
+// Never fails: a problem is reported as a status
 pub async fn check_all(env: &ToolEnv, timeout: Duration) -> Vec<ToolCheck> {
     let yt_dlp = async {
         let path = env.find("yt-dlp");

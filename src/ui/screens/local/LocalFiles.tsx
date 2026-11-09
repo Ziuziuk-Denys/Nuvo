@@ -18,7 +18,6 @@ import look from "../look.module.css";
 import styles from "./LocalFiles.module.css";
 import { sortLocal, type LibrarySort } from "../library/libraryModel";
 
-/** The Library's "On this computer": music folders, one status line, and the files as track rows. */
 export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: LibrarySort }): JSX.Element {
   const { t } = useTranslation();
   const { roots, failed: rootsFailed, reload: reloadRoots } = useLocalRoots();

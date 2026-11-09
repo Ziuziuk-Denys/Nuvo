@@ -1,5 +1,3 @@
-// Shared helpers for the Nuvo benchmarks: an isolated profile, launching the app, and reading
-// PSS and CPU of the whole process tree from /proc. Linux only.
 import { default as fs } from "node:fs";
 import { default as os } from "node:os";
 import { default as path } from "node:path";
@@ -19,8 +17,7 @@ export function option(name, fallback) {
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Temporary XDG dirs, user data dir, socket and test keyring service: the owner's profile,
-// library and `nuvo-core` key are never read or touched
+// Temp dirs and test keyring: the owner's profile, library and nuvo-core key stay untouched
 export function createProfile(name) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), `nuvo-bench-${name}-`));
   const keyringService = testKeyringService();
@@ -49,7 +46,6 @@ export function createProfile(name) {
   };
 }
 
-// exe: a packaged `nuvo` binary; without it the repo build runs on the dev Electron
 export async function launch(profile, exe) {
   const startedAt = Date.now();
   const app = await electron.launch({
@@ -65,7 +61,6 @@ export async function launch(profile, exe) {
     if (!page) await sleep(50);
   }
   if (!page) throw new Error("main window did not appear");
-  // the first animation frame with the window visible and text on screen
   const visibleAt = await page.evaluate(
     () =>
       new Promise((resolve) => {
@@ -85,21 +80,16 @@ export async function close(app) {
   await app.close().catch(() => undefined);
   try {
     process.kill(pid, "SIGKILL");
-  } catch {
-    // already gone
-  }
+  } catch {}
 }
 
-// main plus every descendant (renderers, GPU, utility, zygotes, nuvo-core)
 export function processTree(rootPid) {
   const parents = new Map();
   for (const entry of fs.readdirSync("/proc")) {
     if (!/^\d+$/.test(entry)) continue;
     try {
       parents.set(Number(entry), parseStat(fs.readFileSync(`/proc/${entry}/stat`, "utf8")).parent);
-    } catch {
-      // exited
-    }
+    } catch {}
   }
   const tree = [rootPid];
   for (let i = 0; i < tree.length; i++) {
@@ -121,8 +111,7 @@ function processKind(pid) {
   return path.basename(args[0]) === "nuvo-core" ? "core" : "main";
 }
 
-// PSS in MB: total, by process kind, and the anonymous part. File-backed PSS also moves with how many other
-// processes on the desktop map the same libraries, so only `anon` compares across sessions.
+// Only anon PSS compares across sessions; file-backed PSS moves with shared library mappings
 export function memory(rootPid) {
   const byKind = {};
   const counts = {};
@@ -137,9 +126,7 @@ export function memory(rootPid) {
       counts[kind] = (counts[kind] ?? 0) + 1;
       total += pss;
       anon += readKb(rollup, "Pss_Anon") / 1024;
-    } catch {
-      // exited
-    }
+    } catch {}
   }
   return { total, anon, byKind, counts };
 }
@@ -149,14 +136,11 @@ function cpuTicks(rootPid) {
   for (const pid of processTree(rootPid)) {
     try {
       ticks += parseStat(fs.readFileSync(`/proc/${pid}/stat`, "utf8")).ticks;
-    } catch {
-      // exited
-    }
+    } catch {}
   }
   return ticks;
 }
 
-// CPU of the whole tree over a window, in % of one core
 export async function cpuPercent(rootPid, seconds) {
   const before = cpuTicks(rootPid);
   await sleep(seconds * 1000);
@@ -166,7 +150,6 @@ export async function cpuPercent(rootPid, seconds) {
 export const TRACKS = 5_000;
 export const ALBUMS = 5_000;
 
-// Runs a function in the page with the daemon's base url and JSON headers; the bridge is `nuvo-core://`
 export function core(page, script, arg) {
   return page.evaluate(
     ({ script, arg }) =>
@@ -178,19 +161,18 @@ export function core(page, script, arg) {
 export async function passFirstRun(page) {
   await page.locator("[data-testid=recovery-word]").first().waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: "I wrote it down" }).click();
-  // the tour starts after the phrase: skip it and close its short version, so its layer never sits over a row
+  // Skip the tour and close its short version, or its layer sits over the rows
   await page.getByRole("button", { name: "Skip the tour", exact: true }).click({ timeout: 30_000 });
   await page.locator('[data-tour-layer] [data-next]:not([aria-disabled="true"])').click({ timeout: 30_000 });
   await page.locator("[data-tour-layer]").waitFor({ state: "detached", timeout: 10_000 });
   await page.getByRole("navigation").first().waitFor({ timeout: 30_000 });
 }
 
-// Home is drawn once a mix card or a quick pick is: the rebuilt Home shows Liked songs even while the daemon has no mixes
+// Liked songs shows even with no mixes, so only a mix card or quick pick marks Home drawn
 export function homeReady(page) {
   return page.locator("[data-mix], [data-pick]").first().waitFor({ timeout: 30_000 });
 }
 
-// A playlist of TRACKS songs and ALBUMS saved albums, written straight to the daemon
 async function seedData(page) {
   return core(
     page,
@@ -219,8 +201,6 @@ async function seedData(page) {
   );
 }
 
-// The phrase dialog shows once per fresh profile; with `data` the library also gets the big fixture.
-// Later launches go straight to Home. profile.playlistId is set when seeded.
 export async function seedProfile(profile, exe, { data = false } = {}) {
   const { app, page } = await launch(profile, exe);
   await passFirstRun(page);
@@ -229,14 +209,12 @@ export async function seedProfile(profile, exe, { data = false } = {}) {
   await close(app);
 }
 
-// Turns on the engine handle (`window.__nuvoPlayer`, the same one the e2e suites use) and waits for it
 export async function enableHandle(page) {
   await page.evaluate(() => localStorage.setItem("nuvo.e2e", "1"));
   await page.reload();
   await page.waitForFunction(() => Boolean(window.__nuvoPlayer), null, { timeout: 30_000 });
 }
 
-// Puts a tone in the audio cache under the track id: the engine plays it like a cached download
 export async function putTone(page, id, seconds, rate = 16_000) {
   const wav = toneWav(seconds, rate).toString("base64");
   const status = await page.evaluate(

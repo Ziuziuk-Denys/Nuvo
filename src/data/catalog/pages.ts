@@ -1,4 +1,3 @@
-/** Artist, album and catalog playlist pages for the entity screens, from the YouTube catalog port. */
 import { useCallback, useEffect, useState } from "react";
 import type { AlbumPage, ArtistPage, ArtistRef, PlaylistPage, Release, YtCatalog } from "@/youtube";
 import { isAbortError } from "@/youtube/types";
@@ -17,7 +16,6 @@ export interface ArtistPageData {
   title: string;
   coverUrl: string;
   verified?: boolean;
-  /** The catalog's own phrase, for example "61.5M monthly audience". */
   monthlyListeners?: string;
   tracks: UiTrack[];
   albums: ArtistRelease[];
@@ -38,15 +36,12 @@ export interface CollectionPageData {
 export interface CatalogPage<T> {
   data: T | null;
   loading: boolean;
-  /** The last load failed; any earlier data stays in `data`. */
   error: boolean;
-  /** Loads the page again. */
   retry(): void;
 }
 
 type Loader<T> = (catalog: YtCatalog, id: string, signal: AbortSignal, partial: (value: T) => void) => Promise<T>;
 
-/** Pages seen this session, so going back paints at once while the catalog is asked again. */
 const CACHED_PAGES = 20;
 const cache = new Map<string, unknown>();
 const ARTIST_TIMEOUT_MS = 15_000;
@@ -100,7 +95,6 @@ function toPlaylistPageData(page: PlaylistPage): CollectionPageData {
 
 const loadArtist: Loader<ArtistPageData> = async (catalog, id, signal) => toArtistPageData(await catalog.artist(id, signal));
 const loadAlbum: Loader<CollectionPageData> = async (catalog, id, signal) => toAlbumPageData(await catalog.album(id, signal));
-/** A long playlist shows its first page, then the rest once loaded. */
 const loadPlaylist: Loader<CollectionPageData> = async (catalog, id, signal, partial) => {
   const page = await catalog.playlist(id, signal);
   const first = toPlaylistPageData(page);
@@ -163,7 +157,6 @@ export function useCollection(kind: "album" | "playlist", id: string | null): Ca
   return useCatalogPage(id ? `${kind}:${id}` : null, id, kind === "album" ? loadAlbum : loadPlaylist);
 }
 
-/** The artist's first top song, to seed a station when nothing local does; undefined when the catalog fails. */
 export async function artistTopTrack(id: string): Promise<UiTrack | undefined> {
   const catalog = catalogSource();
   if (!catalog) return undefined;
@@ -176,7 +169,6 @@ export async function artistTopTrack(id: string): Promise<UiTrack | undefined> {
 
 const WHOLE_PAGE_TIMEOUT_MS = 30_000;
 
-/** Every track of an artist's page or an album or catalog playlist, for Play on a library entry; empty when the catalog fails. */
 export async function entityTracks(kind: "artist" | "album" | "playlist", id: string): Promise<UiTrack[]> {
   const catalog = catalogSource();
   if (!catalog) return [];

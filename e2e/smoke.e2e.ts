@@ -85,9 +85,7 @@ async function close() {
   if (pid) {
     try {
       process.kill(pid, "SIGKILL");
-    } catch {
-      // already gone
-    }
+    } catch {}
   }
 }
 
@@ -106,7 +104,6 @@ afterAll(async () => {
 
 describe("Nuvo with nuvo-core", () => {
   it("first run: no login, phrase once, library writes, lyrics", async () => {
-    // fail loudly instead of passing silently when the lyrics provider cannot be reached
     const probe = await fetch("https://lrclib.net/api/get?track_name=Bohemian%20Rhapsody&artist_name=Queen&duration=354").catch((error: unknown) => {
       throw new Error(`LRCLIB is unreachable, lyrics check cannot run: ${String(error)}`);
     });
@@ -116,11 +113,9 @@ describe("Nuvo with nuvo-core", () => {
     await page.locator("[data-testid=recovery-word]").first().waitFor({ timeout: 30_000 });
     expect(await page.locator("[data-testid=recovery-word]").count()).toBe(24);
     await page.getByRole("button", { name: "I wrote it down" }).click();
-    // the tour starts after the phrase: skip it, then close its short version
     await page.getByRole("button", { name: "Skip the tour", exact: true }).click({ timeout: 30_000 });
     await page.locator('[data-tour-layer] [data-next]:not([aria-disabled="true"])').click({ timeout: 30_000 });
     expect(page.url()).not.toContain("#/login");
-    // the Home has no liked tile, so wait for the navigation rail
     await page.getByRole("navigation").first().waitFor({ timeout: 30_000 });
 
     await core(
@@ -130,7 +125,6 @@ describe("Nuvo with nuvo-core", () => {
        const playlist = await fetch(base + "/v1/me/playlists", { method: "POST", headers: json, body: JSON.stringify({ title: "E2E Playlist" }) }).then((r) => r.json());
        await fetch(base + "/v1/me/playlists/" + playlist.id + "/tracks/" + track.id, { method: "POST", headers: json, body: JSON.stringify({ track }) });`,
     );
-    // the writes bypass the UI cache, so reload to make the renderer read them
     await page.evaluate(() => {
       location.hash = "#/library";
     });

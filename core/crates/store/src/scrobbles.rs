@@ -7,8 +7,7 @@ pub const ENOUGH_PLAYED_MS: i64 = 240_000;
 const FIRST_RETRY_MS: i64 = 60_000;
 const MAX_RETRY_MS: i64 = 3_600_000;
 
-/// Last.fm's rule: the track is longer than 30 s and was played for at least half its length
-/// or 4 minutes, whichever is less.
+// Last.fm rule: longer than 30 s and played for half its length or 4 minutes, whichever is less
 pub fn counts(duration_ms: i64, played_ms: i64) -> bool {
     duration_ms > MIN_TRACK_MS && played_ms * 2 >= duration_ms.min(ENOUGH_PLAYED_MS * 2)
 }
@@ -45,7 +44,6 @@ pub struct TrackMeta {
     pub duration_ms: i64,
 }
 
-/// The indexed fields Last.fm needs, `None` for a track the library has never seen.
 pub fn track_meta(conn: &Connection, track_id: &str) -> Result<Option<TrackMeta>, StoreError> {
     Ok(conn
         .query_row("SELECT artist, title, album, duration_ms FROM tracks WHERE id = ?1", [track_id], |row| {
@@ -54,15 +52,12 @@ pub fn track_meta(conn: &Connection, track_id: &str) -> Result<Option<TrackMeta>
         .optional()?)
 }
 
-/// Connected (a session key is stored) and not paused.
 pub fn active(conn: &Connection) -> Result<bool, StoreError> {
     let connected = settings::get(conn, settings::LASTFM_SESSION_KEY)?.is_some_and(|v| v.is_string());
     let enabled = settings::get(conn, settings::LASTFM_ENABLED)?.and_then(|v| v.as_bool()).unwrap_or(true);
     Ok(connected && enabled)
 }
 
-/// Queues a recorded play when scrobbling is active and the play counts. A trimmed track is
-/// judged against its kept span: playing the whole trim is a full listen.
 pub fn enqueue_play(
     conn: &Connection,
     track_id: &str,
@@ -90,7 +85,6 @@ pub fn enqueue_play(
     Ok(true)
 }
 
-/// Oldest plays first, only those whose retry time has come.
 pub fn due(conn: &Connection, now: i64, limit: usize) -> Result<Vec<QueuedScrobble>, StoreError> {
     let mut stmt = conn.prepare("SELECT * FROM scrobble_queue WHERE next_attempt_at <= ?1 ORDER BY played_at, id LIMIT ?2")?;
     Ok(stmt.query_map(params![now, limit as i64], queued_from_row)?.collect::<Result<_, _>>()?)
@@ -105,7 +99,6 @@ pub fn remove(conn: &Connection, ids: &[i64]) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Retries after 1, 2, 4, ... minutes, at most one hour apart.
 pub fn defer(conn: &Connection, ids: &[i64], now: i64) -> Result<(), StoreError> {
     let tx = conn.unchecked_transaction()?;
     for id in ids {
@@ -118,7 +111,6 @@ pub fn defer(conn: &Connection, ids: &[i64], now: i64) -> Result<(), StoreError>
     Ok(())
 }
 
-/// Removes scrobbles older than 14 days (Last.fm rejects them).
 pub fn drop_old(conn: &Connection, now: i64) -> Result<(), StoreError> {
     let fourteen_days = 14 * 24 * 3600;
     let cutoff = now.div_euclid(1000) - fourteen_days;
@@ -126,7 +118,6 @@ pub fn drop_old(conn: &Connection, now: i64) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Clears all queued scrobbles (called on Last.fm disconnect).
 pub fn clear_all(conn: &Connection) -> Result<(), StoreError> {
     conn.execute("DELETE FROM scrobble_queue", [])?;
     Ok(())

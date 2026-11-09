@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// Total RSS and PSS of every process started from the Nuvo install (Electron main, renderer, GPU,
-// utility, zygote and nuvo-core), read from /proc/<pid>/smaps_rollup. Linux only.
-// usage: node scripts/nuvo-mem.mjs [--dir ~/.local/opt/Nuvo] [--max-rss MB] [--max-pss MB] [--json]
 import { default as fs } from "node:fs";
 import { default as os } from "node:os";
 import { default as path } from "node:path";
@@ -35,9 +32,7 @@ for (const entry of fs.readdirSync("/proc")) {
     if (!exe.startsWith(dir + path.sep)) continue;
     const rollup = fs.readFileSync(`/proc/${entry}/smaps_rollup`, "utf8");
     rows.push({ pid: Number(entry), kind: processKind(entry), rssKb: readKb(rollup, "Rss"), pssKb: readKb(rollup, "Pss") });
-  } catch {
-    // the process exited or belongs to another user
-  }
+  } catch {}
 }
 
 const mb = (kb) => Math.round((kb / 1024) * 10) / 10;

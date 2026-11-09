@@ -1,6 +1,3 @@
-/* The command palette: a raised panel near the top, no dim, so the page stays in view.
-   It pours down from a sliver at its top centre, the popover family's motion, and lifts back up into it. */
-/* centred by auto margins between left 0 (from the popover frame) and right 0 */
 .frame {
   composes: frame from "../../components/Popover.module.css";
   top: 96px;
@@ -17,7 +14,6 @@
   padding: var(--n-s-2);
 }
 
-/* The field sits on the panel itself; a hairline divides it from the commands. */
 .list {
   display: flex;
   flex-direction: column;

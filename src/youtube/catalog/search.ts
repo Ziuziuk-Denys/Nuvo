@@ -1,10 +1,8 @@
-/** Search requests and ranking. Word lists are Nuvo's own. */
 import { SEARCH_PARAMS } from "../constants";
 import type { Innertube } from "../http";
 import type { SearchFilter, SearchItem, SearchKind, YtTrack } from "../types";
 import { dedupe, mapSearchResponse } from "./rows";
 
-/** Short words that carry no identity, in English and Russian, plus words people add to song searches. */
 const STOP_WORDS = new Set([
   "a",
   "an",
@@ -48,7 +46,6 @@ const STOP_WORDS = new Set([
   "текст",
 ]);
 
-/** Phrases that mark a video as something other than the recording. */
 const JUNK_PHRASES = [
   "reaction",
   "reacts",
@@ -113,7 +110,6 @@ const JUNK_PHRASES = [
   "сборник",
 ];
 
-/** Words for audio changed after release. */
 const MODIFIED_AUDIO = ["nightcore", "slowed", "reverb", "sped up", "speed up", "bass boosted", "8d", "найткор", "замедлен", "ускорен", "басс буст"];
 
 export function normalise(value: string): string {
@@ -142,7 +138,6 @@ export function matchesWell(track: YtTrack, tokens: string[]): boolean {
   return tokens.length <= 2 ? hits === tokens.length : hits >= Math.ceil(tokens.length * 0.75);
 }
 
-/** Phrase at a word start, so "reaction" also finds "reactions" and "замедлен" finds "замедленная". */
 const containsPhrase = (text: string, phrase: string) => ` ${text}`.includes(` ${phrase}`);
 
 export function isJunk(track: YtTrack, query: string): boolean {
@@ -163,7 +158,6 @@ type Settled = PromiseSettledResult<SearchItem[]>;
 const ok = (result: Settled) => (result.status === "fulfilled" ? result.value : []);
 const tracksOf = (items: SearchItem[]) => items.filter((item): item is Extract<SearchItem, { kind: "track" }> => item.kind === "track");
 
-/** Rejects with the first failure only when every request failed. */
 function firstFailureIfAllFailed(results: Settled[]): void {
   if (results.every((result) => result.status === "rejected")) throw (results[0] as PromiseRejectedResult).reason;
 }
@@ -181,7 +175,6 @@ export async function search(yt: Innertube, query: string, kind: SearchKind, sig
   const mixed = ok(mixedResult);
   const songs = tracksOf(ok(songsResult));
   const goodSongs = songs.filter((song) => matchesWell(song, tokens));
-  // Videos only when the songs answer poorly.
   const results: Settled[] = [mixedResult, songsResult];
   if (goodSongs.length < 3) results.push(...(await Promise.allSettled([searchFiltered(yt, query, "video", signal)])));
   firstFailureIfAllFailed(results);

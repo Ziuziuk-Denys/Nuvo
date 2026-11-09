@@ -1,6 +1,3 @@
-//! `/v1/covers`: every cover at the size the screen needs, from the encrypted cache, and
-//! `DELETE /v1/cache/covers`. Works while locked (memory only, nothing written to disk).
-
 use axum::body::Body;
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode, header};
@@ -39,13 +36,11 @@ struct CoverQuery {
 }
 
 async fn cover(State(state): State<AppState>, Query(q): Query<CoverQuery>, headers: HeaderMap) -> Result<Response, ApiError> {
-    // The UI may send a local cover through here like any other; it is served from the file.
     if let Some(id) = q.src.as_deref().and_then(local_cover_id) {
         let bucket = nuvo_covers::source::bucket(q.size.as_deref()).ok_or_else(|| ApiError::Invalid("size must be a number".into()))?;
         return crate::routes::local::local_cover(&state, id, bucket, &headers).await;
     }
     let request = prepare(q.src.as_deref(), q.alt.as_deref(), q.size.as_deref())?;
-    // The tag is derived from the cache key, so a matching tag means the renderer has these bytes.
     if headers.get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()) == Some(request.etag.as_str()) {
         return Ok((StatusCode::NOT_MODIFIED, [(header::ETAG, request.etag), (header::CACHE_CONTROL, CACHE_CONTROL.to_string())]).into_response());
     }

@@ -43,7 +43,6 @@ async fn offline(State(state): State<AppState>, Path(id): Path<String>) -> Resul
 /// The renderer encodes 600 x 600 WebP at quality 0.86, which stays well below this.
 pub const MAX_COVER_BYTES: usize = 400 * 1024;
 
-/// Accepts only the formats the renderer can produce, and only when the bytes carry that format's signature.
 fn cover_mime(content_type: Option<&str>, bytes: &[u8]) -> Result<&'static str, ApiError> {
     let declared = content_type.unwrap_or_default().split(';').next().unwrap_or_default().trim().to_ascii_lowercase();
     let (mime, valid) = match declared.as_str() {
@@ -100,7 +99,6 @@ struct DetailQuery {
     limit: Option<usize>,
 }
 
-/// Without `limit`, every item (the current renderer); with it, the head, the total and the first page.
 async fn detail(State(state): State<AppState>, Path(id): Path<String>, Query(q): Query<DetailQuery>) -> Result<Json<PlaylistWithItems>, ApiError> {
     let data = state.data()?;
     Ok(Json(match q.limit {
@@ -186,7 +184,6 @@ async fn merge(State(state): State<AppState>, Path(id): Path<String>, JsonBody(b
     Ok(Json(data.db.call(move |c| playlists::merge(c, &id, &body, now_ms())).await?))
 }
 
-/// Undo of a merge that deleted its sources.
 async fn restore(State(state): State<AppState>, JsonBody(body): JsonBody<RestorePlaylists>) -> Result<Json<Items<UserPlaylist>>, ApiError> {
     let data = state.data()?;
     Ok(Json(Items { items: data.db.call(move |c| playlists::restore(c, &body.snapshots, now_ms())).await? }))

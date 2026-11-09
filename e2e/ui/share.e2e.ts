@@ -41,7 +41,6 @@ const NAMES: [string, string][] = [
   ["Björk", "Jóga"],
 ];
 
-/** A `full` link: every song carries its names, so the preview needs no lookup. */
 async function fullLink(): Promise<string> {
   const tracks: ShareTrack[] = youtubeIds(40, 11).map((id, index) => {
     const [artist, title] = NAMES[index % NAMES.length];
@@ -50,7 +49,6 @@ async function fullLink(): Promise<string> {
   return `nuvo://share?id=${await encodeShare({ title: "Вечерний плейлист", tracks })}`;
 }
 
-/** A `lean` link: id-only songs, looked up on arrival; offline, the second one reads as gone. */
 async function leanLink(): Promise<string> {
   const tracks: ShareTrack[] = NAMES.map(([artist, title], index) =>
     index === 1 ? { source: "youtube", id: youtubeIds(1, 99)[0], durationSec: 210 } : { source: "text", artist, title, durationSec: 200 + index },
@@ -68,7 +66,6 @@ async function shot(name: string): Promise<string> {
   return file;
 }
 
-/** A share link arriving while Nuvo runs: main hears a second launch with the link, as the OS sends it. */
 async function arrive(link: string): Promise<void> {
   await session!.app.evaluate(({ app }, value) => {
     app.emit("second-instance", {}, [process.execPath, ".", value], process.cwd());
@@ -81,7 +78,6 @@ async function closeDialog(): Promise<void> {
   await session!.page.getByRole("dialog").waitFor({ state: "detached", timeout: 10_000 });
 }
 
-/** The open dialog: inside the window, nothing wider than its panel. */
 async function dialogFits(): Promise<{ inside: boolean; overflow: string[] }> {
   return session!.page.evaluate(() => {
     const panel = document.querySelector('[role="dialog"]')!;
@@ -116,7 +112,6 @@ describe("sharing", () => {
     fs.mkdirSync(SHOTS, { recursive: true });
     session = await launchNuvo({ profile: "seeded", locale: "en" });
     const { page, app } = session;
-    // fixtures only: the renderer stays offline, so a looked-up song is gone and nothing reaches the network
     await app.evaluate(({ session: electronSession }) => electronSession.defaultSession.enableNetworkEmulation({ offline: true }));
 
     const road = (await session.core(
@@ -152,7 +147,6 @@ describe("sharing", () => {
       await closeDialog();
 
       await openPlaylist(session.seed!.smallPlaylistId);
-      // one song, from a track row's menu
       await page.locator("[data-track-row]").first().click({ button: "right" });
       await page.getByRole("menuitem", { name: "Share" }).click();
       await page.getByRole("button", { name: "Copy link" }).waitFor({ timeout: 10_000 });
@@ -167,7 +161,6 @@ describe("sharing", () => {
       files.push(await shot(`share-40-${look.mode}-1200`));
       await closeDialog();
 
-      // 300 seeded songs without a source id: the long-link notice sits above the actions
       await playlistMenuShare(session.seed!.bigPlaylistId);
       await page.getByRole("button", { name: "Copy long link" }).waitFor({ timeout: 10_000 });
       const sheet = (await page.getByRole("dialog").textContent()) ?? "";
@@ -178,7 +171,6 @@ describe("sharing", () => {
       await closeDialog();
     }
 
-    // Russian at the short window
     await page.evaluate(() => localStorage.setItem("nuvo_locale", "ru"));
     await session.setLook(LIGHT);
     await session.setSize(NARROW);

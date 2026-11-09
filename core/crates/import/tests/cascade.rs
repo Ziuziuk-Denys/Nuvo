@@ -10,7 +10,6 @@ fn track(id: &str, title: &str, artist: &str, ms: i64) -> Value {
     json!({"id": id, "title": title, "artists": [{"id": "", "name": artist}], "durationMs": ms})
 }
 
-/// Runs the cascade with `answers[i]` as the answer to the i-th search (`None` = the search failed).
 fn drive(source: &SourceRow, answers: &[Option<Vec<Value>>]) -> (Cascade, Vec<(String, &'static str, &'static str)>) {
     let mut cascade = Cascade::default();
     let mut asked = Vec::new();

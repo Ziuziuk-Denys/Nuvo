@@ -11,7 +11,6 @@ import styles from "./StartWithArtists.module.css";
 
 const SEARCH = { limit: 6, debounceMs: 250 };
 
-/** Cold start on Home: up to three artists found by search, then a station from them. */
 export function StartWithArtists({ onStarted }: { onStarted(): void }): JSX.Element {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");

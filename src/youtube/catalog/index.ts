@@ -1,4 +1,3 @@
-/** `YtCatalog`: the catalog port over one InnerTube client. */
 import type { FetchLike, Innertube } from "../http";
 import type { YtCatalog } from "../types";
 import { Pages, playlistPage, radio, trackPage, type AccountPlaylists } from "./pages";

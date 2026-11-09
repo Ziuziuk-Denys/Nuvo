@@ -1,4 +1,3 @@
-/** The island state line and the stream hover text. Pure. */
 import type { FallbackInfo, PlayerView, SourceKind, StreamInfo } from "./types";
 import { offlineMode } from "./offlineMode";
 
@@ -17,7 +16,6 @@ export function codecLabel(codec: string): string {
   return CODEC_LABEL[key] ?? codec;
 }
 
-/** Priority: device pause, fallback marker, restart notice, station, sleep countdown, best quality. */
 export function stateLine(view: PlayerView, extra: { sleepRemainingMs?: number | null; stationTitle?: string } = {}): StateLine | null {
   if (view.status === "paused" && view.pauseReason === "device_lost") return { key: "deviceLost", params: {} };
   if (view.fallback) {
@@ -31,7 +29,6 @@ export function stateLine(view: PlayerView, extra: { sleepRemainingMs?: number |
   return null;
 }
 
-/** English copy; the UI keeps the same keys in its locales (ru included). */
 export const STATE_LINE_EN: Record<StateLine["key"], (p: Record<string, string | number>) => string> = {
   deviceLost: () => "Paused · headphones disconnected",
   playedFrom: (p) => `Played from ${p.source}`,
@@ -50,7 +47,6 @@ export const STATE_LINE_RU: Partial<Record<StateLine["key"], (p: Record<string, 
   bestQuality: (p) => `Лучшее качество · ${p.codec} ${p.kbps}`,
 };
 
-/** "Opus · 160 kbps · YouTube" or "Opus · 160 kbps · from cache". */
 export function streamHover(stream: StreamInfo): string {
   const where = stream.fromCache ? "from cache" : SOURCE_LABEL[stream.source];
   return `${codecLabel(stream.codec)} · ${stream.bitrateKbps} kbps · ${where}`;
@@ -67,7 +63,6 @@ const CAUSE_TEXT: Record<string, string> = {
   media_error: "could not be decoded",
 };
 
-/** The one quiet sentence for a skipped track. `original` is the trigger behind the shown cause. */
 export function skipText(title: string, cause: string, original: string = cause): string {
   if (original === "http_403" || (cause === "blocked" && original === cause))
     return `${title} skipped. YouTube refuses this connection; try another network or check your proxy.`;

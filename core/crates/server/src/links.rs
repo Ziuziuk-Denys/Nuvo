@@ -1,6 +1,3 @@
-//! What `POST /v1/links/inspect` read in the last 60 s, by link. `POST /v1/recognize` reads the same
-//! memory, so a post is fetched once when the renderer inspects it and then listens to it.
-
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -9,9 +6,7 @@ use nuvo_fetch::TikTokPost;
 use nuvo_fetch::ytdlp::{MediaTags, Resolved};
 
 pub const TTL: Duration = Duration::from_secs(60);
-/// Pasted links arrive one at a time; this only bounds a burst. It counts keys, and one link holds two.
 const MAX_ENTRIES: usize = 32;
-/// Total size of the cached values; a value is sized by its debug text, which is close enough to bound memory.
 const MAX_BYTES: usize = 1024 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,7 +25,6 @@ fn size_of(value: &Inspected) -> usize {
 }
 
 impl LinkCache {
-    /// Stores `value` under every key (the pasted link and its canonical form).
     pub fn put(&self, keys: &[&str], value: Inspected, now: Instant) {
         let mut entries = self.entries.lock().expect("link cache lock");
         entries.retain(|_, (at, _)| now.saturating_duration_since(*at) < TTL);

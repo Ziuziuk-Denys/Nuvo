@@ -1,4 +1,4 @@
-/** The bug report as plain text. The core section arrives redacted; this module scrubs it once more and adds no paths, tokens, titles or the proxy address. */
+// Core section arrives redacted and is scrubbed again; never add paths, tokens, titles or proxy
 export interface AppFacts {
   version: string;
   platform: string;
@@ -6,7 +6,7 @@ export interface AppFacts {
   compositor: string;
 }
 
-// Only these fields of the core section are printed, at any depth. A field the daemon adds later stays out until it is listed here.
+// Allowlist: only these core fields print, at any depth; new daemon fields stay out until listed
 const KNOWN_FIELDS = new Set([
   "version",
   "uptimeSecs",
@@ -55,7 +55,7 @@ function keepKnown(value: unknown): unknown {
 
 const SECRET_PARAM = /(^|[?&;\s])([a-z0-9_.-]*(?:token|key|secret|session|auth|sig)[a-z0-9_.-]*)=[^\s&;"'#]*/gi;
 
-/** Free text from logs: credentials, secret parameters, home paths and what was playing go. */
+// Strips credentials, secret parameters, home paths and now-playing titles from log text
 function scrubText(text: string): string {
   return text
     .replace(/((?:proxy-)?authorization|set-cookie|cookie)(["']?\s*[:=]\s*)[^\r\n]*/gi, "$1: <redacted>")
@@ -90,7 +90,6 @@ export const ISSUES_URL = "https://github.com/Ziuziuk-Denys/nuvo/issues/new";
 /** Browsers and GitHub refuse much longer links; the diagnostics are cut to fit. */
 const MAX_URL = 7500;
 
-/** The issue text the browser opens: what happened, then the version and system, then the reviewed diagnostics if chosen. */
 export function issueBody(version: string, system: string, diagnostics: string | null): string {
   const lines = ["**What happened**", "", "", "**Steps to see it again**", "", "", "---", `Nuvo ${version} on ${system}`];
   if (diagnostics) lines.push("", "<details><summary>Diagnostics</summary>", "", "```text", diagnostics, "```", "", "</details>");

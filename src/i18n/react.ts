@@ -1,4 +1,3 @@
-/** React access to the runtime. Module state, not context: works with or without a provider. */
 import { useSyncExternalStore } from "react";
 import { currentLocale, i18nVersion, isLocaleLoading, setLocale, subscribeI18n, translate, type Locale, type TFunction } from "./runtime";
 

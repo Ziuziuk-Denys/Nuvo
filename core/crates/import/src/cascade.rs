@@ -1,7 +1,3 @@
-//! The search cascade, driven one step at a time by the import job:
-//! the renderer runs each search it is told to and posts the candidates back. When YouTube finds
-//! nothing approved, a last step asks for a SoundCloud search.
-
 use serde::{Deserialize, Serialize};
 use nuvo_match::Filter;
 use serde_json::{Value, json};
@@ -9,11 +5,9 @@ use serde_json::{Value, json};
 use crate::SourceRow;
 use crate::matcher::{Decision, evaluate, ranked, source};
 
-/// What one row has seen so far. Kept in the database, so a restart resumes at the next step.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Cascade {
     pub steps: Vec<Step>,
-    /// The candidates the current decision rests on.
     pub pool: Vec<Value>,
 }
 
@@ -34,7 +28,6 @@ pub struct Search {
     pub source: &'static str,
 }
 
-/// The final word on a row.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Outcome {
     /// `likely`, `check` or `missing`.
@@ -42,13 +35,10 @@ pub struct Outcome {
     pub score: Option<u8>,
     /// `matched` or a reason code.
     pub reason: &'static str,
-    /// The match, or for `missing` the best proposal when there is one.
     pub track: Option<Value>,
-    /// The best five candidates, for "Pick another".
     pub candidates: Vec<Value>,
 }
 
-/// The cascade of nuvo-match, then the import's own last step: a SoundCloud search.
 fn plan(row: &SourceRow) -> Vec<Search> {
     let mut steps: Vec<Search> = nuvo_match::plan(&source(row))
         .into_iter()
@@ -75,13 +65,11 @@ pub fn is_finished(row: &SourceRow, cascade: &Cascade) -> bool {
     approved(row, &cascade.pool) || cascade.steps.len() >= plan(row).len()
 }
 
-/// The next search to run, or `None` when the row is decided.
 pub fn next_search(row: &SourceRow, cascade: &Cascade) -> Option<Search> {
     if is_finished(row, cascade) { None } else { plan(row).into_iter().nth(cascade.steps.len()) }
 }
 
-/// Records the answer to [`next_search`]. New candidates join the pool (a repeated id keeps its
-/// first place, one without an id is dropped) and the pool keeps the best five. A failed search counts as no candidates.
+// A repeated id keeps its first place; entries without an id are dropped
 pub fn record(row: &SourceRow, cascade: &mut Cascade, candidates: Vec<Value>, failed: bool) {
     let Some(search) = next_search(row, cascade) else { return };
     let candidates: Vec<Value> = if failed { Vec::new() } else { candidates };
@@ -105,7 +93,6 @@ pub fn record(row: &SourceRow, cascade: &mut Cascade, candidates: Vec<Value>, fa
     cascade.pool = ranked(row, &merged).into_iter().take(5).map(|(i, _)| merged[i].clone()).collect();
 }
 
-/// A match from a YouTube search without a cover gets the video thumbnail.
 fn with_cover(mut track: Value) -> Value {
     let id = track["id"].as_str().unwrap_or_default().to_string();
     let youtube = !id.is_empty() && track["source"] == "youtube";

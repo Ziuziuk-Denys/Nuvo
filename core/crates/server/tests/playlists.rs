@@ -179,7 +179,6 @@ async fn move_to_another_playlist_and_undo() {
     assert_eq!(track_order(&core, &source).await.0, ["a"]);
     assert_eq!(track_order(&core, &target).await.0, ["c", "b"]);
 
-    // Undo: take the copies back out of the target and re-insert the originals in the source.
     let added_ids: Vec<&str> = moved["added"].as_array().unwrap().iter().map(|i| i["id"].as_str().unwrap()).collect();
     let (status, removed) = common::call(&core.app, "POST", &format!("/v1/me/playlists/{target}/items/remove"), Some(json!({"itemIds": added_ids}))).await;
     assert_eq!((status, removed["removed"].as_u64()), (StatusCode::OK, Some(1)));

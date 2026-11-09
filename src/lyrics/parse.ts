@@ -1,11 +1,8 @@
-/** One version's raw text to unshifted lines. */
 import { parseLRC, parseQRC, parseTTMLContent, type Lyric, type LyricPart } from "@braccato/parsers";
 import type { Line, RawLyrics, Word } from "./types";
 
-/** The last line of a text without a stated end lasts this long, or to the track end. */
 export const LAST_LINE_MS = 5000;
 
-/** Input limits: later lines and the tail of a long line are dropped, deterministically. */
 export const MAX_LINES = 5000;
 export const MAX_LINE_CHARS = 2000;
 
@@ -21,7 +18,6 @@ export interface Parsed {
   wordTimed: boolean;
 }
 
-/** Null means the text counts as not found. */
 export function parseLyrics(raw: RawLyrics, trackMs: number): Parsed | null {
   const text = raw.content.trim();
   if (text === "") return null;
@@ -34,7 +30,6 @@ export function parseLyrics(raw: RawLyrics, trackMs: number): Parsed | null {
     return plain(text);
   }
   const lines = toLines(parsed, raw.format === "lrc", trackMs);
-  // an LRC text without stamps is plain text; an XML format without lines has nothing readable
   if (lines.length === 0) return raw.format === "lrc" ? plain(text) : null;
   const plainText = lines
     .filter((line) => !line.instrumental)
@@ -85,7 +80,6 @@ function toLines(parsed: Lyric[], recompute: boolean, trackMs: number): Line[] {
   });
 }
 
-/** A word ends at its stated end, else at the next word, and never after its line; text before the first stamp is sung from the line start. */
 function toWords(parts: LyricPart[], lineStart: number, lineEnd: number, text: string): Word[] | undefined {
   const kept = parts.filter((part) => part.words !== "" && Number.isFinite(part.startTimeMs));
   if (kept.length === 0) return undefined;

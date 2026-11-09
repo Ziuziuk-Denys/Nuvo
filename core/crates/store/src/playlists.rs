@@ -13,7 +13,6 @@ use crate::{StoreError, new_id, tracks};
 
 const MAX_TITLE_CHARS: usize = 200;
 const MAX_BULK_TRACKS: usize = 5000;
-/// Below this gap two neighbours are renumbered instead of being split again.
 const MIN_GAP: f64 = 1e-6;
 pub const SORT_MODES: [&str; 6] = ["manual", "added", "title", "artist", "album", "duration"];
 pub const PAGE_DEFAULT: usize = 500;
@@ -21,7 +20,6 @@ pub const PAGE_MAX: usize = 1000;
 /// Same limit as the cover route: the renderer encodes 600 x 600 WebP well below it.
 const MAX_COVER_BYTES: usize = 400 * 1024;
 const COVER_MIMES: [&str; 3] = ["image/webp", "image/jpeg", "image/png"];
-/// Every playlist read joins the cover's timestamp so `coverUrl` changes when the cover does.
 const PLAYLIST_SELECT: &str =
     "SELECT p.*, c.updated_at AS cover_updated_at FROM playlists p LEFT JOIN playlist_covers c ON c.playlist_id = p.id";
 
@@ -54,9 +52,6 @@ fn clean_title(title: &str) -> Result<String, StoreError> {
     Ok(title.to_string())
 }
 
-/// Sort keys of a stored mode, most significant first, as `(expression, descending)`. Every list
-/// ends in the manual order and the item id, so no two rows tie and a cursor marks one exact place;
-/// tracks without an album go last in both directions.
 fn sort_keys(mode: &str, desc: bool) -> Vec<(&'static str, bool)> {
     let mut keys = match mode {
         "added" => vec![("i.added_at", desc)],
@@ -70,13 +65,10 @@ fn sort_keys(mode: &str, desc: bool) -> Vec<(&'static str, bool)> {
     keys
 }
 
-/// ORDER BY for a stored sort mode.
 fn order_by(mode: &str, desc: bool) -> String {
     sort_keys(mode, desc).iter().map(|(expr, desc)| format!("{expr} {}", if *desc { "DESC" } else { "ASC" })).collect::<Vec<_>>().join(", ")
 }
 
-/// Rows after the cursor row in the keys' own directions: `k1 > v1 OR (k1 = v1 AND (k2 > v2 OR ...))`,
-/// with the cursor's values bound from `?first` on.
 fn after_cursor(keys: &[(&str, bool)], first: usize) -> String {
     let mut clause = String::new();
     for (index, (expr, desc)) in keys.iter().enumerate().rev() {
@@ -93,7 +85,6 @@ pub fn list(conn: &Connection) -> Result<Vec<UserPlaylist>, StoreError> {
 
 pub const COLLAGE_COVERS: usize = 4;
 
-/// The list answer: one query for counts, one for covers, no per-playlist reads.
 pub fn list_with_covers(conn: &Connection) -> Result<Vec<PlaylistListItem>, StoreError> {
     let playlists = list(conn)?;
     let mut counts: HashMap<String, i64> = HashMap::new();
@@ -102,8 +93,6 @@ pub fn list_with_covers(conn: &Connection) -> Result<Vec<PlaylistListItem>, Stor
         let (id, count) = row?;
         counts.insert(id, count);
     }
-    // the first COLLAGE_COVERS distinct covers per playlist, numbered in the database so no more than that is read back;
-    // the partitions walk playlist_items_order (playlist_id, position)
     let mut covers: HashMap<String, Vec<String>> = HashMap::new();
     let mut stmt = conn.prepare(
         "WITH firsts AS (
@@ -159,9 +148,6 @@ pub fn get(conn: &Connection, id: &str) -> Result<PlaylistWithItems, StoreError>
     Ok(PlaylistWithItems { playlist, items, total: None, next_cursor: None })
 }
 
-/// One page of items in the playlist's stored sort, optionally filtered by `q` (title, artist or
-/// album, case-insensitive in any script). Keyset paging: the cursor is the id of the last item
-/// served, so an insert or removal elsewhere never shifts a page; a removed cursor item is a conflict.
 pub fn items_page(conn: &Connection, pid: &str, cursor: Option<&str>, limit: usize, q: Option<&str>) -> Result<PlaylistItemsPage, StoreError> {
     let playlist = find(conn, pid)?;
     let keys = sort_keys(&playlist.sort_mode, playlist.sort_desc);
@@ -211,7 +197,6 @@ pub fn items_page(conn: &Connection, pid: &str, cursor: Option<&str>, limit: usi
     Ok(PlaylistItemsPage { items, total: total as usize, next_cursor })
 }
 
-/// The detail with only the first page of items, for `GET /v1/me/playlists/:id?limit=`.
 pub fn get_head(conn: &Connection, pid: &str, limit: usize) -> Result<PlaylistWithItems, StoreError> {
     let playlist = find(conn, pid)?;
     let page = items_page(conn, pid, None, limit, None)?;
@@ -256,7 +241,6 @@ pub fn update(conn: &Connection, id: &str, input: &UpdatePlaylist, now: i64) -> 
     find(conn, id)
 }
 
-/// Also drops the playlist's pin or hide: own playlist ids never come back.
 pub fn delete(conn: &Connection, id: &str) -> Result<(), StoreError> {
     let tx = conn.unchecked_transaction()?;
     tx.execute("DELETE FROM playlists WHERE id = ?1", [id])?;
@@ -265,7 +249,6 @@ pub fn delete(conn: &Connection, id: &str) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Replaces the custom cover. `updated_at` moves so list caches keyed by it refresh.
 pub fn set_cover(conn: &Connection, pid: &str, mime: &str, bytes: &[u8], now: i64) -> Result<UserPlaylist, StoreError> {
     let tx = conn.unchecked_transaction()?;
     find(&tx, pid)?;
@@ -280,7 +263,6 @@ pub fn set_cover(conn: &Connection, pid: &str, mime: &str, bytes: &[u8], now: i6
     Ok(playlist)
 }
 
-/// `(mime, bytes)` of the custom cover, `None` when the playlist has none (or does not exist).
 pub fn cover(conn: &Connection, pid: &str) -> Result<Option<(String, Vec<u8>)>, StoreError> {
     Ok(conn
         .query_row("SELECT mime, bytes FROM playlist_covers WHERE playlist_id = ?1", [pid], |row| Ok((row.get(0)?, row.get(1)?)))
@@ -347,7 +329,6 @@ pub fn add_track(conn: &Connection, pid: &str, track_id: &str, snapshot: Option<
     Ok(created)
 }
 
-/// Invalid snapshots count as rejected; tracks already present are skipped silently.
 pub fn add_tracks(conn: &Connection, pid: &str, snapshots: Vec<Value>, now: i64) -> Result<BulkAddResult, StoreError> {
     if snapshots.len() > MAX_BULK_TRACKS {
         return Err(StoreError::Invalid(format!("at most {MAX_BULK_TRACKS} tracks per request")));
@@ -387,7 +368,6 @@ pub fn remove_item(conn: &Connection, pid: &str, item_id: &str, now: i64) -> Res
     Ok(())
 }
 
-/// Moves `item_id` in front of `before` (or to the end). `revision` must match the stored one.
 pub fn move_item(conn: &Connection, pid: &str, item_id: &str, before: Option<&str>, revision: i64, now: i64) -> Result<PlaylistWithItems, StoreError> {
     let tx = conn.unchecked_transaction()?;
     if find(&tx, pid)?.revision != revision {
@@ -437,7 +417,6 @@ fn check_bulk(len: usize) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// `(item_id, track_id)` of the selected items in manual order; ids not in the playlist are dropped.
 fn selected_items(conn: &Connection, pid: &str, item_ids: &[String]) -> Result<Vec<(String, String)>, StoreError> {
     let wanted: HashSet<&str> = item_ids.iter().map(String::as_str).collect();
     let mut stmt = conn.prepare("SELECT id, track_id FROM playlist_items WHERE playlist_id = ?1 ORDER BY position, added_at, id")?;
@@ -447,8 +426,6 @@ fn selected_items(conn: &Connection, pid: &str, item_ids: &[String]) -> Result<V
     Ok(rows.into_iter().filter(|(id, _)| wanted.contains(id.as_str())).collect())
 }
 
-/// Removes the given items in one transaction. Ids that are not in the playlist are ignored,
-/// so a repeated request is harmless; the revision moves only when something was removed.
 pub fn remove_items(conn: &Connection, pid: &str, item_ids: &[String], now: i64) -> Result<RemoveResult, StoreError> {
     check_bulk(item_ids.len())?;
     let tx = conn.unchecked_transaction()?;
@@ -465,9 +442,6 @@ pub fn remove_items(conn: &Connection, pid: &str, item_ids: &[String], now: i64)
     Ok(RemoveResult { removed, revision })
 }
 
-/// Appends the selected items (in manual order) to `target_id`, skipping tracks the target
-/// already has, also when the selection itself repeats a track. `Move` then removes every
-/// selected item from the source, including the skipped ones: they are in the target already.
 pub fn transfer_items(
     conn: &Connection,
     pid: &str,
@@ -512,8 +486,6 @@ pub fn transfer_items(
     Ok(TransferResult { added, skipped, removed, source_revision, target_revision: target.playlist.revision })
 }
 
-/// Undo of remove and move: puts items back with their old position and date added.
-/// Tracks already in the playlist are skipped; tracks the library does not know count as rejected.
 pub fn insert_items(conn: &Connection, pid: &str, items: &[InsertItem], now: i64) -> Result<BulkAddResult, StoreError> {
     check_bulk(items.len())?;
     let tx = conn.unchecked_transaction()?;
@@ -553,7 +525,6 @@ fn ordered_items(conn: &Connection, pid: &str) -> Result<Vec<(String, f64)>, Sto
     Ok(stmt.query_map([pid], |row| Ok((row.get(0)?, row.get(1)?)))?.collect::<Result<_, _>>()?)
 }
 
-/// `Ok(None)` means the neighbours are too close and the list needs renumbering first.
 fn position_before(items: &[(String, f64)], before: Option<&str>) -> Result<Option<f64>, StoreError> {
     let Some(before) = before else {
         return Ok(Some(items.last().map_or(1.0, |(_, p)| p + 1.0)));
@@ -574,7 +545,6 @@ fn renumber(conn: &Connection, items: &[(String, f64)]) -> Result<(), StoreError
     Ok(())
 }
 
-/// `(track_id, position, added_at)` of every item in manual order.
 fn manual_items(conn: &Connection, pid: &str) -> Result<Vec<(String, f64, i64)>, StoreError> {
     let mut stmt = conn.prepare("SELECT track_id, position, added_at FROM playlist_items WHERE playlist_id = ?1 ORDER BY position, added_at, id")?;
     Ok(stmt.query_map([pid], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?.collect::<Result<_, _>>()?)
@@ -602,10 +572,6 @@ fn snapshot(conn: &Connection, pid: &str) -> Result<PlaylistSnapshot, StoreError
     })
 }
 
-/// Appends every source's items to `target_id`, source by source in manual order. With
-/// `skip_duplicates`, a track already in the target or appended before is skipped. With
-/// `delete_sources`, the sources go and their snapshots come back for the undo. One transaction:
-/// a missing source changes nothing.
 pub fn merge(conn: &Connection, target_id: &str, input: &MergePlaylists, now: i64) -> Result<MergeResult, StoreError> {
     let mut sources: Vec<&str> = Vec::new();
     for id in &input.source_ids {
@@ -659,9 +625,6 @@ pub fn merge(conn: &Connection, target_id: &str, input: &MergePlaylists, now: i6
     Ok(MergeResult { added: added_item_ids.len(), added_item_ids, skipped, deleted_source_ids, snapshots, revision })
 }
 
-/// Undo of a merge that deleted its sources: recreates each playlist with its id, settings,
-/// items (positions and dates added) and cover. The revision moves past the stored one so caches
-/// keyed by it refresh. A playlist that exists again is a conflict and nothing is restored.
 pub fn restore(conn: &Connection, snapshots: &[PlaylistSnapshot], now: i64) -> Result<Vec<UserPlaylist>, StoreError> {
     let tx = conn.unchecked_transaction()?;
     let mut restored = Vec::new();

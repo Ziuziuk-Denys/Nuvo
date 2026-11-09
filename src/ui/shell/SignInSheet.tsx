@@ -4,7 +4,6 @@ import { useTranslation } from "../ports/i18n";
 import { useSignInOffer } from "../ports/youtube";
 import styles from "./SignInSheet.module.css";
 
-/** The YouTube sign-in: a short code to type at a link on any device, while Nuvo waits for it. */
 export function SignInSheet(): JSX.Element | null {
   const { t } = useTranslation();
   const { state, notNow, retry } = useSignInOffer();

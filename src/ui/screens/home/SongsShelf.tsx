@@ -18,12 +18,10 @@ export interface SongsShelfProps {
   onPlay(index: number): void;
 }
 
-/** A titled grid of songs; a click plays the shelf's songs from that one. */
 export function SongsShelf({ name, title, icon, shelf: state, songs, onPlay }: SongsShelfProps): JSX.Element {
   return (
     <section className={shelf.shelf} aria-label={title} data-shelf={name}>
       <ShelfHeading icon={icon} title={title} busy={state.busy} onRefresh={state.refresh} />
-      {/* a new round mounts new rows, which ease in one after another */}
       <div key={state.round} className={state.arrived ? `${styles.grid} ${shelf.arrive}` : styles.grid}>
         {songs.map((track, index) => (
           <Row

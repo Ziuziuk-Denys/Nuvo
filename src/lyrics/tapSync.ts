@@ -1,5 +1,3 @@
-/** Tap to sync: plain lines get [mm:ss.xx] stamps from Space presses while the track plays. Pure. */
-
 export interface SyncLine {
   text: string;
   atMs: number | null;
@@ -19,13 +17,11 @@ export function startSync(plain: string): SyncLine[] {
 
 const withStamp = (lines: SyncLine[], index: number, atMs: number | null) => lines.map((line, at) => (at === index ? { ...line, atMs } : line));
 
-/** Space: stamps the line at `index` and moves to the next one. */
 export function stamp(lines: SyncLine[], index: number, atMs: number): { lines: SyncLine[]; next: number } {
   if (index < 0 || index >= lines.length) return { lines, next: index };
   return { lines: withStamp(lines, index, Math.max(0, Math.round(atMs))), next: index + 1 };
 }
 
-/** Enter: an empty stamped line after a stamped one marks where it ends, so a pause keeps its sync. */
 export function markEnd(lines: SyncLine[], after: number, atMs: number): { lines: SyncLine[]; next: number } {
   if (after < 0 || after >= lines.length || lines[after].atMs === null) return { lines, next: after + 1 };
   const next = [...lines];
@@ -33,7 +29,6 @@ export function markEnd(lines: SyncLine[], after: number, atMs: number): { lines
   return { lines: next, next: after + 2 };
 }
 
-/** Left and Right: 100 ms, with Shift 1 s. Unstamped lines stay as they are. */
 export function nudge(lines: SyncLine[], index: number, deltaMs: number): SyncLine[] {
   const line = lines[index];
   if (!line || line.atMs === null) return lines;

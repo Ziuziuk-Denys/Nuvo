@@ -1,5 +1,3 @@
-//! Matching cases for the import adapter.
-
 use nuvo_import::SourceRow;
 use nuvo_import::matcher::{Decision, evaluate, ranked};
 use serde_json::{Value, json};

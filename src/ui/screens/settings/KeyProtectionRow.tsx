@@ -11,7 +11,6 @@ type Protection = "keyring" | "file" | "passphrase";
 const SEEN_KEY = "nuvo.keyFileWarned";
 const MIN_LENGTH = 8;
 
-/** Whether the warning was shown before; reading it also marks it shown, so it appears once. */
 function warnedBefore(): boolean {
   try {
     const seen = localStorage.getItem(SEEN_KEY) === "1";
@@ -22,10 +21,6 @@ function warnedBefore(): boolean {
   }
 }
 
-/**
- * Where the library key lives. Nothing shows while the system keyring holds it. Without a keyring the
- * key sits in a private file: said once as a warning, always as a quiet line, with a passphrase to seal it.
- */
 export function KeyProtectionRow(): JSX.Element | null {
   const { t } = useTranslation();
   const [protection, setProtection] = useState<Protection | null>(null);

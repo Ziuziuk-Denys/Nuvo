@@ -1,4 +1,3 @@
-/** The one Web Audio graph: two deck inputs, pitch, EQ, reverb, master, analyser. */
 import type { Random } from "../shuffle";
 import { dbToGain } from "./curves";
 import { generateImpulse } from "./reverbIr";
@@ -14,7 +13,6 @@ export const ANALYSER_FFT = 4096;
 /** The send ramps to zero in about 20 ms; the edge is cut after the ramp has settled. */
 const SEND_CLOSE_MS = 200;
 
-/** The shape owned by `src/features/sound/lib/eq.ts`. */
 export interface EqState {
   enabled: boolean;
   gains: number[];
@@ -36,10 +34,9 @@ export interface DeckNodes {
 
 export interface GraphDeps {
   bands: EqBandSpec[];
-  /** Registers the pitch worklet and creates its node; null when the worklet cannot load. */
   loadPitch(context: AudioContext): Promise<AudioWorkletNode | null>;
   random: Random;
-  /** Source nodes per element survive a development hot reload (a second source node for one element throws). */
+  // Kept across hot reload: a second source node for one element throws
   sources: WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>;
 }
 
@@ -58,7 +55,6 @@ export class AudioGraph {
   private readonly preamp: GainNode;
   private readonly filters: BiquadFilterNode[];
   readonly eqOut: GainNode;
-  /** Live spectrum after the EQ; its analyser exists only while a subscriber does. */
   readonly spectrum: SpectrumTap;
   private readonly send: GainNode;
   private readonly convolver: ConvolverNode;
@@ -142,7 +138,6 @@ export class AudioGraph {
     return node;
   }
 
-  /** Releases timers and disconnects every node this graph created. */
   dispose(): void {
     this.disposed = true;
     this.spectrum.dispose();
@@ -173,7 +168,6 @@ export class AudioGraph {
     this.decks[deck].loudness.gain.setTargetAtTime(dbToGain(db), this.now, EQ_RAMP_S);
   }
 
-  /** Loudness for a deck about to prepare: starts at the value, no ramp. */
   presetLoudness(deck: 0 | 1, db: number): void {
     const param = this.decks[deck].loudness.gain;
     param.cancelScheduledValues(this.now);
@@ -184,7 +178,6 @@ export class AudioGraph {
     return !this.pitchUnavailable;
   }
 
-  /** The worklet is created on the first unlinked, audible request; until then only the dry path exists. */
   async setPitch(active: boolean, semitones: number): Promise<void> {
     this.resume();
     if (active && !this.pitchNode && !this.pitchUnavailable) {
@@ -260,7 +253,6 @@ export class AudioGraph {
     this.master.gain.setTargetAtTime(this.sleepLevel, this.now, SLEEP_RAMP_S);
   }
 
-  /** Seek masking on the EQ output: linear 8 ms down or up. */
   mask(down: boolean): void {
     const param = this.eqOut.gain;
     param.cancelScheduledValues(this.now);

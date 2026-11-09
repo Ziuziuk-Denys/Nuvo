@@ -3,15 +3,8 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { settingsStorage } from "../ports/tour";
 import { CHAPTER_IDS, stepCount, type ChapterId } from "./chapters";
 
-/*
-  The tour over the real window. poster - the card before (or between) the chapters; chapter - one step on screen,
-  one outline and one callout; brief - the short version for users who skip.
-  Saved with the settings: whether the tour is still on, where it stopped, and the chapters left out
-  because their part of the window was not there yet. Everything else lives for one run only
-*/
 export type TourPhase = "off" | "poster" | "chapter" | "brief";
 export type PosterKind = "start" | "resume" | "more";
-/** new - never offered (an existing profile); on - running or cut off by closing the window; later - the user chose Finish later */
 export type TourStatus = "new" | "on" | "later" | "done";
 
 export const TOUR_KEY = "nuvo_tour_v1";
@@ -28,27 +21,19 @@ interface TourState extends Saved {
   chapterIds: ChapterId[];
   chapter: number;
   step: number;
-  /** The way the user last moved, so a missing step is passed over in that direction */
   dir: 1 | -1;
-  /** The read gates apply: the first run and its resumption, never a revisit */
   gated: boolean;
-  /** Chapters whose gate already ran out */
   read: ChapterId[];
   briefRead: boolean;
-  /** The skip prompt is open over the current step */
   prompt: boolean;
-  /** The layer steps aside while a sheet opened from the start step is up */
   away: boolean;
-  /** Music was brought in or favourites were sent on the start step */
   started: boolean;
 
   start: () => void;
   restore: () => void;
   offerMore: () => void;
   watch: () => void;
-  /** From the short version: the tour from its first chapter */
   rewatch: () => void;
-  /** From Settings or the palette: every chapter from the first, without the first run's read gates */
   replay: () => void;
   decline: () => void;
   next: () => void;
@@ -72,7 +57,6 @@ const at = (chapterIds: ChapterId[], chapter: number, step: number) => ({ chapte
 export const useTour = create<TourState>()(
   persist(
     (set, get) => {
-      /* Moves to a place in the run and saves it, so a closed window resumes there */
       const go = (chapter: number, step: number, dir: 1 | -1) =>
         set((state) => ({ chapter, step, dir, prompt: false, at: at(state.chapterIds, chapter, step) }));
 
@@ -123,7 +107,6 @@ export const useTour = create<TourState>()(
 
         restore: () => {
           const { status, at: place, phase } = get();
-          // closed on the start step: no chapter yet, so the start step comes back
           if (phase === "off" && (status === "on" || status === "later"))
             set({ phase: "poster", poster: place ? "resume" : "start", gated: true, read: [], briefRead: false });
         },
@@ -215,12 +198,10 @@ export const useTour = create<TourState>()(
   ),
 );
 
-/** Whether Next still waits: once per chapter, on the first run only */
 export function waiting(state: Pick<TourState, "gated" | "read" | "chapterIds" | "chapter">): boolean {
   return state.gated && !state.read.includes(state.chapterIds[state.chapter]);
 }
 
-/** Whether the short version still waits */
 export function briefWaiting(state: Pick<TourState, "gated" | "briefRead">): boolean {
   return state.gated && !state.briefRead;
 }

@@ -27,7 +27,7 @@ describe("appearance safe mode", () => {
     const watch = new StartWatch(m.store);
     watch.loadStarted();
     watch.failed();
-    watch.failed(); // did-fail-load and render-process-gone of the same load count once
+    watch.failed();
     expect(m.flags()).toEqual({ safe: false, failedStarts: 1 });
     watch.loadStarted();
     watch.failed();
@@ -68,7 +68,7 @@ describe("hang watchdog", () => {
     expect(m.flags().failedStarts).toBe(0);
     vi.advanceTimersByTime(1);
     expect(m.flags()).toEqual({ safe: false, failedStarts: 1 });
-    watch.ready(); // a late ready of the same load changes nothing
+    watch.ready();
     expect(m.flags().failedStarts).toBe(1);
   });
 

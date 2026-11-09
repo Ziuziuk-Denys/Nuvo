@@ -57,7 +57,6 @@ function curvePaths(levels: Float32Array): { line: string; area: string } {
   return { line, area: `${line}L${VIEW_WIDTH},${zero}L0,${zero}Z` };
 }
 
-/** The spectrum as a filled outline from the plot floor: band i of n sits at the centre of its log slice. */
 export function spectrumPath(bands: Float32Array): string {
   const floor = PLOT_HEIGHT - PLOT_PAD;
   const span = PLOT_HEIGHT - PLOT_PAD * 2;
@@ -69,7 +68,6 @@ export function spectrumPath(bands: Float32Array): string {
   return `M0,${floor}${points.join("")}L${VIEW_WIDTH},${floor}Z`;
 }
 
-/** Live post-EQ spectrum behind the bands and the clip light; listens only while mounted, so only while the panel is open. */
 function useSpectrum(): { pathRef: RefObject<SVGPathElement | null>; clipRef: RefObject<HTMLSpanElement | null> } {
   const pathRef = useRef<SVGPathElement>(null);
   const clipRef = useRef<HTMLSpanElement>(null);
@@ -81,7 +79,6 @@ function useSpectrum(): { pathRef: RefObject<SVGPathElement | null>; clipRef: Re
         clipRef.current?.toggleAttribute("data-on", frame.clip);
       });
     } catch {
-      // the engine has not started yet: no audio, nothing to draw
       return undefined;
     }
   }, []);
@@ -90,7 +87,6 @@ function useSpectrum(): { pathRef: RefObject<SVGPathElement | null>; clipRef: Re
 
 type Naming = { mode: "save" } | { mode: "rename"; name: string };
 
-/** The equalizer's header controls: Auto gain, Compare, then the master switch. */
 export function EqHeader(): JSX.Element {
   const { t } = useTranslation();
   const enabled = useSoundStore((state) => state.eqEnabled);
@@ -111,11 +107,6 @@ export function EqHeader(): JSX.Element {
   );
 }
 
-/**
- * The ten-band equalizer: a response curve with a handle per band over a dB and Hz grid, the presets
- * under it, then the remember switches and Save as preset. It edits the curve playback uses: the
- * track's, else the artist's, else the global one.
- */
 export function EqPanel(): JSX.Element {
   const { t } = useTranslation();
   const enabled = useSoundStore((state) => state.eqEnabled);
@@ -134,7 +125,6 @@ export function EqPanel(): JSX.Element {
   const [draftName, setDraftName] = useState("");
   const spectrum = useSpectrum();
 
-  // Compare is a listening aid: leaving the panel always returns to the equalized sound
   useEffect(
     () => () => {
       if (useSoundStore.getState().bypass) useSoundStore.getState().setBypass(false);
@@ -159,7 +149,6 @@ export function EqPanel(): JSX.Element {
   const curve = useMemo(() => curvePaths(responseDb(shownGains, CURVE_FREQS)), [shownGains]);
   const bandLevels = useMemo(() => responseDb(shownGains, BAND_FREQS), [shownGains]);
 
-  // every edit is meant to be heard, so it turns the equalizer on and ends a comparison
   const edit = (change: () => void) => {
     const store = useSoundStore.getState();
     if (!store.eqEnabled) store.setEnabled(true);
@@ -264,7 +253,6 @@ export function EqPanel(): JSX.Element {
   };
 
   const shownBand = dragBand ?? hoverBand ?? focusBand;
-  // the tip keeps its last band while it fades out
   const lastBand = useRef(0);
   if (shownBand !== null) lastBand.current = shownBand;
   const tipBand = lastBand.current;
@@ -408,7 +396,6 @@ export function EqPanel(): JSX.Element {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") submitName();
                   if (event.key === "Escape") {
-                    // the name field's own Escape, not the popover's
                     event.stopPropagation();
                     closeNaming();
                   }

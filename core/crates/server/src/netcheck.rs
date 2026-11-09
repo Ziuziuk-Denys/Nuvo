@@ -1,7 +1,3 @@
-//! The daemon's half of the network check: DNS, TCP and HTTPS per host (TLS problems show in the
-//! HTTPS row), the proxy, clock skew and tools. Every step has 5 s and all hosts run at once.
-//! Main adds the interface and Chromium-path rows; the renderer adds the YouTube stream resolve.
-
 use std::future::Future;
 use std::io;
 use std::net::SocketAddr;
@@ -31,7 +27,6 @@ pub struct Target {
     pub url: String,
 }
 
-/// What the check talks to. Tests swap in local servers and a fake resolver.
 #[derive(Clone)]
 pub struct Setup {
     pub targets: Vec<Target>,
@@ -41,7 +36,6 @@ pub struct Setup {
 }
 
 impl Setup {
-    /// Only services Nuvo already uses; there is no server of ours to ping.
     pub fn production() -> Self {
         let hosts = [
             ("YouTube", "music.youtube.com"),
@@ -62,8 +56,7 @@ pub fn system_resolver() -> Resolver {
     Arc::new(|host: String, port: u16| Box::pin(async move { Ok(tokio::net::lookup_host((host.as_str(), port)).await?.collect()) }))
 }
 
-/// The S3 code for an HTTP status; `None` means the host answered and works. Other 4xx count as
-/// working: a root path may well be a 404 on an API host.
+// Other 4xx count as working: a root path may well be a 404 on an API host
 pub fn status_code(status: u16) -> Option<&'static str> {
     match status {
         407 => Some("proxy_failed"),
@@ -74,7 +67,6 @@ pub fn status_code(status: u16) -> Option<&'static str> {
     }
 }
 
-/// The S3 code and a short detail for a failed request, read from the whole error chain.
 pub fn classify_error(err: &reqwest::Error, proxied: bool) -> (&'static str, String) {
     let mut text = err.to_string();
     let mut source = std::error::Error::source(err);
@@ -90,7 +82,6 @@ pub fn classify_error(err: &reqwest::Error, proxied: bool) -> (&'static str, Str
         // hyper reports a 407 answer to CONNECT as this exact tunnel error.
         return ("proxy_failed", "HTTP 407".to_string());
     } else if proxied && (lower.contains("tunnel") || lower.contains("proxy")) {
-        // Refused, reset or any other non-407 answer from the proxy.
         "proxy_failed"
     } else if err.is_timeout() {
         "timeout"
@@ -99,11 +90,9 @@ pub fn classify_error(err: &reqwest::Error, proxied: bool) -> (&'static str, Str
     } else {
         "blocked"
     };
-    // The URL is the target's root and carries nothing private, but keep the detail short.
     (code, text.chars().take(200).collect())
 }
 
-/// `Date: Sun, 06 Nov 1994 08:49:37 GMT` in unix milliseconds.
 pub fn http_date_ms(value: &str) -> Option<i64> {
     let parts: Vec<&str> = value.split_whitespace().collect();
     let [_, day, month, year, time, "GMT"] = parts[..] else { return None };
@@ -165,7 +154,6 @@ async fn check_host(target: &Target, setup: &Setup, client: &reqwest::Client, pr
         rows.push(host_row("tcp", target, started, failure));
     }
 
-    // Through the proxy when one is set: this is the path the daemon's own requests take.
     let started = Instant::now();
     let (failure, date) = match client.get(&target.url).send().await {
         Ok(response) => {
@@ -199,7 +187,6 @@ async fn check_proxy(proxy: &Url, setup: &Setup) -> NetCheckRow {
     }
 }
 
-/// Runs the daemon's checks. `hook` is the proxy every daemon client uses.
 pub async fn run(setup: &Setup, proxy: Option<&Url>, hook: reqwest::Proxy, now: i64) -> NetCheck {
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
@@ -239,7 +226,6 @@ pub async fn run(setup: &Setup, proxy: Option<&Url>, hook: reqwest::Proxy, now: 
     NetCheck { checked_at: iso_from_ms(now), rows, summary, code, service }
 }
 
-/// yt-dlp and ffmpeg rows from the dependency check. They never change the summary: playback needs neither.
 pub fn tool_rows(deps: &Deps) -> Vec<NetCheckRow> {
     deps.tools
         .iter()
@@ -270,8 +256,6 @@ fn join_and(names: &[&str]) -> String {
     }
 }
 
-/// One English sentence with the most specific cause, plus its S3 code and service so the
-/// renderer can say the same in its own language.
 pub fn summarize(rows: &[NetCheckRow]) -> (String, Option<&'static str>, Option<&'static str>) {
     if rows.iter().any(|r| r.check == "proxy" && !r.ok) {
         return ("The proxy is not reachable.".into(), Some("proxy_failed"), None);
@@ -291,8 +275,7 @@ pub fn summarize(rows: &[NetCheckRow]) -> (String, Option<&'static str>, Option<
             services.push(service);
         }
     }
-    // A host counts as broken only when its HTTPS row failed: a blocked direct TCP connect is
-    // fine while the proxy gets through.
+    // Broken only when HTTPS failed: a blocked direct TCP connect is fine while the proxy gets through
     let broken_host = |host: &Option<String>| https.iter().any(|r| &r.host == host && !r.ok);
     let broken: Vec<(&'static str, &'static str)> = services
         .iter()

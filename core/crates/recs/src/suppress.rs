@@ -1,7 +1,3 @@
-//! "Not interested": decaying suppressions by exact track, work or artist. Likes are the
-//! exceptions: a liked track and every upload of the same variant survive work and decaying
-//! artist suppressions. A permanent artist block wins over likes.
-
 use std::collections::{HashMap, HashSet};
 
 use nuvo_contracts::{NotInterestedResult, RecordPlaybackEvent, SuppressionItem, iso_from_ms};
@@ -12,18 +8,12 @@ use crate::keys::{self, TrackKey};
 use crate::rewards;
 
 const DAY_MS: f64 = 86_400_000.0;
-/// A permanent artist block: tracks at this penalty are never shown.
 pub const FOREVER_W0: f64 = 10.0;
-/// Tracks whose suppression reached this (one "any version" dislike) are hidden from mixes and
-/// held back by the ranker.
 pub const HIDDEN_AT: f64 = 1.0;
-/// Every user dislike of a track also counts against its artist at the artist-scope rate.
 const DISLIKE_ARTIST: (f64, f64) = (0.3, 30.0);
 const SCRUB_SKIP: Rule = ("work", 0.3, Some(30.0));
 pub const OFFER_HIDE_ARTIST_AT: f64 = 1.0;
-/// Below this an entry no longer matters and is dropped from the blocklist.
 const FADED_BELOW: f64 = 0.05;
-/// Contexts where a full play is the user's own choice.
 const USER_CONTEXTS: [&str; 2] = ["library", "playlist"];
 
 pub fn decayed(w0: f64, half_life_days: Option<f64>, age_ms: i64) -> f64 {
@@ -33,7 +23,6 @@ pub fn decayed(w0: f64, half_life_days: Option<f64>, age_ms: i64) -> f64 {
     }
 }
 
-/// Request scope -> (stored scope, w0, half-life in days; `None` never fades).
 fn rule(scope: &str) -> Result<Rule, StoreError> {
     match scope {
         "exact" => Ok(("exact", 1.0, None)),
@@ -88,7 +77,6 @@ fn rows(conn: &Connection) -> Result<Vec<Row>, StoreError> {
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
-/// Everything needed to judge candidates, loaded once per request.
 pub struct Suppressions {
     now: i64,
     rows: Vec<Row>,
@@ -110,9 +98,7 @@ impl Suppressions {
         Ok(Self { now, rows, row_keys: all_keys, liked, liked_variants })
     }
 
-    /// Decaying artist penalty: explicit artist entries plus every user dislike of their tracks.
     pub fn artist_decaying(&self, artist: &str) -> f64 {
-        // An empty artist key is no artist; it never collects penalties from other tracks.
         if artist.is_empty() {
             return 0.0;
         }
@@ -139,7 +125,6 @@ impl Suppressions {
         self.rows.iter().filter(|r| r.scope == "artist" && r.half_life.is_none() && r.key == artist).map(|r| r.w0).sum()
     }
 
-    /// `None`: never show this track (exact suppression). Otherwise the penalty to apply.
     pub fn penalty(&self, track_id: &str, key: &TrackKey) -> Option<f64> {
         if self.rows.iter().any(|r| r.scope == "exact" && r.key == track_id) {
             return None;
@@ -198,7 +183,6 @@ pub fn delete(conn: &Connection, id: i64) -> Result<(), StoreError> {
     }
 }
 
-/// The blocklist, newest first. Entries that faded are deleted on the way.
 pub fn list(conn: &Connection, now: i64) -> Result<Vec<SuppressionItem>, StoreError> {
     let mut items = Vec::new();
     for row in rows(conn)?.into_iter().rev() {
@@ -225,8 +209,6 @@ pub fn list(conn: &Connection, now: i64) -> Result<Vec<SuppressionItem>, StoreEr
     Ok(items)
 }
 
-/// After a play is recorded: a scrub-then-skip adds a weak work suppression, and a full play the
-/// user chose (library or playlist) halves the work suppressions on that song.
 pub fn after_play(conn: &Connection, event: &RecordPlaybackEvent, now: i64) -> Result<(), StoreError> {
     let reason = rewards::end_reason(event);
     let scrub_skipped = event.seek_forward_ms > 0 && (reason == "skip" || reason == "next");

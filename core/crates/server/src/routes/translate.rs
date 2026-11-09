@@ -1,8 +1,3 @@
-//! Lyrics translation through a local model on loopback.
-//! Nothing leaves the machine: the target is a stored setting that only the validated settings
-//! route can change, the path is fixed, redirects are never followed and the request carries
-//! the lyric lines and nothing else.
-
 use std::net::{Ipv4Addr, SocketAddr};
 use std::time::Duration;
 
@@ -20,14 +15,12 @@ use crate::state::AppState;
 
 pub const MAX_LINES: usize = 400;
 pub const MAX_LINE_CHARS: usize = 500;
-/// All lines together; a song never comes near it.
 pub const MAX_TOTAL_CHARS: usize = 60_000;
 const MAX_REPLY_BYTES: usize = 512 * 1024;
 const MAX_NAME_CHARS: usize = 200;
 const MAX_LANG_CHARS: usize = 40;
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(3);
 const TIMEOUT: Duration = Duration::from_secs(90);
-/// The OpenAI-compatible chat route, the only path the daemon ever calls.
 const CHAT_PATH: &str = "/v1/chat/completions";
 
 #[derive(Deserialize)]
@@ -53,10 +46,7 @@ pub fn routes() -> Router<AppState> {
     Router::new().route("/v1/lyrics/translator", get(read_translator).put(write_translator)).route("/v1/lyrics/translate", post(translate))
 }
 
-/// The one accepted shape is `http://127.0.0.1:P`, `http://localhost:P` or `http://[::1]:P`, with an
-/// optional final slash and P an unprivileged port (1024 and up). It is matched as text, not parsed:
-/// credentials, other numeric spellings of loopback, DNS names, paths, queries and fragments all
-/// fail the comparison. Returns the host and port.
+// Matched as text, not parsed: credentials, other loopback spellings, DNS names and paths fail
 fn loopback_target(endpoint: &str) -> Option<(&str, u16)> {
     let rest = endpoint.strip_prefix("http://")?;
     let rest = rest.strip_suffix('/').unwrap_or(rest);
@@ -87,7 +77,6 @@ fn valid_lines(lines: &[String]) -> bool {
         && lines.iter().map(|line| line.chars().count()).sum::<usize>() <= MAX_TOTAL_CHARS
 }
 
-/// "1. text" or "1) text" lines in order, skipping chatter; None unless exactly `count` arrive in sequence.
 fn numbered_lines(reply: &str, count: usize) -> Option<Vec<String>> {
     let mut out = Vec::new();
     for line in reply.lines().map(str::trim).filter(|line| !line.is_empty()) {
@@ -123,7 +112,6 @@ async fn write_translator(State(state): State<AppState>, JsonBody(body): JsonBod
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// The reply body, read up to the cap so a runaway model cannot fill memory.
 async fn capped_reply(mut response: reqwest::Response) -> Result<Value, ApiError> {
     let mut body = Vec::new();
     while let Some(chunk) = response.chunk().await.map_err(|_| ApiError::Upstream("the local model reply broke off".into()))? {
@@ -153,8 +141,7 @@ async fn translate(State(state): State<AppState>, JsonBody(body): JsonBody<Trans
         return Err(ApiError::Conflict("no_translator".into()));
     };
 
-    // no proxy and no redirects: the request stays on loopback. "localhost" is pinned to 127.0.0.1,
-    // so a changed hosts file cannot point it elsewhere.
+    // No proxy, no redirects, localhost pinned to 127.0.0.1: the request cannot leave loopback
     let mut builder = reqwest::Client::builder().no_proxy().redirect(reqwest::redirect::Policy::none()).connect_timeout(CONNECT_TIMEOUT).timeout(TIMEOUT);
     if host == "localhost" {
         builder = builder.resolve("localhost", SocketAddr::from((Ipv4Addr::LOCALHOST, port)));

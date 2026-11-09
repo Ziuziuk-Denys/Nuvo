@@ -1,6 +1,3 @@
-//! The ranker behind radio, continuation, suggestions and search: filters, scores and orders the
-//! candidates the renderer fetched, 10 at a time, using the current session's feedback.
-
 use std::collections::{HashMap, HashSet};
 
 use nuvo_contracts::{RankReason, RankRequest, RankResponse, RankSignals, RankedItem};
@@ -36,12 +33,10 @@ pub(crate) const MAX_PMI_SUM: f64 = 3.0;
 const REASON_FLOOR: f64 = 0.05;
 const SESSION_LOOKBACK_MS: i64 = 86_400_000;
 const SERVED_KEEP_MS: i64 = 30 * 86_400_000;
-/// The stored lists of the last few finished tracks and of the seeds join a batch, at most `POOL_MERGE` tracks in all.
 const POOL_FINISHED: usize = 3;
 const POOL_ANCHORS: usize = 12;
 const POOL_MERGE: usize = 50;
 
-/// splitmix64: deterministic under a test seed, no dependency.
 pub struct Rng(u64);
 
 impl Rng {
@@ -73,18 +68,12 @@ struct Candidate {
     key: TrackKey,
     x: [f64; FEATURES],
     score: f64,
-    /// "Not interested" penalty, below `FOREVER_W0` (blocked tracks are dropped).
     penalty: f64,
-    /// The anchor that makes it most similar, and whether that anchor is a track finished this session.
     best_anchor: Option<(String, bool)>,
-    /// Shown in a recent batch, the same work as a recent play or hidden by a dislike: used only
-    /// to avoid silence, hidden ones last.
     held_back: bool,
-    /// Work group: tracks with same group are the same work.
     work_group: usize,
 }
 
-/// The current session's verdicts.
 #[derive(Default)]
 struct Session {
     finished: Vec<String>,
@@ -144,7 +133,6 @@ fn validate(req: &RankRequest) -> Result<usize, StoreError> {
     Ok(req.limit.unwrap_or(DEFAULT_LIMIT).clamp(1, MAX_LIMIT))
 }
 
-/// Suppression scales a positive score down and pushes a negative one further down, within +-10.
 pub(crate) fn suppressed(score: f64, penalty: f64) -> f64 {
     let factor = (-SUPPRESSION_STRENGTH * penalty).exp();
     let score = if score >= 0.0 { score * factor } else { score / factor };
@@ -161,9 +149,6 @@ fn similarity(a: &Candidate, b: &Candidate, vectors: &HashMap<String, Vec<f32>>)
     features::similarity(vectors.get(&a.id), vectors.get(&b.id))
 }
 
-/// Ranks one batch. `seed` drives exploration; pass something that changes per call.
-/// `mix:mood:<key>` seeds itself with the mood's best-loved tracks and holds back other moods.
-/// One savepoint over the whole batch: all writes commit together, or none.
 pub fn rank(conn: &Connection, req: &RankRequest, now: i64, seed: u64) -> Result<RankResponse, StoreError> {
     let limit = validate(req)?;
     let mood = req.context.strip_prefix("mix:mood:");
@@ -179,7 +164,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
     let mut rng = Rng::new(seed);
     let mut dropped = 0;
 
-    // Store the snapshots; invalid ones and repeats are dropped, not fatal.
     let mut incoming: Vec<(String, Value, String)> = Vec::new();
     let mut incoming_ids = HashSet::new();
     for snapshot in &req.candidates {
@@ -190,8 +174,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
     }
     keys::refresh(conn)?;
     let session = session(conn, req.session_id.as_deref(), now)?;
-    // Breadth: the stored lists (YouTube radio, SoundCloud related) of this session's finished
-    // tracks and of the seeds join the catalog's list, so one batch draws on several sources.
     let request_count = incoming.len();
     let mut pool_anchors: Vec<String> = Vec::new();
     for id in session.finished.iter().rev().take(POOL_FINISHED).chain(req.seeds.iter().rev()) {
@@ -218,7 +200,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
     let model = Model::load(conn)?;
     let bucket = rewards::bucket_now(now, req.tz_offset_min.unwrap_or(0));
 
-    // Anchors: seeds and recent plays at weight 1, tracks finished this session at weight 2.
     let mut anchors: HashMap<String, (f64, bool)> = HashMap::new();
     let recent_tail = &req.recent[req.recent.len().saturating_sub(RECENT_ANCHORS)..];
     for id in seeds.iter().chain(recent_tail) {
@@ -227,7 +208,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
     for id in &session.finished {
         anchors.insert(id.clone(), (POSITIVE_SEED_WEIGHT, true));
     }
-    // A track skipped this session lifts nothing, even when it is a seed or a recent play.
     for id in &session.negative {
         anchors.remove(id);
     }
@@ -240,7 +220,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
     let all_ids: Vec<String> = candidate_ids.iter().chain(&anchor_ids).chain(&req.recent).cloned().collect();
     let vectors = features::load(conn, &all_ids)?;
 
-    // Same work once in 50: recent plays from the database, the request's recent ids and the seeds.
     let mut spaced_ids = ids_query(conn, "SELECT track_id FROM play_events ORDER BY started_at DESC, id DESC LIMIT ?1", [WORK_SPACING])?;
     spaced_ids.extend(req.recent.iter().cloned());
     spaced_ids.extend(seeds.iter().cloned());
@@ -264,7 +243,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
             dropped += usize::from(index < request_count);
             continue;
         };
-        // An exact suppression or a permanently blocked artist never shows.
         let penalty = match suppressions.penalty(&id, &key) {
             Some(penalty) if penalty < FOREVER_W0 && !blocked.contains(&id) => penalty,
             _ => {
@@ -272,8 +250,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
                 continue;
             }
         };
-        // Evidence adds up over anchors, so a finished track lifts its neighbours even when the
-        // seed already relates to every candidate.
         let mut best_anchor = None;
         let (mut pmi_sum, mut best_pmi) = (0.0, 0.0);
         for (anchor, weight, positive) in &sorted_anchors {
@@ -300,7 +276,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
             1.0 / (1.0 + f64::from(plays)),
             1.0 - index as f64 / total,
         ];
-        // Session feedback: neighbours of tracks skipped this session go down, capped at -1.
         let mut feedback: f64 = 0.0;
         for negative in &session.negative {
             if key_map.get(negative).is_some_and(|k| k.same_artist(&key)) {
@@ -320,7 +295,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
         candidates.push(Candidate { id, snapshot, artist_name, key, x, score, penalty, best_anchor, held_back, work_group });
     }
 
-    // Assign work groups: group candidates by same work; compare each to group representatives.
     let mut group_keys: Vec<TrackKey> = Vec::new();
     for c in &mut candidates {
         let mut group = 0;
@@ -341,7 +315,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
     let names = titles(conn, &anchor_ids.iter().chain(seeds).cloned().collect::<Vec<_>>())?;
     let batch_id = new_id();
     let mut items = Vec::new();
-    // Served rows: track id and the features the model learns from (none for fallback tracks).
     let mut served: Vec<(String, Option<String>)> = Vec::new();
     if order.is_empty() && !req.candidates.is_empty() {
         for (id, track) in fallback(conn, &blocked, &session.negative, limit)? {
@@ -369,9 +342,6 @@ fn rank_with(conn: &Connection, req: &RankRequest, limit: usize, mood: Option<&s
     Ok(RankResponse { batch_id, items, signals: session.signals, dropped })
 }
 
-/// When every candidate was dropped, tracks already heard (seeds, recent and session plays) rather
-/// than silence: least recently played first, never one skipped this session, an exact
-/// suppression or a permanently blocked artist.
 fn fallback(conn: &Connection, heard: &HashSet<&String>, negative: &[String], limit: usize) -> Result<Vec<(String, Value)>, StoreError> {
     let ids: Vec<&String> = heard.iter().copied().filter(|id| !negative.contains(id)).collect();
     let mut stmt = conn.prepare(
@@ -389,8 +359,6 @@ fn fallback(conn: &Connection, heard: &HashSet<&String>, negative: &[String], li
     rows.into_iter().map(|(id, raw)| Ok((id, serde_json::from_str(&raw)?))).collect()
 }
 
-/// Batch order as (candidate index, picked by exploration). Greedy MMR under the artist cap and
-/// work spacing; search leads with the seed's neighbours; 15 % of slots explore new artists.
 #[allow(clippy::too_many_arguments)]
 fn select(
     candidates: &[Candidate],
@@ -407,14 +375,12 @@ fn select(
     let relevance = |c: &Candidate| if max > min { (c.score - min) / (max - min) } else { 1.0 };
     let is_search = req.context.starts_with("search:");
 
-    // Exploration: 1-2 of every 10 slots, spread through the batch, never in the search lead.
     let share = limit as f64 * EXPLORE_SHARE;
     let slots = share.floor() as usize + usize::from(rng.next_f64() < share.fract());
     let explore_at: Vec<usize> = (1..=slots).map(|k| k * limit / (slots + 1)).filter(|p| !is_search || *p >= SEARCH_LEAD).collect();
     let mut explorers: Vec<(f64, usize)> = Vec::new();
     let mut explored_artists = HashSet::new();
     for (i, c) in candidates.iter().enumerate() {
-        // A new artist: known by name, never disliked, rarely played.
         if c.held_back
             || c.penalty > 0.0
             || c.score < -0.5
@@ -429,7 +395,6 @@ fn select(
     }
     explorers.sort_by(|a, b| b.0.total_cmp(&a.0));
 
-    // Search: the first picks come from the seed's PMI and audio neighbourhood, then catalog order.
     let seed_key = seeds.first().and_then(|s| key_map.get(s));
     let mut lead: Vec<usize> = Vec::new();
     if is_search && let Some(seed) = seeds.first() {
@@ -476,8 +441,6 @@ fn select(
             pick = explorers.iter().map(|(_, i)| *i).find(|&i| !used[i] && allowed(i, &chosen, true)).map(|i| (i, true));
         }
         if pick.is_none() {
-            // Fresh candidates under the cap first; then held-back repeats; then without the cap;
-            // works hidden by a dislike only when nothing else is left.
             let level = |c: &Candidate| if c.penalty >= HIDDEN_AT { 2 } else { u8::from(c.held_back) };
             for (max_level, cap) in [(0, true), (1, true), (1, false), (2, false)] {
                 let best = (0..candidates.len())
@@ -525,6 +488,5 @@ fn reason(c: &Candidate, explored: bool, model: &Model, seeds: &[String], names:
     if time > REASON_FLOOR {
         return RankReason { kind: "time", name: None };
     }
-    // No strong signal: the catalog put it next to the seed.
     RankReason { kind: "similar", name: seeds.first().and_then(|s| names.get(s)).cloned() }
 }

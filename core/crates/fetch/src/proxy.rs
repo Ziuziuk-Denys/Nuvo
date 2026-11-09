@@ -1,22 +1,10 @@
-//! The proxy URL main hands to the daemon, and the subset each tool understands.
-//!
-//! **Proxy modes:**
-//! - `http://` and `https://` proxies: forward all traffic through the proxy host.
-//! - `socks5://` proxy: resolve hostnames locally, tunnel through proxy. Used by yt-dlp and
-//!   `reqwest` clients; ffmpeg has no SOCKS support.
-//! - `socks5h://` proxy: resolve hostnames through the proxy ("h" = "hostnames"). Used by
-//!   yt-dlp and `reqwest`; ffmpeg cannot use it.
-//!
-//! When a proxy is set, `ensure_public` (before redirection) and `follow_public` (after redirection)
-//! do best-effort DNS checks with no guarantee: a malicious proxy or resolver can still bypass them.
+// With a proxy set, DNS checks are best effort: a malicious proxy or resolver can bypass them
 
 use reqwest::Url;
 
 const SCHEMES: [&str; 4] = ["http", "https", "socks5", "socks5h"];
 
-/// Accepts `http`, `https`, `socks5` and `socks5h` URLs with a host and an explicit port, optional
-/// credentials, and nothing after the authority. The error is one sentence for the user.
-/// Credentials are passed through environment variables, not command arguments.
+// Credentials go through environment variables, never command arguments
 pub fn parse_proxy(text: &str) -> Result<Url, String> {
     let url = Url::parse(text.trim()).map_err(|_| "the proxy is not a valid URL".to_string())?;
     if !SCHEMES.contains(&url.scheme()) {

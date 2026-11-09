@@ -1,4 +1,3 @@
-// Dev server for the EQ harness without the Electron plugin: node e2e/sound/serve.mjs
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";

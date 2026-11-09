@@ -16,7 +16,6 @@ const STATUS_TEXT: Record<Exclude<DiscordState, "off">, string> = {
   error: "settings.discord.status.error",
 };
 
-/** Discord presence: one switch, off until the user turns it on. */
 export function DiscordSection(): JSX.Element {
   const { t } = useTranslation();
   const [on, setOn] = useState<boolean | null>(null);
@@ -42,7 +41,6 @@ export function DiscordSection(): JSX.Element {
     };
   }, [on]);
 
-  // "off" with a message: this build has no Discord application id
   const statusText =
     !on || status === null
       ? null

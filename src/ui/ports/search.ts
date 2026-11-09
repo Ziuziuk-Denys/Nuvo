@@ -16,7 +16,6 @@ export const { useSearchHistoryStore, loadSearchHistory } = createSearchHistory(
 
 export type SearchKind = "song" | "album" | "artist" | "playlist";
 
-/** One search hit, shaped for a row: a song carries its playable track, the rest an href. */
 export interface SearchResult {
   kind: SearchKind;
   id: string;
@@ -32,7 +31,6 @@ export function songResult(track: Track): SearchResult {
   return { kind: "song", id: track.id, title: track.title, subtitle: track.artists, cover: track.coverUrl, durationMs: track.durationMs, track };
 }
 
-/** The catalog's search items as rows, with their covers and links. */
 export function toSearchResult(item: CatalogSearchItem): SearchResult {
   const cover = item.cover?.url ?? "";
   if (item.kind === "track") return songResult(toUiTrack(item));

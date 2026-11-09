@@ -88,7 +88,6 @@ async fn most_saved(State(state): State<AppState>, Query(q): Query<SavedQuery>) 
     Ok(Json(data.db.call(move |c| stats::most_saved(c, &kind, q.limit.unwrap_or(20))).await?))
 }
 
-/// Radio stays client-side (InnerTube) until sub-project 2; 404 makes the renderer keep its own result.
 async fn radio(State(state): State<AppState>, Path(_id): Path<String>) -> Result<StatusCode, ApiError> {
     state.data()?;
     Err(ApiError::NotFound("server radio is not available".into()))

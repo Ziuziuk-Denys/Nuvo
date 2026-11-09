@@ -14,8 +14,6 @@ fn record(id: i64, duration: f64, synced: Option<&str>, plain: Option<&str>, ins
            "instrumental": instrumental, "plainLyrics": plain, "syncedLyrics": synced})
 }
 
-/// Mock LRCLIB: `/api/get` knows "Song" at 200 s, has an empty record for "Empty" and fails with 502
-/// for "Busy"; `/api/search` returns `search` for any query.
 async fn mock(search: Value) -> (String, Arc<AtomicUsize>) {
     let gets = Arc::new(AtomicUsize::new(0));
     let counter = gets.clone();

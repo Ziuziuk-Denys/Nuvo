@@ -8,7 +8,6 @@ const SYNTHETIC = readFileSync(new URL("../../../fixtures/yt/player-synthetic.js
 const TCL = (id: string) => `https://www.youtube.com/s/player/${id}/tv-player-ias-tcl.vflset/tv-player-ias-tcl.js`;
 const PLAIN = (id: string) => `https://www.youtube.com/s/player/${id}/tv-player-ias.vflset/tv-player-ias.js`;
 
-/** Test solver for the synthetic fixture only: it evaluates the fixture and calls its two functions. */
 const syntheticSolver: Solver = {
   async load(_playerId, script) {
     const player = new Function(`${script}\nreturn nuvoPlayer;`)() as {

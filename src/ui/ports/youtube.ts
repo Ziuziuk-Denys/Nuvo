@@ -4,12 +4,10 @@ import type { Profile } from "@/youtube/account/tv";
 
 export const signOutYoutube = (): Promise<void> => getYoutube().account.disconnect();
 
-/** Opens the sign-in offer the way the settings page asks for it. */
 export function openYoutubeSignIn(): void {
   getSignInOffer().open("settings");
 }
 
-/** Whether an account is linked, and its profile once the account answers. */
 export function useYoutubeAccount(): { signedIn: boolean; account: Profile | undefined; loading: boolean } {
   const account = getYoutube().account;
   const [signedIn, setSignedIn] = useState(account.status());
@@ -43,7 +41,6 @@ export function useYoutubeAccount(): { signedIn: boolean; account: Profile | und
 
 type Preferences = ReturnType<ReturnType<typeof getYoutube>["account"]["preferences"]["get"]>;
 
-/** The account preferences and a setter that patches some of them. */
 export function useYoutubePreferences(): [Preferences, (patch: Partial<Preferences>) => void] {
   const account = getYoutube().account;
   const [prefs, setPrefs] = useState(() => account.preferences.get());
@@ -51,7 +48,6 @@ export function useYoutubePreferences(): [Preferences, (patch: Partial<Preferenc
   return [prefs, (patch) => void account.preferences.set(patch).then(setPrefs, () => undefined)];
 }
 
-/** The sign-in offer's phase and its actions, for the sheet that follows it. */
 export function useSignInOffer() {
   const offer = getSignInOffer();
   const [state, setState] = useState(offer.state);

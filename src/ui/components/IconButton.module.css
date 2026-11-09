@@ -1,4 +1,3 @@
-/* A glyph on a 30 px square: secondary ink, a soft grey under the pointer, a small press. */
 .button {
   display: inline-grid;
   flex: none;

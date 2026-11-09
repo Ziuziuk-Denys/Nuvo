@@ -8,15 +8,12 @@ import { useReducedEffects } from "../effects";
 import styles from "./Field.module.css";
 
 const FADE_MS = 380;
-/** The bottom strip of the cover, darkened, tints the canvas below the image. */
 const FILL_DARKEN = 0.38;
-/** The foot strip is squeezed into a row this many pixels wide, then averaged. */
 const SAMPLE_WIDTH = 16;
 const FOOT_SHARE = 0.08;
 
 type Rgb = readonly number[];
 
-/** The bottom 8 % of the picture squeezed into one 16 px row of RGBA bytes; null if it has no size or is cross-origin tainted. */
 function footRow(picture: HTMLImageElement): Uint8ClampedArray | null {
   const { naturalWidth: width, naturalHeight: height } = picture;
   if (!width || !height) return null;
@@ -31,7 +28,6 @@ function footRow(picture: HTMLImageElement): Uint8ClampedArray | null {
   }
 }
 
-/** Mean red, green and blue of a row of RGBA bytes, darkened by FILL_DARKEN. */
 function darkenedMean(row: Uint8ClampedArray): Rgb {
   const totals = [0, 0, 0, 0];
   row.forEach((byte, offset) => {
@@ -40,7 +36,6 @@ function darkenedMean(row: Uint8ClampedArray): Rgb {
   return totals.slice(0, 3).map((total) => Math.round((total / SAMPLE_WIDTH) * FILL_DARKEN));
 }
 
-/** The window behind every screen: the preset canvas, the blurred cover of the page in focus, or the user's wallpaper. */
 export function Field(): JSX.Element {
   const look = useLook();
   const wallpaper = useCustomizationStore((s) => s.backgroundImage);
@@ -51,7 +46,6 @@ export function Field(): JSX.Element {
   const options = usePageBackdropStore((s) => s.options);
   const cover = useCoverSrc(coverGlow && !calm && !reduced ? (pageCover ?? undefined) : undefined);
   const dark = look.mode === "dark";
-  // the wallpaper shows in dark mode only, as it always has
   const showWallpaper = Boolean(wallpaper) && dark;
 
   return (
@@ -61,19 +55,17 @@ export function Field(): JSX.Element {
   );
 }
 
-/** One cover in the crossfade; generations only grow, so a cover that comes back still gets a fresh element. */
+// Generations only grow, so a cover that comes back still gets a fresh element
 type CoverLayer = { generation: number; src: string };
 
 const COVER_IMG = { alt: "", crossOrigin: "anonymous", draggable: false, decoding: "async" } as const;
 
-/** The cover over the top half of the window, blurred and fading down into a tone taken from its foot. Covers crossfade. */
 function Backdrop({ src, dark, blur, dim }: { src: string; dark: boolean; blur: number; dim: number }) {
   const [stack, setStack] = useState<CoverLayer[]>([{ generation: 0, src }]);
   const [visible, setVisible] = useState(-1);
   const [foot, setFoot] = useState<Rgb | null>(null);
   const top = stack[stack.length - 1];
 
-  // a changed cover is stacked over the current top and the older ones are let go: two layers at most
   if (top.src !== src) setStack([top, { generation: top.generation + 1, src }]);
 
   const reveal = (layer: CoverLayer, picture: HTMLImageElement) => {

@@ -1,7 +1,3 @@
-/**
- * The match report's words and buttons, as data. Pure, so the
- * screen stays a thin view. Every text is an i18n key under `ui.imports`.
- */
 import type { ImportSummary, ReportRow, RowsFilter } from "./types";
 
 export interface Message {
@@ -11,10 +7,8 @@ export interface Message {
 
 export type RowAction = "use" | "keep" | "remove" | "pick";
 
-/** The report's chips, the default first. */
 export const REPORT_CHIPS: RowsFilter[] = ["review", "matched", "all"];
 
-/** Length differences under this are not worth a line. */
 const DIFF_WORTH_MS = 3_000;
 
 export function formatDuration(ms: number): string {
@@ -22,7 +16,6 @@ export function formatDuration(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-/** The plain-words line under a row, or null while it is still being matched. */
 export function reasonMessage(row: ReportRow): Message | null {
   if (!row.label) return null;
   if (row.decision === "remove") return { key: "ui.imports.decision.removed" };
@@ -56,7 +49,6 @@ export function reasonMessage(row: ReportRow): Message | null {
   }
 }
 
-/** The buttons a row offers. "Pick another" needs another candidate to pick. */
 export function rowActions(row: ReportRow): RowAction[] {
   if (!row.label || row.label === "already") return [];
   const others = row.candidates.some((c) => c.id !== row.track?.id);
@@ -67,7 +59,6 @@ export function rowActions(row: ReportRow): RowAction[] {
   return ["remove", ...pick];
 }
 
-/** Candidates for "Pick another": everything but the current match. */
 export function pickChoices(row: ReportRow) {
   return row.candidates.filter((c) => c.id !== row.track?.id);
 }
@@ -77,7 +68,6 @@ export function addedCount(summary: ImportSummary): number {
   return exact + likely + check;
 }
 
-/** The one-line state of an import, for the report header and the Library row. */
 export function summaryMessage(summary: ImportSummary): Message {
   if (summary.status === "running")
     return {
@@ -95,7 +85,6 @@ export function summaryMessage(summary: ImportSummary): Message {
   };
 }
 
-/** Running imports by target playlist, for the Library row's "Importing {done} of {total}". */
 export function progressByPlaylist(summaries: readonly ImportSummary[]): Map<string, { done: number; total: number }> {
   const progress = new Map<string, { done: number; total: number }>();
   for (const summary of summaries) {
@@ -109,7 +98,6 @@ export function progressByPlaylist(summaries: readonly ImportSummary[]): Map<str
   return progress;
 }
 
-/** Every running import together, in percent, for the rail's progress line; null when none runs. */
 export function importsPercent(summaries: readonly ImportSummary[]): number | null {
   const running = summaries.filter((summary) => summary.status === "running");
   if (running.length === 0) return null;

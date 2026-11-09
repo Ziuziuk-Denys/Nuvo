@@ -1,7 +1,5 @@
-/** Mapping primitives for InnerTube JSON (text, artists, album, year, duration, cover, explicit). Pure. */
 import type { AlbumRef, ArtistRef, Cover } from "../types";
 
-/** InnerTube JSON. Every read is defensive: unknown shapes give `undefined`, never a throw. */
 // oxlint-disable-next-line typescript/no-explicit-any
 export type Obj = Record<string, any>;
 
@@ -14,7 +12,6 @@ export function isObj(value: unknown): value is Obj {
   return typeof value === "object" && value !== null;
 }
 
-/** `simpleText` wins, trimmed; otherwise the runs joined and trimmed. Empty is missing. */
 export function textOf(node: unknown): string | undefined {
   if (!isObj(node)) return undefined;
   if (typeof node.simpleText === "string") return node.simpleText.trim() || undefined;
@@ -81,7 +78,6 @@ export function yearFromRuns(runs: Obj[]): number | undefined {
   return run ? Number(run.text.trim()) : undefined;
 }
 
-/** `m:ss` or `h:mm:ss` in milliseconds; zero or anything else is `undefined`. */
 export function parseDuration(value: string | undefined): number | undefined {
   const match = value?.trim().match(/^(\d{1,3}):(\d{1,3})(?::(\d{1,3}))?$/);
   if (!match) return undefined;
@@ -134,7 +130,6 @@ export function thumbnailsOf(node: unknown): Thumb[] {
     }));
 }
 
-/** Catalog 5 "Cover": square artwork preferred and resized; artists at original size. */
 export function pickCover(thumbs: Thumb[], artist = false): Cover | undefined {
   if (thumbs.length === 0) return undefined;
   const largest = (list: Thumb[]) => list.reduce((best, item) => (item.width * item.height > best.width * best.height ? item : best));
@@ -173,7 +168,6 @@ export function videoThumbnail(videoId: string): Cover {
   };
 }
 
-/** True when an explicit badge appears anywhere inside the node. */
 export function hasExplicit(node: unknown): boolean {
   let found = false;
   walk(node, (value) => {
@@ -183,7 +177,6 @@ export function hasExplicit(node: unknown): boolean {
   return found;
 }
 
-/** Depth-first walk over objects; the visitor returns true to stop. */
 export function walk(node: unknown, visit: (value: Obj) => boolean | void): void {
   const stack: unknown[] = [node];
   while (stack.length > 0) {
@@ -198,7 +191,6 @@ export function walk(node: unknown, visit: (value: Obj) => boolean | void): void
   }
 }
 
-/** Every value stored under `key`, in document order, without descending into matches. */
 export function findAll(node: unknown, key: string): Obj[] {
   const out: Obj[] = [];
   const visit = (value: unknown) => {
@@ -218,7 +210,6 @@ export function findFirst(node: unknown, key: string): Obj | undefined {
   return findAll(node, key)[0];
 }
 
-/** Continuation token in any of the shapes InnerTube returns. */
 export function continuationOf(node: unknown): string | undefined {
   let token: string | undefined;
   walk(node, (value) => {

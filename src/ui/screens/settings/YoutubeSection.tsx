@@ -6,7 +6,6 @@ import { SettingGroup, SettingRow, Switch } from "./controls";
 import { SectionIcon } from "./SectionIcon";
 import styles from "./sections.module.css";
 
-/** The signed-in account, or the way to sign in; the code and QR open in the sign-in window. */
 function AccountCard(): JSX.Element {
   const { t } = useTranslation();
   const { signedIn, account, loading } = useYoutubeAccount();

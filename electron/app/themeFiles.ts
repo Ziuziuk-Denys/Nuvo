@@ -1,4 +1,3 @@
-/** Theme export and import files (customization 3.1): main checks size and UTF-8 and the CSS, the renderer parses. */
 import fs from "node:fs";
 import { sanitizeCss } from "../../src/data/look/appearance/cssSanitizer";
 
@@ -6,7 +5,6 @@ import { sanitizeCss } from "../../src/data/look/appearance/cssSanitizer";
 export const MAX_THEME_FILE_BYTES = 48 * 1024;
 export type ThemeFileRead = { ok: true; text: string } | { ok: false; error: "cancelled" | "theme_size" | "theme_encoding" | "theme_css" };
 
-/** `<name>.nuvotheme.json` with characters no file system takes replaced. */
 export function themeFileName(name: string): string {
   // eslint-disable-next-line no-control-regex
   const base = name
@@ -17,7 +15,6 @@ export function themeFileName(name: string): string {
   return `${base || "theme"}.nuvotheme.json`;
 }
 
-/** The export payload: a name and the file text the renderer serialized; null when either is out of shape. */
 export function validateThemeExport(raw: unknown): { name: string; text: string } | null {
   const r = raw as { name?: unknown; text?: unknown } | null;
   if (typeof r?.name !== "string" || r.name.length > 40 || typeof r.text !== "string") return null;
@@ -54,9 +51,7 @@ export function readThemeFile(file: string): ThemeFileRead {
   try {
     const css = (JSON.parse(text) as { css?: unknown } | null)?.css;
     if (typeof css === "string" && css.length > 0 && !sanitizeCss(css).ok) return { ok: false, error: "theme_css" };
-  } catch {
-    // not JSON: the renderer reports it as a bad file
-  }
+  } catch {}
   return { ok: true, text };
 }
 
@@ -70,9 +65,7 @@ export function writeThemeFile(target: string, text: string): boolean {
   } catch {
     try {
       fs.rmSync(temporary, { force: true });
-    } catch {
-      // nothing left to clean
-    }
+    } catch {}
     return false;
   }
 }

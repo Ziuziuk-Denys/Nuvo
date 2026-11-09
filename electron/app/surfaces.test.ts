@@ -273,7 +273,6 @@ describe("tray", () => {
 
   it("clicks map to commands, show and quit", () => {
     const routes: Record<string, unknown> = { toggle: { type: "toggle" }, next: { type: "next" }, previous: { type: "previous" }, like: { type: "like" } };
-    // main's click router: liked state decides like or unlike
     const route = (id: string, liked: boolean) => (id === "like" && liked ? { type: "unlike" } : (routes[id] ?? id));
     expect(route("next", false)).toEqual({ type: "next" });
     expect(route("like", false)).toEqual({ type: "like" });

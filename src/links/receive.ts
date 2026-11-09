@@ -1,8 +1,3 @@
-/**
- * The receiver's side of a shared playlist: names for the preview (fetched for `lean` id-only rows) and
- * the import through the daemon's job, which matches and reports the rest. Nothing plays or imports
- * before the person presses Import.
- */
 import type { ImportSummary } from "./core";
 import { shareImportRows } from "./share";
 import type { Share } from "./shareCodec";
@@ -33,7 +28,6 @@ export interface PreviewRow {
   title: string;
   artist: string;
   durationMs?: number;
-  /** An id-only song whose lookup failed: the video or track is gone. */
   missing: boolean;
 }
 
@@ -42,7 +36,6 @@ function needsLookup(share: Share, index: number): boolean {
   return track.source !== "text" && track.title === undefined;
 }
 
-/** Snapshots for the id-only tracks among `indexes`, four lookups at a time. A failed lookup is absent. */
 export async function lookupNames(share: Share, indexes: number[], ports: ReceivePorts, signal: AbortSignal): Promise<Map<number, CatalogTrack>> {
   const queue = indexes.filter((index) => needsLookup(share, index));
   const found = new Map<number, CatalogTrack>();
@@ -87,11 +80,6 @@ export function previewRows(share: Share, looked: ReadonlyMap<number, CatalogTra
   });
 }
 
-/**
- * Looks up every id-only song, then starts one import with `source: "nuvo-link"`. `fallbackLabel` names a
- * playlist shared without a title. Unreadable songs are counted for the sheet, not posted.
- */
-/** The import that is running: a second Import press joins it instead of posting the songs twice. */
 let running: Promise<{ summary: ImportSummary | null; unreadable: number }> | null = null;
 
 export function importShare(

@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-// UI speed on a seeded profile with a 5,000-track playlist and 5,000 saved albums.
-//   scroll: the playlist page is scrolled down and back at 800 px per frame; frame gaps are taken
-//           from requestAnimationFrame, one p95 per run
-//   filter: search-as-you-type in the Library filter; per keystroke, from the `keydown` reaching the
-//           page to the first frame where the drawn rows changed and all contain the typed text
-// usage: node scripts/bench/ui.mjs [--exe path/to/nuvo] [--runs 5] [--json out.json]
 import fs from "node:fs";
 import { close, createProfile, enableHandle, homeReady, launch, openPlaylist, option, seedProfile, sleep } from "./lib.mjs";
 import { frameStats, summarize } from "./stats.mjs";
@@ -39,7 +33,6 @@ function scrollPass(page) {
   }, STEP_PX);
 }
 
-// resolves with ms from keydown to the first frame where all drawn rows match; -1 on timeout
 function armKeystroke(page, needle) {
   return page.evaluate(
     ({ needle, rows }) => {

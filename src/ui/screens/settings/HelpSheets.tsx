@@ -19,7 +19,6 @@ export const useHelpSheet = create<{ open: HelpSheet | null; show(sheet: HelpShe
   close: () => set({ open: null }),
 }));
 
-/** What's new for this version, opened once by itself after an update, and the problem report. */
 export function HelpSheets(): JSX.Element {
   const version = useAppVersion();
   const open = useHelpSheet((state) => state.open);
@@ -66,7 +65,7 @@ function WhatsNewSheet({ open, version, onClose }: { open: boolean; version: str
   );
 }
 
-/** Nothing leaves Nuvo here: the browser opens a new GitHub issue, filled in, and the person sends it there or not. */
+// Nothing is sent from the app: the browser opens a prefilled GitHub issue for the user
 function ReportSheet({ version, onClose }: { version: string; onClose(): void }): JSX.Element {
   const { t } = useTranslation();
   const [withDiagnostics, setWithDiagnostics] = useState(false);
@@ -108,7 +107,6 @@ function ReportSheet({ version, onClose }: { version: string; onClose(): void })
   );
 }
 
-/** The two quiet links in the About card, after the support link's look. */
 export function HelpLinks(): JSX.Element {
   const { t } = useTranslation();
   const show = useHelpSheet((state) => state.show);

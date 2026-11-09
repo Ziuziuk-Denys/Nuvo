@@ -1,4 +1,3 @@
-/** Track, album, artist, playlist and radio pages. */
 import type { Innertube } from "../http";
 import {
   YtError,
@@ -36,7 +35,6 @@ import { searchFiltered } from "./search";
 
 export const MAX_CONTINUATIONS = 50;
 
-/** The node holding the main track list: a playlist shelf, a continuation page, else the first music shelf. */
 function mainShelf(node: unknown): unknown {
   const playlistShelf = findFirst(node, "musicPlaylistShelfRenderer");
   if (playlistShelf) return playlistShelf;
@@ -47,7 +45,6 @@ function mainShelf(node: unknown): unknown {
   return undefined;
 }
 
-/** Track rows of the main shelf of a page or continuation, in document order, deduplicated by id. */
 export function trackRows(node: unknown, fallbackArtists: ArtistRef[] = [], seen = new Set<string>()): YtTrack[] {
   const out: YtTrack[] = [];
   for (const row of findAll(mainShelf(node), "musicResponsiveListItemRenderer")) {
@@ -60,10 +57,7 @@ export function trackRows(node: unknown, fallbackArtists: ArtistRef[] = [], seen
   return out;
 }
 
-/**
- * Follows continuation tokens for at most `MAX_CONTINUATIONS` pages. Stops when a page has no token, repeats
- * the token or adds nothing. A failed page keeps what was collected and sets `outcome.partial`; an abort rejects.
- */
+// Capped at MAX_CONTINUATIONS; stops on a missing, repeated or empty page; failures mark partial
 export async function followContinuations(
   yt: Innertube,
   firstToken: string | undefined,
@@ -182,7 +176,6 @@ export class Pages {
     throw new YtError("not-found");
   }
 
-  /** The artist cover, from the session's artist pages when one is cached. Never throws. */
   async artistImage(id: string, signal: AbortSignal): Promise<Cover | undefined> {
     try {
       return (this.artists.get(id) ?? (await this.artist(id, signal))).cover;
@@ -355,7 +348,6 @@ export function mapPlaylistHeader(response: unknown, id: string): Omit<PlaylistP
   };
 }
 
-/** The signed-in account's playlists, served from the TV browse when the id is one of them. */
 export interface AccountPlaylists {
   isAccountPlaylist(id: string): boolean;
   accountPlaylist(id: string, signal: AbortSignal): Promise<PlaylistPage | undefined>;

@@ -9,12 +9,10 @@ import styles from "./LockScreen.module.css";
 
 const PHRASE_WORDS = 24;
 
-/** Over the window while the key is missing from the keyring: the recovery phrase opens the library. */
 export function LockScreen({ onUnlocked, passphrase = false }: { onUnlocked: () => void; passphrase?: boolean }): JSX.Element {
   return passphrase ? <PassphraseLock onUnlocked={onUnlocked} /> : <PhraseLock onUnlocked={onUnlocked} />;
 }
 
-/** The key file is sealed with a passphrase the owner set: it opens the library without the phrase. */
 function PassphraseLock({ onUnlocked }: { onUnlocked: () => void }): JSX.Element {
   const { t } = useTranslation();
   const [value, setValue] = useState("");
@@ -100,7 +98,7 @@ function PhraseLock({ onUnlocked }: { onUnlocked: () => void }): JSX.Element {
         <textarea
           ref={fieldRef}
           className={styles.field}
-          // custom CSS may never hide the way back in (customization 6.3)
+          // Custom CSS may never hide the way back in
           data-nuvo-guard="block"
           value={phrase}
           onChange={(event) => {
@@ -108,7 +106,6 @@ function PhraseLock({ onUnlocked }: { onUnlocked: () => void }): JSX.Element {
             setError(null);
           }}
           onKeyDown={(event) => {
-            // the words are separated by spaces, so Enter is free to mean Unlock
             if (event.key !== "Enter" || event.shiftKey) return;
             event.preventDefault();
             void unlock();

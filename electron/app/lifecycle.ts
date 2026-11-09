@@ -1,4 +1,3 @@
-/** Shutdown, sleep blocker, crash policy, app icon and Chromium storage. */
 import { default as fs } from "node:fs";
 import { default as os } from "node:os";
 import { default as path } from "node:path";
@@ -14,7 +13,6 @@ export const ICON_SIZES = [16, 32, 48, 64, 128, 256, 512];
 export const ICON_CACHE_TIMEOUT_MS = 5000;
 
 export interface ShutdownDeps {
-  /** Sends `app:before-quit` and resolves on `app:quit-ready`; null when no renderer is alive. */
   askRenderer(deadlineMs: number): Promise<void> | null;
   steps: Array<[name: string, run: () => void | Promise<void>]>;
   quit(): void;
@@ -22,7 +20,6 @@ export interface ShutdownDeps {
   log(message: string, error?: unknown): void;
 }
 
-/** One idempotent shutdown with a quit handshake and a watchdog. */
 export class Shutdown {
   private started: Promise<void> | null = null;
   quitting = false;
@@ -56,7 +53,6 @@ export class Shutdown {
         // 100 ms of slack leaves the quit call ahead of the watchdog
         const waitMs = name === "daemon" ? startedAt + WATCHDOG_MS - 100 - Date.now() : Math.min(STEP_TIMEOUT_MS, daemonFrom - Date.now());
         if (waitMs <= 0) {
-          // out of time: the step still starts, nobody waits for it
           Promise.resolve()
             .then(step)
             .catch((error) => this.deps.log(`[shutdown] ${name} failed`, error));
@@ -87,7 +83,6 @@ export interface BlockerApi {
   stop(id: number): void;
 }
 
-/** One display-sleep blocker while the relayed status is playing or loading. */
 export class SleepBlocker {
   private id: number | null = null;
   constructor(private readonly api: BlockerApi) {}
@@ -105,7 +100,6 @@ export class SleepBlocker {
   }
 }
 
-/** Reload once after a renderer crash; a second crash within 60 s leaves the window as it is. */
 export class CrashPolicy {
   private lastReload = -Infinity;
   constructor(private readonly now: () => number) {}
@@ -122,13 +116,11 @@ export interface IconDeps {
   platform: NodeJS.Platform;
   dataHome: string;
   iconName: string;
-  /** Scales a PNG to a square size (Electron `nativeImage` in production). */
   scale(png: Buffer, size: number): Buffer;
   refreshCache(themeDir: string): Promise<void>;
   setWindowIcon(png: Buffer): void;
 }
 
-/** Window icon always; in a packaged Linux build also the freedesktop theme icon. Jobs run one after another. */
 export class IconInstaller {
   private queue: Promise<void> = Promise.resolve();
   private lastBytes: Buffer | null = null;
@@ -156,9 +148,7 @@ export class IconInstaller {
         try {
           fs.unlinkSync(this.file(size));
           removed += 1;
-        } catch {
-          // not installed
-        }
+        } catch {}
       }
       this.lastBytes = null;
       if (removed > 0) await this.deps.refreshCache(themeDir).catch(() => undefined);
@@ -191,9 +181,7 @@ export function directorySize(dir: string): number {
     else {
       try {
         total += fs.statSync(full).size;
-      } catch {
-        // vanished while counting
-      }
+      } catch {}
     }
   }
   return total;

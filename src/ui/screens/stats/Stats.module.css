@@ -1,4 +1,3 @@
-/* Statistics: one lead number and its sentence, then the listening told section by section. No card frames: type, space and hairlines carry the hierarchy. */
 .page {
   display: flex;
   flex-direction: column;
@@ -29,7 +28,6 @@
   display: none;
 }
 
-/* History, then Export and delete */
 .barEnd {
   display: flex;
   flex: none;
@@ -64,7 +62,6 @@
   font: var(--n-type-caption);
 }
 
-/* the lead */
 .lead {
   display: flex;
   align-items: flex-end;
@@ -157,7 +154,6 @@
   margin-top: 6px;
 }
 
-/* the numbers under it: one line split by hairlines */
 .figures {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -208,7 +204,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* sections */
 .section {
   margin-top: 48px;
   min-width: 0;
@@ -243,7 +238,6 @@
   white-space: nowrap;
 }
 
-/* bars */
 .chart {
   min-width: 0;
 }
@@ -336,7 +330,6 @@
   justify-content: flex-end;
 }
 
-/* calendar */
 .calendar {
   display: flex;
   flex-direction: column;
@@ -433,7 +426,6 @@
   width: 11px;
 }
 
-/* when */
 .when {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
@@ -506,7 +498,6 @@
   font: 600 13px/1.25 var(--n-font);
 }
 
-/* shares */
 .shares {
   display: flex;
   flex-direction: column;
@@ -556,7 +547,6 @@
   background: var(--n-accent);
 }
 
-/* lists */
 .topTabs {
   margin-bottom: 8px;
 }
@@ -661,7 +651,6 @@
   font: var(--n-type-body);
 }
 
-/* range popover and the delete sheet */
 .customRange {
   display: flex;
   flex-direction: column;
@@ -697,7 +686,6 @@
   font: var(--n-type-body);
 }
 
-/* drill-down */
 .detailDates {
   margin: 12px 0 0;
   color: var(--n-ink-2);

@@ -12,7 +12,6 @@ async fn mock_lrclib() -> (String, Arc<AtomicUsize>) {
     mock_lrclib_with(json!({"trackName": "Song", "artistName": "Artist", "duration": 200.0, "instrumental": false, "plainLyrics": "line", "syncedLyrics": "[00:01.00] line"})).await
 }
 
-/// LRCLIB double whose exact lookup answers `record` and whose search finds nothing.
 async fn mock_lrclib_with(record: Value) -> (String, Arc<AtomicUsize>) {
     let hits = Arc::new(AtomicUsize::new(0));
     let (get_hits, search_hits) = (hits.clone(), hits.clone());
@@ -32,7 +31,6 @@ async fn mock_lrclib_with(record: Value) -> (String, Arc<AtomicUsize>) {
     (format!("http://{addr}"), hits)
 }
 
-/// Splits an SSE body exactly the way `api.streamLyrics` does: on "\n\n", keeping `data:` lines.
 fn events(body: &[u8]) -> Vec<Value> {
     String::from_utf8(body.to_vec())
         .unwrap()
@@ -67,7 +65,6 @@ async fn streams_lrclib_lyrics_then_serves_them_from_cache() {
 
 const WORD_TTML: &str = r#"<tt><body><div><p begin="00:01.000" end="03:10.000"><span begin="00:01.000" end="03:10.000">One</span></p></div></body></tt>"#;
 
-/// The word database double: `Song` by `Artist`, one file; a closed port stands for "offline" when `up` is false.
 async fn mock_words() -> (String, Arc<AtomicUsize>) {
     let hits = Arc::new(AtomicUsize::new(0));
     let (index_hits, file_hits) = (hits.clone(), hits.clone());

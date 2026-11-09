@@ -1,9 +1,4 @@
 #!/usr/bin/env node
-// Music folders at scale: a 20,000-file synthetic folder is added while a local track plays.
-// Measures the scan, a rescan after touching 100 files, the daemon's RSS and CPU, playback
-// steadiness during the scan, the Library tab's scroll and the search latency over 20,000 files.
-// The daemon is the binary at core/target/debug/nuvo-core (point it at a release build for release numbers).
-// usage: node scripts/bench/local.mjs [--fixture ~/.cache/nuvo-20k] [--json out.json]
 import { default as fs } from "node:fs";
 import { default as os } from "node:os";
 import { default as path } from "node:path";
@@ -38,7 +33,6 @@ async function pick(app, folder) {
 }
 const status = (page) => page.evaluate(() => fetch("nuvo-core://local/v1/local/status").then((r) => r.json()));
 
-// samples the daemon every 100 ms while `until` has not resolved
 async function watchDaemon(pid, until) {
   const samples = [];
   let done = false;
@@ -85,7 +79,6 @@ try {
     await page.waitForFunction(() => window.__nuvoPlayer.engine.getView().status === "playing", null, { timeout: 15_000 });
     await sleep(3_000);
 
-    // playback sampler: deck clock against wall time on every animation frame
     await page.evaluate(() => {
       window.__samples = [];
       window.__stop = false;
@@ -116,7 +109,6 @@ try {
       window.__stop = true;
       return window.__samples;
     });
-    // drift = how far the deck clock fell behind wall time since the scan began; stalls = frames a clock stood still for over 250 ms
     const from = samples.findIndex((s) => s[0] >= samples[0][0]);
     const base = samples[from];
     let worstDrift = 0;
@@ -142,7 +134,6 @@ try {
     };
     result.coreAfterScan = { rssMb: round(rssMb(core)) };
 
-    // a rescan after touching 100 files, then one with nothing changed
     const files = [];
     (function collect(dir) {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -175,7 +166,6 @@ try {
     }
     result.noChangeRescanMs = Date.now() - t2;
 
-    // Library tab: open fresh, time until rows, then scroll
     await page.evaluate(() => (location.hash = "#/library"));
     await page.reload();
     await page.evaluate(() => (location.hash = "#/library?tab=local"));
@@ -208,7 +198,6 @@ try {
     scroll.gaps.length = 0;
     result.rowsInDomIdle = await page.locator("[data-track-row]").count();
 
-    // search: daemon query time through the bridge, then typing in the Library filter
     const queries = ["Утро", "Evening 1", "Северный ветер 7", "Song", "Lantern 19", "Тишина 123", "Harbor", "Огни 9999", "zzzz", "Paper Satellites 3"];
     const times = await page.evaluate(async (qs) => {
       const out = [];
@@ -263,7 +252,6 @@ try {
     }
     result.filterKeystrokeMs = summarize(keystrokes, 0);
     result.filterKeystrokes = keystrokes.map((k) => Math.round(k));
-    // a key whose result left the drawn rows unchanged has nothing to time and is listed here
     result.filterDropped = dropped;
     result.rendererHeapMb = round(await page.evaluate(() => performance.memory?.usedJSHeapSize / 1048576));
   } finally {

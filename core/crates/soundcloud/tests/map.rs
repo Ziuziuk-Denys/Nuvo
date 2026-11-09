@@ -93,7 +93,6 @@ fn set_views_and_cover_fallbacks() {
     assert!(map::album(&json!({"id": 3}), &[]).is_none(), "a set without a title is not found");
 }
 
-/// The mapping level.
 #[test]
 fn release_types_sort_sets_into_albums_and_singles() {
     let set = |t: Value| json!({"id": 1, "title": "x", "set_type": t, "track_count": 4});

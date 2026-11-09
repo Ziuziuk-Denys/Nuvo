@@ -1,5 +1,4 @@
-// Synthetic stand-in for a TV player script, written for Nuvo's tests. It is not YouTube code.
-// Shape kept: a wrapper, a signatureTimestamp field and two string transforms.
+// Synthetic stand-in for a TV player script, written for tests; not YouTube code
 var nuvoPlayer = (function () {
   var config = { signatureTimestamp: 20123, variant: "synthetic" };
   function transformN(value) {

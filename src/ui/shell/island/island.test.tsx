@@ -328,7 +328,6 @@ describe("Island", () => {
     click(button("ui.island.sound")!);
     expect(dialog()).toBe(first);
     expect(first?.getAttribute("aria-label")).toBe("ui.sound.title");
-    // no hover hint over the button whose popover is open
     act(() => {
       button("ui.island.sound")!.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
       vi.advanceTimersByTime(600);

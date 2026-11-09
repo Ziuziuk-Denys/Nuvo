@@ -31,14 +31,12 @@ function rowText(row: NetCheckRow, t: TFunction): string {
   return `${what} · ${outcome} · ${row.ms} ms`;
 }
 
-/** What the proxy row says under its title: what each mode does, and what the automatic mode found. */
 function proxyNote(proxy: ProxyView, t: TFunction): string {
   if (proxy.mode === "none") return t("ui.settings.proxy.none_desc");
   if (proxy.mode === "manual") return t("ui.settings.proxy.manual_desc");
   return proxy.inForce ? t("ui.settings.proxy.found", { proxy: proxy.inForce }) : t("ui.settings.proxy.not_found");
 }
 
-/** Proxy and the connection check: one sentence for the cause, then the rows behind it. */
 export function NetworkSection(): JSX.Element {
   const { t } = useTranslation();
   const [proxy, setProxy] = useState<ProxyView | null>(null);
@@ -52,7 +50,6 @@ export function NetworkSection(): JSX.Element {
 
   const [tools, setTools] = useState<ToolsView | null>(null);
 
-  // A second's poll only while a download runs, so the bar moves.
   useEffect(() => {
     let live = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -74,7 +71,6 @@ export function NetworkSection(): JSX.Element {
     const read = (first: boolean) =>
       void readProxy().then((value) => {
         if (!live || !value) return;
-        // a later read only refreshes what main found; the fields keep what is being typed
         setProxy((current) => (first || !current ? value : { ...current, inForce: value.inForce }));
         if (!first) return;
         setUrl(value.url ?? "");
@@ -101,7 +97,6 @@ export function NetworkSection(): JSX.Element {
   const saveManual = () => void save({ mode: "manual", url: url.trim(), username: username.trim() || undefined, password: password || undefined });
 
   const chooseMode = (mode: ProxyMode) => {
-    // manual waits for an address; the other two apply at once
     if (mode === "manual") setProxy({ mode, url });
     else void save({ mode });
   };

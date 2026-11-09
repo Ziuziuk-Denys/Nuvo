@@ -1,9 +1,3 @@
-/**
- * A stand-in Nuvo for working on the panel widgets: the real quest.nuvo.Nuvo.Player service plus a small MPRIS player
- * with two songs, covers, likes and timed lyrics. Run it on a private bus, never next to a running Nuvo:
- *   dbus-run-session -- node --experimental-transform-types desktop/dev/fake-nuvo.ts
- * Needs Node 23.6 or newer (TypeScript transforms and module hooks).
- */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { registerHooks } from "node:module";
 import { homedir } from "node:os";

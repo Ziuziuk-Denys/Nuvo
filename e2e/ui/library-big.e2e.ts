@@ -9,10 +9,7 @@ const ALBUMS = 5_000;
 const BATCH = 100;
 const REPORT = path.resolve(import.meta.dirname, "..", "artifacts", "ui", "2-library", "library-big.json");
 const MB = 1024 * 1024;
-/**
- * Only the visit from cache must stay under 100 ms. The cold first visit also fetches all 5000
- * over IPC and measured 100 ms, so this is a regression ceiling, not a requirement.
- */
+// Regression ceiling: the cold visit fetches all 5000 rows over IPC and measured 100 ms
 const COLD_CEILING_MS = 400;
 
 let session: NuvoSession | null = null;
@@ -21,7 +18,6 @@ afterAll(async () => {
   await session?.close();
 });
 
-/** Rows of the library list in the DOM right now. */
 const ROWS = '[data-view] [style*="translateY"] [role="button"]';
 
 async function seedAlbums(live: NuvoSession): Promise<void> {
@@ -47,7 +43,6 @@ async function seedAlbums(live: NuvoSession): Promise<void> {
   );
 }
 
-/** Milliseconds from the hash change to the 12th list row in the DOM. */
 function timeToRows(page: Page): Promise<number> {
   return page.evaluate(
     (selector) =>
@@ -76,7 +71,6 @@ async function heapAfterGc(live: NuvoSession): Promise<number> {
 
 async function rendererWorkingSet(live: NuvoSession): Promise<number> {
   const metrics = await live.app.evaluate(({ app }) => app.getAppMetrics().filter((metric) => metric.type === "Tab"));
-  // KB; the main window is the biggest renderer
   return Math.max(...metrics.map((metric) => metric.memory.workingSetSize)) / 1024;
 }
 
@@ -85,7 +79,6 @@ interface ScrollRun {
   frames: number[];
 }
 
-/** Scrolls the shell to the end and back `passes` times, 1200 px a frame, counting rows and frame gaps. */
 function scrollPasses(page: Page, passes: number): Promise<ScrollRun> {
   return page.evaluate(
     async ({ selector, passes }) => {
@@ -135,7 +128,6 @@ describe("Library with 5000 saved albums", () => {
     await live.page.getByRole("navigation").first().waitFor({ timeout: 30_000 });
     await live.setSize({ width: 1200, height: 780 });
 
-    // first visit warms the saved-items cache; every later visit is measured
     const cold = await timeToRows(live.page);
     await live.page.waitForTimeout(1_500);
     const warm: number[] = [];

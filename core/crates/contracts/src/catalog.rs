@@ -1,5 +1,3 @@
-//! Catalog wire types shared by the SoundCloud routes, matching and the renderer.
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -74,7 +72,6 @@ pub struct PlaylistDetails {
     pub description: Option<String>,
 }
 
-/// An album or playlist in a list (artist page, link lookup).
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SetSummary {
@@ -124,7 +121,6 @@ pub struct ArtistDetails {
     pub releases_next: Option<String>,
 }
 
-/// One page of an artist listing.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct Page<T> {
     pub items: Vec<T>,

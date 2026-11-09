@@ -6,7 +6,6 @@ import { _electron, type ElectronApplication, type Page } from "playwright-core"
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isolate, type Isolation } from "./isolation";
 
-/** Blocked, refused, stalled and offline networks, with no traffic leaving this machine. Runs against a build. */
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ELECTRON = createRequire(import.meta.url)("electron") as unknown as string;
 const VIDEO = "aaaaaaaaaaa";
@@ -21,7 +20,6 @@ interface PlayerHandle {
   engine: { playList(tracks: unknown[]): void; getView(): View; pause(): void };
 }
 
-/** A proxy that refuses every tunnel with 403, or holds it open and never answers. */
 class FixtureProxy {
   readonly tunnels: Array<{ host: string; auth?: string }> = [];
   mode: "refuse" | "hang" = "refuse";
@@ -152,7 +150,6 @@ describe("network", () => {
       .toContain("music.youtube.com:443");
     const check = await networkCheck(page);
     expect(check.rows.some((row) => row.check === "proxy" && row.ok)).toBe(true);
-    // The proxy answered the tunnel with 403: it is the proxy that says no.
     expect(check.code).toBe("proxy_failed");
   });
 
@@ -165,7 +162,7 @@ describe("network", () => {
 
   it("the daemon logs in to the proxy with the stored password", async (context) => {
     const stored = await setProxy(page, { mode: "manual", url: `http://127.0.0.1:${proxy.port}`, username: "me", password: "p@ss" });
-    if (!stored.ok) context.skip(); // no keyring in this session: the password cannot be stored
+    if (!stored.ok) context.skip();
     proxy.tunnels.length = 0;
     await expect
       .poll(async () => {

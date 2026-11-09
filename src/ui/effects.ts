@@ -1,4 +1,3 @@
-/** Reduce effects (no glow, blur or motion beyond what explains a change) and the frame rate of moving backgrounds, per device. */
 import { useEffect, useSyncExternalStore } from "react";
 import { create } from "zustand";
 
@@ -27,9 +26,7 @@ function stored(): { reduce: boolean; fps: FrameCap } {
 function keep(state: { reduce: boolean; fps: FrameCap }): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
-  } catch {
-    // the choice still holds for this run
-  }
+  } catch {}
 }
 
 export const useEffectsStore = create<EffectsState>((set, get) => ({
@@ -53,18 +50,15 @@ function watchSystem(listener: () => void): () => void {
 
 const systemReduced = () => typeof matchMedia === "function" && matchMedia(REDUCED_MOTION).matches;
 
-/** True while the switch is on or the system asks for less motion. */
 export function useReducedEffects(): boolean {
   const system = useSyncExternalStore(watchSystem, systemReduced, () => false);
   return useEffectsStore((state) => state.reduce) || system;
 }
 
-/** For loops that read it each frame. */
 export function reducedEffectsNow(): boolean {
   return useEffectsStore.getState().reduce || systemReduced();
 }
 
-/** Marks the document while effects are reduced; motion.css turns glass, blur and motion down under the mark. */
 export function useEffectsMark(): boolean {
   const reduced = useEffectsStore((state) => state.reduce);
   useEffect(() => {

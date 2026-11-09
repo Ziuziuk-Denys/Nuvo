@@ -2,7 +2,6 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Track } from "@/engine/types";
 import type { LibraryClient } from "./client";
 
-/** Liked tracks: paged list, the liked id set and optimistic like and unlike. */
 export const LIKED_PAGE = 100;
 
 export interface LikedState {
@@ -19,13 +18,10 @@ interface LikedDeps {
   onChange(): void;
 }
 
-/** What the user last asked for one id, kept while a write is in flight and until every read that began before it has landed. */
 interface Intent {
   liked: boolean;
   track: Track | undefined;
-  /** What the daemon holds, as far as we know: the state before the first write, then each confirmed write. */
   confirmed: boolean;
-  /** Where the track sat before the first write, to put it back on a rollback. */
   index: number;
   pending: number;
   doneAt: number;
@@ -82,7 +78,6 @@ export function createLiked({ client, onError, onChange }: LikedDeps) {
     return fresh;
   }
 
-  /** Intents a read that began at `since` may have missed: still in flight, or finished after it began. */
   function openIntents(since: number): [string, Intent][] {
     for (const [id, intent] of intents) {
       if (intent.pending === 0 && intent.doneAt <= since) intents.delete(id);
@@ -120,7 +115,6 @@ export function createLiked({ client, onError, onChange }: LikedDeps) {
       intent.confirmed = liked;
       onChange();
     } catch (error) {
-      // only the last press decides the end state, and that is whatever the daemon really holds
       if (latestAction.get(id) === mine) {
         intent.liked = intent.confirmed;
         place(id, intent.confirmed, intent.track, intent.index);
@@ -166,7 +160,6 @@ export function createLiked({ client, onError, onChange }: LikedDeps) {
       const added = page.tracks.filter((t) => !seen.has(t.id) && !dropped.has(t.id));
       store.setState({ tracks: [...store.getState().tracks, ...added], next: page.next });
     },
-    /** A change notice after load: reread in the background, never back to "loading". */
     async refresh(): Promise<void> {
       if (store.getState().status !== "ready") return this.load();
       store.setState({ refreshing: true });
@@ -178,7 +171,6 @@ export function createLiked({ client, onError, onChange }: LikedDeps) {
         store.setState({ refreshing: false });
       }
     },
-    /** Play all and shuffle: every liked track, page by page. */
     async allTracks(): Promise<Track[]> {
       const all: Track[] = [];
       let cursor: string | undefined;

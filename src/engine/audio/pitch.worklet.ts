@@ -1,4 +1,3 @@
-/** AudioWorklet wrapper around the phase-vocoder pitch shifter. Loaded with `audioWorklet.addModule`. */
 import { PhaseVocoderShifter } from "./phaseVocoder";
 
 // Minimal declarations of the AudioWorkletGlobalScope (not part of the DOM lib).

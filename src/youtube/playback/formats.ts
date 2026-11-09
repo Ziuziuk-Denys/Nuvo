@@ -1,5 +1,3 @@
-/** Audio format choice and what the source reports. Pure. */
-
 export interface AudioFormat {
   itag: number;
   mimeType: string;
@@ -43,7 +41,6 @@ const ORDER_AAC = [140, 139, 251, 250, 249];
 
 export function chooseFormat(formats: AudioFormat[], choice: FormatChoice): AudioFormat | undefined {
   const plain = formats.filter((format) => !isDrc(format));
-  // A DRC-only upload still plays: music never stops for a format preference.
   let pool = choice.allowDrc || plain.length === 0 ? formats : plain;
   if (pool.some((format) => format.audioTrack)) {
     const defaults = pool.filter((format) => !format.audioTrack || format.audioTrack.audioIsDefault);

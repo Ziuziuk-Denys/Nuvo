@@ -12,32 +12,22 @@ export interface PopoverProps {
   anchor: HTMLElement | null;
   onClose: () => void;
   title: string;
-  /** 300 small pickers, 320 lists, 440 Sound's speed, sleep and moments, 560 the equalizer. */
   width: 300 | 320 | 440 | 560;
-  /** Header controls before the close button: one master toggle at most. */
   trailing?: ReactNode;
-  /** Only for a popover with no anchor to click again. */
   showClose?: boolean;
-  /** The near-opaque surface instead of the glass: the Sound panel. */
   solid?: boolean;
-  /** Wheel over the whole panel, header included: the Volume popover steps the level with it. */
   onWheel?: (event: WheelEvent<HTMLDivElement>) => void;
   children: ReactNode;
 }
 
 interface Place {
   left: number;
-  /** Distance of the bottom edge from the window bottom when above, of the top edge from the top when below. */
   edge: number;
   below: boolean;
   originX: number;
-  /** The tallest the panel may be on its side; taller content scrolls inside it. */
   room: number;
 }
 
-/** Above the anchor and centred on it, clamped to the window; below when the top is too close and below has more room.
-    A player button opens its panel 10 px above the player bar rather than above the button, and never below it:
-    the bar sits at the window foot, so a panel taller than the room above scrolls inside instead. */
 export function placeOn(anchor: HTMLElement | null, width: number, height: number): Place {
   const viewWidth = window.innerWidth;
   const viewHeight = window.innerHeight;
@@ -58,22 +48,14 @@ export function placeOn(anchor: HTMLElement | null, width: number, height: numbe
   return { left, edge, below, originX: centre - left, room: Math.max(0, below ? roomBelow : roomAbove) };
 }
 
-// the opening starts as a sliver this wide at the anchor and pours out from there
 const SLIVER_PX = 44;
-// the content's rise is over by then; later content changes only fade
 const FRESH_MS = 1000;
 
-/**
- * The player's popover family. It opens out of its anchor: a sliver at the anchor's centre widens and
- * grows into the panel while the content rises in after it. While open, a new anchor, width or content
- * morphs this one container (position, width and height over --n-t-base) instead of closing and reopening.
- */
 export function Popover(props: PopoverProps): JSX.Element | null {
   const phase = usePresence(props.open);
   return phase === null ? null : <PopoverPanel {...props} phase={phase} />;
 }
 
-/** Mounted from the first frame of the opening to the last of the exit, so its measured state starts fresh each time. */
 function PopoverPanel({
   open,
   anchor,
@@ -129,7 +111,6 @@ function PopoverPanel({
     return () => cancelAnimationFrame(frame);
   }, [place, settled]);
 
-  // the content fades in at its new size while the container morphs around it; not on opening
   useEffect(() => {
     if (!settled) return;
     if (opening.current) {

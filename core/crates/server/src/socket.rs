@@ -1,6 +1,3 @@
-//! The local listener. Unix uses a socket file; Windows uses a named pipe. Both implement
-//! `axum::serve::Listener`, so the router and the tests do not know the difference.
-
 #[cfg(unix)]
 pub use unix::bind;
 #[cfg(windows)]
@@ -15,8 +12,6 @@ mod unix {
 
     use tokio::net::{UnixListener, UnixStream};
 
-    /// Binds the daemon socket in a 0700 directory with mode 0600. A stale socket file left by a
-    /// crash is replaced; a socket that still answers means another daemon owns the library.
     pub async fn bind(path: &Path) -> io::Result<UnixListener> {
         if let Some(dir) = path.parent() {
             crate::paths::ensure_private_dir(dir)?;
@@ -48,14 +43,12 @@ mod windows {
     /// Protected DACL: full access for the pipe's owner (the current user) and nobody else.
     const OWNER_ONLY: &str = "D:P(A;;GA;;;OW)";
 
-    /// Serves one pipe name, always keeping one free instance waiting for the next client.
     pub struct PipeListener {
         name: String,
         next: NamedPipeServer,
     }
 
-    /// Creates the first instance. `first_pipe_instance` makes the call fail when the name already
-    /// exists, so another process cannot squat it or share it.
+    // first_pipe_instance fails if the name exists, so another process cannot squat or share it
     pub async fn bind(path: &Path) -> io::Result<PipeListener> {
         let name = path.to_str().filter(|n| n.starts_with(r"\\.\pipe\")).ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidInput, r"the socket path must be a \\.\pipe\ name")

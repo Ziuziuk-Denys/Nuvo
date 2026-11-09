@@ -1,11 +1,8 @@
-/** Window decisions. Pure. */
-
 export const DEFAULT_SIZE = { width: 1200, height: 780 };
 export const MIN_SIZE = { width: 1100, height: 705 };
 
 export type CloseDecision = "close" | "hide" | "quit";
 
-/** While quitting it closes; with close-to-tray and a tray it hides; otherwise the app quits. */
 const MIN_VISIBLE_PX = 80;
 
 export interface Rect {
@@ -15,7 +12,6 @@ export interface Rect {
   height: number;
 }
 
-/** A window no display shows is moved onto the nearest work area, shrunk to fit; a visible one stays exactly where it is. */
 export function onScreenBounds(bounds: Rect, workAreas: Rect[]): Rect {
   if (workAreas.length === 0) return bounds;
   const overlap = (area: Rect) => {
@@ -57,7 +53,6 @@ export interface WinState {
   visible: boolean;
 }
 
-/** Tray activate: hidden or minimised shows; a focused visible window hides when close-to-tray holds, else it is focused. */
 export function activateWindow(win: { visible: boolean; focused: boolean; minimized: boolean }, canHide: boolean): "show" | "hide" | "focus" {
   if (!win.visible || win.minimized) return "show";
   if (win.focused) return canHide ? "hide" : "focus";
@@ -66,12 +61,10 @@ export function activateWindow(win: { visible: boolean; focused: boolean; minimi
 
 const isWeb = (url: string) => /^https?:\/\//i.test(url);
 
-/** window.open and target-blank: web URLs go to the browser; no window is ever created. */
 export function windowOpenDecision(url: string): "browser" | "deny" {
   return isWeb(url) ? "browser" : "deny";
 }
 
-/** Navigation of the main window; main applies it to will-navigate, will-frame-navigate and will-redirect alike: the app's own pages proceed; web URLs open in the browser; the rest does nothing. */
 export function navigationDecision(url: string, devServerUrl: string | undefined, appFileUrl: string): "allow" | "browser" | "deny" {
   if (devServerUrl) {
     try {
@@ -91,19 +84,16 @@ export interface Bounds {
   height: number;
 }
 
-/** Non-Linux drag: start bounds plus the cursor travel, size kept from the start. */
 export function dragBounds(start: Bounds, startCursor: { x: number; y: number }, cursor: { x: number; y: number }): Bounds {
   return { x: start.x + cursor.x - startCursor.x, y: start.y + cursor.y - startCursor.y, width: start.width, height: start.height };
 }
 
-/** Dragging a maximised window restores it under the cursor, keeping the horizontal fraction and the top offset. */
 export function restoreUnderCursor(maximized: Bounds, restored: { width: number; height: number }, cursor: { x: number; y: number }): Bounds {
   const fraction = (cursor.x - maximized.x) / maximized.width;
   const offsetY = Math.min(cursor.y - maximized.y, restored.height);
   return { x: Math.round(cursor.x - fraction * restored.width), y: Math.round(cursor.y - offsetY), width: restored.width, height: restored.height };
 }
 
-/** Chromium switches, each once; feature lists joined into one value. */
 export function chromiumSwitches(nativeWayland: boolean): Array<[string, string?]> {
   return [
     ["enable-gpu-rasterization"],
@@ -113,7 +103,6 @@ export function chromiumSwitches(nativeWayland: boolean): Array<[string, string?
   ];
 }
 
-/** A launch that arrives while quitting is relaunched with the same arguments minus inspector flags. */
 export function relaunchArgs(argv: readonly string[]): string[] {
   return argv.slice(1).filter((arg) => !arg.startsWith("--inspect"));
 }

@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { debouncedStorage } from "@/data/platform/debouncedStorage";
 import { PRESET_IDS, type PresetId } from "./presets";
 
-/** Look settings: their own key, filled once from the old one. */
 export const LOOK_KEY = "nuvo.look.v1";
 export const LEGACY_LOOK_KEY = "nuvo_customization_v1";
 export const MIN_WALLPAPER_BLUR = 10;
@@ -17,9 +16,7 @@ export interface LookFields {
   coverGlow: boolean;
   accentFromCover: boolean;
   backgroundImage: string | null;
-  /** Pixels, MIN_WALLPAPER_BLUR to MAX_WALLPAPER_BLUR. */
   backgroundBlur: number;
-  /** Per cent, 0 to MAX_WALLPAPER_DIM. */
   backgroundDim: number;
   themeBeforePreset: ThemeChoice | null;
 }
@@ -39,7 +36,6 @@ const clampBlur = (value: number) => clamp(value, MIN_WALLPAPER_BLUR, MAX_WALLPA
 const clampDim = (value: number) => clamp(value, 0, MAX_WALLPAPER_DIM);
 const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
-/** Reads the old zustand blob field by field: a bad field defaults alone, a broken blob gives the defaults. */
 export function migrateLegacyLook(raw: string | null): LookFields {
   let state: Record<string, unknown> = {};
   try {
@@ -60,7 +56,6 @@ export function migrateLegacyLook(raw: string | null): LookFields {
   return look;
 }
 
-/** First start of this store: move the old blob over and remove it. */
 function moveLegacy(): void {
   try {
     if (localStorage.getItem(LOOK_KEY) !== null) return;
@@ -68,9 +63,7 @@ function moveLegacy(): void {
     if (old === null) return;
     localStorage.setItem(LOOK_KEY, JSON.stringify({ state: migrateLegacyLook(old), version: 1 }));
     localStorage.removeItem(LEGACY_LOOK_KEY);
-  } catch {
-    // storage blocked: defaults for this session
-  }
+  } catch {}
 }
 
 interface LookState extends LookFields {
@@ -81,7 +74,6 @@ interface LookState extends LookFields {
   setBackgroundBlur(blur: number): void;
   setBackgroundDim(dim: number): void;
   setThemeBeforePreset(theme: ThemeChoice | null): void;
-  /** Removes the wallpaper and puts its blur and dimming back; the look itself stays. */
   resetAll(): void;
 }
 
@@ -113,7 +105,6 @@ export const useLookStore = create<LookState>()(
         backgroundDim,
         themeBeforePreset,
       }),
-      // numbers saved by an older build are clamped on read
       merge: (saved, current) => {
         const stored = (saved ?? {}) as Partial<LookFields>;
         return {
@@ -127,6 +118,5 @@ export const useLookStore = create<LookState>()(
   ),
 );
 
-/** A wallpaper is set: the window runs as glass over it. */
 export const selectIsGlassThemeActive = (state: Pick<LookFields, "backgroundImage">) => state.backgroundImage !== null;
 export const useHasCustomBackground = () => useLookStore(selectIsGlassThemeActive);

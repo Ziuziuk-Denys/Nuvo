@@ -1,4 +1,3 @@
-/** The daemon's catalog track as the player and the rows take it (`@/engine/types` Track). */
 import type { Track } from "@/engine/types";
 import { displayText } from "./messages";
 import type { CatalogTrack } from "./types";

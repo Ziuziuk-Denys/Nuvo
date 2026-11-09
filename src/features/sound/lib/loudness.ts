@@ -27,12 +27,7 @@ const BUCKET_S = 0.1;
 const BUCKETS_PER_BLOCK = 4;
 const ABSOLUTE_GATE = -70;
 
-/**
- * Integrated loudness (LUFS) of channels, gated per BS.1770-4, summing power across channels.
- * One pass per channel: both filters run inline and the weighted energy lands in 100 ms buckets,
- * so a 400 ms block (75% overlap) is the sum of four buckets and no filtered copy is allocated.
- * Returns -Infinity for silence.
- */
+// BS.1770-4 gating: 100 ms buckets, so a 400 ms block (75% overlap) is four buckets
 export function integratedLoudness(channels: Float32Array[], sampleRate: number): number {
   const step = Math.round(BUCKET_S * sampleRate);
   const bucketCount = Math.floor((channels[0]?.length ?? 0) / step);
@@ -41,7 +36,6 @@ export function integratedLoudness(channels: Float32Array[], sampleRate: number)
   const [s0, s1, s2, sa1, sa2] = shelf;
   const [h0, h1, h2, ha1, ha2] = highpass;
   for (const channel of channels) {
-    // x: input history, y: shelf output history, z: high-pass output history
     let x1 = 0,
       x2 = 0,
       y1 = 0,
@@ -83,7 +77,6 @@ export function integratedLoudness(channels: Float32Array[], sampleRate: number)
 export const TARGET_LUFS = -14;
 const MAX_GAIN_DB = 12;
 
-/** Gain that brings a track to the target, clamped, and lowered so the peak stays under -1 dBFS. */
 export function normalizationGain(loudness: number, peak: number): number {
   if (!Number.isFinite(loudness)) return 0;
   const wanted = Math.max(-MAX_GAIN_DB, Math.min(MAX_GAIN_DB, TARGET_LUFS - loudness));
@@ -100,7 +93,6 @@ export function peakOf(channels: Float32Array[]): number {
   return peak;
 }
 
-/** Normalization gain in dB for decoded channels: loudness plus peak headroom. */
 export function loudnessGain(channels: Float32Array[], sampleRate: number): number {
   return normalizationGain(integratedLoudness(channels, sampleRate), peakOf(channels));
 }

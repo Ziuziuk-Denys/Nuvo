@@ -54,7 +54,6 @@ describe("theme file css", () => {
   it("a failed write is reported calmly and keeps the old file", () => {
     const old = write("a.nuvotheme.json", "old");
     const dir = path.dirname(old);
-    // a directory where the temporary file would go makes the write fail
     fs.mkdirSync(path.join(dir, `a.nuvotheme.json.${process.pid}.tmp`));
     expect(writeThemeFile(old, "new")).toBe(false);
     expect(fs.readFileSync(old, "utf8")).toBe("old");

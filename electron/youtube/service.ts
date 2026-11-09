@@ -1,7 +1,3 @@
-/**
- * The YouTube worker service main starts: the hidden worker
- * window, `nuvo-yt:*` IPC, the interpreter allowlist and the content-token rate limit.
- */
 import { BrowserWindow, ipcMain, net, webContents, type Session } from "electron";
 import path from "node:path";
 import { CONTENT_TOKENS_PER_MINUTE, WorkerError, WorkerHost, type WorkerWindow } from "./host";
@@ -42,13 +38,11 @@ function electronWindow(partition: Session, preload: string): WorkerWindow {
 
 export function startYoutubeService(deps: { partition: Session; log: (message: string) => void }): { dispose(): void } {
   const preload = path.join(import.meta.dirname, "youtube-worker.cjs");
-  // The app's own page, as main loads it and as the engine's permission policy checks it.
   const appLocation = {
     indexUrl: pathToFileURL(path.join(import.meta.dirname, "../dist/index.html")).href,
     devServerUrl: process.env.VITE_DEV_SERVER_URL,
   };
   lockDownWorkerSession(deps.partition);
-  // The worker stays open while the app plays a queue.
   const appAudible = () => webContents.getAllWebContents().some((contents) => contents.session !== deps.partition && contents.isCurrentlyAudible());
   const host = new WorkerHost(() => electronWindow(deps.partition, preload), deps.log, undefined, appAudible);
   const fromWorker = (event: SenderEvent) => fromWorkerMainFrame(event, host.contentsId);

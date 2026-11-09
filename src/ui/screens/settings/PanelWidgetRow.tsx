@@ -7,10 +7,7 @@ import styles from "./sections.module.css";
 
 type Panel = NonNullable<NotchSession["panel"]>;
 
-/**
- * Offers the desktop's own panel widget; nothing is installed until the button is pressed. A profile whose
- * folders are moved away from HOME gets the manual steps instead, and GNOME's Turn on waits for the next login.
- */
+// Profiles with folders moved off HOME get manual steps; GNOME applies Turn on at next login
 export function PanelWidgetRow({ panel, instead }: { panel: Panel; instead: boolean }): JSX.Element {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);

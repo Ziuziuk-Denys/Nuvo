@@ -310,7 +310,6 @@ describe("transport", () => {
     h.engine.startRadio(track(y("a")));
     expect(h.engine.getView().repeat).toBe("off");
     expect(ids(h)).toEqual([y("a")]);
-    // the request starts once the last play report settled (a microtask)
     await flush();
     release = () => h.continuation.pendingResolve!(list("a", "b", "c", "b"));
     release();

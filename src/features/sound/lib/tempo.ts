@@ -2,7 +2,6 @@ export interface TempoSettings {
   rate: number;
   pitchSemitones: number;
   pitchLinked: boolean;
-  /** Reverb amount 0-1; null means reverb is off */
   reverb: number | null;
 }
 
@@ -31,7 +30,6 @@ export function sameTempo(a: TempoSettings, b: TempoSettings): boolean {
   return Math.abs(a.reverb - b.reverb) <= REVERB_TOLERANCE;
 }
 
-/** The preset the settings match within tolerance, or null for a custom mix. */
 export function presetOf(settings: TempoSettings): TempoPresetKey | null {
   const keys = Object.keys(TEMPO_PRESETS) as TempoPresetKey[];
   return keys.find((key) => sameTempo(settings, TEMPO_PRESETS[key])) ?? null;

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// Builds THIRD-PARTY-NOTICES from what Nuvo ships: npm packages the window and main process import (with their
-// installed dependencies), the daemon's Rust crates, and the icon sets whose drawings Nuvo uses. Electron ships
-// its own notices inside the packaged app, so it is not repeated here.
+// Electron ships its own notices in the packaged app, so it is left out here
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -22,7 +20,6 @@ function sources(dir, out = []) {
   return out;
 }
 
-// Texts for packages that ship no licence file, one file per package, "/" written as "__".
 const MISSING = path.join(path.dirname(fileURLToPath(import.meta.url)), "notices", "missing");
 
 function licenseText(dir, name) {
@@ -32,7 +29,6 @@ function licenseText(dir, name) {
   return fs.existsSync(supplied) ? fs.readFileSync(supplied, "utf8").trim() : "";
 }
 
-/** Imported packages and their installed dependencies, resolved through pnpm's sibling layout. */
 export function runtimePackages(root) {
   const queue = [];
   for (const file of [...sources(path.join(root, "src")), ...sources(path.join(root, "electron"))]) {

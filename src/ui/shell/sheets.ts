@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import type { Track } from "../ports/player";
 
-/** Which sheet or overlay is open, and what it is about. Named `useModalStore` because the screens use that name. */
 export interface RemoveFromLibraryTarget {
   id: string;
   title: string;
@@ -24,7 +23,6 @@ export interface RemoveFromPlaylistTarget {
 interface Sheets {
   searchOpen: boolean;
   settingsOpen: boolean;
-  /** A section id or name the settings panel adopts on opening. */
   settingsSection: string | null;
   createPlaylistOpen: boolean;
   createPlaylistPendingTrack: Track | null;
@@ -51,7 +49,6 @@ export const useModalStore = create<Sheets>((set) => ({
   createPlaylistPendingTrack: null,
   removeFromLibrary: null,
   removeFromPlaylist: null,
-  // search is a page now: opening it goes there
   openSearch: () => {
     window.location.hash = "#/search";
   },

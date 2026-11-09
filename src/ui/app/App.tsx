@@ -35,7 +35,6 @@ function Root(): JSX.Element {
   );
 }
 
-/** The main window's root. */
 export function App(): JSX.Element {
   const reduced = useEffectsMark();
   return (

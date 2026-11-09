@@ -10,7 +10,6 @@ import styles from "./popovers.module.css";
 const NONE: never[] = [];
 const clock = (ms: number) => formatDuration(ms) ?? "0:00";
 
-/** Bookmarks inside the playing song: one press keeps the moment, a chip plays from it, the cross forgets it. */
 export function MomentsPanel(): JSX.Element {
   const { t } = useTranslation();
   const trackId = usePlayerStore((state) => state.currentTrack?.id ?? null);

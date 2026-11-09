@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { launchNuvo, MATRIX, passFirstRun, SIZES, type Look, type NuvoSession } from "./harness";
 import { seedPools } from "./seed";
 
-/** Home on the real window: the mixes, the quick picks, the shelf, the page glow and the glass bar, shot in every look. */
 const STEP = "home";
 const W1200 = SIZES[0];
 const W1100 = SIZES[1];
@@ -16,7 +15,6 @@ afterEach(async () => {
   session = null;
 });
 
-/** What Home drew: mix cards, quick picks, shelf covers, whether the field holds a cover and the bar is glass. */
 async function homeState(live: NuvoSession) {
   await live.page.locator("[data-pick]").first().waitFor({ timeout: 30_000 });
   await live.page.waitForTimeout(1_000);
@@ -30,7 +28,6 @@ async function homeState(live: NuvoSession) {
   }));
 }
 
-/** The first run only knows the English buttons, so the session switches to Russian after it. */
 async function shootRussian(live: NuvoSession, state: string): Promise<void> {
   await live.page.evaluate(() => localStorage.setItem("nuvo_locale", "ru"));
   await live.setLook({ preset: "nuvo", mode: "light" });
@@ -96,7 +93,6 @@ describe("home", () => {
     await seedPools(live);
     await live.page.reload();
     await live.go("#/");
-    // one More like shelf per artist mix the shelves name, the first two of three
     await live.page.waitForFunction(() => document.querySelectorAll("[data-shelf=like]").length === 2, undefined, { timeout: 30_000 });
     const shelves = await live.page.evaluate(() =>
       [...document.querySelectorAll<HTMLElement>("[data-shelf]")].map((shelf) => ({
@@ -110,16 +106,13 @@ describe("home", () => {
     expect(shelves.map((shelf) => shelf.name)).toEqual(["songs", "like", "shuffle", "like", "saved"]);
     const [, like, shuffle] = shelves;
     expect(shuffle.title).toBe("A shuffle of your music");
-    // the shuffle is one card with its first covers stacked
     expect(shuffle.songs).toHaveLength(4);
-    // liked songs and the playlists' songs, never the radio lists' new ones
     expect(shuffle.songs.every((id) => /^seed-\d{4}$/.test(id))).toBe(true);
     const artist = like.title!.replace("More like ", "");
     expect(like.songs.length).toBeGreaterThanOrEqual(4);
     expect(like.artists).not.toContain(artist);
     const all = shelves.flatMap((shelf) => shelf.songs);
     expect(new Set(all).size).toBe(all.length);
-    // no local file has a genre tag, so no style is named
     expect(await live.page.locator("[data-shelf=style]").count()).toBe(0);
 
     const shelvesInView = async () => {
@@ -129,7 +122,6 @@ describe("home", () => {
         .first()
         .evaluate((shelf) => {
           shelf.scrollIntoView({ block: "start" });
-          // clear of the window's top band
           let scroller = shelf.parentElement;
           while (scroller && scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
           scroller?.scrollBy(0, -72);
@@ -170,7 +162,6 @@ describe("home", () => {
         [name, before.join()] as const,
         { timeout: 30_000 },
       );
-      // the new rows ease in rather than jump
       const opacity = await live.page.evaluate(
         (shelf) => Number(getComputedStyle(document.querySelector(`[data-shelf="${shelf}"] [data-song]:last-child`)!).opacity),
         name,
@@ -183,7 +174,6 @@ describe("home", () => {
     const all = await everySong();
     expect(new Set(all).size).toBe(all.length);
 
-    // Most saved turns on to the covers after the ones in view
     const saved = () => live.page.evaluate(() => [...document.querySelectorAll("[data-shelf=saved] a")].map((card) => card.textContent));
     const savedBefore = await saved();
     await live.page.locator("[data-shelf=saved] [data-refresh]").click();
@@ -215,11 +205,9 @@ describe("home", () => {
     expect(state.picks).toEqual(["Liked songs0 songs"]);
     expect(state.coldStart).toBe(true);
     expect(state.glow).toBe(false);
-    // the artist ask: the count and Listen sit under the search field, edge to edge
     const edges = await live.page.evaluate(() => {
       const box = (selector: string) => document.querySelector(`[aria-labelledby="start-artists-title"] ${selector}`)!.getBoundingClientRect();
       const field = box('[role="search"]');
-      // the ask sits centred in the page's area, and Import centres under the field
       const importButton = [...document.querySelectorAll("button")].find((button) => button.textContent === "Import playlist")!.getBoundingClientRect();
       return {
         field: [field.left, field.right],

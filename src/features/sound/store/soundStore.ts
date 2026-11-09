@@ -31,7 +31,6 @@ export interface SoundState {
   byArtist: Record<string, Profile>;
   loudness: Record<string, LoudnessEntry>;
   moments: Record<string, Moment[]>;
-  /** Tempo on tracks without memory */
   globalTempo: TempoSettings;
   tempoByTrack: Record<string, TempoSettings>;
   tempoByArtist: Record<string, TempoSettings>;
@@ -40,7 +39,6 @@ export interface SoundState {
   setGain: (index: number, db: number) => void;
   setGains: (gains: EqGains) => void;
   applyPreset: (name: string) => void;
-  /** Saves `gains` (the global curve when omitted); only a global save selects the new preset. */
   saveCustomPreset: (name: string, gains?: EqGains) => void;
   deleteCustomPreset: (name: string) => void;
   renameCustomPreset: (oldName: string, newName: string) => void;
@@ -60,7 +58,6 @@ export interface SoundState {
   forgetTempo: (scope: ProfileScope, key: string) => void;
 }
 
-/** Preset name when the curve is exactly a built-in or custom preset, else the gains. */
 function currentProfile(state: SoundState): Profile {
   return state.presetName !== "custom" ? state.presetName : state.gains;
 }
@@ -69,10 +66,6 @@ function sameGains(a: EqGains, b: EqGains | undefined): boolean {
   return b !== undefined && a.length === b.length && a.every((db, index) => Math.abs(db - b[index]) < 1e-6);
 }
 
-/**
- * Names the preset whose curve equals `gains`, preferring `preferred`, so a curve edited back
- * to a preset reads as that preset again; "custom" when none matches.
- */
 export function presetNameFor(gains: EqGains, preferred: string, customPresets: Record<string, number[]>): string {
   const presets: Array<[string, EqGains]> = [...Object.entries(BUILT_IN_PRESETS), ...Object.entries(customPresets)];
   const preferredGains = presets.find(([name]) => name === preferred)?.[1];
@@ -84,12 +77,10 @@ function profileKey(scope: ProfileScope, key: string): string {
   return scope === "artist" ? key.toLowerCase() : key;
 }
 
-/** Rewrites profiles that reference a preset by name. */
 function replaceProfiles(profiles: Record<string, Profile>, name: string, next: Profile): Record<string, Profile> {
   return Object.fromEntries(Object.entries(profiles).map(([key, profile]) => [key, profile === name ? next : profile]));
 }
 
-/** Resolves a stored profile (preset name or gains) to gains; unknown names fall back to flat. */
 export function profileGains(profile: Profile, customPresets: Record<string, number[]>): EqGains {
   if (Array.isArray(profile)) return profile;
   const builtIn = (BUILT_IN_PRESETS as Record<string, EqGains>)[profile];
@@ -140,7 +131,6 @@ export const useSoundStore = create<SoundState>()(
         set((state) => {
           const { [name]: removed, ...customPresets } = state.customPresets;
           if (!removed) return {};
-          // Profiles that pointed at the preset keep its curve
           return {
             customPresets,
             presetName: state.presetName === name ? "custom" : state.presetName,
@@ -222,7 +212,7 @@ export const useSoundStore = create<SoundState>()(
       name: "nuvo_sound_v1",
       version: 3,
       storage: createJSONStorage(() => debouncedStorage),
-      // v1 stops persisting bypass (Compare is a momentary A/B); v2 adds the tempo memory maps, v3 the global tempo
+      // v1 drops bypass, v2 adds the tempo memory maps, v3 the global tempo
       migrate: (persisted) => {
         const { bypass: _bypass, ...rest } = (persisted ?? {}) as Record<string, unknown>;
         return { globalTempo: TEMPO_PRESETS.normal, tempoByTrack: {}, tempoByArtist: {}, ...rest } as unknown as SoundState;

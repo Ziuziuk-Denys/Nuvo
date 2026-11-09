@@ -44,7 +44,6 @@ fn unknown_input_kinds_are_refused() {
 fn a_version_1_library_is_backed_up_and_upgraded() {
     let (dir, conn) = common::open();
     nuvo_store::settings::set(&conn, "k", &json!("kept")).unwrap();
-    // Undo every migration after 1, so the upgrade path a real v1 library takes is the one tested.
     conn.execute_batch(common::UNDO_OWNER_MIGRATIONS).unwrap();
     conn.execute_batch(common::UNDO_RECS_MIGRATION).unwrap();
     conn.execute_batch(

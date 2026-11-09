@@ -70,7 +70,6 @@ async fn catalog_routes_answer_in_wire_shapes() {
     assert_eq!(common::call(&core.app, "GET", "/v1/sc/lookup?url=x&type=song", None).await.0, StatusCode::BAD_REQUEST);
 }
 
-/// A set link as Exact import rows; a bad link is 400.
 #[tokio::test]
 async fn import_lists_a_set_as_rows() {
     let fx = fixture().await;
@@ -88,7 +87,6 @@ async fn import_lists_a_set_as_rows() {
     assert_eq!(common::call(&core.app, "GET", "/v1/sc/import", None).await.0, StatusCode::BAD_REQUEST);
 }
 
-/// The import cascade's SoundCloud step: tracks for a query, capped, and a missing query is 400.
 #[tokio::test]
 async fn search_answers_tracks_for_a_query() {
     let fx = fixture().await;
@@ -102,7 +100,6 @@ async fn search_answers_tracks_for_a_query() {
     assert_eq!(common::call(&core.app, "GET", "/v1/sc/search?q=%20", None).await.0, StatusCode::BAD_REQUEST);
 }
 
-/// The error mapping.
 #[tokio::test]
 async fn errors_use_the_shared_shape() {
     let fx = fixture().await;
@@ -196,7 +193,6 @@ async fn hls_audio_is_cached_once_and_served_with_ranges() {
     assert_eq!(common::call(&core.app, "GET", "/v1/sc/tracks/sc:2/audio", None).await.0, StatusCode::NOT_FOUND);
 }
 
-/// Review focus 3: prefetch and play ask for the same HLS track at once.
 #[tokio::test]
 async fn two_stream_requests_for_one_hls_track_both_get_whole_audio() {
     let fx = fixture().await;
@@ -214,7 +210,6 @@ async fn two_stream_requests_for_one_hls_track_both_get_whole_audio() {
     assert_eq!(audio_files(&core).len(), 1);
 }
 
-/// A foreign id at the route.
 #[tokio::test]
 async fn unplayable_tracks_are_409_with_a_reason() {
     let fx = fixture().await;
@@ -235,7 +230,6 @@ fn audio_files(core: &common::TestCore) -> Vec<String> {
     }
 }
 
-/// A dropped request leaves nothing in the cache.
 #[tokio::test]
 async fn a_cancelled_stream_request_writes_nothing() {
     let fx = fixture().await;

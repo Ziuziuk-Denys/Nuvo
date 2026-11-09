@@ -22,7 +22,6 @@ pub fn routes() -> Router<AppState> {
     Router::new().route("/v1/appearance", get(read).patch(update))
 }
 
-/// fontconfig family names as main cleans them (customization 5.1).
 fn clean_name(name: &str, max: usize) -> bool {
     let count = name.chars().count();
     count >= 1 && count <= max && !name.chars().any(|c| c.is_control() || matches!(c, ';' | '{' | '}' | '<' | '>' | '"' | '\'' | '\\'))
@@ -36,7 +35,6 @@ fn font_id(id: &str) -> bool {
     id.len() == 64 && id.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
 
-/// Only the characters of `#hex`, `rgb()` and `rgba()`; the renderer parses the value itself.
 fn colour(value: &str) -> bool {
     (1..=40).contains(&value.len()) && value.bytes().all(|b| b.is_ascii_hexdigit() || b"#rgbRGBaA(),. ".contains(&b))
 }

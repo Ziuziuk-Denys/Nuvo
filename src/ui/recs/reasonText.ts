@@ -1,7 +1,6 @@
 import type { TFunction } from "../ports/i18n";
 import type { RankReason } from "../ports/recs";
 
-/** One honest line from the daemon's facts; null for kinds this build does not word yet. */
 export function reasonText(reason: RankReason | null, t: TFunction): string | null {
   const name = reason?.name;
   switch (reason?.kind) {

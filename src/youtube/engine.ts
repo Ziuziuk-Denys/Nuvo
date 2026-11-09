@@ -1,4 +1,3 @@
-/** The engine's `YoutubePort` and `CatalogPort` over this module. */
 import type { CatalogPort } from "../engine/adapters";
 import type { YoutubePort } from "../engine/sources/ports";
 import type { Track } from "../engine/types";

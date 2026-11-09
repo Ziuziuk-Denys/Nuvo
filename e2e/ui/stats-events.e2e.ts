@@ -7,7 +7,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isolate, type Isolation } from "../isolation";
 import { passFirstRun } from "./harness";
 
-/** Every way a song can play leaves a play event: local files, cached streams, radio, gapless, crossfade, offline, quit and a killed app. */
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const CACHED = ["e2eStatsAa1", "e2eStatsBb2", "e2eStatsCc3"];
 
@@ -65,7 +64,6 @@ function tone(file: string, seconds: number, hz: number, title: string, artist: 
   execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", `sine=frequency=${hz}:duration=${seconds}`, ...tags, file]);
 }
 
-/** Tracks in the Liked list with their audio in the cache: they play like a stream that was fetched before. */
 async function seedCached(seconds: number): Promise<void> {
   const file = path.join(music, "..", `${path.basename(music)}-cached.mp3`);
   tone(file, seconds, 500, "", "");
@@ -124,9 +122,7 @@ afterAll(async () => {
     if (pid) {
       try {
         process.kill(pid, "SIGKILL");
-      } catch {
-        // already gone
-      }
+      } catch {}
     }
   }
   profile?.dispose();

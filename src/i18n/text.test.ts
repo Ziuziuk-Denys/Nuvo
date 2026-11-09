@@ -12,7 +12,6 @@ const EN = flattenTexts({
   legacy: { songs_plural: "{count} songs", songs: "Songs" },
 });
 
-/** What the runtime does: look up, fall back to the key, then fill placeholders. */
 function say(active: ReadonlyMap<string, string> | undefined, locale: string, key: string, vars?: Vars): string {
   const text = lookUp(active, locale, EN, key, vars) ?? key;
   return vars ? interpolate(text, vars, locale) : text;

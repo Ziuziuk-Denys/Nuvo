@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore, useEffect } from "react";
 import { contrastRatio } from "../../ports/color";
 import type { PresetId } from "../../ports/theme";
 
-/* Developer-facing labels: plain English literals, the one exception to the strings rule. */
+// Developer-only screen: plain English literals, exempt from the localisation rule
 
 export const PRESET_NAMES: Record<PresetId, string> = {
   nuvo: "Nuvo",
@@ -50,7 +50,6 @@ export const COLOUR_ROLES = [
 export type ColourRole = (typeof COLOUR_ROLES)[number]["id"];
 export type RootTokens = Record<ColourRole, string>;
 
-/** Generated artwork, as in the e2e harness: a diagonal two-stop gradient with two soft discs. */
 function coverArt(from: string, to: string): string {
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">` +
@@ -62,7 +61,6 @@ function coverArt(from: string, to: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-/* Test artwork is content, not interface colour; the violet cover proves the purple guard. */
 export const COVERS = [
   { id: "red", name: "Red", url: coverArt("#E0302F", "#FF9E5C") },
   { id: "blue", name: "Blue", url: coverArt("#1E88E5", "#7FD1FF") },
@@ -80,10 +78,7 @@ function readTokens(): RootTokens {
   return Object.fromEntries(COLOUR_ROLES.map(({ id }) => [id, style.getPropertyValue(`--n-${id}`).trim()])) as RootTokens;
 }
 
-/**
- * The nine colour roles as the root holds them now. Presets write them inline on the root from an
- * effect higher in the tree, after this screen's effects, so the root's attributes are watched.
- */
+// Presets write the roles inline on the root after this screen's effects, so root attributes are watched
 export function useRootTokens(): RootTokens {
   const [tokens, setTokens] = useState(readTokens);
   useEffect(() => {
@@ -99,7 +94,6 @@ export function useRootTokens(): RootTokens {
   return tokens;
 }
 
-/** WCAG ratio, or null while a value is missing or unparsable. */
 export function ratio(foreground: string, background: string): number | null {
   try {
     return contrastRatio(foreground, background);
@@ -108,7 +102,6 @@ export function ratio(foreground: string, background: string): number | null {
   }
 }
 
-/** "#F4F7FF" or, for a translucent ink, "#F4F7FF 72%". */
 export function formatColour(value: string): string {
   const rgba = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/.exec(value);
   if (!rgba) return value.toUpperCase();

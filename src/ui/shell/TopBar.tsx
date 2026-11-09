@@ -6,7 +6,6 @@ import { isEntityRoute, navigateWithTransition } from "./navigate";
 import styles from "./TopBar.module.css";
 import { WindowButtons } from "./WindowButtons";
 
-/** The window's top row: the Nuvo mark over the rail, a Back chip on entity pages, the window pill. Drags the window. */
 export function TopBar(): JSX.Element {
   const { t } = useTranslation();
   const location = useLocation();

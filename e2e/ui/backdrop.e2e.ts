@@ -6,10 +6,6 @@ import { launchNuvo, SIZES, type NuvoSession } from "./harness";
 import { diffRatio } from "./pixels";
 import { coverDataUrl } from "./seed";
 
-/**
- * The karaoke background on a real GPU: what one frame costs, and frames every 2 s of its own clock
- * for a side-by-side look with the observed view (e2e/artifacts/ui/karaoke-observed/background-*.png).
- */
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const FRAMES = path.join(ROOT, "e2e", "artifacts", "ui", "karaoke-backdrop");
 /** Half of the 30 fps frame budget; the field must leave the rest of the frame to the view. */
@@ -77,7 +73,6 @@ it("draws the cover field within the frame budget", async () => {
     await page.screenshot({ path: file });
     files.push(file);
   }
-  // it moves, but slowly: in 2 s many pixels shift a little (the observed view: about 0.7 by more than 2 of 255), almost none by more than 32
   for (let i = 1; i < files.length; i += 1) {
     expect(await diffRatio(session.app, files[i - 1], files[i], 2)).toBeGreaterThan(0.15);
     expect(await diffRatio(session.app, files[i - 1], files[i], 32)).toBeLessThan(0.05);

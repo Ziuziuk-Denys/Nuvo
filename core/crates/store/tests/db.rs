@@ -96,19 +96,16 @@ fn migration_7_deduplicates_play_events_before_creating_unique_index() {
     let (dir, conn) = common::open();
     let db_path = dir.path().join("library.db");
 
-    // Insert a dummy track to satisfy foreign key constraints.
     conn.execute(
         "INSERT INTO tracks (id, title, artist, artists_json, duration_ms, source, snapshot_json, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         ["t1", "T", "A", "[]", "1000", "youtube", "{}", "0"],
     ).unwrap();
 
-    // Drop the unique index created by migration 7 so we can insert duplicates.
     conn.execute_batch("DROP INDEX IF EXISTS play_events_idempotent;").unwrap();
     conn.execute_batch(common::UNDO_OWNER_MIGRATIONS).unwrap();
     conn.execute_batch(common::UNDO_RECS_MIGRATION).unwrap();
 
-    // Insert duplicate play_events (same track_id, session_id, started_at).
     for _i in 0..3 {
         conn.execute(
             "INSERT INTO play_events (track_id, session_id, started_at, played_ms, end_reason, hour, weekday)
@@ -117,24 +114,19 @@ fn migration_7_deduplicates_play_events_before_creating_unique_index() {
         ).unwrap();
     }
 
-    // Verify 3 rows exist.
     let count: i64 = conn.query_row("SELECT count(*) FROM play_events", [], |r| r.get(0)).unwrap();
     assert_eq!(count, 3);
 
-    // Downgrade to v6 to simulate pre-migration data (index is already gone).
     conn.pragma_update(None, "user_version", 6).unwrap();
     drop(conn);
 
-    // Reopen: migration 7 runs, deduplicates, and creates the unique index.
     let conn = open_connection(&db_path, &common::KEY, &dir.path().join("backups")).unwrap();
     let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
     assert_eq!(version, 21, "migrations 7 to 21 applied");
 
-    // Verify only 1 row remains (lowest rowid kept).
     let count: i64 = conn.query_row("SELECT count(*) FROM play_events", [], |r| r.get(0)).unwrap();
     assert_eq!(count, 1, "duplicates removed, keeping lowest rowid");
 
-    // Verify the unique index exists and works (try inserting a duplicate, should fail).
     let result = conn.execute(
         "INSERT INTO play_events (track_id, session_id, started_at, played_ms, end_reason, hour, weekday)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",

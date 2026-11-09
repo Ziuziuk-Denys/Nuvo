@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { AppInfo, WinState } from "@/shell/nuvoShell";
 
-/** Window state, window commands, drag regions and mouse focus rings. */
 export interface WindowState {
   isMaximized: boolean;
   isFullScreen: boolean;

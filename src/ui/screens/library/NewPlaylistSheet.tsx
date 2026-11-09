@@ -10,10 +10,6 @@ import styles from "./NewPlaylistSheet.module.css";
 const NAME_MAX = 200;
 const DESCRIPTION_MAX = 300;
 
-/**
- * New playlist: the name well with its length count and a description that opens on request. Enter creates, Escape cancels.
- * Opened through the modal store, so a track waiting in "Add to playlist" goes into the new playlist.
- */
 export function NewPlaylistSheet(): JSX.Element | null {
   const { t } = useTranslation();
   const open = useModalStore((state) => state.createPlaylistOpen);
@@ -30,7 +26,6 @@ export function NewPlaylistSheet(): JSX.Element | null {
   // the playlist exists but the waiting track did not go in: only Done is left, so a retry never makes a twin
   const [created, setCreated] = useState(false);
 
-  // every opening starts blank
   const [shownOpen, setShownOpen] = useState(open);
   if (open !== shownOpen) {
     setShownOpen(open);
@@ -72,14 +67,12 @@ export function NewPlaylistSheet(): JSX.Element | null {
     close();
   };
 
-  // the import sheet takes over; a song waiting for a playlist goes into the imported one
   const fromLink = () => {
     close();
     useImportsUi.getState().openImport(track ? { pendingTrack: snapshotOf(track) } : {});
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    // Shift+Enter keeps its new line in the description
     if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
     event.preventDefault();
     void submit();

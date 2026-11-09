@@ -1,5 +1,3 @@
-//! LRCLIB client: exact lookup by title, artist and duration, then a search within +-2 s.
-
 mod amll;
 
 use std::time::Duration;
@@ -22,7 +20,6 @@ pub enum LyricsError {
     Index(u16),
 }
 
-/// Enhanced LRC carries `<mm:ss.xx>` stamps inside its lines.
 pub fn lrc_sync_level(content: &str) -> &'static str {
     let stamped = content.split('<').skip(1).any(|rest| {
         let mut parts = rest.split('>').next().unwrap_or_default().splitn(2, ':');
@@ -83,7 +80,6 @@ impl Lrclib {
         Self::with_proxy(base, None)
     }
 
-    /// Like [`Lrclib::new`], with every request sent through `proxy`.
     pub fn with_proxy(base: impl Into<String>, proxy: Option<reqwest::Proxy>) -> Self {
         let mut builder = reqwest::Client::builder().user_agent("nuvo-core/0.1 (personal music player)").timeout(Duration::from_secs(10));
         if let Some(proxy) = proxy {

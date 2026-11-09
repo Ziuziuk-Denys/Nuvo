@@ -10,8 +10,6 @@ use crate::error::ApiError;
 use crate::extract::JsonBody;
 use crate::state::AppState;
 
-/// Optional YouTube account storage: tokens and the three preferences live in the
-/// encrypted library database, never in renderer storage.
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/v1/youtube/account", get(account))

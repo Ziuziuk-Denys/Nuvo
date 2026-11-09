@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Act, Chapter, TargetId } from "./chapters";
 import { runStep, type TourStage } from "./runStep";
 
-/* A stage that records what the runner asks of it; `present` says which targets are on screen */
 function recordingStage(present: TargetId[], onAct?: (act: Act) => void) {
   const log: string[] = [];
   const stage: TourStage = {

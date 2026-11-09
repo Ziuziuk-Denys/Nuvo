@@ -1,7 +1,3 @@
-/*
- * The rail: 58 px of the preset's glass, 6 px off the window's left and bottom edges, from 12 px under the top row
- * to the bottom frame. No border, rim or shadow.
- */
 .rail {
   position: absolute;
   z-index: 41;
@@ -26,7 +22,6 @@
   flex-direction: column;
 }
 
-/* Pinned lists under a hairline; they give way to the glyphs above when the window is short. */
 .pins {
   display: flex;
   flex: 1;
@@ -51,7 +46,6 @@
   opacity: 1;
 }
 
-/* 46 px cells, no gap: one 26 px glyph every 46 px. Nothing but the glyph ever shows. */
 .item {
   position: relative;
   display: grid;
@@ -95,7 +89,6 @@
   opacity: 1;
 }
 
-/* Running imports: a 2 px line under the Library glyph, filled in the accent as songs land. */
 .progress {
   position: absolute;
   bottom: 5px;

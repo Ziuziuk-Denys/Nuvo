@@ -1,4 +1,3 @@
-/** Shared setup for the catalog and playback tests: a fake fetch with visitor data and an InnerTube client. */
 import { SEARCH_PARAMS } from "../constants";
 import { Innertube, VisitorData } from "../http";
 import { FakeFetch, text } from "./fakeFetch";
@@ -16,7 +15,6 @@ export function harness(visitor = VISITOR) {
   return { fake, yt, visitorData };
 }
 
-/** Body predicate for a search request with the given filter (no filter means the mixed request). */
 export const searchFor = (filter?: keyof typeof SEARCH_PARAMS) => (body: Record<string, unknown>) =>
   body.params === (filter ? SEARCH_PARAMS[filter] : undefined);
 

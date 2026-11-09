@@ -4,7 +4,7 @@ export interface Spring {
   mass: number;
 }
 
-// openNook's morph spring: 0.30 s with a slight overshoot.
+// Morph spring: about 0.30 s with a slight overshoot
 export const MORPH_SPRING: Spring = { stiffness: 439, damping: 27, mass: 1 };
 
 const STEP_S = 1 / 600;
@@ -12,7 +12,6 @@ const REST_DISPLACEMENT = 0.001;
 const REST_VELOCITY = 0.01;
 const MAX_DURATION_S = 2;
 
-/** Step response of a damped spring from 0 to 1, sampled until it rests. */
 export function simulateSpring(spring: Spring): { values: number[]; durationMs: number } {
   const values = [0];
   let position = 0;
@@ -29,7 +28,6 @@ export function simulateSpring(spring: Spring): { values: number[]; durationMs: 
   return { values, durationMs: Math.round(time * 1000) };
 }
 
-/** CSS `linear()` easing that reproduces the spring, plus the duration to pair it with. */
 export function springEasing(spring: Spring, points = 32): { easing: string; durationMs: number } {
   const { values, durationMs } = simulateSpring(spring);
   const stops: string[] = [];

@@ -1,4 +1,3 @@
-/** Default bindings, the daemon's copy of the user's changes, and the one-time move of the old renderer settings. */
 import { parseAccelerator } from "./accelerator";
 import type { Scope, StoredBindings } from "./registry";
 
@@ -7,7 +6,7 @@ export interface DefaultBinding {
   global: string | null;
 }
 
-/** Spec 3.1. app.palette and app.show are listed for conflicts and migration; their own modules register them. */
+// app.palette and app.show are listed for conflicts and migration; their modules register them
 export const DEFAULT_BINDINGS: Record<string, DefaultBinding> = {
   "player.toggle": { app: "Space", global: null },
   "player.next": { app: "Control+Right", global: null },
@@ -31,7 +30,6 @@ export const DEFAULT_BINDINGS: Record<string, DefaultBinding> = {
   "app.show": { app: null, global: null },
 };
 
-/** The old renderer's persisted shortcuts. */
 export const LEGACY_SHORTCUTS_KEY = "nuvo_shortcuts_settings_v1";
 
 const LEGACY_FIELDS: Record<"global" | "mainApp", Record<string, string>> = {
@@ -58,7 +56,6 @@ export function emptyBindings(): StoredBindings {
   return { version: 1, app: {}, global: {} };
 }
 
-/** The old settings as stored bindings: canonical, only real changes, the global one wins a cross-scope clash; null without the key. */
 export function migrateLegacyBindings(raw: string | null, defaults: Record<string, DefaultBinding> = DEFAULT_BINDINGS): StoredBindings | null {
   if (raw === null) return null;
   const result = emptyBindings();
@@ -78,7 +75,6 @@ export function migrateLegacyBindings(raw: string | null, defaults: Record<strin
     if (!values || typeof values !== "object") continue;
     for (const [name, value] of Object.entries(values)) {
       const id = LEGACY_FIELDS[field][name];
-      // the old app could not clear a binding, so an empty value is not a choice
       if (!id || typeof value !== "string" || value.trim() === "") continue;
       const accelerator = parseAccelerator(value);
       if (accelerator && accelerator !== defaults[id]?.[scope]) result[scope][id] = accelerator;
@@ -117,7 +113,6 @@ export type LoadResult = { state: "ok"; bindings: StoredBindings | null } | { st
 export function createBindingsClient(base: string, doFetch: typeof fetch) {
   const url = `${base}/v1/shortcuts`;
   return {
-    /** Unavailable when the library is locked (423) or the daemon is starting or down. */
     async load(): Promise<LoadResult> {
       try {
         const response = await doFetch(url);

@@ -62,7 +62,6 @@ fn a_play_counts_when_completed_or_after_30_seconds_and_time_is_real() {
     assert_eq!(stats.totals.plays, 2);
     assert_eq!(stats.totals.listened_ms, 235_000);
     assert_eq!(stats.totals.tracks, 2);
-    // a skip before any sound and a failed start say nothing about the song
     assert!((stats.totals.skip_rate - 1.0 / 3.0).abs() < 1e-9);
     assert!((stats.totals.completed_rate - 1.0 / 3.0).abs() < 1e-9);
 }
@@ -119,7 +118,6 @@ fn streaks_break_on_a_day_without_a_counted_play() {
     for (index, offset) in [0, 1, 2, 4, 5].iter().enumerate() {
         play(&conn, "a", &format!("s{index}"), JULY + offset * DAY, 60_000, "next", json!({}));
     }
-    // a skip is listening time but not a day of listening
     play(&conn, "a", "x", JULY + 3 * DAY, 5_000, "skip", json!({}));
     let stats = overview(&conn, all("2026-07-07")).unwrap();
     assert_eq!(stats.current_streak, 2);
@@ -313,7 +311,6 @@ fn delete_removes_a_local_date_range_and_what_only_it_left_behind() {
     assert_eq!(count(&conn, "SELECT count(*) FROM tracks WHERE id = 'liked'"), 1);
     assert_eq!(count(&conn, "SELECT count(*) FROM suppressions"), 1);
     assert_eq!(overview(&conn, all("2026-07-10")).unwrap().totals.plays, 1);
-    // scrobbles of the same seconds go with the plays; the other one stays
     assert_eq!(count(&conn, "SELECT count(*) FROM scrobble_queue WHERE track = 'kept'"), 1);
     assert_eq!(count(&conn, "SELECT count(*) FROM scrobble_queue WHERE track = 'gone'"), 0);
 }
@@ -375,7 +372,6 @@ fn migration_21_fills_the_offset_from_the_stored_hour_and_the_source_from_the_tr
     assert_eq!(iso_day(local_day(rows[1].0, rows[1].1)), "2026-07-01");
 }
 
-/// About five and a half years of daily listening over 8000 tracks of 600 artists.
 fn fixture(conn: &Connection, events: i64) {
     let tx = conn.unchecked_transaction().unwrap();
     let mut seed: u64 = 0x2545_f491_4f6c_dd1d;

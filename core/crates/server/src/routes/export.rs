@@ -1,5 +1,4 @@
-//! `/v1/fs/export/*`: documents Electron main saves through a save dialog. M3U8 carries local
-//! paths and the listening history is personal, so these routes are main-only like every `fs` route.
+// Main-only: M3U8 carries local paths and the listening history is personal
 
 use axum::extract::{Path, Query, State};
 use axum::http::header;

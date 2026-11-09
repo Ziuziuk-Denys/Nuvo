@@ -7,14 +7,6 @@ import { _electron, type ElectronApplication, type Page } from "playwright-core"
 import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
 import { isolate, type Isolation } from "./isolation";
 
-/**
- * Word by word in the real app: a fixture song with enhanced LRC plays through the daemon and the audio graph,
- * and each frame the marked word on the screen is read back and compared with the position being heard.
- * The lyrics provider is a local stand-in and the audio a tone in the daemon cache: no live network, silent.
- * Runs against a build: `pnpm build`, then `pnpm exec vitest run --config vitest.e2e.config.ts e2e/lyrics-words.e2e.ts`.
- * NUVO_WORDS_AUDIBLE=1 runs on the real output device at volume 0, so a real output latency is in the numbers;
- * otherwise Chromium's fake output keeps the latency steady.
- */
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ELECTRON = createRequire(import.meta.url)("electron") as unknown as string;
 const SHOTS = path.join(os.homedir(), ".cache", "words-shots");
@@ -30,7 +22,6 @@ const EARLY_MS = 40;
 /** Still lit after its end: the hold over a short gap, a tick and a frame. */
 const LATE_MS = 200;
 
-/** Four words a line, one long enough to wrap, Cyrillic, Hebrew and Japanese among them. */
 function fixtureLrc(): string {
   const texts = [
     ["Morning ", "light ", "over ", "the ", "hill"],
@@ -83,7 +74,6 @@ interface Sample {
   latencyMs: number;
 }
 
-/** Reads the screen on every frame for `ms`: how many words are lit, and how far the lit word is from the position being heard. */
 function record(ms: number): Promise<Sample[]> {
   return main.evaluate((duration) => {
     type Decks = {
@@ -136,7 +126,6 @@ function expectOneWordOnTime(result: ReturnType<typeof summary>) {
   expect(result.latestMs).toBeLessThan(LATE_MS);
 }
 
-/** Every word lit in turn over `ms`, as the time stamps of the marked elements. */
 function litOrder(ms: number): Promise<number[]> {
   return main.evaluate(
     (duration) =>
@@ -166,7 +155,6 @@ async function chooseMode(label: string) {
   await main.waitForTimeout(250);
 }
 
-/** What the screen says is lit: whole words or the line, and the word being filled with how far it got. */
 function litNow() {
   return main.evaluate(() => {
     const text = (element: Element) => element.textContent!.trim();
@@ -180,7 +168,6 @@ function litNow() {
   });
 }
 
-/** The output latency the app subtracts to show what is heard; the sink reports anything from 40 to 450 ms. */
 function latencyMs(): Promise<number> {
   return main.evaluate(() => {
     const context = (window as unknown as { __nuvoPlayer: { decks: { audioContext: AudioContext | null } } }).__nuvoPlayer.decks.audioContext;
@@ -188,7 +175,6 @@ function latencyMs(): Promise<number> {
   });
 }
 
-/** Paused where `ms` is the heard position, the one the screen shows. */
 async function pausedAt(ms: number) {
   await player(`seekTo(${ms + (await latencyMs())})`);
   await main.waitForTimeout(350);
@@ -274,15 +260,12 @@ afterAll(async () => {
   if (pid) {
     try {
       process.kill(pid, "SIGKILL");
-    } catch {
-      // already gone
-    }
+    } catch {}
   }
   provider?.close();
   isolation?.dispose();
 });
 
-/** A failed check must not leave the tests after it a paused player, another speed, an offset or another mode. */
 afterEach(async ({ task }) => {
   if (task.result?.state !== "fail") return;
   await main.emulateMedia({ reducedMotion: "no-preference" });
@@ -461,7 +444,6 @@ it("the fill is flat: two colours with a hard edge, no glow or filter", async ()
     return { shadow: style.textShadow, filter: style.filter, image: style.backgroundImage };
   });
   expect(fill).toMatchObject({ shadow: "none", filter: "none" });
-  // both stops at the edge: the second stop at 0 sits on the first
   expect(fill.image).toMatch(/^linear-gradient\(90deg, rgb\(255, 255, 255\) [\d.]+%, .+ 0px\)$/);
   await chooseMode("Word");
   await player("play()");
@@ -575,7 +557,6 @@ it("with the user's own lyrics saved, the version menu lists both and switches b
   await main.waitForFunction(() => (window as unknown as { __nuvoLyrics: Lyrics }).__nuvoLyrics.getState().versions.length === 2, undefined, {
     timeout: 30_000,
   });
-  // the Russian locale from the shots is still on
   await main.locator('header button[aria-label="Версия текста"]').click({ force: true });
   const items = main.locator('[role="menu"] [role="menuitem"]');
   await items.first().waitFor();

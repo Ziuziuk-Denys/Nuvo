@@ -1,5 +1,3 @@
-//! What a local file is: tags, length and format read with lofty, its cover, its id and snapshot.
-
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
 use std::path::Path;
@@ -17,15 +15,13 @@ use serde_json::{Value, json};
 use crate::open::{open_inside, open_regular};
 use crate::walk::folder_art;
 
-/// Where the daemon serves a local cover; part of every local snapshot.
 pub const COVER_BASE: &str = "nuvo-core://local/v1/local/tracks/";
 const MAX_TEXT_CHARS: usize = 512;
 const MAX_COVER_BYTES: u64 = 8 * 1024 * 1024;
 /// Tag reading skips pictures, so the limit only guards text, lyrics and other frames.
 pub(crate) const MAX_TAG_ITEM_BYTES: u64 = 32 * 1024 * 1024;
 
-/// Lofty keeps its allocation limit per thread and reads a tag item fully into memory. Set on
-/// every entry point (scanner and request threads differ) so a hostile item fails early.
+// Lofty's allocation limit is per thread: set it on every entry so hostile items fail early
 pub(crate) fn cap_allocations(bytes: u64) {
     apply_global_options(GlobalOptions::new().allocation_limit(bytes as usize));
 }
@@ -70,7 +66,6 @@ fn clean(text: &str) -> Option<String> {
     (!text.is_empty()).then(|| text.to_string())
 }
 
-/// Codec, MIME type, lossless and the reason Chromium cannot play it, per container and content.
 pub fn format_of(file_type: FileType, mp4: Option<Mp4Codec>, wav: Option<WavFormat>) -> (&'static str, &'static str, bool, Option<&'static str>) {
     match file_type {
         FileType::Mpeg => ("mp3", "audio/mpeg", false, None),
@@ -92,7 +87,6 @@ pub fn format_of(file_type: FileType, mp4: Option<Mp4Codec>, wav: Option<WavForm
     }
 }
 
-/// Title and artist from "Artist - Title.ext": for files without tags or that cannot be read.
 pub fn meta_from_name(path: &Path) -> LocalMeta {
     let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("Unknown");
     let (artists, title) = match stem.split_once(" - ") {
@@ -156,12 +150,10 @@ pub fn read_meta(path: &Path) -> Result<LocalMeta, TagError> {
     })
 }
 
-/// The front cover, else any embedded picture, else the folder's cover image.
 pub fn read_cover(path: &Path) -> Result<Option<Vec<u8>>, TagError> {
     read_cover_from(open_regular(path)?, path.parent().unwrap_or(Path::new("")))
 }
 
-/// [`read_cover`] on a file the caller already opened and checked; `dir` is that file's folder.
 pub fn read_cover_from(file: File, dir: &Path) -> Result<Option<Vec<u8>>, TagError> {
     cap_allocations(MAX_COVER_BYTES);
     let options = ParseOptions::new().read_properties(false).read_cover_art(true);
@@ -180,13 +172,12 @@ pub fn read_cover_from(file: File, dir: &Path) -> Result<Option<Vec<u8>>, TagErr
     Ok((bytes.len() as u64 <= MAX_COVER_BYTES).then_some(bytes))
 }
 
-/// `local:` and 32 hex of the path's hash. Stored on first sight; a moved file keeps its old id.
+// Stored on first sight, so a moved file keeps its old id
 pub fn local_id(path: &str) -> String {
     format!("local:{}", &sha256_hex(path.as_bytes())[..32])
 }
 
-/// `has_cover`: the cover route has a picture for this file. Without one the snapshot carries no
-/// cover, so the renderer never asks.
+// Without a cover the snapshot carries none, so the renderer never asks the route
 pub fn snapshot(id: &str, meta: &LocalMeta, has_cover: bool) -> Value {
     let names = if meta.artists.is_empty() { vec!["Unknown Artist".to_string()] } else { meta.artists.clone() };
     let mut value = json!({

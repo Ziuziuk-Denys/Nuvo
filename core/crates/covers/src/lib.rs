@@ -1,6 +1,3 @@
-//! Cover art at display size: CDN-side sizing first, local crop and downscale only when needed,
-//! one fetch per cover and size, kept in the encrypted cache.
-
 pub mod index;
 pub mod picture;
 mod service;

@@ -1,8 +1,3 @@
-/**
- * Wire shapes of the daemon's import job (`POST /v1/imports` and the report routes) and the
- * listing result the link listers produce. Field names follow `nuvo-contracts` (camelCase).
- */
-
 export interface CatalogTrack {
   id: string;
   title: string;
@@ -13,7 +8,6 @@ export interface CatalogTrack {
   explicit?: boolean;
 }
 
-/** One source line. `track` names a playable YouTube or SoundCloud track and makes the row Exact. */
 export interface ImportRow {
   title: string;
   artists: string[];
@@ -23,26 +17,17 @@ export interface ImportRow {
   track?: CatalogTrack;
 }
 
-/** Sources the daemon accepts for rows listed in the renderer. */
 export type RowSource = "youtube-music" | "soundcloud" | "apple-music" | "deezer" | "spotify";
 
 export type ImportTarget = { kind: "new" } | { kind: "liked" } | { kind: "playlist"; id: string };
 
-export type ListingNotice =
-  /** The source page showed fewer songs than the playlist has; `total` when the source said it. */
-  | { kind: "partial"; shown: number; total?: number }
-  /** The listing stopped at the daemon's row cap. */
-  | { kind: "capped"; kept: number }
-  /** The source stopped answering part way: these rows are all that was read. */
-  | { kind: "cut"; kept: number };
+export type ListingNotice = { kind: "partial"; shown: number; total?: number } | { kind: "capped"; kept: number } | { kind: "cut"; kept: number };
 
-/** What a link lister read. An empty `label` means "use the source's default name". */
 export interface Listing {
   source: RowSource;
   label: string;
   rows: ImportRow[];
   notice?: ListingNotice;
-  /** Set for a SoundCloud likes listing: the label becomes "{name}: Likes". */
   likesOf?: string;
 }
 
@@ -88,7 +73,6 @@ export interface ReportRow {
   durationDiffMs?: number;
 }
 
-/** `review` is the report's default chip: Check and Missing rows nobody decided on. */
 export type RowsFilter = "review" | "matched" | "all" | ReportLabel;
 
 export interface RowsPage {
@@ -119,12 +103,10 @@ export type ImportErrorCode =
   | "gone"
   | "source_changed"
   | "network"
-  /** Some pages are imported, a later one could not be posted. */
   | "cut"
   | "locked"
   | "daemon";
 
-/** A failed import step. `host` names the refused host for `unsupported_host`. */
 export class ImportError extends Error {
   constructor(
     readonly code: ImportErrorCode,
@@ -135,7 +117,5 @@ export class ImportError extends Error {
   }
 }
 
-/** Rows per import (the daemon's cap). */
 export const MAX_ROWS = 20_000;
-/** Playlist titles are cut here before they reach the daemon. */
 export const MAX_LABEL_CHARS = 200;

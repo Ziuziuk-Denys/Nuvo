@@ -1,5 +1,3 @@
-// Removes `export ... from "<specifier>";` statements from a barrel, so the last edge to a deleted module goes without reading the barrel.
-// Usage: node scripts/cut-export.mjs <file> <specifier>
 import fs from "node:fs";
 
 const [file, specifier] = process.argv.slice(2);

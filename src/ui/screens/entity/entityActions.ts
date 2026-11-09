@@ -13,11 +13,6 @@ import {
 
 type SavedKind = "album" | "artist" | "playlist";
 
-/**
- * Save or Saved for an album, an artist or someone else's playlist. The toggle shows at once;
- * the library list is the truth again as soon as it reloads, and a failed call puts it back.
- * `item` is the saved entry, which still knows the name and cover when the catalog is out of reach.
- */
 export function useSaved(
   kind: SavedKind,
   id: string,
@@ -41,7 +36,6 @@ export function useSaved(
   return { saved, toggle, item };
 }
 
-/** Pin to Home and Pin to sidebar, each an Unpin when it is pinned there already. */
 export function pinMenuItems(pin: HomePin, onHome: boolean, onRail: boolean, t: TFunction): MenuItem[] {
   return [
     onHome

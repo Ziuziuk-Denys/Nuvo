@@ -1,4 +1,3 @@
-/* The create dialog's fields: a 44 px tinted well with its count, a 12 px link that opens the description. */
 .fields {
   display: flex;
   flex-direction: column;

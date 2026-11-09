@@ -4,21 +4,15 @@ import styles from "./tour.module.css";
 
 interface GateButtonProps {
   seconds: number;
-  /** False when the text was already read: ready at once */
   waiting: boolean;
-  /** The wait counts only while running: a chapter starts it once its scene has played */
   running?: boolean;
-  /** A new key restarts the wait */
   gateKey: string;
   onReady?: () => void;
   onClick: () => void;
   children: ReactNode;
 }
 
-/*
-  The read gate: a grey button with a darker fill growing inside for the given seconds, then the primary button.
-  The fill is a timer, not decoration, so it runs from the clock and ignores reduced motion
-*/
+// The fill is a timer, not decoration, so it ignores reduced motion
 export function GateButton({ seconds, waiting, running = true, gateKey, onReady, onClick, children }: GateButtonProps): JSX.Element {
   const fillRef = useRef<HTMLSpanElement>(null);
   const [ready, setReady] = useState(!waiting);

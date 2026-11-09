@@ -9,7 +9,6 @@ export const line = (fromMs: number, extra: Partial<Line> = {}): Line => ({
   ...extra,
 });
 
-/** The player engine as the lyrics module sees it; tests set `state` and call `emit()` for play, pause and seek. */
 export function fakeAudio(positionMs = 0, playing = false) {
   const listeners = new Set<() => void>();
   const audio = {
@@ -29,7 +28,6 @@ export function fakeAudio(positionMs = 0, playing = false) {
   return audio;
 }
 
-/** Animation frames that run only when the test says so. */
 export function fakeFrames() {
   const queue = new Map<number, () => void>();
   let next = 1;
@@ -50,7 +48,6 @@ export function fakeFrames() {
   };
 }
 
-/** Lets pending promise chains (async generators, awaits) settle. Works with fake timers too. */
 export async function flush(): Promise<void> {
   for (let index = 0; index < 100; index += 1) await Promise.resolve();
 }

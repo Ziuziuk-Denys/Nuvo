@@ -1,9 +1,7 @@
-/** Recording a new binding: Escape cancels, held modifiers show, a key commits or is refused with a reason. */
 import { acceleratorFromEvent, heldModifiers, isComposing, type KeyLike } from "./accelerator";
 import type { GlobalSync } from "./globalSync";
 import type { BindingResult, CommandRegistry, Scope } from "./registry";
 
-/** How long a refusal stays on screen. */
 export const REJECTION_MS = 2500;
 
 export type RecorderState =
@@ -29,7 +27,6 @@ export class Recorder {
     return this.current.kind === "recording";
   }
 
-  /** In-app recording keeps main's grabs; a global one releases them so the keys reach the window. */
   start(id: string, scope: Scope): void {
     this.stop();
     this.current = { kind: "recording", id, scope, held: [], rejection: null };
@@ -37,7 +34,6 @@ export class Recorder {
     this.emit();
   }
 
-  /** Cancel or finish: normal shortcuts work again and a released global list is sent again. */
   stop(): void {
     if (this.current.kind !== "recording") return;
     const { scope } = this.current;

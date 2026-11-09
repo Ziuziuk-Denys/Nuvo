@@ -1,13 +1,10 @@
-/** Found versions: validation, parsing on arrival and ranking. */
 import { parseLyrics, type Parsed } from "./parse";
 import type { Candidate, StreamEvent, Version } from "./types";
 
-/** Larger texts are ignored; the daemon caps user lyrics at 64 KB. */
 export const MAX_CONTENT_BYTES = 256 * 1024;
 
 const SYNC_DEPTH: Record<string, number> = { syllable_level: 2, word_level: 2, line_level: 1 };
 
-/** A usable version: its candidate, its unshifted parse and its arrival order in the stream. */
 export interface Entry {
   candidate: Candidate;
   parsed: Parsed;
@@ -19,7 +16,6 @@ function quality(candidate: Candidate): number {
   return typeof total === "number" && Number.isFinite(total) ? total : 0;
 }
 
-/** A `found` event as a parsed entry; null for anything unusable (not found, empty, oversized, unreadable). */
 export function toEntry(event: StreamEvent, order: number, trackMs: number): Entry | null {
   if (event.type !== "provider" || event.status !== "found" || !event.candidate) return null;
   const lyrics = event.candidate.lyrics;
@@ -29,7 +25,6 @@ export function toEntry(event: StreamEvent, order: number, trackMs: number): Ent
   return parsed ? { candidate: event.candidate, parsed, order } : null;
 }
 
-/** User lyrics first, then real word timing (read from the text, not the daemon's claim), then quality, sync depth and arrival. */
 export function compareEntries(a: Entry, b: Entry): number {
   return (
     Number(b.candidate.topPriority === true) - Number(a.candidate.topPriority === true) ||
@@ -40,7 +35,6 @@ export function compareEntries(a: Entry, b: Entry): number {
   );
 }
 
-/** Adds the entry, replacing an earlier one from the same provider, and re-ranks. */
 export function addEntry(entries: Entry[], entry: Entry): Entry[] {
   return [...entries.filter((existing) => existing.candidate.provider !== entry.candidate.provider), entry].sort(compareEntries);
 }

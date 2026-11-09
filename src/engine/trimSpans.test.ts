@@ -18,7 +18,6 @@ async function start(h: Harness) {
   h.deck.duration = 200_000;
 }
 
-/** 250 ms position updates from `fromMs` up to `toMs`, as the element sends them. */
 async function playTo(h: Harness, fromMs: number, toMs: number) {
   for (let at = fromMs; at <= toMs; at += 250) {
     await vi.advanceTimersByTimeAsync(250);

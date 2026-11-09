@@ -1,4 +1,3 @@
-/** One player state for every surface outside the renderer. */
 import type { NotchAction, NotchState } from "../../src/notch/contracts";
 import type { RemoteCommand, SurfaceState } from "../../src/engine/types";
 
@@ -28,7 +27,6 @@ export function toNotchState(state: SurfaceState): NotchState {
   };
 }
 
-/** Notch actions become player commands; focusApp stays a window action. The heart is a toggle, so it follows the current liked state. */
 export function notchActionToCommand(action: NotchAction, liked: boolean): RemoteCommand | null {
   switch (action.type) {
     case "togglePlay":
@@ -69,7 +67,6 @@ export class PlayerRelay {
     for (const reader of this.readers) reader(state);
   }
 
-  /** The renderer went away: every reader sees idle. */
   rendererGone(now: number): void {
     this.accept({ ...IDLE_STATE, sampledAt: now });
   }

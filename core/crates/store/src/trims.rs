@@ -16,14 +16,11 @@ pub fn get(conn: &Connection, track_id: &str) -> Result<Option<TrackTrim>, Store
         .optional()?)
 }
 
-/// Every trim, so the renderer can mark trimmed rows without one request per track.
 pub fn list(conn: &Connection) -> Result<Vec<TrackTrim>, StoreError> {
     let mut stmt = conn.prepare("SELECT * FROM track_trims ORDER BY updated_at DESC, track_id")?;
     Ok(stmt.query_map([], trim_from_row)?.collect::<Result<_, _>>()?)
 }
 
-/// Requires `0 <= start < end <= duration` and a span of at least `MIN_TRIM_MS`. A track with
-/// an unknown duration (0) can therefore not be trimmed.
 pub fn set(conn: &Connection, track_id: &str, input: &SetTrim, now: i64) -> Result<TrackTrim, StoreError> {
     let tx = conn.unchecked_transaction()?;
     tracks::ensure(&tx, track_id, input.track.as_ref(), now)?;

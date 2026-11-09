@@ -16,7 +16,6 @@ function poke(): void {
   started.forEach((listener) => listener());
 }
 
-/** A failed save or export is shown in the island's line for a few seconds. */
 function remember(error: string | null): string | null {
   if (error) {
     lastError = { text: error, at: Date.now() };
@@ -28,7 +27,6 @@ function remember(error: string | null): string | null {
 export type SaveFormat = SaveFilesRequest["format"];
 const FORMAT_KEY = "nuvo.saveFormat";
 
-/** How saves write songs: as the source sent them, or converted to MP3 (the daemon needs ffmpeg for that). */
 export function saveFormat(): SaveFormat {
   try {
     return localStorage.getItem(FORMAT_KEY) === "mp3" ? "mp3" : "original";
@@ -45,7 +43,6 @@ export function setSaveFormat(format: SaveFormat): void {
   }
 }
 
-/** Asks main for a folder and starts the save in the chosen format; the error text, or null when started or cancelled. */
 export async function saveAsFiles(request: Omit<SaveFilesRequest, "format">): Promise<string | null> {
   const result = await window.nuvoShell?.saveAsFiles({ ...request, format: saveFormat() });
   if (result && "error" in result) return remember(result.error);
@@ -61,7 +58,6 @@ export async function exportDocument(request: SaveDocumentRequest): Promise<stri
   return remember(result && "error" in result ? result.error : null);
 }
 
-/** Cancels every running save; files already written stay. */
 export async function cancelSaves(): Promise<void> {
   const jobs = await client.downloads();
   await Promise.all(jobs.filter((job) => job.status === "running").map((job) => client.cancelDownload(job.id)));
@@ -74,7 +70,6 @@ export interface DownloadState {
   error: string | null;
 }
 
-/** Saved-file progress across running saves and the last error; polls only while a save runs. */
 export function useDownloadProgress(): DownloadState | null {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [tick, setTick] = useState(0);
@@ -106,7 +101,6 @@ export function useDownloadProgress(): DownloadState | null {
   const error = lastError && Date.now() - errorAt < ERROR_MS ? lastError.text : null;
   useEffect(() => {
     if (!errorAt) return;
-    // one more render when the error is due to leave the line
     const timer = setTimeout(() => setTick((n) => n + 1), Math.max(0, errorAt + ERROR_MS - Date.now()));
     return () => clearTimeout(timer);
   }, [errorAt]);

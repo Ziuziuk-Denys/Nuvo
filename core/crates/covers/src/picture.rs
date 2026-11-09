@@ -1,6 +1,3 @@
-//! Local processing, only when the CDN cannot deliver the final form: video thumbnails become
-//! square, larger images are downscaled. Everything else is kept byte for byte.
-
 use std::io::Cursor;
 
 use image::imageops::FilterType;
@@ -32,13 +29,11 @@ fn undecodable() -> CoverError {
     CoverError::Upstream("the cover image cannot be decoded".into())
 }
 
-/// The centre square of the 16:9 picture area: `W * 9 / 16` for a letterboxed 4:3 frame, the
-/// height for a 16:9 one.
+// Centre square of the 16:9 area: W * 9 / 16 for a letterboxed 4:3 frame, the height for 16:9
 pub fn video_square(width: u32, height: u32) -> u32 {
     height.min((u64::from(width) * 9 / 16) as u32)
 }
 
-/// `video` is true for YouTube thumbnails, whose wide frames are cropped to a square.
 pub fn process(body: Vec<u8>, bucket: u32, video: bool) -> Result<Processed, CoverError> {
     if body.len() as u64 > MAX_INPUT_BYTES {
         return Err(CoverError::Invalid("image too large".into()));
@@ -64,7 +59,6 @@ pub fn process(body: Vec<u8>, bucket: u32, video: bool) -> Result<Processed, Cov
     let mut picture = reader.decode().map_err(|_| undecodable())?;
     drop(body);
     if crop {
-        // YouTube video frames only: crop letterboxed content to 16:9 square
         let side = video_square(width, height);
         picture = picture.crop_imm((width - side) / 2, (height - side) / 2, side, side);
     }

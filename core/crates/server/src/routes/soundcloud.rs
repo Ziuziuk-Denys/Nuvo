@@ -1,6 +1,3 @@
-//! `/v1/sc/*`: SoundCloud catalog, link lookup and playback. Public data, so no route needs an
-//! unlocked library except storing and serving assembled HLS audio.
-
 use std::io;
 
 use axum::extract::{Path, Query, State};
@@ -114,7 +111,6 @@ struct ImportQuery {
     url: Option<String>,
 }
 
-/// A track, set or likes link as rows for `POST /v1/imports`.
 async fn import(State(state): State<AppState>, Query(q): Query<ImportQuery>) -> Result<Json<Value>, ApiError> {
     let url = q.url.as_deref().map(str::trim).filter(|u| !u.is_empty() && u.len() <= 2048).ok_or_else(|| ApiError::Invalid("url is required".into()))?;
     let listing = state.soundcloud().await.import_listing(url).await?;
@@ -137,7 +133,6 @@ struct SearchQuery {
 const SEARCH_DEFAULT: usize = 25;
 const SEARCH_MAX: usize = 50;
 
-/// Tracks for a text query: the import cascade's last step.
 async fn search(State(state): State<AppState>, Query(q): Query<SearchQuery>) -> Result<Json<Items<Track>>, ApiError> {
     let query = q.q.as_deref().map(str::trim).filter(|q| !q.is_empty() && q.chars().count() <= 200).ok_or_else(|| ApiError::Invalid("q is required, at most 200 characters".into()))?;
     let limit = q.limit.unwrap_or(SEARCH_DEFAULT).clamp(1, SEARCH_MAX);
@@ -145,7 +140,6 @@ async fn search(State(state): State<AppState>, Query(q): Query<SearchQuery>) -> 
     Ok(Json(Items { items: records.iter().filter_map(nuvo_soundcloud::map::track).take(limit).collect() }))
 }
 
-/// Writes assembled HLS audio into the encrypted cache. Refuses while the library is locked.
 struct CacheSink {
     data: Option<Unlocked>,
     key: String,
@@ -172,7 +166,6 @@ impl AudioSink for CacheSink {
     }
 }
 
-/// A request dropped mid-download (the renderer gave up) leaves no partial file behind.
 impl Drop for CacheSink {
     fn drop(&mut self) {
         if let Some(writer) = &self.writer {

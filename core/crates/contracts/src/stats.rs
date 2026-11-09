@@ -1,5 +1,3 @@
-//! Wire types of the `/v1/stats` routes.
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -65,7 +63,6 @@ pub struct StatsSessions {
     pub longest_tracks: i64,
 }
 
-/// A ranked row of any list: a track, an artist, an album, a playlist or a genre.
 #[derive(Serialize, Debug, Default, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StatsRow {
@@ -81,12 +78,9 @@ pub struct StatsRow {
     pub rank: i64,
     /// Places gained since the previous period; null when it was not ranked then.
     pub rank_delta: Option<i64>,
-    /// Ranked now and not in the previous period.
     pub is_new: bool,
-    /// The stored snapshot of a track row, so the row can play.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub track: Option<Value>,
-    /// The catalog id an artist or album row opens; absent when there is no page for it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub open_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -106,7 +100,6 @@ pub struct StatsTop {
     pub artists: Vec<StatsRow>,
     pub albums: Vec<StatsRow>,
     pub playlists: Vec<StatsRow>,
-    /// From the tags of local files; empty when none are known.
     pub genres: Vec<StatsRow>,
 }
 
@@ -121,7 +114,6 @@ pub struct StatsOverview {
     pub new_artists: i64,
     /// Consecutive local days with a play, ending today or yesterday, whatever the period.
     pub current_streak: i64,
-    /// The longest run inside the period.
     pub longest_streak: StatsStreak,
     pub first_played_at: Option<String>,
     /// Listening time and plays per local day of the period; days without plays are absent.
@@ -132,7 +124,6 @@ pub struct StatsOverview {
     pub by_hour: Vec<i64>,
     /// Time by local weekday, 0 is Sunday.
     pub by_weekday: Vec<i64>,
-    /// What started the music: playlist, album, artist, radio, mix, search, local and so on.
     pub sources: Vec<StatsShare>,
     /// Where the audio came from: stream, cache or local.
     pub origins: Vec<StatsShare>,
@@ -154,7 +145,6 @@ pub struct StatsMonth {
     pub listened_ms: i64,
 }
 
-/// One track's or one artist's whole history.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StatsDetail {
@@ -163,7 +153,6 @@ pub struct StatsDetail {
     pub cover_url: Option<String>,
     /// The track's snapshot; null on an artist.
     pub track: Option<Value>,
-    /// The catalog id of the artist's page.
     pub open_id: Option<String>,
     pub first_played_at: Option<String>,
     pub last_played_at: Option<String>,
@@ -176,11 +165,9 @@ pub struct StatsDetail {
     pub by_hour: Vec<i64>,
     pub by_weekday: Vec<i64>,
     pub sources: Vec<StatsShare>,
-    /// An artist's most played tracks; empty on a track.
     pub top_tracks: Vec<StatsRow>,
 }
 
-/// Plays of the songs started from one list, album or artist page, for the library's sort.
 #[derive(Serialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StatsContextPlays {

@@ -70,7 +70,6 @@ describe("which romanizer a song gets", () => {
 
   it("kana means Japanese, romanized kana only; Latin and Cyrillic have nothing to romanize", () => {
     expect(romanizerFor(["夜に駆ける", "さよなら"])).toBe(romanizeKana);
-    // a kanji-only line of a Japanese song never gets a Chinese reading
     expect(romanizerFor(["漢字だけ", "日本語"])?.("日本語")).toBe("日本語");
     expect(romanizerFor(["just english", "привет"])).toBeNull();
   });

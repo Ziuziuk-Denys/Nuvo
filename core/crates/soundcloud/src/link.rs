@@ -1,10 +1,6 @@
-//! Recognising SoundCloud links the user typed or pasted.
-
 #[derive(Debug, PartialEq)]
 pub enum Link {
-    /// `on.soundcloud.com` short link: follow its redirects first.
     Short(String),
-    /// `https://soundcloud.com/<path>` without query or fragment.
     Canonical(String),
 }
 

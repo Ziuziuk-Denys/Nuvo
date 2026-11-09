@@ -1,5 +1,3 @@
-//! `open_inside` walks from the registered folder without following a link at any component.
-
 #![cfg(unix)]
 use std::os::unix::fs::symlink;
 

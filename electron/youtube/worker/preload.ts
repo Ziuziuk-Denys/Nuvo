@@ -1,7 +1,4 @@
-/**
- * Preload of the hidden worker window. Active only on the
- * `www.youtube.com` document; exposes nothing to the page and talks to main over `nuvo-yt:*` only.
- */
+// Only on www.youtube.com; exposes nothing to the page, talks to main over nuvo-yt:* only
 import { GOOG_API_KEY } from "bgutils-js/utils";
 import { ipcRenderer } from "electron";
 import { bgutilsBotGuard } from "./botguard";

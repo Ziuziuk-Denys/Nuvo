@@ -3,9 +3,9 @@ import { hslToRgb, rgbToHsl } from "@/data/color/hsl";
 import type { Preset, PresetMode, Tokens } from "../presets";
 import { normalizeColour, rolesFor, type NuvoTheme, type RoleKey, type ThemeRoles } from "./themeSchema";
 
-/** Contrast targets of the chips: AA for reading text, 3:1 for hints and the accent (customization 2, 7). */
+// Contrast targets: 4.5 (AA) for reading text, 3:1 for hints and the accent
 export const TARGETS: Partial<Record<RoleKey, number>> = { ink: 4.5, ink2: 4.5, ink3: 3, accent: 3 };
-/** Provisional owner default: below this `ink` on `field` or `raised` blocks Save; anything else only warns. */
+// Owner's provisional threshold: below it ink on field or raised blocks Save, else warns
 export const BLOCK_BELOW = 1.5;
 
 const rgbOf = (colour: string) => {
@@ -31,10 +31,6 @@ function mix(a: string, b: string, amount: number): string {
   return toHex({ r: x.r + (y.r - x.r) * amount, g: x.g + (y.g - x.g) * amount, b: x.b + (y.b - x.b) * amount, a: 1 });
 }
 
-/**
- * "Fix for me": the nearest lightness, away from the background, that reaches `target`.
- * Hue, saturation and alpha stay; a colour that already passes comes back unchanged.
- */
 export function fixContrast(foreground: string, background: string, target: number): string {
   if (contrastRatio(foreground, background) >= target) return foreground;
   const start = lightnessOf(foreground);
@@ -43,7 +39,6 @@ export function fixContrast(foreground: string, background: string, target: numb
     const candidate = withLightness(foreground, start + (darker ? -step : step) / 100);
     if (contrastRatio(candidate, background) >= target) return candidate;
   }
-  // the far end of the lightness range did not reach the target: try the other direction
   for (let step = 1; step <= 100; step += 1) {
     const candidate = withLightness(foreground, start + (darker ? step : -step) / 100);
     if (contrastRatio(candidate, background) >= target) return candidate;
@@ -51,7 +46,6 @@ export function fixContrast(foreground: string, background: string, target: numb
   return withLightness(foreground, darker ? 0 : 1);
 }
 
-/** "Smart start": the seven other roles from a field and an accent, the way the presets build theirs. */
 export function deriveRoles(field: string, accent: string, mode: PresetMode): ThemeRoles {
   const base = toHex(parseColor(field));
   const lightInk = luminance(parseColor(base)) <= 0.18;
@@ -78,7 +72,6 @@ export interface ContrastLine {
   pass: boolean;
 }
 
-/** One line per checked role, translucent roles composited over `field`. */
 export function contrastReport(roles: ThemeRoles): ContrastLine[] {
   return (Object.entries(TARGETS) as Array<[RoleKey, number]>).map(([role, target]) => {
     const ratio = contrastRatio(roles[role], roles.field);
@@ -86,7 +79,6 @@ export function contrastReport(roles: ThemeRoles): ContrastLine[] {
   });
 }
 
-/** Modes whose text would be unreadable: `ink` under BLOCK_BELOW on `field` or `raised`. */
 export function blockingModes(theme: NuvoTheme): PresetMode[] {
   return (["light", "dark"] as const).filter((mode) => {
     const roles = theme.modes[mode];
@@ -94,12 +86,10 @@ export function blockingModes(theme: NuvoTheme): PresetMode[] {
   });
 }
 
-/** The focus ring uses the accent only while it reaches 3:1 on the field (customization 7). */
 export function focusRing(roles: ThemeRoles): string {
   return contrastRatio(roles.accent, roles.field) >= 3 ? roles.accent : roles.ink;
 }
 
-/** The ten `--n-*` tokens of a theme, from its roles plus the focus ring. */
 export function themeTokens(theme: NuvoTheme, mode: PresetMode): Tokens {
   const roles = rolesFor(theme, mode);
   return {
@@ -116,7 +106,6 @@ export function themeTokens(theme: NuvoTheme, mode: PresetMode): Tokens {
   };
 }
 
-/** "Customize" and "New theme from this" on a built-in preset: its nine `--n-*` values as a theme. */
 export function themeFromPreset(preset: Preset, name: string, id: string): NuvoTheme {
   const modes: NuvoTheme["modes"] = {};
   for (const mode of preset.modes) {

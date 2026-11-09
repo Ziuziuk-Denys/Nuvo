@@ -1,5 +1,3 @@
-/* Nuvo spacing (4, 8, 12, 16) and radii (8, 10, 14); colours follow the shell theme, the glow follows the cover. */
-
 .nuvo-panel-box {
   spacing: 8px;
 }

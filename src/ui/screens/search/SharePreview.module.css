@@ -1,11 +1,9 @@
-/* The shared-playlist preview: one column inside the Sheet, as the import dialog lays it out. */
 .body {
   display: flex;
   flex-direction: column;
   gap: var(--n-s-4);
 }
 
-/* the count sits close under the sheet's title */
 .caption {
   margin: calc(-1 * var(--n-s-2)) 0 0;
   color: var(--n-ink-2);
@@ -13,7 +11,6 @@
   letter-spacing: var(--n-track-caption);
 }
 
-/* twelve compact rows are taller than a short window, so the list scrolls inside the sheet */
 .rows {
   display: flex;
   flex-direction: column;
@@ -22,7 +19,6 @@
   overflow-y: auto;
 }
 
-/* a gone song reads quieter than the rest, as an unplayable row does */
 .rows [data-missing] * {
   color: var(--n-ink-3);
 }

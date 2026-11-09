@@ -1,11 +1,9 @@
-/** The daemon origin served by main's bridge. */
 export const CORE_BASE_URL = "nuvo-core://local";
 import { CoreError } from "@/imports/core";
 
-/** A daemon that does not answer in this long is treated as hung, so one call cannot stall a queue behind it. */
+// Longer than this counts as hung, so one call cannot stall the queue behind it
 export const CORE_TIMEOUT_MS = 10_000;
 
-/** One JSON call to the daemon through main's bridge. */
 export async function coreRequest<T>(method: string, path: string, body?: unknown, signal?: AbortSignal, headers?: Record<string, string>): Promise<T> {
   let response: Response;
   const controller = new AbortController();
@@ -18,7 +16,6 @@ export async function coreRequest<T>(method: string, path: string, body?: unknow
   if (signal?.aborted) controller.abort();
   signal?.addEventListener("abort", forward);
   try {
-    // a Blob (an image) goes as its own bytes and type; anything else as JSON
     const raw = body instanceof Blob;
     response = await fetch(`${CORE_BASE_URL}${path}`, {
       method,
@@ -39,7 +36,6 @@ export async function coreRequest<T>(method: string, path: string, body?: unknow
       const parsed = (await response.json()) as { code?: unknown };
       if (typeof parsed.code === "string") code = parsed.code;
     } catch {
-      // not a JSON body
     }
     throw new CoreError(response.status, code);
   }

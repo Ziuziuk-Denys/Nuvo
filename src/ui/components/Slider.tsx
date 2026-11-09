@@ -7,19 +7,13 @@ export interface SliderProps {
   max: number;
   step: number;
   onChange: (value: number) => void;
-  /** The accessible name. */
   label: string;
-  /** The numeral at the right and aria-valuetext. */
   format?: (value: number) => string;
 }
 
 const KNOB_PX = 14;
 const PAGE_STEPS = 10;
 
-/**
- * A 4 px track with a 14 px knob that stays inside it. The fill and the knob move by transform only,
- * so a drag repaints two layers and lays out nothing.
- */
 export function Slider({ value, min, max, step, onChange, label, format }: SliderProps): JSX.Element {
   const dragging = useRef(false);
   const span = max - min;
@@ -101,7 +95,6 @@ function clamp(value: number, low: number, high: number): number {
   return Math.min(Math.max(value, low), high);
 }
 
-// rounds to the step grid and drops float noise (0.1 + 0.2), keeping as many decimals as the step has
 function snap(value: number, min: number, step: number): number {
   if (step <= 0) return value;
   const decimals = (String(step).split(".")[1] ?? "").length;

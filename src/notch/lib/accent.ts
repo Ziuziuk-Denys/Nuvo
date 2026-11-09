@@ -13,7 +13,6 @@ function relativeLuminance([r, g, b]: number[]): number {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
-/** First brighten keeping the hue (peak channel to 255), then mix towards white. */
 function liftToContrast(color: number[]): number[] {
   const peak = Math.max(...color);
   const full = color.map((v) => (v / peak) * 255);
@@ -25,7 +24,6 @@ function liftToContrast(color: number[]): number[] {
   return [255, 255, 255];
 }
 
-/** Average of the colourful pixels of an RGBA buffer as hex; white when the image has none. */
 export function accentFromPixels(data: Uint8ClampedArray): string {
   let red = 0;
   let green = 0;

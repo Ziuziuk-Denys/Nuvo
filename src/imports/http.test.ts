@@ -88,7 +88,6 @@ describe("get", () => {
   });
 });
 
-/** A body that delivers `first`, then never answers; `cancelled` records the cancel. */
 function stalledBody(first = "{") {
   const cancelled = vi.fn();
   const body = new ReadableStream<Uint8Array>({

@@ -6,7 +6,6 @@ import { SettingRow, Switch } from "./controls";
 const TITLE = "ui.settings.stats_pause.title";
 const DESCRIPTION = "ui.settings.stats_pause.description";
 
-/** Statistics stop collecting: while on, new plays are not stored at all. */
 export function StatsPauseRow(): JSX.Element {
   const { t } = useTranslation();
   const { paused, setPaused } = useStatsPaused();

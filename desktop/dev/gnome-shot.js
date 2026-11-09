@@ -1,5 +1,3 @@
-// Automation script for a headless GNOME Shell (see gnome-check.sh): opens the Nuvo card,
-// presses like and play, and saves screenshots plus a JSON summary to $NUVO_SHOT_DIR.
 import GLib from "gi://GLib";
 import Gio from "gi://Gio";
 import Shell from "gi://Shell";

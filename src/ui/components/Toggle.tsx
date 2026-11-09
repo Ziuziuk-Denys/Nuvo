@@ -4,9 +4,7 @@ import styles from "./Toggle.module.css";
 export interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  /** Visible text, tied to the switch so clicking it toggles too. */
   label: string;
-  /** The row around it already names the setting: the switch alone, with the label read out only. */
   labelHidden?: boolean;
   disabled?: boolean;
 }

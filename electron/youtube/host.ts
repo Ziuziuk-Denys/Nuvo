@@ -1,8 +1,6 @@
-/** Supervises the hidden worker window. Electron-free so it runs under fake windows. */
 import { MinuteLimit, validateJob, type Job, type WorkerOp } from "./validate";
 
 export const START_TIMEOUT_MS = 20_000;
-/** Close after 3 minutes without requests and without app audio. */
 export const IDLE_CLOSE_MS = 180_000;
 const IDLE_CHECK_MS = 15_000;
 export const MAX_PENDING = 64;
@@ -44,7 +42,6 @@ const isText = (value: unknown): value is string => typeof value === "string" &&
 
 const textsOf = (value: unknown, length: number): boolean => Array.isArray(value) && value.length === length && value.every(isText);
 
-/** Answer shapes the renderer bridge reads (`src/youtube/playback/worker.ts`); anything else never reaches a caller. */
 function answerMatches(job: Job, value: unknown): boolean {
   if (job.op === "content-token") return isText(value) && value.length > 0;
   if (typeof value !== "object" || value === null) return false;
@@ -58,7 +55,6 @@ export class WorkerHost {
   private window: WorkerWindow | null = null;
   private ready: Promise<void> | null = null;
   private markReady: (() => void) | null = null;
-  /** The current window has said hello and is not closed. */
   private open = false;
   private failStart: ((error: WorkerError) => void) | null = null;
   private startTimer: ReturnType<typeof setTimeout> | null = null;
@@ -70,7 +66,6 @@ export class WorkerHost {
     private readonly createWindow: () => WorkerWindow,
     private readonly log: (message: string) => void = () => undefined,
     private readonly tokenLimit = new MinuteLimit(CONTENT_TOKENS_PER_MINUTE),
-    /** While true (a queue is playing) the idle close waits another round. */
     private readonly keepOpen: () => boolean = () => false,
   ) {}
 
@@ -88,7 +83,6 @@ export class WorkerHost {
     this.cancelIdle();
     const id = this.nextId++;
     const result = new Promise<unknown>((resolve, reject) => this.pending.set(id, { job, resolve, reject, timer: null }));
-    // Settled by timers or close while start() is still awaited; the caller sees it below.
     result.catch(() => undefined);
     try {
       await this.start();
@@ -98,15 +92,13 @@ export class WorkerHost {
     }
     const entry = this.pending.get(id);
     if (entry && this.window) {
-      // The op timeout runs from the moment the job is sent; the start has its own 20 s.
-      // A timed-out worker is not trusted any more: restart it on the next request.
+      // A timed-out worker is not trusted any more: restart it on the next request
       entry.timer = setTimeout(() => this.close("worker-timeout", job.op), OP_TIMEOUT_MS[job.op]);
       this.window.send("nuvo-yt:job", { id, op: job.op, args: job.args });
     }
     return result;
   }
 
-  /** The worker document is ready; only the current window counts. */
   hello(contentsId: number): void {
     if (contentsId !== this.window?.contentsId) return;
     if (this.startTimer) clearTimeout(this.startTimer);

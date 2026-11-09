@@ -1,12 +1,6 @@
-/**
- * The daemon routes the link features call, through Electron main's `nuvo-core://local` bridge (it adds
- * the token). Every call takes an AbortSignal; aborting the recognize stream makes the daemon kill its
- * child processes.
- */
 import { CORE_BASE_URL } from "@/data/core/request";
 import type { CatalogTrack, ImportRow, ImportTarget, MatchAnswer, MatchSource, MatchStep } from "./types";
 
-/** Longest event the stream may hold unterminated; a daemon never sends more. */
 const MAX_EVENT_BYTES = 256 * 1024;
 
 export interface TikTokSound {
@@ -14,7 +8,6 @@ export interface TikTokSound {
   author: string;
   original: boolean;
   album?: string;
-  /** Length of the clip the post uses, never the song's length. */
   clipMs?: number;
 }
 
@@ -36,7 +29,6 @@ export type InspectAnswer =
 
 export type ListenVia = "clean" | "mix" | "side";
 
-/** What one recognize stream ended with. */
 export type Heard =
   | {
       kind: "found";
@@ -60,7 +52,6 @@ export interface ImportSummary {
 export type SoundCloudItem =
   ({ type: "track" } & CatalogTrack) | { type: "album" | "playlist"; id: string; title: string } | { type: "artist"; id: string; name: string };
 
-/** A failed daemon call: `status` 0 when the daemon could not be reached. */
 export class CoreError extends Error {
   constructor(
     readonly status: number,
@@ -134,7 +125,6 @@ export async function soundcloudLookup(url: string, signal: AbortSignal): Promis
   return answer.items[0] ?? null;
 }
 
-/** Null when SoundCloud says the track is gone. */
 export async function soundcloudTrack(id: string, signal: AbortSignal): Promise<CatalogTrack | null> {
   try {
     return await call<CatalogTrack>("GET", `/v1/sc/tracks/${encodeURIComponent(id)}`, undefined, signal);
@@ -144,7 +134,6 @@ export async function soundcloudTrack(id: string, signal: AbortSignal): Promise<
   }
 }
 
-/** One event of the recognize stream, as the daemon sends it. */
 export interface RecognizeEvent {
   type: string;
   id?: string;
@@ -167,16 +156,11 @@ export interface RecognizeEvent {
   };
 }
 
-/**
- * Runs `POST /v1/recognize` and hands each event to `pick`; the first answer it returns ends the stream.
- * `lost` is the answer when the stream breaks or ends without one.
- */
 export async function recognizeStream<T>(body: object, signal: AbortSignal, pick: (event: RecognizeEvent) => T | null, lost: T): Promise<T> {
   const response = await send("POST", "/v1/recognize", body, signal);
   const reader = (response.body as ReadableStream<Uint8Array>).getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  // Handles one SSE block; a returned answer ends the stream.
   const handle = (block: string): T | null => {
     const data = block
       .split("\n")
@@ -215,7 +199,6 @@ export async function recognizeStream<T>(body: object, signal: AbortSignal, pick
         const answer = handle(block);
         if (answer !== null) return answer;
       }
-      // only an unfinished event is left, so the cap applies to it alone
       if (buffer.length > MAX_EVENT_BYTES) return lost;
     }
   } finally {
@@ -223,10 +206,6 @@ export async function recognizeStream<T>(body: object, signal: AbortSignal, pick
   }
 }
 
-/**
- * Runs `POST /v1/recognize {url, part}` and returns its last event. `onListening` hears which audio is
- * being listened to, for the stage line.
- */
 export function recognizeLink(url: string, part: 0 | 1, signal: AbortSignal, onListening: (via: ListenVia) => void): Promise<Heard> {
   const pick = (event: RecognizeEvent): Heard | null => {
     if (event.type === "stage" && event.name === "listening" && event.via) onListening(event.via);

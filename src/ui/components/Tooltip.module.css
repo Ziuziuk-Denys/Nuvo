@@ -2,7 +2,6 @@
   display: contents;
 }
 
-/* A dark glass hint, white text, fading in once it has a position. */
 .tooltip {
   position: fixed;
   top: 0;

@@ -15,7 +15,6 @@ const SPEED_LABELS: Record<TempoPresetKey, string> = {
   daycore: "sound.tempo.daycore",
 };
 
-/** What the equalizer and speed do on every track; the curve itself is drawn in the player's Sound panel. */
 export function SoundSection(): JSX.Element {
   const { t } = useTranslation();
   const sound = useSoundStore();

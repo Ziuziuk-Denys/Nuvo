@@ -1,4 +1,3 @@
-/** Escape guards: a recorder or dialog that owns Escape holds one so global Escape handlers stand down. */
 let held = 0;
 
 export function acquireEscapeGuard(): () => void {

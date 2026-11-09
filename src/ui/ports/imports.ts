@@ -1,4 +1,3 @@
-/** Imports for the UI: the screens' actions, the report model and the wire types (src/imports). */
 export type { ImportActions } from "@/imports/actions";
 export type { ImportsDaemon } from "@/imports/core";
 export { errorMessage, noticeMessage } from "@/imports/messages";

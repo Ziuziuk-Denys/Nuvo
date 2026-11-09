@@ -1,4 +1,3 @@
-/** Crossfade between tracks (sound part B): album runs, repeat one, A-B loop and the sleep stop keep the exact seam. Pure. */
 import { defaultPolicy, type TransitionPolicy } from "./decks";
 import type { PlayerView } from "../types";
 
@@ -17,7 +16,6 @@ export const crossfadePolicy: TransitionPolicy = (input) => {
   return { kind: "crossfade", startAtMediaMs: input.current.endMs - fadeMs * input.rate, fadeMs };
 };
 
-/** Two neighbours of one album played in list order: a live album must not fade between songs. */
 export function albumInOrder(view: Pick<PlayerView, "entries" | "index" | "shuffle">): boolean {
   if (view.shuffle) return false;
   const current = view.entries[view.index]?.track.album?.id;
@@ -25,7 +23,6 @@ export function albumInOrder(view: Pick<PlayerView, "entries" | "index" | "shuff
   return Boolean(current) && current === next;
 }
 
-/** From the legacy A-B loop and sleep stores: both make the seam exact. */
 export function seamFlags(
   ab: { a: number | null; b: number | null },
   sleep: { plan: { target: { kind: string } } | null },

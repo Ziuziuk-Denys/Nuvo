@@ -1,19 +1,5 @@
 name: Release files to the Telegram bot
 
-# Optional. Uploads each release file to @NuvoAppBot (up to 2 GB) so the bot can send it to anyone.
-# The bot logs in over MTProto with its own token, uploads into the maintainer's private chat,
-# then takes the Bot API file id from a forwarded copy and records it through the bot's /upload route.
-# No second bot, no channel, no user account.
-#
-# Copy into the app repository:
-#   bot/ci/telegram-upload.yml -> .github/workflows/telegram-upload.yml
-#   bot/ci/upload.py           -> .github/telegram/upload.py
-#   bot/ci/requirements.txt    -> .github/telegram/requirements.txt
-#
-# Does nothing unless all six repository secrets are set:
-#   BOT_TOKEN, TG_API_ID, TG_API_HASH, ADMIN_ID, UPLOAD_SECRET, WORKER_URL
-# Optional repository variable: ADMIN_LANG (en or ru) for the bot's receipts.
-
 on:
   release:
     types: [published]

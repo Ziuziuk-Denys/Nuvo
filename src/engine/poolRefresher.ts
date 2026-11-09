@@ -1,10 +1,3 @@
-/**
- * Candidate pool refresh: once a day, after a minute with nothing playing, asks the
- * daemon for seeds with stale YouTube lists (`GET /v1/recs/seeds?source=yt_radio`, at most 12) and stores each
- * seed's catalog radio (`PUT /v1/recs/pool`), then for seeds with stale SoundCloud lists asks the daemon to
- * fetch them itself (`POST /v1/recs/pool/sc-related`). One job at a time, 3 s apart. Playback stops a run at
- * once; the daemon only returns seeds still stale, so the next idle minute continues where it stopped.
- */
 import type { CatalogPort } from "./adapters";
 import type { KeyValue } from "./persist";
 import { toSnapshot } from "./snapshot";
@@ -27,9 +20,7 @@ export interface PoolDeps {
   fetch: typeof fetch;
   storage: KeyValue;
   now(): number;
-  /** True while a track plays or loads. */
   busy(): boolean;
-  /** Called on every player status change; returns an unsubscribe. */
   onStatus(listener: () => void): () => void;
   log(message: string, error?: unknown): void;
 }
@@ -80,13 +71,11 @@ export class PoolRefresher {
     const age = this.deps.now() - last;
     // a negative age means the clock went back: refresh rather than wait for the stamp to pass
     if (age >= 0 && age < POOL_EVERY_MS) return false;
-    // a failed run rests: no retry before the stamp, which is never more than a day ahead
     const retryAt = Number(this.deps.storage.getItem(POOL_RETRY_KEY) ?? 0);
     const wait = retryAt - this.deps.now();
     return wait <= 0 || wait > POOL_EVERY_MS;
   }
 
-  /** A run that did not finish its day: the next try waits 30 min, doubling per failure up to a day. */
   private backOff(): void {
     const { storage, now } = this.deps;
     const previous = Number(storage.getItem(RETRY_BACKOFF_KEY) ?? 0);
@@ -107,7 +96,6 @@ export class PoolRefresher {
     this.run = run;
     const { base, fetch: doFetch } = this.deps;
     let jobs = 0;
-    // One source: its stale seeds, one job each, every job but the run's first 3 s after the previous one; null when the daemon did not answer.
     const pass = async (source: string, job: (seed: string) => Promise<boolean>): Promise<{ seeds: number; stored: number } | null> => {
       const response = await doFetch(`${base}/v1/recs/seeds?source=${source}`, { signal: run.signal });
       if (!response.ok) return null;
@@ -129,7 +117,6 @@ export class PoolRefresher {
     try {
       const youtube = await pass(POOL_SOURCE, (seed) => this.storeRadio(seed, run.signal));
       const soundcloud = youtube && (await pass(SC_SOURCE, (seed) => this.storeRelated(seed, run.signal)));
-      // A day with seeds but nothing stored (offline, catalog or SoundCloud down) stays open, retried after a rest.
       if (youtube && soundcloud && (youtube.seeds + soundcloud.seeds === 0 || youtube.stored + soundcloud.stored > 0)) {
         this.deps.storage.setItem(POOL_KEY, String(this.deps.now()));
         this.deps.storage.removeItem(POOL_RETRY_KEY);
@@ -144,7 +131,6 @@ export class PoolRefresher {
     }
   }
 
-  /** One seed's YouTube radio into the pool; false when the catalog had nothing or the daemon refused. */
   private async storeRadio(seed: string, signal: AbortSignal): Promise<boolean> {
     const items = await this.deps.catalog.radio(seed, { limit: POOL_ITEMS }, signal);
     if (items.length === 0) return false;
@@ -157,7 +143,6 @@ export class PoolRefresher {
     return put.ok;
   }
 
-  /** One seed's SoundCloud related tracks: the daemon finds the upload, fetches the list and stores it. */
   private async storeRelated(seed: string, signal: AbortSignal): Promise<boolean> {
     const response = await this.deps.fetch(`${this.deps.base}/v1/recs/pool/sc-related`, {
       method: "POST",

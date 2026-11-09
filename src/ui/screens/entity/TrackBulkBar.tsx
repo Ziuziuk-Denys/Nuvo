@@ -8,14 +8,11 @@ export interface TrackBulkBarProps {
   onAddToPlaylist(anchor: HTMLElement): void;
   onLike(): void;
   onQueue(): void;
-  /** Own playlists only. */
   onRemove?(): void;
-  /** Own playlists only: moves the selection to another playlist. */
   onMove?(anchor: HTMLElement): void;
   onClear(): void;
 }
 
-/** A quiet bar that appears while rows are selected: add to a playlist, like, queue, move, remove. */
 export function TrackBulkBar({ count, onAddToPlaylist, onLike, onQueue, onRemove, onMove, onClear }: TrackBulkBarProps): JSX.Element | null {
   const { t } = useTranslation();
   if (count === 0) return null;

@@ -1,5 +1,3 @@
-/** Local filtering for in-page search and offline search: every word must appear in the title, artists or album. */
-
 export interface SearchableTrack {
   title: string;
   artists: string;
@@ -8,11 +6,9 @@ export interface SearchableTrack {
 
 export interface TrackMatch<T> {
   track: T;
-  /** The track's place in the full list. */
   index: number;
 }
 
-/** Letters with no accent to strip fold by table. */
 const LATIN_FOLDS: Record<string, string> = {
   ł: "l",
   ø: "o",
@@ -28,7 +24,6 @@ const LATIN_FOLDS: Record<string, string> = {
 };
 const LATIN_FOLD_PATTERN = new RegExp(`[${Object.keys(LATIN_FOLDS).join("")}]`, "g");
 
-/** Latin letters lose their accents (é is e, ł is l, ß is ss); Cyrillic keeps its letters except ё, which is е, so й stays й. Decomposed input is composed first. */
 export function normalizeForSearch(text: string): string {
   return text
     .normalize("NFC")
@@ -40,7 +35,6 @@ export function normalizeForSearch(text: string): string {
     .trim();
 }
 
-/** Folded texts per track, so a keystroke does not fold 20k titles again. Tracks with an id are kept by id and checked against their fields. */
 const MAX_CACHED = 100_000;
 interface Folded {
   title: string;

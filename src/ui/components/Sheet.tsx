@@ -15,14 +15,11 @@ export interface SheetProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  /** Right-aligned; the primary closes the line. */
   actions: SheetAction[];
-  /** False for steps that must be finished, such as the recovery phrase: Escape and the backdrop do nothing. */
   dismissible?: boolean;
   children: ReactNode;
 }
 
-/** A centred modal dialog over the dimmed field. */
 export function Sheet({ open, onClose, title, actions, dismissible = true, children }: SheetProps): JSX.Element | null {
   const phase = usePresence(open);
   const titleId = useId();

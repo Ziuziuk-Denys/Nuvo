@@ -7,7 +7,6 @@ import { ExcludedPlaylists } from "./ExcludedPlaylists";
 import { hiddenLine, hiddenTitle } from "./hiddenText";
 import styles from "./HiddenList.module.css";
 
-/** Settings section: everything "Not interested" hides, then the playlists left out of recommendations. */
 export function HiddenList(): JSX.Element {
   return (
     <>
@@ -17,12 +16,10 @@ export function HiddenList(): JSX.Element {
   );
 }
 
-/** Everything "Not interested" hides, newest first, how long each lasts and its own Show again. */
 function HiddenMusic(): JSX.Element | null {
   const { t } = useTranslation();
   const [items, setItems] = useState<Suppression[] | "failed" | null>(null);
   const [undoFailed, setUndoFailed] = useState(false);
-  // months are counted from when the section opened
   const [now] = useState(() => Date.now());
 
   useEffect(() => {

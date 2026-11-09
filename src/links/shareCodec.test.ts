@@ -29,7 +29,6 @@ async function codeOf(payload: string): Promise<string> {
   }
 }
 
-/** A payload from a header byte and raw body bytes, bypassing the encoder. */
 function raw(header: number, body: number[]): string {
   return toBase64Url(Uint8Array.from([header, ...body]));
 }
@@ -103,7 +102,7 @@ const CYRILLIC: Share = {
 };
 const MIXED = randomShare(seeded(50), 50, "Вечерний плейлист");
 
-// Produced by this encoder on 2026-10-27 (Node 24 zlib through CompressionStream). Compared after decoding.
+// Golden payload from this encoder (Node 24 zlib via CompressionStream); compared after decoding
 const GOLDEN_SONG = "EAABDXUMOMPVoF3EI1JpY2sgQXN0bGV5CU5ldmVyIEdvbm5hIEdpdmUgWW91IFVw1QE";
 const GOLDEN_CYRILLIC = "EAABDCDQmtC40L3QvgnQk9GA0YPQv9C_0LAg0LrRgNC-0LLQuJ8C";
 
@@ -212,7 +211,6 @@ describe("strict decoding", () => {
       await codeOf(toBase64Url(bytes));
       times.push(performance.now() - started);
     }
-    // A parallel full run adds GC and scheduler pauses, so the 10 ms bound holds for 99.9 % of strings.
     times.sort((a, b) => a - b);
     expect(times[Math.floor(times.length * 0.999)]).toBeLessThan(10);
     expect(times[times.length - 1]).toBeLessThan(250);

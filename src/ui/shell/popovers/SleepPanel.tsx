@@ -12,7 +12,6 @@ function isSame(a: SleepTarget | null, b: SleepTarget): boolean {
   return a.kind !== "minutes" || (b.kind === "minutes" && a.minutes === b.minutes);
 }
 
-/** The armed timer in one short accent line, for the panel header; nothing while unarmed. */
 export function SleepStatus(): JSX.Element | null {
   const { t } = useTranslation();
   const { target, remainingMs } = useSleepTimer();
@@ -24,7 +23,6 @@ export function SleepStatus(): JSX.Element | null {
   );
 }
 
-/** Stop playback after a time, the track or the queue: two chip rows, then a typed length with Start and Cancel. */
 export function SleepPanel(): JSX.Element {
   const { t } = useTranslation();
   const { target } = useSleepTimer();
@@ -55,7 +53,6 @@ export function SleepPanel(): JSX.Element {
     <div className={styles.panel}>
       {chips(lengths, styles.lengths)}
       {chips(ends)}
-      {/* a form, so Enter in the field starts the timer */}
       <form
         className={styles.customRow}
         onSubmit={(event) => {

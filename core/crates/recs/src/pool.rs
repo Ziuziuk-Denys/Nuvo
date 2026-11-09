@@ -1,6 +1,3 @@
-//! Candidate lists per seed (`candidate_edges`): the catalog's radio for a track, fetched by the
-//! renderer (the daemon cannot call InnerTube) and kept as similarity evidence.
-
 use std::collections::HashSet;
 
 use nuvo_contracts::MAX_TRACK_ID_LEN;
@@ -12,12 +9,9 @@ use crate::savepoint;
 
 pub const MAX_POOL_ITEMS: usize = 100;
 pub const SEED_LIMIT: i64 = 12;
-/// The renderer's YouTube radio list for a seed.
 pub const YT_RADIO: &str = "yt_radio";
-/// SoundCloud related tracks, fetched by the daemon itself.
 pub const SC_RELATED: &str = "sc_related";
 const STALE_MS: i64 = 86_400_000;
-/// A fetch that stored nothing (no SoundCloud upload, an empty list) is tried again after a week.
 const MISS_RETRY_MS: i64 = 7 * 86_400_000;
 const SEED_WINDOW_MS: i64 = 30 * 86_400_000;
 
@@ -28,9 +22,6 @@ fn check_id(id: &str, what: &str) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Replaces the seed's list from `source` with `items` (track snapshots in catalog order) and notes
-/// the fetch, an empty one too. Lists from other sources stay. Returns how many edges were stored;
-/// the seed itself and repeats are skipped, a track another list already holds still counts.
 pub fn replace(conn: &Connection, seed_id: &str, source: &str, items: &[Value], now: i64) -> Result<usize, StoreError> {
     check_id(seed_id, "seedId")?;
     check_source(source)?;
@@ -71,7 +62,6 @@ fn check_source(source: &str) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Adds or refreshes edges from a ranked request (the candidates it was given for one seed).
 pub fn record(conn: &Connection, seed_id: &str, ids: &[String], now: i64) -> Result<(), StoreError> {
     if ids.len() > MAX_POOL_ITEMS {
         return Err(StoreError::Invalid(format!("at most {MAX_POOL_ITEMS} items")));
@@ -88,10 +78,7 @@ pub fn record(conn: &Connection, seed_id: &str, ids: &[String], now: i64) -> Res
     })
 }
 
-/// Up to 12 tracks worth a fresh `source` list, the owner's own taste first (liked, or played to a
-/// count in the last 30 days, best loved first), then cold-start starters, then tracks of playlists
-/// not excluded from taste. A list is due when missing, older than 24 h, or an empty fetch older than
-/// a week. Only `sc_related` may start from a SoundCloud track; the renderer's YouTube sources cannot.
+// Only sc_related may start from a SoundCloud track: the renderer's YouTube sources cannot
 pub fn stale_seeds(conn: &Connection, now: i64, source: &str) -> Result<Vec<String>, StoreError> {
     check_source(source)?;
     let mut stmt = conn.prepare(
@@ -121,8 +108,6 @@ pub fn stale_seeds(conn: &Connection, now: i64, source: &str) -> Result<Vec<Stri
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
-/// Up to `limit` tracks from the stored lists of `anchors` (any source), best catalog rank first,
-/// as (id, snapshot, first artist). A snapshot that no longer parses is left out.
 pub fn neighbours(conn: &Connection, anchors: &[String], limit: usize) -> Result<Vec<(String, Value, String)>, StoreError> {
     if anchors.is_empty() {
         return Ok(Vec::new());

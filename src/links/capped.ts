@@ -1,4 +1,3 @@
-/** Reads a byte stream to the end, or returns null as soon as it holds more than `limit` bytes. */
 export async function readCapped(stream: ReadableStream<Uint8Array>, limit: number): Promise<Uint8Array | null> {
   const reader = stream.getReader();
   const parts: Uint8Array[] = [];

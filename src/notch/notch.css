@@ -54,8 +54,6 @@ body,
   outline-offset: 2px;
 }
 
-/* Island: box and silhouette morph together on the same spring */
-
 .island {
   position: absolute;
   top: 0;
@@ -87,8 +85,6 @@ body,
   overflow: hidden;
   transition: border-radius var(--morph-ms) var(--morph-ease);
 }
-
-/* Faces crossfade; the incoming one settles out of a slight blur and scale */
 
 .compact,
 .expanded {
@@ -177,8 +173,6 @@ body,
   transition-delay: 60ms, 60ms, 0s, 0s;
 }
 
-/* Covers */
-
 .cover {
   display: block;
   flex: none;
@@ -191,8 +185,6 @@ body,
   place-items: center;
   color: rgba(255, 255, 255, 0.35);
 }
-
-/* Visualizer: CSS only, frozen whenever nothing plays or the bars are hidden */
 
 .bars {
   display: flex;
@@ -241,8 +233,6 @@ body,
   }
 }
 
-/* Marquee */
-
 .marquee {
   display: block;
   overflow: hidden;
@@ -268,8 +258,6 @@ body,
     transform: translateX(var(--marquee-shift));
   }
 }
-
-/* Expanded: now playing */
 
 .view {
   flex: 1;
@@ -367,8 +355,6 @@ body,
   height: 40px;
 }
 
-/* Scrubber */
-
 .scrubber {
   display: flex;
   align-items: center;
@@ -419,8 +405,6 @@ body,
   transform-origin: 0 50%;
 }
 
-/* Lyric strip under the transport */
-
 .lyric-strip {
   display: flex;
   flex-direction: column;
@@ -452,8 +436,6 @@ body,
   min-height: 16px;
   color: var(--ink-3);
 }
-
-/* Expanded: lyrics */
 
 .lyrics-window {
   height: 96px;
@@ -497,8 +479,6 @@ body,
 .lyrics-line[data-state="current"] .lyrics-text {
   transform: scale(1.12);
 }
-
-/* Expanded: up next */
 
 .up-next {
   margin: 0;
@@ -557,8 +537,6 @@ body,
   color: var(--ink-2);
 }
 
-/* View dots */
-
 .dots {
   flex: none;
   display: flex;
@@ -589,8 +567,6 @@ body,
   border-radius: 2.5px;
   background: var(--ink);
 }
-
-/* Volume: thin bar at the top, nudged towards the change */
 
 .volume {
   position: absolute;

@@ -1,7 +1,3 @@
-/**
- * TV device-flow sign-in on YouTube's own OAuth endpoints. The credential lookup is
- * own code (about fifteen lines) so youtubei.js stays out of the renderer.
- */
 import { COBALT_UA, UA_HEADER, WWW_ORIGIN } from "../constants";
 import type { FetchLike } from "../http";
 import { YtError, abortError, type DeviceCode } from "../types";
@@ -21,7 +17,6 @@ export interface Credentials {
   clientSecret: string;
 }
 
-/** Reads the TV app's public client id and secret from its base script. */
 export async function loadCredentials(fetchFn: FetchLike, signal?: AbortSignal): Promise<Credentials> {
   const headers = { [UA_HEADER]: COBALT_UA };
   const page = await fetchFn(`${WWW_ORIGIN}/tv`, { headers, signal });
@@ -98,7 +93,6 @@ export async function requestDeviceCode(fetchFn: FetchLike, credentials: Credent
   return code;
 }
 
-/** Token answers: an `error` field wins, then missing tokens, then a non-2xx status. */
 export function readTokens(answer: { status: number; ok: boolean; json: Record<string, unknown> }, previousRefresh?: string): StoredSession {
   const json = answer.json;
   if (typeof json.error === "string") throw new YtError(`auth:${json.error}`);
@@ -152,7 +146,6 @@ export async function pollForTokens(fetchFn: FetchLike, credentials: Credentials
         signal,
       );
     } catch (error) {
-      // A short network drop retries at the next interval; a longer one ends the sign-in.
       if (error instanceof YtError && error.code === "unreachable" && (failures += 1) <= MAX_POLL_FAILURES) continue;
       throw error;
     }
@@ -182,7 +175,6 @@ export async function refreshTokens(fetchFn: FetchLike, credentials: Credentials
   return { ...next, scope: next.scope ?? session.scope };
 }
 
-/** Rejects with an abort error as soon as `signal` fires, without cancelling the shared work behind `work`. */
 export function raceAbort<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
   if (!signal) return work;
   if (signal.aborted) return Promise.reject(abortError());

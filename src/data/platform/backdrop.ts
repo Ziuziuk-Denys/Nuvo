@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 
-/** The cover a page lights the field with. */
 export interface BackdropOptions {
   blur?: number;
   dim?: number;

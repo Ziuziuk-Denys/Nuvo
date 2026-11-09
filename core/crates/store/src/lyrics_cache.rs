@@ -3,7 +3,6 @@ use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::StoreError;
 
-/// `candidate == None` records a lookup that found nothing, so it is not repeated on every play.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CachedLyrics {
     pub candidate: Option<LyricsCandidate>,

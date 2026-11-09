@@ -51,7 +51,6 @@ describe("createImportsSession", () => {
     session.started([summary("a")]);
     await flush();
     await flush();
-    // one throttled refresh for the three rows, one when the workers stopped
     expect(summarySpy).toHaveBeenCalledTimes(2);
   });
 

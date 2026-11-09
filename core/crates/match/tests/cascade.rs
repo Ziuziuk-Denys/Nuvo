@@ -14,7 +14,6 @@ fn track(id: &str, title: &str, artist: &str, ms: i64) -> Value {
 
 type Log = Arc<Mutex<Vec<(String, Filter)>>>;
 
-/// A fake catalog: answer `i` serves search `i`; `None` fails that search.
 async fn cascade(src: &Source, answers: Vec<Option<Vec<Value>>>) -> (Answer, Vec<(String, Filter)>) {
     let log: Log = Arc::default();
     let seen = log.clone();
@@ -95,7 +94,6 @@ async fn an_early_duration_mismatch_survives_unrelated_results() {
     }
 }
 
-/// A non-YouTube id.
 #[tokio::test]
 async fn approved_videos_get_their_thumbnail() {
     let src = source("Blinding Lights", "The Weeknd", 200000);
@@ -107,7 +105,6 @@ async fn approved_videos_get_their_thumbnail() {
     assert!(other.get("cover").is_none());
 }
 
-/// Dropping the driver mid-search gives no outcome.
 #[tokio::test]
 async fn cancelling_mid_search_gives_no_outcome() {
     let src = source("Teardrop", "Massive Attack", 330000);
@@ -172,7 +169,6 @@ fn open() -> (tempfile::TempDir, nuvo_store::Connection) {
 
 const DAY: i64 = 86_400_000;
 
-/// Remembered sources at the store level, with their expiry rules.
 #[test]
 fn memo_entries_expire_by_kind_and_version() {
     let (_dir, conn) = open();
@@ -191,7 +187,6 @@ fn memo_entries_expire_by_kind_and_version() {
     assert_eq!(memo::get(&conn, &src, 1).unwrap(), None, "a new matcher version drops the memo");
 }
 
-/// A transient lookup failure must not answer repeats for a day without searching again.
 #[test]
 fn a_failed_lookup_is_not_remembered() {
     let (_dir, conn) = open();

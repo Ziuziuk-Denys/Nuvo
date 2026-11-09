@@ -1,4 +1,3 @@
-/** YouTube URL parsing and import. */
 import { IMPORT_DEFAULT_TITLE, PLACEHOLDER_ARTIST, PLACEHOLDER_TITLE } from "../constants";
 import type { FetchLike, Innertube } from "../http";
 import { YtError, isAbortError, type ImportedList, type ImportedTrack, type YtTrack } from "../types";
@@ -6,7 +5,6 @@ import { continuationOf, findAll, findFirst, isObj, runsOf, textOf, videoThumbna
 import { followContinuations, trackRows } from "./pages";
 
 const HOSTS = new Set(["youtube.com", "www.youtube.com", "music.youtube.com", "m.youtube.com", "youtu.be"]);
-/** True for the hosts `parseUrl` accepts; a bare `youtube.com` counts too. */
 export const isYoutubeHost = (host: string) => HOSTS.has(host.toLowerCase());
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 const LIST_ID = /^(VL)?(PL|OLAK5uy_|RD|UU)[\w-]{10,64}$/;
@@ -99,7 +97,6 @@ async function singleVideo(yt: Innertube, fetchFn: FetchLike, videoId: string, s
   } catch (error) {
     if (isAbortError(error)) throw error;
   }
-  // oEmbed only when `next` gave nothing usable.
   try {
     const query = new URLSearchParams({
       url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -135,7 +132,6 @@ export async function importUrl(yt: Innertube, fetchFn: FetchLike, url: string, 
       throw new YtError("empty-playlist", {
         text: "The playlist is empty. Check that it is public.",
       });
-    // sourceUrl is rebuilt canonical.
     const playlistIdWithoutVL = parsed.playlistId.startsWith("VL") ? parsed.playlistId.slice(2) : parsed.playlistId;
     const sourceUrl = `https://music.youtube.com/playlist?list=${playlistIdWithoutVL}`;
     return {
@@ -157,7 +153,6 @@ export async function importUrl(yt: Innertube, fetchFn: FetchLike, url: string, 
       artistChannelIds: [],
       coverUrl: videoThumbnail(parsed.videoId).url,
     };
-    // sourceUrl is rebuilt canonical.
     const sourceUrl = `https://www.youtube.com/watch?v=${parsed.videoId}`;
     return { source: "youtube", sourceUrl, title, tracks: [track] };
   }

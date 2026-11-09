@@ -1,4 +1,3 @@
-/** Visitor data and the InnerTube request rules shared by every call. */
 import { UA_HEADER, WEB_REMIX, WWW_ORIGIN, type ClientContext } from "./constants";
 import { YtError, abortError, isAbortError } from "./types";
 
@@ -8,15 +7,13 @@ export const VISITOR_TTL_MS = 5.5 * 60 * 60 * 1000;
 const VISITOR_PATTERN = /Cg[stuv][A-Za-z0-9_-]{20,}(?:=|%3D){0,2}/;
 const VISITOR_LOG_EVERY_MS = 60 * 60 * 1000;
 
-/** Reads the visitor data string from a `sw.js_data` body. Padding is kept exactly as received. */
+// Padding is kept exactly as received
 export function parseVisitorData(body: string): string | null {
   const stripped = body.startsWith(")]}'") ? body.slice(body.indexOf("\n") + 1) : body;
   try {
     const value = (JSON.parse(stripped) as unknown[][][][][])[0]?.[2]?.[0]?.[0]?.[13];
     if (typeof value === "string" && new RegExp(`^${VISITOR_PATTERN.source}$`).test(value)) return value;
-  } catch {
-    // shape changed: fall back to the pattern below
-  }
+  } catch {}
   return body.match(VISITOR_PATTERN)?.[0] ?? null;
 }
 
@@ -31,7 +28,6 @@ export class VisitorData {
     private readonly log: (message: string) => void = () => undefined,
   ) {}
 
-  /** Never throws: a failed refresh keeps the previous value, and no value means requests go without one. */
   get(): Promise<string | null> {
     if (this.value && Date.now() - this.fetchedAt < VISITOR_TTL_MS) return Promise.resolve(this.value);
     this.inflight ??= this.refresh().finally(() => (this.inflight = null));
@@ -64,11 +60,8 @@ export class VisitorData {
 export interface CallOptions {
   client?: ClientContext;
   signal?: AbortSignal;
-  /** `"<type> <token>"` for the signed-in TV client. */
   authorization?: string;
-  /** Overrides the shared visitor data (the TV identity brings its own). */
   visitorData?: string;
-  /** Extra fields merged into `context.client`. */
   clientExtra?: Record<string, unknown>;
 }
 
@@ -82,7 +75,6 @@ export class Innertube {
     },
   ) {}
 
-  /** One InnerTube call with the shared rules: one retry on 401/403 with fresh visitor data, typed errors. */
   async call<T = unknown>(endpoint: string, body: Record<string, unknown>, options: CallOptions = {}): Promise<T> {
     const first = await this.send(endpoint, body, options);
     if (first.status !== 401 && first.status !== 403) return this.read<T>(first);

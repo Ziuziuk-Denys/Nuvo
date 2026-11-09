@@ -12,7 +12,6 @@ export interface DuplicatesSheetProps {
   onRemove(itemIds: string[]): void;
 }
 
-/** Lists each song found more than once; Remove keeps the first one added of each. */
 export function DuplicatesSheet({ open, groups, onClose, onRemove }: DuplicatesSheetProps): JSX.Element | null {
   const { t } = useTranslation();
   const extra = extraItemIds(groups);

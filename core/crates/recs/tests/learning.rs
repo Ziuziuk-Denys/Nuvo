@@ -43,7 +43,6 @@ fn outcomes_of_served_tracks_train_the_model() {
 fn learned_weights_take_over_after_500_outcomes() {
     let (_dir, conn) = common::open();
     assert!(!Model::load(&conn).unwrap().learned);
-    // Weights that prefer the end of the catalog list, one outcome short of the threshold.
     let mut reversed = [0.0; 8];
     reversed[6] = -1.0;
     conn.execute(
@@ -66,13 +65,11 @@ fn learned_weights_take_over_after_500_outcomes() {
 #[test]
 fn corrupt_weights_fall_back_to_fixed() {
     let (_dir, conn) = common::open();
-    // Insert corrupt (non-finite) weights
     conn.execute(
         "INSERT INTO rec_model (key, weights_json, events_seen, updated_at) VALUES ('global', ?1, 600, 0)",
         rusqlite::params!["[1.0, NaN, 0.3, 1.2, 0.8, 0.2, 0.6, 0.0]"],
     )
     .unwrap();
-    // learn() should restart from FIXED, not persist the NaN
     model::learn(&conn, &[0.0; 7], true, NOW).unwrap();
     let json: String = conn.query_row("SELECT weights_json FROM rec_model", [], |r| r.get(0)).unwrap();
     let weights: Vec<f64> = serde_json::from_str(&json).unwrap();
@@ -87,7 +84,6 @@ fn once_only_learning_per_served_row() {
     rank::rank(&conn, &req, NOW, 1).unwrap();
     common::track(&conn, "a", "A", "x");
 
-    // First play teaches the model
     feedback::after_play(&conn, &event("a", json!({})), NOW).unwrap();
     assert_eq!(seen(&conn), 1);
     let w1: Vec<f64> = conn.query_row("SELECT weights_json FROM rec_model", [], |r| {
@@ -95,7 +91,6 @@ fn once_only_learning_per_served_row() {
         Ok(serde_json::from_str(&s).unwrap())
     }).unwrap();
 
-    // Same event again does not teach again (learned flag prevents it)
     feedback::after_play(&conn, &event("a", json!({})), NOW).unwrap();
     assert_eq!(seen(&conn), 1, "same event teaches only once");
     let w2: Vec<f64> = conn.query_row("SELECT weights_json FROM rec_model", [], |r| {
@@ -111,7 +106,6 @@ fn single_seed_with_savepoint() {
     common::track(&conn, "seed", "Seed", "z");
     let candidates = vec![snapshot("t0", "Track 0", "a"), snapshot("t1", "Track 1", "b")];
     let req = RankRequest { context: "radio:seed".into(), seeds: vec!["seed".into()], candidates, ..Default::default() };
-    // This should not panic even though pool::record uses a SAVEPOINT inside rank
     let res = rank::rank(&conn, &req, NOW, 1).unwrap();
     assert_eq!(res.items.len(), 2);
     let edges: i64 = conn.query_row("SELECT count(*) FROM candidate_edges WHERE seed_id = 'seed'", [], |r| r.get(0)).unwrap();

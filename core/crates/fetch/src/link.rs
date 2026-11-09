@@ -1,5 +1,3 @@
-//! Deny-by-default link rules.
-
 use std::future::Future;
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
@@ -13,15 +11,12 @@ pub const MAX_LINK_LEN: usize = 2048;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Link {
-    /// Normalised, without the fragment.
     pub url: String,
-    /// Lowercase domain or IP address (IPv6 without brackets).
     pub host: String,
     pub tiktok: bool,
 }
 
-/// `http`/`https` only, at most 2048 characters, no credentials, ports 80/443 only,
-/// and no loopback, private or link-local address literals.
+// http/https only, max 2048 chars, no credentials, ports 80/443, no private address literals
 pub fn parse_link(text: &str) -> Result<Link, FetchError> {
     let text = text.trim();
     if text.is_empty() || text.len() > MAX_LINK_LEN {
@@ -31,7 +26,6 @@ pub fn parse_link(text: &str) -> Result<Link, FetchError> {
     if !matches!(url.scheme(), "http" | "https") || !url.username().is_empty() || url.password().is_some() {
         return Err(FetchError::InvalidLink);
     }
-    // allow exactly ports 80 and 443
     if let Some(port) = url.port()
         && !matches!(port, 80 | 443)
     {
@@ -46,12 +40,11 @@ pub fn parse_link(text: &str) -> Result<Link, FetchError> {
     Ok(Link { url: url.into(), host, tiktok })
 }
 
-/// Resolves the host of an `http`/`https` URL and refuses it unless every address is public.
 pub async fn ensure_public(url: &str) -> Result<(), FetchError> {
     public_addresses(url).await.map(|_| ())
 }
 
-/// Like `ensure_public`, and returns the checked addresses so a client can connect to exactly those.
+// Returns the checked addresses so a client connects to exactly those
 pub async fn public_addresses(url: &str) -> Result<Vec<SocketAddr>, FetchError> {
     let url = Url::parse(url).map_err(|_| FetchError::InvalidLink)?;
     if !matches!(url.scheme(), "http" | "https") {
@@ -69,7 +62,6 @@ pub async fn public_addresses(url: &str) -> Result<Vec<SocketAddr>, FetchError> 
     if addresses.iter().all(|a| is_public(a.ip())) { Ok(addresses) } else { Err(FetchError::InvalidLink) }
 }
 
-/// `scheme://host/path`: no credentials, query or fragment. Empty when the text is not a URL.
 pub fn bare_url(url: &str) -> String {
     match Url::parse(url) {
         Ok(parsed) => format!("{}://{}{}", parsed.scheme(), parsed.host_str().unwrap_or(""), parsed.path()),
@@ -79,10 +71,7 @@ pub fn bare_url(url: &str) -> String {
 
 const MAX_HOPS: usize = 5;
 
-/// Resolves a media URL's redirects by hand, checking every hop with `public_addresses` and connecting
-/// only to the addresses it approved (a second DNS answer cannot rebind a hop), and returns the final
-/// URL for ffmpeg (which is told not to follow redirects itself). Credentials leave with a redirect
-/// to another host. `proxy` is the daemon's proxy hook, when one is set; a proxy resolves names itself.
+// Follows redirects by hand, pinning each hop to checked addresses so DNS cannot rebind it
 pub async fn follow_public(remote: &Remote, proxy: Option<&reqwest::Proxy>) -> Result<Remote, FetchError> {
     follow_checked(remote, proxy, |url| async move { public_addresses(&url).await }).await
 }
@@ -137,7 +126,6 @@ where
     Err(FetchError::InvalidLink)
 }
 
-/// Lowercase host; IPv6 literals lose their brackets so they parse as `IpAddr`; trailing dots are removed.
 fn host_of(url: &Url) -> Option<String> {
     let host = url.host_str()?.trim_start_matches('[').trim_end_matches(']').trim_end_matches('.');
     (!host.is_empty()).then(|| host.to_ascii_lowercase())

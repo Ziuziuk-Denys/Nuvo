@@ -8,7 +8,6 @@ import { restoreDeleted, useRecentlyDeleted } from "../../ports/library";
 import { MediaRow } from "../MediaRow";
 import styles from "./NewPlaylistSheet.module.css";
 
-/** Playlists deleted since Nuvo started, newest first, each with Restore. */
 export function RecentlyDeletedSheet({ open, onClose }: { open: boolean; onClose(): void }): JSX.Element {
   const { t } = useTranslation();
   const items = useRecentlyDeleted((state) => state.items);

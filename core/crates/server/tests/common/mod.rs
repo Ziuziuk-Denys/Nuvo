@@ -24,24 +24,20 @@ pub struct TestCore {
     pub app: Router,
 }
 
-/// No spacing and millisecond back-off, so recognize tests do not wait for Shazam's real pace.
 pub const FAST: Pace = Pace { spacing: Duration::ZERO, backoff: [Duration::from_millis(5); 3] };
 
 pub fn boot(dir: TempDir, keystore: impl KeyStore + 'static, lrclib_url: &str) -> TestCore {
     boot_urls(dir, keystore, lrclib_url, "http://127.0.0.1:9", "http://127.0.0.1:9/2.0/")
 }
 
-/// Like `boot`, with Shazam pointed at a local mock.
 pub fn boot_with(dir: TempDir, keystore: impl KeyStore + 'static, lrclib_url: &str, shazam_url: &str) -> TestCore {
     boot_urls(dir, keystore, lrclib_url, shazam_url, "http://127.0.0.1:9/2.0/")
 }
 
-/// Like `boot`, with Last.fm pointed at a local mock.
 pub fn boot_lastfm(dir: TempDir, keystore: impl KeyStore + 'static, lrclib_url: &str, lastfm_url: &str) -> TestCore {
     boot_urls(dir, keystore, lrclib_url, "http://127.0.0.1:9", lastfm_url)
 }
 
-/// Like `boot`, with catalog and artwork requests sent to a `nuvo_net::fixture::Fixture` at `fixture_base`.
 pub fn boot_net(dir: TempDir, keystore: impl KeyStore + 'static, fixture_base: &str) -> TestCore {
     boot_config(dir, keystore, |config| config.net_rewrite = Some(fixture_base.to_string()))
 }
@@ -54,7 +50,6 @@ fn boot_urls(dir: TempDir, keystore: impl KeyStore + 'static, lrclib_url: &str, 
     })
 }
 
-/// Fresh profile whose config `edit` adjusts first. Every URL starts at the closed port 9.
 pub fn boot_config(dir: TempDir, keystore: impl KeyStore + 'static, edit: impl FnOnce(&mut Config)) -> TestCore {
     let mut config = Config {
         paths: Paths::under(dir.path()),
@@ -75,7 +70,6 @@ pub fn boot_config(dir: TempDir, keystore: impl KeyStore + 'static, edit: impl F
     TestCore { app: router(state.clone()), state, dir }
 }
 
-/// Fresh profile with an in-memory keystore; LRCLIB points at a closed port.
 pub fn core() -> TestCore {
     boot(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), "http://127.0.0.1:9")
 }
@@ -96,14 +90,12 @@ pub async fn send(app: &Router, req: Request<Body>) -> (StatusCode, Vec<u8>, axu
     (status, bytes, headers)
 }
 
-/// JSON call; an empty body comes back as `Value::Null`.
 pub async fn call(app: &Router, method: &str, path: &str, body: Option<Value>) -> (StatusCode, Value) {
     let (status, bytes, _) = send(app, request(method, path, body)).await;
     let json = if bytes.is_empty() { Value::Null } else { serde_json::from_slice(&bytes).unwrap() };
     (status, json)
 }
 
-/// A core that has not made its start decision yet (the keyring prompt is still open).
 pub fn starting() -> (TempDir, Router) {
     let dir = tempfile::tempdir().unwrap();
     let config = Config {
@@ -125,7 +117,6 @@ pub fn starting() -> (TempDir, Router) {
     (dir, router(state))
 }
 
-/// A silent mono 16-bit WAV at 8 kHz, `seconds` long: real audio for local-file tests.
 pub fn wav_bytes(seconds: u32) -> Vec<u8> {
     let rate = 8000u32;
     let data_len = rate * seconds * 2;
@@ -148,17 +139,14 @@ pub fn write_wav(path: &std::path::Path, seconds: u32) {
     std::fs::write(path, wav_bytes(seconds)).unwrap();
 }
 
-/// A core whose folder watcher settles after 30 ms instead of 2 s.
 pub fn local_core() -> TestCore {
     boot_config(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), |c| c.test.local_debounce = Some(Duration::from_millis(30)))
 }
 
-/// Adds a music folder the way Electron main does and returns its JSON.
 pub async fn add_folder(core: &TestCore, path: &std::path::Path) -> (StatusCode, Value) {
     call(&core.app, "POST", "/v1/fs/local/roots", Some(serde_json::json!({"path": path.to_str().unwrap()}))).await
 }
 
-/// Polls the local track list until `done` holds (5 s at most).
 pub async fn wait_tracks(core: &TestCore, done: impl Fn(&Value) -> bool) -> Value {
     for _ in 0..250 {
         let (_, page) = call(&core.app, "GET", "/v1/local/tracks?limit=500", None).await;

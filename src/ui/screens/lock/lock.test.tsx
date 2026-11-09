@@ -137,7 +137,6 @@ describe("LockScreen", () => {
     expect(card.getAttribute("aria-modal")).toBe("true");
     expect(document.getElementById(card.getAttribute("aria-labelledby")!)?.textContent).toBe("ui.lock.title");
     expect(document.getElementById(card.getAttribute("aria-describedby")!)?.textContent).toBe("ui.lock.line");
-    // the window stays movable and closable while the card is up
     expect(document.querySelector("[data-window-controls]")).not.toBeNull();
   });
 
@@ -211,7 +210,6 @@ describe("LockScreen", () => {
     expect(document.activeElement).toBe(field());
     expect(animate).toHaveBeenCalledOnce();
     expect(button("ui.lock.unlock").disabled).toBe(false);
-    // typing again takes the complaint back
     type(`${PHRASE} `);
     expect(document.querySelector("[role=alert]")).toBeNull();
     expect(field().getAttribute("aria-invalid")).toBeNull();
@@ -311,7 +309,6 @@ describe("Gate", () => {
     expect(host.querySelector("[data-page]")).toBeNull();
     expect(dialog()).not.toBeNull();
     expect(document.activeElement).toBe(field());
-    // the island hides while the library is locked
     expect(useGateStore.getState().locked).toBe(true);
     type(PHRASE);
     act(() => button("ui.lock.unlock").click());

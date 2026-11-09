@@ -1,19 +1,11 @@
 import type { KaraokeLayout } from "./layout";
 
-/**
- * Nuvo's stylesheet for @braccato/core: measured size and inactive colour, the system font, the follow position.
- * What is being sung is a flat change of colour: nowMark.ts marks it from the audio clock, the module's own
- * sweep, glow, wobble and scale are off and its highlight copies of the words are not drawn. The mark lights at
- * once, so nothing delays it behind the voice, and lets go with a short plain fade. The fill is two flat colours
- * with a hard edge between them, as a filled word is no other colour than a lit one and a dim one.
- */
 export function lyricsTheme(lyrics: KaraokeLayout["lyrics"]): string {
   return [
     `/* blyrics-target-scroll-pos-ratio = ${lyrics.scrollRatio}; */`,
     // words over 16 characters may wrap, or they would run out of the column
     "/* blyrics-long-word-wrap-threshold = 8; */",
     ".blyrics-container {",
-    // Settings > Look writes the lyrics size and font on :root (applyFontSettings)
     `  --blyrics-font-size: calc(${lyrics.fontSize}px * var(--n-lyrics-scale, 1));`,
     '  --blyrics-font-family: var(--n-font-lyrics, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable", system-ui, sans-serif);',
     "  --blyrics-font-weight: 600;",
@@ -28,7 +20,6 @@ export function lyricsTheme(lyrics: KaraokeLayout["lyrics"]): string {
     "  --blyrics-animate-highlight-fade: 0;",
     "  --blyrics-animate-instrumental: 0;",
     "  --blyrics-richsync-timing-offset: 0s;",
-    // measured: 40 px between lines, words start at the column edge
     "  --blyrics-padding: 20px;",
     "}",
     ".blyrics-container > div {",

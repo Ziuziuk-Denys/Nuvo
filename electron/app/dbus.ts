@@ -1,4 +1,3 @@
-/** A small D-Bus client over the session bus socket: enough to own a name, serve one object and emit signals. No library. */
 import { default as net } from "node:net";
 
 export type Variant = [signature: string, value: unknown];
@@ -25,7 +24,6 @@ function typeEnd(signature: string, start: number): number {
   return start + 1;
 }
 
-/** Splits a signature into its complete types: "sa{sv}as" gives ["s", "a{sv}", "as"]. */
 export function splitSignature(signature: string): string[] {
   const types: string[] = [];
   for (let at = 0; at < signature.length;) {
@@ -137,7 +135,6 @@ class Writer {
   }
 }
 
-/** Reads either byte order; dictionaries come back as [key, value] pairs. */
 class Reader {
   constructor(
     private readonly buffer: Buffer,
@@ -308,7 +305,6 @@ export function encodeMessage(message: Message, serial: number): Buffer {
   return Buffer.concat([head.result(), body.result()]);
 }
 
-/** Total byte length of the message at the start of `buffer`, or null until its fixed header is in. */
 export function messageLength(buffer: Buffer): number | null {
   if (buffer.length < 16) return null;
   const little = buffer[0] === "l".charCodeAt(0);
@@ -351,9 +347,7 @@ export function socketPathOf(address: string | undefined): string | null {
       const equals = pair.indexOf("=");
       try {
         params.set(pair.slice(0, equals), decodeURIComponent(pair.slice(equals + 1)));
-      } catch {
-        // a malformed escape: skip this pair
-      }
+      } catch {}
     }
     const path = params.get("path");
     if (path) return path;
@@ -372,7 +366,6 @@ export class DBusError extends Error {
   }
 }
 
-/** One connection to a bus. `onCall` receives method calls addressed to this connection. */
 export class BusConnection {
   onCall: (call: Message) => void = () => undefined;
   onClose: () => void = () => undefined;
@@ -390,7 +383,6 @@ export class BusConnection {
     socket.on("error", () => socket.destroy());
   }
 
-  /** Connects, authenticates as this user (EXTERNAL) and says Hello. */
   static async open(socketPath: string, uid: number, timeoutMs = 3000): Promise<BusConnection> {
     const socket = net.createConnection(socketPath);
     socket.setNoDelay(true);

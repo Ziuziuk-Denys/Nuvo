@@ -1,6 +1,5 @@
 import { createListeners } from "@/engine/listeners";
 
-/** Whether the main window is shown: the document's visibility and main's hidden-to-tray signal. */
 let shellVisible = true;
 let shellConnected = false;
 const listeners = createListeners<[boolean]>();
@@ -14,7 +13,7 @@ function emit(): void {
   listeners.emit(visible);
 }
 
-/** Main's own report (hidden to tray keeps the document "visible" on some compositors); also used by tests. */
+// Hidden to tray keeps the document visible on some compositors, so main reports it
 export function applyWindowVisibility(visible: boolean): void {
   if (shellVisible === visible) return;
   shellVisible = visible;

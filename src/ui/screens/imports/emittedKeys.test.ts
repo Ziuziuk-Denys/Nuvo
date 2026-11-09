@@ -65,7 +65,6 @@ function summaries(): ImportSummary[] {
   ] as ImportSummary[];
 }
 
-/** A key as the translator resolves it: plain, or with a plural form. */
 function resolves(dict: unknown, key: string, plural: string[]): boolean {
   const find = (k: string) => {
     let node: unknown = dict;

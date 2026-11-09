@@ -24,7 +24,6 @@ describe("bench stats", () => {
 
   it("parses /proc stat with spaces in the command name", () => {
     const fields = Array.from({ length: 40 }, (_, i) => String(i));
-    // after ") " the first field is the state (index 0), the parent pid is index 1, utime 11, stime 12
     const after = ["S", "42", ...fields.slice(2)].map((v, i) => (i === 11 ? "7" : i === 12 ? "5" : v));
     expect(parseStat(`123 (nuvo core) ${after.join(" ")}`)).toEqual({ parent: 42, ticks: 12 });
   });

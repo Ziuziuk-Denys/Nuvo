@@ -142,7 +142,6 @@ async fn a_re_sent_play_teaches_once() {
     let core = common::core();
     let body = json!({"trackId": "song", "scope": "work", "track": snapshot("song", "song", "Artist")});
     assert_eq!(common::call(&core.app, "POST", "/v1/recs/not-interested", Some(body)).await.0, StatusCode::OK);
-    // A full play the user chose halves the work suppression; the same event sent twice halves it once.
     let event = play("song", json!({"startedAt": 1_700_000_000_000i64, "context": {"type": "library"}}));
     for _ in 0..2 {
         assert_eq!(common::call(&core.app, "POST", "/v1/me/playback/events", Some(event.clone())).await.0, StatusCode::NO_CONTENT);

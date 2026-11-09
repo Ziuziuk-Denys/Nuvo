@@ -1,10 +1,8 @@
 import { hslToRgb, rgbToHsl } from "../color/hsl";
 
-/** An accent colour from cover pixels (RGBA): the dominant saturated hue at a fixed lightness per mode. */
 export const NEUTRAL_ACCENT = { light: "rgb(110, 110, 115)", dark: "rgb(170, 170, 176)" } as const;
 
 const BUCKETS = 24;
-/** A hue must carry at least this share of the weighted pixels, or the cover counts as grey. */
 const MIN_SHARE = 0.01;
 
 export function coverAccent(pixels: Uint8ClampedArray, light: boolean): string {

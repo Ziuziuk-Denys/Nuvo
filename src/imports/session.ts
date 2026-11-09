@@ -1,7 +1,3 @@
-/**
- * The renderer's view of import jobs: the known summaries (newest first), the workers, and a
- * resume after start or unlock. The daemon owns the jobs; nothing here is persisted.
- */
 import { createListeners } from "@/engine/listeners";
 import type { ImportsDaemon } from "./core";
 import type { Sleep } from "./http";
@@ -11,12 +7,9 @@ import { ImportRunner, type SearchPorts } from "./workers";
 export interface ImportsSession {
   subscribe(listener: () => void): () => void;
   getSnapshot(): readonly ImportSummary[];
-  /** New imports from a link or a file. */
   started(summaries: ImportSummary[]): void;
-  /** Reads every import and restarts the workers of running ones (app start, unlock). */
   resume(): Promise<void>;
   refresh(id: string): Promise<void>;
-  /** "Done": the report goes, the playlist stays. */
   dismiss(id: string): Promise<void>;
   stopAll(): void;
 }
@@ -24,13 +17,10 @@ export interface ImportsSession {
 export interface SessionOptions {
   sleep?: Sleep;
   now?: () => number;
-  /** Imports write to the library: new playlists, songs added as rows are decided. */
   onLibraryChange?: () => void;
 }
 
-/** Summary refreshes per import while workers post rows. */
 export const REFRESH_EVERY_MS = 1_000;
-/** How often a locked or starting daemon is asked again. */
 export const RESUME_RETRY_MS = 10_000;
 
 export function createImportsSession(daemon: ImportsDaemon, search: SearchPorts, options: SessionOptions = {}): ImportsSession {
@@ -57,9 +47,7 @@ export function createImportsSession(daemon: ImportsDaemon, search: SearchPorts,
       const known = items.find((item) => item.id === id);
       put(fresh);
       if (known?.done !== fresh.done || known.status !== fresh.status) options.onLibraryChange?.();
-    } catch {
-      // the import was deleted or the daemon is away; the next resume reads the truth
-    }
+    } catch {}
   };
 
   const runner = new ImportRunner(daemon, search, {
@@ -106,10 +94,6 @@ export function createImportsSession(daemon: ImportsDaemon, search: SearchPorts,
   };
 }
 
-/**
- * Resumes as soon as the daemon answers: at app start it may still be starting or locked, and
- * the unlock happens elsewhere. Stops on abort.
- */
 export async function resumeWhenReady(session: Pick<ImportsSession, "resume">, wait: Sleep, signal: AbortSignal): Promise<void> {
   for (;;) {
     try {

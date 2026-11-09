@@ -1,6 +1,3 @@
-//! Local recommendations: rewards from listening, "Not interested", and the ranker behind radio,
-//! continuation, suggestions and mixes. Pure functions plus SQL over the `nuvo-store` connection.
-
 pub mod canon;
 pub mod keys;
 pub mod rewards;
@@ -17,8 +14,7 @@ pub mod starters;
 use nuvo_store::StoreError;
 use rusqlite::Connection;
 
-/// Runs `f` inside a SAVEPOINT: its writes commit together (one disk sync instead of one per row)
-/// or not at all. Nests inside an outer transaction or savepoint.
+// One SAVEPOINT: writes commit together with one disk sync, or not at all; nests safely
 pub(crate) fn savepoint<T>(conn: &Connection, name: &str, f: impl FnOnce() -> Result<T, StoreError>) -> Result<T, StoreError> {
     conn.execute_batch(&format!("SAVEPOINT {name}"))?;
     match f() {

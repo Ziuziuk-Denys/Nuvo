@@ -117,11 +117,9 @@ describe("Home mixes", () => {
     expect(cards[0].textContent).toContain("ui.recs.home.for_you");
     expect(cards[0].textContent).toContain("ui.home.for_you_subtitle");
     expect(cards[1].textContent).toContain("ui.recs.home.discover");
-    // the artist and mood mixes speak the app's language, named after the mix's own artist
     expect(cards[2].textContent).toContain("ui.home.artist_mix:A");
     expect(cards[2].textContent).toContain("ui.home.artist_mix_subtitle:A");
     expect(cards[3].textContent).toContain("ui.home.mood_late_night");
-    // the tour points at the lead mix's name
     expect(host.querySelector("[data-tour=mixes]")?.textContent).toBe("ui.recs.home.for_you");
   });
 
@@ -286,7 +284,6 @@ describe("Home variety shelves", () => {
     mocks.librarySongs.mockResolvedValue([...tracks("f", 5), ...tracks("l", 20)]);
     await mount();
     expect(host.querySelector("[data-shelf=shuffle] h2")?.textContent).toBe("ui.home.shuffle");
-    // one card: the first four covers stacked, the artists they bring, and Play for all twelve
     expect(shelfSongs("shuffle")).toEqual(["l19", "l18", "l17", "l16"]);
     expect(host.querySelector("[data-shelf=shuffle]")?.textContent).toContain("ui.home.shuffle_names:A");
     act(() => [...host.querySelectorAll<HTMLElement>("[data-shelf=shuffle] button")].find((button) => button.textContent === "ui.entity.play")!.click());
@@ -304,9 +301,7 @@ describe("Home variety shelves", () => {
     await mount();
     const titles = [...host.querySelectorAll("[data-shelf=like] h2")].map((title) => title.textContent);
     expect(titles).toEqual(["ui.home.more_like:Velvet Hour", "ui.home.more_like:Mono"]);
-    // each starts from its artist, shown as a round cover before the songs
     expect(host.querySelector("[data-shelf=like] [data-lead]")?.textContent).toBe("Velvet Hourui.home.more_like_line");
-    // what Songs for you already shows is not asked for again
     expect(mocks.songsLike).toHaveBeenCalledWith("home:like:Velvet Hour", ["v0", "v1", "v2", "v3"], expect.arrayContaining(["f0", "f1"]));
     expect(shelfSongs("like").slice(0, 6)).toEqual(by("Other", "home:like:Velvet Hour-", 6).map((track) => track.id));
   });
@@ -359,7 +354,6 @@ describe("Home refresh", () => {
       expect(after).toHaveLength(name === "shuffle" ? 4 : 12);
       expect(after.filter((id) => before.includes(id))).toEqual([]);
     }
-    // a refreshed Songs for you still plays the song's mix from that song
     act(() => host.querySelector<HTMLElement>("[data-shelf=songs] [data-song]")!.click());
     expect(mocks.playMix).toHaveBeenCalledWith("daily-mix-for-you", expect.any(Array), 12);
   });

@@ -1,4 +1,3 @@
-/* Two columns of 68 px rows: a 56 px cover, the name and a quiet count. */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -48,7 +48,6 @@ export function validateSaveDocument(raw: unknown): SaveDocumentRequest | null {
   return null;
 }
 
-/** The save dialog's suggested name. */
 export function documentName(title: string, format: "m3u8" | "csv" | "json"): string {
   // eslint-disable-next-line no-control-regex
   const clean = title

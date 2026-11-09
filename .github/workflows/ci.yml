@@ -28,7 +28,6 @@ jobs:
       - run: pnpm check
       - run: NUVO_CORE_KEYRING_SERVICE=nuvo-core-test pnpm core:test
 
-  # Known vulnerabilities at high severity or above, in every package the app bundles or builds with
   audit:
     runs-on: ubuntu-latest
     steps:
@@ -40,7 +39,6 @@ jobs:
           version: 11
       - run: pnpm audit --audit-level high
 
-  # Rust advisories, licences that fit AGPL-3.0-or-later, and crate sources (core/deny.toml)
   cargo-deny:
     runs-on: ubuntu-latest
     steps:

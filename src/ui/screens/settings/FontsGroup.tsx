@@ -18,13 +18,11 @@ type Option = { choice: FontChoice; label: string };
 
 const sameChoice = (a: FontChoice, b: FontChoice) => JSON.stringify(a) === JSON.stringify(b);
 
-/** A choice drawn in its own face; a file font draws once it is loaded, the default stack until then. */
 function previewFamily(choice: FontChoice): string | undefined {
   if (choice.kind === "file") return `${cssFamily(userFontFamily(choice.id))}, var(--n-font-stack)`;
   return familyValue(choice, new Set()) ?? undefined;
 }
 
-/** Sliders move the look at once and reach the daemon after a pause. */
 function useFontSaver(): (fonts: FontSettings) => void {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -35,7 +33,6 @@ function useFontSaver(): (fonts: FontSettings) => void {
   };
 }
 
-/** Interface and lyrics fonts, independent, with a live sample, the text sizes and the loaded files (customization 2, 5). */
 export function FontsGroup(): JSX.Element {
   const { t } = useTranslation();
   const fonts = useAppearanceStore((s) => s.saved.fonts);
@@ -97,7 +94,6 @@ export function FontsGroup(): JSX.Element {
     const known = files.some((f) => f.id === result.file.id);
     const fontFiles = known ? files : [...files, result.file];
     const ok = await save({ fontFiles, fonts: { ...fonts, [slot]: { kind: "file", id: result.file.id } } });
-    // a file the settings never took is not kept on disk
     if (!ok && !known) void window.nuvoShell?.deleteFontFile(result.file.id);
   };
 
@@ -241,7 +237,6 @@ export function FontsGroup(): JSX.Element {
   );
 }
 
-/** Search plus a windowed list; each visible row draws in its own font. Hover and arrows preview, Enter or click commits. */
 function FontList({
   options,
   current,
@@ -271,7 +266,6 @@ function FontList({
     estimateSize: () => ROW_PX,
     overscan: 6,
     initialRect: { width: 280, height: LIST_PX },
-    // the list opens with the current font in view
     initialOffset: () => Math.max(0, index * ROW_PX - LIST_PX / 2),
   });
 

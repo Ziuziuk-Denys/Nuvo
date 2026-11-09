@@ -91,7 +91,6 @@ describe("ImportsHost", () => {
     await click("ui.imports.import");
     expect(daemon.addedToPlaylist).toEqual([{ playlistId: "pl-new", track: song }]);
     expect(document.body.textContent).toContain('ui.imports.pending_added {"title":"Paper Moons"}');
-    // the song was kept in the library while it waited, then forgotten
     expect(daemon.pending).toBeNull();
   });
 

@@ -19,13 +19,11 @@ import styles from "./sections.module.css";
 
 const KEY_PAGE = "https://www.last.fm/api/account/create";
 
-/** Last.fm scrobbling: the account card, the switch, and the key and secret the user creates once on last.fm. */
 export function LastfmSection(): JSX.Element {
   const { t } = useTranslation();
   const [status, setStatus] = useState<LastfmStatus | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
-  // the token waits here while the user approves Nuvo in the browser
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);

@@ -23,10 +23,8 @@ use crate::error::ApiError;
 use crate::extract::JsonBody;
 use crate::state::{AppState, Unlocked};
 
-/// Lyrics that were found are kept for good; a miss is retried after a week.
 const MISS_TTL_MS: i64 = 7 * 86_400_000;
 
-/// The legacy renderer map held a few hundred entries; this only bounds a hostile body.
 const MAX_IMPORTED_OFFSETS: usize = 10_000;
 
 pub fn routes() -> Router<AppState> {
@@ -41,7 +39,6 @@ fn valid_track_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= MAX_TRACK_ID_LEN
 }
 
-/// LRC needs at least one `[mm:ss` stamp, or it is plain text sent as LRC by mistake.
 fn has_timed_line(content: &str) -> bool {
     content.lines().any(|line| {
         let line = line.trim_start().as_bytes();
@@ -85,7 +82,6 @@ async fn clear_user_lyrics(State(state): State<AppState>, Path(id): Path<String>
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// The user's text as a found version; `topPriority` ranks it first in the renderer.
 fn user_event(format: String, content: String) -> LyricsStreamEvent {
     let synced = format == "lrc";
     let (content_kind, sync_level) = if synced { ("line_synced", nuvo_lyrics::lrc_sync_level(&content)) } else { ("plain", "plain") };
@@ -158,7 +154,6 @@ async fn lyrics(
     Ok(Sse::new(stream))
 }
 
-/// Emits the `LyricsStreamEvent` sequence the renderer expects: metadata, one provider event, done.
 async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mpsc::Sender<Event>) {
     let send = |event: LyricsStreamEvent| {
         let tx = tx.clone();
@@ -201,7 +196,6 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
     }
 
     let query = title.zip(artist).map(|(title, artist)| nuvo_lyrics::Query { title, artist, duration_ms });
-    // each sends its version as soon as it has one
     let lines = async {
         let outcome = line_version(&state, &data, &id, query.as_ref()).await;
         send(outcome.event()).await;
@@ -226,7 +220,6 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
     }
 }
 
-/// What the line source answered, from the cache or the network.
 struct LineOutcome {
     candidate: Option<LyricsCandidate>,
     instrumental: bool,
@@ -276,7 +269,6 @@ async fn line_version(state: &AppState, data: &Unlocked, id: &str, query: Option
     LineOutcome { candidate, instrumental, cached: false, duration_ms: elapsed, message: None }
 }
 
-/// The word source keeps its own row, so a song cached before it existed still gets looked up once.
 async fn word_version(state: &AppState, data: &Unlocked, id: &str, query: Option<&nuvo_lyrics::Query>) -> Option<LyricsCandidate> {
     let amll = state.amll.as_ref()?;
     let key = format!("{id}#words");
@@ -322,8 +314,6 @@ where
 
 const MAX_LRC_BYTES: u64 = 512 * 1024;
 
-/// The `.lrc` next to a local file, when it is still a small regular file in the same folder,
-/// inside the music folder and reached through no link.
 async fn read_sidecar(local: &nuvo_store::local::LocalFile) -> Option<String> {
     let lrc = std::path::PathBuf::from(local.row.lrc_path.as_ref()?);
     if lrc.parent() != std::path::Path::new(&local.row.path).parent() {
@@ -342,7 +332,6 @@ async fn read_sidecar(local: &nuvo_store::local::LocalFile) -> Option<String> {
     Some(String::from_utf8_lossy(&bytes).into_owned())
 }
 
-/// A sidecar beats online sources: the owner put it there for this very file.
 pub fn sidecar_candidate(text: String) -> LyricsCandidate {
     let synced = text.lines().any(|line| {
         let line = line.trim_start();

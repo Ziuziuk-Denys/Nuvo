@@ -42,7 +42,6 @@ beforeEach(() => {
   mocks.confirm.mockResolvedValue(undefined);
   mocks.save.mockResolvedValue(true);
   mocks.copy.mockResolvedValue(undefined);
-  // the test never reaches the real clipboard
   Object.defineProperty(navigator, "clipboard", { value: { writeText: mocks.copy }, configurable: true });
   host = document.createElement("div");
   document.body.append(host);

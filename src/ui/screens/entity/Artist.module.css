@@ -1,11 +1,10 @@
-/* Popular songs, Albums and Singles: 40 px apart, each title 16 px above what it names. */
 .sections {
   display: flex;
   flex-direction: column;
   gap: 40px;
 }
 
-/* rows pad 8 px; pulling them out by 8 puts the covers on the title's edge, 2 px under the heading row */
+/* rows pad 8 px; pulling them out by 8 puts the covers on the title's edge */
 .songs {
   margin: -14px -8px 0;
 }
@@ -91,7 +90,6 @@
   }
 }
 
-/* the blue verified mark beside the name */
 .verified {
   display: inline-flex;
   flex: none;

@@ -159,7 +159,6 @@ function has(tool: string): boolean {
   }
 }
 
-/** A private bus for this test only: never the owner's session bus. */
 describe.skipIf(!has("dbus-daemon") || !has("gdbus"))("quest.nuvo.Nuvo.Player on a real bus", () => {
   let daemon: ChildProcess;
   let dir: string;

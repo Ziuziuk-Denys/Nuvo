@@ -1,4 +1,3 @@
-/* Search: a 54 px field and one panel under it, both 660 px wide and centred, on the panel tone. */
 .page {
   display: flex;
   flex-direction: column;
@@ -70,10 +69,6 @@
   overflow: hidden;
 }
 
-/*
- * Slow request: a 2 px accent line under the field, a 30 % segment travelling across it. It sits in
- * the 8 px gap above the subline, inset by the field's radius so it reads as part of the field.
- */
 .progress {
   position: absolute;
   top: calc(100% + 3px);
@@ -117,7 +112,6 @@
   font: 400 12px/normal var(--n-font);
 }
 
-/* filter pills: the chosen one keeps a soft fill and a medium weight */
 .tabs {
   display: flex;
   gap: 6px;
@@ -169,7 +163,6 @@
   padding: 8px 14px 14px;
 }
 
-/* a tab change or a new kind of content (history, placeholders, results) settles in quickly */
 .swap {
   animation: swap var(--n-t-base) var(--n-ease-out) both;
 }
@@ -186,7 +179,6 @@
   flex-direction: column;
 }
 
-/* a group's label: the quiet 12 px line the result list has always used */
 .heading {
   margin: 0;
   padding: 6px 8px;
@@ -237,7 +229,6 @@
   color: var(--n-ink);
 }
 
-/* nothing found, or nothing searched yet: one quiet centred line */
 .line {
   margin: 0;
   padding: 40px 20px;

@@ -9,7 +9,6 @@ export { advance, IDLE, listening, songFacts, timeAgo, type RecognizedSong, type
 
 const ports = createLinkPorts(youtubeCatalog);
 
-/** The catalog's copy of a recognized song, or null when there is none or the search failed. */
 export async function findSong(song: { title: string; artist: string }, signal: AbortSignal): Promise<Track | null> {
   try {
     const result = await matchByName({ title: song.title, artists: song.artist ? [song.artist] : [] }, ports, signal);
@@ -20,7 +19,6 @@ export async function findSong(song: { title: string; artist: string }, signal: 
   }
 }
 
-/** The id that stands for a file the user picked or dropped; null when Nuvo may not read it. */
 export async function grantFile(file: File): Promise<string | null> {
   const grant = await window.nuvoShell?.recognizeFile(file);
   return grant?.id ?? null;

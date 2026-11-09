@@ -8,7 +8,6 @@ import { SettingRow } from "./controls";
 const TITLE = "ui.settings.output";
 const DESCRIPTION = "ui.settings.output_desc";
 
-/** Where the sound goes. The list is read on every open, since devices come and go. */
 export function OutputRow(): JSX.Element {
   const { t } = useTranslation();
   const label = usePlayerStore((state) => state.outputLabel);

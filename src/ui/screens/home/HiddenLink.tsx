@@ -5,7 +5,6 @@ import { recs, recsChanged } from "../../ports/recs";
 import look from "../look.module.css";
 import styles from "./HiddenLink.module.css";
 
-/** A quiet way into what "Not interested" hides: the Settings section that lists it. Shown only once something is hidden. */
 export function HiddenLink(): JSX.Element | null {
   const { t } = useTranslation();
   const [anyHidden, setAnyHidden] = useState(false);

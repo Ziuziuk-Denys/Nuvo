@@ -338,7 +338,6 @@ describe("Playlist", () => {
     });
     act(() => useShareSheet.getState().close());
     act(() => host.querySelector<HTMLButtonElement>('button[aria-label="ui.entity.more"]:not([data-track-row] *)')!.click());
-    // the track menu may still be fading out, so take the newest Share item
     act(() =>
       [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
         .filter((node) => node.textContent === "ui.links.share.title")

@@ -327,7 +327,6 @@ describe("Equalizer", () => {
     });
     const tip = host.querySelector("[data-on]")!;
     expect(tip.textContent).toBe("ui.eq.bands.62");
-    // the frequency row stays as it was: no gain numbers appear anywhere on hover
     expect(host.textContent).not.toMatch(/[+-]\d+\.\d/);
   });
 

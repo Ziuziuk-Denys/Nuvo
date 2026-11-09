@@ -1,12 +1,10 @@
-//! Alone in its binary: a thread-local tracing subscriber races with the callsite interest other
-//! tests cache concurrently, so this test was flaky inside system.rs.
+// Alone in its binary: a thread-local tracing subscriber races with callsite interest other tests cache
 
 mod common;
 
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
-/// Collects log output so a test can read what the daemon wrote.
 #[derive(Clone, Default)]
 struct LogBuffer(Arc<Mutex<Vec<u8>>>);
 

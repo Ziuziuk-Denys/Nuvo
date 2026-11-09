@@ -1,5 +1,3 @@
-/* The window behind the error card: the canvas with its 6 px frame and the empty page panel, as the app draws them.
-   The field is not mounted here, so it paints its own. */
 .window {
   position: fixed;
   inset: 0;

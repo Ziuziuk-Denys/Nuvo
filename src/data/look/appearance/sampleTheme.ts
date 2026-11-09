@@ -1,4 +1,3 @@
-/** The design's sample theme file (customization 3.1), shared by the appearance tests. */
 export const SAMPLE = {
   format: "nuvo-theme",
   version: 1,

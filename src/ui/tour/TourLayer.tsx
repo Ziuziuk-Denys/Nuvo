@@ -18,13 +18,10 @@ import { briefWaiting, lastStep, useTour, waiting } from "./tourStore";
 import { useTourStage } from "./useTourStage";
 import styles from "./tour.module.css";
 
-/* The band the dock takes at the bottom of the window, or under the top row */
 const DOCK_ZONE = 104;
-/* The dock's width: min(560px, 100% - 32px) in the stylesheet */
+// Must match the dock's min(560px, 100% - 32px) width in the stylesheet
 const DOCK_WIDTH = 560;
-/* A tour cut off by closing the window comes back once the window has settled */
 const RESTORE_DELAY_MS = 1200;
-/* How often an idle window looks whether a left-out chapter can be shown now */
 const MORE_CHECK_MS = 2000;
 
 interface Frame {
@@ -50,7 +47,6 @@ function holeClip(ring: Ring): string {
   return `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${x}px ${y}px, ${right}px ${y}px, ${right}px ${bottom}px, ${x}px ${bottom}px, ${x}px ${y}px)`;
 }
 
-/* Tab and Shift+Tab wrap inside what the tour offers right now */
 function cycleFocus(event: KeyboardEvent, scope: HTMLElement[]): void {
   const items = scope.filter((item) => item.tabIndex >= 0);
   if (items.length === 0) return;
@@ -60,10 +56,6 @@ function cycleFocus(event: KeyboardEvent, scope: HTMLElement[]): void {
   items[next].focus({ preventScroll: true });
 }
 
-/*
-  The tour over the real window: the welcome poster, the chapters step by step, the skip prompt and the short version.
-  The window under it takes no presses and no keys while it is on, except the control an interactive step outlines
-*/
 export function TourLayer(): JSX.Element | null {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -82,11 +74,9 @@ export function TourLayer(): JSX.Element | null {
   const locked = useGateStore((state) => state.locked);
   const presence = usePresence(phase !== "off" && !locked);
   const { stage, shown } = useTourStage(navigate);
-  /* The step whose outline and callout are on screen; ready only while it is the current one */
   const [shownKey, setShownKey] = useState<string | null>(null);
   const stepKey = `${chapterIds.join()}:${chapter}:${step}`;
   const ready = phase === "chapter" && shownKey === stepKey;
-  /* The dock names the step on screen, so a chapter passed over for want of its target never flashes its title */
   const [onScreen, setOnScreen] = useState({ chapter: 0, step: 0 });
   const [frame, setFrame] = useState<Frame | null>(null);
   const size = useWindowSize();
@@ -95,7 +85,6 @@ export function TourLayer(): JSX.Element | null {
   useEffect(() => {
     shownRef.current = shown;
   }, [shown]);
-  /* The chapter whose scene is on screen; a later step of it keeps the scene */
   const sceneOf = useRef<string | null>(null);
 
   useEffect(() => {
@@ -104,7 +93,6 @@ export function TourLayer(): JSX.Element | null {
     return () => window.clearTimeout(timer);
   }, [locked]);
 
-  // a chapter left out for want of its part of the window is offered once that part shows up, the player after the first play
   useEffect(() => {
     if (phase !== "off" || locked) return;
     const timer = window.setInterval(() => {
@@ -119,7 +107,6 @@ export function TourLayer(): JSX.Element | null {
     return () => window.clearInterval(timer);
   }, [phase, locked]);
 
-  // plays the current step; a new step or leaving the tour cuts it off, a new chapter sets its scene again
   useEffect(() => {
     const current = chapterById(chapterIds[chapter]);
     if (phase !== "chapter" || !current) {
@@ -130,7 +117,6 @@ export function TourLayer(): JSX.Element | null {
     const scene = `${chapterIds.join()}:${chapter}`;
     const fresh = sceneOf.current !== scene;
     sceneOf.current = scene;
-    // a new chapter usually means a new page: the outline closes and opens again on its target
     if (fresh) setFrame(null);
     let alive = true;
     const key = `${chapterIds.join()}:${chapter}:${step}`;
@@ -147,8 +133,6 @@ export function TourLayer(): JSX.Element | null {
     };
   }, [phase, chapterIds, chapter, step, stage]);
 
-  // follows the outlined control every frame: panels pour out, pages scroll, the window resizes.
-  // Between steps the last outline stays put, so the next one glides from it
   useEffect(() => {
     if (phase !== "chapter") {
       setFrame(null);
@@ -171,7 +155,6 @@ export function TourLayer(): JSX.Element | null {
     return () => cancelAnimationFrame(id);
   }, [phase, shown]);
 
-  // focus: Next once a step is on screen, the first way out in the prompt, the main action of a card
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -191,12 +174,10 @@ export function TourLayer(): JSX.Element | null {
     return () => window.clearTimeout(timer);
   }, [phase, poster, prompt, ready, presence, away]);
 
-  // the tour's keys; nothing reaches the window under it
   useEffect(() => {
     if (phase === "off") return;
     const onKeyDown = (event: KeyboardEvent) => {
       const state = useTour.getState();
-      // a sheet opened from the start step has the keys while the tour stands aside
       if (state.away) return;
       const root = rootRef.current;
       const step = shownRef.current;
@@ -208,7 +189,6 @@ export function TourLayer(): JSX.Element | null {
         cycleFocus(event, promptCard ? focusables(promptCard) : [...(live ? focusables(live) : []), ...(root ? focusables(root) : [])]);
         return;
       }
-      // the outlined control of an interactive step keeps its own keys
       if (live && target && live.contains(target) && event.key !== "Escape") return;
       event.stopPropagation();
 

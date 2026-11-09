@@ -7,7 +7,6 @@ import { ImportSheet } from "./ImportSheet";
 import { useImportsUi } from "./importsUi";
 import { useFinishedNotice } from "./finishedNotice";
 
-/** Mounts the import sheet and the match report; opened through `useImportsUi`. */
 export function ImportsHost(): JSX.Element {
   const { t } = useTranslation();
   const runtime = getImports();
@@ -15,7 +14,6 @@ export function ImportsHost(): JSX.Element {
   const summaries = useSyncExternalStore(runtime.session.subscribe, runtime.session.getSnapshot);
   const report = reportId ? summaries.find((s) => s.id === reportId) : undefined;
   useFinishedNotice(summaries, t);
-  // "Added to playlist" for the waiting song, shown in the sheet's started state
   const [note, setNote] = useState<string | null>(null);
 
   const reportPorts = useMemo<ReportPorts>(() => {
@@ -58,7 +56,6 @@ export function ImportsHost(): JSX.Element {
         actions={runtime.actions}
         initialLink={sheet?.initialLink}
         initialMode={sheet?.mode}
-        // the waiting song needs a playlist of its own
         target={sheet?.pendingTrack ? { kind: "new" } : sheet?.target}
         onStarted={onStarted}
         note={note}

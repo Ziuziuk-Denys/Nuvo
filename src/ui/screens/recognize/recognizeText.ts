@@ -1,9 +1,7 @@
 import type { TFunction } from "../../ports/i18n";
 import type { Session } from "../../ports/recognize";
 
-/** Every code the screen has its own words for; the rest read as `failed`. */
 const ERRORS = new Set(["no_capture", "network", "busy", "tool_missing", "decode_failed", "unavailable", "unsupported", "core_down", "locked"]);
-/** A link fails in its own words; the codes it shares with the other inputs keep theirs. */
 const LINK_ERRORS = new Set([
   "invalid_link",
   "unsupported",
@@ -18,7 +16,6 @@ const LINK_ERRORS = new Set([
   "proxy_unsupported",
 ]);
 
-/** The panel's two lines for a state. */
 export function recognizeText(session: Exclude<Session, { phase: "found" }>, reachable: boolean, t: TFunction): { title: string; line: string } {
   if (session.phase === "listening") {
     if (session.step === "wait") return { title: t("ui.recognize.waiting_title"), line: t("ui.recognize.waiting", { seconds: session.seconds }) };

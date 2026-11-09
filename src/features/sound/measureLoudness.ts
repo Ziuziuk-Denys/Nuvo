@@ -11,7 +11,6 @@ function decodeWithOfflineContext(data: ArrayBuffer): Promise<AudioBuffer> {
   return new OfflineAudioContext(2, 1, DECODE_RATE).decodeAudioData(data);
 }
 
-/** Weighs the channels in a module worker. The buffers are transferred, not copied, and die with the worker. */
 function analyseInWorker(channels: Float32Array[], sampleRate: number): Promise<number> {
   // shortcut: without Worker (unit tests) the estimate runs inline on this thread
   if (typeof Worker === "undefined") return Promise.resolve(loudnessGain(channels, sampleRate));
@@ -36,7 +35,6 @@ function analyseInWorker(channels: Float32Array[], sampleRate: number): Promise<
   });
 }
 
-/** Normalization gain in dB for an audio blob. Uses all decoded channels, not a mono mixdown. */
 export async function measureLoudness(blob: Blob, decode: Decoder = decodeWithOfflineContext): Promise<number> {
   const buffer = await decode(await blob.arrayBuffer());
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
@@ -59,13 +57,11 @@ function whenIdle(task: () => void): void {
 
 const pending = new Set<string>();
 
-/** `audio` may be a loader, so a track played from the core cache is fetched only when its turn comes. */
 export function scheduleLoudness(trackId: string, audio: Blob | (() => Promise<Blob>), durationMs: number): void {
   if (durationMs > MAX_DURATION_MS) return;
   if (useSoundStore.getState().loudness[trackId] || pending.has(trackId)) return;
   pending.add(trackId);
   whenIdle(() => {
-    // useSoundSync applies the stored value the next time this track starts, never mid-track
     enqueue(async () => measureLoudness(typeof audio === "function" ? await audio() : audio))
       .then((db) => useSoundStore.getState().setLoudness(trackId, db))
       .catch(() => undefined)

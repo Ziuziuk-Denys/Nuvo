@@ -1,17 +1,13 @@
-/* The tour layer: a soft dim with a rounded cut-out over the real window, a callout card, the dock, and the cards
-   before and after. Cards use the dialog material (near-opaque page grey over a blur), the motion of the popover family. */
 .root {
   --tour-dim: rgba(0, 0, 0, 0.4);
   --tour-ring: #fff;
   position: fixed;
   z-index: 2000;
   inset: 0;
-  /* the blocker and the cards take presses; the root itself lets an interactive step's outline through */
   pointer-events: none;
   color: var(--n-ink);
   font: var(--n-type-body);
-  /* backwards only: a fade kept filled after the entrance makes the layer the cards' backdrop root, so their blur
-     would stop at the dim and the page would show through sharp */
+  /* Backwards only: a filled fade makes this the cards' backdrop root, so their blur stops at the dim */
   animation: tour-in var(--n-t-base) var(--n-ease-out) backwards;
 }
 
@@ -40,15 +36,12 @@
   }
 }
 
-/* Takes every press while the tour is on; an interactive step cuts the outline out of it with clip-path */
 .blocker {
   position: absolute;
   inset: 0;
   pointer-events: auto;
 }
 
-/* The cut-out: its own box is the hole, the shadow around it is the dim. With no target it shrinks to the
-   middle of the window, so the first outline opens out of it. */
 .hole {
   position: absolute;
   top: 0;
@@ -73,7 +66,6 @@
     0 0 0 200vmax var(--tour-dim);
 }
 
-/* The line from the outline to its card */
 .line {
   position: absolute;
   inset: 0;
@@ -87,7 +79,6 @@
   animation: tour-in var(--n-t-base) var(--n-ease-out) 120ms both;
 }
 
-/* Shared card material */
 .card {
   pointer-events: auto;
   box-sizing: border-box;
@@ -112,8 +103,6 @@
   text-wrap: pretty;
 }
 
-/* The dock and the skip prompt over it, at the bottom of the window or under the top row */
-/* left comes from the layer: centred, or clear of an outline in the dock's band */
 .dockWrap {
   position: absolute;
   bottom: 14px;
@@ -195,7 +184,6 @@
   gap: 6px;
 }
 
-/* The read gate: a grey button with a darker fill growing across it */
 .gate {
   position: relative;
   overflow: hidden;
@@ -218,7 +206,6 @@
   position: relative;
 }
 
-/* Skip prompt: three ways out, each a full-width row with a quiet line under it */
 .prompt {
   width: 100%;
   padding: 14px;
@@ -270,7 +257,6 @@
   margin-top: 10px;
 }
 
-/* Poster and short version: centred cards over the dim */
 .center {
   position: absolute;
   inset: 0;
@@ -290,7 +276,6 @@
   color: var(--n-ink);
 }
 
-/* the mark at poster size: the icon set stops at 26 px */
 .mark svg {
   display: block;
   width: 40px;
@@ -376,8 +361,6 @@
   white-space: nowrap;
 }
 
-/* The start step: the welcome over an empty Home, with two ways to give it music */
-/* the cards that hold reading stay near-opaque over a busy page */
 .start,
 .brief {
   background: color-mix(in srgb, var(--n-raised) 94%, transparent);
@@ -419,7 +402,6 @@
   text-wrap: pretty;
 }
 
-/* One service a row: two columns cut every subtitle to "From a playlist l..." */
 .sources {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

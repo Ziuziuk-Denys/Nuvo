@@ -1,4 +1,3 @@
-/* A soft fill, no border. The input itself draws nothing; the fill deepens under the pointer and with focus. */
 .field {
   display: flex;
   align-items: center;
@@ -16,7 +15,6 @@
   border-radius: var(--n-r-m);
 }
 
-/* A calm well: hover and focus only deepen the grey, no colour and no ring; the caret carries the accent. */
 .field {
   transition: background-color var(--n-t-quick) var(--n-ease-out);
 }
@@ -59,7 +57,6 @@
   opacity: 1;
 }
 
-/* text ends 12 px from the edge; a 28 px button sits in a 4 px inset instead */
 .field:not(:has(button)) {
   padding-right: var(--n-s-3);
 }

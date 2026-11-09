@@ -67,13 +67,11 @@ fn redaction_holds_on_adversarial_inputs() {
 fn the_log_tail_is_whole_lines_and_whole_characters() {
     let dir = tempfile::tempdir().unwrap();
     let log = dir.path().join("core.log");
-    // A cut exactly on a line start keeps that line.
     let line = format!("{}\n", "y".repeat(99));
     std::fs::write(&log, line.repeat(LOG_TAIL_BYTES / 100 + 5)).unwrap();
     let tail = log_tail(&log);
     assert_eq!(tail.len() % 100, 0);
     assert_eq!(tail.len(), LOG_TAIL_BYTES);
-    // One long line without a newline never starts mid-character.
     std::fs::write(&log, "\u{e9}".repeat(LOG_TAIL_BYTES)).unwrap();
     let tail = log_tail(&log);
     assert!(!tail.contains('\u{fffd}') && tail.chars().all(|c| c == '\u{e9}'));

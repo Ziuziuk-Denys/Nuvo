@@ -1,5 +1,3 @@
-//! Explore feeds computed from the local user's own history. Daily mixes live in `nuvo-recs`.
-
 use nuvo_contracts::{
     MostSavedEntry, MostSavedResponse, PopularAlbumEntry, PopularAlbumsResponse,
     PopularTrackItem, PopularTracksResponse, Viewer, iso_from_ms,

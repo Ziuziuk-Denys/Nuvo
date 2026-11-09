@@ -18,10 +18,8 @@ function throwRequested(): boolean {
   }
 }
 
-/** Decides what fills the content area: the first run or the pages, with the lock card floating over an empty window while locked. */
 export function Gate({ children }: { children: ReactNode }): JSX.Element | null {
   const status = useCoreStatus();
-  // a finished first run never waits for the daemon; the lock screen can still replace the pages later
   const [state, setState] = useState<GateState>(() => (isDone() ? { kind: "open" } : { kind: "checking" }));
 
   useEffect(() => {
@@ -54,7 +52,6 @@ export function Gate({ children }: { children: ReactNode }): JSX.Element | null 
           setState({ kind: "open" });
         }
       } catch {
-        // a dead daemon shows in the status line; the pages show what they have cached
         if (active) setState((current) => (current.kind === "checking" ? { kind: "open" } : current));
       }
     })();

@@ -8,7 +8,6 @@ import type { Track } from "../ports/player";
 import styles from "./ShareSheet.module.css";
 
 export interface ShareSheetProps {
-  /** The playlist title; empty when one song is shared. */
   title: string;
   items: ShareItem[];
   onClose(): void;
@@ -25,7 +24,6 @@ interface ShareSheetState {
   close(): void;
 }
 
-/** The one share sheet of the window: menus anywhere open it, the shell hosts it. */
 export const useShareSheet = create<ShareSheetState>((set) => ({
   open: null,
   show: (title, items) => set({ open: { title, items } }),
@@ -38,7 +36,6 @@ export function ShareSheetHost(): JSX.Element | null {
   return open ? <ShareSheet title={open.title} items={open.items} onClose={close} /> : null;
 }
 
-/** Saves the songs as a Nuvo playlist file (`nuvo-playlist` version 1), which any Nuvo imports. */
 function saveFile(title: string, items: ShareItem[]): void {
   const tracks = items.map((item) => ({
     id: item.id,
@@ -55,7 +52,6 @@ function saveFile(title: string, items: ShareItem[]): void {
   setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
-/** One link, a YouTube list for people without Nuvo, a plain list and a file. Mount it while open only. */
 export function ShareSheet({ title, items, onClose }: ShareSheetProps): JSX.Element {
   const { t } = useTranslation();
   const [built, setBuilt] = useState<BuiltLink | null>(null);
@@ -63,7 +59,6 @@ export function ShareSheet({ title, items, onClose }: ShareSheetProps): JSX.Elem
 
   useEffect(() => {
     let live = true;
-    // a failed encode leaves only the text and file actions
     buildShareLink(title, items).then(
       (next) => live && setBuilt(next),
       () => live && setBuilt(null),

@@ -16,7 +16,6 @@
   visibility: hidden;
 }
 
-/* the view's shade over the field: it keeps white text readable on any cover */
 .shade {
   position: absolute;
   inset: 0;

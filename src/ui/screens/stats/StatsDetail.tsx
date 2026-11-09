@@ -19,7 +19,6 @@ import styles from "./Stats.module.css";
 
 const HOUR_MARKS = [0, 6, 12, 18];
 
-/** Every month from the first play to the last, the silent ones at zero. */
 function monthPoints(detail: Detail, locale: string): CurvePoint[] {
   const first = detail.byMonth[0]?.month;
   const last = detail.byMonth.at(-1)?.month;
@@ -134,7 +133,6 @@ function Failed(): JSX.Element {
   );
 }
 
-/** /stats/track?id=: one song's history. */
 export function StatsTrack(): JSX.Element {
   const { t } = useTranslation();
   const [params] = useSearchParams();
@@ -184,7 +182,6 @@ export function StatsTrack(): JSX.Element {
   );
 }
 
-/** /stats/artist?key=: one artist's history and most played songs. */
 export function StatsArtist(): JSX.Element {
   const { t } = useTranslation();
   const [params] = useSearchParams();

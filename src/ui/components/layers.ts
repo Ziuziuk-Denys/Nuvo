@@ -2,12 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as Rea
 import { DURATION_MS } from "../motion";
 import { isEscapeGuarded } from "../ports/escape";
 
-/*
- * One stack for every Nuvo overlay. A single window listener sends Escape to the top layer only,
- * so a sheet opened over a popover closes first, and a shortcut recorder holding the escape guard
- * keeps Escape for itself.
- */
-
 const stack: { onEscape: () => void }[] = [];
 
 function onKeyDown(event: KeyboardEvent): void {
@@ -18,7 +12,6 @@ function onKeyDown(event: KeyboardEvent): void {
   top.onEscape();
 }
 
-/** True while any Nuvo overlay holds a place on the Escape stack. */
 export function hasOpenLayer(): boolean {
   return stack.length > 0;
 }
@@ -35,14 +28,8 @@ export function pushLayer(onEscape: () => void): () => void {
   };
 }
 
-/**
- * A press inside an element with this attribute never dismisses an overlay. Overlay roots carry it,
- * so a menu over a popover keeps the popover; a group of anchors (the island) carries it, so its
- * buttons can move an open popover between them instead of closing it.
- */
 export const LAYER_ATTRIBUTE = "data-layer";
 
-/** Pixels an overlay keeps from the window edges. */
 export const EDGE_PX = 12;
 
 const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
@@ -51,7 +38,6 @@ export function focusables(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)];
 }
 
-/** Tab and Shift+Tab wrap around inside root. */
 export function trapTab(event: ReactKeyboardEvent, root: HTMLElement): void {
   if (event.key !== "Tab") return;
   const items = focusables(root);
@@ -75,7 +61,6 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), Math.max(min, max));
 }
 
-/** "in" while open, "out" for the exit motion, then null so the caller unmounts. */
 export function usePresence(open: boolean): "in" | "out" | null {
   const [phase, setPhase] = useState<"in" | "out" | null>(open ? "in" : null);
   if (open && phase !== "in") setPhase("in");
@@ -91,11 +76,6 @@ export function usePresence(open: boolean): "in" | "out" | null {
   return phase;
 }
 
-/**
- * The behaviour every overlay shares while open: a place on the Escape stack, focus moved inside
- * and given back on close (to returnTo, else to whatever had it before), and with an anchor or a
- * pointer menu, dismissal by a press outside.
- */
 export function useLayer(
   open: boolean,
   root: RefObject<HTMLElement | null>,

@@ -1,4 +1,3 @@
-/** Item mapping: track rows, top-result cards, non-track rows, queue rows and the search response. Pure. */
 import { PLACEHOLDER_ARTIST } from "../constants";
 import type { ArtistRef, SearchItem, TrackPage, YtTrack } from "../types";
 import {
@@ -34,7 +33,6 @@ function columns(row: Obj): { flex: Obj[]; fixed: Obj[] } {
 
 const playButtonOf = (node: Obj) => node.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint;
 
-/** Text parts across runs, split on the `•` separator, trimmed, empty ones dropped. */
 function parts(runs: Obj[]): string[] {
   return runs
     .flatMap((run) => (typeof run.text === "string" ? run.text.split("•") : []))
@@ -42,7 +40,6 @@ function parts(runs: Obj[]): string[] {
     .filter((part: string) => part.length > 0);
 }
 
-/** A list row or a bare row renderer as a track, or `undefined` when it has no id or no title. */
 export function mapTrackRow(item: unknown, fallbackArtists: ArtistRef[] = []): YtTrack | undefined {
   if (!isObj(item)) return undefined;
   const row = isObj(item.musicResponsiveListItemRenderer) ? item.musicResponsiveListItemRenderer : item;
@@ -74,7 +71,6 @@ export function mapTrackRow(item: unknown, fallbackArtists: ArtistRef[] = []): Y
   };
 }
 
-/** The top-result card, or any item with a title plus `onTap` or `buttons`. */
 export function mapCard(item: unknown): SearchItem | undefined {
   if (!isObj(item)) return undefined;
   const card = isObj(item.musicCardShelfRenderer) ? item.musicCardShelfRenderer : item;
@@ -137,7 +133,6 @@ export function mapCard(item: unknown): SearchItem | undefined {
   };
 }
 
-/** A list row that is not a track: artist, album or playlist by the row's page type. */
 export function mapListRow(item: unknown): SearchItem | undefined {
   if (!isObj(item)) return undefined;
   const row = isObj(item.musicResponsiveListItemRenderer) ? item.musicResponsiveListItemRenderer : item;
@@ -178,7 +173,6 @@ export function mapListRow(item: unknown): SearchItem | undefined {
   }
 }
 
-/** One search item: card first, then track, then non-track row. */
 export function mapSearchItem(item: unknown): SearchItem | undefined {
   const card = mapCard(item);
   if (card) return card;
@@ -197,7 +191,6 @@ export function dedupe(items: SearchItem[]): SearchItem[] {
   });
 }
 
-/** A search response in YouTube's order, deduplicated by `kind:id`. */
 export function mapSearchResponse(response: unknown): SearchItem[] {
   const sections: unknown[] = isObj(response)
     ? (response.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents ?? [])
@@ -220,7 +213,6 @@ export function mapSearchResponse(response: unknown): SearchItem[] {
   return dedupe(out);
 }
 
-/** A `playlistPanelVideoRenderer` for the radio (`"radio"`) or for track details (`"details"`). */
 export function mapQueueRow(item: unknown, mode: "radio" | "details"): TrackPage | undefined {
   if (!isObj(item)) return undefined;
   const row = isObj(item.playlistPanelVideoRenderer) ? item.playlistPanelVideoRenderer : item;

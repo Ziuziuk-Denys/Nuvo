@@ -31,7 +31,6 @@ interface Flag {
   snapshot?: Partial<HomePin> | null;
 }
 
-/** Where pins lived before the daemon kept them; read once to move them, then removed. */
 export const LEGACY_PINS_KEY = "nuvo_home_pins_v1";
 const MAX_RAIL_PINS = 6;
 const OWN_PLAYLIST_HREF = "/library/playlist";
@@ -41,7 +40,6 @@ const enc = encodeURIComponent;
 const samePin = (kind: HomePinKind, id: string) => (pin: HomePin) => pin.kind === kind && pin.id === id;
 const warn = (error: unknown) => log("warn", "pins", error instanceof Error ? error.message : String(error));
 
-/** What a pin shows on Home rides along as the flag's snapshot. */
 function putPin(pin: HomePin): Promise<unknown> {
   const { kind, id, ...snapshot } = pin;
   return coreRequest("PUT", `/v1/me/flags/${kind}/${enc(id)}`, { pinned: true, snapshot });
@@ -57,7 +55,6 @@ function fromFlag(flag: Flag): HomePin[] {
   return [{ ...snapshot, kind, id: flag.id, title: typeof snapshot.title === "string" ? snapshot.title : "", href: snapshot.href }];
 }
 
-/** The pins an older version kept in this browser, newest first. */
 function legacyPins(storage: Pick<Storage, "getItem">): HomePin[] {
   try {
     const pins = (JSON.parse(storage.getItem(LEGACY_PINS_KEY) ?? "null") as { state?: { pins?: unknown } } | null)?.state?.pins;
@@ -67,7 +64,6 @@ function legacyPins(storage: Pick<Storage, "getItem">): HomePin[] {
   }
 }
 
-/** Pins live in the daemon's library flags, so they survive a cleared browser store; the list is newest first, with no cap. */
 export const useHomePinsStore = create<HomePinsState>()((set, get) => ({
   pins: [],
   pin: (item) => {
@@ -91,7 +87,6 @@ export const useHomePinsStore = create<HomePinsState>()((set, get) => ({
   },
 }));
 
-/** Reads the pins from the daemon. Pins an older version kept in this browser move there first, ahead of the rest; the old copy goes only once they are in. */
 export async function loadPins(storage: Pick<Storage, "getItem" | "removeItem"> = localStorage): Promise<void> {
   const legacy = legacyPins(storage);
   if (legacy.length > 0) {
@@ -103,7 +98,6 @@ export async function loadPins(storage: Pick<Storage, "getItem" | "removeItem"> 
   useHomePinsStore.setState({ pins: flags.items.flatMap(fromFlag) });
 }
 
-/** A pinned list kept in local storage under `name`, newest first, at most `max`. */
 const pinsStore = (name: string, max: number) =>
   create<HomePinsState>()(
     persist(
@@ -129,10 +123,8 @@ const pinsStore = (name: string, max: number) =>
     ),
   );
 
-/** The playlists, albums and artists pinned to the navigation rail. */
 export const useRailPinsStore = pinsStore("nuvo_rail_pins_v1", MAX_RAIL_PINS);
 
-// Own playlists can be deleted; saved albums, artists and external playlists keep their pages.
 export function livePins(pins: HomePin[], ownPlaylistIds: string[] | null): HomePin[] {
   if (!ownPlaylistIds) return pins;
   return pins.filter((pin) => pin.kind !== "playlist" || !pin.href.startsWith(OWN_PLAYLIST_HREF) || ownPlaylistIds.includes(pin.id));

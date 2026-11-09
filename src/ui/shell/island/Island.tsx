@@ -50,12 +50,10 @@ type Panel = "add" | "sound" | "volume";
 
 const CODEC_NAMES: Record<string, string> = { opus: "Opus", aac: "AAC", mp3: "MP3" };
 
-/** The accent is a solid colour; the bar shows only a faint wash of it, as with the grey fallback. */
 export function coverWash(accent: string, light: boolean): string {
   return `color-mix(in srgb, ${accent} ${light ? 9 : 18}%, transparent)`;
 }
 
-/** The played part of the bar, tinted from the cover: a faint wash of its strongest hue, or grey for a grey cover. */
 function useCoverTint(url: string | undefined, light: boolean): string {
   const fallback = light ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)";
   const [tint, setTint] = useState<{ key: string; value: string } | null>(null);
@@ -88,19 +86,12 @@ function useCoverTint(url: string | undefined, light: boolean): string {
   return tint?.key === key ? tint.value : fallback;
 }
 
-/**
- * The bottom player: a 64 px bar right of the rail. Cover, title and like on the left, the transport in the middle,
- * the tools in a grey well on the right. The played part of the track tints the bar from the left; a press on the bar
- * itself seeks. Glass while a cover lights the page, the plain page colour otherwise. The panel buttons share one
- * popover; the bar carries the layer attribute so those presses never count as outside it.
- */
 export function Island(): JSX.Element | null {
   const { t } = useTranslation();
   const player = usePlayerState();
   const setFullscreen = usePlayerStore((state) => state.setFullscreen);
   const queueOpen = useShellStore((state) => state.queueOpen);
   const toggleQueue = useShellStore((state) => state.toggleQueue);
-  // a first launch has nothing loaded; the tour's player chapters show a sample song here
   const demo = useTourDemo();
   const track = player.currentTrack ?? demo;
   const liked = useIsTrackLiked(track?.id);
@@ -118,11 +109,9 @@ export function Island(): JSX.Element | null {
   // shortcut: probed once per track, so a stream that finishes caching mid-play says so from the next play
   const cachedIds = useCachedTrackIds(player.currentTrack ? [player.currentTrack.id] : [], Boolean(player.currentTrack));
 
-  // the popover keeps showing its last panel through the exit motion
   const [panel, setPanel] = useState<Panel>("volume");
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  // the shared Popover keeps its own last panel while the volume column is up
   const shared = useRef<"sound" | "add">("sound");
   if (panel !== "volume") shared.current = panel;
   const [soundTab, setSoundTab] = useState<SoundTab>("eq");
@@ -132,7 +121,6 @@ export function Island(): JSX.Element | null {
   const [dislikeMenu, setDislikeMenu] = useState({ open: false, at: { x: 0, y: 0 } });
   const hasTrack = Boolean(track);
 
-  // a notice belongs to the track it was made on; with nothing playing it must not wait for the next play
   useEffect(() => {
     if (!hasTrack) useNotInterestedStore.getState().setNotice(null);
   }, [hasTrack]);
@@ -185,7 +173,6 @@ export function Island(): JSX.Element | null {
     reason: standIn
       ? t(standIn.restarted ? "ui.island.state.restarted" : "ui.island.state.played_from", { source: standIn.source })
       : reasonText(pick.reason, t),
-    // a playing track nobody hears outranks every other line
     notice: player.outputSilent
       ? t(player.outputSilent === "system_muted" ? "ui.island.state.system_muted" : "ui.island.state.output_stopped")
       : notice
@@ -201,7 +188,6 @@ export function Island(): JSX.Element | null {
     if (value.kind === "radio-seed") return t("ui.island.state.radio_seed", { seed: value.seed });
     return t("ui.island.state.radio_queue");
   };
-  // read at render: the bar re-renders with every position update, so the hover hint stays current
   const format = currentStreamFormat();
   const hint = standIn
     ? `${standIn.hover} ${t("ui.island.stand_in_hint")}`
@@ -354,7 +340,6 @@ export function Island(): JSX.Element | null {
 
       <Scrubber positionMs={player.positionMs} durationMs={durationMs} tint={tint} loop={{ a: loopA, b: loopB }} />
 
-      {/* volume is its own small column; the other panels share the Popover */}
       <VolumePopover open={open && panel === "volume"} anchor={anchor} onClose={() => setOpen(false)} onWheel={onVolumeWheel} />
       <Popover
         open={open && panel !== "volume"}

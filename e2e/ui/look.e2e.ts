@@ -5,7 +5,6 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { launchNuvo, type Look, type NuvoSession, type Size } from "./harness";
 
-/** Screens of the theme editor, fonts and custom CSS in Settings (customization design 2, 6, 12). */
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const SHOTS = process.env.LOOK_SHOTS ?? path.join(os.homedir(), ".cache", "look-shots");
 const WIDE: Size = { width: 1200, height: 780 };
@@ -17,14 +16,12 @@ const dictionaries: Record<Locale, Record<string, unknown>> = {
   ru: JSON.parse(fs.readFileSync(path.join(ROOT, "src", "i18n", "locales", "ru.json"), "utf8")),
 };
 
-/** The UI text of a key, so the same flow runs in both languages. */
 function text(locale: Locale, key: string, params: Record<string, string> = {}): string {
   const found = key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], dictionaries[locale]);
   if (typeof found !== "string") throw new Error(`no ${locale} text for ${key}`);
   return Object.entries(params).reduce((value, [name, param]) => value.replace(`{${name}}`, param), found);
 }
 
-/** A small installed TTF or OTF to load as the owner's font file. */
 function fontFixture(): string {
   const files = execFileSync("fc-list", [":", "file"], { encoding: "utf8" })
     .split("\n")
@@ -50,13 +47,11 @@ async function stubDialogs(live: NuvoSession, open: string | null, save: string 
   );
 }
 
-/** Applies the look, size and locale, and returns a shooter that names files by state. */
 async function prepare(live: NuvoSession, look: Look, size: Size, locale: Locale) {
   const page = live.page;
   await page.evaluate((value) => localStorage.setItem("nuvo_locale", value), locale);
   const custom = await page.evaluate(() => document.documentElement.dataset.preset?.startsWith("custom:") === true);
   if (custom) {
-    // a saved theme is in force, so only the mode changes; the harness waits for a built-in preset
     await page.waitForTimeout(1_100);
     await page.evaluate((mode) => localStorage.setItem("theme", mode), look.mode);
     await page.reload();
@@ -97,7 +92,6 @@ describe("look", () => {
     const shoot = await prepare(live, { preset: "nuvo", mode: "light" }, WIDE, "en");
     const editor = page.locator(`aside[aria-label="${t("appearance.editor.label")}"]`);
 
-    // a new theme opens the sheet over the live app, Settings steps aside
     await openSection(live, "appearance");
     await shoot("appearance");
     await page.getByRole("button", { name: t("appearance.theme.new_from") }).click();
@@ -105,14 +99,12 @@ describe("look", () => {
     await expect.poll(() => page.locator("[role=dialog][aria-modal=true]").count()).toBe(0);
     await shoot("editor");
 
-    // a colour typed in the picker repaints the app
     await editor.getByRole("button", { name: t("appearance.editor.edit_role", { role: t("appearance.roles.accent.name") }) }).click();
     await page.getByLabel(t("appearance.picker.hex")).fill("#c2456b");
     await expect.poll(() => rootToken(live, "--n-accent")).toBe("#c2456b");
     await shoot("picker");
     await page.keyboard.press("Escape");
 
-    // grey text warns, text the colour of the background blocks Save, Fix for me clears the warning
     const save = editor.getByRole("button", { name: t("appearance.editor.save"), exact: true });
     const editText = editor.getByRole("button", { name: t("appearance.editor.edit_role", { role: t("appearance.roles.ink.name") }) });
     await editText.click();
@@ -136,14 +128,12 @@ describe("look", () => {
       .click();
     await expect.poll(() => save.isEnabled()).toBe(true);
 
-    // Save stores the theme and makes it the active look
     await save.click();
     await editor.waitFor({ state: "detached" });
     await expect.poll(() => page.evaluate(() => document.documentElement.dataset.preset ?? "")).toMatch(/^custom:/);
     await page.locator("[role=dialog] h2").first().waitFor();
     await shoot("saved");
 
-    // a font file loads and becomes the interface font
     const fixture = fontFixture();
     await stubDialogs(live, fixture, null);
     await page
@@ -158,7 +148,6 @@ describe("look", () => {
     await shoot("font-list");
     await page.keyboard.press("Escape");
 
-    // custom CSS: a fetch is refused with its line, a clean sheet applies and survives Settings closing
     await openSection(live, "customization");
     await page.getByRole("button", { name: t("appearance.css.show"), exact: true }).click();
     const area = page.getByLabel(t("appearance.css.editor"));
@@ -176,7 +165,6 @@ describe("look", () => {
     await page.waitForTimeout(2_500);
     expect(await page.locator("#nuvo-custom-css").count()).toBe(1);
 
-    // export with the CSS, then import it back: the CSS is shown and only joins after the owner says so
     const exported = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-look-")), "shared.nuvotheme.json");
     await stubDialogs(live, exported, exported);
     await openSection(live, "appearance");
@@ -197,11 +185,9 @@ describe("look", () => {
     await page.getByRole("button", { name: t("appearance.theme.discard") }).click();
     fs.rmSync(path.dirname(exported), { recursive: true, force: true });
 
-    // safe mode: the default look with the banner, and back on
     await openSection(live, "customization");
     await page.getByRole("button", { name: t("appearance.safe.reset") }).click();
     await expect.poll(() => page.locator("#nuvo-custom-css").count()).toBe(0);
-    // the banner stays off Settings, whose reset row says the same
     const banner = page.locator("[role=status][data-nuvo-guard]");
     expect(await banner.count()).toBe(0);
     await page.keyboard.press("Escape");

@@ -1,5 +1,4 @@
-//! Every ffmpeg decode of a short or unknown-length input must carry `-t`, or a live stream
-//! reads until the timeout. Own test binary: fake ffmpeg on PATH.
+// Own test binary with a fake ffmpeg on PATH
 
 mod common;
 
@@ -12,7 +11,6 @@ async fn every_decode_is_bounded_by_t() {
     let tools = tempfile::tempdir().unwrap();
     let log = tools.path().join("decodes.log");
     let script = tools.path().join("ffmpeg");
-    // Probe calls (no s16le output) print a banner; decodes log their arguments and emit PCM.
     let body = format!(
         "#!/bin/sh\ncase \"$*\" in\n*s16le*) echo \"$*\" >> \"{log}\"; /usr/bin/head -c 640000 /dev/zero ;;\n*) echo \"$BANNER\" >&2; exit 1 ;;\nesac\n",
         log = log.display()

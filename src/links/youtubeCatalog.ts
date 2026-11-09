@@ -1,7 +1,3 @@
-/**
- * The YouTube client's catalog as the link features need it.
- * Only track results count for matching; a video that is gone is null.
- */
 import { YtError, type SearchItem, type YtTrack } from "@/youtube/types";
 import { getYoutube } from "@/youtubeBoot";
 import type { YoutubeCatalog } from "./ports";

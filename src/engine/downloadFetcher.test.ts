@@ -25,14 +25,14 @@ describe("DownloadFetcher", () => {
     const daemon = fakeDaemon(queue);
     const ensureCached = vi.fn(async (track: { id: string }) => {
       if (track.id === "aaaaaaaaaaa") {
-        queue.shift(); // the daemon wrote the file and dropped it from the waiting list
+        queue.shift();
         return true;
       }
       return false;
     });
     const fetcher = new DownloadFetcher({ base: "nuvo-core://local", fetch: daemon.fetch, ensureCached, log: () => undefined });
     fetcher.kick();
-    fetcher.kick(); // a second kick while running joins the same loop
+    fetcher.kick();
     await vi.waitFor(() => expect(queue).toEqual([]));
     expect(ensureCached.mock.calls.map(([t]) => t.id)).toEqual(["aaaaaaaaaaa", "bbbbbbbbbbb"]);
     expect(daemon.failed).toEqual(["bbbbbbbbbbb"]);

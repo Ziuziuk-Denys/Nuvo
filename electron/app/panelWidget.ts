@@ -1,7 +1,4 @@
-/**
- * The desktop panel widgets: which one fits this session, and setting it up after the user's click, never before.
- * Only files in the user's own extension or widget folders are written; no shared desktop setting is ever touched.
- */
+// Set up only after the user's click; writes only the user's own extension or widget folders
 import { existsSync } from "node:fs";
 import { chmod, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -15,7 +12,6 @@ const PLASMA_DIR = path.join("plasma", "quest.nuvo.panel");
 const WAYBAR_DIR = "waybar";
 const TIMEOUT_MS = 15_000;
 
-/** What the user does after the install: nothing, log in again, add the widget, or paste the Waybar snippet. */
 export type PanelNext = "ready" | "relogin" | "add-widget" | "add-module";
 export type PanelInstallResult = { ok: true; next: PanelNext; snippet?: string } | { ok: false; error: string };
 
@@ -28,30 +24,22 @@ export function panelTarget(session: NotchSession, env: Record<string, string | 
 }
 
 export interface PanelDeps {
-  /** The folder holding dist/, plasma/ and waybar/: resources/desktop when packaged, the repo's desktop/ in development. */
   resources: string;
   configHome: string;
   exec: Exec;
-  /** A marker file: the GNOME extension is installed and waits for "Turn on" after the next login. */
   pendingFile: string;
 }
 
-/**
- * Whether the one-click install is safe here. With XDG_CONFIG_HOME or XDG_DATA_HOME moved away from HOME, the
- * desktop's tools and its settings daemon would disagree about which profile they write to, so the user gets
- * the manual steps instead.
- */
+// A moved XDG_CONFIG_HOME or XDG_DATA_HOME makes desktop tools and the settings daemon disagree
 export function panelInstallAllowed(env: Record<string, string | undefined>, home: string): boolean {
   const same = (value: string | undefined, fallback: string) => !value || path.resolve(value) === path.resolve(home, fallback);
   return same(env.XDG_CONFIG_HOME, ".config") && same(env.XDG_DATA_HOME, path.join(".local", "share"));
 }
 
-/** Where the files for `target` sit in this build, for the manual steps. */
 export function panelSource(target: PanelTarget, resources: string): string {
   return path.join(resources, { gnome: GNOME_ZIP, plasma: PLASMA_DIR, waybar: WAYBAR_DIR }[target]);
 }
 
-/** Whether this build carries the files for `target` (the GNOME zip only exists after `pnpm panel:pack`). */
 export function panelFilesPresent(target: PanelTarget, resources: string): boolean {
   return existsSync(panelSource(target, resources));
 }
@@ -75,7 +63,6 @@ async function installGnome(deps: PanelDeps): Promise<PanelNext> {
   return enableGnome(deps);
 }
 
-/** "Turn on" after the login that follows an install: only `gnome-extensions enable`, nothing is installed. */
 export async function enablePanelWidget(deps: Pick<PanelDeps, "exec" | "pendingFile">): Promise<PanelInstallResult> {
   try {
     return { ok: true, next: await enableGnome(deps) };
@@ -95,7 +82,6 @@ async function installPlasma({ resources, exec }: PanelDeps): Promise<PanelNext>
   return "add-widget";
 }
 
-/** Copies the script and stylesheet next to the Waybar config; the snippet points at that copy. */
 async function installWaybar({ resources, configHome }: PanelDeps): Promise<{ next: PanelNext; snippet: string }> {
   const target = path.join(configHome, "waybar", "nuvo");
   await mkdir(target, { recursive: true });
@@ -118,10 +104,8 @@ export async function installPanelWidget(target: PanelTarget, deps: PanelDeps & 
   }
 }
 
-/** Starts a desktop app without waiting for it; false when it could not start. */
 export type Launch = (file: string, args: string[]) => Promise<boolean>;
 
-/** GNOME's Extensions app, where the user can switch Nuvo on by hand: the native app, else its desktop entry. */
 export async function openExtensionsApp(launch: Launch): Promise<boolean> {
   return (await launch("gnome-extensions-app", [])) || launch("gtk-launch", ["org.gnome.Extensions"]);
 }

@@ -1,5 +1,3 @@
-//! ffmpeg decodes everything to 16 kHz stereo `s16le` on stdout; nothing touches the disk.
-
 use std::ffi::OsString;
 use std::path::Path;
 use std::time::Duration;
@@ -9,16 +7,13 @@ use tokio::process::Command;
 use crate::process::run;
 use crate::{FetchError, Remote, classify};
 
-/// Length of a system audio or microphone recording.
 pub const MONITOR_MS: u64 = 12_000;
 const TIMEOUT: Duration = Duration::from_secs(60);
 
 pub enum Input<'a> {
     File(&'a Path),
     Remote(&'a Remote),
-    /// The default PipeWire/PulseAudio monitor: whatever the computer is playing.
     Monitor,
-    /// The default PipeWire/PulseAudio source.
     Microphone,
 }
 
@@ -26,15 +21,13 @@ fn seconds(ms: u64) -> String {
     format!("{}.{:03}", ms / 1000, ms % 1000)
 }
 
-/// First stderr line with every word that holds a URL replaced; URLs can carry tokens.
+// URLs can carry tokens, so every word holding one is redacted
 fn first_line_redacted(stderr: &str) -> String {
     let line = stderr.lines().next().unwrap_or("ffmpeg failed");
     line.split(' ').map(|word| if word.contains("http://") || word.contains("https://") { "***" } else { word }).collect::<Vec<_>>().join(" ")
 }
 
-/// `-ss` (and `-t`) before `-i`, so ffmpeg seeks in the input and HTTP sources are read by range.
-/// Header lines containing CR or LF are dropped: they come from the remote site via yt-dlp.
-/// Proxy handling is done in `decode` via environment variables, not in arguments.
+// -ss before -i so ffmpeg seeks the input; CR/LF headers from remote sites are dropped
 pub fn decode_args(input: &Input, start_ms: u64, len_ms: Option<u64>, _proxy: Option<&str>) -> Vec<OsString> {
     let mut args: Vec<OsString> = Vec::new();
     let push = |args: &mut Vec<OsString>, items: &[&str]| args.extend(items.iter().map(OsString::from));
@@ -74,7 +67,6 @@ pub fn decode_args(input: &Input, start_ms: u64, len_ms: Option<u64>, _proxy: Op
     args
 }
 
-/// Interleaved 16 kHz stereo samples of the input from `start_ms`, `len_ms` long (`None`: to the end).
 pub async fn decode(ffmpeg: &Path, input: &Input<'_>, start_ms: u64, len_ms: Option<u64>, proxy: Option<&str>) -> Result<Vec<i16>, FetchError> {
     if let Input::Remote(remote) = input {
         if !(remote.url.starts_with("https://") || remote.url.starts_with("http://")) {
@@ -120,8 +112,7 @@ pub async fn decode(ffmpeg: &Path, input: &Input<'_>, start_ms: u64, len_ms: Opt
     Ok(output.stdout.as_chunks::<2>().0.iter().map(|b| i16::from_le_bytes(*b)).collect())
 }
 
-/// Duration of a local file from ffmpeg's banner (`Duration: 00:03:21.45`). ffmpeg exits with an
-/// error here because no output is given; only the banner matters. `Ok(None)` when it says `N/A`.
+// ffmpeg exits with an error without an output; only its Duration banner line matters
 pub async fn probe(ffmpeg: &Path, path: &Path) -> Result<Option<u64>, FetchError> {
     let mut command = Command::new(ffmpeg);
     command.args(["-nostdin", "-hide_banner", "-protocol_whitelist", "file,crypto", "-i"]);

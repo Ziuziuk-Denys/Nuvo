@@ -15,7 +15,6 @@ function call(objectPath: string, method: string, ...args: string[]): string[] {
   return ["call", "--session", "--dest", "org.kde.KWin", "--object-path", objectPath, "--method", method, ...args];
 }
 
-/** Unloads the Notch script; errors are ignored (KWin gone or script never loaded). */
 export async function unloadKwinScript(run: (cmd: string, args: string[]) => Promise<string> = gdbus): Promise<void> {
   await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.unloadScript", PLUGIN)).catch(() => "");
 }

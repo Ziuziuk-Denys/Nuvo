@@ -1,4 +1,3 @@
-/** Signed-in TV browse: profile, the account's playlists and one account playlist. */
 import { TVHTML5 } from "../constants";
 import { continuationOf, findAll, isObj, parseDuration, pickCover, textOf, thumbnailsOf, videoThumbnail, type Obj } from "../catalog/map";
 import type { Innertube } from "../http";
@@ -24,7 +23,6 @@ export interface AccountPlaylistRow {
 
 type Call = (endpoint: string, body: Record<string, unknown>, signal: AbortSignal) => Promise<unknown>;
 
-/** InnerTube as the signed-in TV client. */
 export function tvCaller(yt: Innertube, authorization: (signal: AbortSignal) => Promise<string | null>): Call {
   return async (endpoint, body, signal) => {
     const auth = await authorization(signal);

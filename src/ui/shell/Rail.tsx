@@ -20,10 +20,6 @@ interface RailItem {
   href: string;
 }
 
-/**
- * The navigation rail: a glass column on the left edge, solid glyphs on top and settings at the foot.
- * The active destination is told by its glyph alone: it takes the full ink, the others rest at 55 %.
- */
 export function Rail(): JSX.Element {
   const { t } = useTranslation();
   const { pathname } = useLocation();
@@ -37,7 +33,6 @@ export function Rail(): JSX.Element {
   // a failed fetch lists no playlists, so only a clean one may hide pins of deleted playlists
   const settled = playlists.isFetched && !playlists.error && !playlists.isLoading;
   const shown = livePins(pins, settled ? playlists.data.playlists.map((playlist) => playlist.id) : null);
-  // running imports draw a thin line under the Library glyph; the rows land in the library as it fills
   const importing = importsPercent(useImportSummaries());
   const importingText = importing === null ? "" : t("ui.library.importing", { percent: importing });
 
@@ -49,7 +44,6 @@ export function Rail(): JSX.Element {
     { id: "stats", icon: "stats", label: t("ui.nav.stats"), href: "#/stats" },
   ];
 
-  // the search popup stands in for the search screen, so it lights Search while it is open
   const active = searchOpen ? "search" : activeNav(pathname);
 
   const openPin = (event: MouseEvent<HTMLAnchorElement>, pin: HomePin) => {
@@ -59,13 +53,11 @@ export function Rail(): JSX.Element {
   };
 
   const go = (event: MouseEvent<HTMLAnchorElement>, { href }: RailItem) => {
-    // modified clicks keep the browser's own link behaviour
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     navigateWithTransition(navigate, href.slice(1));
   };
 
-  // arrows walk the rail's controls, Home and End jump to its ends
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const controls = [...event.currentTarget.querySelectorAll<HTMLElement>("a, button")];
     const at = controls.indexOf(document.activeElement as HTMLElement);

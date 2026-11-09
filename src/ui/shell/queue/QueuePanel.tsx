@@ -16,20 +16,17 @@ import styles from "./QueuePanel.module.css";
 
 const ROW_HEIGHT = 56;
 
-/** The song the radio after the queue starts from: a station's seed, else the last song before the radio began. */
 export function radioSeed(queue: readonly { title: string }[], context: string | null, autoplayFrom: number | null): string | null {
   if (context?.startsWith("radio:")) return queue[0]?.title ?? null;
   return queue[(autoplayFrom ?? queue.length) - 1]?.title ?? null;
 }
 
-/** The queue on the right: play an entry, drag to reorder, remove one, clear what follows the current song. */
 export function QueuePanel(): JSX.Element | null {
   const { t } = useTranslation();
   const open = useShellStore((state) => state.queueOpen);
   const setOpen = useShellStore((state) => state.setQueueOpen);
   const queue = usePlayerStore((state) => state.queue);
   const currentIndex = usePlayerStore((state) => state.currentIndex);
-  // the queue never just stops: with repeat off a radio follows its last song
   const seed = usePlayerStore((state) => (state.repeat === "off" ? radioSeed(state.queue, state.playbackContext, state.autoplayFrom) : null));
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);

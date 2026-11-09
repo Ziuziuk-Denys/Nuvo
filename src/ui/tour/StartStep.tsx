@@ -12,7 +12,6 @@ import { ServiceMark } from "./ServiceMark";
 import { useTour } from "./tourStore";
 import styles from "./tour.module.css";
 
-/** Picks it takes before Home has something to start from */
 export const ENOUGH_PICKS = 3;
 const SUGGESTIONS = 3;
 
@@ -21,10 +20,6 @@ interface StartStepProps {
   onSkipTour: () => void;
 }
 
-/*
-  The first card of the tour, so Home is never empty on a first launch: bring music in from another service,
-  or name a few songs and artists to start the mixes from. Either, both, or neither; then the tour goes on
-*/
 export function StartStep({ onContinue, onSkipTour }: StartStepProps): JSX.Element {
   const { t } = useTranslation();
   const started = useTour((state) => state.started);
@@ -67,7 +62,6 @@ export function StartStep({ onContinue, onSkipTour }: StartStepProps): JSX.Eleme
 function ImportPanel(): JSX.Element {
   const { t } = useTranslation();
 
-  // the tour steps aside while the sheet is up and comes back where it was
   const choose = async (source: ImportSource) => {
     const tour = useTour.getState();
     tour.setAway(true);
@@ -126,7 +120,6 @@ function TastePanel(): JSX.Element {
     inputRef.current?.focus();
   };
 
-  // Enter in the field takes the first suggestion
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (suggestions[0]) pick(suggestions[0]);

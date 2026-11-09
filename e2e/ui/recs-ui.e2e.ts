@@ -8,7 +8,6 @@ import { artistRun, browseRow, nextResponse, queueRow, run, searchResponse, SEP,
 import { launchNuvo, passFirstRun, type Look, type NuvoSession } from "./harness";
 import { coverBase, seedLibrary } from "./seed";
 
-/** Runs against a `pnpm build`: cold start on Home, the hidden list in Settings, suggestions under a playlist. No traffic leaves the machine. */
 const STEP = "recs-ui";
 const SHOTS = path.join(os.homedir(), ".cache", "recs-shots");
 const LIGHT: Look = { preset: "nuvo", mode: "light" };
@@ -28,7 +27,6 @@ afterAll(async () => {
   await session?.close();
 });
 
-/** InnerTube answers for artist search, artist pages and radio lists, built from the catalog tests' shapes. */
 async function fixtures() {
   const port = await coverBase();
   const cover = (seed: number) => `http://127.0.0.1:${port}/${seed}.svg`;
@@ -106,7 +104,6 @@ async function fixtures() {
   return { artistSearch, artistPages, radio, artistParams: SEARCH_PARAMS.artist };
 }
 
-/** Patches fetch before the app runs on every load: YouTube hosts answer from the fixtures or 404, the probe says online. */
 async function installFixtures(page: Page): Promise<void> {
   const data = await fixtures();
   await page.route(/^https?:\/\/([a-z0-9-]+\.)*(youtube|ytimg|googlevideo|googleusercontent|soundcloud|sndcdn)\.com\//, (route) =>
@@ -164,7 +161,6 @@ describe("recs UI", () => {
     await page.reload();
     await passFirstRun(page);
 
-    // cold start: the daemon says nothing tells the taste, the tour is gone, the catalog answers
     const needed = await live.core(`return (await (await fetch(base + "/v1/recs/start")).json()).needed;`);
     expect(needed).toBe(true);
     const title = page.getByRole("heading", { name: "Start with a few artists you like" });
@@ -194,7 +190,6 @@ describe("recs UI", () => {
         await page.mouse.move(30, 400);
       }),
     );
-    // the fit at 1100 in Russian: nothing in the foot clips
     const foot = await page.evaluate(() => {
       const button = [...document.querySelectorAll("button")].find((b) => b.textContent === "Слушать")!;
       return { clipped: button.scrollWidth > button.clientWidth, right: button.getBoundingClientRect().right, width: innerWidth };
@@ -205,14 +200,12 @@ describe("recs UI", () => {
     await page.getByRole("heading", { name: "Начните с нескольких любимых исполнителей" }).waitFor({ state: "detached", timeout: 30_000 });
     const after = await live.core(`return (await (await fetch(base + "/v1/recs/start")).json()).needed;`);
     expect(after, "the starters answered the ask").toBe(false);
-    // the station plays at once, so Home shows its mix rather than an empty state
     await page.locator("[data-mix]").first().waitFor({ timeout: 30_000 });
     expect(await page.locator("[data-slot=cold-start]").count()).toBe(0);
     await page.waitForTimeout(1_500);
     console.log(await shoot(live, "home", "after-start-ru", [LIGHT], [W1100]));
     await setLocale(live, "en");
 
-    // the hidden list: three entries the way "Not interested" makes them
     const seed = await seedLibrary(live);
     const coverPort = await coverBase();
     await live.core(`
@@ -223,7 +216,6 @@ describe("recs UI", () => {
         const res = await fetch(base + "/v1/recs/not-interested", { method: "POST", headers: json, body: JSON.stringify({ trackId: tracks[i].id, scope: scopes[i], track: tracks[i] }) });
         if (!res.ok) throw new Error("not-interested " + res.status);
       }`);
-    // a reload first: the settings panel over Home would cover the link
     const openHidden = async () => {
       await page.reload();
       await live.go("#/");
@@ -244,20 +236,17 @@ describe("recs UI", () => {
     await setLocale(live, "ru");
     console.log(await shoot(live, "settings", "hidden-ru", [LIGHT], [W1100], openHidden));
     await page.getByRole("button", { name: "Вернуть", exact: true }).first().click();
-    // newest first: the first row is the artist hidden last
     await page.getByText("Massive Attack").waitFor({ state: "detached", timeout: 10_000 });
     const left = (await live.core(`return (await (await fetch(base + "/v1/recs/suppressions")).json()).items.length;`)) as number;
     expect(left, "Show again removed one entry in the daemon").toBe(2);
     await setLocale(live, "en");
     await page.reload();
 
-    // suggestions under an own playlist
     const playlistUrl = `#/library/playlist?id=${seed.smallPlaylistId}`;
     const openSuggestions = async () => {
       await live.go(playlistUrl);
       const section = page.locator("section[aria-label]").filter({ has: page.getByRole("heading", { name: /^(Suggestions|Предложения)$/ }) });
       await section.waitFor({ timeout: 30_000 });
-      // the playlist's last rows above the section, clear of the top bar
       await page
         .locator("[data-reorder-item]")
         .last()
@@ -286,7 +275,6 @@ describe("recs UI", () => {
     await page.reload();
     await openSuggestions();
 
-    // add one, then Not interested on the next, then Refresh
     const section = page.locator("section[aria-label=Suggestions]");
     const before = (await live.core(`return (await (await fetch(base + "/v1/me/playlists/${seed.smallPlaylistId}")).json()).items.length;`)) as number | null;
     const firstTitle = await section.locator("[data-track-row]").first().locator("span").nth(2).innerText();

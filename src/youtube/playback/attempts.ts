@@ -1,4 +1,3 @@
-/** One stream attempt per client: WEB_REMIX with a content token, or an anonymous fallback client. The resolver probes the URL. */
 import { TVHTML5, WEB_REMIX, type ClientContext } from "../constants";
 import type { FetchLike, Innertube } from "../http";
 import { YtError } from "../types";

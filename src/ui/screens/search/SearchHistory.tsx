@@ -11,7 +11,6 @@ export interface SearchHistoryProps {
   onActivate: (item: SearchHistoryItem) => void;
 }
 
-/** A typed query gets the clock mark; a remembered track, album or artist gets its cover. */
 function historyArt(entry: SearchHistoryItem): JSX.Element {
   if (entry.type !== "query") {
     const round = entry.type === "artist";
@@ -52,7 +51,6 @@ function HistoryRow({
   );
 }
 
-/** Recent searches with remove on hover and Clear history; one quiet line when there are none. */
 export function SearchHistory({ onActivate }: SearchHistoryProps): JSX.Element {
   const { t } = useTranslation();
   const { entries, forget, forgetAll } = useSearchHistoryStore(

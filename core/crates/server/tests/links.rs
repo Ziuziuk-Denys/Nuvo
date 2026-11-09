@@ -20,7 +20,6 @@ const ORIGINAL: &str = include_str!("../../fetch/tests/fixtures/tiktok-post.html
 const LICENSED_ID: &str = "7000000000000000011";
 const ORIGINAL_ID: &str = "6718335390845095173";
 
-/// Local TikTok: serves the two saved posts and counts page requests.
 async fn mock_tiktok() -> (String, Arc<AtomicUsize>) {
     let hits = Arc::new(AtomicUsize::new(0));
     let app = Router::new()
@@ -43,7 +42,6 @@ async fn mock_tiktok() -> (String, Arc<AtomicUsize>) {
     (format!("http://{addr}"), hits)
 }
 
-/// A fake yt-dlp that prints `json` and logs each run's arguments as one line of `runs.txt` next to itself.
 fn fake_yt_dlp(dir: &Path, json: &str) {
     let script = dir.join("yt-dlp");
     std::fs::write(dir.join("out.json"), json).unwrap();
@@ -83,7 +81,6 @@ async fn a_licensed_tiktok_sound_is_read_once_and_shared_with_recognize() {
     assert_eq!(inspect(&core, &canonical).await, answer);
     assert_eq!(hits.load(Ordering::SeqCst), 1, "the second inspect is answered from memory");
 
-    // recognize reads the same memory; the saved post's media live on a refused address
     let (status, body, _) = common::send(&core.app, common::request("POST", "/v1/recognize", Some(json!({ "url": canonical })))).await;
     assert_eq!(status, StatusCode::OK);
     let last = events(&body).pop().unwrap();

@@ -1,9 +1,3 @@
-/**
- * Fake fetch for the YouTube tests. Routes match by method,
- * URL with the query order ignored, and an optional body predicate. An unmatched request is recorded and
- * rejected; `assertClean()` fails the test when one happened.
- */
-
 export interface Call {
   method: string;
   url: string;
@@ -42,10 +36,6 @@ export class FakeFetch {
   readonly unmatched: Call[] = [];
   private routes: Route[] = [];
 
-  /**
-   * Adds a route. `url` is exact (query order ignored), a prefix ending in `*`, or a predicate.
-   * Several replies are served in order; the last one repeats.
-   */
   on(method: string, url: string | ((url: string) => boolean), replies: Reply | Reply[], body?: (body: Record<string, unknown>) => boolean): this {
     const match =
       typeof url === "function"
@@ -63,7 +53,6 @@ export class FakeFetch {
     return this;
   }
 
-  /** Shortcut for InnerTube: matches `POST {origin}/youtubei/v1/{endpoint}` and a body predicate. */
   innertube(endpoint: string, replies: Reply | Reply[], body?: (body: Record<string, unknown>) => boolean, origin = "https://music.youtube.com"): this {
     return this.on("POST", `${origin}/youtubei/v1/${endpoint}?prettyPrint=false`, replies, body);
   }

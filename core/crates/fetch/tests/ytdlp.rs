@@ -29,7 +29,6 @@ fn argument_list_is_fixed_and_the_url_comes_last_after_a_separator() {
     );
     let hostile = args("--exec=rm -rf ~");
     assert_eq!(hostile[hostile.len() - 2..], ["--", "--exec=rm -rf ~"]);
-    // Proxy is passed via environment, not in argv
     let proxied = args("https://youtu.be/abc");
     assert!(!proxied.iter().any(|arg| arg.contains("user") || arg.contains("pw")), "no credentials in argv");
 }
@@ -87,7 +86,6 @@ async fn drives_the_binary_and_classifies_its_errors() {
     assert_eq!(passed, args("https://youtu.be/ok"));
     assert!(passed.windows(2).any(|pair| pair == ["--use-extractors", "default,-generic"]), "recognize runs without the generic extractor");
 
-    // The links route calls resolve_full; it must pass the same list.
     resolve_full(&fake, "https://youtu.be/full", None).await.unwrap();
     let passed: Vec<String> = std::fs::read_to_string(&args_file).unwrap().lines().map(String::from).collect();
     assert!(passed.windows(2).any(|pair| pair == ["--use-extractors", "default,-generic"]), "inspect runs without the generic extractor");

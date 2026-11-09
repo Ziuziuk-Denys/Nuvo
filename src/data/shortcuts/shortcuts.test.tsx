@@ -52,7 +52,6 @@ beforeEach(() => {
   appCommand = null;
   globalLists = [];
   remoteSubscriptions = 0;
-  // onRemoteCommand is on the real shell too; the registry must never subscribe to it
   const shell: ShortcutShell & { onRemoteCommand(): () => void } = {
     setGlobalShortcuts: async (bindings) => {
       globalLists.push(bindings);

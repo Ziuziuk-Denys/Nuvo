@@ -1,6 +1,4 @@
-//! Audio feature vectors (`track_features`, f32 little-endian). Optional input: nothing analyses
-//! audio yet (the analyser and its licence are a later decision), so every caller treats a
-//! missing vector as "no audio evidence" and ranks on the other signals.
+// Optional input: nothing analyses audio yet, so a missing vector means no audio evidence
 
 use std::collections::HashMap;
 
@@ -34,7 +32,6 @@ pub fn load(conn: &Connection, ids: &[String]) -> Result<HashMap<String, Vec<f32
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
-/// Euclidean distance; `None` when either vector is missing or they come from different layouts.
 pub fn distance(a: Option<&Vec<f32>>, b: Option<&Vec<f32>>) -> Option<f64> {
     let (a, b) = (a?, b?);
     if a.len() != b.len() || a.is_empty() {
@@ -43,7 +40,6 @@ pub fn distance(a: Option<&Vec<f32>>, b: Option<&Vec<f32>>) -> Option<f64> {
     Some(a.iter().zip(b).map(|(x, y)| (f64::from(*x) - f64::from(*y)).powi(2)).sum::<f64>().sqrt())
 }
 
-/// 1 for identical sound, toward 0 as the distance grows; 0 without vectors.
 pub fn similarity(a: Option<&Vec<f32>>, b: Option<&Vec<f32>>) -> f64 {
     distance(a, b).map_or(0.0, |d| 1.0 / (1.0 + d))
 }

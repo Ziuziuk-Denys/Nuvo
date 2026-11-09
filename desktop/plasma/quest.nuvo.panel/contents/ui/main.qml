@@ -1,6 +1,4 @@
-// Nuvo in a Plasma 6 panel. Playback and metadata come from Nuvo's MPRIS player, like, dislike,
-// the lyrics line and "open" from quest.nuvo.Nuvo.Player (see desktop/README.md). Needs Plasma 6.4 or newer
-// for the D-Bus QML module.
+// Needs Plasma 6.4 or newer for the D-Bus QML module
 import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.plasmoid

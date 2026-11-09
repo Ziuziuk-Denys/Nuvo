@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { afterEach as after, beforeEach, vi } from "vitest";
 import { applyCustomCss, guardsReachable, watchCustomCss } from "./customCss";
 
-/** jsdom has no layout: a guard is a box the test places and a hit test the test answers. */
 function guard(box = { width: 100, height: 30 }) {
   const el = document.createElement("button");
   el.setAttribute("data-nuvo-guard", "flex");
@@ -11,7 +10,6 @@ function guard(box = { width: 100, height: 30 }) {
   document.body.append(el);
   return el;
 }
-/** A window whose listed members are replaced; the rest is the real one. */
 const viewWith = (overrides: object) =>
   new Proxy(window, { get: (target, key) => (key in overrides ? (overrides as Record<PropertyKey, unknown>)[key] : bind(target, key)) });
 const bind = (target: Window, key: PropertyKey) => {
@@ -80,7 +78,6 @@ describe("applying custom CSS", () => {
 
   it("drops the sheet when it hides a guarded control", () => {
     hits(guard());
-    // jsdom does not run cascade layers, so the computed style is reported by hand once the sheet is in
     const view = viewWith({
       getComputedStyle: () => ({ display: "block", visibility: "visible", opacity: document.getElementById("nuvo-custom-css") ? "0.2" : "1" }),
     });
@@ -103,7 +100,6 @@ describe("cascade layers", () => {
   it.each(bypasses)("installs %s only inside the custom layer, behind a guard sheet declared first", (sheet) => {
     hits(guard());
     const result = applyCustomCss(document, window, sheet);
-    // a sheet the static check already refuses never reaches the page
     if (!result.ok && result.reason === "sanitizer") return;
     const guardSheet = document.head.firstElementChild as HTMLStyleElement;
     expect(guardSheet.id).toBe("nuvo-guard-sheet");
@@ -194,7 +190,6 @@ describe("watching custom CSS", () => {
     const stop = watchCustomCss(document, window, ".card{color:red}", dropped);
     await vi.advanceTimersByTimeAsync(60000);
     expect(dropped).not.toHaveBeenCalled();
-    // a screen mounts a second guard that the sheet hides
     const second = guard();
     second.style.opacity = "0.2";
     await vi.advanceTimersByTimeAsync(1000);

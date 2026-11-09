@@ -9,14 +9,12 @@ import styles from "./NewPlaylistSheet.module.css";
 /** The Liked songs page uses this in place of a playlist id. */
 const LIKED_ID = "likes";
 
-/** The last non-null value, so a sheet sliding out still shows what it was about. */
 function useLast<T>(value: T | null): T | null {
   const [last, setLast] = useState(value);
   if (value && value !== last) setLast(value);
   return value ?? last;
 }
 
-/** Confirms taking an album, artist or playlist out of the library; your own playlist is deleted. */
 export function RemoveFromLibrarySheet(): JSX.Element {
   const { t } = useTranslation();
   const target = useModalStore((state) => state.removeFromLibrary);
@@ -72,7 +70,6 @@ export function RemoveFromLibrarySheet(): JSX.Element {
   );
 }
 
-/** Confirms taking one track out of a playlist, or out of Liked songs. */
 export function RemoveFromPlaylistSheet(): JSX.Element {
   const { t } = useTranslation();
   const target = useModalStore((state) => state.removeFromPlaylist);

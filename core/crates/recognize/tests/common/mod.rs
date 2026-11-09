@@ -11,7 +11,6 @@ use axum::routing::post;
 use nuvo_recognize::Pace;
 use serde_json::{Value, json};
 
-/// Pacing for tests: no spacing, millisecond back-off.
 pub const FAST: Pace = Pace { spacing: Duration::ZERO, backoff: [Duration::from_millis(5); 3] };
 
 pub struct Recorded {
@@ -37,7 +36,6 @@ impl MockShazam {
     }
 }
 
-/// Local stand-in for Shazam: answers with `replies` in order, then "no match" forever.
 pub async fn mock_shazam(replies: Vec<(u16, Value)>) -> MockShazam {
     let mock = Mock { replies: Arc::new(Mutex::new(replies.into())), seen: Arc::default() };
     let seen = mock.seen.clone();
@@ -98,7 +96,6 @@ pub fn found() -> Value {
     })
 }
 
-/// 16 kHz mono: a tone of `hz` pulsed every 250 ms, which gives plenty of peaks.
 pub fn pulsed_tone(hz: f32, samples: usize) -> Vec<i16> {
     (0..samples)
         .map(|n| {

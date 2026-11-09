@@ -1,4 +1,3 @@
-/** Errors from the real front door, mapped by the engine's own youtubeCause. */
 import { describe, expect, it } from "vitest";
 import { youtubeCause } from "../engine/sources/ports";
 import { createYoutube } from "./index";

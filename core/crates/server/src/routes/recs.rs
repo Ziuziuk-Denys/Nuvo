@@ -112,10 +112,6 @@ struct ScRelatedReply {
     stored: usize,
 }
 
-/// One `sc_related` job: the seed's SoundCloud upload (the seed
-/// itself, a stored alternative, or the match cascade's approved pick), then up to 50 related tracks
-/// into the pool. No upload or a real empty list is stored as an empty fetch, so the seed rests a week.
-/// SoundCloud out of reach (search or related read failing) stores nothing and answers an error, so the seed stays due.
 async fn sc_related(State(state): State<AppState>, JsonBody(body): JsonBody<ScRelatedBody>) -> Result<Json<ScRelatedReply>, ApiError> {
     let data = state.data()?;
     let seed = body.seed_id;
@@ -139,8 +135,6 @@ async fn sc_related(State(state): State<AppState>, JsonBody(body): JsonBody<ScRe
     Ok(Json(ScRelatedReply { stored }))
 }
 
-/// The approved SoundCloud upload of a track known by its snapshot, through the same cascade as
-/// `POST /v1/match/approved`. `None` when nothing is close enough; 503 when every search failed.
 async fn soundcloud_upload(sc: &SoundCloud, snapshot: &Value) -> Result<Option<String>, ApiError> {
     let Some(known) = Candidate::from_track(snapshot) else { return Ok(None) };
     let source = Source { title: known.title, artists: known.artists, duration_ms: known.duration_ms };
@@ -167,7 +161,6 @@ struct StartersBody {
     tracks: Vec<Value>,
 }
 
-/// Whether Home should ask for a few artists (nothing tells the taste yet).
 async fn start(State(state): State<AppState>) -> Result<Json<StartReply>, ApiError> {
     let data = state.data()?;
     let needed = data.db.call(starters::needed).await?;

@@ -1,7 +1,3 @@
-/**
- * The YouTube module's front door. Catalog and account are small and ready at once; the playback code loads on
- * the first stream request, and googlevideo on the first signed-in track.
- */
 import type { YtPlayback } from "./playback";
 import { createRuntime, type RuntimeDeps } from "./runtime";
 import type { YtAccount } from "./account";
@@ -20,9 +16,7 @@ export interface Youtube {
   catalog: YtCatalog;
   playback: YtPlayback;
   account: YtAccount;
-  /** Settles when the stored account and preferences are loaded. */
   ready: Promise<void>;
-  /** Stops listeners and closes the worker bridge; safe to call twice. */
   dispose(): void;
 }
 

@@ -1,4 +1,3 @@
-/** Fonts, the theme editor and custom CSS (customization design) for the Appearance and Customization sections. */
 export { useAppearanceStore, activeTheme, CUSTOM_PREFIX } from "@/data/look/appearance/appearanceStore";
 export {
   normalizeColour,

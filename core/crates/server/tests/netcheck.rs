@@ -33,7 +33,6 @@ VGtjYsOBstwMtzTtGOHHYAr6jkyhRANCAAQd3s4fChV+sW8gLINfz7gMmRknIvIY
 ujKnHz0TDXPrHW2q+VbEH6bE66AYNmZV4Bi+W6ORs2guHiquRTb3J2B0
 -----END PRIVATE KEY-----";
 
-/// An HTTP server whose every path answers `status`; hyper adds a `Date` header.
 async fn http_status(status: u16) -> String {
     let app = axum::Router::new().fallback(get(move || async move { StatusCode::from_u16(status).unwrap() }));
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -42,7 +41,6 @@ async fn http_status(status: u16) -> String {
     url
 }
 
-/// Accepts, reads the TLS ClientHello and hangs up, like a middlebox resetting the handshake.
 async fn resetting() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("https://localhost:{}/", listener.local_addr().unwrap().port());
@@ -56,7 +54,6 @@ async fn resetting() -> String {
     url
 }
 
-/// A TLS server with a self-signed certificate, like a middlebox rewriting TLS.
 async fn self_signed() -> String {
     let certs = vec![CertificateDer::from_pem_slice(CERT.as_bytes()).unwrap()];
     let key = PrivateKeyDer::from_pem_slice(KEY.as_bytes()).unwrap();
@@ -152,7 +149,6 @@ fn the_summary_names_the_most_specific_cause() {
 async fn local_servers_give_each_cause() {
     let (ok, limited, legal, broken) = (http_status(200).await, http_status(429).await, http_status(451).await, http_status(503).await);
     let (reset, intercepted) = (resetting().await, self_signed().await);
-    // Production order: the summary names the first failing service.
     let setup = local(vec![
         target("YouTube", &reset),
         Target { host: "intercepted".into(), ..target("YouTube", &intercepted) },
@@ -161,7 +157,6 @@ async fn local_servers_give_each_cause() {
         Target { host: "broken".into(), ..target("SoundCloud", &broken) },
         target("Lyrics", &ok),
     ]);
-    // The renamed hosts resolve through the real resolver as their URL host would.
     let resolver: Resolver = Arc::new(|_host: String, port: u16| Box::pin(async move { Ok(vec![std::net::SocketAddr::from(([127, 0, 0, 1], port))]) }));
     let setup = Setup { resolver, ..setup };
     let started = std::time::Instant::now();
@@ -206,7 +201,6 @@ async fn proxy_problems_come_first() {
     let setup = local(vec![target("Lyrics", &ok)]);
     let closed = run(&setup, Some("http://127.0.0.1:9")).await;
     assert_eq!(closed.rows[0].check, "proxy");
-    // the row says a proxy is set and its scheme, never where it is
     assert_eq!(closed.rows[0].host.as_deref(), Some("http proxy"));
     let socks = run(&setup, Some("socks5://user:pw@proxy.internal.example:1080")).await;
     assert_eq!(socks.rows[0].host.as_deref(), Some("socks5 proxy"));
@@ -253,7 +247,6 @@ async fn the_route_runs_without_a_library_and_keeps_the_result() {
     assert_eq!(core.state.last_network_check.read().unwrap().as_ref().unwrap().summary, "Everything is reachable.");
 }
 
-/// An HTTP proxy that reads the request head and then runs `reply`.
 async fn proxy_that(reply: &'static [u8]) -> String {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
@@ -272,20 +265,17 @@ async fn only_a_real_407_reads_as_login_rejected() {
     let setup = local(vec![Target { service: "YouTube", host: "music.youtube.com".into(), url: "https://music.youtube.com/".into() }]);
     let https_row = |check: &NetCheck| check.rows.iter().find(|r| r.check == "https").unwrap().clone();
 
-    // Accepts the connection and drops it without an answer.
     let closing = proxy_that(b"").await;
     let check = run(&setup, Some(&closing)).await;
     assert_eq!(check.summary, "The proxy is not reachable.");
     assert_ne!(https_row(&check).detail.as_deref(), Some("HTTP 407"));
 
-    // Answers CONNECT with a gateway error.
     let bad_gateway = proxy_that(b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\n\r\n").await;
     let check = run(&setup, Some(&bad_gateway)).await;
     assert_eq!(check.summary, "The proxy is not reachable.");
     assert_eq!(https_row(&check).code, Some("proxy_failed"));
     assert_ne!(https_row(&check).detail.as_deref(), Some("HTTP 407"));
 
-    // Nothing listens on the proxy port.
     let check = run(&setup, Some("http://127.0.0.1:9")).await;
     assert_eq!(check.summary, "The proxy is not reachable.");
 

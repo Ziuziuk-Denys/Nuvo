@@ -1,11 +1,9 @@
-/* The share sheet: one column inside the Sheet, as the import dialog lays it out; quiet type, no cards. */
 .body {
   display: flex;
   flex-direction: column;
   gap: var(--n-s-4);
 }
 
-/* what is shared, in body type under the sheet's title */
 .heading {
   margin: 0;
   color: var(--n-ink);
@@ -44,7 +42,6 @@
   gap: var(--n-s-2);
 }
 
-/* "Link copied" sits after the buttons, so it never moves the sheet */
 .status {
   margin: 0 0 0 var(--n-s-2);
   color: var(--n-ink-2);

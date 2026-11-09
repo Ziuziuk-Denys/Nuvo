@@ -1,4 +1,3 @@
-/** The lyrics editor's port: the daemon's user lyrics, the playing position and a reload of what views show. */
 import { playerRuntime, usePlayerStore } from "@/engine/compat";
 import type { Track } from "@/engine/types";
 import { lyrics } from "@/lyrics";
@@ -11,14 +10,12 @@ export { NoTranslatorError } from "@/lyrics/stream";
 
 export type LyricsTrack = Pick<Track, "id" | "title" | "artists" | "coverUrl" | "durationMs">;
 
-/** The fields the lyrics routes read; artist ids of the UI's track shape do not matter here. */
 export function toLyricsTrack(track: LyricsTrack): LyricsTrack {
   return { id: track.id, title: track.title, artists: track.artists, coverUrl: track.coverUrl, durationMs: track.durationMs };
 }
 
 const fetcher = (input: string, init?: RequestInit) => fetch(input, init);
 
-/** What the views show for the track is read again; before the engine starts there is nothing to refresh. */
 async function reloadShown(track: LyricsTrack): Promise<void> {
   let engine: ReturnType<typeof lyrics>;
   try {

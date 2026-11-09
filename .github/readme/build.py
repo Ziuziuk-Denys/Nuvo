@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Renders the README artwork and README.md from data.json. Standard library only.
-
-    python3 .github/readme/build.py
-
-Every card comes in light and dark, and in a narrow layout for phones. Text is drawn from glyphs.json
-as outlines and icons come from src/ui/icons/svg, so the cards match the app on every system.
-GitHub shows SVGs through <img>: motion runs from page load and hover never fires, so numbers loop
-gently and anything that would need a hover lives in a <details> in the template.
-"""
+"""Renders the README artwork from data.json: python3 .github/readme/build.py"""
 
 import base64
 import html
@@ -24,7 +16,6 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 DATA = json.loads((HERE / "data.json").read_text())
 FONT = json.loads((HERE / "glyphs.json").read_text())["weights"]
-# Golos Text is the site's face, used only by the two banners the site handed over
 FACES = {"g": FONT, "o": json.loads((HERE / "glyphs-golos.json").read_text())["weights"]}
 ICON_DIR = ROOT / "src" / "ui" / "icons" / "svg"
 PAGES = HERE / "pages"
@@ -35,7 +26,7 @@ EASE = "cubic-bezier(.45,.05,.2,1)"
 LOOP = 24
 SHOT_SIZE = (1672, 1126)
 SHOT_WINDOW = (76, 76, 1520, 974)
-CORNER = 26 / SHOT_WINDOW[2]  # the app window's own corner, as a share of its width
+CORNER = 26 / SHOT_WINDOW[2]
 
 THEMES = {
     "dark": {
@@ -53,7 +44,7 @@ THEMES = {
         "fieldFrom": "#AFC8F7", "fieldTo": "#DCE7FB", "coverOpacity": 0.3, "shade": "#1B2F66", "shadeOpacity": 0.32, "edge": "#10132022",
     },
 }
-BANNER_WIDE, BANNER_NARROW = 560, 420  # card widths; the art adds room for the shadow
+BANNER_WIDE, BANNER_NARROW = 560, 420
 HUES = {"blue": "#5C8BFF", "sky": "#6FBBFF", "ice": "#C4D8FF", "yellow": "#F6CE5B", "red": "#F0675F"}
 LITTLE = {"yellow": 0.7, "red": 0.5}
 TILES = [("#1B3F8F", "#8FB8FF"), ("#C8553D", "#FFC58A"), ("#0F6E78", "#7FE3D4"), ("#D9963A", "#FFE29A"), ("#B23A5B", "#FFB7A8"), ("#2F7D5B", "#CDEFB6")]
@@ -89,7 +80,6 @@ def wrap(text, size, width, weight=400, face="g"):
 
 
 def wrap_parts(text, size, width, weight=400):
-    """Breaks a line only between its dot-separated parts, so no part is split and no dot ends a line."""
     lines = []
     for part in text.split(" · "):
         joined = f"{lines[-1]} · {part}" if lines else part
@@ -105,13 +95,11 @@ def format_number(value):
 
 
 def app_icon(name):
-    # glyphs the app does not ship live next to this script
     source = next(path for path in (ICON_DIR / f"{name}.svg", HERE / "brands" / f"{name}.svg") if path.exists()).read_text()
     return re.sub(r"^<svg[^>]*>|</svg>\s*$", "", source.strip())
 
 
 class Art:
-    """One SVG document: outlined text, shared defs and a stylesheet."""
 
     def __init__(self, theme, width, height, title):
         self.theme = theme
@@ -161,7 +149,6 @@ class Art:
         return "".join(parts), y + (len(lines) - 1) * line_height
 
     def roll(self, x, y, content, size, fill=None, weight=700, anchor="start", tracking=-0.01):
-        """A number that rolls up from zero on a slow loop. Its resting state is the true value."""
         fill = fill or self.t["ink"]
         total = advance(content, size, weight, tracking)
         x -= total / 2 if anchor == "middle" else total if anchor == "end" else 0
@@ -207,7 +194,6 @@ class Art:
         return f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="url(#{name})"{extra}/>'
 
     def frame(self, x, y, w, h, extra=""):
-        """The one corner shape: a plain circular radius from the artboard width. Small pieces stop at a quarter of their side, so they never turn into circles."""
         radius = min(max(self.width * CORNER, 12), min(w, h) / 4)
         return f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" rx="{radius:.1f}"{extra}/>'
 
@@ -239,7 +225,6 @@ DRIFT = (
 
 
 def card(a, x, y, w, h, hues=("blue",), fill=None):
-    """A clipped surface with soft glows drifting too slowly to notice at a glance. Nothing shows outside its corners."""
     a.rule("drift", DRIFT)
     clip = a.clip(x, y, w, h)
     strength = a.t["hueOpacity"]
@@ -248,10 +233,7 @@ def card(a, x, y, w, h, hues=("blue",), fill=None):
     a.add(f'<g clip-path="url(#{clip})"><rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{fill or a.t["panel"]}"/>{first}{second}</g>')
 
 
-# Hero
-
 def wordmark(a, x, baseline, size, ink):
-    """The mark stands in for the N, so the name reads once and the mark sits at full height."""
     cap = size * 0.7
     tall = cap * 1.04
     drawn = a.mark(x, baseline - tall + cap * 0.02, tall, a.gradient(a.t["markFrom"], a.t["markTo"]))
@@ -263,7 +245,6 @@ def wordmark_width(size):
 
 
 def app_window(a, x, y, width):
-    """The real Home capture, cropped to its window. The card's own edge cuts off whatever runs past it."""
     left, top, full_width, full_height = SHOT_WINDOW
     scale = width / full_width
     height = full_height * scale
@@ -315,8 +296,6 @@ def hero(a, narrow):
     )
 
 
-# Section cards
-
 CORE_ICONS = ["library", "playlist", "history", "radio", "import", "folder", "lyrics", "database"]
 
 def title_block(a, icon, title, sub, x=30, y=30, width=None, size=38):
@@ -329,7 +308,6 @@ def title_block(a, icon, title, sub, x=30, y=30, width=None, size=38):
 
 
 def story(a, narrow):
-    """A memory map of the app at idle, one square per megabyte: the core lit in the middle, the app grown around it, and the jobs the core holds."""
     t = a.t
     total = DATA["metrics"]["memIdle"]["p50"]
     card(a, 0, 0, a.width, a.height, ("blue", "sky"))
@@ -405,8 +383,6 @@ def plain_head(icon, title, sub, hues):
     return draw
 
 
-# Banners: the site's own Download and Telegram cards, from the file the site handed over, and a warm Support card in their pattern. Same on either theme.
-
 BANNERS = {
     "download": {
         "title": "Download Nuvo", "subtitle": "Free · Linux, Windows and macOS", "action": "Download",
@@ -418,7 +394,6 @@ BANNERS = {
         "icon": "telegram", "badgeIcon": 34, "badge": "#2A9FE3", "button": "#1571B5", "shadow": "#2086D0",
         "stops": ((0, "#6CC0F5"), (0.45, "#2A9FE3"), (0.7, "#1D86D0"), (1, "#1A78BD")),
     },
-    # peach to coral, a touch deeper than the sky blue so white text reads at least as well
     "support": {
         "title": "Support the author", "subtitle": "Nuvo stays free. This keeps it going.", "action": "Support",
         "icon": "liked", "badgeIcon": 30, "badge": "#F6634F", "button": "#C2412F", "shadow": "#F6634F",
@@ -431,14 +406,13 @@ TITLE_SIZE, NOTE_SIZE, ACTION_SIZE = 20.48, 14.8, 16
 
 
 def golos_line(size, height=None):
-    """A line box as Chrome lays out Golos Text: ascent .98 em and descent .22 em, each rounded to a pixel. Returns its height and baseline."""
+    """Line box as Chrome lays out Golos Text: ascent .98 em, descent .22 em, rounded to a pixel"""
     ascent, descent = round(size * 0.98), round(size * 0.22)
     height = height or ascent + descent
     return height, (height - ascent - descent) / 2 + ascent
 
 
 def banner_layout(spec, width, narrow):
-    """The site's grid: padding 16, a 60 px badge, 18 px gaps, a 46 px pill. Below 600 px the pill takes its own row."""
     card = width - BANNER_MARGIN[0] * 2
     pill = advance(spec["action"], ACTION_SIZE, 600, face="o") + 44
     room = card - 16 - 60 - 18 - 18 - (0 if narrow else pill + 18)
@@ -502,8 +476,6 @@ def banner(spec):
     return draw
 
 
-# Feature widgets
-
 def heading(a, x, y, icon, title, sub, width):
     a.add(a.icon(icon, x, y, 28))
     a.add(a.text(x + 40, y + 23, title, 28, a.t["ink"], 700, tracking=-0.01, width=width - 40))
@@ -513,7 +485,6 @@ def heading(a, x, y, icon, title, sub, width):
 
 
 def v_library(a, x, y, w, h):
-    """A shelf that slides past, slower than you can follow."""
     size = min(118, h)
     gap = 14
     count = 6
@@ -526,7 +497,6 @@ def v_library(a, x, y, w, h):
 
 
 def v_mixes(a, x, y, w, h):
-    """A mosaic whose tiles change one at a time, the way a mix refreshes."""
     size = min(h, 170)
     cell = (size - 4) / 2
     cx = x + (w - size) / 2
@@ -569,7 +539,6 @@ def v_sound(a, x, y, w, h):
 
 
 def v_lyrics(a, x, y, w, h):
-    """The column climbs a line at a time while the active line lights word by word."""
     t = a.t
     size = min(27, w / 14.8)
     gap = size * 1.75
@@ -728,8 +697,6 @@ def band(key):
     return draw
 
 
-# Performance
-
 def stamp():
     build = DATA["build"]
     return f"Measured {build['date']}, {build['short']}, median of {build['runs']} runs"
@@ -837,7 +804,6 @@ def perf_karaoke(a, narrow):
 
 
 def numbers(a, narrow):
-    """Every metric as a range on its own ruler: dot at the median, end of the bar at the highest run."""
     t = a.t
     items = list(DATA["metrics"].values())
     card(a, 0, 0, a.width, a.height, ("blue", "sky"))
@@ -865,8 +831,6 @@ def numbers(a, narrow):
         a.add(f'<rect x="{ruler_x + item["p50"] * scale:.1f}" y="{ry - 2}" width="{max(3, (item["high"] - item["p50"]) * scale):.1f}" height="6" rx="3" fill="{t["accent"]}" opacity=".45"/>')
         a.add(f'<circle cx="{ruler_x + item["p50"] * scale:.1f}" cy="{ry + 1}" r="5" fill="{t["accent"]}"/>')
 
-
-# Comparison
 
 def pending_pill(a, x, y, anchor="start"):
     t = a.t
@@ -937,8 +901,6 @@ def compare_chart(a, narrow):
         a.add(a.text(a.width - pad, a.height - 24, f"A dash means {DATA['pendingLabel']}.", 14.5, t["faint"], 400, "end"))
 
 
-# Feature matrix
-
 MATRIX_COLUMNS = ["Nuvo", "Riff", "Liner", "Spotify", "YouTube Music", "Apple Music", "Strawberry"]
 MATRIX_PANELS = {
     "Playback and sound": ("equalizer", ("blue", "sky")),
@@ -959,7 +921,6 @@ NARROW_LEAD, NARROW_GAP = 46, 12
 
 
 def matrix_cells(row):
-    """Cells in column order. data.json keeps its own app order, so each one is looked up by name."""
     apps = DATA["matrix"]["apps"]
     if len(row["cells"]) != len(apps):
         raise ValueError(f"{row['label']}: needs {len(apps)} cells")
@@ -971,7 +932,6 @@ def matrix_slug(group):
 
 
 def matrix_marks(a):
-    """The four states as shared shapes, plain for the panel and inverted for Nuvo's column."""
     t = a.t
     marks = (("m", t["accent"], t["onAccent"], t["muted"], t["faint"]), ("l", t["onAccent"], t["accent"], t["onAccent"], t["onAccent"]))
     for prefix, main, inner, cross, dot in marks:
@@ -1094,7 +1054,6 @@ def matrix_panel(group):
 
 
 def compare_head(a, narrow):
-    """The section title, and the one legend for every panel below it."""
     t = a.t
     data = DATA["matrix"]
     matrix_card(a, ("blue", "sky"))
@@ -1113,8 +1072,6 @@ def compare_head(a, narrow):
         a.add(a.text(x + 28, y, label, 16.5, t["ink"]))
         x += width + 26
 
-
-# Roadmap
 
 def roadmap_rows(width, weights):
     unit = (width - 60 - 18 * 3) / sum(weights)
@@ -1164,8 +1121,6 @@ def roadmap_narrow_height():
     return 28 + sum(50 + 27 * len(stage["items"]) + 12 for stage in DATA["roadmap"]["stages"]) + 6
 
 
-# Buttons, fixed height so they wrap on phones
-
 def download_art(theme):
     label = "Download"
     size, height = 19, 54
@@ -1192,10 +1147,7 @@ def docs_art(theme):
     return a
 
 
-# Repository art, static: these go where motion never runs or where only a PNG works
-
 def plate(a, bleed=False):
-    """The first card's field and glows without the motion. Returns the clip to draw inside. A bleed fills the image, for feeds that round it themselves."""
     t = a.t
     w, h = a.width, a.height
     clip = a.clip(-99, -99, w + 198, h + 198) if bleed else a.clip(0, 0, w, h)
@@ -1210,7 +1162,6 @@ def plate(a, bleed=False):
 
 
 def social(a):
-    """Shared in feeds at about 300 px wide, so the name and the line stay inside the 40 px margin at full weight."""
     t = a.t
     plate(a, bleed=True)
     a.add(wordmark(a, 72, 268, 204, t["ink"]))
@@ -1220,7 +1171,6 @@ def social(a):
 
 
 def release_head(a):
-    """Sits under the release title. It carries no version, so one pair of files serves every release."""
     t = a.t
     clip = plate(a)
     a.add(wordmark(a, 44, 132, 124, t["ink"]))
@@ -1230,7 +1180,6 @@ def release_head(a):
 
 
 def page_head(a, narrow):
-    """One strip above every community page, so the page keeps a real heading for readers and anchors."""
     t = a.t
     plate(a)
     if narrow:
@@ -1243,7 +1192,6 @@ def page_head(a, narrow):
 
 
 def rasterize(art, target, scale=1):
-    """Chrome is the one renderer that draws these cards as GitHub's viewers do. Without it the committed PNG stays."""
     chrome = shutil.which("google-chrome") or shutil.which("chromium")
     if not chrome:
         print(f"no Chrome, kept {target.name}")
@@ -1270,8 +1218,6 @@ def build_png():
         page_head(a, False)
         rasterize(a, HERE / f"page-head-{theme}.png", 2)
 
-
-# Output
 
 def wide_narrow(name, title, wide, narrow, draw):
     for theme in THEMES:
@@ -1487,13 +1433,12 @@ def page_nav(target):
 
 
 def form_head():
-    """Issue forms resolve no relative paths and keep this block out of the issue body."""
+    """Issue forms resolve no relative paths"""
     base = f"{DATA['repo']}/raw/main/{ASSET_PATH}/page-head"
     return f'<picture><source media="(prefers-color-scheme: dark)" srcset="{base}-dark.png"><img src="{base}-light.png" width="100%" alt="Nuvo"></picture>'
 
 
 def build_pages():
-    """Files GitHub reads from fixed paths. The sources sit in pages/ under the same paths, so links can use the site constant."""
     for source in PAGES.rglob("*"):
         if not source.is_file():
             continue

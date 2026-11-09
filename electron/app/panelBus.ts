@@ -1,8 +1,3 @@
-/**
- * quest.nuvo.Nuvo.Player on the session bus: the part of the player MPRIS cannot carry, for the desktop panel widgets.
- * Playback, metadata and the cover stay on MPRIS (Chromium publishes it); this object adds the like state,
- * a dislike, the current lyrics line and a way to bring the window up. Interface reference: desktop/README.md.
- */
 import type { NotchLyrics } from "../../src/notch/contracts";
 import { activeLineIndex, msUntilNextLine, positionAt } from "../../src/notch/lib/playback";
 import type { RemoteCommand, SurfaceState } from "../../src/engine/types";
@@ -46,7 +41,6 @@ export interface PanelBusLike {
 }
 
 export interface PanelDeps {
-  /** Chromium's MPRIS name for this process, so a widget finds the right player without guessing. */
   mprisName: string;
   command(command: RemoteCommand): void;
   show(): void;
@@ -164,7 +158,6 @@ export interface PanelBus {
   close(): void;
 }
 
-/** Owns quest.nuvo.Nuvo.Player on the session bus; null when there is no bus or the name is taken. Linux only. */
 export async function startPanelBus(deps: PanelDeps, env: NodeJS.ProcessEnv = process.env, uid = process.getuid?.() ?? 0): Promise<PanelBus | null> {
   const socketPath = socketPathOf(env.DBUS_SESSION_BUS_ADDRESS);
   if (!socketPath) return null;

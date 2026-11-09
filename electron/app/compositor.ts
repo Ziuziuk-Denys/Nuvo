@@ -1,4 +1,3 @@
-/** Compositor detection and Notch placement on Hyprland and sway. */
 import { execFile } from "node:child_process";
 import { default as net } from "node:net";
 import { default as path } from "node:path";
@@ -13,13 +12,11 @@ export interface PlaceRequest {
   anchor: Anchor;
   pinned: boolean;
   margin: number;
-  /** "workArea" (default) respects panels; "monitor" uses the full output, over panels. */
   bounds?: "monitor" | "workArea";
 }
 
 export type Rect = Record<"x" | "y" | "width" | "height", number>;
 
-/** What the Notch window (ours) receives for Hyprland and sway. */
 export interface CompositorBridge {
   kind: "hyprland" | "sway";
   placeOverlay(request: PlaceRequest): Promise<boolean>;
@@ -53,7 +50,6 @@ export type HyprMonitor = Rect & {
   reserved: [number, number, number, number];
 };
 
-/** Logical size (pixels / scale, swapped when rotated) minus the reserved edges, offset by the monitor position. */
 export function hyprWorkArea(monitor: HyprMonitor): Rect {
   let width = monitor.width / monitor.scale;
   let height = monitor.height / monitor.scale;
@@ -62,7 +58,6 @@ export function hyprWorkArea(monitor: HyprMonitor): Rect {
   return { x: monitor.x + left, y: monitor.y + top, width: width - left - right, height: height - top - bottom };
 }
 
-/** Escapes a title for sway's regular-expression criteria. */
 export function escapeSwayTitle(title: string): string {
   return title.replace(/[\\^$.*+?()[\]{}|"]/g, "\\$&");
 }
@@ -197,7 +192,6 @@ export function createSwayPlacer(pid: number, exec: Exec = execText) {
   };
 }
 
-/** Failures resolve false and are logged once per distinct message; placement never throws. */
 export function createCompositorBridge(
   kind: CompositorKind,
   env: NodeJS.ProcessEnv,

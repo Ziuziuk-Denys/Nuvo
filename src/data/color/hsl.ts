@@ -1,4 +1,3 @@
-/** RGB (0-255) to HSL: hue in degrees, saturation and lightness 0-1. */
 export function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   const red = r / 255;
   const green = g / 255;
@@ -16,7 +15,6 @@ export function rgbToHsl(r: number, g: number, b: number): [number, number, numb
   return [h * 60, s, l];
 }
 
-/** HSL back to RGB integers 0-255. */
 export function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   const c = (1 - Math.abs(2 * l - 1)) * s;
   const hue = (((h % 360) + 360) % 360) / 60;

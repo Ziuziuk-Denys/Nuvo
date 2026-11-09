@@ -1,10 +1,5 @@
-/**
- * Custom CSS check (customization 6). A small tokenizer, not regexes on the raw text: comments,
- * strings and escapes are resolved first, so `u\72l(` is still `url(`. Deny by default: only
- * the listed at-rules pass, every fetching function fails, and the whole sheet is refused on any problem.
- */
+// Tokenizer, not regexes: escapes are decoded first so u\72l( is still url(; deny by default
 
-/** `key` is an i18n key under `appearance.css_errors`. */
 export interface CssProblem {
   line: number;
   key: string;
@@ -29,13 +24,11 @@ const FETCHING = new Set([
 const AT_RULES = new Set(["media", "supports", "keyframes", "-webkit-keyframes", "container"]);
 const BANNED_PROPERTIES = new Set(["behavior", "-moz-binding"]);
 const LOGICAL = new Set(["has", "not", "is", "where"]);
-/** Selectors that must keep pointer events: the page itself and the guarded controls. */
 const PROTECTED = /(^|[\s>+~,(])(\*|html|body|:root|#root)(?![\w-])|\[data-nuvo-guard/;
 
 type Kind = "ident" | "function" | "at" | "string" | "ws" | "open" | "close" | "semicolon" | "colon" | "lparen" | "rparen" | "other";
 interface Token {
   kind: Kind;
-  /** Escapes decoded, lower-cased for names; the raw character otherwise. */
   value: string;
   line: number;
 }
@@ -46,7 +39,6 @@ const isEscape = (c: string | undefined, next: string | undefined) => c === "\\"
 const isIdentStart = (c: string | undefined, next: string | undefined, afterNext?: string) =>
   c !== undefined && (/[A-Za-z_]/.test(c) || c.charCodeAt(0) >= 0x80 || isEscape(c, next) || (c === "-" && (isIdentChar(next) || isEscape(next, afterNext))));
 
-/** Reads an identifier at `start`, decoding `\hex ` and `\x` escapes. */
 function readName(text: string, start: number): { name: string; end: number } {
   let i = start;
   let name = "";
@@ -128,7 +120,6 @@ function tokenize(text: string, problems: CssProblem[]): Token[] {
   return tokens;
 }
 
-/** Index of the first of `kinds` at parenthesis depth 0 from `start`, or the token count. */
 function findAtTop(tokens: Token[], start: number, kinds: Kind[]): number {
   let parens = 0;
   for (let i = start; i < tokens.length; i += 1) {
@@ -211,7 +202,6 @@ export function sanitizeCss(css: string): Sanitized {
       if (prelude.filter((t) => t.kind === "function" && LOGICAL.has(t.value)).length > CSS_LIMITS.logical)
         problems.push({ line: token.line, key: "selector_cost" });
     } else if (parent?.style) {
-      // a declaration: name, colon, value up to the semicolon or the closing brace
       const name = prelude[0].kind === "ident" ? prelude[0].value : "";
       const colon = prelude.findIndex((t) => t.kind === "colon");
       const value = colon >= 0 ? text(prelude.slice(colon + 1)).toLowerCase() : "";

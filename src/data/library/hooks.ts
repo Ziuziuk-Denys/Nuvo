@@ -6,9 +6,7 @@ import { libraryClient, type PlaylistDetail, type PlaylistSummary, type SavedKin
 import type { LibraryItemViewModel, RemoveTarget } from "./collections";
 import { notifyLibraryChanged, onLibraryChange } from "./changes";
 
-/** The library names the screens use (src/ui/ports/library.ts), over the library modules. */
 export type EntityType = SavedKind;
-/** A playlist as the screens list it: a cover string always, and the collage covers by their old name. */
 export type LibraryPlaylistSummary = Omit<PlaylistSummary, "coverUrl" | "covers"> & { coverUrl: string; coverUrls: string[] };
 export type LibraryPlaylistDetail = PlaylistDetail;
 export type LibrarySortOption = "recent" | "title" | "creator";
@@ -55,7 +53,6 @@ function useMutation<I, R>(run: (input: I) => Promise<R>): Mutation<I, R> {
   return { mutate, mutateAsync, isPending: pending > 0 };
 }
 
-/** A screen that opens while a read failed (the daemon was still starting) asks for a fresh read. */
 function useReadAgainIfFailed(): void {
   useEffect(() => {
     const { liked, collections } = library();

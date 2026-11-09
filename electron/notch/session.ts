@@ -13,7 +13,6 @@ export function detectNotchSession(env: Env, ozoneX11 = false): NotchSession {
   return "other-wayland";
 }
 
-/** Sessions where a Wayland client cannot pin or position itself get no notch. */
 export function canPlaceNotch(session: NotchSession): boolean {
   return session !== "gnome-wayland" && session !== "other-wayland";
 }

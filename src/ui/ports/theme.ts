@@ -11,7 +11,7 @@ export { useAppIconSync } from "@/data/look/appIcon";
 
 export type ThemeMode = "light" | "dark" | "system";
 
-/** The preset and the mode it renders in. The one hook a port holds: screens may not import next-themes. */
+// The one hook a port holds: screens may not import next-themes
 export function useLook(): { preset: PresetId; mode: PresetMode } {
   const preset = useLookStore((s) => s.preset);
   const custom = useAppearanceStore(activeTheme);
@@ -21,13 +21,11 @@ export function useLook(): { preset: PresetId; mode: PresetMode } {
   return custom ? { preset: "nuvo", mode: requested } : { preset, mode: resolvePresetMode(getPreset(preset), requested) };
 }
 
-/** The mode the user picked, before a preset forces one. */
 export function useThemeMode(): ThemeMode {
   const { theme } = useTheme();
   return theme === "light" || theme === "dark" ? theme : "system";
 }
 
-/** Sets Light, Dark or System; an explicit pick replaces whatever a single-mode preset would restore later. */
 export function useSetThemeMode(): (mode: ThemeMode) => void {
   const { setTheme } = useTheme();
   const setThemeBeforePreset = useLookStore((s) => s.setThemeBeforePreset);

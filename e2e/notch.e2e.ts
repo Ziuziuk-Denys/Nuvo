@@ -41,7 +41,6 @@ function playingState(status: NotchState["status"]): NotchState {
   };
 }
 
-/** The Notch state as the engine publishes it to main. */
 function surfaceOf(state: NotchState) {
   return {
     trackId: state.track?.id ?? null,
@@ -57,7 +56,6 @@ function surfaceOf(state: NotchState) {
   };
 }
 
-/** What the page receives: the surface state, or the previous Notch state. */
 const stateFor = (state: NotchState) => surfaceOf(state);
 
 interface Launched {
@@ -90,9 +88,7 @@ async function close(launched: Launched | undefined): Promise<void> {
   if (pid) {
     try {
       process.kill(pid, "SIGKILL");
-    } catch {
-      // already gone
-    }
+    } catch {}
   }
   rmSync(launched.profile, { recursive: true, force: true });
   launched.isolation?.dispose();
@@ -114,7 +110,6 @@ async function expectMode(page: Page, mode: IslandMode): Promise<void> {
   await expect.poll(() => modeOf(page), { timeout: 5_000 }).toBe(mode);
 }
 
-/** Waits until the island box is exactly the size for the mode, so the spring has settled. */
 async function expectSize(page: Page, mode: IslandMode): Promise<void> {
   const size = ISLAND_SIZES[mode];
   await expect
@@ -222,7 +217,6 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
   });
 
   it("shows a YouTube Music cover", async () => {
-    // YouTube Music artwork, on the host its songs use now
     const cover = "https://yt3.googleusercontent.com/N55arCGj69gtw6thXK8JUPisxoVYiwuIEQ7I6SGlkEyNcSJ7xIWPe76Vuu1SiUqRyx5w9qvR_zV8fV3CWQ=w512-h512-l90-rj";
     await launched.main.evaluate((state) => window.nuvoShell!.sendPlayerState(state as never), { ...stateFor(playingState("playing")), publicCoverUrl: cover });
     const shown = () =>
@@ -275,7 +269,6 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
   });
 });
 
-/** A looped quiet tone with metadata, so Chromium publishes the page on MPRIS. */
 async function playTone(page: Page): Promise<void> {
   await page.evaluate(async () => {
     const rate = 8000;
@@ -300,7 +293,6 @@ async function playTone(page: Page): Promise<void> {
     // blob: is in the media policy of both builds, data: is not
     const audio = new Audio(URL.createObjectURL(new Blob([bytes], { type: "audio/wav" })));
     audio.volume = 0.01;
-    // Looped so the media session stays active while the test polls the bus.
     audio.loop = true;
     (window as unknown as { __tone: HTMLAudioElement }).__tone = audio;
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -390,7 +382,6 @@ const hasBusTools = (() => {
   }
 })();
 
-/** The panel widget's bus object on a private session bus: never the owner's bus, so no widget there sees the test. */
 describe.skipIf(!hasBusTools)("Panel widget bus", () => {
   let launched: Launched;
   let daemon: ChildProcess;
@@ -480,7 +471,6 @@ describe.skipIf(!hasBusTools)("Panel widget bus", () => {
     expect(status.panel?.target ?? null).toBe(expected);
     if (!expected) return;
     await launched.main.evaluate(() => (location.hash = "#/settings?section=notch"));
-    // a profile with moved XDG folders never gets the one-click install, only the manual steps
     const shown = launched.main.locator(status.panel!.manual ? '[data-testid="panel-note"]' : '[data-testid="panel-install"]');
     await shown.waitFor({ timeout: 10_000 });
     if (status.panel!.manual) expect(await launched.main.locator('[data-testid="panel-install"]').count()).toBe(0);

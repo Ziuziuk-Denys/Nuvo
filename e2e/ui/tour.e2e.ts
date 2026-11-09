@@ -6,7 +6,6 @@ import { afterAll, describe, expect, it } from "vitest";
 import { launchNuvo, type Look, type NuvoSession, type Size } from "./harness";
 import { PLAYER_SESSION_KEY } from "./seed";
 
-/* The tour on the real window, shot step by step. Shots go outside the repo: TOUR_SHOTS or ~/.cache/tour-shots */
 const SHOTS = process.env.TOUR_SHOTS ?? path.join(os.homedir(), ".cache", "tour-shots");
 const TOUR_KEY = "nuvo_tour_v1";
 
@@ -46,7 +45,6 @@ async function shot(page: Page, dir: string, name: string): Promise<void> {
   await page.screenshot({ path: path.join(dir, `${name}.png`) });
 }
 
-/* Nothing on screen overlaps: the callout, the dock and the outline stay apart and inside the window */
 async function checkLayout(page: Page, where: string): Promise<void> {
   const boxes = await page.evaluate(() => {
     const rect = (element: Element | null) => {
@@ -75,7 +73,6 @@ async function checkLayout(page: Page, where: string): Promise<void> {
   }
 }
 
-/* Plays the chapters to the end, one shot per step; returns the chapter and step names it saw */
 async function walk(page: Page, dir: string, onStep?: (key: string, index: number) => Promise<void>): Promise<string[]> {
   const seen: string[] = [];
   let previous = "";
@@ -84,7 +81,6 @@ async function walk(page: Page, dir: string, onStep?: (key: string, index: numbe
       (prev) => {
         const layer = document.querySelector("[data-tour-layer]");
         if (!layer || !layer.querySelector("[data-next]")) return "end";
-        // the screen-reader line names the step once it is fully on screen: "Chapter. Callout"
         const key = layer.querySelector("[aria-live]")?.textContent ?? "";
         return key && key !== prev && layer.querySelector("[data-callout]") ? key : null;
       },
@@ -109,7 +105,6 @@ async function saved(page: Page): Promise<{ status: string; at: unknown; missed:
   return page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}").state, TOUR_KEY);
 }
 
-/* Writes stored state the way a previous launch would have left it, then relaunches the window */
 async function relaunchWith(page: Page, entries: Record<string, (stored: unknown) => unknown>): Promise<void> {
   // a pending debounced store write would land after ours and replace it
   await page.waitForTimeout(1_100);
@@ -139,7 +134,6 @@ describe("tour", () => {
     await expect.poll(() => backdropRoots(page, "[aria-labelledby=tour-start-title]")).toEqual([]);
     await shot(page, dir, "00-start");
 
-    // three favourites, when the catalog answers
     const field = page.getByRole("textbox", { name: "Song or artist" });
     for (const name of ["Radiohead", "Massive Attack", "Portishead"]) {
       await field.fill(name);
@@ -161,7 +155,6 @@ describe("tour", () => {
       await shot(page, dir, "03-start-sent");
     }
 
-    // the theme pick on Appearance happens for real through the outline
     await page.locator("[data-primary]").click();
     const counters: string[] = [];
     const seen = await walk(page, dir, async (key) => {
@@ -174,7 +167,6 @@ describe("tour", () => {
       await page.locator('[data-preset="nuvo"]').click();
     });
 
-    // every chapter on an empty profile, in order: the player chapters show a sample song, Home its first-run card
     const chapters = [...new Set(seen.map((key) => key.split(". ")[0]))];
     expect(chapters).toEqual(["Search", "Recognize", "Player", "Sound", "Playlists", "Library", "Home", "Look"]);
     expect(counters).toEqual(chapters.map((_, index) => `${index + 1} of 8`));
@@ -182,7 +174,6 @@ describe("tour", () => {
     const state = await saved(page);
     expect(state.status).toBe("done");
     expect(state.missed).toEqual([]);
-    // the sample song leaves with the tour
     await expect.poll(() => page.locator("[data-island]").count()).toBe(0);
     await session.close();
     session = null;
@@ -197,7 +188,6 @@ describe("tour", () => {
       await session.setSize(run.size);
       await page.emulateMedia({ reducedMotion: "reduce" });
 
-      // a paused track for the player chapters, and a tour the window was closed in the middle of
       await page.evaluate((locale) => localStorage.setItem("nuvo_locale", locale), run.locale);
       await relaunchWith(page, {
         [PLAYER_SESSION_KEY]: (stored) => ({ ...(stored as object), index: 0 }),
@@ -209,7 +199,6 @@ describe("tour", () => {
       await page.locator("[data-tour-layer] [data-primary]").click();
       const seen = await walk(page, dir);
       expect(seen.length).toBeGreaterThanOrEqual(11);
-      // the Sound panel opens inside the window at either size, so its speed and sleep steps are shown, not passed over; so is Recognize
       const locale = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "..", "..", "src", "i18n", "locales", `${run.locale}.json`), "utf8"));
       const steps = locale.ui.tour.steps as Record<string, string>;
       for (const step of ["speed", "sleep", "rail_recognize", "recognize_sources"])
@@ -219,7 +208,6 @@ describe("tour", () => {
         ).toBe(true);
       expect((await saved(page)).status).toBe("done");
 
-      // the start step again, then Esc for the prompt and Skip the whole tour for the short version
       await relaunchWith(page, { [TOUR_KEY]: tourAt(null) });
       await page.locator("#tour-start-title").waitFor({ timeout: 30_000 });
       await shot(page, dir, "01-start");
@@ -240,10 +228,6 @@ describe("tour", () => {
   }
 });
 
-/*
-  Ancestors that would cut the card's backdrop blur off from the page under it: an opacity, filter, mask, clip, blend
-  or backdrop filter below 1 or set, also one an animation keeps filled, makes that ancestor the blur's backdrop root
-*/
 async function backdropRoots(page: Page, selector: string): Promise<string[]> {
   return page.locator(selector).evaluate((card) => {
     const found: string[] = [];

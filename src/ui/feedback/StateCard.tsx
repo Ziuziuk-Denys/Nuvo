@@ -8,10 +8,8 @@ interface StateCardProps {
   title: string;
   line: string;
   glyph: ReactNode;
-  /** alertdialog for a brief message that needs an answer, dialog for a task. */
   role?: "dialog" | "alertdialog";
   busy?: boolean;
-  /** Each increment shakes the card once, the way a login window says no. */
   shake?: number;
   children: ReactNode;
 }
@@ -22,10 +20,6 @@ function reducedMotion(): boolean {
   return typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/**
- * One calm card over the live window, for the states where nothing else can be done: the window behind dims and
- * blurs, the window buttons stay usable, Tab stays inside the card and Escape goes nowhere.
- */
 export function StateCard({ title, line, glyph, role = "dialog", busy = false, shake = 0, children }: StateCardProps): JSX.Element {
   const titleId = useId();
   const lineId = useId();

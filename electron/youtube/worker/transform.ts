@@ -1,4 +1,3 @@
-/** Player script transforms inside the worker. The solver that runs YouTube's code is a seam. */
 import type { FetchLike } from "./tokens";
 
 export interface SolvedScript {
@@ -6,7 +5,6 @@ export interface SolvedScript {
   sig(value: string): Promise<string>;
 }
 
-/** Turns a player script into its `n` and signature functions. Production: youtubei.js, see `solver.ts`. */
 export interface Solver {
   load(playerId: string, script: string): Promise<SolvedScript>;
 }
@@ -26,7 +24,7 @@ const SOLVE_TIMEOUT_MS = 5000;
 const MAX_VALUES = 16;
 const MAX_CACHED_PLAYERS = 4;
 
-/** Bounds one solver call; the script is untrusted, so a hung transform must not hang the worker. */
+// The script is untrusted: a hung transform must not hang the worker
 function withTimeout<T>(work: Promise<T>, what: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   const limit = new Promise<never>((_, reject) => {
@@ -74,12 +72,10 @@ export class PlayerTransforms {
     };
   }
 
-  /** Once per player id per worker lifetime; a failure is forgotten so the next call fetches again. */
   private load(playerId: string): Promise<Loaded> {
     if (!SAFE.test(playerId)) return Promise.reject(new Error("bad player id"));
     let loading = this.scripts.get(playerId);
     if (loading) {
-      // Refresh recency.
       this.scripts.delete(playerId);
     } else {
       loading = this.fetchScript(playerId);

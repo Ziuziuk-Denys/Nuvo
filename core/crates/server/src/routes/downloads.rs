@@ -1,5 +1,3 @@
-//! Saved-file jobs. Starting one names a folder, so it is under `/v1/fs/` (main only).
-
 use std::path::PathBuf;
 
 use axum::extract::{Path, Query, State};

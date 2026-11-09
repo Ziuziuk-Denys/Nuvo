@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-// Playing-state memory and CPU: a 90 s tone from the daemon's audio cache is played from a row of
-// the 5,000-track playlist (the page stays open). CPU is the whole tree over seconds 40-60, PSS of
-// the whole tree is read at 60 s.
-// --view karaoke measures with the karaoke view open over the playing song; --reduced-motion emulates
-// the system setting for the page. --lyrics lines|words|song gives the song fixture lyrics from a local
-// stand-in: line timing, word timing with a word always filling and a new line every 3 s (the worst
-// case), or word timing paced like singing, a line every 4.5 s with a rest in it; song-lines is that pace
-// with line timing only. --highlight line|word|fill|step picks the karaoke mode. The song plays at volume 0.
-// usage: node scripts/bench/playing.mjs [--exe path/to/nuvo] [--runs 5] [--play 60] [--cpu 20] [--view karaoke] [--lyrics words] [--highlight fill] [--reduced-motion] [--json out.json]
 import fs from "node:fs";
 import http from "node:http";
 import { close, cpuPercent, createProfile, enableHandle, homeReady, launch, memory, openPlaylist, option, putTone, round, seedProfile, sleep } from "./lib.mjs";
@@ -31,7 +22,6 @@ function stamp(ms) {
   return `${part(ms / 60_000)}:${part((ms / 1000) % 60)}.${part((ms % 1000) / 10)}`;
 }
 
-/** Six words a line; word stamps close the last word, so a rest after it stays unfilled. */
 function fixtureLrc(wordTimed, lineMs, wordMs) {
   const lines = [];
   for (let at = 1000; at < (playSeconds + 30) * 1000; at += lineMs) {

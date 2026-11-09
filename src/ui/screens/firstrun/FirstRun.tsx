@@ -9,15 +9,10 @@ import { markDone, phraseText } from "./firstRunModel";
 import styles from "./FirstRun.module.css";
 
 interface FirstRunProps {
-  /** The recovery phrase while it is unconfirmed, null once it is. */
   words: string[] | null;
   onDone: () => void;
 }
 
-/**
- * The first run: the recovery phrase while it is unconfirmed, then the pages with the tour over them.
- * Everything else is told on the real window.
- */
 export function FirstRun({ words, onDone }: FirstRunProps): JSX.Element | null {
   const finished = useRef(false);
   const finish = useRef(() => {
@@ -28,7 +23,6 @@ export function FirstRun({ words, onDone }: FirstRunProps): JSX.Element | null {
     onDone();
   });
 
-  // nothing to confirm: straight to the pages and the tour
   useEffect(() => {
     if (!words) finish.current();
   }, [words]);
@@ -36,10 +30,9 @@ export function FirstRun({ words, onDone }: FirstRunProps): JSX.Element | null {
   return words ? <PhraseStep words={words} onConfirmed={() => finish.current()} /> : null;
 }
 
-/** How long Copy and Save as file say they worked. */
 const DONE_MS = 2_000;
 
-/** Not dismissible: the phrase is gone for good once it is confirmed, so it has no Back, Skip or Escape. */
+// Not dismissible: the phrase is gone for good once confirmed, so no Back, Skip or Escape
 function PhraseStep({ words, onConfirmed }: { words: string[]; onConfirmed: () => void }): JSX.Element {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);

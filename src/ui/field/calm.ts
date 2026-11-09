@@ -14,7 +14,6 @@ export const useCalmStore = create<CalmState>((set) => ({
   leave: () => set((s) => ({ count: Math.max(0, s.count - 1) })),
 }));
 
-/** The calling screen asks for the calm brand light while it is mounted. */
 export function useCalmLight(): void {
   useEffect(() => {
     useCalmStore.getState().enter();

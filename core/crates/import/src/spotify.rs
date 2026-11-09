@@ -1,13 +1,9 @@
-//! Spotify playlist and album links, read from Spotify's public embed page with no account. The
-//! embed lists at most 100 songs; the rest come from the web player's own paged query, sent with
-//! the anonymous token the embed page hands every visitor. When that fails, the public playlist
-//! page names how many songs there are, so a longer list is reported as partial instead.
+// The embed lists 100 songs at most; the rest come from the web player's anonymous paged query
 
 use serde_json::{Value, json};
 
 use crate::parse::SourceRow;
 
-/// The most songs the embed page lists.
 pub const EMBED_MAX_TRACKS: usize = 100;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,7 +37,6 @@ impl SpotifyLink {
     }
 }
 
-/// An https `open.spotify.com` playlist or album link, with or without an `intl-xx` segment.
 pub fn parse_link(url: &str) -> Option<SpotifyLink> {
     let rest = url.trim().strip_prefix("https://")?;
     let (host, path) = rest.split_once('/')?;
@@ -80,11 +75,9 @@ pub struct EmbedListing {
     pub rows: Vec<SourceRow>,
     /// Entries the page listed, songs or not: the embed's limit applies to these.
     pub listed: usize,
-    /// The anonymous token the page gave the embed player.
     pub token: Option<String>,
 }
 
-/// The JSON of the page's `__NEXT_DATA__` script.
 fn page_data(html: &str) -> Option<Value> {
     let start = html.find("<script id=\"__NEXT_DATA__\"")?;
     let body = &html[start..];
@@ -97,7 +90,6 @@ fn text(value: &Value, key: &str) -> String {
     value.get(key).and_then(Value::as_str).map(str::trim).unwrap_or_default().to_string()
 }
 
-/// Reads the embed page of a playlist or album into rows; an album's rows carry its title.
 pub fn parse_embed(html: &str, kind: Kind) -> Result<EmbedListing, EmbedError> {
     let data = page_data(html).ok_or(EmbedError::Changed)?;
     let props = data.pointer("/props/pageProps").ok_or(EmbedError::Changed)?;
@@ -127,23 +119,18 @@ pub fn parse_embed(html: &str, kind: Kind) -> Result<EmbedListing, EmbedError> {
     Ok(EmbedListing { label, rows, listed: tracks.len(), token })
 }
 
-/// The song count in the public playlist page's `music:song_count` tag.
 pub fn song_count(html: &str) -> Option<usize> {
     let tag = &html[html.find("name=\"music:song_count\"")?..];
     let value = &tag[tag.find("content=\"")? + "content=\"".len()..];
     value[..value.find('"')?].parse().ok()
 }
 
-/// The web player's query endpoint.
 pub const QUERY_URL: &str = "https://api-partner.spotify.com/pathfinder/v2/query";
 
-/// Entries asked for per page of the web player's query.
 pub const PAGE_SIZE: usize = 100;
 
-/// The web player's request for one page of a playlist or album, starting at entry `offset`.
 pub fn page_query(link: &SpotifyLink, offset: usize) -> Value {
-    // shortcut: these are the persisted query hashes of the web player built 2026-11-06; once Spotify
-    // retires them every import keeps the embed's first 100 songs, so update them from the player then
+    // Web player query hashes from 2026-11-06; when Spotify retires them imports stop at 100 songs
     let uri = format!("spotify:{}:{}", link.kind.path(), link.id);
     let (name, hash, variables) = match link.kind {
         Kind::Playlist => (
@@ -165,11 +152,9 @@ pub struct Page {
     pub rows: Vec<SourceRow>,
     /// Entries on this page, songs or not: the next page starts after them.
     pub entries: usize,
-    /// Entries in the whole playlist or album.
     pub total: usize,
 }
 
-/// Reads one answer of the web player's query into rows; `album` is the album's title for album rows.
 pub fn parse_page(body: &[u8], kind: Kind, album: Option<&str>) -> Result<Page, EmbedError> {
     let data: Value = serde_json::from_slice(body).map_err(|_| EmbedError::Changed)?;
     let list = match kind {

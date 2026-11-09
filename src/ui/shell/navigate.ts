@@ -2,7 +2,6 @@ import { flushSync } from "react-dom";
 import type { NavigateFunction } from "react-router-dom";
 import { reducedEffectsNow } from "../effects";
 
-/** Pages that open from a list and show back and forward in the top bar. */
 export const ENTITY_ROUTES = ["/library/playlist", "/artist", "/collection", "/stats/track", "/stats/artist"];
 
 export type NavItem = "home" | "library" | "search" | "recognize" | "stats";
@@ -20,14 +19,10 @@ export function activeNav(pathname: string): NavItem | null {
   return null;
 }
 
-/**
- * The content column takes view-transition-name n-page only while this attribute is on the root,
- * so the theme reveal (a root view transition) keeps revealing the page with the rest of the window.
- */
+// Page view-transition-name only while this is set, so the root theme reveal includes the page
 const PAGE_TRANSITION_ATTRIBUTE = "data-page-transition";
 let running = 0;
 
-/** In-app navigation: the old page fades out and the new one rises in, unless motion or effects are reduced. */
 export function navigateWithTransition(navigate: NavigateFunction, to: string): void {
   if (typeof document.startViewTransition !== "function" || reducedEffectsNow()) {
     void navigate(to);

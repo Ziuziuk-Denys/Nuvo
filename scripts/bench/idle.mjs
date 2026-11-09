@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// M1 app start (window with text, first contentful paint, Home with data) and idle memory (PSS of
-// the whole process tree 30 s after Home) and idle CPU, one seeded temporary profile, N launches.
-// usage: node scripts/bench/idle.mjs [--exe path/to/nuvo] [--runs 5] [--settle 30] [--cpu 30] [--json out.json]
 import fs from "node:fs";
 import { close, cpuPercent, createProfile, homeReady, launch, memory, option, seedProfile, sleep } from "./lib.mjs";
 import { round, summarize } from "./stats.mjs";

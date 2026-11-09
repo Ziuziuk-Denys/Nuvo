@@ -1,4 +1,3 @@
-/** Background cache writes, pre-cache of the next track and idle prefetch of kept tracks. */
 import type { PrecacheLike } from "../engine";
 import { isLocalId, type Status, type Track } from "../types";
 import type { DaemonPort } from "./ports";
@@ -46,14 +45,12 @@ const sleep = (ms: number, signal: AbortSignal) =>
 export class PrecacheScheduler implements PrecacheLike {
   private next: Track | null = null;
   private job: Job | null = null;
-  /** The next track whose pre-cache failed; it is not retried until the next entry changes. */
   private failedNextId: string | null = null;
   private epoch = 0;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private idle: AbortController | null = null;
   private disposed = false;
   private readonly failedAt = new Map<string, number>();
-  /** The one Blob path B may hold; dropped as soon as its PUT resolves. */
   heldBlob: Blob | null = null;
 
   constructor(private readonly deps: PrecacheDeps) {}
@@ -87,7 +84,6 @@ export class PrecacheScheduler implements PrecacheLike {
     }, IDLE_PREFETCH_AFTER_MS);
   }
 
-  /** After a network start the playing track is cached in the background (path A or B). */
   started(track: Track, resolved: Resolved): void {
     if (this.disposed) return;
     if (resolved.stream.source === "local" || resolved.stream.fromCache || track.durationMs > BACKGROUND_CACHE_MAX_MS) return;
@@ -103,7 +99,6 @@ export class PrecacheScheduler implements PrecacheLike {
     this.idle = null;
   }
 
-  /** Final stop: nothing prefetches or uploads afterwards. */
   dispose(): void {
     this.disposed = true;
     this.cancelAll();
@@ -117,7 +112,6 @@ export class PrecacheScheduler implements PrecacheLike {
     if (job.pathA) void (job.starting ?? Promise.resolve()).then(() => this.deps.daemon.cancelFetch(job.trackId));
   }
 
-  /** Saves: caches one track now, outside the next-track slot. True once the daemon has it. */
   async ensureCached(track: Track, signal: AbortSignal): Promise<boolean> {
     if (await this.deps.isCached(track.id)) return true;
     const resolved = await this.deps.resolve(track, { positionMs: 0, bypassCache: true, bestQuality: false, signal });
@@ -151,7 +145,6 @@ export class PrecacheScheduler implements PrecacheLike {
     }
   }
 
-  /** Path A for URL streams (the daemon downloads), path B for bytes the renderer already holds. True once the track is cached. */
   private async store(track: Track, resolved: Resolved, signal: AbortSignal, job?: Job): Promise<boolean> {
     const epoch = this.epoch;
     if (resolved.fetchable) {

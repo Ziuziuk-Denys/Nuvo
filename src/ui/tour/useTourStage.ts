@@ -6,7 +6,6 @@ import type { Step, TargetId } from "./chapters";
 import type { TourStage } from "./runStep";
 import { targetElement } from "./targets";
 
-/* How long a target may take to mount: a page transition, a popover pouring out of its button */
 const FIND_FRAMES = 60;
 const PAGE_SETTLE_MS = 480;
 const PANEL_SETTLE_MS = 320;
@@ -18,17 +17,12 @@ function currentPath(): string {
   return window.location.hash.replace(/^#/, "").split("?")[0] || "/";
 }
 
-/* A press on the page outside every overlay: the player's popover and the queue drawer close the way a click would close them */
 function closePanels(): void {
   document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
   document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
   useModalStore.getState().closeSettings();
 }
 
-/*
-  The stage the chapters play on. It only opens pages and panels the user could open themselves;
-  the step on screen is the state the layer draws its outline and callout from
-*/
 export function useTourStage(navigate: NavigateFunction): { stage: TourStage; shown: Step | null } {
   const [shown, setShown] = useState<Step | null>(null);
 

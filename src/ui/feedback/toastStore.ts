@@ -12,7 +12,6 @@ export interface Toast {
   message: string;
   description?: string;
   variant: ToastVariant;
-  /** Milliseconds on screen; STICKY stays until dismissed. */
   duration: number;
   action?: ToastAction;
   onDismiss?: () => void;
@@ -24,7 +23,6 @@ export const DEFAULT_DURATION_MS = 4000;
 /** The legacy API marks a toast that stays with 999999 ms; anything that long is sticky. */
 export const STICKY = 999_999;
 
-/** Options the legacy showToast() puts on a nuvo:toast event. */
 interface LegacyOptions {
   id?: string | number;
   duration?: number;
@@ -38,11 +36,8 @@ interface LegacyOptions {
 interface ToastState {
   queue: Toast[];
   show: (input: ToastInput) => void;
-  /** The toast leaves because the user or its timer closed it: onDismiss runs. */
   dismiss: (id: string | number) => void;
-  /** The caller takes it back: onDismiss does not run. */
   remove: (id: string | number) => void;
-  /** Takes the app's showToast() events; returns the unsubscribe. */
   listen: () => () => void;
 }
 
@@ -52,7 +47,6 @@ function isLoader(variant: ToastVariant): boolean {
   return variant === "loader" || variant === "loading";
 }
 
-/** One toast at a time: timed toasts take turns oldest first, a sticky one shows when none is waiting. */
 export function visibleToast(queue: Toast[]): Toast | null {
   return queue.find((toast) => toast.duration < STICKY) ?? queue[0] ?? null;
 }

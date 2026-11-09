@@ -8,8 +8,6 @@ use nuvo_recs::{features, pool, rank, suppress};
 use nuvo_store::Connection;
 use serde_json::{Value, json};
 
-/// Plays a filler track per artist three times long ago, so the ranker knows them and does not
-/// pick them for exploration.
 fn know(conn: &Connection, artists: &[&str]) {
     for (i, artist) in artists.iter().enumerate() {
         for n in 0..3 {
@@ -18,7 +16,6 @@ fn know(conn: &Connection, artists: &[&str]) {
     }
 }
 
-/// `per_artist` tracks for each artist, ids `<artist>-<n>`, interleaved in catalog order.
 fn candidates(artists: &[&str], per_artist: usize) -> Vec<Value> {
     (0..per_artist).flat_map(|n| artists.iter().map(move |a| snapshot(&format!("{a}-{n}"), &format!("{a} song {n}"), a))).collect()
 }
@@ -63,12 +60,10 @@ fn batches_of_ten_are_recorded() {
 fn session_feedback_moves_neighbours() {
     let (_dir, conn) = common::open();
     know(&conn, &TEN);
-    // A finished track and a skipped one, each with a known neighbour from its candidate list.
     pool::replace(&conn, "good", "radio", &[snapshot("h-pal", "Pal of good", "h")], NOW - DAY).unwrap();
     pool::replace(&conn, "bad", "radio", &[snapshot("i-pal", "Pal of bad", "i")], NOW - DAY).unwrap();
     play(&conn, "good", "g", "live", NOW - 60_000, json!({}));
     play(&conn, "bad", "b", "live", NOW - 30_000, skip(1000));
-    // The neighbours sit mid-list; no seed, so no request adds similarity evidence of its own.
     let mut list = candidates(&TEN, 1);
     list.push(snapshot("h-pal", "Pal of good", "h"));
     list.push(snapshot("i-pal", "Pal of bad", "i"));
@@ -276,7 +271,6 @@ fn fallback_replays_heard_tracks_when_every_candidate_is_dropped() {
 fn not_interested_holds_across_two_hundred_batches() {
     let (_dir, conn) = common::open();
     know(&conn, &TEN);
-    // Never-played artists: exploration would pick them if it could.
     track(&conn, "blk-0", "Blocked song 0", "blk");
     suppress::not_interested(&conn, "blk-0", "artist_forever", NOW).unwrap();
     track(&conn, "hw-song", "Hidden Song", "hw");
@@ -322,7 +316,6 @@ fn a_skipped_track_lifts_nothing_as_a_seed_or_a_recent_play() {
 #[test]
 fn a_plain_repeat_comes_before_a_hidden_work() {
     let (_dir, conn) = common::open();
-    // The hidden work's artist is loved and the repeat's artist is skipped: only the tier orders them.
     for n in 0..5 {
         let id = format!("hw-old{n}");
         nuvo_store::library::like(&conn, &id, Some(snapshot(&id, &format!("Loved {n}"), "hw")), NOW - 10 * DAY + n).unwrap();
@@ -462,7 +455,6 @@ fn the_artist_cap_holds_after_soundcloud_lists_join_the_batch() {
     let (_dir, conn) = common::open();
     know(&conn, &TEN);
     track(&conn, "seed", "Seed", "z");
-    // Two stored SoundCloud lists crowded with artist "a" and "b", whose own candidates are also in the request.
     let first: Vec<Value> = (1..=8).map(|n| snapshot(&format!("sc:{n}"), &format!("Cloud a {n}"), "a")).collect();
     let second: Vec<Value> = (11..=18).map(|n| snapshot(&format!("sc:{n}"), &format!("Cloud b {n}"), "b")).collect();
     pool::replace(&conn, "seed", pool::SC_RELATED, &first, NOW - DAY).unwrap();

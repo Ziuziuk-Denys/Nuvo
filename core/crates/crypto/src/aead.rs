@@ -10,8 +10,7 @@ pub const NONCE_PREFIX_LEN: usize = 16;
 #[error("chunk failed authentication")]
 pub struct ChunkError;
 
-/// Seals fixed-size chunks independently so any byte range decrypts without reading from the start.
-/// Nonce = per-file random prefix (16 bytes) || chunk index (u64 big-endian).
+// Chunks seal independently for random access; nonce = 16-byte file prefix || u64 BE index
 pub struct ChunkCipher {
     cipher: XChaCha20Poly1305,
 }
@@ -41,7 +40,6 @@ impl ChunkCipher {
     }
 }
 
-/// Plaintext length of a sealed body (file length without the header).
 pub fn plain_len(sealed_len: u64) -> u64 {
     let full = sealed_len / CHUNK_CIPHER as u64;
     let rest = sealed_len % CHUNK_CIPHER as u64;

@@ -1,5 +1,3 @@
-/** Request header rewriting for YouTube and scoped CORS for media hosts. Pure. */
-
 export type Headers = Record<string, string | string[]>;
 
 export const UA_HEADER = "x-nuvo-ua";
@@ -7,7 +5,6 @@ export const UA_HEADER = "x-nuvo-ua";
 /** Public pages and APIs the import reads; they send no CORS headers for the app's origin. */
 export const IMPORT_HOSTS = ["music.apple.com", "api.deezer.com", "www.deezer.com", "deezer.page.link", "link.deezer.com"];
 
-/** Hosts whose responses the audio graph and the cover accent read cross-origin, and the import hosts. */
 export const CORS_HOSTS = [
   "*.youtube.com",
   "*.googlevideo.com",
@@ -22,7 +19,6 @@ export const CORS_HOSTS = [
 /** Song lookups for pasted links; these APIs send no CORS headers for the app's origin. */
 export const LOOKUP_HOSTS = ["api.deezer.com", "api.music.yandex.net"];
 
-/** Removed together with the Apple Music import. */
 export const APPLE_MUSIC_HOSTS = ["api.music.apple.com", "amp-api.music.apple.com"];
 
 export function hostMatches(host: string, patterns: readonly string[]): boolean {

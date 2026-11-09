@@ -1,4 +1,3 @@
-/** One report per play. Pure accumulator; the outbox posts the body and keeps it until the daemon took it. */
 import type { KeyValue } from "./persist";
 import { toSnapshot, type TrackSnapshot } from "./snapshot";
 import { isStation, splitContext, type QueueEntry, type SourceKind, type Track } from "./types";
@@ -67,7 +66,6 @@ export class PlayTracker {
     return this.play !== null;
   }
 
-  /** The listening session the reports carry; null before the first play. */
   get session(): string | null {
     return this.sessionId;
   }
@@ -94,7 +92,6 @@ export class PlayTracker {
     };
   }
 
-  /** Called with every position update and status change. */
   observe(playing: boolean): void {
     const play = this.play;
     if (!play) return;
@@ -114,7 +111,6 @@ export class PlayTracker {
     if (toMs > fromMs + SEEK_FLAG_MS) play.seekForwardMs += toMs - fromMs;
   }
 
-  /** Natural end or switch to a prepared deck. `loop` is true when repeat-one replays the same entry. */
   complete(loop = false): void {
     if (!this.play) return;
     this.play.completed = true;
@@ -127,7 +123,6 @@ export class PlayTracker {
     this.play.fallbackReason = fallbackReason;
   }
 
-  /** Ends the play. Returns the body to send, or null when this play is not reported. */
   end(kind: "change" | "error" | "stop"): PlaybackEventBody | null {
     const play = this.play;
     if (!play || !this.sessionId) return null;
@@ -136,7 +131,6 @@ export class PlayTracker {
     return this.report(play, this.sessionId, kind);
   }
 
-  /** The running play as a quit would report it, for when the app dies before it ends. */
   peek(): PlaybackEventBody | null {
     return this.play && this.sessionId ? this.report(this.play, this.sessionId, "stop") : null;
   }
@@ -181,7 +175,6 @@ export class PlayTracker {
   }
 }
 
-/** Autoplay after a list is `continue:<list>`, as the refill asks for it; a station stays a station. */
 function continuationContext(context: string | null): string {
   if (isStation(context)) return context!;
   const id = context ? (context.includes(":") ? context.slice(context.indexOf(":") + 1) : context) : "queue";
@@ -191,10 +184,6 @@ function continuationContext(context: string | null): string {
 const sameReport = (a: PlaybackEventBody, b: PlaybackEventBody): boolean =>
   a.trackId === b.trackId && a.listeningSessionId === b.listeningSessionId && a.startedAt === b.startedAt;
 
-/**
- * A report stays in storage until the daemon took it, so a daemon that is down or busy loses no play. The running play
- * is written every few seconds, so a crash, a kill or a reload loses seconds and not the play; the daemon drops a repeat.
- */
 export class ReportOutbox {
   private lastCheckpoint = -Infinity;
 
@@ -237,14 +226,12 @@ export class ReportOutbox {
     );
   }
 
-  /** The finished play replaces its checkpoint. */
   send(report: PlaybackEventBody): Promise<void> {
     this.write(OUTBOX_KEY, [...this.read(OUTBOX_KEY), report]);
     this.checkpoint(null);
     return this.deliver(report).catch((error: unknown) => this.log("play report failed", error));
   }
 
-  /** On start: what the last run did not get to deliver, the play it died in included. */
   async flush(): Promise<void> {
     const left = [...this.read(OUTBOX_KEY), ...this.read(OPEN_PLAY_KEY)];
     this.write(OUTBOX_KEY, left);

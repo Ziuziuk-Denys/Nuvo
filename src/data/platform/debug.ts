@@ -3,9 +3,8 @@ import { playerEngine } from "@/engine/compat";
 import { createDaemonClient } from "@/engine/sources/daemon";
 import type { Track } from "@/engine/types";
 
-// Test-only hooks for the real-app e2e run. Loaded in dev builds only, never in a packaged build.
+// Test-only e2e hooks: loaded in dev builds only, never in a packaged build
 export interface NuvoDebug {
-  /** Caches the blob as the audio of a fake track and plays it. */
   playBlob(blob: Blob, id: string, title?: string): Promise<void>;
 }
 

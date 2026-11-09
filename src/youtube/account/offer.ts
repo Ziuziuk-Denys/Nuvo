@@ -1,4 +1,3 @@
-/** The sign-in sheet's behaviour without its visuals. */
 import { isAbortError, type DeviceCode } from "../types";
 import type { Profile } from "./tv";
 
@@ -13,9 +12,7 @@ export interface OfferAccount {
 }
 
 export interface OfferHooks {
-  /** Playback opened the sheet: resume the track after sign-in. */
   resume?: () => void;
-  /** Playback opened the sheet: move on (next fallback or next track) after "Not now". */
   continuePlayback?: () => void;
 }
 
@@ -37,7 +34,6 @@ export class SignInOffer {
     return () => this.listeners.delete(listener);
   }
 
-  /** Opens the sheet; a no-op when signed in, already open, declined, disabled or not enabled. */
   open(origin: "playback" | "settings", hooks: OfferHooks = {}): boolean {
     if (this.account.status() || this.state.phase !== "closed") return false;
     if (origin === "playback" && (this.declined || !this.account.enabled())) return false;
@@ -51,7 +47,6 @@ export class SignInOffer {
     if (this.state.phase === "error") void this.run();
   }
 
-  /** Closes, stops polling and remembers the decline for this app session. */
   notNow(): void {
     if (this.state.phase === "closed") return;
     const wasWaiting = this.state.phase === "waiting";
@@ -75,7 +70,6 @@ export class SignInOffer {
           await this.account.awaitSignIn(code, signal);
           break;
         } catch (error) {
-          // An expired code is replaced without bothering the user.
           if ((error as { code?: string })?.code !== "auth:expired_token") throw error;
         }
       }

@@ -4,7 +4,6 @@ import { Toggle } from "../../components/Toggle";
 import { matchesQuery } from "./sections";
 import styles from "./controls.module.css";
 
-/** The settings search; rows and blocks that do not match it render nothing. */
 export const SearchQuery = createContext("");
 
 function useHidden(title: string, description: string | undefined, keys: (string | undefined)[]): boolean {
@@ -15,7 +14,6 @@ function useHidden(title: string, description: string | undefined, keys: (string
 interface RowProps {
   title: string;
   description?: string;
-  /** Show the description under the title; without it the description only feeds search. */
   explained?: boolean;
   control?: ReactNode;
   icon?: ReactNode;
@@ -23,7 +21,6 @@ interface RowProps {
   descKey?: string;
 }
 
-/** One line: title on the left, the control pinned right. */
 export function SettingRow({ title, description, explained, control, icon, titleKey, descKey }: RowProps): JSX.Element | null {
   if (useHidden(title, description, [titleKey, descKey])) return null;
   return (
@@ -38,7 +35,6 @@ export function SettingRow({ title, description, explained, control, icon, title
   );
 }
 
-/** Title on top and a wide control below it, such as a grid of cards. */
 export function SettingBlock({
   title,
   description,
@@ -58,7 +54,6 @@ export function SettingBlock({
   );
 }
 
-/** A run of rows, optionally under a quiet label. */
 export function SettingGroup({ label, children }: { label?: string; children: ReactNode }): JSX.Element {
   return (
     <section className={styles.group}>
@@ -86,11 +81,9 @@ export interface SegmentOption<T extends string> {
   value: T;
   label: string;
   disabled?: boolean;
-  /** Why a disabled option cannot be picked; shown on hover. */
   reason?: string;
 }
 
-/** Pill buttons in a row, one pressed. */
 export function Segmented<T extends string>({
   options,
   value,

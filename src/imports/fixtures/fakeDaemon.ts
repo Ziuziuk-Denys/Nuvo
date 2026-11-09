@@ -1,4 +1,3 @@
-/** An in-memory stand-in for the daemon's import routes, for tests. */
 import { MAX_ROWS } from "../types";
 import { CoreError, type ImportsDaemon, type StartBody } from "../core";
 import type { PendingJob } from "../pending";
@@ -33,7 +32,6 @@ export function reportRow(id: number, patch: Partial<ReportRow> = {}): ReportRow
 
 const ROW_SOURCES = ["youtube-music", "soundcloud", "apple-music", "deezer", "spotify", "nuvo-link", "legacy"];
 
-/** The daemon's checks on a start body (routes/imports.rs, parse_rows). */
 function validateStart(body: StartBody): void {
   const invalid = () => new CoreError(400, "INVALID_INPUT");
   if (body.target?.kind === "playlist" && !body.target.id) throw invalid();
@@ -46,7 +44,6 @@ function validateStart(body: StartBody): void {
 export class FakeDaemon implements ImportsDaemon {
   started: StartBody[] = [];
   startAnswer: ImportSummary[] | CoreError = [summary("i1")];
-  /** Scripted answers of `next`, per import; an empty script answers `{ done: true }`. */
   script = new Map<string, (ImportNext | CoreError)[]>();
   posted: {
     id: string;
@@ -71,7 +68,6 @@ export class FakeDaemon implements ImportsDaemon {
   spotify = new Map<string, Listing | CoreError>();
   addedToPlaylist: { playlistId: string; track: CatalogTrack }[] = [];
   nextCalls = 0;
-  /** The step each served row waits for, as the daemon's cascade does. */
   private leased = new Map<string, number>();
 
   async start(body: StartBody): Promise<ImportSummary[]> {
@@ -81,7 +77,6 @@ export class FakeDaemon implements ImportsDaemon {
     return this.startAnswer;
   }
   appended: { id: string; rows: ImportRow[] }[] = [];
-  /** Appends from this one on fail, as a daemon that went away would. */
   failAppendFrom: number | null = null;
   async appendRows(id: string, rows: ImportRow[]): Promise<ImportSummary> {
     if (this.failAppendFrom !== null && this.appended.length >= this.failAppendFrom) throw new CoreError(0, "CORE_DOWN");
@@ -115,7 +110,6 @@ export class FakeDaemon implements ImportsDaemon {
     if (step !== body.step) throw new CoreError(409, "CONFLICT");
     this.posted.push({ id, rowId, ...body });
     if (this.postError) throw this.postError;
-    // the daemon moves a row on once a step is answered
     this.leased.set(key, step + 1);
     return reportRow(rowId);
   }
@@ -124,7 +118,6 @@ export class FakeDaemon implements ImportsDaemon {
     return this.pages.get(`${id}:${filter}:${cursor ?? ""}`) ?? { items: [] };
   }
   async decide(id: string, rowId: number, decision: Decision, track?: CatalogTrack): Promise<ReportRow> {
-    // the daemon's checks (job.rs, decide): a known decision, and a pick brings a real track
     if (!["use", "pick", "remove", "keep"].includes(decision)) throw new CoreError(400, "INVALID_INPUT");
     if (decision === "pick" && !track?.id) throw new CoreError(400, "INVALID_INPUT");
     this.decisions.push({ id, rowId, decision, track });

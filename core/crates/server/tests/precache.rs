@@ -43,7 +43,6 @@ fn redirect(location: &'static str) -> Response {
     Response::builder().status(302).header(header::LOCATION, location).body(Body::empty()).unwrap()
 }
 
-/// Mock paths for the failure cases: odd ranges, redirects, a stall, a host that fails once.
 fn odd_routes() -> axum::Router {
     let flaky_calls = Arc::new(AtomicUsize::new(0));
     axum::Router::new()
@@ -60,7 +59,6 @@ fn odd_routes() -> axum::Router {
                 }
             }),
         )
-        // The exact multiple of the range size: 2 ranges, no third.
         .route(
             "/exact",
             get(|headers: HeaderMap| async move {
@@ -73,7 +71,6 @@ fn odd_routes() -> axum::Router {
                 partial(start, end, total, vec![5u8; end - start + 1])
             }),
         )
-        // Short ranges: 100 bytes at a time out of 1000.
         .route(
             "/slices",
             get(|headers: HeaderMap| async move {
@@ -81,7 +78,6 @@ fn odd_routes() -> axum::Router {
                 partial(start, start + 99, 1000, vec![9u8; 100])
             }),
         )
-        // 600 bytes of a claimed 1000, then nothing more.
         .route(
             "/short",
             get(|headers: HeaderMap| async move {
@@ -89,7 +85,6 @@ fn odd_routes() -> axum::Router {
                 if start == 0 { partial(0, 999, 1000, vec![1u8; 600]) } else { partial(start, start, 1000, Vec::new()) }
             }),
         )
-        // A 206 first, then a whole body answering a later range.
         .route(
             "/later200",
             get(|headers: HeaderMap| async move {
@@ -107,8 +102,6 @@ fn odd_routes() -> axum::Router {
         .route("/userinfo", get(|| async { redirect("https://u:p@x.googlevideo.com/") }))
 }
 
-/// A CDN that serves `audio()` by range at `/a`, refuses `/gone`, claims 600 MB at `/huge` and
-/// sends one chunk then stalls at `/slow`. Counts range requests to `/a`.
 async fn cdn() -> (String, Arc<AtomicUsize>) {
     let body = Arc::new(audio());
     let count = Arc::new(AtomicUsize::new(0));
@@ -150,7 +143,6 @@ fn request(track: &str, url: &str) -> Value {
     json!({"trackId": track, "url": url, "mime": "audio/webm", "codec": "opus", "bitrateKbps": 160})
 }
 
-/// Polls the status until the fetch leaves `queued` and `fetching`.
 async fn settle(core: &common::TestCore, track: &str) -> Value {
     for _ in 0..200 {
         let (_, status) = common::call(&core.app, "GET", &format!("/v1/cache/fetch/{track}"), None).await;

@@ -1,9 +1,3 @@
-//! `GET /v1/spotify/import?url=`: a public Spotify playlist or album link as rows for
-//! `POST /v1/imports`. Read from Spotify's public embed page with no account, through the daemon's
-//! network rules: https only, Spotify hosts only on every hop, a size cap and a timeout. A list the
-//! embed cuts at 100 is read on through the web player's paged query with the embed's anonymous
-//! token; any failure there keeps the embed's songs and the partial notice.
-
 use std::time::Duration;
 
 use axum::extract::{Query, State};
@@ -38,7 +32,6 @@ const QUERY: Fetch = Fetch {
 };
 
 const BROWSER: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
-/// The pause between two pages, and the waits after a 429 when Spotify names none.
 const PAGE_PAUSE: Duration = Duration::from_millis(300);
 const BACKOFF: [Duration; 3] = [Duration::from_secs(1), Duration::from_secs(2), Duration::from_secs(4)];
 const MAX_RETRY_WAIT: Duration = Duration::from_secs(10);
@@ -54,7 +47,6 @@ struct ImportQuery {
 
 fn net_error(err: NetError) -> ApiError {
     match err {
-        // a short link that leads off Spotify
         NetError::Forbidden(_) => ApiError::Invalid("not a Spotify playlist or album link".into()),
         NetError::Timeout => ApiError::UpstreamTimeout,
         NetError::TooLarge => ApiError::SourceChanged,
@@ -73,7 +65,6 @@ async fn page(state: &AppState, url: &str) -> Result<Fetched, ApiError> {
     }
 }
 
-/// A `spotify.link` short link is followed to the playlist or album it names.
 async fn resolve(state: &AppState, input: &str) -> Result<SpotifyLink, ApiError> {
     if let Some(link) = spotify::parse_link(input) {
         return Ok(link);
@@ -112,7 +103,6 @@ async fn import(State(state): State<AppState>, Query(q): Query<ImportQuery>) -> 
     }
     let mut answer = json!({"label": listing.label, "rows": rows});
     if !complete {
-        // the public playlist page says how many songs there are; an album page does not
         let total = match link.kind {
             Kind::Playlist => match page(&state, &link.page_url()).await {
                 Ok(fetched) => spotify::song_count(&String::from_utf8_lossy(&fetched.body)),
@@ -131,7 +121,6 @@ async fn import(State(state): State<AppState>, Query(q): Query<ImportQuery>) -> 
     Ok(Json(answer))
 }
 
-/// The entries after the first `offset`, page by page the way the web player reads a list.
 async fn rest(state: &AppState, link: &SpotifyLink, token: &str, mut offset: usize, album: Option<&str>) -> Result<Vec<SourceRow>, String> {
     let mut rows = Vec::new();
     loop {

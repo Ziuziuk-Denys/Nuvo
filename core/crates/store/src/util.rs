@@ -6,7 +6,6 @@ pub fn now_ms() -> i64 {
         .map_or(0, |d| d.as_millis() as i64)
 }
 
-/// Random UUID v4 string; the renderer treats ids as opaque.
 pub fn new_id() -> String {
     let mut b: [u8; 16] = nuvo_crypto::random_bytes();
     b[6] = (b[6] & 0x0f) | 0x40;

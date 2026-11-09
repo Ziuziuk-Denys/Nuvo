@@ -3,7 +3,6 @@ import { useTranslation } from "../../ports/i18n";
 import { saveFormat, setSaveFormat, type SaveFormat } from "../../ports/exports";
 import { Segmented, SettingGroup, SettingRow } from "./controls";
 
-/** The format "Save as file" writes: the original stream, or MP3 through ffmpeg. */
 export function SaveFormatRow(): JSX.Element {
   const { t } = useTranslation();
   const [format, setFormat] = useState<SaveFormat>(saveFormat);

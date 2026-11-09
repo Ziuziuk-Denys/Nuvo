@@ -1,4 +1,3 @@
-/** Fake Web Audio and media elements driven by fake timers. */
 import { vi } from "vitest";
 
 type Event = {
@@ -56,7 +55,6 @@ export class FakeParam {
     this.events.push({ kind: "set", time, value: held });
     return this;
   }
-  /** Evaluates the automation timeline at `time`. */
   valueAt(time: number): number {
     let value = this.base;
     let lastTime = 0;
@@ -117,7 +115,6 @@ export class FakeNode {
   }
 }
 
-/** Frequency and time-domain data are set by the test; reads copy them like the real node. */
 export class FakeAnalyser extends FakeNode {
   fftSize = 2048;
   smoothingTimeConstant = 0.8;
@@ -224,13 +221,11 @@ export class FakeWorkletNode extends FakeNode {
   }
 }
 
-/** Media element whose time advances with fake timers while playing. */
 export class FakeElement {
   private source = "";
   get src(): string {
     return this.source;
   }
-  /** Setting a source starts loading, as on a real element. */
   set src(value: string) {
     this.source = value;
     this.load();
@@ -273,7 +268,6 @@ export class FakeElement {
   dispatch(type: string) {
     for (const listener of [...(this.listeners.get(type) ?? [])]) listener();
   }
-  /** Loads `src`: metadata and canplaythrough arrive on the next microtasks. */
   load() {
     this.time = 0;
     this.readyState = 0;

@@ -1,5 +1,3 @@
-//! Small proxies for tests: an HTTP proxy that answers by itself, and a tunnelling SOCKS5 proxy.
-
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -18,9 +16,6 @@ async fn read_head(stream: &mut TcpStream) -> String {
     String::from_utf8_lossy(&head).into_owned()
 }
 
-/// An HTTP proxy that answers every plain-HTTP request itself with `200` and `body`, so a request
-/// that succeeds while its URL points at a closed port went through it. With `auth`, a request
-/// without `Proxy-Authorization: Basic <auth>` gets `407`. Returns the proxy URL and a request count.
 pub async fn answering(body: &'static [u8], auth: Option<&'static str>) -> (String, Arc<AtomicUsize>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
@@ -47,8 +42,6 @@ pub async fn answering(body: &'static [u8], auth: Option<&'static str>) -> (Stri
     (url, count)
 }
 
-/// A SOCKS5 proxy without authentication that tunnels to the requested address. Returns its
-/// `socks5h://` URL and a connection count.
 pub async fn socks5() -> (String, Arc<AtomicUsize>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("socks5h://{}", listener.local_addr().unwrap());

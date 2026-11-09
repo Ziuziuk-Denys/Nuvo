@@ -5,7 +5,6 @@ import { listYoutube } from "./youtube";
 
 const signal = new AbortController().signal;
 
-// Compile-time guard: the real catalog port must satisfy the lister.
 function listerOf(catalog: Pick<YtCatalog, "importUrl">) {
   return catalog;
 }

@@ -15,12 +15,10 @@ export function readPlayerTempo(): TempoSettings {
   };
 }
 
-/** Applies settings through the engine so its ramps run. */
 export function applyTempo(settings: TempoSettings): void {
   soundActions.setTempo(settings);
 }
 
-/** What a track will play at: its memory, its artist's memory, else the global or neutral tempo. */
 export function tempoFor(track: Track): TempoSettings {
   const sound = useSoundStore.getState();
   const artist = selectArtist({ currentTrack: track });
@@ -29,7 +27,6 @@ export function tempoFor(track: Track): TempoSettings {
   return usePlayerStore.getState().keepSpeedAcrossTracks ? sound.globalTempo : TEMPO_PRESETS.normal;
 }
 
-/** Track memory beats artist memory; null when neither exists. */
 export function activeTempoScope(
   trackId: string | null,
   artist: string | null,
@@ -48,7 +45,6 @@ function currentScope() {
   return activeTempoScope(player.currentTrack?.id ?? null, selectArtist(player), sound.tempoByTrack, sound.tempoByArtist);
 }
 
-// Single owner of tempo on track change: the runtime no longer resets speed itself
 export function useTempoSync(): void {
   const trackId = usePlayerStore((state) => state.currentTrack?.id ?? null);
   const artist = usePlayerStore(selectArtist);
@@ -60,7 +56,6 @@ export function useTempoSync(): void {
   const reverbOn = usePlayerStore((state) => state.isReverbEnabled);
   const reverbLevel = usePlayerStore((state) => state.reverbLevel);
 
-  // The engine asks this for every start and for the prepared next deck, so a transition never jumps.
   useEffect(() => {
     soundActions.setTempoResolver(tempoFor);
     return () => soundActions.setTempoResolver(null);
@@ -69,18 +64,16 @@ export function useTempoSync(): void {
   const active = activeTempoScope(trackId, artist, tempoByTrack, tempoByArtist);
   const activeId = active ? `${active.scope}:${active.key}` : null;
 
-  // Apply on track change or when the governing memory changes (declared first: it runs before capture)
+  // Declared first: it must run before the capture effect
   useEffect(() => {
     let target: TempoSettings | null = currentScope()?.settings ?? null;
     if (!target && trackId !== null) {
       target = usePlayerStore.getState().keepSpeedAcrossTracks ? useSoundStore.getState().globalTempo : TEMPO_PRESETS.normal;
     }
-    // Re-applying the playing tempo would still unlink and relink the pitch for nothing
     if (target && !sameTempo(readPlayerTempo(), target)) applyTempo(target);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- state is read fresh; only the track and the governing memory matter
   }, [trackId, artist, activeId]);
 
-  // Capture edits: into the governing memory, or into the stored global tempo
   useEffect(() => {
     const current = currentScope();
     const live = readPlayerTempo();

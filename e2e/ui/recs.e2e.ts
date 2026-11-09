@@ -2,7 +2,6 @@ import { afterAll, describe, expect, it } from "vitest";
 import { launchNuvo, passFirstRun, type Look, type NuvoSession } from "./harness";
 import { seedLibrary, trackSnapshot } from "./seed";
 
-/** Runs against a `pnpm build`: Home's mixes, the bar's reason line and the "Not interested" notice. */
 const STEP = "recs-home";
 const LIGHT: Look = { preset: "nuvo", mode: "light" };
 const DARK: Look = { preset: "nuvo", mode: "dark" };
@@ -52,7 +51,6 @@ async function playing(live: NuvoSession, index: number, reason: { kind: string;
   await live.page.waitForTimeout(800);
 }
 
-/** Boxes of the bar's left zone: nothing may overlap or leave the bar. */
 async function leftZone(live: NuvoSession) {
   return live.page.evaluate(() => {
     const rect = (el: Element | null) => {
@@ -82,7 +80,6 @@ describe("recs UI shots", () => {
     const page = live.page;
     page.on("console", (m) => m.type() === "error" && console.log("console:", m.text().slice(0, 400)));
     page.on("pageerror", (e) => console.log("pageerror:", e.message.slice(0, 400), (e.stack ?? "").slice(0, 600)));
-    // the phrase, then the tour skipped, so its layer never sits over the bar
     await passFirstRun(page);
     await seedLibrary(live);
     await page.waitForTimeout(1_100);
@@ -93,7 +90,6 @@ describe("recs UI shots", () => {
     )) as string[];
     console.log("daemon mixes:", real.join(", "));
 
-    // Home: the daemon's own mixes; a missing "New to you" (no candidate pool offline) is filled from seeded tracks
     await page.addInitScript(() => {
       const original = window.fetch.bind(window);
       window.fetch = async (input, init) => {
@@ -119,12 +115,10 @@ describe("recs UI shots", () => {
     expect(mixes.slice(0, 2)).toEqual(["daily-mix-for-you", "daily-mix-discover"]);
     console.log(await live.shoot(STEP, "home", "mixes", { looks: [LIGHT, DARK], sizes: [W1200] }));
 
-    // the bar's reason line
     await live.setLook(LIGHT);
     await playing(live, 5, { kind: "session", name: "Teardrop" });
     console.log(await live.shoot(STEP, "bar", "reason", { looks: [LIGHT, DARK], sizes: [W1200] }));
 
-    // the notice, en then ru, at 1100 with the long title
     for (const [locale, index] of [
       ["en", 2],
       ["ru", 3],

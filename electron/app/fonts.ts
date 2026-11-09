@@ -1,4 +1,3 @@
-/** User fonts (customization 5): the fc-list parser, magic-byte and table checks, the hash-named store and the nuvo-core:// font response. */
 import crypto from "node:crypto";
 import { default as fs } from "node:fs";
 import { default as path } from "node:path";
@@ -40,7 +39,6 @@ export function cleanFamily(raw: string): string | null {
   return /[\u0000-\u001f\u007f-\u009f;{}<>"'\\]/.test(name) ? null : name;
 }
 
-/** `fc-list --format '%{family}\n'`: the first name of each line, cleaned, unique, sorted for people. */
 export const FC_LIST_MAX_FAMILIES = 5000;
 export function parseFcList(stdout: string): string[] {
   const names = new Set<string>();
@@ -72,7 +70,6 @@ export function sniffFont(buf: Buffer): { ok: true; format: FontFormat } | { ok:
   if (magic === "wOFF") return { ok: false, error: "woff1" };
   if (magic === "ttcf") return { ok: false, error: "collection" };
   if (magic === "wOF2") {
-    // header: signature, flavor, length (the whole file), numTables
     const fits = buf.length >= 48 && buf.readUInt32BE(8) === buf.length && buf.readUInt16BE(12) >= 1 && buf.readUInt16BE(12) <= 64;
     return fits ? { ok: true, format: "woff2" } : { ok: false, error: "damaged" };
   }
@@ -81,12 +78,10 @@ export function sniffFont(buf: Buffer): { ok: true; format: FontFormat } | { ok:
   return sfntTablesFit(buf) ? { ok: true, format } : { ok: false, error: "damaged" };
 }
 
-/** The `name` table's typographic family (16), else family (1); Windows or Unicode UTF-16BE, else Mac Roman as Latin-1. */
 export function familyFromNameTable(buf: Buffer): string | null {
   try {
     return readFamily(buf);
   } catch {
-    // a record pointing past its table: no name, the caller falls back to the file name
     return null;
   }
 }
@@ -170,12 +165,9 @@ export class FontStore {
       fs.writeFileSync(temporary, buf, { mode: 0o600 });
       fs.renameSync(temporary, target);
     } catch {
-      // a full disk or a read-only folder says nothing about the font itself
       try {
         fs.rmSync(temporary, { force: true });
-      } catch {
-        // nothing left to clean
-      }
+      } catch {}
       return { ok: false, error: "write" };
     }
     return { ok: true, file: entry };
@@ -219,7 +211,6 @@ export function fontResponse(request: Request, store: FontStore, allowedOrigins:
 
 const RESCAN_MS = 30_000;
 
-/** The installed families, scanned once; a rescan or a failed scan is retried at most every 30 s. */
 export class SystemFonts {
   private pending: Promise<{ ok: true; families: string[] } | { ok: false }> | null = null;
   private failed = false;

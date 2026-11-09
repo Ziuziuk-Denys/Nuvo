@@ -4,7 +4,6 @@ import { ErrorScreen } from "./ErrorScreen";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  /** Tests pass a spy; the app reloads the window. */
   onReload?: () => void;
 }
 
@@ -13,7 +12,6 @@ interface ErrorBoundaryState {
   info: ErrorInfo | null;
 }
 
-/** The last line of defence: a render error anywhere below swaps the window for the error screen. */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   override state: ErrorBoundaryState = { error: null, info: null };
 

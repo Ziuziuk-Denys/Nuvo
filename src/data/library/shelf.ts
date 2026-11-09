@@ -3,7 +3,6 @@ import type { YtAccount } from "@/youtube";
 import type { AccountPlaylistRow } from "@/youtube/account/tv";
 import type { LibraryItemViewModel } from "./collections";
 
-/** The signed-in YouTube account's playlists and albums, after the user's own items. */
 export const ALBUM_PREFIX = "OLAK5uy_";
 
 export function shelfItems(rows: AccountPlaylistRow[]): LibraryItemViewModel[] {

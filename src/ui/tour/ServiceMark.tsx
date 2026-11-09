@@ -1,11 +1,6 @@
 import { useId, type JSX, type ReactNode } from "react";
 import type { ImportSource } from "../ports/importSources";
 
-/*
-  The import services' marks, drawn for Nuvo in one ink on a 24 px grid: a solid shape with its figure cut out,
-  so every mark reads in light and dark from currentColor alone
-*/
-
 function Cut({ shape, figure }: { shape: ReactNode; figure: ReactNode }): JSX.Element {
   const id = useId();
   return (

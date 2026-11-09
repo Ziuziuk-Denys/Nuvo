@@ -1,4 +1,3 @@
-/** Two decks, fades, seek masking and the prepared-deck transitions. */
 import type { DeckCandidate, DeckEvent, DeckLoad, DeckPort } from "../deckPort";
 import type { AttachedSource } from "../sources/resolver";
 import { pitchStageActive, type Tempo } from "../tempo";
@@ -46,7 +45,6 @@ export interface TransitionPlan {
 export type TransitionPolicy = (input: TransitionInput) => TransitionPlan;
 export type SpanResolver = (trackId: string, elementDurationMs: number) => Span;
 
-/** Until sound part B: gapless when the next deck is ready, else plain. */
 export const defaultPolicy: TransitionPolicy = (input) =>
   input.nextReady
     ? { kind: "gapless", startAtMediaMs: input.current.endMs - GAPLESS_MS * input.rate, fadeMs: GAPLESS_MS }
@@ -59,7 +57,6 @@ export interface DecksDeps {
   cacheUrl(trackId: string): string;
   isFullyCached(trackId: string): Promise<boolean>;
   dropCached(trackId: string): Promise<void>;
-  /** Settings the policy reads that live outside the engine (sound store, A-B loop, sleep timer). */
   transitionContext(): Pick<TransitionInput, "crossfadeSeconds" | "albumInOrder" | "repeat" | "abLoop" | "sleepAtTrackEnd"> & {
     reverbNext: number | null;
     reverbCurrent: number | null;
@@ -112,7 +109,6 @@ export class DeckController implements DeckPort {
   private readonly decks: [Deck, Deck];
   private activeIndex: 0 | 1 = 0;
   private graph: AudioGraph | null = null;
-  /** Spectrum listeners outlive the graph: they attach to each graph as it is built. */
   private readonly spectrumListeners = new Map<SpectrumListener, (() => void) | null>();
   private graphFailed = false;
   private context: AudioContext | null = null;
@@ -164,9 +160,6 @@ export class DeckController implements DeckPort {
     return this.decks[this.activeIndex === 0 ? 1 : 0];
   }
 
-  // graph
-
-  /** Built on the first play and kept; without an AudioContext the elements play alone. */
   private ensureGraph(): AudioGraph | null {
     if (this.graph || this.graphFailed) return this.graph;
     try {
@@ -195,7 +188,6 @@ export class DeckController implements DeckPort {
     for (const listener of this.spectrumListeners.keys()) this.spectrumListeners.set(listener, graph.spectrum.subscribe(listener));
   }
 
-  /** Development hot reload: a fresh graph over the same elements and source nodes. */
   rebuildGraph(): void {
     this.graph?.dispose();
     this.graph = null;
@@ -208,13 +200,11 @@ export class DeckController implements DeckPort {
     return this.context;
   }
 
-  // fades
-
   private gainOf(deck: Deck): AudioParam | null {
     return this.graph?.decks[deck.index].transition.gain ?? null;
   }
 
-  /** Freezes the automation at the current value; the fallback keeps the value where cancelAndHoldAtTime is missing. */
+  // The fallback covers engines without cancelAndHoldAtTime
   private hold(param: AudioParam, now: number, current = param.value): void {
     if (typeof param.cancelAndHoldAtTime === "function") {
       param.cancelAndHoldAtTime(now);
@@ -233,8 +223,6 @@ export class DeckController implements DeckPort {
     param.setValueCurveAtTime(raisedCosine(from, to), now, ms / 1000);
   }
 
-  // DeckPort
-
   async load(load: DeckLoad): Promise<void> {
     this.cancelTransition(true);
     if (this.pauseTimer) clearTimeout(this.pauseTimer);
@@ -250,7 +238,6 @@ export class DeckController implements DeckPort {
     graph?.resume();
     const outParam = this.gainOf(deck);
     if (outParam && !deck.element.paused && outParam.value > 0.01) {
-      // Audible: fade the old track out before the source is swapped.
       this.fade(deck, 0, PLAIN_TAIL_MS);
       await new Promise<void>((resolve) => this.later(resolve, PLAIN_TAIL_MS));
       if (deck.token !== load.token || this.disposed) {
@@ -302,7 +289,6 @@ export class DeckController implements DeckPort {
     });
   }
 
-  /** Play after a pause rises over 180 ms; during a pause fade it turns around from the current value. */
   async resume(): Promise<void> {
     const deck = this.active;
     this.graph?.resume();
@@ -413,8 +399,6 @@ export class DeckController implements DeckPort {
     this.active.token = token;
   }
 
-  // clock and sound bus
-
   readonly clock = {
     positionMs: () => this.positionMs(),
     activeElement: () => this.active.element,
@@ -454,7 +438,6 @@ export class DeckController implements DeckPort {
     pitchAvailable: () => this.graph?.pitchAvailable ?? true,
   };
 
-  /** A fire-and-forget timer that dispose can still cancel. */
   private later(action: () => void, ms: number): void {
     const timer = setTimeout(() => {
       this.loose.delete(timer);
@@ -463,7 +446,6 @@ export class DeckController implements DeckPort {
     this.loose.add(timer);
   }
 
-  /** Releases timers, element listeners, pending preparation and every audio node. */
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -534,13 +516,10 @@ export class DeckController implements DeckPort {
     this.rearm();
   }
 
-  // element events
-
   private onElementEvent(deck: Deck, type: DeckEvent["type"]): void {
     if (deck !== this.active) return;
     const element = deck.element;
     if (type === "ended" && this.prepared?.ready && !this.switching) {
-      // Late timer: the outgoing deck reached its end first.
       this.startSwitch("plain", 0);
       return;
     }
@@ -557,8 +536,6 @@ export class DeckController implements DeckPort {
     };
     for (const listener of [...this.listeners]) listener(event);
   }
-
-  // next deck
 
   setCandidate(candidate: DeckCandidate | null): void {
     if (this.candidate?.entryId === candidate?.entryId) {
@@ -643,7 +620,6 @@ export class DeckController implements DeckPort {
     return Math.min(LOOKAHEAD_MAX_MS, Math.max(0, average));
   }
 
-  /** Asks the policy and arms one timer for the switch. */
   private rearm(): void {
     if (this.armTimer) clearTimeout(this.armTimer);
     this.armTimer = null;
@@ -676,7 +652,6 @@ export class DeckController implements DeckPort {
     );
   }
 
-  /** Manual next to the prepared entry: 120 ms crossfade, no loading. */
   switchNow(entryId: string, token: number): boolean {
     if (!this.prepared?.ready || this.prepared.candidate.entryId !== entryId || this.switching) return false;
     this.startSwitch("crossfade", MANUAL_SKIP_MS, token);
@@ -725,7 +700,6 @@ export class DeckController implements DeckPort {
     this.finishTimer = setTimeout(() => this.finishSwitch(), envelope + FINISH_EXTRA_MS);
   }
 
-  /** The outgoing deck pauses; its source stays attached until it is prepared again. */
   private finishSwitch(): void {
     this.finishTimer = null;
     this.outgoing?.element.pause();
@@ -734,7 +708,6 @@ export class DeckController implements DeckPort {
     this.maybePrepare();
   }
 
-  /** Next, previous or another start during a transition: envelopes cancelled, the outgoing deck fades out in 30 ms. */
   private cancelTransition(fadeOutgoing: boolean): void {
     this.discardPrepared();
     if (!this.switching) return;

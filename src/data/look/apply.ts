@@ -2,10 +2,7 @@ import type { Preset, PresetMode, Tokens } from "./presets";
 
 const ink = (percent: number) => `color-mix(in srgb, var(--n-ink) ${percent}%, transparent)`;
 
-/**
- * The older colour names some styles still read, as references to the --n-* tokens so they follow every look.
- * Written inline, so they win over the static defaults in the base stylesheet.
- */
+// Written inline so they win over the static defaults in the base stylesheet
 const OLDER_NAMES: Record<string, string> = {
   "bg-canvas": "var(--n-deep)",
   "bg-panel": "var(--n-deep)",
@@ -32,7 +29,6 @@ const OLDER_NAMES: Record<string, string> = {
   "btn-primary-text": "var(--n-field)",
 };
 
-/** Paints tokens as `--name` custom properties on the root and removes `--n-*` ones the new set does not have. */
 export function applyTokens(root: HTMLElement, key: string, tokens: Tokens): void {
   const stale: string[] = [];
   for (let i = 0; i < root.style.length; i += 1) {

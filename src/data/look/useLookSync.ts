@@ -9,13 +9,11 @@ import { applyPresetTokens, applyTokens } from "./apply";
 import { getPreset, resolvePresetMode, type Preset, type PresetId, type PresetMode } from "./presets";
 import { selectIsGlassThemeActive, useLookStore, type ThemeChoice } from "./lookStore";
 
-/** Under a wallpaper a light-only preset gives way to the default look (the settings screen says so). */
 export function effectivePreset(id: PresetId, glass: boolean): Preset {
   const chosen = getPreset(id);
   return glass && !chosen.modes.includes("dark") ? getPreset("nuvo") : chosen;
 }
 
-/** A one-mode preset forces its mode and remembers the old choice; a two-mode preset restores it. */
 export function modeStep(preset: Preset, theme: ThemeChoice, before: ThemeChoice | null): { setTheme?: ThemeChoice; before: ThemeChoice | null } {
   if (preset.modes.length === 1) {
     const forced = preset.modes[0];
@@ -26,7 +24,6 @@ export function modeStep(preset: Preset, theme: ThemeChoice, before: ThemeChoice
   return { before: null };
 }
 
-/** Applies the look settings to the window. Mounted once in the shell. */
 export function useLookSync(): void {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const presetId = useLookStore((s) => s.preset);
@@ -41,7 +38,6 @@ export function useLookSync(): void {
     document.documentElement.dataset.coverGlow = coverGlow ? "on" : "off";
   }, [coverGlow]);
 
-  // a custom theme has both modes and never forces one
   useEffect(() => {
     if (custom) return;
     const choice: ThemeChoice = theme === "light" || theme === "dark" ? theme : "system";
@@ -55,7 +51,6 @@ export function useLookSync(): void {
     const root = document.documentElement;
     let cancelled = false;
     const preset = effectivePreset(presetId, glass);
-    // data-preset names the look in force: the preset, or `custom:<id>` for a saved theme
     root.dataset.preset = custom ? `custom:${custom.id}` : preset.id;
     if (custom) applyTokens(root, `custom:${custom.id}`, themeTokens(custom, mode));
     else applyPresetTokens(root, preset, resolvePresetMode(preset, mode));

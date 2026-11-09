@@ -1,4 +1,3 @@
-/* The import dialog: one column inside the Sheet, quiet type, no cards. */
 .body {
   display: flex;
   flex-direction: column;

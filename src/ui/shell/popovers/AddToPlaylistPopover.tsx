@@ -12,7 +12,6 @@ const ADDED_HOLD_MS = 1200;
 
 type Outcome = { playlistId: string; kind: "added" | "already" | "failed" };
 
-/** Up and Down walk from the search field through the rows and back, so a pick never needs the pointer. */
 function walkRows(event: KeyboardEvent<HTMLDivElement>): void {
   if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
   const stops = [...event.currentTarget.querySelectorAll<HTMLElement>("input, button[data-row]")];
@@ -22,20 +21,7 @@ function walkRows(event: KeyboardEvent<HTMLDivElement>): void {
   stops[Math.min(stops.length - 1, Math.max(0, index + (event.key === "ArrowDown" ? 1 : -1)))].focus();
 }
 
-/**
- * The track being added, a search field, the playlists most recently changed first, and New playlist.
- * A pick adds the track, says "Added" on that row for 1.2 s and then closes;
- * a playlist that already holds it says so and stays open for another pick.
- */
-export function AddToPlaylistPopover({
-  track,
-  tracks,
-  onDone,
-}: {
-  track: Track;
-  /** A selection: every one is added; `track` is the one shown on the card. */ tracks?: readonly Track[];
-  onDone(): void;
-}): JSX.Element {
+export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; tracks?: readonly Track[]; onDone(): void }): JSX.Element {
   const { t } = useTranslation();
   const { data, isLoading } = usePlaylistsList();
   const addTrack = useAddPlaylistTracks();
@@ -53,7 +39,6 @@ export function AddToPlaylistPopover({
   const playlists = needle ? all.filter((playlist) => playlist.title.toLowerCase().includes(needle)) : all;
 
   const add = async (playlistId: string) => {
-    // one add at a time, and none after the "Added" hold has started
     if (busy.current) return;
     busy.current = true;
     setPending(playlistId);
@@ -67,7 +52,6 @@ export function AddToPlaylistPopover({
           added += 1;
         } catch (error) {
           failure = error;
-          // a track the playlist already holds is not a failure of the rest
           if (!(error instanceof ApiError && error.status === 409)) break;
         }
       }
@@ -89,7 +73,6 @@ export function AddToPlaylistPopover({
     openCreatePlaylist(undefined, track);
   };
 
-  // the song joins the playlist the link import creates
   const fromLink = () => {
     onDone();
     useImportsUi.getState().openImport({ pendingTrack: snapshotOf(track) });

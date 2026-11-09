@@ -28,7 +28,6 @@ interface PendingCss {
   problems: CssProblem[];
 }
 
-/** A saved theme's tile: its own background with a card and the accent, in the preset tiles' frame. */
 function ThemeSwatch({ theme, mode }: { theme: NuvoTheme; mode: "light" | "dark" }): JSX.Element {
   const roles = rolesFor(theme, theme.modes[mode] ? mode : theme.defaultMode);
   return (
@@ -39,7 +38,6 @@ function ThemeSwatch({ theme, mode }: { theme: NuvoTheme; mode: "light" | "dark"
   );
 }
 
-/** Saved themes next to the presets, the editor's entry points, import with the carried-CSS question and export. */
 export function ThemeLibrary(): JSX.Element {
   const { t } = useTranslation();
   const saved = useAppearanceStore((s) => s.saved);
@@ -93,7 +91,6 @@ export function ThemeLibrary(): JSX.Element {
     void file.text().then(openText);
   };
 
-  /** "Colours and CSS": the theme's CSS joins custom CSS, switched on, after the owner read it. */
   const acceptCss = async ({ theme, css }: PendingCss) => {
     const text = [saved.customCss.text.trim(), `/* ${theme.name.replace(/\*\//g, "")} */\n${css.trim()}`].filter(Boolean).join("\n\n");
     if (new TextEncoder().encode(text).length > CSS_LIMITS.bytes) {

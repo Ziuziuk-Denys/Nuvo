@@ -100,7 +100,6 @@ async fn stats_routes_answer_from_real_events() {
     assert_eq!(artist["plays"], 3);
     assert_eq!(common::call(&core.app, "GET", "/v1/stats/tracks/nope", None).await.0, StatusCode::NOT_FOUND);
 
-    // a play after the page was read shows on the next read
     assert_eq!(common::call(&core.app, "POST", "/v1/me/playback/events", Some(play("c", "s9", now + 1000))).await.0, StatusCode::NO_CONTENT);
     assert_eq!(common::call(&core.app, "GET", "/v1/stats/overview?tzOffsetMin=-180", None).await.1["totals"]["plays"], 4);
 

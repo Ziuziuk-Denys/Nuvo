@@ -784,7 +784,7 @@ describe("shutdown hardening and window restore", () => {
     vi.useFakeTimers();
     const s = new Shutdown({ askRenderer: () => Promise.resolve(), steps: [], quit: vi.fn(), exit: vi.fn(), log: vi.fn() });
     await s.run();
-    expect(vi.getTimerCount()).toBe(1); // only the watchdog
+    expect(vi.getTimerCount()).toBe(1);
   });
 
   const left = { x: 0, y: 0, width: 1920, height: 1080 };
