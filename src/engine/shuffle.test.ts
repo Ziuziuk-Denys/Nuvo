@@ -9,7 +9,8 @@ interface Item {
 const library: Item[] = Array.from({ length: 40 }, (_, i) => ({ id: `t${i}`, artist: `artist${i % 8}` }));
 
 describe("spaced shuffle", () => {
-  it("keeps artists 3 apart and leaves the first slot uniform", () => {
+  // 10 000 seeds of a 40 item shuffle take about 6 s on a shared CI runner, over the 5 s default
+  it("keeps artists 3 apart and leaves the first slot uniform", { timeout: 60_000 }, () => {
     const firsts = new Map<string, number>();
     for (let seed = 1; seed <= 10_000; seed++) {
       const order = spacedShuffle(library, (item) => item.artist, seededRandom(seed));
