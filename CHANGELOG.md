@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.11-beta.2
+
+- **No console window on Windows.** Nuvo no longer opens a black terminal next to the app.
+- **Security fixes.** A slow-matching cover link pattern, incomplete tag stripping in lyrics translation, and an unchecked language lookup are fixed and covered by tests.
+- **Code cleanup.** Fewer comments and dead code.
+
 ## 0.2.11-beta.1
 
 A beta for testers: the first Windows and macOS builds of Nuvo, plus Linux and Chromebook.
