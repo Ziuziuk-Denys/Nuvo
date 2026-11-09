@@ -19,4 +19,11 @@ describe("sizedCoverUrl", () => {
     expect(sizedCoverUrl("data:image/svg+xml,%3Csvg%3E", 40)).toBe("data:image/svg+xml,%3Csvg%3E");
     expect(sizedCoverUrl("", 40)).toBe("");
   });
+
+  it("handles a hostile suffix in linear time", () => {
+    const hostile = `${base}=s0-${"-".repeat(50000)}!`;
+    const start = Date.now();
+    expect(sizedCoverUrl(hostile, 40)).toBe(`${hostile}=s80`);
+    expect(Date.now() - start).toBeLessThan(500);
+  });
 });

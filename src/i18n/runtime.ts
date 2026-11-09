@@ -97,7 +97,9 @@ function english(): Table {
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function loadTable(code: Exclude<Locale, "en">): Promise<void> {
-  const source = config.sources[code];
+  // explicit map, never a computed property on caller data
+  const source = code === "ru" ? config.sources.ru : null;
+  if (!source) return;
   let texts: Texts;
   try {
     texts = await source();
