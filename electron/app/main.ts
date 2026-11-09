@@ -60,9 +60,9 @@ import { exclusive } from "./exclusive";
 import { readThemeFile, themeFileName, validateThemeExport, writeThemeFile, type ThemeFileRead } from "./themeFiles";
 import { systemMuted, unmuteSystem } from "./systemSound";
 import { probeWatcher, TrayController, trayIconStyle, trayWanted, type TrayItemId } from "./tray";
-import { RateGate, RefusalLog, validateBindings, validateIcon, validateNotchAction, validateNotice, validateSurfaceState, validateWinDrag } from "./validate";
+import { RateGate, RefusalLog, validateBindings, validateIcon, validateNotchAction, validateNotice, validateSurfaceState } from "./validate";
 import { nextZoom, zoomKey } from "./zoom";
-import { activateWindow, DEFAULT_SIZE, dragBounds, MIN_SIZE, navigationDecision, onScreenBounds, restoreUnderCursor, type Bounds } from "./windowRules";
+import { activateWindow, DEFAULT_SIZE, MIN_SIZE, navigationDecision, onScreenBounds } from "./windowRules";
 
 export interface YoutubeService {
   dispose(): void;
@@ -140,7 +140,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     return nativeImage.createFromPath(iconFile(32));
   };
   let lastSaveDir: string | null = null;
-  let dragStart: { bounds: Bounds; cursor: { x: number; y: number } } | null = null;
 
   const socketPath = coreSocketPath({ platform: process.platform, env: process.env, tmpdir: os.tmpdir(), random: randomBytes(16).toString("hex") });
   const coreBinary = coreBinaryName(process.platform);
@@ -400,21 +399,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     ipc.handle(CHANNELS.winToggleFullscreen, "main", () => windows.toggleFullscreen());
     ipc.handle(CHANNELS.winClose, "main", () => windows.close());
     ipc.handle(CHANNELS.winGetState, "main", () => windows.state());
-    ipc.on(CHANNELS.winDrag, "main", (payload) => {
-      const phase = validateWinDrag(payload);
-      const win = windows.window as unknown as BrowserWindow | null;
-      if (!phase || !win || process.platform === "linux" || win.isFullScreen()) return;
-      const cursor = screen.getCursorScreenPoint();
-      if (phase === "start") {
-        if (win.isMaximized()) {
-          const restored = restoreUnderCursor(win.getBounds(), win.getNormalBounds(), cursor);
-          win.unmaximize();
-          win.setBounds(restored);
-        }
-        dragStart = { bounds: win.getBounds(), cursor };
-      } else if (phase === "move" && dragStart) win.setBounds(dragBounds(dragStart.bounds, dragStart.cursor, cursor));
-      else dragStart = null;
-    });
     ipc.handle(CHANNELS.appInfo, "main", () => ({
       version: app.getVersion(),
       platform: process.platform,

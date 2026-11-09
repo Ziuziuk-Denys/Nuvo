@@ -24,9 +24,6 @@ export function makeLegacyBridge(shell: NuvoShell, info: AppInfo) {
     isFullScreen: async () => (await shell.getWinState()).fullscreen,
     onWindowStateChange: (cb: (state: WindowState) => void) =>
       shell.onWinState((s) => cb({ isMaximized: s.maximized, isFullScreen: s.fullscreen, isVisible: s.visible })),
-    dragStart: () => shell.drag("start"),
-    dragMove: (_deltaX?: number, _deltaY?: number) => shell.drag("move"),
-    dragEnd: () => shell.drag("end"),
     onDeeplink: (cb: (target: DeeplinkTarget) => void) => {
       const deliver = (t: DeeplinkTarget) => (t.type === "share" ? deliverShareLink(t.id) : cb(t));
       void shell.takePendingLink().then((t) => t && deliver(t));

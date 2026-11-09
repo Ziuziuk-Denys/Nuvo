@@ -6,8 +6,8 @@
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  height: 56px;
-  padding: 6px 12px 0 6px;
+  height: 62px;
+  padding: 6px 12px 6px 6px;
   user-select: none;
 }
 

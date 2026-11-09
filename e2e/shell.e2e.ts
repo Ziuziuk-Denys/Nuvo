@@ -219,7 +219,6 @@ describe("shell e2e", () => {
       "close",
       "getWinState",
       "onWinState",
-      "drag",
       "getAppInfo",
       "quit",
       "onBeforeQuit",

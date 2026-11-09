@@ -105,10 +105,6 @@ export function validateNotice(raw: unknown): { title: string; body: string } | 
   return { title: raw.title, body: raw.body };
 }
 
-export function validateWinDrag(raw: unknown): "start" | "move" | "end" | null {
-  return isObject(raw) && oneOf(["start", "move", "end"] as const, raw.phase) ? raw.phase : null;
-}
-
 export class RateGate<T> {
   private windowStart = -Infinity;
   private count = 0;

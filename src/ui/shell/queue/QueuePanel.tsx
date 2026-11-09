@@ -53,6 +53,7 @@ export function QueuePanel(): JSX.Element | null {
       className={styles.panel}
       style={{ "--queue-width": `${QUEUE_PANEL.width}px`, "--queue-radius": `${QUEUE_PANEL.radius}px` } as CSSProperties}
       aria-label={t("ui.queue.title")}
+      data-no-window-drag
     >
       <header className={styles.head}>
         <h2 className={styles.title}>{t("ui.queue.title")}</h2>

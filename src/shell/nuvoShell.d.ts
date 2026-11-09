@@ -94,7 +94,6 @@ export interface NuvoShell {
   close(): Promise<void>;
   getWinState(): Promise<WinState>;
   onWinState(cb: (state: WinState) => void): Off;
-  drag(phase: "start" | "move" | "end"): void;
   getAppInfo(): Promise<AppInfo>;
   notify(title: string, body: string): Promise<boolean>;
   quit(): Promise<void>;
