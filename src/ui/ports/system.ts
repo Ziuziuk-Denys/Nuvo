@@ -9,11 +9,11 @@ export async function trayAvailable(): Promise<boolean> {
 
 export async function readCloseToTray(): Promise<boolean | null> {
   const settings = await window.nuvoShell?.getMainSettings().catch(() => null);
-  return settings ? settings.closeToTray : null;
+  return settings ? settings.keepInTray : null;
 }
 
 export async function writeCloseToTray(on: boolean): Promise<boolean> {
-  const result = await window.nuvoShell?.setMainSetting("closeToTray", on).catch(() => null);
+  const result = await window.nuvoShell?.setMainSetting("keepInTray", on).catch(() => null);
   return result?.ok === true;
 }
 

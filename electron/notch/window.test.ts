@@ -39,6 +39,9 @@ const electron = vi.hoisted(() => {
     setShape(r: unknown) {
       this.rec("setShape", r);
     }
+    setIgnoreMouseEvents(...a: unknown[]) {
+      this.rec("setIgnoreMouseEvents", ...a);
+    }
     isDestroyed() {
       return this.destroyed;
     }
@@ -50,6 +53,8 @@ const electron = vi.hoisted(() => {
     show = vi.fn();
     focus = vi.fn();
     isMinimized = () => true;
+    isVisible = () => true;
+    isAlwaysOnTop = () => this.calls.some((c) => c[0] === "setAlwaysOnTop");
     fullscreen = false;
     isFullScreen = () => this.fullscreen;
     getBounds = () => ({ x: 100, y: 100, width: 800, height: 600 });
@@ -78,9 +83,11 @@ const electron = vi.hoisted(() => {
 });
 
 vi.mock("electron", () => electron.module);
-import { DEFAULT_NOTCH_SETTINGS, type NotchState } from "../../src/notch/contracts";
+import { DEFAULT_NOTCH_SETTINGS as OFF_BY_DEFAULT, type NotchState } from "../../src/notch/contracts";
 import type { NotchSession } from "./session";
 import { NOTCH_TITLE, NotchWindow, registerNotchIpc } from "./window";
+
+const DEFAULT_NOTCH_SETTINGS = { ...OFF_BY_DEFAULT, mode: "auto" as const };
 
 type FakeWin = InstanceType<typeof electron.module.BrowserWindow>;
 const lastWindow = () => electron.windows.at(-1)!;
@@ -121,7 +128,7 @@ describe("NotchWindow", () => {
 
   it("creates the window only when settings arrive", async () => {
     const { notch } = createNotch({ session: "x11", apply: false });
-    expect(notch.hello().settings).toEqual(DEFAULT_NOTCH_SETTINGS);
+    expect(notch.hello().settings).toEqual(OFF_BY_DEFAULT);
     expect(electron.windows.filter((w) => w.options.title === NOTCH_TITLE)).toHaveLength(0);
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, mode: "off" });
     expect(electron.windows.filter((w) => w.options.title === NOTCH_TITLE)).toHaveLength(0);
@@ -147,8 +154,8 @@ describe("NotchWindow", () => {
     createNotch({ session: "x11" });
     const win = lastWindow();
     expect(win.options).toMatchObject({
-      width: 560,
-      height: 240,
+      width: 496,
+      height: 200,
       frame: false,
       transparent: true,
       hasShadow: false,
@@ -171,9 +178,12 @@ describe("NotchWindow", () => {
     const win = lastWindow();
     const order = names(win);
     expect(order.indexOf("showInactive")).toBeLessThan(order.indexOf("setAlwaysOnTop"));
-    expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 680, y: 0, width: 560, height: 240 });
+    expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 712, y: 0, width: 496, height: 200 });
     expect(win.calls.find((c) => c[0] === "setAlwaysOnTop")!.slice(1)).toEqual([true, "screen-saver"]);
-    expect(win.calls.find((c) => c[0] === "setVisibleOnAllWorkspaces")!.slice(1)).toEqual([true, { visibleOnFullScreen: true }]);
+    expect(win.calls.find((c) => c[0] === "setVisibleOnAllWorkspaces")!.slice(1)).toEqual([
+      true,
+      { visibleOnFullScreen: true, skipTransformProcessType: true },
+    ]);
   });
 
   it("places through the compositor bridge on Hyprland and Sway", async () => {
@@ -182,8 +192,8 @@ describe("NotchWindow", () => {
     await notch.ready;
     expect(bridge.placeOverlay).toHaveBeenCalledWith({
       title: "Nuvo Notch",
-      width: 560,
-      height: 240,
+      width: 496,
+      height: 200,
       anchor: "top-center",
       pinned: true,
       margin: 0,
@@ -199,7 +209,7 @@ describe("NotchWindow", () => {
     expect(loadKwin).toHaveBeenCalledTimes(1);
     const script = (loadKwin.mock.calls[0] as unknown as [string])[0];
     expect(script).toContain('"Nuvo Notch"');
-    expect(script).toContain('"x":680');
+    expect(script).toContain('"x":712');
   });
 
   it("records a placement error from a failing bridge or KWin and clears it on success", async () => {
@@ -254,7 +264,7 @@ describe("NotchWindow", () => {
     vi.advanceTimersByTime(1);
     vi.useRealTimers();
     await vi.waitFor(() => expect(count()).toBe(5));
-    expect(win.calls.filter((c) => c[0] === "setBounds").at(-1)![1]).toEqual({ x: 2600, y: 0, width: 560, height: 240 });
+    expect(win.calls.filter((c) => c[0] === "setBounds").at(-1)![1]).toEqual({ x: 2632, y: 0, width: 496, height: 200 });
   });
 
   it("does not place a window that stays hidden, and places it when shown", async () => {
@@ -288,15 +298,15 @@ describe("NotchWindow", () => {
     notch.setShape({ x: 0, y: 0, width: 500, height: 200 });
     lastWindow().webContents.emit("render-process-gone", {}, { reason: "crashed" });
     expect(deps.loadPage).toHaveBeenCalledTimes(2);
-    expect(notch.lastShape).toEqual({ x: 164, y: 0, width: 232, height: 34 });
+    expect(notch.lastShape).toEqual({ x: 132, y: 0, width: 232, height: 34 });
     warn.mockRestore();
   });
 
   it("stops reloading after 3 renderer crashes in 60 s, hides and logs once", async () => {
-    vi.useFakeTimers();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { notch, deps } = createNotch({ session: "x11" });
     await notch.ready;
+    vi.useFakeTimers();
     const crash = () => lastWindow().webContents.emit("render-process-gone", {}, { reason: "crashed" });
     for (let i = 0; i < 3; i++) crash();
     expect(deps.loadPage).toHaveBeenCalledTimes(4);
@@ -311,6 +321,56 @@ describe("NotchWindow", () => {
     warn.mockRestore();
   });
 
+  it("on Windows and macOS ignores the mouse until the renderer asks, and never sets a shape", async () => {
+    for (const [session, type] of [
+      ["windows", "toolbar"],
+      ["macos", "panel"],
+    ] as const) {
+      const { notch } = createNotch({ session });
+      await notch.ready;
+      const win = lastWindow();
+      expect(win.options).toMatchObject({ type, focusable: false, skipTaskbar: true, width: 496, height: 200 });
+      const ignores = () => win.calls.filter((c) => c[0] === "setIgnoreMouseEvents").map((c) => c.slice(1));
+      expect(ignores()).toEqual([[true, { forward: true }]]);
+      expect(names(win)).not.toContain("setShape");
+      expect(names(win)).toContain("showInactive");
+      expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 712, y: 0, width: 496, height: 200 });
+      notch.setCapture(true);
+      expect(notch.capturesMouse).toBe(true);
+      notch.setShape({ x: 0, y: 0, width: 50, height: 20 });
+      win.webContents.emit("render-process-gone", {}, { reason: "crashed" });
+      expect(notch.capturesMouse).toBe(false);
+      expect(ignores()).toEqual([
+        [true, { forward: true }],
+        [false, { forward: true }],
+        [true, { forward: true }],
+      ]);
+      expect(names(win)).not.toContain("setShape");
+      notch.destroy();
+    }
+  });
+
+  it("asks for always-on-top again until the window manager keeps it", async () => {
+    vi.useFakeTimers();
+    const { notch } = createNotch({ session: "x11", apply: false });
+    notch.applySettings(DEFAULT_NOTCH_SETTINGS);
+    const win = lastWindow();
+    let checks = 0;
+    win.isAlwaysOnTop = () => ++checks > 3;
+    await vi.advanceTimersByTimeAsync(1_000);
+    await notch.ready;
+    expect(win.calls.filter((c) => c[0] === "setAlwaysOnTop")).toHaveLength(4);
+  });
+
+  it("keeps the input shape on Linux and ignores capture requests there", async () => {
+    const { notch } = createNotch({ session: "x11" });
+    await notch.ready;
+    notch.setCapture(true);
+    expect(notch.capturesMouse).toBe(false);
+    expect(names(lastWindow())).not.toContain("setIgnoreMouseEvents");
+    expect(lastWindow().options.type).toBeUndefined();
+  });
+
   it("starts with the idle shape and clamps later shapes", async () => {
     const { notch } = createNotch({ session: "x11" });
     await notch.ready;
@@ -318,12 +378,12 @@ describe("NotchWindow", () => {
       lastWindow()
         .calls.filter((c) => c[0] === "setShape")
         .map((c) => c[1]);
-    expect(shapes()[0]).toEqual([{ x: 164, y: 0, width: 232, height: 34 }]);
+    expect(shapes()[0]).toEqual([{ x: 132, y: 0, width: 232, height: 34 }]);
     notch.setShape({ x: -10, y: 0, width: 900, height: 34.6 });
     notch.setShape({ x: Number.NaN, y: 0, width: 10, height: 10 });
-    expect(shapes().at(-1)).toEqual([{ x: 0, y: 0, width: 560, height: 35 }]);
+    expect(shapes().at(-1)).toEqual([{ x: 0, y: 0, width: 496, height: 35 }]);
     expect(shapes()).toHaveLength(2);
-    expect(notch.lastShape).toEqual({ x: 0, y: 0, width: 560, height: 35 });
+    expect(notch.lastShape).toEqual({ x: 0, y: 0, width: 496, height: 35 });
   });
 
   it("hides while the main window is fullscreen and shows again after", async () => {
@@ -403,6 +463,12 @@ describe("registerNotchIpc", () => {
 
     electron.ipcOn.get("notch:shape")!({ sender: notchSender }, { x: 0, y: 0, width: 50, height: 20 });
     expect(notch.lastShape).toEqual({ x: 0, y: 0, width: 50, height: 20 });
+
+    const capture = vi.spyOn(notch, "setCapture");
+    electron.ipcOn.get("notch:capture")!({ sender: main.webContents }, true);
+    expect(capture).not.toHaveBeenCalled();
+    electron.ipcOn.get("notch:capture")!({ sender: notchSender }, true);
+    expect(capture).toHaveBeenCalledWith(true);
 
     expect(electron.ipcHandle.get("notch:hello")!({ sender: notchSender })).toEqual(notch.hello());
     expect(electron.ipcHandle.get("notch:session")!({ sender: notchSender })).toEqual({ session: "x11", supported: true, placementError: null });

@@ -52,4 +52,11 @@ describe("NotchSection", () => {
     expect(sessionNote()).toBe('settings.notch.session {"session":"settings.notch.desktop_x11"}');
     expect(host.textContent).not.toContain("settings.notch.panel_instead");
   });
+
+  it("names Windows and macOS and offers the Notch there", async () => {
+    notch.getNotchSession.mockResolvedValue({ session: "windows", supported: true, panel: null });
+    await act(async () => root.render(<NotchSection />));
+    expect(sessionNote()).toBe('settings.notch.session {"session":"settings.notch.desktop_windows"}');
+    expect(host.textContent).toContain("settings.notch.description");
+  });
 });

@@ -12,7 +12,7 @@ export interface ProxySettings {
 }
 
 export interface MainSettings {
-  closeToTray: boolean;
+  keepInTray: boolean;
   trayHintShown: boolean;
   proxy: ProxySettings;
   discord: { enabled: boolean };
@@ -34,7 +34,7 @@ export interface SafeStorageLike {
 }
 
 export const DEFAULT_MAIN_SETTINGS: MainSettings = {
-  closeToTray: true,
+  keepInTray: false,
   trayHintShown: false,
   proxy: { mode: "system" },
   discord: { enabled: false },
@@ -46,7 +46,7 @@ export const DEFAULT_MAIN_SETTINGS: MainSettings = {
 };
 
 const MAX_USERNAME = 256;
-const BOOLEAN_KEYS = ["closeToTray", "trayHintShown", "trackChangeNotice", "autoUpdate", "menuEntry"] as const;
+const BOOLEAN_KEYS = ["keepInTray", "trayHintShown", "trackChangeNotice", "autoUpdate", "menuEntry"] as const;
 
 export function validProxyUrl(url: string): boolean {
   try {

@@ -5,7 +5,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import type { SurfaceState } from "../../src/engine/types";
 import { notchActionToCommand, PlayerRelay, toNotchState } from "./relay";
 import { MainSettingsStore } from "./settings";
-import { probeWatcher, TrayController, trayIconStyle, trayMenu, type TrayMenuItem } from "./tray";
+import { probeWatcher, TrayController, trayIconStyle, trayMenu, trayWanted, type TrayMenuItem } from "./tray";
 import { RateGate, validateNotice, validateSurfaceState } from "./validate";
 
 const state = (extra: Partial<SurfaceState> = {}): SurfaceState => ({
@@ -107,18 +107,27 @@ describe("main settings", () => {
   it("missing gives defaults; unreadable gives defaults and a .bad copy", () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
-    expect(new MainSettingsStore(file, safe(true), () => undefined).view().closeToTray).toBe(true);
+    expect(new MainSettingsStore(file, safe(true), () => undefined).view().keepInTray).toBe(false);
     fs.writeFileSync(file, "{not json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
     expect(store.view().discord.enabled).toBe(false);
     expect(fs.existsSync(`${file}.bad`)).toBe(true);
   });
 
+  it("closing the window quits unless the user keeps Nuvo in the tray; the old default is not carried over", () => {
+    const file = path.join(tempDir(), "main-settings.json");
+    fs.writeFileSync(file, JSON.stringify({ closeToTray: true, trayHintShown: true, autoUpdate: false }));
+    const store = new MainSettingsStore(file, safe(true), () => undefined);
+    expect(store.view()).toMatchObject({ keepInTray: false, trayHintShown: true, autoUpdate: false });
+    expect(store.set("keepInTray", true).ok).toBe(true);
+    expect(new MainSettingsStore(file, safe(true), () => undefined).view().keepInTray).toBe(true);
+  });
+
   it("a wrong type or an unknown key writes nothing", () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    expect(store.set("closeToTray", "yes")).toMatchObject({ ok: false });
+    expect(store.set("keepInTray", "yes")).toMatchObject({ ok: false });
     expect(store.set("colour", true)).toMatchObject({ ok: false });
     expect(fs.existsSync(file)).toBe(false);
   });
@@ -127,7 +136,7 @@ describe("main settings", () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    store.set("closeToTray", false);
+    store.set("keepInTray", false);
     const before = fs.readFileSync(file, "utf8");
     const rename = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
       throw new Error("power cut");
@@ -165,13 +174,16 @@ describe("main settings", () => {
 });
 
 describe("tray", () => {
-  const host = () => {
+  const host = (wanted = true) => {
     const created: Array<{ menus: TrayMenuItem[][]; destroyed: boolean }> = [];
     const availability: boolean[] = [];
+    const want = { value: wanted };
     return {
       created,
       availability,
+      want,
       host: {
+        wanted: () => want.value,
         create: () => {
           const tray = { menus: [] as TrayMenuItem[][], destroyed: false };
           created.push(tray);
@@ -220,6 +232,33 @@ describe("tray", () => {
     await tray.check();
     expect(h.availability).toEqual([true, false]);
     tray.dispose();
+  });
+
+  it("shows the icon only while it is wanted, and keeps the watcher state either way", async () => {
+    const h = host(false);
+    const tray = new TrayController(h.host, async () => true);
+    await tray.start();
+    expect(tray.isAvailable).toBe(true);
+    expect(h.created).toHaveLength(0);
+    h.want.value = true;
+    tray.update(state());
+    expect(h.created).toHaveLength(1);
+    expect(h.created[0].menus).toHaveLength(1);
+    h.want.value = false;
+    tray.sync();
+    expect(h.created[0].destroyed).toBe(true);
+    tray.sync();
+    expect(h.created).toHaveLength(1);
+    tray.dispose();
+  });
+
+  it("is wanted when kept in the tray or playing with the window closed", () => {
+    expect(trayWanted({ keepInTray: false, windowHidden: false, status: "playing" })).toBe(false);
+    expect(trayWanted({ keepInTray: false, windowHidden: true, status: "paused" })).toBe(false);
+    expect(trayWanted({ keepInTray: false, windowHidden: true, status: null })).toBe(false);
+    expect(trayWanted({ keepInTray: false, windowHidden: true, status: "playing" })).toBe(true);
+    expect(trayWanted({ keepInTray: false, windowHidden: true, status: "loading" })).toBe(true);
+    expect(trayWanted({ keepInTray: true, windowHidden: false, status: "idle" })).toBe(true);
   });
 
   it("a long title is cut to 60 characters and disabled", () => {
@@ -330,7 +369,7 @@ describe("review fixes", () => {
       { isEncryptionAvailable: () => true, encryptString: (t) => Buffer.from(t), decryptString: (b) => b.toString() },
       () => undefined,
     );
-    store.set("closeToTray", false);
+    store.set("keepInTray", false);
     expect(fs.statSync(file).mode & 0o777).toBe(0o600);
     const rename = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
       throw new Error("boom");

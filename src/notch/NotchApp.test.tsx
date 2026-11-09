@@ -34,6 +34,7 @@ interface Harness {
     notchHello: ReturnType<typeof vi.fn>;
     notchAction: ReturnType<typeof vi.fn>;
     notchSetShape: ReturnType<typeof vi.fn>;
+    notchSetCapture: ReturnType<typeof vi.fn>;
   };
   pushState: (state: NotchState) => void;
   pushLyrics: (lyrics: NotchLyrics) => void;
@@ -57,6 +58,7 @@ function installApi(hello: NotchHello): Harness {
     onNotchSettings: subscribe(settingsListeners),
     notchAction: vi.fn(),
     notchSetShape: vi.fn(),
+    notchSetCapture: vi.fn(),
   };
   (window as unknown as { nuvoElectron: unknown }).nuvoElectron = api;
   return {
@@ -199,6 +201,42 @@ describe("NotchApp", () => {
     expect(shape).toHaveBeenLastCalledWith(islandRect(ISLAND_SIZES.expanded));
     advance(1);
     expect(shape).toHaveBeenLastCalledWith(islandRect(ISLAND_SIZES.live));
+  });
+
+  it("takes the mouse only over the pill and gives it back past the slop or when the pill shrinks", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    const capture = harness.api.notchSetCapture;
+    const move = (x: number, y: number, buttons = 0) => act(() => window.dispatchEvent(new MouseEvent("mousemove", { clientX: x, clientY: y, buttons })));
+    const idle = islandRect(ISLAND_SIZES.idle);
+    move(5, 150);
+    expect(capture).not.toHaveBeenCalled();
+    move(idle.x + 10, 10);
+    expect(capture).toHaveBeenLastCalledWith(true);
+    move(idle.x - 3, 10);
+    expect(capture).toHaveBeenCalledTimes(1);
+    move(idle.x - 20, 10);
+    expect(capture).toHaveBeenLastCalledWith(false);
+
+    click(island());
+    expect(mode()).toBe("idle");
+    harness.pushState(makeState());
+    click(island());
+    expect(mode()).toBe("expanded");
+    const expanded = islandRect(ISLAND_SIZES.expanded);
+    move(expanded.x + 10, 150);
+    expect(capture).toHaveBeenLastCalledWith(true);
+    act(() => document.documentElement.dispatchEvent(new MouseEvent("mouseleave")));
+    expect(capture).toHaveBeenLastCalledWith(false);
+    move(expanded.x + 10, 150);
+    expect(capture).toHaveBeenLastCalledWith(true);
+    enter();
+    leave();
+    advance(200);
+    expect(mode()).toBe("live");
+    expect(capture).toHaveBeenLastCalledWith(true);
+    advance(MORPH_MS);
+    expect(capture).toHaveBeenLastCalledWith(false);
   });
 
   it("an interrupted grow still tightens to the exact rect after the morph", async () => {

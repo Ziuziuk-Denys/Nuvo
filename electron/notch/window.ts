@@ -10,7 +10,7 @@ import {
 } from "../../src/notch/contracts";
 import { ISLAND_SIZES, NOTCH_WINDOW, islandRect } from "../../src/notch/lib/geometry";
 import { kwinScript, notchOrigin } from "./placement";
-import { canPlaceNotch, notchEnabled, type NotchSession } from "./session";
+import { canPlaceNotch, clicksPassThrough, notchEnabled, type NotchSession } from "./session";
 
 export const NOTCH_TITLE = "Nuvo Notch";
 
@@ -27,6 +27,8 @@ export interface OverlayPlacer {
 }
 const { width: WIDTH, height: HEIGHT } = NOTCH_WINDOW;
 const MOVE_SETTLE_MS = 300;
+const ON_TOP_TRIES = 10;
+const ON_TOP_RETRY_MS = 100;
 const MAX_CRASH_RELOADS = 3;
 const CRASH_WINDOW_MS = 60_000;
 
@@ -50,6 +52,7 @@ export class NotchWindow {
   private state: NotchState | null = null;
   private lyrics: NotchLyrics | null = null;
   private shape: ShapeRect | null = null;
+  private capturing = false;
   private loaded = false;
   private placementFailure: string | null = null;
   private listening = false;
@@ -73,6 +76,10 @@ export class NotchWindow {
 
   get lastShape(): ShapeRect | null {
     return this.shape;
+  }
+
+  get capturesMouse(): boolean {
+    return this.capturing;
   }
 
   get session(): NotchSession {
@@ -124,7 +131,13 @@ export class NotchWindow {
     const height = Math.min(HEIGHT, Math.round(rect.y + rect.height)) - top;
     if (width <= 0 || height <= 0) return;
     this.shape = { x: left, y: top, width, height };
-    if (this.win && !this.win.isDestroyed()) this.win.setShape([this.shape]);
+    if (this.win && !this.win.isDestroyed() && !clicksPassThrough(this.deps.session)) this.win.setShape([this.shape]);
+  }
+
+  setCapture(capture: boolean): void {
+    if (typeof capture !== "boolean" || !this.win || this.win.isDestroyed() || !clicksPassThrough(this.deps.session)) return;
+    this.capturing = capture;
+    this.win.setIgnoreMouseEvents(!capture, { forward: true });
   }
 
   hello(): NotchHello {
@@ -163,6 +176,7 @@ export class NotchWindow {
       movable: false,
       skipTaskbar: true,
       focusable: false,
+      ...(this.deps.session === "windows" ? { type: "toolbar" } : this.deps.session === "macos" ? { type: "panel", hiddenInMissionControl: true } : {}),
       show: false,
       title: NOTCH_TITLE,
       icon: this.deps.icon,
@@ -175,6 +189,8 @@ export class NotchWindow {
       },
     });
     this.win = win;
+    this.capturing = false;
+    if (clicksPassThrough(this.deps.session)) win.setIgnoreMouseEvents(true, { forward: true });
     // The title is the join key compositors use to find this window.
     win.on("page-title-updated", (event) => event.preventDefault());
     win.webContents.on("render-process-gone", (_event, details) => {
@@ -192,6 +208,7 @@ export class NotchWindow {
       this.crashTimes.push(now);
       console.warn(`[notch] renderer gone (${details.reason}), reloading`);
       this.setShape(islandRect(ISLAND_SIZES.idle));
+      this.setCapture(false);
       this.deps.loadPage(win).catch((error) => console.warn("[notch] reload failed:", error));
     });
     this.listenToDisplays();
@@ -260,12 +277,17 @@ export class NotchWindow {
     this.placedDisplayId = display.id;
     const geometry = { ...notchOrigin(display.bounds, WIDTH), width: WIDTH, height: HEIGHT };
     const session = this.deps.session;
-    if (session === "x11") {
+    if (session === "x11" || clicksPassThrough(session)) {
       win.setBounds(geometry);
       win.showInactive();
-      // Always-on-top set before the window is mapped is lost on Mutter, so it follows showInactive.
       win.setAlwaysOnTop(true, "screen-saver");
-      win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+      // Mutter drops always-on-top asked for before the window is mapped, so it is asked again until it holds.
+      for (let tries = 0; tries < ON_TOP_TRIES; tries++) {
+        await new Promise((resolve) => setTimeout(resolve, ON_TOP_RETRY_MS));
+        if (win.isDestroyed() || !win.isVisible() || win.isAlwaysOnTop()) break;
+        win.setAlwaysOnTop(true, "screen-saver");
+      }
     } else if (session === "kde-wayland") {
       win.showInactive();
       const ok = await this.deps.loadKwin(kwinScript(NOTCH_TITLE, geometry)).catch(() => false);
@@ -370,6 +392,9 @@ export function registerNotchIpc(notch: NotchWindow, options: { onAction: (actio
   });
   ipcMain.on("notch:shape", (event, rect: ShapeRect) => {
     if (fromNotch(event)) notch.setShape(rect);
+  });
+  ipcMain.on("notch:capture", (event, capture: boolean) => {
+    if (fromNotch(event)) notch.setCapture(capture);
   });
   const onlyNotch = (event: { sender: unknown }, channel: string) => {
     if (!fromNotch(event)) throw new Error(`${channel}: sender not allowed`);

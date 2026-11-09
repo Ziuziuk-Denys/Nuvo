@@ -59,7 +59,7 @@ import { GlobalShortcuts, PLAYER_COMMAND_IDS } from "./shortcuts";
 import { exclusive } from "./exclusive";
 import { readThemeFile, themeFileName, validateThemeExport, writeThemeFile, type ThemeFileRead } from "./themeFiles";
 import { systemMuted, unmuteSystem } from "./systemSound";
-import { probeWatcher, TrayController, trayIconStyle, type TrayItemId } from "./tray";
+import { probeWatcher, TrayController, trayIconStyle, trayWanted, type TrayItemId } from "./tray";
 import { RateGate, RefusalLog, validateBindings, validateIcon, validateNotchAction, validateNotice, validateSurfaceState, validateWinDrag } from "./validate";
 import { nextZoom, zoomKey } from "./zoom";
 import { activateWindow, DEFAULT_SIZE, dragBounds, MIN_SIZE, navigationDecision, onScreenBounds, restoreUnderCursor, type Bounds } from "./windowRules";
@@ -182,6 +182,8 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         win.show();
         win.focus();
       });
+      win.on("show", () => tray?.sync());
+      win.on("hide", () => tray?.sync());
       win.webContents.on("console-message", (event) => {
         const level = event.level;
         if (devServerUrl || level === "warning" || level === "error") console.log(`[renderer:${level}] ${event.message}`);
@@ -217,7 +219,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       return win;
     },
     quitting: () => shutdown.quitting,
-    closeToTray: () => settings.value.closeToTray,
+    keepInTray: () => settings.value.keepInTray,
     trayAvailable: () => tray?.isAvailable ?? false,
     trayHintShown: () => settings.value.trayHintShown,
     markTrayHintShown: () => settings.set("trayHintShown", true),
@@ -334,7 +336,11 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       preloadPath: path.join(import.meta.dirname, "preload-notch.cjs"),
       icon: nativeImage.createFromPath(iconFile(512)),
       loadPage: (win) => (devServerUrl ? win.loadURL(`${devServerUrl}#/notch`) : win.loadFile(appFile, { hash: "/notch" })),
-      session: detectNotchSession(process.env, process.argv.includes("--ozone-platform=x11") || process.argv.includes("--ozone-platform-hint=x11")),
+      session: detectNotchSession(
+        process.env,
+        process.argv.includes("--ozone-platform=x11") || process.argv.includes("--ozone-platform-hint=x11"),
+        process.platform,
+      ),
       bridge: createCompositorBridge(compositor, process.env, process.pid, log, trackedExec),
       loadKwin: loadKwinScript,
       unloadKwin: unloadKwinScript,
@@ -469,7 +475,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       if (state) states.offer(state);
       else refusals.refuse(CHANNELS.playerState, "shape");
     });
-    ipc.handle(CHANNELS.trayGetStatus, "main", () => ({ available: tray?.isAvailable ?? false, closeToTray: settings.value.closeToTray }));
+    ipc.handle(CHANNELS.trayGetStatus, "main", () => ({ available: tray?.isAvailable ?? false, keepInTray: settings.value.keepInTray }));
     // the proxy in force with its login left out, so Settings can say what the automatic mode found
     ipc.handle(CHANNELS.settingsGet, "main", () => ({
       ...settings.view(),
@@ -484,6 +490,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       if (result.ok && key === "proxy") void applyProxy();
       if (result.ok && key === "autoUpdate") updater.setEnabled(settings.value.autoUpdate);
       if (result.ok && key === "menuEntry") void syncMenuEntry();
+      if (result.ok && key === "keepInTray") tray?.sync();
       return result;
     });
     ipc.handle(CHANNELS.discordStatus, "main", () => discord.current);
@@ -679,6 +686,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
             },
           };
         },
+        wanted: () => trayWanted({ keepInTray: settings.value.keepInTray, windowHidden: !(windows.window?.isVisible() ?? false), status: relay.latest.status }),
         onClick: onTrayClick,
         availabilityChanged: (available) => {
           if (!available && windows.window && !windows.window.isVisible()) windows.show();
@@ -688,7 +696,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
           if (!win) return windows.show();
           const action = activateWindow(
             { visible: win.isVisible(), focused: win.isFocused(), minimized: win.isMinimized() },
-            settings.value.closeToTray && (tray?.isAvailable ?? false),
+            settings.value.keepInTray && (tray?.isAvailable ?? false),
           );
           if (action === "hide") win.hide();
           else windows.show();

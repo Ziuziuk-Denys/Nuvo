@@ -14,8 +14,8 @@ let host: HTMLDivElement;
 function shell(over: Record<string, unknown> = {}) {
   const setMainSetting = vi.fn(async () => ({ ok: true }));
   (window as unknown as { nuvoShell: unknown }).nuvoShell = {
-    getTrayStatus: async () => ({ available: true, closeToTray: true }),
-    getMainSettings: async () => ({ closeToTray: true }),
+    getTrayStatus: async () => ({ available: true, keepInTray: true }),
+    getMainSettings: async () => ({ keepInTray: true }),
     setMainSetting,
     ...over,
   };
@@ -45,18 +45,18 @@ describe("CloseToTrayRow", () => {
     await mount();
     expect(toggle()?.getAttribute("aria-checked")).toBe("true");
     await act(async () => toggle()?.click());
-    expect(setMainSetting).toHaveBeenCalledWith("closeToTray", false);
+    expect(setMainSetting).toHaveBeenCalledWith("keepInTray", false);
     expect(toggle()?.getAttribute("aria-checked")).toBe("false");
   });
 
   it("is hidden without a tray, so closing always quits", async () => {
-    shell({ getTrayStatus: async () => ({ available: false, closeToTray: true }) });
+    shell({ getTrayStatus: async () => ({ available: false, keepInTray: true }) });
     await mount();
     expect(toggle()).toBeNull();
   });
 
   it("returns to the old value when main refuses", async () => {
-    shell({ setMainSetting: vi.fn(async () => ({ ok: false, error: "closeToTray must be a boolean" })) });
+    shell({ setMainSetting: vi.fn(async () => ({ ok: false, error: "keepInTray must be a boolean" })) });
     await mount();
     await act(async () => toggle()?.click());
     expect(toggle()?.getAttribute("aria-checked")).toBe("true");

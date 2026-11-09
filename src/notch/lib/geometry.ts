@@ -14,7 +14,9 @@ export const ISLAND_SIZES: Record<IslandMode, IslandSize> = {
 };
 
 export const WING = 14;
-export const NOTCH_WINDOW = { width: 560, height: 240 };
+// The expanded island plus the largest spring overshoot (geometry.test.ts checks it)
+export const NOTCH_WINDOW = { width: 496, height: 200 };
+export const HIT_SLOP = 6;
 const SHAPE_SLACK = 2;
 
 export interface Rect {
@@ -46,6 +48,19 @@ export function grownRect(from: IslandSize, to: IslandSize, overshoot: number, w
     width,
     height: Math.min(window.height, exact.height + below),
   };
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+// Captures inside the rect; once capturing, lets go only past the slop or when no button is held
+export function capturesPointer(point: Point | null, rect: Rect, capturing: boolean, buttons = 0): boolean {
+  if (!point) return capturing && buttons !== 0;
+  if (capturing && buttons !== 0) return true;
+  const slop = capturing ? HIT_SLOP : 0;
+  return point.x >= rect.x - slop && point.x < rect.x + rect.width + slop && point.y >= rect.y - slop && point.y < rect.y + rect.height + slop;
 }
 
 const KAPPA = 0.5523;
