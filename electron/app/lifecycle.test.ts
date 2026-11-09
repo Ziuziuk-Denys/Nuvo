@@ -19,7 +19,7 @@ import {
   type WindowLike,
 } from "./mainWindow";
 import { PlayerRelay } from "./relay";
-import { dragBounds, onScreenBounds, restoreUnderCursor } from "./windowRules";
+import { onScreenBounds } from "./windowRules";
 
 class FakeWindow extends EventEmitter {
   destroyed = false;
@@ -597,7 +597,7 @@ describe("app icon", () => {
   });
 });
 
-describe("storage and drag", () => {
+describe("storage", () => {
   it("the larger cache figure wins; a failure gives zeros with the path", async () => {
     const userData = tempDir();
     fs.mkdirSync(path.join(userData, "Cache"));
@@ -624,24 +624,6 @@ describe("storage and drag", () => {
     expect(revealTarget(path.join(downloads, "a.json"), roots)).toEqual({ path: path.join(downloads, "a.json"), folder: false });
     expect(revealTarget("/etc/passwd", roots)).toBeNull();
     expect(revealTarget(path.join(downloads, "missing.json"), roots)).toEqual({ path: downloads, folder: true });
-  });
-
-  it("drag moves by the cursor travel with the start size", () => {
-    expect(dragBounds({ x: 100, y: 100, width: 800, height: 600 }, { x: 150, y: 120 }, { x: 400, y: 300 })).toEqual({
-      x: 350,
-      y: 280,
-      width: 800,
-      height: 600,
-    });
-  });
-
-  it("dragging a maximised window restores it under the cursor", () => {
-    expect(restoreUnderCursor({ x: 0, y: 0, width: 1920, height: 1080 }, { width: 800, height: 600 }, { x: 960, y: 10 })).toEqual({
-      x: 560,
-      y: 0,
-      width: 800,
-      height: 600,
-    });
   });
 });
 

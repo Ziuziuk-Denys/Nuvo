@@ -3,7 +3,7 @@
 export const WINDOW = { width: 1200, height: 780, minWidth: 1100, minHeight: 705 } as const;
 
 export const TOP_BAR = {
-  height: 56,
+  height: 62,
   gutter: 12,
   wideGutter: 12,
   wideFrom: 1500,

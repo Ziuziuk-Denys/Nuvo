@@ -7,7 +7,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock("../ports/feedback", () => ({ logError: vi.fn(), APP_VERSION: "1.2.3", useWindowDrag: () => undefined }));
+vi.mock("../ports/feedback", () => ({ logError: vi.fn(), APP_VERSION: "1.2.3" }));
 vi.mock("../shell/WindowButtons", () => ({ WindowButtons: () => <div data-window-controls /> }));
 vi.mock("../ports/escape", () => ({ isEscapeGuarded: () => false }));
 

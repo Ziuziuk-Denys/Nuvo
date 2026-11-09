@@ -1,7 +1,7 @@
 import { useId, useMemo, useState, type JSX } from "react";
 import { Button } from "../components/Button";
 import { Icon } from "../icons/Icon";
-import { APP_VERSION, useWindowDrag } from "../ports/feedback";
+import { APP_VERSION } from "../ports/feedback";
 import { useTranslation } from "../ports/i18n";
 import styles from "./ErrorScreen.module.css";
 import { StateCard } from "./StateCard";
@@ -25,7 +25,6 @@ function report(error: Error, componentStack: string | null): string {
 }
 
 export function ErrorScreen({ error, componentStack, onReload }: ErrorScreenProps): JSX.Element {
-  useWindowDrag();
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);

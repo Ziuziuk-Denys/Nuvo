@@ -72,7 +72,6 @@ export const CHANNELS = {
   winClose: "win:close",
   winGetState: "win:get-state",
   winState: "win:state",
-  winDrag: "win:drag",
   appInfo: "app:info",
   appQuit: "app:quit",
   appBeforeQuit: "app:before-quit",

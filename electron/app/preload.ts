@@ -20,7 +20,6 @@ const shell: NuvoShell = {
   close: () => invoke("win:close"),
   getWinState: () => invoke("win:get-state"),
   onWinState: on("win:state"),
-  drag: (phase) => ipcRenderer.send("win:drag", { phase }),
   getAppInfo: () => invoke("app:info"),
   quit: () => invoke("app:quit"),
   onBeforeQuit: on("app:before-quit"),

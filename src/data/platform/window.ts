@@ -76,44 +76,6 @@ export function canMinimizeWindow(): boolean {
   return appInfo?.tiling !== true;
 }
 
-const NO_DRAG = "button, a, input, textarea, select, [role=slider], [contenteditable], [data-no-drag]";
-
-export function isDragTarget(element: Element | null): boolean {
-  if (!element?.closest("[data-window-drag]")) return false;
-  return !element.closest(NO_DRAG);
-}
-
-export function useWindowDrag(): void {
-  useEffect(() => {
-    const shell = window.nuvoShell;
-    if (!shell) return;
-    let dragging = false;
-    const down = (event: PointerEvent) => {
-      if (event.button !== 0 || !isDragTarget(event.target as Element | null)) return;
-      dragging = true;
-      shell.drag("start");
-    };
-    const move = () => {
-      if (dragging) shell.drag("move");
-    };
-    const end = () => {
-      if (!dragging) return;
-      dragging = false;
-      shell.drag("end");
-    };
-    document.addEventListener("pointerdown", down);
-    document.addEventListener("pointermove", move);
-    document.addEventListener("pointerup", end);
-    document.addEventListener("pointercancel", end);
-    return () => {
-      document.removeEventListener("pointerdown", down);
-      document.removeEventListener("pointermove", move);
-      document.removeEventListener("pointerup", end);
-      document.removeEventListener("pointercancel", end);
-    };
-  }, []);
-}
-
 /** A pointer click (`detail > 0`) blurs the clicked button; keyboard activation has `detail` 0 and keeps focus. */
 export function useDisableButtonFocus(): void {
   useEffect(() => {

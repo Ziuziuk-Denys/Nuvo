@@ -77,23 +77,6 @@ export function navigationDecision(url: string, devServerUrl: string | undefined
   return isWeb(url) ? "browser" : "deny";
 }
 
-export interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export function dragBounds(start: Bounds, startCursor: { x: number; y: number }, cursor: { x: number; y: number }): Bounds {
-  return { x: start.x + cursor.x - startCursor.x, y: start.y + cursor.y - startCursor.y, width: start.width, height: start.height };
-}
-
-export function restoreUnderCursor(maximized: Bounds, restored: { width: number; height: number }, cursor: { x: number; y: number }): Bounds {
-  const fraction = (cursor.x - maximized.x) / maximized.width;
-  const offsetY = Math.min(cursor.y - maximized.y, restored.height);
-  return { x: Math.round(cursor.x - fraction * restored.width), y: Math.round(cursor.y - offsetY), width: restored.width, height: restored.height };
-}
-
 export function chromiumSwitches(nativeWayland: boolean): Array<[string, string?]> {
   return [
     ["enable-gpu-rasterization"],

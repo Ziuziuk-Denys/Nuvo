@@ -16,7 +16,6 @@ const shell = {
     return () => undefined;
   }),
   getAppInfo: vi.fn(async () => ({ version: "1.0.0", platform: "linux", packaged: false, compositor: "hyprland" as const, tiling: true })),
-  drag: vi.fn(),
 };
 
 beforeEach(() => {
@@ -81,27 +80,7 @@ describe("window commands", () => {
   });
 });
 
-describe("drag regions and button focus", () => {
-  it("drags from the region but not from its controls", async () => {
-    const { isDragTarget, useWindowDrag } = await load();
-    document.body.innerHTML = '<header data-window-drag><span id="t">Title</span><button id="b">x</button><div data-no-drag><i id="n"></i></div></header>';
-    expect(isDragTarget(document.getElementById("t"))).toBe(true);
-    expect(isDragTarget(document.getElementById("b"))).toBe(false);
-    expect(isDragTarget(document.getElementById("n"))).toBe(false);
-    function Probe() {
-      useWindowDrag();
-      return null;
-    }
-    const view = render(<Probe />);
-    const title = document.getElementById("t")!;
-    title.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
-    document.dispatchEvent(new PointerEvent("pointermove", { bubbles: true }));
-    document.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
-    document.getElementById("b")!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
-    expect(shell.drag.mock.calls.map((call) => call[0])).toEqual(["start", "move", "end"]);
-    view.unmount();
-  });
-
+describe("button focus", () => {
   it("a mouse click leaves no focus on the button; keyboard activation keeps it", async () => {
     const { useDisableButtonFocus } = await load();
     function Probe() {

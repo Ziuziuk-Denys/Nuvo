@@ -14,7 +14,7 @@ afterAll(async () => {
 });
 
 interface ChromeBoxes {
-  bar: { y: number; height: number };
+  bar: { y: number; height: number; regions: string[] };
   rail: { x: number; y: number; width: number; bottomGap: number };
   items: { x: number; y: number; width: number; height: number }[];
   settings: { y: number; bottomGap: number };
@@ -25,7 +25,9 @@ interface ChromeBoxes {
 async function measureChrome(page: Page): Promise<ChromeBoxes> {
   return page.evaluate(() => {
     const box = (element: Element) => element.getBoundingClientRect();
-    const bar = box(document.querySelector("header[data-window-drag]")!);
+    const header = document.querySelector("header[data-window-drag]")!;
+    const bar = box(header);
+    const region = (element: Element) => getComputedStyle(element).getPropertyValue("-webkit-app-region");
     const rail = box(document.querySelector("aside:has(> nav)")!);
     const items = [...document.querySelectorAll("aside > nav a")].map((link) => {
       const { x, y, width, height } = box(link);
@@ -34,7 +36,7 @@ async function measureChrome(page: Page): Promise<ChromeBoxes> {
     const settings = box(document.querySelector("aside > button")!);
     const controls = box(document.querySelector("[data-window-controls]")!);
     return {
-      bar: { y: bar.y, height: bar.height },
+      bar: { y: bar.y, height: bar.height, regions: [header, ...header.querySelectorAll("a, button")].map(region) },
       rail: { x: rail.x, y: rail.y, width: rail.width, bottomGap: window.innerHeight - rail.bottom },
       items,
       settings: { y: settings.y, bottomGap: window.innerHeight - settings.bottom },
@@ -52,6 +54,10 @@ async function checkGeometry(live: NuvoSession, where: string): Promise<void> {
     const at = `${where} ${size.width}`;
     expect(m.bar.y, `${at}: top bar at the top`).toBe(0);
     expect(m.bar.height, `${at}: top bar height`).toBe(TOP_BAR.height);
+    const [band, ...controls] = m.bar.regions;
+    expect(band, `${at}: the top band drags the window`).toBe("drag");
+    expect(controls, `${at}: controls in the band stay clickable`).toEqual(controls.map(() => "no-drag"));
+    expect(m.rail.y, `${at}: the rail starts where the band ends`).toBe(TOP_BAR.height);
     expect(m.controls, `${at}: window pill at the right inset of the top row`).toEqual({
       right: m.view - TOP_BAR.controlsInset,
       y: TOP_ROW.y,
