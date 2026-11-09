@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.11-beta.3
+
+- **The Notch stays out of your way.** It no longer takes the mouse outside its pill, and it is off until you turn it on.
+- **Closing the window quits Nuvo,** unless you choose to keep it in the tray.
+- **No console window on Windows.**
+- **Security fixes.**
+
 ## 0.2.11-beta.2
 
 - **No console window on Windows.** Nuvo no longer opens a black terminal next to the app.
