@@ -28,7 +28,7 @@ pub fn load(conn: &Connection, ids: &[String]) -> Result<HashMap<String, Vec<f32
     let mut stmt = conn.prepare("SELECT track_id, vector FROM track_features WHERE track_id IN (SELECT value FROM json_each(?1))")?;
     let rows = stmt.query_map([serde_json::to_string(ids)?], |r| {
         let blob: Vec<u8> = r.get(1)?;
-        let vector = blob.chunks_exact(4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
+        let vector = blob.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect();
         Ok((r.get::<_, String>(0)?, vector))
     })?;
     Ok(rows.collect::<Result<_, _>>()?)

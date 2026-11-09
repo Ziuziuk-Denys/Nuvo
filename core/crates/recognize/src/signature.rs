@@ -151,7 +151,7 @@ fn log_magnitude(x: f32) -> f32 {
 /// Signature of 16 kHz mono samples; a trailing partial hop is ignored.
 pub fn generate(samples: &[i16]) -> Signature {
     let mut generator = Generator::new();
-    let chunks = samples.chunks_exact(HOP);
+    let chunks = samples.as_chunks::<HOP>().0;
     let used = chunks.len() * HOP;
     for chunk in chunks {
         generator.feed(chunk);

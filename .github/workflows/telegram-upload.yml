@@ -63,7 +63,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir upload \
-            --pattern '*.AppImage' --pattern '*amd64.deb' --pattern '*.exe' --pattern '*arm64.dmg'
+            --pattern '*.AppImage' --pattern '*.deb' --pattern '*.rpm' --pattern '*-win-x64.exe' --pattern '*-mac-arm64.dmg'
 
       - name: Upload to the bot
         if: env.READY == 'true'

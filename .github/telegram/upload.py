@@ -24,23 +24,32 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-# Same patterns as bot/src/release.ts
-PLATFORMS = {
-    "appimage": re.compile(r"(?<!arm64)\.AppImage$", re.IGNORECASE),
-    "deb": re.compile(r"(_amd64|-linux-amd64|-linux-x64)\.deb$", re.IGNORECASE),
-    "windows": re.compile(r"(?<!arm64)\.exe$", re.IGNORECASE),
-    "macos": re.compile(r"arm64\.dmg$", re.IGNORECASE),
-}
+# The same reading as bot/src/release.ts: release names Nuvo-<version>-<os>-<arch>.<ext>, where Linux spells the
+# processor per format (x86_64, amd64, aarch64), plus the older Nuvo-<version>.AppImage and nuvo_<version>_amd64.deb
+NAME = re.compile(
+    r"^Nuvo-(\d+\.\d+\.\d+(?:-(?:alpha|beta|rc|pre|dev)(?:\.?\d+)*)?)-(linux|win|mac)-(x64|x86_64|amd64|arm64|aarch64|ia32|armv7l|universal)\.(AppImage|deb|rpm|exe|dmg|zip)$",
+    re.IGNORECASE,
+)
+ARCH = {"x86_64": "x64", "amd64": "x64", "aarch64": "arm64"}
 # A pre-release tag is alpha, beta, rc, pre or dev with an optional number, so "-arm64" and ".dmg" stay out
 VERSION = re.compile(r"(\d+\.\d+\.\d+(?:-(?:alpha|beta|rc|pre|dev)(?:\.?\d+)*)?)", re.IGNORECASE)
+USER_AGENT = "nuvo-release-upload/1.0"
 REQUIRED = ["BOT_TOKEN", "TG_API_ID", "TG_API_HASH", "ADMIN_ID", "UPLOAD_SECRET", "WORKER_URL"]
 
 
 def platform_of(name):
-    for platform, pattern in PLATFORMS.items():
-        if pattern.search(name):
-            return platform
-    return None
+    match = NAME.match(name)
+    if match:
+        os_name, kind = match.group(2).lower(), match.group(4).lower()
+        arch = ARCH.get(match.group(3).lower(), match.group(3).lower())
+        if os_name == "linux" and kind in ("appimage", "deb", "rpm"):
+            return kind if arch == "x64" else f"{kind}_arm64" if arch == "arm64" else None
+        if os_name == "win" and arch == "x64" and kind == "exe":
+            return "windows"
+        return "macos" if os_name == "mac" and arch == "arm64" and kind == "dmg" else None
+    if re.match(r"^Nuvo-\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?\.AppImage$", name, re.IGNORECASE):
+        return "appimage"
+    return "deb" if re.search(r"_amd64\.deb$", name, re.IGNORECASE) else None
 
 
 def version_of(name):
@@ -57,12 +66,18 @@ def sha256_of(path):
 
 
 def post_json(url, payload, headers, opener):
-    request = urllib.request.Request(url, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json", **headers}, method="POST")
+    # A named User-Agent: Cloudflare refuses Python's default one before the request reaches the Worker
+    request = urllib.request.Request(url, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json", "User-Agent": USER_AGENT, **headers}, method="POST")
     try:
         with opener(request, timeout=60) as response:
-            return response.status, json.loads(response.read() or b"null")
+            status, raw = response.status, response.read()
     except urllib.error.HTTPError as error:
-        return error.code, json.loads(error.read() or b"null")
+        status, raw = error.code, error.read()
+    try:
+        return status, json.loads(raw or b"null")
+    except ValueError:
+        # Not JSON, for example an error page in front of the Worker: keep the start of it for the log
+        return status, {"ok": False, "description": raw[:200].decode("utf-8", "replace")}
 
 
 class BotApi:
@@ -73,10 +88,10 @@ class BotApi:
         self.opener = opener
 
     def call(self, method, **params):
-        _, body = post_json(f"https://api.telegram.org/bot{self.token}/{method}", params, {}, self.opener)
+        status, body = post_json(f"https://api.telegram.org/bot{self.token}/{method}", params, {}, self.opener)
         if not body or not body.get("ok"):
             description = (body or {}).get("description", "no answer")
-            raise RuntimeError(f"Bot API {method} failed: {description}")
+            raise RuntimeError(f"Bot API {method} failed: HTTP {status}: {description}")
         return body["result"]
 
 
@@ -84,7 +99,8 @@ def make_recorder(worker_url, secret, opener=urllib.request.urlopen):
     def record(payload):
         status, body = post_json(f"{worker_url.rstrip('/')}/upload", payload, {"X-Upload-Secret": secret}, opener)
         if status != 200:
-            raise RuntimeError(f"The bot refused the record for {payload['file_name']}: HTTP {status}")
+            reason = (body or {}).get("error") or (body or {}).get("description") or "no details"
+            raise RuntimeError(f"The bot refused the record for {payload['file_name']}: HTTP {status}: {reason}")
         return body
 
     return record
