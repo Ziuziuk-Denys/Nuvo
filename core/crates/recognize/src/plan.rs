@@ -69,18 +69,18 @@ fn window(media: Media, duration_ms: u64, position: f64, via: Via) -> Candidate 
 
 /// Left plus right, halved.
 pub fn mix(stereo: &[i16]) -> Vec<i16> {
-    stereo.chunks_exact(2).map(|lr| ((lr[0] as i32 + lr[1] as i32) / 2) as i16).collect()
+    stereo.as_chunks::<2>().0.iter().map(|lr| ((lr[0] as i32 + lr[1] as i32) / 2) as i16).collect()
 }
 
 /// Left minus right, halved: a voice-over mixed to the centre cancels out.
 pub fn side(stereo: &[i16]) -> Vec<i16> {
-    stereo.chunks_exact(2).map(|lr| ((lr[0] as i32 - lr[1] as i32) / 2) as i16).collect()
+    stereo.as_chunks::<2>().0.iter().map(|lr| ((lr[0] as i32 - lr[1] as i32) / 2) as i16).collect()
 }
 
 /// Side energy at least -30 dB relative to mid energy. Identical channels (mono) give none.
 pub fn side_is_audible(stereo: &[i16]) -> bool {
     let (mut mid, mut side) = (0f64, 0f64);
-    for lr in stereo.chunks_exact(2) {
+    for lr in stereo.as_chunks::<2>().0 {
         let (l, r) = (lr[0] as f64, lr[1] as f64);
         mid += (l + r) * (l + r);
         side += (l - r) * (l - r);

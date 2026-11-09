@@ -286,7 +286,7 @@ export class SignedInTv implements SignedInStep {
       const blob = await new Response(rest).blob();
       return {
         ...base,
-        bytes: new Blob([blob], { type: mime }),
+        bytes: blob.slice(0, blob.size, mime),
         sizeBytes: blob.size,
       };
     } catch (error) {

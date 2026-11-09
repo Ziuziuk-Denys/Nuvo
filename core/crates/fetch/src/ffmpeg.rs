@@ -117,7 +117,7 @@ pub async fn decode(ffmpeg: &Path, input: &Input<'_>, start_ms: u64, len_ms: Opt
     if output.stdout.len() < 4 {
         return Err(FetchError::DecodeFailed("no audio".into()));
     }
-    Ok(output.stdout.chunks_exact(2).map(|b| i16::from_le_bytes([b[0], b[1]])).collect())
+    Ok(output.stdout.as_chunks::<2>().0.iter().map(|b| i16::from_le_bytes(*b)).collect())
 }
 
 /// Duration of a local file from ffmpeg's banner (`Duration: 00:03:21.45`). ffmpeg exits with an
