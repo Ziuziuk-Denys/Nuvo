@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.11-beta.4
+
+- **Move the window from the whole top band.** Drag anywhere along the top to move it, and double click to maximize. It works on Wayland too.
+
 ## 0.2.11-beta.3
 
 - **The Notch stays out of your way.** It no longer takes the mouse outside its pill, and it is off until you turn it on.
