@@ -68,16 +68,7 @@ fn events(body: &[u8]) -> Vec<Value> {
 #[tokio::test]
 async fn a_licensed_tiktok_sound_is_read_once_and_shared_with_recognize() {
     let (base, hits) = mock_tiktok().await;
-    // recognize looks for ffmpeg before it judges the address, so the test brings a stub instead of relying on the machine having one
-    let tools = tempfile::tempdir().unwrap();
-    let ffmpeg = tools.path().join("ffmpeg");
-    std::fs::write(&ffmpeg, "#!/bin/sh\nexit 1\n").unwrap();
-    std::fs::set_permissions(&ffmpeg, std::fs::Permissions::from_mode(0o755)).unwrap();
-    let managed = tools.path().to_path_buf();
-    let core = common::boot_config(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), |config| {
-        config.test.tiktok_url = Some(base);
-        config.env = ToolEnv { path: None, home: None, managed: Some(managed) };
-    });
+    let core = common::boot_config(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), |config| config.test.tiktok_url = Some(base));
     let pasted = format!("https://www.tiktok.com/@someone/video/{LICENSED_ID}?is_from_webapp=1");
     let canonical = format!("https://www.tiktok.com/@i/video/{LICENSED_ID}");
     let answer = inspect(&core, &pasted).await;
