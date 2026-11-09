@@ -68,9 +68,11 @@ fn events(body: &[u8]) -> Vec<Value> {
 #[tokio::test]
 async fn a_licensed_tiktok_sound_is_read_once_and_shared_with_recognize() {
     let (base, hits) = mock_tiktok().await;
-    // recognize looks for yt-dlp before it judges the address, so the test brings its own instead of relying on the machine having one
+    // recognize looks for ffmpeg before it judges the address, so the test brings a stub instead of relying on the machine having one
     let tools = tempfile::tempdir().unwrap();
-    fake_yt_dlp(tools.path(), include_str!("../../fetch/tests/fixtures/ytdlp-tagged.json"));
+    let ffmpeg = tools.path().join("ffmpeg");
+    std::fs::write(&ffmpeg, "#!/bin/sh\nexit 1\n").unwrap();
+    std::fs::set_permissions(&ffmpeg, std::fs::Permissions::from_mode(0o755)).unwrap();
     let path = tools.path().as_os_str().to_owned();
     let core = common::boot_config(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), |config| {
         config.test.tiktok_url = Some(base);
