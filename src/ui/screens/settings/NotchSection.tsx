@@ -11,6 +11,8 @@ const DESKTOP_NAMES: Record<string, string> = {
   hyprland: "settings.notch.desktop_hyprland",
   sway: "settings.notch.desktop_sway",
   x11: "settings.notch.desktop_x11",
+  windows: "settings.notch.desktop_windows",
+  macos: "settings.notch.desktop_macos",
   "other-wayland": "settings.notch.desktop_wayland",
 };
 
@@ -39,6 +41,7 @@ export function NotchSection(): JSX.Element {
         description={t("settings.notch.description")}
         titleKey="settings.notch.mode"
         descKey="settings.notch.description"
+        explained
         control={
           <Segmented
             label={t("settings.notch.mode")}

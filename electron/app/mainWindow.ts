@@ -74,7 +74,7 @@ export interface WindowLike {
 export interface MainWindowDeps {
   create(): WindowLike;
   quitting(): boolean;
-  closeToTray(): boolean;
+  keepInTray(): boolean;
   trayAvailable(): boolean;
   trayHintShown(): boolean;
   markTrayHintShown(): void;
@@ -144,7 +144,7 @@ export class MainWindowController {
   }
 
   private onClose(event: { preventDefault(): void }): void {
-    const decision = closeDecision({ quitting: this.deps.quitting(), closeToTray: this.deps.closeToTray(), trayAvailable: this.deps.trayAvailable() });
+    const decision = closeDecision({ quitting: this.deps.quitting(), keepInTray: this.deps.keepInTray(), trayAvailable: this.deps.trayAvailable() });
     if (decision === "close") return;
     event.preventDefault();
     if (decision === "quit") {

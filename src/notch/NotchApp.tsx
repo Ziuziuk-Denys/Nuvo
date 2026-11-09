@@ -3,7 +3,7 @@ import { CompactFace } from "./CompactFace";
 import { ExpandedFace, VIEWS, type ExpandedView } from "./ExpandedFace";
 import { Island, MORPH } from "./Island";
 import { DEFAULT_NOTCH_SETTINGS, type NotchAction, type NotchLyrics, type NotchSettings, type NotchState, type NotchTrack } from "./contracts";
-import { ISLAND_SIZES, grownRect, islandRect, type IslandMode, type IslandSize, type Rect } from "./lib/geometry";
+import { ISLAND_SIZES, capturesPointer, grownRect, islandRect, type IslandMode, type IslandSize, type Point, type Rect } from "./lib/geometry";
 import { IslandMachine } from "./lib/machine";
 import { MORPH_SPRING, simulateSpring } from "./lib/spring";
 import { activeLineIndex, msUntilNextLine, positionAt, type LyricLine, type PositionSample } from "./lib/playback";
@@ -95,12 +95,48 @@ export default function NotchApp() {
     if (previous === null && trackId !== null && islandRef.current?.matches(":hover")) machine.pointerEnter();
   }, [machine, trackId, pulseOnTrackChange]);
 
+  const shapeRect = useRef<Rect>(islandRect(ISLAND_SIZES.idle));
+  const pointer = useRef({ at: null as Point | null, buttons: 0, capturing: false });
+  const updateCapture = () => {
+    const { at, buttons, capturing } = pointer.current;
+    const next = capturesPointer(at, shapeRect.current, capturing, buttons);
+    if (next === capturing) return;
+    pointer.current.capturing = next;
+    notchBridge()?.notchSetCapture?.(next);
+  };
+
+  useEffect(() => {
+    const onMove = (event: MouseEvent) => {
+      pointer.current.at = { x: event.clientX, y: event.clientY };
+      pointer.current.buttons = event.buttons;
+      updateCapture();
+    };
+    const onLeave = () => {
+      pointer.current.at = null;
+      updateCapture();
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mousedown", onMove);
+    window.addEventListener("mouseup", onMove);
+    document.documentElement.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mousedown", onMove);
+      window.removeEventListener("mouseup", onMove);
+      document.documentElement.removeEventListener("mouseleave", onLeave);
+    };
+  }, []);
+
   const shapeSize = useRef<IslandSize>(ISLAND_SIZES.idle);
   const shapePadded = useRef(false);
   useEffect(() => {
     const next = ISLAND_SIZES[mode];
     const previous = shapeSize.current;
-    const setShape = (rect: Rect) => notchBridge()?.notchSetShape(rect);
+    const setShape = (rect: Rect) => {
+      shapeRect.current = rect;
+      notchBridge()?.notchSetShape(rect);
+      updateCapture();
+    };
     const armTighten = () => {
       const tighten = setTimeout(() => {
         shapePadded.current = false;

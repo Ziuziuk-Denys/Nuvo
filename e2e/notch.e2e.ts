@@ -138,10 +138,13 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
 
   beforeAll(async () => {
     launched = await launch({}, X11_FLAGS);
-    // The renderer sends its stored settings on mount and creates the Notch; ours are sent after, so they win.
+    // The renderer sends its stored settings on mount, so ours are stored before a reload.
+    await launched.main.evaluate((settings) => {
+      localStorage.setItem("nuvo_notch_settings_v1", JSON.stringify({ state: settings, version: 1 }));
+      location.reload();
+    }, SETTINGS);
     notch = await waitForPage(launched.app, (url) => url.includes("#/notch"));
     await notch.waitForSelector(".island");
-    await launched.main.evaluate((settings) => window.nuvoShell!.notchUpdateSettings(settings), SETTINGS);
     await launched.app.evaluate(() => (globalThis as { nuvoNotch?: { ready: Promise<void> } }).nuvoNotch?.ready);
   });
 
@@ -200,7 +203,7 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
     await expectMode(notch, "hover");
     await expectSize(notch, "hover");
     await screenshot(notch, "hover");
-    await notch.mouse.move(5, 230);
+    await notch.mouse.move(5, NOTCH_WINDOW.height - 5);
     await expectMode(notch, "live");
 
     await setSettings(SETTINGS);
@@ -211,7 +214,7 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
     await expectSize(notch, "expanded");
     await screenshot(notch, "expanded");
 
-    await notch.mouse.move(5, 230);
+    await notch.mouse.move(5, NOTCH_WINDOW.height - 5);
     await notch.waitForTimeout(300);
     await expectMode(notch, "live");
   });
@@ -240,7 +243,7 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
     await expect
       .poll(() => launched.main.evaluate(() => (window as unknown as { __notchActions: NotchAction[] }).__notchActions))
       .toContainEqual({ type: "next" });
-    await notch.mouse.move(5, 230);
+    await notch.mouse.move(5, NOTCH_WINDOW.height - 5);
     await expectMode(notch, "live");
   });
 
@@ -266,6 +269,53 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
     console.log(`[e2e] Notch renderer CPU over 10 s: ${cpu}%`);
     expect(cpu).not.toBeNull();
     expect(cpu!).toBeLessThan(0.5);
+  });
+});
+
+describe.skipIf(!process.env.DISPLAY)("Notch and tray defaults", () => {
+  let launched: Launched;
+
+  beforeAll(async () => {
+    launched = await launch({}, X11_FLAGS);
+  });
+
+  afterAll(() => close(launched));
+
+  const notchWindows = () =>
+    launched.app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()
+        .filter((w) => w.getTitle() === "Nuvo Notch")
+        .map((w) => ({ focusable: w.isFocusable(), visible: w.isVisible(), bounds: w.getBounds() })),
+    );
+
+  it("shows no Notch on a fresh profile and turns it on and off from Settings", async () => {
+    await launched.main.waitForTimeout(1_500);
+    expect(await notchWindows()).toEqual([]);
+
+    await launched.main.evaluate(() => (location.hash = "#/settings?section=Notch"));
+    const mode = launched.main.getByRole("group", { name: "Notch" });
+    await mode.waitFor();
+    await launched.main.getByText("A small player at the top of the screen.", { exact: false }).first().waitFor();
+    expect(await mode.getByRole("button", { name: "Off" }).getAttribute("aria-pressed")).toBe("true");
+
+    await mode.getByRole("button", { name: "Automatic" }).click();
+    await expect.poll(notchWindows).toEqual([{ focusable: false, visible: true, bounds: expect.objectContaining({ y: 0, ...NOTCH_WINDOW }) }]);
+    const stored = await launched.main.evaluate(() => JSON.parse(localStorage.getItem("nuvo_notch_settings_v1") ?? "null"));
+    expect(stored).toMatchObject({ version: 1, state: { mode: "auto" } });
+
+    await mode.getByRole("button", { name: "Off" }).click();
+    await expect.poll(notchWindows).toEqual([]);
+  });
+
+  it("does not keep Nuvo in the tray unless asked, so closing the window quits", async () => {
+    expect(await launched.main.evaluate(() => window.nuvoShell!.getMainSettings())).toMatchObject({ keepInTray: false });
+    const exited = new Promise((resolve) => launched.app.process().once("exit", resolve));
+    await launched.app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()
+        .find((w) => w.getTitle() === "Nuvo")
+        ?.close(),
+    );
+    await exited;
   });
 });
 

@@ -18,6 +18,7 @@ const bridge = {
   onNotchSettings: on<NotchSettings>("notch:settings"),
   notchAction: (action: NotchAction) => ipcRenderer.send("notch:action", action),
   notchSetShape: (rect: ShapeRect) => ipcRenderer.send("notch:shape", rect),
+  notchSetCapture: (capture: boolean) => ipcRenderer.send("notch:capture", capture),
 };
 
 export type NotchBridge = typeof bridge;

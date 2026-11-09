@@ -35,7 +35,7 @@ export interface DeeplinkTarget {
   id: string;
 }
 export interface MainSettingsView {
-  closeToTray: boolean;
+  keepInTray: boolean;
   trayHintShown: boolean;
   trackChangeNotice: boolean;
   autoUpdate: boolean;
@@ -115,7 +115,7 @@ export interface NuvoShell {
   onRemoteCommand(cb: (command: RemoteCommand) => void): Off;
   onNetworkChanged(cb: () => void): Off;
   onAppCommand(cb: (command: { commandId: string }) => void): Off;
-  getTrayStatus(): Promise<{ available: boolean; closeToTray: boolean }>;
+  getTrayStatus(): Promise<{ available: boolean; keepInTray: boolean }>;
   getMainSettings(): Promise<MainSettingsView>;
   setMainSetting(key: string, value: unknown): Promise<{ ok: boolean; error?: string }>;
   getDiscordStatus(): Promise<{ state: "off" | "connecting" | "connected" | "no_client" | "error"; message?: string }>;

@@ -816,8 +816,8 @@
         "title": "Show Nuvo in the applications menu"
       },
       "close_to_tray": {
-        "description": "Closing the window keeps Nuvo playing in the tray",
-        "title": "Keep running in the tray"
+        "description": "Music keeps playing after you close the window. When off, closing the window quits Nuvo.",
+        "title": "Keep Nuvo in the tray when the window is closed"
       },
       "connection": "Connection",
       "connection_desc": "Check that Nuvo can reach the services it needs",
@@ -1661,7 +1661,7 @@
       "more": "More languages"
     },
     "notch": {
-      "description": "A small player in the display cutout",
+      "description": "A small player at the top of the screen. Turn it on to see the song and its controls there.",
       "mode": "Notch",
       "mode_auto": "Automatic",
       "mode_on": "Always on",
@@ -1675,6 +1675,8 @@
       "desktop_hyprland": "Hyprland",
       "desktop_sway": "Sway",
       "desktop_x11": "X11",
+      "desktop_windows": "Windows",
+      "desktop_macos": "macOS",
       "desktop_wayland": "This Wayland desktop",
       "placement_error": "Couldn't place the notch on this display",
       "expand_on": "Expand on",

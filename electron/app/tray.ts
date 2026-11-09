@@ -101,8 +101,14 @@ export async function probeWatcher(exec: Exec): Promise<boolean> {
   }
 }
 
+// The icon shows only while it is useful: kept in the tray, or playing with the window closed
+export function trayWanted(input: { keepInTray: boolean; windowHidden: boolean; status: SurfaceState["status"] | null }): boolean {
+  return input.keepInTray || (input.windowHidden && (input.status === "playing" || input.status === "loading"));
+}
+
 export interface TrayHost {
   create(onActivate: () => void): { setMenu(items: TrayMenuItem[]): void; destroy(): void };
+  wanted(): boolean;
   onClick(id: TrayItemId): void;
   /** Called when availability changes (the window must never stay hidden with no tray). */
   availabilityChanged(available: boolean): void;
@@ -136,7 +142,14 @@ export class TrayController {
     const available = await this.probe();
     if (available === this.available) return;
     this.available = available;
-    if (available) {
+    this.sync();
+    this.host.availabilityChanged(available);
+  }
+
+  sync(): void {
+    const show = this.available && this.host.wanted();
+    if (show === (this.handle !== null)) return;
+    if (show) {
       this.handle = this.host.create(() => this.host.activate());
       this.key = null;
       if (this.state) this.render(this.state);
@@ -144,11 +157,11 @@ export class TrayController {
       this.handle?.destroy();
       this.handle = null;
     }
-    this.host.availabilityChanged(available);
   }
 
   update(state: SurfaceState): void {
     this.state = state;
+    this.sync();
     if (menuKey(state) === this.key) return;
     if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
     this.rebuildTimer = setTimeout(() => {

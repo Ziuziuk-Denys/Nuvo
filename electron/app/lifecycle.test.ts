@@ -81,7 +81,7 @@ class FakeWindow extends EventEmitter {
   destroy = () => (this.destroyed = true);
 }
 
-function controller(options: { quitting?: boolean; closeToTray?: boolean; tray?: boolean; tiling?: boolean } = {}) {
+function controller(options: { quitting?: boolean; keepInTray?: boolean; tray?: boolean; tiling?: boolean } = {}) {
   const windows: FakeWindow[] = [];
   const notes: string[] = [];
   const external: string[] = [];
@@ -96,7 +96,7 @@ function controller(options: { quitting?: boolean; closeToTray?: boolean; tray?:
       return w as unknown as WindowLike;
     },
     quitting: () => options.quitting ?? false,
-    closeToTray: () => options.closeToTray ?? true,
+    keepInTray: () => options.keepInTray ?? true,
     trayAvailable: () => options.tray ?? true,
     trayHintShown: () => hint,
     markTrayHintShown: () => (hint = true),
@@ -249,7 +249,7 @@ describe("close rules", () => {
   });
 
   it("close-to-tray off quits", () => {
-    const t = controller({ closeToTray: false });
+    const t = controller({ keepInTray: false });
     t.c.show();
     t.windows[0].close();
     expect(t.quits.count).toBe(1);

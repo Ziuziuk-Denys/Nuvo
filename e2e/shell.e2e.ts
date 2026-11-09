@@ -474,6 +474,8 @@ describe("shell e2e", () => {
   });
 
   it.runIf(watcherPresent())("the tray item, its menu and a click", async () => {
+    await main.evaluate(() => window.nuvoShell!.setMainSetting("keepInTray", true));
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
     const items = execFileSync("gdbus", [
       "call",
       "--session",

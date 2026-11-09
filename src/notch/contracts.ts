@@ -33,7 +33,7 @@ export interface NotchSettings {
 }
 
 export const DEFAULT_NOTCH_SETTINGS: NotchSettings = {
-  mode: "auto",
+  mode: "off",
   expandOn: "hover",
   showLyrics: true,
   pulseOnTrackChange: true,

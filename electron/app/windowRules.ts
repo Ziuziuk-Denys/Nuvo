@@ -33,9 +33,9 @@ export function onScreenBounds(bounds: Rect, workAreas: Rect[]): Rect {
   return { x: area.x + Math.round((area.width - width) / 2), y: area.y + Math.round((area.height - height) / 2), width, height };
 }
 
-export function closeDecision(input: { quitting: boolean; closeToTray: boolean; trayAvailable: boolean }): CloseDecision {
+export function closeDecision(input: { quitting: boolean; keepInTray: boolean; trayAvailable: boolean }): CloseDecision {
   if (input.quitting) return "close";
-  return input.closeToTray && input.trayAvailable ? "hide" : "quit";
+  return input.keepInTray && input.trayAvailable ? "hide" : "quit";
 }
 
 export function minimizeAllowed(input: { fullscreen: boolean; tiling: boolean }): boolean {
