@@ -30,7 +30,6 @@ pub fn track(conn: &Connection, id: &str, title: &str, artist: &str) {
     tracks::upsert(conn, &snapshot(id, title, artist), NOW - 400 * DAY).unwrap();
 }
 
-/// Records one play through the real `events::record` path.
 pub fn play(conn: &Connection, id: &str, artist: &str, session: &str, started_at: i64, extra: Value) {
     let mut body = json!({
         "listeningSessionId": session, "trackId": id, "trackSnapshot": snapshot(id, &format!("Song {id}"), artist),

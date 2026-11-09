@@ -3,10 +3,9 @@ import { useToastStore } from "../feedback/toastStore";
 import { applyFontSettings, DEFAULT_FONTS, dropUserFonts, loadUserFont, removeCustomCss, useAppearanceStore, watchCustomCss } from "../ports/appearance";
 import { useTranslation } from "../ports/i18n";
 
-/** After the saved look is read and this long, main hears the start went fine (safe mode counts crashed starts). */
+// Delay before telling main the start went fine; safe mode counts crashed starts
 export const READY_DELAY_MS = 2000;
 
-/** Reads `appearance.*` at start and after an unlock, and applies fonts and custom CSS. Colours: useLookSync. */
 export function useAppearanceSync(): void {
   const { t } = useTranslation();
   const fonts = useAppearanceStore((s) => s.saved.fonts);
@@ -22,7 +21,6 @@ export function useAppearanceSync(): void {
     return () => window.removeEventListener("library:changed", reload);
   }, []);
 
-  // a locked library never loads: no heartbeat until an unlock read applies the look
   useEffect(() => {
     if (!loaded) return;
     window.nuvoShell?.appearanceApplying();
@@ -33,7 +31,6 @@ export function useAppearanceSync(): void {
   useEffect(() => {
     const root = document.documentElement;
     const chosen = safe ? DEFAULT_FONTS : fonts;
-    // system fonts and sizes at once; file fonts once they load, never awaited before paint
     applyFontSettings(root, chosen, new Set());
     const files = fontFiles.filter((file) => [chosen.ui, chosen.lyrics].some((c) => c.kind === "file" && c.id === file.id));
     dropUserFonts(new Set(files.map((file) => file.id)));
@@ -47,7 +44,7 @@ export function useAppearanceSync(): void {
     };
   }, [fonts, fontFiles, safe]);
 
-  // custom CSS goes through customCss.ts only: sanitize, install in its layer, guard checks, removal
+  // Custom CSS goes through customCss.ts only: it sanitizes, installs in its layer and guards
   useEffect(() => {
     if (safe || !customCss.enabled) {
       removeCustomCss(document);
@@ -55,7 +52,6 @@ export function useAppearanceSync(): void {
     }
     return watchCustomCss(document, window, customCss.text, (reason) => {
       void useAppearanceStore.getState().save({ customCss: { ...customCss, enabled: false } });
-      // placeholder keys: the strings are added with the settings texts
       useToastStore.getState().show({ message: t(reason === "sanitizer" ? "appearance.css.refused" : "appearance.css.guard_off"), variant: "error" });
     });
   }, [customCss, safe, t]);

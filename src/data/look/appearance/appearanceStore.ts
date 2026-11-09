@@ -5,15 +5,11 @@ import { DEFAULT_APPEARANCE, type Appearance, type AppearancePatch, type NuvoThe
 export const CUSTOM_PREFIX = "custom:";
 
 export interface AppearanceState {
-  /** The daemon's `appearance.*`; defaults until the library is unlocked and read. */
   saved: Appearance;
   loaded: boolean;
-  /** main-settings.json `appearance.safe`: saved theme, fonts and CSS are kept but not applied. */
   safe: boolean;
-  /** The editor's unsaved theme; applied over everything, safe mode included, while the sheet is open. */
   draft: NuvoTheme | null;
   load(): Promise<void>;
-  /** False when the daemon refused or could not be reached; `saved` is then unchanged. */
   save(patch: AppearancePatch): Promise<boolean>;
   setDraft(theme: NuvoTheme | null): void;
   setSafe(safe: boolean): Promise<void>;
@@ -53,7 +49,6 @@ export const useAppearanceStore = create<AppearanceState>()((set) => ({
   },
 }));
 
-/** The custom theme in force: the editor's draft, else the active saved theme unless safe mode is on. */
 export function activeTheme(state: Pick<AppearanceState, "saved" | "safe" | "draft">): NuvoTheme | null {
   if (state.draft) return state.draft;
   const id = state.saved.active.presetId;

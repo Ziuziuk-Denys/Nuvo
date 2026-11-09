@@ -15,7 +15,6 @@ vi.mock("../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => k
 
 const toasted = () => useToastStore.getState().queue.map((toast) => [toast.message, toast.variant]);
 
-// custom CSS is installed by customCss.ts only: this id is its style element
 const CSS_ID = "nuvo-custom-css";
 
 function Harness() {
@@ -27,7 +26,6 @@ let root: Root;
 const ready = vi.fn();
 const applying = vi.fn();
 
-/** jsdom has no layout: a guarded control is a box the test places and a hit test the test answers. */
 function addGuard(hidden = false) {
   const el = document.createElement("button");
   el.setAttribute("data-nuvo-guard", "flex");

@@ -1,20 +1,17 @@
-/** Recent searches, kept by the daemon in the encrypted library. Nothing is written to localStorage. */
+// Kept by the daemon in the encrypted library; nothing is written to localStorage
 import { create } from "zustand";
 
 export type SearchHistoryType = "query" | "track" | "artist" | "album" | "playlist";
 
 export interface SearchHistoryItem {
-  /** `query:<folded text>` for a typed query, else the picked result's id. */
   id: string;
   type: SearchHistoryType;
   title: string;
   subtitle?: string;
   coverUrl?: string;
   durationMs?: number;
-  /** The played track for a song, `{ href }` for the rest. */
   itemData?: unknown;
   timestamp?: number;
-  /** The daemon's row id, once the daemon holds the entry. */
   entryId?: string;
 }
 
@@ -27,16 +24,13 @@ export interface SearchHistoryState {
   clearHistory(): void;
 }
 
-/** The old renderer key; posted to the daemon once, then removed. */
 export const LEGACY_HISTORY_KEY = "nuvo_search_history";
-/** Rows shown; the daemon keeps 50. */
 export const SHOWN = 30;
 const DAEMON_KEEPS = 50;
 const KINDS: readonly SearchHistoryType[] = ["query", "track", "artist", "album", "playlist"];
 
 type PostResult = { ok: true; entryId: string } | { ok: false; retry: boolean };
 
-/** Folded like the daemon folds a query: trimmed, inner whitespace collapsed, lower case. */
 export function queryId(query: string): string {
   return `query:${query.trim().split(/\s+/).join(" ").toLowerCase()}`;
 }
@@ -79,7 +73,6 @@ function isLegacyItem(value: unknown): value is SearchHistoryItem {
   return Boolean(item) && typeof item!.id === "string" && typeof item!.title === "string" && KINDS.includes(item!.type as SearchHistoryType);
 }
 
-/** The old entries oldest first, so the daemon's order (each post stamped after the last) matches the old list. */
 export function legacyItems(raw: string): NewSearchHistoryItem[] {
   let parsed: unknown;
   try {
@@ -177,26 +170,21 @@ export function createSearchHistory(deps: SearchHistoryDeps) {
       return;
     }
     if (!storage || raw === null) return;
-    // after a partial failure the daemon already holds some entries; post only the rest
     const held = await list(DAEMON_KEEPS);
     if (!held) return;
     const heldIds = new Set(held.map((item) => item.id));
     for (const item of legacyItems(raw)) {
       if (heldIds.has(item.type === "query" ? queryId(item.title) : item.id)) continue;
       const result = await post(item);
-      // locked or down: keep the key and try again on the next load; a refused entry is skipped
       if (!result.ok && result.retry) return;
     }
     try {
       storage.removeItem(LEGACY_HISTORY_KEY);
-    } catch {
-      // the next load skips what the daemon holds and tries the removal again
-    }
+    } catch {}
   }
 
   let loading: Promise<void> | null = null;
 
-  /** Moves the old local list once, then shows the daemon's list; entries not yet stored stay on top. */
   function loadSearchHistory(): Promise<void> {
     loading ??= (async () => {
       await migrate();

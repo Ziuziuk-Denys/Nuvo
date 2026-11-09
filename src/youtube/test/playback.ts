@@ -1,4 +1,3 @@
-/** Fakes for the stream resolution tests: worker bridge, iframe_api and googlevideo answers. */
 import { PlayerScript } from "../playback/player";
 import type { Transform, TvIdentity, WorkerBridge } from "../playback/worker";
 import type { FakeFetch } from "./fakeFetch";

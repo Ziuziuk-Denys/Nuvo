@@ -10,10 +10,6 @@ import { StartWithArtists } from "../../recs/StartWithArtists";
 import { useTour } from "../../tour/tourStore";
 import styles from "./ColdStart.module.css";
 
-/**
- * What Home shows while it has nothing to offer. A library with no taste yet asks for a few artists once the
- * tour is out of the way (its start card asks the same); offline, or after that, a plain empty state with search.
- */
 export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Element | null {
   const { t } = useTranslation();
   const online = useStreamingReachable();
@@ -39,7 +35,6 @@ export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Ele
 
   if (cold === null || started) return null;
   if (cold && online && tourOff) {
-    // an empty library can also bring its music in instead of naming artists
     return (
       <div className={styles.ask} data-cold-ask="">
         <StartWithArtists onStarted={() => setStarted(true)} />

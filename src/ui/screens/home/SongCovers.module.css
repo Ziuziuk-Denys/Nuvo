@@ -1,4 +1,3 @@
-/* Song covers as buttons: the shelf card's look without a button's own chrome. */
 .card {
   padding: 0;
   border: 0;
@@ -13,7 +12,6 @@
   gap: 28px;
 }
 
-/* the artist a shelf starts from, set apart from the songs by a hairline */
 .lead {
   padding-inline-end: 28px;
   border-inline-end: 1px solid var(--n-hair);
@@ -24,7 +22,6 @@
   text-align: center;
 }
 
-/* the shuffle: one calm card, the covers stacked at its start and its words beside them */
 .shuffle {
   display: flex;
   align-items: center;
@@ -40,7 +37,6 @@
   flex: none;
 }
 
-/* each cover behind is smaller, so the stack reads from the front one */
 .stacked {
   position: absolute;
   top: 50%;

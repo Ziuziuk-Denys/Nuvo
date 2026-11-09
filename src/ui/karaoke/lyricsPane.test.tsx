@@ -93,12 +93,10 @@ describe("lyric lines", () => {
       scrollRatio: 0.38,
     });
     expect(css).toContain("--blyrics-font-size: calc(34px * var(--n-lyrics-scale, 1))");
-    // the Lyrics font and size from Settings > Look
     expect(css).toMatch(/--blyrics-font-family: var\(--n-font-lyrics, /);
     expect(css).toContain("blyrics-target-scroll-pos-ratio = 0.38");
     expect(css).toContain("--blyrics-lyric-active-color: rgb(255, 255, 255)");
     expect(css).toContain("--blyrics-lyric-inactive-color: rgba(255, 255, 255, 0.3)");
-    // measured: 40 px between lines, the first word at the column edge
     expect(css).toContain("--blyrics-padding: 20px");
     expect(css).toMatch(/padding-inline: 0/);
     expect(css).toMatch(/prefers-reduced-motion: reduce[\s\S]*transition: none/);
@@ -119,7 +117,6 @@ describe("lyric lines", () => {
     expect(css).toMatch(/\.blyrics-highlight-run \{[^}]*display: none/);
     expect(css).toMatch(/\[data-nuvo-now\] \.blyrics--word \{[^}]*color: var\(--blyrics-lyric-active-color\)/);
     expect(css).not.toMatch(/drop-shadow|text-shadow|blur/);
-    // the fill: two flat colours with a hard edge, the second stop at 0 sits on the first
     expect(css).toMatch(
       /linear-gradient\(90deg, var\(--blyrics-lyric-active-color\) calc\(var\(--nuvo-fill, 0\) \* 100%\), var\(--blyrics-lyric-inactive-color\) 0\)/,
     );

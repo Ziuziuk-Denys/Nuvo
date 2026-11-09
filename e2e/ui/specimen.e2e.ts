@@ -45,12 +45,10 @@ describe("specimen", () => {
         await scrollTo(live, section);
         await live.shoot(STEP, "specimen", section, { looks: [look], sizes: [SIZES[0]] });
       }
-      // every contrast number the page prints holds its floor
       expect(await page.locator("[data-low]").count(), `${look.preset}-${look.mode}`).toBe(0);
       expect(await page.locator("[data-swatch]").count()).toBe(9);
     }
 
-    // the island strip stays pure black in the light theme too
     await live.setLook(LIGHT);
     const island = await page.evaluate(() => {
       const button = [...document.querySelectorAll("button")].find((node) => node.getAttribute("aria-label") === "Previous");
@@ -76,7 +74,6 @@ describe("specimen", () => {
 
     const button = (name: string) => page.locator("[data-section=overlays]").getByRole("button", { name, exact: true });
     const dialog = page.getByRole("dialog");
-    // the trigger sits mid-window, so the popover has room above it
     const reset = async () => {
       await page.keyboard.press("Escape");
       await page.waitForTimeout(300);
@@ -120,10 +117,8 @@ describe("specimen", () => {
       }
     }
 
-    // geometry: 8 px above the anchor, centred on it, then the same container at 320
     await reset();
     await button("Sound").click();
-    // the tab carries over from the 320 shot
     await dialog.getByRole("tab", { name: "Equalizer" }).click();
     await page.waitForTimeout(500);
     const measure = () =>
@@ -150,14 +145,11 @@ describe("specimen", () => {
     expect(narrow.width).toBeCloseTo(POPOVER.narrow, 0);
     expect(narrow.same).toBe(true);
 
-    // one frame in the middle of the morph, with motion on
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await dialog.getByRole("tab", { name: "Equalizer" }).click();
     await page.waitForTimeout(110);
     await page.screenshot({ path: path.join(DIR, "..", STEP_OVERLAYS, "specimen-popover-morphing-vinyl-dark-1200.png") });
 
-    // Escape closes it. Focus return is covered in overlays.test.tsx: the legacy AppFrame blurs every
-    // focused button (useDisableButtonFocus) until the shell replaces it.
     await page.waitForTimeout(400);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);

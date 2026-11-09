@@ -5,7 +5,6 @@ import { Segmented, SettingGroup, SettingRow, Switch } from "./controls";
 import { PanelWidgetRow } from "./PanelWidgetRow";
 import styles from "./sections.module.css";
 
-/** Plain names for the sessions main detects (electron/notch/session.ts). */
 const DESKTOP_NAMES: Record<string, string> = {
   "gnome-wayland": "settings.notch.desktop_gnome",
   "kde-wayland": "settings.notch.desktop_kde",

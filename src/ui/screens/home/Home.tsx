@@ -16,10 +16,8 @@ import { LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
 import { ColdStartSlot, HiddenLinkSlot } from "./slots";
 import styles from "./Home.module.css";
 
-/** "More like" shelves, one per favourite artist the daemon made a mix of. */
 const LIKE_SHELVES = 2;
 
-/** The daemon's Home mixes, refetched when the first-run picks change what it can offer. */
 function useHomeMixes(): HomeMix[] | null {
   const [mixes, setMixes] = useState<HomeMix[] | null>(null);
   useEffect(() => {
@@ -52,10 +50,6 @@ function useMostSaved(): MostSavedEntry[] {
   return items;
 }
 
-/**
- * Home: For you as the lead mix with the daily mixes beside it, Liked songs and the pins, then the most saved shelf.
- * The lead mix's first cover lights the page and tints the glass bar.
- */
 export function Home(): JSX.Element | null {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -63,7 +57,6 @@ export function Home(): JSX.Element | null {
   const saved = useMostSaved();
   const { data: likedCount } = useLikedTrackCount();
   const playlists = usePlaylistsList();
-  // the tour's start card covers first launch; this entry is for an empty library afterwards
   const libraryEmpty = likedCount === 0 && !playlists.isLoading && playlists.data.playlists.length === 0;
   usePageBackdrop(mixes?.[0] ? mosaicCovers(mixes[0].tracks)[0] : undefined);
 
@@ -92,17 +85,13 @@ export function Home(): JSX.Element | null {
     });
   }
   sections.push({ key: "picks", node: <QuickPicks onOpen={open} /> });
-  // a young profile has one or two mixes: their songs fill Home instead of an empty page
   sections.push({ key: "songs", node: <SongsForYou mixes={mixes} /> });
-  // the shelves below fill in when their answers come; until then they take no room
   const [firstArtist, secondArtist] = likeArtists(mixes, LIKE_SHELVES);
-  // each form shows once in a run: rows, an artist's covers, the shuffle card, the next artist, a carousel
   if (firstArtist) sections.push({ key: `like:${firstArtist.name}`, node: <LikeShelf artist={firstArtist} /> });
   sections.push({ key: "shuffle", node: <ShuffleShelf /> });
   if (secondArtist) sections.push({ key: `like:${secondArtist.name}`, node: <LikeShelf artist={secondArtist} /> });
   sections.push({ key: "style", node: <StyleShelf /> });
   const openImport = libraryEmpty ? () => useImportsUi.getState().openImport() : undefined;
-  // with nothing to suggest, Import sits beside Search in the empty state
   if (mixes.length === 0) sections.push({ key: "cold-start", node: <ColdStartSlot onImport={openImport} /> });
   else if (openImport) {
     sections.push({

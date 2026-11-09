@@ -1,6 +1,3 @@
-/* The response curve: a 220 px plot over a dB and Hz grid, ten handles riding the curve, frequencies under it.
-   Hover or focus on a handle names its band in one small tip; nothing else lights up. */
-
 .header {
   display: flex;
   align-items: center;
@@ -39,7 +36,6 @@
   overflow: visible;
 }
 
-/* the dB lines start clear of their labels */
 .hline {
   position: absolute;
   right: 0;
@@ -64,7 +60,6 @@
   stroke-opacity: 0.07;
 }
 
-/* the dB scale sits over the left end of its line, the Hz names hang from the top beside theirs */
 .dbLabel,
 .hzLabel {
   position: absolute;
@@ -86,13 +81,11 @@
   margin-left: 4px;
 }
 
-/* the live spectrum sits behind the grid and the curve, a soft fill */
 .spectrum {
   fill: var(--n-ink);
   fill-opacity: 0.12;
 }
 
-/* lights red while the output clips, dim otherwise */
 .clip {
   position: absolute;
   bottom: 2px;
@@ -108,7 +101,6 @@
   background: #ff3b30;
 }
 
-/* a preset change glides the curve and the handles together; a drag follows the pointer at once */
 .line,
 .area {
   transition: d 200ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -149,7 +141,6 @@
     background-color 150ms ease-out;
 }
 
-/* a 28 px target around the 12 px dot */
 .handle::before {
   position: absolute;
   inset: -8px;
@@ -171,7 +162,6 @@
     0 0 0 4px color-mix(in srgb, var(--n-accent) 40%, transparent);
 }
 
-/* the band's name only, in the app's dark tooltip */
 .tip {
   position: absolute;
   z-index: 1;
@@ -218,7 +208,6 @@
   white-space: nowrap;
 }
 
-/* every preset in full: the chips wrap onto more lines instead of scrolling under a fade */
 .presets {
   display: flex;
   flex-wrap: wrap;

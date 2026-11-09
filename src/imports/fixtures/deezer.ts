@@ -1,4 +1,3 @@
-/** Deezer API answers for tests, invented names. */
 export function deezerTrack(index: number, album = "Northbound") {
   return {
     id: 3_000_000 + index,

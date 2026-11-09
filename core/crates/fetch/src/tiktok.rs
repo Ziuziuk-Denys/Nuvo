@@ -1,6 +1,3 @@
-//! TikTok posts without a browser: the post page carries its data in the rehydration JSON,
-//! sometimes behind a SHA-256 proof-of-work page that is solved here.
-
 use std::time::Duration;
 
 use nuvo_crypto::{base64_decode, base64_encode};
@@ -24,9 +21,7 @@ pub struct Sound {
     pub title: String,
     pub author: String,
     pub duration_ms: u64,
-    /// The creator's own audio ("original sound"), not a named track.
     pub original: bool,
-    /// The album TikTok names for a licensed sound.
     pub album: Option<String>,
 }
 
@@ -34,7 +29,6 @@ pub struct Sound {
 pub struct TikTokPost {
     pub id: String,
     pub title: String,
-    /// `None` for photo posts.
     pub video: Option<Remote>,
     pub duration_ms: u64,
     pub sound: Option<Sound>,
@@ -50,13 +44,11 @@ pub struct TikTok {
 }
 
 impl TikTok {
-    /// `base` replaces `https://www.tiktok.com` in tests. Redirects are followed only to TikTok hosts
-    /// and the base host.
+    // Redirects are followed only to TikTok hosts and the base host
     pub fn new(base: impl Into<String>) -> Self {
         Self::with_proxy(base, None)
     }
 
-    /// Like [`TikTok::new`], with every request sent through `proxy`.
     pub fn with_proxy(base: impl Into<String>, proxy: Option<reqwest::Proxy>) -> Self {
         let base = base.into().trim_end_matches('/').to_string();
         let base_host = Url::parse(&base).ok().and_then(|u| u.host_str().map(String::from)).unwrap_or_default();
@@ -80,7 +72,6 @@ impl TikTok {
         Self { client, base, base_host }
     }
 
-    /// Resolves a post link (short links included) to its media.
     pub async fn post(&self, url: &str) -> Result<TikTokPost, FetchError> {
         self.validate_url(url)?;
         let id = match post_id(url) {
@@ -141,7 +132,6 @@ impl TikTok {
     }
 }
 
-/// Reads the page as text, refusing to buffer more than `MAX_PAGE_BYTES`.
 async fn read_capped(mut response: reqwest::Response) -> Result<String, FetchError> {
     let mut body = Vec::new();
     while let Some(chunk) = response.chunk().await.map_err(network)? {
@@ -161,7 +151,6 @@ fn cookie_header(cookies: &[(String, String)]) -> String {
     cookies.iter().map(|(name, value)| format!("{name}={value}")).collect::<Vec<_>>().join("; ")
 }
 
-/// The 15-21 digit id after `/video/`, `/photo/` or `/v/`.
 pub fn post_id(url: &str) -> Option<String> {
     ["/video/", "/photo/", "/v/"].iter().find_map(|mark| {
         let at = url.find(mark)? + mark.len();
@@ -170,7 +159,6 @@ pub fn post_id(url: &str) -> Option<String> {
     })
 }
 
-/// The JSON inside `<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">`.
 pub fn rehydration(html: &str) -> Option<Value> {
     let tag = html.find(DATA_MARK)?;
     let start = tag + html[tag..].find('>')? + 1;
@@ -178,7 +166,6 @@ pub fn rehydration(html: &str) -> Option<Value> {
     serde_json::from_str(&html[start..end]).ok()
 }
 
-/// Value of the `class` attribute in the tag whose `id` is `id`.
 fn attribute<'a>(html: &'a str, id: &str) -> Option<&'a str> {
     let at = html.find(&format!("id=\"{id}\""))?;
     let tag = &html[at..at + html[at..].find('>')?];
@@ -187,8 +174,6 @@ fn attribute<'a>(html: &'a str, id: &str) -> Option<&'a str> {
     Some(&tag[start..end])
 }
 
-/// Solves the proof-of-work page: find `n` with `sha256(a + n) == c`, answer with the cookies the
-/// page's script would set. Empty when the page is not a challenge or has no solution.
 pub fn solve_challenge(html: &str) -> Vec<(String, String)> {
     solve(html).unwrap_or_default()
 }
@@ -239,7 +224,6 @@ fn is_tiktok_family(url: &str) -> bool {
     host.ends_with(".tiktokcdn-eu.com") || host.ends_with(".tiktokv.com")
 }
 
-/// Reads `webapp.video-detail` of the rehydration JSON.
 pub fn parse_post(data: &Value, id: &str, cookies: &[(String, String)]) -> Result<TikTokPost, FetchError> {
     let detail = &data["__DEFAULT_SCOPE__"]["webapp.video-detail"];
     let status = detail["statusCode"].as_i64().unwrap_or(0);

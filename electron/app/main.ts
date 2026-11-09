@@ -1,4 +1,3 @@
-/** Nuvo's main process: composition only. Every rule lives in a tested module next to this file. */
 import {
   app,
   BrowserWindow,
@@ -65,7 +64,6 @@ import { RateGate, RefusalLog, validateBindings, validateIcon, validateNotchActi
 import { nextZoom, zoomKey } from "./zoom";
 import { activateWindow, DEFAULT_SIZE, dragBounds, MIN_SIZE, navigationDecision, onScreenBounds, restoreUnderCursor, type Bounds } from "./windowRules";
 
-/** The YouTube worker module provides the service; main only starts and stops it. */
 export interface YoutubeService {
   dispose(): void;
 }
@@ -81,10 +79,9 @@ const execFileAsync = promisify(execFile);
 const PROXY_POLL_MS = 30_000;
 const PROXY_PUT_TIMEOUT_MS = 3000;
 
-/** execFile that shutdown can reach: gtk-update-icon-cache, swaymsg and the tray probe are killed if still running. */
 const trackedExec: Exec = (file, args, timeoutMs) =>
   new Promise((resolve, reject) => {
-    const child = execFile(file, args, { timeout: timeoutMs }, (error, stdout) => {
+    const child = execFile(file, args, { timeout: timeoutMs, windowsHide: true }, (error, stdout) => {
       children.delete(child);
       if (error) reject(error);
       else resolve(stdout);
@@ -110,8 +107,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   const systemFonts = new SystemFonts(
     () =>
       new Promise((resolve) =>
-        execFile("fc-list", ["--format", "%{family}\n"], { timeout: 5000, maxBuffer: FC_LIST_MAX_BYTES }, (error, stdout) => {
-          // a missing fc-list, a timeout or output over the cap: no list
+        execFile("fc-list", ["--format", "%{family}\n"], { timeout: 5000, maxBuffer: FC_LIST_MAX_BYTES, windowsHide: true }, (error, stdout) => {
           resolve(error ? { ok: false } : { ok: true, families: parseFcList(stdout) });
         }),
       ),
@@ -136,7 +132,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   let youtube: YoutubeService | null = null;
   let tray: TrayController | null = null;
   let trayIcon: Tray | null = null;
-  // the preset's icon as PNG bytes; null while the stock icon is on
   let presetIcon: Buffer | null = null;
   const trayImage = () => {
     const style = trayIconStyle(process.env.XDG_CURRENT_DESKTOP ?? "", nativeTheme.shouldUseDarkColors);
@@ -153,7 +148,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     binaryPath: app.isPackaged ? path.join(process.resourcesPath, "bin", coreBinary) : path.join(app.getAppPath(), "core", "target", "debug", coreBinary),
     socketPath,
     env: process.env,
-    // the main window only; the Notch has no use for it
     onStatus: (status) => {
       sendToMain(CHANNELS.coreStatus, status);
       // a restarted daemon starts direct; it has to hear the proxy again
@@ -200,7 +194,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         if (countsAsFailedStart(code, isMainFrame)) startWatch.failed();
       });
       win.webContents.on("before-input-event", (event, input) => {
-        // Shift held while Nuvo starts: default look for this and later starts until the owner turns it back on
         if (isShiftAtStart(input, Date.now() - createdAt) && !settings.value.appearance.safe) {
           startWatch.forceSafe();
           win.webContents.reload();
@@ -245,7 +238,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   const mainContents = () => windows.window?.webContents ?? null;
   const sendToMain = (channel: string, payload?: unknown) => mainContents()?.send(channel, payload);
 
-  /** A screen unplugged while the window was hidden or on it must not leave the window out of reach. */
   const keepOnScreen = () => {
     const win = windows.window;
     if (!win || win.isDestroyed() || win.isMaximized() || win.isFullScreen()) return;
@@ -257,7 +249,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     if (next !== bounds) win.setBounds(next);
   };
 
-  // electron-updater is loaded on the first check only; a development run never loads it
   let loadedBackend: Promise<UpdateBackend> | undefined;
   const backend = () => (loadedBackend ??= import("electron-updater").then((pkg) => createBackend(pkg.default.autoUpdater as unknown as AutoUpdaterLike)));
   const updater = new Updater({
@@ -363,7 +354,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     if (!app.isPackaged) (globalThis as { nuvoNotch?: NotchWindow }).nuvoNotch = notch;
   }
 
-  /** The panel widgets' bus object; the MPRIS name is the one Chromium gives this browser process. */
   async function startPanel(): Promise<void> {
     panelBus = await startPanelBus({
       mprisName: `org.mpris.MediaPlayer2.chromium.instance${process.pid}`,
@@ -396,7 +386,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   function registerIpc(): void {
     const ipc = new IpcRegistry(ipcMain, {
       contents: (who) => (who === "main" ? mainContents() : (notch?.webContents ?? null)),
-      // the main window and the Notch load the same index page (the Notch under #/notch, which the check ignores)
       page: () => ({ fileUrl: appFileUrl, devOrigin: devServerUrl }),
       refused: (channel) => refusals.refuse(channel, "sender"),
     });
@@ -432,7 +421,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       const notice = validateNotice(payload);
       if (!notice) return refusals.refuse(CHANNELS.appNotify, "shape");
       const win = windows.window as unknown as BrowserWindow | null;
-      // a focused window shows its own progress; the system notice is for someone looking elsewhere
       if (!win || win.isFocused() || !Notification.isSupported()) return false;
       const shown = new Notification({ title: notice.title, body: notice.body });
       shown.on("click", () => windows.show());
@@ -499,7 +487,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       return result;
     });
     ipc.handle(CHANNELS.discordStatus, "main", () => discord.current);
-    // the panel widgets ship in resources/desktop; a development run reads the repo's desktop/ folder
     const panelResources = app.isPackaged ? path.join(process.resourcesPath, "desktop") : path.join(app.getAppPath(), "desktop");
     const panelFor = () => {
       const session = notch?.session ?? "other-wayland";
@@ -575,7 +562,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     registerAppearanceIpc(ipc);
   }
 
-  /** Fonts, theme files and the start heartbeat (customization 5, 3.1, 6.1). */
   function registerAppearanceIpc(ipc: IpcRegistry): void {
     const parent = () => windows.window as unknown as BrowserWindow;
     ipc.on(CHANNELS.appearanceReady, "main", () => startWatch.ready());
@@ -727,7 +713,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     kioslaverc: () => fs.promises.readFile(path.join(process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config"), "kioslaverc"), "utf8"),
   });
 
-  /** What Settings says, else what the system says. Reports a change to the daemon and the player. */
   async function refreshProxy(): Promise<void> {
     const proxy = settings.value.proxy;
     let url: string | null = null;
@@ -787,8 +772,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     });
   }
 
-  // Every web contents, before it loads anything: no window.open, navigation only to its own pages.
-  // App pages (default session) stay on the app; the YouTube worker partition keeps to https.
+  // Every web contents, before it loads: no window.open, navigation only to its own pages
   app.on("web-contents-created", (_event, contents) => {
     const appPages = contents.session === session.defaultSession;
     guardContents(contents, appPages ? (url) => navigationDecision(url, devServerUrl, appFileUrl) === "allow" : (url) => url.startsWith("https://"));
@@ -818,7 +802,6 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     const allowedOrigins = ["file://", "null", ...(devServerUrl ? [new URL(devServerUrl).origin] : [])];
     protocol.handle(CORE_SCHEME, (request) => {
       const url = new URL(request.url);
-      // user fonts are main's own files; everything else goes to the daemon
       if (url.hostname === "local" && url.pathname.startsWith("/fonts/")) return fontResponse(request, fonts, allowedOrigins);
       return forwardToCore(request, { socketPath, token: core.token, waitReady: () => core.whenReady(), allowedOrigins });
     });

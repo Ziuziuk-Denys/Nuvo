@@ -20,15 +20,10 @@ export function formatTime(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-/**
- * The player's seek surface: the whole bar behind its controls. The played part fills from the left in the cover's
- * tint; a press or a drag anywhere on the bar previews the position and seeks on release.
- */
 interface ScrubberProps {
   positionMs: number;
   durationMs: number;
   tint: string;
-  /** The A-B loop: a band from A to B, or a mark at A while B is not set yet. */
   loop?: { a: number | null; b: number | null };
 }
 
@@ -39,7 +34,7 @@ export function Scrubber({ positionMs, durationMs, tint, loop }: ScrubberProps):
   const duration = Math.max(0, durationMs);
   const position = dragMs ?? Math.min(positionMs, duration);
   const fraction = duration > 0 ? Math.min(1, Math.max(0, position / duration)) : 0;
-  // a minimised window still draws (background throttling is off for playback), so the line holds still until it is back
+  // Background throttling is off for playback, so a minimised window still draws: hold the line
   const visible = useSyncExternalStore(onWindowVisibilityChange, isWindowVisible);
   const shown = useRef(fraction);
   useLayoutEffect(() => {

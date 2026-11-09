@@ -1,5 +1,4 @@
-/* Static Nuvo tokens. The nine colour roles (--n-field ... --n-accent) are written inline on :root
-   for the active preset and mode by applyPresetTokens. */
+/* The colour roles (--n-field ... --n-accent) are written inline on :root by applyPresetTokens */
 
 :root[data-ui="nuvo"] {
   --n-font-stack: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Cantarell, Ubuntu, sans-serif;
@@ -41,8 +40,6 @@
   --n-island-wash: rgba(255, 255, 255, 0.1);
   --n-island-rail: rgba(255, 255, 255, 0.2);
 
-  /* Glass: the preset's translucent surface over a 20 px blur, flat, no rim, sheen or shadow.
-     The bottom player thickens it to 48 px and halves the saturation behind it. */
   --n-glass: var(--bg-glass);
   --n-glass-blur: blur(20px);
   --n-glass-thick: blur(48px) saturate(0.5);
@@ -51,22 +48,17 @@
   --n-glass-rim: transparent;
   --n-glass-shade: transparent;
   --n-glass-shadow: none;
-  /* the grey well behind the player's tool buttons when no cover lights the page */
   --n-well: #ebebed;
   --n-well-glass: rgba(0, 0, 0, 0.04);
   --n-well-on: #dfdfe1;
   --n-well-glass-on: rgba(0, 0, 0, 0.08);
 
-  /* Floating material for popovers and menus: a faint ink wash over a 40 px blur. */
   --n-pop: rgba(0, 0, 0, 0.05);
   --n-pop-blur: blur(40px) saturate(1.5);
   --n-pop-hover: rgba(0, 0, 0, 0.05);
-  /* The Sound panel's own material: the preset's raised grey, near opaque, so the cover never muddies the curve. */
   --n-pop-solid: color-mix(in srgb, var(--bg-elevated) 97%, transparent);
-  /* Dialogs: the near-opaque page grey over the same blur, one deep shadow. */
   --n-sheet: rgba(245, 245, 247, 0.92);
   --n-sheet-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-  /* Filled secondary controls: buttons, chips and fields. */
   --n-fill: rgba(0, 0, 0, 0.05);
   --n-fill-hover: rgba(0, 0, 0, 0.09);
   --n-switch: rgba(0, 0, 0, 0.12);
@@ -74,15 +66,11 @@
 
   --n-measure: 66ch;
 
-  /* Focus and selection: every state is an amount of soft fill, never a line.
-     Rest, hover (a grey breath), selected (a faint accent), focus (a deeper accent). */
   --n-hover: rgba(0, 0, 0, 0.05);
   --n-press: color-mix(in srgb, var(--n-ink) 9%, transparent);
   --n-select: color-mix(in srgb, var(--n-accent) 13%, transparent);
   --n-focus: color-mix(in srgb, var(--n-accent) 20%, transparent);
-  /* the halo a control without its own focus fill gets from the keyboard */
   --n-focus-halo: color-mix(in srgb, var(--n-ring, var(--n-accent)) 38%, transparent);
-  /* the sliding pill of a segmented control */
   --n-lens: var(--n-raised);
   --n-lens-shadow: 0 1px 2px rgba(16, 19, 32, 0.08), 0 6px 14px -8px rgba(16, 19, 32, 0.25);
 }
@@ -106,15 +94,12 @@
   --n-switch-hover: rgba(255, 255, 255, 0.11);
 }
 
-/* Browser surfaces */
-
 :root[data-ui="nuvo"] ::selection {
   background: color-mix(in srgb, var(--n-accent) 30%, transparent);
   color: var(--n-ink);
 }
 
-/* A soft halo, not a hard ring. Zero specificity, so any component selector can move or replace it. In the base layer,
-   so legacy controls that opt out with Tailwind's outline-none keep their own focus look. */
+/* Zero specificity in the base layer, so components and Tailwind outline-none can override it */
 @layer base {
   :where(:root[data-ui="nuvo"] :focus-visible) {
     outline: 3px solid var(--n-focus-halo);
@@ -126,12 +111,11 @@
   caret-color: var(--n-accent);
 }
 
-/* While a colour is dragged in the theme editor: no colour transitions, so every frame shows the value at once. */
 :root[data-theme-editing] * {
   transition: none !important;
 }
 
-/* Overlay scrollbar for Nuvo scroll containers; useScrollActivity sets data-scrolling. */
+/* Overlay scrollbar; useScrollActivity sets data-scrolling */
 .n-scroll::-webkit-scrollbar {
   display: block;
   width: 6px;

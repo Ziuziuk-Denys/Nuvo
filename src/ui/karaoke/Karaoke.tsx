@@ -30,11 +30,10 @@ const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
 };
 const SEEK_STEP_MS = 5_000;
 const VOLUME_STEP = 0.05;
-/** Unmute after a mute that started at zero returns here. */
 const DEFAULT_VOLUME_LEVEL = 0.7;
 const WIDE = layoutFor(1200);
 const NARROW = layoutFor(1100);
-/** The measured column edges move linearly with the window width between the two measured sizes. */
+// Column edges interpolate linearly between the measured 1100 px and 1200 px windows
 const along = (wide: number, narrow: number, width: number) => narrow + ((wide - narrow) * (width - 1100)) / 100;
 
 function useWindowWidth(): number {
@@ -53,7 +52,6 @@ interface GlyphButtonProps {
   className?: string;
   onClick(): void;
   size?: 18 | 20 | 24;
-  /** A mode that is on (shuffle, repeat): aria-pressed and full ink. */
   on?: boolean;
 }
 
@@ -67,18 +65,15 @@ function GlyphButton({ icon, label, className, onClick, size = 20, on }: GlyphBu
 
 interface BarProps {
   label: string;
-  /** 0 to 1. */
   value: number;
   valueNow: number;
   valueMax: number;
   valueText: string;
   className: string;
-  /** final is false while the pointer is still down. */
   onChange(fraction: number, final: boolean): void;
   onStep(direction: 1 | -1): void;
 }
 
-/** A thin white line on a faint track: press or drag anywhere on its 24 px box, arrow keys step. */
 function Bar({ label, value, valueNow, valueMax, valueText, className, onChange, onStep }: BarProps): JSX.Element {
   const [drag, setDrag] = useState<number | null>(null);
   const shown = Math.min(1, Math.max(0, drag ?? value));
@@ -130,7 +125,6 @@ function Bar({ label, value, valueNow, valueMax, valueText, className, onChange,
   );
 }
 
-/** A crossed note over the quiet line of the lyric column. */
 function NoLyricsGlyph(): JSX.Element {
   return (
     <svg
@@ -152,7 +146,6 @@ function NoLyricsGlyph(): JSX.Element {
   );
 }
 
-/** A filled speaker with two waves, the volume row's mute button. */
 function SpeakerGlyph(): JSX.Element {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
@@ -166,7 +159,6 @@ function SpeakerGlyph(): JSX.Element {
   );
 }
 
-/** Shown only when more than one version was found: a menu of them, the shown one ticked; a pick stays for the track. */
 function VersionButton(): JSX.Element | null {
   const { t } = useTranslation();
   const versions = useLyrics((state) => state.versions);
@@ -203,7 +195,6 @@ function VersionButton(): JSX.Element | null {
   );
 }
 
-/** Earlier, the offset (a press clears it), Later, the lyrics version and the highlight mode, centred over the lyric column; quiet until the bar is hovered. */
 function OffsetPill({ mode }: { mode: HighlightMode }): JSX.Element {
   const { t } = useTranslation();
   const offsetMs = useLyrics((state) => state.offsetMs);
@@ -256,7 +247,6 @@ function OffsetPill({ mode }: { mode: HighlightMode }): JSX.Element {
   );
 }
 
-/** The lyric column: the lines once found, else one quiet line; nothing while they load. */
 function LyricsColumn({ track, mode }: { track: LyricsTrack | null; mode: HighlightMode }): JSX.Element | null {
   const { t } = useTranslation();
   const trackId = track?.id ?? null;
@@ -283,7 +273,6 @@ function LyricsColumn({ track, mode }: { track: LyricsTrack | null; mode: Highli
   );
 }
 
-/** Seek line and the two times under it: arrow keys move 5 s, a press or a drag seeks on release. */
 function Timeline({ fallbackMs }: { fallbackMs: number }): JSX.Element {
   const { t } = useTranslation();
   const playerDurationMs = usePlayerStore((state) => state.durationMs);
@@ -314,7 +303,6 @@ function Timeline({ fallbackMs }: { fallbackMs: number }): JSX.Element {
   );
 }
 
-/** The full-window lyrics view: always dark, the cover field behind, the player left, the lyrics right. */
 export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const { t } = useTranslation();
   // everything but the position: the timeline re-renders on its own as the song plays

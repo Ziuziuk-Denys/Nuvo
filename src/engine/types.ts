@@ -1,8 +1,6 @@
-/** Track snapshot as the library stores it. The engine never mutates one. */
 export interface Track {
   id: string;
   title: string;
-  /** One display string, "A, B". */
   artists: string;
   artistId?: string;
   artistList?: Array<{ id?: string; name: string }>;
@@ -13,17 +11,14 @@ export interface Track {
   explicit?: boolean;
   releaseDate?: string;
   playlistItemId?: string;
-  /** Public page of a SoundCloud track, when the snapshot carries one. */
   permalinkUrl?: string;
 }
 
 export type Origin = "list" | "next" | "queued" | "continuation";
 
-/** Why the daemon picked a continuation track (`RankReason` in nuvo-core). Facts only; the UI words them. */
 export interface RankReason {
-  /** `artist`, `similar`, `new`, `time` or `session`; later kinds may appear, so readers skip unknown ones. */
+  // Later kinds may appear: readers must skip unknown ones
   kind: string;
-  /** Artist name for `artist`, a track title for `similar` and `session`. */
   name?: string;
 }
 
@@ -31,13 +26,10 @@ export interface QueueEntry {
   entryId: string;
   track: Track;
   origin: Origin;
-  /** Place in the unshuffled sequence. */
   order: number;
-  /** Only on continuation entries the daemon ranked. */
   reason?: RankReason;
 }
 
-/** The tempo, pitch and reverb settings a player view carries. */
 export interface TuningState {
   playbackRate: number;
   pitchSemitones: number;
@@ -52,7 +44,6 @@ export type PauseReason = "user" | "device_lost" | "autoplay_blocked" | "sign_in
 export type RepeatMode = "off" | "all" | "one";
 export type SourceKind = "youtube" | "soundcloud" | "cache" | "local";
 
-/** Failure causes: the network vocabulary plus three playback ones. */
 export type Cause =
   | "offline"
   | "dns_failed"
@@ -100,7 +91,6 @@ export interface OutputView {
   active: OutputDevice;
   fellBack: boolean;
   error?: string;
-  /** Set while a playing track cannot be heard and Nuvo knows why. */
   silent?: "system_muted" | "output_stopped";
 }
 
@@ -148,7 +138,6 @@ export interface SurfaceUpNext {
   durationMs: number;
 }
 
-/** The `player:state` payload shared with Electron main. */
 export interface SurfaceState {
   trackId: string | null;
   title: string;
@@ -169,7 +158,6 @@ export interface SurfaceState {
 
 export const SYSTEM_DEFAULT: OutputDevice = { id: "", label: "System default" };
 
-/** `<kind>:<id>` split at the first colon. */
 export function splitContext(context: string | null): { type: string; id?: string } | null {
   if (!context) return null;
   const at = context.indexOf(":");
@@ -192,7 +180,6 @@ export function isLocalId(id: string): boolean {
   return /^local:[0-9a-f]{32}$/.test(id);
 }
 
-/** Which source owns an id. Imported rows ("other") play through a YouTube match. */
 export function idKind(id: string): "youtube" | "soundcloud" | "local" | "other" {
   if (isLocalId(id)) return "local";
   if (isSoundCloudId(id)) return "soundcloud";
@@ -200,7 +187,6 @@ export function idKind(id: string): "youtube" | "soundcloud" | "local" | "other"
   return "other";
 }
 
-/** Where a track plays from when nothing fails. */
 export function primarySource(id: string): SourceKind {
   const kind = idKind(id);
   return kind === "soundcloud" || kind === "local" ? kind : "youtube";

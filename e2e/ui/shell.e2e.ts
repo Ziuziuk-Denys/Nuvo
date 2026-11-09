@@ -22,7 +22,6 @@ interface ChromeBoxes {
   view: number;
 }
 
-/** The top bar, the rail, its items and settings, in CSS pixels. */
 async function measureChrome(page: Page): Promise<ChromeBoxes> {
   return page.evaluate(() => {
     const box = (element: Element) => element.getBoundingClientRect();
@@ -78,7 +77,6 @@ const NUVO_LOOKS: Look[] = [
 
 const SOUND_TAB_INDEX = { speed: 1, sleep: 2 } as const;
 
-/** Opens the Sound popover on one tab and shoots it as panel-<state>. */
 async function shootSoundTab(live: NuvoSession, tab: keyof typeof SOUND_TAB_INDEX, looks: Look[], size: Size, open: () => Promise<void>, state: string = tab) {
   await live.shoot(STEP, "panel", state, {
     looks,
@@ -90,7 +88,6 @@ async function shootSoundTab(live: NuvoSession, tab: keyof typeof SOUND_TAB_INDE
   });
 }
 
-/** Chips and tabs in the open popover whose text is cut or that run past its edges. */
 function clippedChips(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const panel = document.querySelector('[role="dialog"]')!.getBoundingClientRect();
@@ -103,7 +100,6 @@ function clippedChips(page: Page): Promise<string[]> {
   });
 }
 
-/** The number of distinct rows the sleep lengths (the first five chips) sit on. */
 function sleepChipRows(page: Page): Promise<number> {
   return page.evaluate(() => {
     const chips = [...document.querySelectorAll('[role="dialog"] button[aria-pressed]')].slice(0, 5);
@@ -111,10 +107,6 @@ function sleepChipRows(page: Page): Promise<number> {
   });
 }
 
-/**
- * Makes queue[index] of the seeded session the current, paused track and reloads so the island shows it.
- * A context replaces the playback context too ("radio:<id>" makes the island name the station's seed).
- */
 async function setCurrentTrack(live: NuvoSession, index: number, context?: string): Promise<void> {
   const page = live.page;
   // a pending debounced store write would land after ours and replace it
@@ -142,9 +134,7 @@ interface Box {
   bottom: number;
 }
 
-/** The player's boxes, its glass and every inside colour that equals the accent. */
 async function measureIsland(page: Page) {
-  // the island shows once the player has restored the saved session
   await page.locator('button[aria-label="Open lyrics"], button[aria-label="Открыть текст песни"]').first().waitFor({ timeout: 15_000 });
   return page.evaluate(() => {
     const box = (element: Element): Box => {
@@ -203,7 +193,6 @@ async function checkIsland(live: NuvoSession, where: string): Promise<void> {
     expect(m.play.width, `${at}: play width`).toBeCloseTo(ISLAND.play, 0);
     expect(m.play.height, `${at}: play height`).toBeCloseTo(ISLAND.play, 0);
     expect(m.background, `${at}: never black`).not.toBe("rgb(0, 0, 0)");
-    // glass only while a cover lights the page; the plain page colour otherwise
     if (m.lit) expect(m.backdrop, `${at}: frosted glass`).toContain("blur");
     expect(m.accentUses, `${at}: no accent inside the island`).toEqual([]);
     expect(m.like.right, `${at}: like ends before the middle`).toBeLessThan(m.centre.x);
@@ -211,10 +200,6 @@ async function checkIsland(live: NuvoSession, where: string): Promise<void> {
   }
 }
 
-/**
- * Answers the link block's requests inside the page, so no YouTube, SoundCloud or yt-dlp traffic leaves
- * the machine: InnerTube `next` for the YouTube link, the daemon's SoundCloud lookup and inspect.
- */
 async function installLinkFixtures(page: Page): Promise<void> {
   const next = nextResponse(
     queueRow({
@@ -247,7 +232,6 @@ async function installLinkFixtures(page: Page): Promise<void> {
   );
 }
 
-/** A paste over whatever the focused search field holds: the paste event the screen reads, then the text it inserts. */
 async function pasteLink(page: Page, link: string): Promise<void> {
   await page.keyboard.press("Control+A");
   await page.evaluate((text) => {
@@ -288,17 +272,14 @@ describe("shell", () => {
 
     await live.go("#/");
     await checkGeometry(live, "home");
-    // one rail and no logo anywhere in the chrome
     expect(await page.locator("aside nav").count()).toBe(1);
     expect(await page.locator('header img[alt="Nuvo"]').count()).toBe(0);
 
-    // the nav marks the active page and moves with in-app navigation
     await page.locator('aside nav a[aria-label="Library"]').click();
     await page.waitForTimeout(800);
     expect(await page.evaluate(() => location.hash)).toBe("#/library");
     expect(await page.locator('aside nav a[aria-current="page"]').getAttribute("aria-label")).toBe("Library");
 
-    // the Back chip shows on entity pages only
     expect(await page.getByRole("button", { name: "Back" }).count()).toBe(0);
     await live.go(`#/library/playlist?id=${live.seed!.bigPlaylistId}`);
     expect(await page.getByRole("button", { name: "Back" }).count()).toBe(1);
@@ -314,7 +295,6 @@ describe("shell", () => {
       await page.waitForFunction(() => location.hash.startsWith("#/search"), undefined, { timeout: 5_000 });
       await page.getByPlaceholder("Songs, albums, artists").waitFor({ timeout: 5_000 });
     };
-    // the rail's Search arrives through the page transition, like every other rail item
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await live.go("#/");
     await page.evaluate(() => {
@@ -331,7 +311,6 @@ describe("shell", () => {
     expect(await page.evaluate(() => (window as unknown as { pageTransitions: number }).pageTransitions)).toBe(1);
     expect(await fieldFocused()).toBe(true);
 
-    // a query in flight draws rows of the results' shape until the answer comes
     await page.route(/youtubei\/v1\/search/, () => undefined);
     await page.getByPlaceholder("Songs, albums, artists").fill("radiohead");
     await page.locator("[data-placeholder=row]").waitFor({ timeout: 5_000 });
@@ -339,7 +318,6 @@ describe("shell", () => {
     await page.unroute(/youtubei\/v1\/search/);
     await page.getByPlaceholder("Songs, albums, artists").fill("");
 
-    // the shortcut ("/") from another page lands on the same page with the field focused
     await live.go("#/library");
     await page.waitForTimeout(500);
     await page.keyboard.press("/");
@@ -347,7 +325,6 @@ describe("shell", () => {
     await page.waitForTimeout(500);
     expect(await fieldFocused()).toBe(true);
 
-    // a query shows the tabs; the Russian labels are the widest, so look at them at 1100
     await page.getByPlaceholder("Songs, albums, artists").fill("a");
     await live.shoot(STEP, "search", "page", {
       looks: [
@@ -357,7 +334,6 @@ describe("shell", () => {
       prepare: fromRail,
     });
 
-    // Russian at 1100: the tab strip must fit its row
     await page.evaluate(() => localStorage.setItem("nuvo_locale", "ru"));
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
@@ -379,7 +355,6 @@ describe("shell", () => {
   it("opens a pasted link as one block in place of the tabs and groups", async () => {
     const live = session ?? (session = await launchNuvo({ profile: "seeded" }));
     const page = live.page;
-    // images and anything else the fetch fixtures cannot see stop here too (thumbnails, stream hosts)
     await page.route(/^https?:\/\/([a-z0-9-]+\.)*(youtube|ytimg|googlevideo|soundcloud|sndcdn)\.com\//, (route) => route.fulfill({ status: 404 }));
     const shots: string[] = [];
     for (const locale of ["en", "ru"] as const) {
@@ -423,7 +398,6 @@ describe("shell", () => {
       }
     }
 
-    // Escape closes the block, empties the field and brings back the recent searches without the link
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
     expect(await page.locator("section[aria-busy]").count()).toBe(0);
@@ -442,7 +416,6 @@ describe("shell", () => {
     await setCurrentTrack(live, 0);
     const files = await live.shoot(STEP, "home", "island");
     expect(files).toHaveLength(12);
-    // the shoot ends in a light look; geometry holds and the bar stays glass there
     await live.setLook({ preset: "nuvo", mode: "light" });
     await checkIsland(live, "island");
   }, 900_000);
@@ -475,7 +448,6 @@ describe("shell", () => {
         await shootSoundTab(live, "speed", NUVO_LOOKS, SIZES[0], open);
         await shootSoundTab(live, "sleep", NUVO_LOOKS, SIZES[0], open);
         expect(await sleepChipRows(page), "sleep: the five lengths keep one row").toBe(1);
-        // every equalizer preset shows its whole name at the minimum width
         await live.setSize(SIZES[1]);
         await open();
         await page.locator('[role="dialog"] [role="tab"]').first().click();
@@ -490,7 +462,6 @@ describe("shell", () => {
       await page.waitForTimeout(300);
     }
 
-    // a press on the bar itself seeks: the played part fills from the left
     await live.setSize(SIZES[0]);
     const bar = await page.locator("[data-island]").boundingBox();
     await page.mouse.click(bar!.x + bar!.width * 0.75, bar!.y + 6);
@@ -502,7 +473,6 @@ describe("shell", () => {
     expect(played, "seek on the bar").toBeGreaterThan(60);
     await page.mouse.move(10, 300);
 
-    // the queue opens above the bar, which keeps its place
     const queue = page.locator('button[aria-label="Queue"]');
     const openQueue = async () => {
       if ((await queue.getAttribute("aria-pressed")) !== "true") await queue.click();
@@ -522,7 +492,6 @@ describe("shell", () => {
     await setCurrentTrack(live, 0, "radio:seed-0001");
     const line = page.locator("[data-state-line]");
     await live.shoot(STEP, "island-state", "radio", { looks: NUVO_LOOKS, sizes: [SIZES[0]], prepare: () => line.waitFor({ timeout: 10_000 }) });
-    // the station names its seed; without the network the more urgent "Offline" takes the line
     expect(await line.textContent()).toMatch(/^(Radio · from .+|Offline)$/);
     const fit = await page.evaluate(() => {
       const title = document.querySelector("[data-island-title]")!;
@@ -542,7 +511,6 @@ describe("shell", () => {
   it("opens the command palette on Ctrl+K: suggestions, a match, nothing, a settings entry and full screen", async () => {
     const live = session ?? (session = await launchNuvo({ profile: "seeded" }));
     const page = live.page;
-    // the open panel only: a closing one stays in the page until its exit ends, and typing into it goes nowhere
     const palette = page.locator('[role="dialog"][data-state="in"]:has(input)');
     const openWith = (query: string) => async () => {
       if ((await palette.count()) === 0) await page.keyboard.press("Control+KeyK");
@@ -558,7 +526,6 @@ describe("shell", () => {
     await live.shoot(STEP, "palette", "zzz", { ...at1200, prepare: openWith("zzz") });
     await live.setLook({ preset: "nuvo", mode: "light" });
 
-    // the empty palette: five suggestions, the panel 560 wide at 96 px, nothing outside the window
     await openWith("")();
     const box = await palette.boundingBox();
     expect(box!.y, "palette: 96 px from the top").toBeCloseTo(96, 0);
@@ -572,14 +539,12 @@ describe("shell", () => {
     expect(await palette.count(), "palette: Escape closes").toBe(0);
     expect(await page.evaluate(() => location.hash), "palette: Escape stays on the page").toBe("#/library");
 
-    // a settings entry opens the settings on its tab
     await openWith("cover glow")();
     await page.keyboard.press("Enter");
     await page.getByText("Cover glow", { exact: true }).first().waitFor({ timeout: 5_000 });
     await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
 
-    // full screen from the palette, then back
     const fullScreen = () =>
       live.app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows()
@@ -597,11 +562,9 @@ describe("shell", () => {
     await page.keyboard.press("Enter");
     await expect.poll(fullScreen, { message: "palette: full screen off", timeout: 10_000 }).toBe(false);
 
-    // Russian at 1200: the longest titles fit their rows
     await page.evaluate(() => localStorage.setItem("nuvo_locale", "ru"));
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
-    // Ctrl+K is heard once the app has mounted
     await page.getByRole("navigation").first().waitFor({ timeout: 30_000 });
     const ru = { looks: [{ preset: "nuvo", mode: "light" } as Look], sizes: [SIZES[0]] };
     await live.shoot(STEP, "palette", "ru-empty", { ...ru, prepare: openWith("") });
@@ -619,7 +582,6 @@ describe("shell", () => {
   }, 600_000);
 
   it("fits the Russian navigation at the minimum size", async () => {
-    // the first-run step only knows the English button, so the seeded session switches locale after it
     const live = session!;
     await live.page.evaluate(() => localStorage.setItem("nuvo_locale", "ru"));
     await live.page.reload();
@@ -629,7 +591,6 @@ describe("shell", () => {
     await checkGeometry(live, "ru home");
     expect(await live.page.locator("aside nav a").first().getAttribute("aria-label")).toBe("Главная");
 
-    // the Russian sleep tab: the five lengths still fit one row
     const sound = live.page.locator("[data-island] button[aria-haspopup]").first();
     const openSound = async () => {
       if ((await live.page.locator('[role="dialog"]').count()) === 0) await sound.click();
@@ -647,7 +608,6 @@ describe("shell", () => {
     await live.page.keyboard.press("Escape");
     await live.page.waitForTimeout(300);
 
-    // the 60-character Russian title ellipsizes and stops short of the transport
     await setCurrentTrack(live, 2);
     await live.shoot(STEP, "home", "ru-long", { looks: [{ preset: "nuvo", mode: "light" }], sizes: [SIZES[1]] });
     const m = await measureIsland(live.page);

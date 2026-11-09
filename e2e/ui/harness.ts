@@ -32,7 +32,6 @@ export interface ShootOptions {
   looks?: Look[];
   sizes?: Size[];
   motion?: boolean;
-  /** Runs after every look change (a reload drops open popups and drawers). */
   prepare?: () => Promise<void>;
 }
 
@@ -44,12 +43,10 @@ export interface NuvoSession {
   setSize(size: Size): Promise<void>;
   shoot(step: string, screen: string, state: string, options?: ShootOptions): Promise<string[]>;
   core(script: string): Promise<unknown>;
-  /** Set for the seeded profile. */
   seed?: SeedReport;
   close(): Promise<void>;
 }
 
-/** The recorders rewrite tracked files (references, measured look data): only with NUVO_E2E_RECORD=1. */
 export const RECORDING = process.env.NUVO_E2E_RECORD === "1";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
@@ -62,7 +59,6 @@ export function clearKeyring(): void {
   clearTestKeyring(KEYRING_SERVICE);
 }
 
-/** Confirms the recovery phrase, then skips the tour: Skip the tour on the start step, Got it once the short version's wait is over. */
 export async function passFirstRun(page: Page): Promise<void> {
   await page.locator("[data-testid=recovery-word]").first().waitFor({ timeout: 30_000 });
   if ((await page.locator("[data-testid=recovery-word]").count()) !== 24) {
@@ -72,16 +68,10 @@ export async function passFirstRun(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Skip the tour", exact: true }).click({ timeout: 30_000 });
   await page.locator('[data-tour-layer] [data-next]:not([aria-disabled="true"])').click({ timeout: 30_000 });
   await page.locator("[data-tour-layer]").waitFor({ state: "detached", timeout: 10_000 });
-  // every Home state draws the navigation rail, so wait for it
   await page.getByRole("navigation").first().waitFor({ timeout: 30_000 });
 }
 
-export async function launchNuvo(options: {
-  profile: "fresh" | "seeded";
-  locale?: "en" | "ru";
-  /** Extra Chromium switches, e.g. --enable-precise-memory-info. */
-  args?: string[];
-}): Promise<NuvoSession> {
+export async function launchNuvo(options: { profile: "fresh" | "seeded"; locale?: "en" | "ru"; args?: string[] }): Promise<NuvoSession> {
   // a fresh profile only shows the phrase step when the keyring holds no key
   if (openSessions === 0) clearKeyring();
   openSessions += 1;
@@ -102,7 +92,6 @@ export async function launchNuvo(options: {
   delete env.VITE_DEV_SERVER_URL;
 
   const app = await electron.launch({
-    // test runs never play through the speakers
     args: [ROOT, "--mute-audio", `--user-data-dir=${path.join(work, "user-data")}`, ...(options.args ?? [])],
     cwd: ROOT,
     env,
@@ -151,14 +140,12 @@ export async function launchNuvo(options: {
         look,
         { timeout: 30_000 },
       );
-      // the theme lands before the app renders; the root fills once the player has started
       await main.waitForFunction(() => (document.getElementById("root")?.childElementCount ?? 0) > 0, undefined, { timeout: 30_000 });
       currentLook = look;
     },
 
     async setSize(size) {
       await app.evaluate(({ BrowserWindow }, value) => {
-        // the app page, not the notch nor the YouTube worker window playback opens on youtube.com
         const win = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().startsWith("file:") && !w.webContents.getURL().includes("#/notch"));
         if (!win) throw new Error("no main window");
         if (win.isMaximized()) win.unmaximize();
@@ -206,9 +193,7 @@ export async function launchNuvo(options: {
       if (pid) {
         try {
           process.kill(pid, "SIGKILL");
-        } catch {
-          // already gone
-        }
+        } catch {}
       }
       fs.rmSync(work, { recursive: true, force: true });
       fs.rmSync(socketDir, { recursive: true, force: true });

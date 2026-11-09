@@ -53,7 +53,6 @@ fn liked_pages_walk_every_track_once_newest_first() {
     let (_dir, conn) = common::open();
     for i in 0..5 {
         let id = format!("sc:{i}");
-        // Two tracks share a timestamp to exercise the id tie-breaker in the cursor.
         library::like(&conn, &id, Some(common::track(&id, "A")), 1000 + (i / 2) as i64).unwrap();
     }
     let mut seen = Vec::new();

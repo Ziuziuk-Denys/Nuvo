@@ -14,7 +14,6 @@ describe("migrateLegacyBindings", () => {
   });
 
   it("stores Cyrillic letters as their key position (test 41)", () => {
-    // the example "Alt+Shift+д" equals the like default once canonical, so a non-default value shows the rule
     expect(migrateLegacyBindings(legacy({ mainApp: { playPause: "Control+д" } }))?.app).toEqual({ "player.toggle": "Control+L" });
   });
 
@@ -26,7 +25,6 @@ describe("migrateLegacyBindings", () => {
     const raw = legacy({ global: { quickLikeSong: "Control+K" }, mainApp: { search: "Alt+Shift+L" } });
     const migrated = migrateLegacyBindings(raw, { ...DEFAULT_BINDINGS, "app.palette": { app: "Control+K", global: null } });
     expect(migrated?.global).toEqual({ "library.like-toggle": "Control+K" });
-    // app.palette's default Control+K is cleared; nav.search keeps Alt+Shift+L, which the moved global binding no longer holds
     expect(migrated?.app).toEqual({ "app.palette": null, "nav.search": "Alt+Shift+L" });
   });
 

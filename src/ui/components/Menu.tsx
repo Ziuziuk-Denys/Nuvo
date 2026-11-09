@@ -13,9 +13,7 @@ export interface MenuProps {
   anchor: HTMLElement | null;
   onClose: () => void;
   items: MenuItem[];
-  /** A pointer position to open at instead of the anchor (right-click menus). */
   at?: { x: number; y: number };
-  /** Extra panel class, for a surface whose look differs from the app theme (the karaoke view is always dark). */
   className?: string;
 }
 
@@ -24,13 +22,10 @@ const GAP_PX = 4;
 interface Place {
   left: number;
   top: number;
-  /** Opened to the left of the anchor or the pointer. */
   flipX: boolean;
-  /** Opened above it. */
   flipY: boolean;
 }
 
-/** Below-right of the anchor (or the pointer), flipped on either axis to stay inside the window. */
 function placeMenu(anchor: HTMLElement | null, at: MenuProps["at"], width: number, height: number): Place {
   const viewWidth = window.innerWidth;
   const viewHeight = window.innerHeight;
@@ -47,7 +42,6 @@ function placeMenu(anchor: HTMLElement | null, at: MenuProps["at"], width: numbe
   };
 }
 
-/** A list of actions, each with an optional leading glyph: arrows move, Enter selects, a letter jumps to the next item starting with it. */
 export function Menu({ open, anchor, onClose, items, at, className }: MenuProps): JSX.Element | null {
   const phase = usePresence(open);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -87,7 +81,6 @@ export function Menu({ open, anchor, onClose, items, at, className }: MenuProps)
     else if (event.key === "Tab") onClose();
     else if (event.key.length === 1 && event.key !== " " && !event.ctrlKey && !event.metaKey && !event.altKey) {
       const letter = event.key.toLocaleLowerCase();
-      // the next match after the current item, wrapping around
       const order = buttons.map((_, step) => buttons[(current + 1 + step) % buttons.length]);
       order.find((node) => node.textContent?.toLocaleLowerCase().startsWith(letter))?.focus();
     } else return;
@@ -136,7 +129,6 @@ export function Menu({ open, anchor, onClose, items, at, className }: MenuProps)
   );
 }
 
-/** A right-click menu at the pointer: call open from onContextMenu and render element. */
 export function useContextMenu(): {
   open: (event: { clientX: number; clientY: number; preventDefault(): void }, items: MenuItem[]) => void;
   element: JSX.Element | null;

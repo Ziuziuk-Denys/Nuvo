@@ -9,7 +9,6 @@ import { DonateLink } from "./DonateLink";
 import { HelpLinks } from "./HelpSheets";
 import { AutoUpdateRow, UpdateNotice } from "./UpdateRows";
 
-/** The app card: logo and name, the version pill and the client line over a faint diagonal band, then the update switch. */
 export function AboutSection(): JSX.Element | null {
   const { t } = useTranslation();
   const version = useAppVersion();

@@ -30,7 +30,6 @@ describe("request headers", () => {
   });
 
   it("the worker partition gets the same rewrite", () => {
-    // main installs the same function on both sessions; the rule itself has no session input
     expect(rewriteRequestHeaders("https://www.youtube.com/robots.txt", { "x-nuvo-ua": "Cobalt" })["User-Agent"]).toBe("Cobalt");
   });
 });

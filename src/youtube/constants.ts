@@ -1,8 +1,4 @@
-/**
- * Every YouTube constant the module sends, in one place.
- * Values marked "current" change over time. Source: YouTube's own web and TV clients as documented by
- * youtubei.js, ytmusicapi and bgutils-js. Last checked 2026-10-27.
- */
+// Values marked current change over time; sources: youtubei.js, ytmusicapi and bgutils-js
 
 export const MUSIC_ORIGIN = "https://music.youtube.com";
 export const WWW_ORIGIN = "https://www.youtube.com";
@@ -12,13 +8,11 @@ export const UA_HEADER = "x-nuvo-ua";
 
 export interface ClientContext {
   clientName: string;
-  /** Numeric id for `x-youtube-client-name`. */
   headerId: number;
   /** current */
   clientVersion: string;
   origin: string;
   userAgent?: string;
-  /** Extra fields merged into `context.client`. */
   extra?: Record<string, string | number>;
 }
 

@@ -1,10 +1,5 @@
-/**
- * YouTube and YouTube Music links through the YouTube client's
- * `importUrl`. Every item names a video, so every row is Exact.
- */
 import { ImportError, type CatalogTrack, type ImportRow, type Listing } from "./types";
 
-/** The part of the YouTube client's `ImportedList` this lister reads. */
 export interface YoutubeImportedList {
   title: string;
   tracks: {

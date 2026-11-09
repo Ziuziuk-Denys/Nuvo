@@ -44,7 +44,6 @@ const MODES: { id: ThemeMode; label: string }[] = [
   { id: "system", label: "System" },
 ];
 
-/** The hidden #/specimen route: every Nuvo foundation on the live field, in the active look. */
 export function Specimen(): JSX.Element {
   return (
     <div
@@ -77,7 +76,6 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-/** A caption in the left rail and the samples beside it. */
 function Group({ label, children, inset }: { label: string; children: ReactNode; inset?: "chip" }) {
   return (
     <div className={styles.group}>
@@ -442,7 +440,6 @@ type IslandPopover = "sound" | "volume";
 
 function OverlaysSection() {
   const [open, setOpen] = useState(false);
-  // kept through the exit, so the content does not switch while it fades out
   const [shown, setShown] = useState<IslandPopover>("sound");
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [tab, setTab] = useState<SoundTab>("eq");
@@ -459,7 +456,6 @@ function OverlaysSection() {
   const [menuOpen, setMenuOpen] = useState(false);
   const context = useContextMenu();
 
-  // the caller's toggle: the same button closes, the other one moves the open popover over to it
   const toggle = (next: IslandPopover, target: HTMLElement) => {
     if (open && shown === next) {
       setOpen(false);
@@ -483,7 +479,6 @@ function OverlaysSection() {
     <Section id="overlays" title="Overlays">
       <div className={styles.stackWide}>
         <Group label="Popover">
-          {/* presses on these anchors never count as outside: they toggle or move the popover */}
           <div className={styles.line} {...{ [LAYER_ATTRIBUTE]: "" }}>
             <Button aria-expanded={open && shown === "sound"} onClick={(event) => toggle("sound", event.currentTarget)}>
               Sound

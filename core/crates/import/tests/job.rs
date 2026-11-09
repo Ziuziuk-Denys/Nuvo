@@ -33,7 +33,6 @@ fn playlist_tracks(conn: &Connection, id: &str) -> Vec<String> {
     playlists::get(conn, id).unwrap().items.into_iter().map(|i| i.track["id"].as_str().unwrap().to_string()).collect()
 }
 
-/// Answers one row's searches in order until it is decided (`None` = the search failed).
 fn answer(conn: &Connection, id: &str, row_id: i64, answers: &[Option<Vec<Value>>]) -> ImportRow {
     for step in 0..6 {
         let given = answers.get(step).cloned().unwrap_or(Some(vec![]));

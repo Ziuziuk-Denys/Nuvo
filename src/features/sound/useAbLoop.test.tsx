@@ -11,7 +11,6 @@ function Probe() {
   return null;
 }
 
-// A media clock that advances with the fake timers at the store's playback rate
 const clock = { base: 0, at: 0 };
 const mediaMs = () => clock.base + (Date.now() - clock.at) * usePlayerStore.getState().playbackRate;
 const placeAt = (ms: number) => {
@@ -37,7 +36,6 @@ describe("A-B loop", () => {
     usePlayerStore.setState({ currentTrack: { id: "t1" } as never, positionMs: 0, status: "playing", playbackRate: 1 });
     useAbLoopStore.getState().clear();
     vi.spyOn(soundActions, "livePositionMs").mockImplementation(mediaMs);
-    // Same order as the real seek: the store moves first, then the element
     seek = vi.spyOn(soundActions, "seekMasked").mockImplementation((target: number) => {
       seekPositions.push(mediaMs());
       usePlayerStore.setState({ positionMs: target });
@@ -71,7 +69,6 @@ describe("A-B loop", () => {
     expect(seek).toHaveBeenCalledWith(10_000);
     expect(Math.abs(seekPositions[0] - 20_000)).toBeLessThanOrEqual(30);
 
-    // the store update from the seek itself must not trigger a second jump; the next lap does
     act(() => vi.advanceTimersByTime(9_900));
     expect(seek).toHaveBeenCalledTimes(1);
     act(() => vi.advanceTimersByTime(200));

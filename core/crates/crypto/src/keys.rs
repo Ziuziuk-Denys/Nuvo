@@ -10,7 +10,7 @@ pub fn random_bytes<const N: usize>() -> [u8; N] {
     out
 }
 
-/// Subkey for one purpose. `info` strings carry a version so a new scheme can coexist with old data.
+// `info` strings carry a version so a new scheme can coexist with old data
 pub fn derive_key(master: &MasterKey, info: &str) -> [u8; 32] {
     let mut out = [0u8; 32];
     Hkdf::<Sha256>::new(None, master)

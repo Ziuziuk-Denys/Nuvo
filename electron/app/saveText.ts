@@ -1,4 +1,3 @@
-/** The renderer's "save this text as a file" request (import report CSV, recovery phrase): checked before any dialog opens. */
 import { default as fs } from "node:fs";
 import { default as path } from "node:path";
 
@@ -11,7 +10,6 @@ export interface SaveText {
   text: string;
 }
 
-/** The dialog's filter for a checked name: the import report is a table, the recovery phrase plain text. */
 export function saveFilter(name: string): { name: string; extensions: string[] } {
   return name.toLowerCase().endsWith(".txt") ? { name: "Text", extensions: ["txt"] } : { name: "CSV", extensions: ["csv"] };
 }

@@ -11,7 +11,6 @@ export interface MixCardProps {
   number: number;
   title: string;
   subtitle: string;
-  /** The lead mix: a larger cover and a heading-sized name. */
   lead?: boolean;
   onOpen(): void;
   onPlay(): void;
@@ -20,7 +19,6 @@ export interface MixCardProps {
 const LEAD_SIZE = 240;
 const DAILY_SIZE = 175;
 
-/** A mix as a square cover (a 2 x 2 collage when it has four covers) with the Nuvo mark, "MIX" and its number. */
 export function MixCard({ mix, number, title, subtitle, lead = false, onOpen, onPlay }: MixCardProps): JSX.Element {
   const size = lead ? LEAD_SIZE : DAILY_SIZE;
   const covers = mosaicCovers(mix.tracks);

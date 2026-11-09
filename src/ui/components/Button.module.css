@@ -1,4 +1,3 @@
-/* The button language: 32 px, 9 px corners, 14 px text; colour changes on hover, a small press. */
 .button {
   display: inline-flex;
   align-items: center;

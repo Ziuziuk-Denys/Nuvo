@@ -32,7 +32,6 @@ afterEach(() => {
   dirs = [];
 });
 
-/** A fake Discord client socket server. */
 async function fakeDiscord(dir: string, name = "discord-ipc-0") {
   const socketPath = path.join(dir, name);
   const frames: Array<{ op: number; payload: Record<string, unknown> }> = [];

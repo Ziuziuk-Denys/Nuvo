@@ -1,5 +1,3 @@
-/** Public types of the YouTube module. */
-
 export type YtCode =
   | "bad-id"
   | "bad-url"
@@ -160,7 +158,6 @@ export interface PlaylistPage {
   cover?: Cover;
   trackCount?: number;
   tracks: YtTrack[];
-  /** Loads the remaining pages. Absent when the first page was the last. */
   more?: (signal: AbortSignal) => Promise<YtTrack[]>;
 }
 

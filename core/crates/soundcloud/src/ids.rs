@@ -1,5 +1,3 @@
-//! Persisted SoundCloud id formats: `sc:<n>` tracks, `sc_user_<n>` users, `sc_playlist_<n>` sets.
-
 fn digits(text: &str) -> Option<u64> {
     if text.is_empty() || !text.bytes().all(|b| b.is_ascii_digit()) {
         return None;
@@ -7,13 +5,11 @@ fn digits(text: &str) -> Option<u64> {
     text.parse().ok()
 }
 
-/// Strips `prefix` in any letter case.
 fn strip<'a>(text: &'a str, prefix: &str) -> Option<&'a str> {
     let head = text.get(..prefix.len())?;
     head.eq_ignore_ascii_case(prefix).then(|| &text[prefix.len()..])
 }
 
-/// Accepts `sc:<n>`, `soundcloud:<n>`, `soundcloud:track:<n>`, `soundcloud:tracks:<n>` and bare digits.
 pub fn track_num(id: &str) -> Option<u64> {
     let id = id.trim();
     ["sc:", "soundcloud:tracks:", "soundcloud:track:", "soundcloud:"]

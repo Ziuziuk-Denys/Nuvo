@@ -6,15 +6,12 @@ use serde::de::DeserializeOwned;
 
 use crate::error::ApiError;
 
-/// Required JSON body. Parsed from raw bytes so a missing Content-Type is not an error,
-/// and failures use the daemon's error shape instead of axum's plain-text rejection.
+// Parsed from raw bytes so a missing Content-Type is not an error and failures keep the daemon's shape
 pub struct JsonBody<T>(pub T);
 
-/// Optional JSON body: an empty body yields `T::default()`. The renderer sends some
-/// PUTs without a body (for example liking a track it has no snapshot for).
+// The renderer sends some PUTs without a body, for example liking a track it has no snapshot for
 pub struct OptionalJson<T>(pub T);
 
-/// A body over the length limit keeps its 413, in the daemon's JSON error shape.
 pub fn body_error(err: BytesRejection) -> ApiError {
     if err.status() == StatusCode::PAYLOAD_TOO_LARGE {
         ApiError::TooLarge

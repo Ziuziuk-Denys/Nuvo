@@ -19,7 +19,6 @@ import { EntityTracks, entityPlayback, useUnavailable } from "./EntityTracks";
 const TOP = 5;
 const NO_TRACKS: Track[] = [];
 
-/** /artist?id=: one page per artist, so "Show all" folds back when the id changes. */
 export function Artist(): JSX.Element {
   const [params] = useSearchParams();
   const id = params.get("id") ?? "";
@@ -30,14 +29,12 @@ function byArtist(track: Track, id: string): boolean {
   return track.artistId === id || (track.artistList ?? []).some((artist) => artist.id === id);
 }
 
-/** "61.5M monthly audience", from the catalog's own phrase, else the number of songs. */
 function audience(monthly: string | undefined, count: number, t: TFunction): string | undefined {
   const listeners = monthly?.match(/^[\d.,]+\s?[KMBkmb]?/)?.[0];
   if (listeners) return t("artist.monthly_audience", { count: listeners.trim() });
   return count > 0 ? t("ui.home.songs", { count }) : undefined;
 }
 
-/** A shelf of releases: 180 px covers in one row that scrolls sideways. */
 function Shelf({ title, items, onOpen }: { title: string; items: ArtistAlbumViewModel[]; onOpen: (id: string) => void }): JSX.Element {
   return (
     <section className={styles.section}>
@@ -63,7 +60,6 @@ function ArtistPage({ id }: { id: string }): JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data, loading } = useArtist(id || null);
-  // a song by this artist the player already holds: the radio's seed when the catalog is out of reach
   const localSeed = usePlayerStore((state) => state.queue.find((track) => byArtist(track, id)));
   const [all, setAll] = useState(false);
 
@@ -133,7 +129,6 @@ function ArtistPage({ id }: { id: string }): JSX.Element {
         />
       );
     }
-    // nothing local to list and no catalog: the name and one way to start listening
     const radio = (
       <button type="button" className={`${look.pill} ${look.solid} ${look.wide}`} data-primary="" onClick={() => void startArtistRadio(id, localSeed)}>
         {t("ui.entity.radio_from", { artist: name })}

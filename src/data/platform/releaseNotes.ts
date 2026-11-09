@@ -1,7 +1,5 @@
-/** What's new: the CHANGELOG.md section of a version, bundled with the build, and whether it should open on its own. */
 import changelog from "../../../CHANGELOG.md?raw";
 
-/** The lines under "## <version>" up to the next section, without blank edges; empty when the version has none. */
 export function notesFor(version: string, text: string = changelog): string[] {
   const lines = text.split(/\r?\n/);
   const start = lines.findIndex((line) => line.trim() === `## ${version}`);
@@ -15,10 +13,6 @@ export function notesFor(version: string, text: string = changelog): string[] {
 
 const SEEN_KEY = "nuvo.whatsNewSeen";
 
-/**
- * True once after an update to a version with notes. A first start only remembers the version, so a new
- * install never opens with release notes.
- */
 export function takeWhatsNew(version: string, hasNotes: boolean): boolean {
   try {
     const seen = localStorage.getItem(SEEN_KEY);

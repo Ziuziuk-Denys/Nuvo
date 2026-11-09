@@ -53,7 +53,6 @@ async fn stored_keys(disk: &Disk) -> Vec<String> {
     disk.db.call(index::by_last_served).await.unwrap().into_iter().map(|e| e.key).collect()
 }
 
-/// Refused before any request.
 #[test]
 fn bad_sources_are_refused_up_front() {
     assert_eq!(prepare(Some("https://evil.example/a.jpg"), None, None).unwrap_err(), CoverError::Forbidden("evil.example".into()));
@@ -203,7 +202,6 @@ async fn clearing_forgets_every_cover() {
     assert_eq!(fx.total(), 2);
 }
 
-/// Bad CDN answers and the body cap.
 #[tokio::test]
 async fn bad_cdn_answers_are_upstream_errors_and_never_cached() {
     let fx = Fixture::start().await;
@@ -250,7 +248,6 @@ async fn a_lone_cancelled_request_stores_nothing_but_a_shared_one_completes() {
     assert_eq!(stored_keys(&disk).await.len(), 1);
 }
 
-/// Review focus 4: tokenless artwork is downscaled locally instead.
 #[tokio::test]
 async fn tokenless_artwork_is_downscaled_locally() {
     let fx = Fixture::start().await;
@@ -274,7 +271,7 @@ async fn without_a_disk_covers_live_in_memory() {
     assert_eq!(fx.total(), 1);
 }
 
-/// Talks to the real YouTube thumbnail CDN. `cargo test -p nuvo-covers --test service -- --ignored`
+// Hits the real YouTube CDN: cargo test -p nuvo-covers --test service -- --ignored
 #[tokio::test]
 #[ignore = "network: real cover CDN"]
 async fn live_youtube_thumbnail_becomes_a_square() {

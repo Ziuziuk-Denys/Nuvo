@@ -1,5 +1,3 @@
-//! Deciding whether a catalog track is the same recording as a track known only by metadata.
-
 pub mod cascade;
 pub mod decide;
 pub mod liked;

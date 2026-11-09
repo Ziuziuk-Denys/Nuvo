@@ -11,16 +11,13 @@ use crate::{StoreError, now_ms, schema::MIGRATIONS};
 pub const DB_KEY_INFO: &str = "nuvo/db/v1";
 const KEEP_BACKUPS: usize = 3;
 
-/// Opens (or creates) the SQLCipher database and applies pending migrations.
-/// A wrong key returns `WrongKey` and never touches the file.
 pub fn open_connection(path: &Path, db_key: &[u8; 32], backups_dir: &Path) -> Result<Connection, StoreError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
     let existed = path.exists();
     let mut conn = Connection::open(path)?;
-    // Raw-key syntax skips PBKDF2. Do not use pragma_update here: its quoting turns the
-    // key into a passphrase and reopening the file fails.
+    // Raw-key syntax skips PBKDF2; pragma_update quoting would turn the key into a passphrase
     conn.execute_batch(&format!("PRAGMA key = \"x'{}'\";", to_hex(db_key)))?;
     if let Err(err) = conn.query_row("SELECT count(*) FROM sqlite_master", [], |row| row.get::<_, i64>(0)) {
         return Err(match err.sqlite_error_code() {
@@ -37,14 +34,12 @@ pub fn open_connection(path: &Path, db_key: &[u8; 32], backups_dir: &Path) -> Re
     add_served_learned(&conn)?;
     add_local_keys(&conn)?;
     add_folder_art(&conn)?;
-    // Off while migrating: migration 19 rebuilds `tracks`, which child rows point at, and the
-    // pragma cannot change inside a migration's transaction.
+    // Off while migrating: migration 19 rebuilds tracks and the pragma cannot change in a transaction
     conn.execute_batch("PRAGMA foreign_keys = ON;")?;
     Ok(conn)
 }
 
-/// Migration 8 gained `served.learned` after some builds had already applied it; such a
-/// database is at version 8 without the column.
+// Some builds applied migration 8 before it gained served.learned, so the column may be missing
 fn add_served_learned(conn: &Connection) -> Result<(), StoreError> {
     let (has_served, has_learned): (bool, bool) = conn.query_row(
         "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'served'),
@@ -58,9 +53,6 @@ fn add_served_learned(conn: &Connection) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// `local_files` keeps the order the Library lists files in (artist, album, disc, track, title) and the
-/// text its filter searches (title, artist, album), so a listing never folds 20 000 rows again.
-/// Added after migration 20, with the existing rows filled in.
 fn add_local_keys(conn: &Connection) -> Result<(), StoreError> {
     let has: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('local_files') WHERE name = 'sort_key')", [], |row| row.get(0))?;
     if has {
@@ -80,8 +72,6 @@ fn add_local_keys(conn: &Connection) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Whether a file's folder held a cover image when it was read. NULL on rows from before this
-/// column: the next scan reads them again, which drops the cover from files that have none.
 fn add_folder_art(conn: &Connection) -> Result<(), StoreError> {
     let has: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('local_files') WHERE name = 'folder_art')", [], |row| row.get(0))?;
     if !has {
@@ -131,8 +121,6 @@ pub fn backup_database(conn: &Connection, path: &Path, backups_dir: &Path, versi
     Ok(())
 }
 
-/// One connection behind a mutex: a single-user daemon never needs concurrent writers,
-/// and SQLite serialises them anyway.
 #[derive(Clone)]
 pub struct Db {
     conn: Arc<Mutex<Connection>>,
@@ -155,8 +143,7 @@ impl Db {
     {
         let conn = self.conn.clone();
         tokio::task::spawn_blocking(move || {
-            // A panic inside an earlier call poisons the mutex; the connection itself is still
-            // usable (SQLite rolls back an unfinished statement), so one bad call cannot lock the library.
+            // A poisoned mutex still holds a usable connection: SQLite rolls back an unfinished statement
             let guard = conn.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             f(&guard)
         })

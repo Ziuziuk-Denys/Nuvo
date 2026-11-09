@@ -1,6 +1,4 @@
-//! Keeps a private yt-dlp current from its official GitHub release. The binary is checked against
-//! the release's own SHA2-256SUMS and has to run before it replaces the old one, so a failed
-//! update leaves the last good build in place. Goes through the owner's proxy like every client.
+// The binary must match the release SHA2-256SUMS and run before it replaces the old one
 
 use std::path::Path;
 
@@ -40,7 +38,6 @@ pub enum Outcome {
     Installed,
 }
 
-/// The release asset that runs on `os` and `arch`, as `std::env::consts` names them.
 pub fn asset_for(os: &str, arch: &str) -> Option<&'static str> {
     match (os, arch) {
         ("linux", "x86_64") => Some("yt-dlp_linux"),
@@ -97,7 +94,6 @@ async fn read_sums(client: &Client, base: &str) -> Result<String, UpdateError> {
     Ok(String::from_utf8_lossy(&body).into_owned())
 }
 
-/// Streams `url` into `file`, reporting received and total bytes; returns the hash of what arrived.
 async fn download(client: &Client, url: String, file: &Path, progress: &(dyn Fn(u64, Option<u64>) + Send + Sync)) -> Result<String, UpdateError> {
     let mut response = get(client, url).await?;
     let total = response.content_length();
@@ -118,8 +114,7 @@ async fn download(client: &Client, url: String, file: &Path, progress: &(dyn Fn(
     Ok(hex(&hasher.finalize()))
 }
 
-/// Brings `dir/yt-dlp` to the latest release of `base`. The rename is the only step that touches
-/// the installed build, and it is atomic: yt-dlp running at that moment keeps its old file.
+// Only the atomic rename touches the installed build; a running yt-dlp keeps its old file
 pub async fn update_yt_dlp(client: &Client, base: &str, asset: &'static str, dir: &Path, progress: &(dyn Fn(u64, Option<u64>) + Send + Sync)) -> Result<Outcome, UpdateError> {
     let base = base.trim_end_matches('/');
     let expected = checksum_of(&read_sums(client, base).await?, asset).ok_or(UpdateError::NoChecksum(asset))?;
@@ -161,7 +156,6 @@ async fn install(client: &Client, url: String, partial: &Path, installed: &Path,
     Ok(())
 }
 
-/// A pinned static ffmpeg: the archive, its SHA-256 and the folder inside it that holds `ffmpeg`.
 #[derive(Debug, PartialEq, Eq)]
 pub struct FfmpegBuild {
     pub url: &'static str,
@@ -169,9 +163,7 @@ pub struct FfmpegBuild {
     pub folder: &'static str,
 }
 
-/// ffmpeg 7.0.2 static builds by John Van Sickle (GPLv3, kept at fixed addresses); the hashes are of
-/// the archives as published, and the publisher's own md5 files agree with them. Linux only: other
-/// systems keep using an installed ffmpeg.
+// John Van Sickle's static ffmpeg 7.0.2 (GPLv3); hashes match the archives as published
 pub fn ffmpeg_build_for(os: &str, arch: &str) -> Option<FfmpegBuild> {
     match (os, arch) {
         ("linux", "x86_64") => Some(FfmpegBuild {
@@ -188,8 +180,7 @@ pub fn ffmpeg_build_for(os: &str, arch: &str) -> Option<FfmpegBuild> {
     }
 }
 
-/// Installs `dir/ffmpeg` from a pinned archive when there is none yet. The archive has to match its
-/// hash, `tar` takes only the one file out, and the file has to run before it is put in place.
+// The archive must match its hash, tar extracts only ffmpeg, and it must run before install
 pub async fn install_ffmpeg(client: &Client, build: &FfmpegBuild, dir: &Path, progress: &(dyn Fn(u64, Option<u64>) + Send + Sync)) -> Result<Outcome, UpdateError> {
     let installed = dir.join("ffmpeg");
     if version(&installed).await.is_some() {

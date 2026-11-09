@@ -13,7 +13,6 @@ fn decode(bytes: &[u8]) -> RgbImage {
     image::load_from_memory(bytes).unwrap().to_rgb8()
 }
 
-/// A 4:3 frame with black bars above and below white 16:9 content.
 fn letterboxed(width: u32, height: u32) -> RgbImage {
     let bar = (height - width * 9 / 16) / 2;
     RgbImage::from_fn(width, height, |_, y| if y < bar || y >= height - bar { Rgb([0, 0, 0]) } else { Rgb([250, 250, 250]) })
@@ -43,7 +42,6 @@ fn originals_are_downscaled_to_the_bucket() {
     assert_eq!(decode(&out.bytes).dimensions(), (1024, 1024));
 }
 
-/// Wide artwork that is not a video thumbnail keeps its shape.
 #[test]
 fn non_square_artwork_is_not_cropped() {
     let out = process(jpeg(RgbImage::from_pixel(600, 400, Rgb([1, 2, 3]))), 512, false).unwrap();

@@ -1,5 +1,3 @@
-/** Seeded shuffle with artist spacing and wrap-around avoidance (transport 4.3). Pure. */
-
 export type Random = () => number;
 
 /** mulberry32: a small, well-known 32-bit generator; good enough for shuffles and reproducible in tests. */
@@ -14,17 +12,12 @@ export function seededRandom(seed: number): Random {
   };
 }
 
-/** No artist twice within this many consecutive entries, where the list allows it. */
 export const ARTIST_WINDOW = 3;
-/** Share of a pass that must not reappear at the start of the next pass. */
 export const WRAP_SHARE = 0.2;
-/** Search steps per item before giving up on spacing (lists dominated by one artist). */
 const STEP_BUDGET_PER_ITEM = 20;
 
 export interface ShuffleOptions {
-  /** Artists of the entries just before the shuffled part, oldest first; spacing continues across the seam. */
   recentArtists?: string[];
-  /** Items that must not land in the first WRAP_SHARE of the result (the end of the previous pass). */
   avoidEarly?: ReadonlySet<unknown>;
 }
 
@@ -33,7 +26,6 @@ interface Group<T> {
   items: T[];
 }
 
-/** Uniform pick from an array, removing it. */
 function take<T>(list: T[], random: Random, accept: (item: T) => boolean = () => true): T | undefined {
   const allowed = list.filter(accept);
   if (allowed.length === 0) return undefined;
@@ -42,7 +34,6 @@ function take<T>(list: T[], random: Random, accept: (item: T) => boolean = () =>
   return pick;
 }
 
-/** Weighted pick (weight = items left) from the groups not tried yet at this slot, so every item is equally likely. */
 function pickGroup<T>(pool: Group<T>[], random: Random): Group<T> | undefined {
   const total = pool.reduce((sum, group) => sum + group.items.length, 0);
   if (total === 0) return undefined;
@@ -55,11 +46,6 @@ function pickGroup<T>(pool: Group<T>[], random: Random): Group<T> | undefined {
   return pool.splice(index, 1)[0];
 }
 
-/**
- * Depth-first over artists: each slot tries the allowed artists in weighted random order and backtracks
- * when the rest cannot be spaced. A list that cannot be spaced (or exhausts the budget) falls back to a
- * greedy pass that drops spacing only for the slots that need it.
- */
 export function spacedShuffle<T>(items: readonly T[], artistOf: (item: T) => string, random: Random, options: ShuffleOptions = {}): T[] {
   const byArtist = new Map<string, Group<T>>();
   for (const item of items) {
@@ -82,7 +68,6 @@ export function spacedShuffle<T>(items: readonly T[], artistOf: (item: T) => str
     const tail = placed.slice(-(ARTIST_WINDOW - 1)).map((p) => p.group.artist);
     return [...seed, ...tail].slice(-(ARTIST_WINDOW - 1));
   };
-  // Only artists holding about a third of the remaining slots can break spacing, so most steps skip the scan.
   const feasible = (slotsLeft: number, recent: string[]): boolean => {
     const threshold = (slotsLeft - ARTIST_WINDOW) / ARTIST_WINDOW;
     return groups.every((group) => {
@@ -148,7 +133,6 @@ function greedyShuffle<T>(
   return out;
 }
 
-/** Display string of the first artist, the spacing key. */
 export function firstArtist(artists: string): string {
   return (artists.split(",")[0] ?? "").trim().toLowerCase();
 }

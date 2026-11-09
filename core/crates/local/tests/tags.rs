@@ -102,7 +102,6 @@ fn tagged_wav_bytes() -> Vec<u8> {
     std::fs::read(path).unwrap()
 }
 
-/// Whatever the bytes are, reading must return, never panic or hang.
 #[test]
 fn truncated_and_garbage_files_never_panic() {
     let dir = tempfile::tempdir().unwrap();
@@ -179,7 +178,6 @@ fn cyrillic_paths_read_and_name_files() {
     assert_eq!((meta.title.as_str(), meta.artists.clone()), ("Бессонница", vec!["Земфира".to_string()]));
 }
 
-/// A FIFO named like a song must not hang the scan: reads give up at once.
 #[cfg(unix)]
 fn make_fifo(path: &std::path::Path) {
     assert!(std::process::Command::new("mkfifo").arg(path).status().unwrap().success());

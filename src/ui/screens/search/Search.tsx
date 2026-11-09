@@ -38,14 +38,12 @@ import { SearchGroups } from "./SearchGroups";
 import { SearchHistory } from "./SearchHistory";
 import styles from "./Search.module.css";
 
-/** The legacy popup's numbers: a query survives a minute away from search, requests wait 320 ms. */
 const CACHE_TTL_MS = 60_000;
 const DEBOUNCE_MS = 320;
 const LIMIT = 20;
 const SLOW_MS = 300;
 const PLACEHOLDER_ROWS = 5;
 
-/** The filter pills in the order and with the glyphs the field has always shown. */
 const FILTER_PILLS: { id: SearchFilter; icon: IconName }[] = [
   { id: "all", icon: "grid" },
   { id: "songs", icon: "track" },
@@ -55,7 +53,6 @@ const FILTER_PILLS: { id: SearchFilter; icon: IconName }[] = [
 ];
 
 const lastQuery = { text: "", leftAt: 0 };
-/** Recent results by filter and query, so a return to search paints at once while the hook asks again. */
 const resultCache = new Map<string, SearchResult[]>();
 const CACHED_SEARCHES = 20;
 
@@ -65,7 +62,6 @@ function initialQuery(params: URLSearchParams): string {
   return Date.now() - lastQuery.leftAt < CACHE_TTL_MS ? lastQuery.text : "";
 }
 
-/** True once `on` has held for `ms`; false again as soon as it drops. */
 function useAfter(on: boolean, ms: number): boolean {
   const [late, setLate] = useState(false);
   useEffect(() => {
@@ -79,18 +75,15 @@ function useAfter(on: boolean, ms: number): boolean {
   return on && late;
 }
 
-/** The pasted link a text stands for, or null for a normal query. */
 function linkIn(text: string): string | null {
   return routeLink(text) ? text.trim() : null;
 }
 
-/** Plays a search hit alone; radio follows through autoplay similar. */
 function playTrack(track: Track, queue: Track[]) {
   playerEngine.primeUserGesture();
   void playerEngine.playTrack(track, queue, "search");
 }
 
-/** /search: one field, filter tabs and grouped rows, recent searches when empty, the library when offline. */
 export function Search(): JSX.Element {
   useCalmLight();
   const { t } = useTranslation();
@@ -101,25 +94,21 @@ export function Search(): JSX.Element {
   const [filter, setFilter] = useState<SearchFilter>("all");
   const headRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
-  // offline mode asks nothing of the network: search falls back to the library and files, as with no connection
   const offlineMode = useOfflineMode();
   const online = useStreamingReachable() && !offlineMode;
   const addHistory = useSearchHistoryStore((state) => state.addItem);
   const like = useLikeTrack();
   const linkPorts = useMemo(() => createLinkPorts(youtubeCatalog), []);
-  // a link in the field on arrival (a shared link, or a return within the minute) opens its block again
   const [linkText, setLinkText] = useState<string | null>(() => linkIn(query));
   const [linkSlow, setLinkSlow] = useState(false);
   const [share, setShare] = useState<Share | null>(null);
   const [add, setAdd] = useState<{ track: Track; anchor: HTMLElement } | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
-  // recent searches live in the daemon: ask for them on arrival (the first time this also moves the old local list)
   useEffect(() => {
     void loadSearchHistory();
   }, []);
 
-  // while a link shows its block the search hooks get "": nothing is searched and nothing reaches the history
   const searchQuery = linkText === null ? query : "";
   const trimmed = searchQuery.trim();
 
@@ -138,7 +127,6 @@ export function Search(): JSX.Element {
     setParams({ q: arrived }, { replace: true });
   }, [arrived, setParams]);
 
-  // the URL keeps ?q= in step with the field, replacing the entry instead of adding one per keystroke
   useEffect(() => {
     if (arrived !== null) return;
     lastQuery.text = query;
@@ -196,9 +184,7 @@ export function Search(): JSX.Element {
   const groups = useMemo(() => groupResults(results, filter), [results, filter]);
   const slow = useAfter(online && source.loading && trimmed.length >= 2, SLOW_MS) || (linkText !== null && linkSlow);
   const noResults = isEmpty(groups) && (online ? settled && trimmed.length >= 2 : trimmed !== "");
-  // a query in flight with nothing to show yet draws rows of the results' shape instead of a blank panel
   const pending = online && source.loading && isEmpty(groups);
-  // under All a group's tab holds more when the catalog is asked again; offline only when rows were cut
   const hasMore = (key: GroupKey) => online || results.filter((result) => result.kind === GROUP_KIND[key]).length > groups[key].length;
 
   const activate = (result: SearchResult) => {
@@ -242,7 +228,6 @@ export function Search(): JSX.Element {
     return true;
   };
 
-  // the preview stands for the pasted link: closing it empties the field
   const closeShare = () => {
     setShare(null);
     setLinkText(null);
@@ -251,7 +236,6 @@ export function Search(): JSX.Element {
 
   const resultRows = () => [...(resultsRef.current?.querySelectorAll<HTMLElement>('[role="button"]') ?? [])];
 
-  // roving focus: Down from the field enters the rows, Up from the first row returns to the field
   const onFieldKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowDown" && event.target instanceof HTMLInputElement) {
       const first = resultRows()[0];
@@ -280,7 +264,6 @@ export function Search(): JSX.Element {
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     const rows = resultRows();
     const index = rows.findIndex((row) => row === event.target);
-    // only a row itself moves focus: the like and menu buttons inside it, and popovers, keep their keys
     if (index < 0) return;
     event.preventDefault();
     if (event.key === "ArrowDown") rows[index + 1]?.focus();
@@ -379,9 +362,7 @@ export function Search(): JSX.Element {
               ))}
             </div>
           )}
-          {/* links plan: the link block takes this place, in place of the tabs and groups, while a link is shown */}
           <div className={styles.results} ref={resultsRef} onKeyDown={onRowsKeyDown}>
-            {/* a new tab or a new kind of content fades in; new rows for the same tab replace the old in place */}
             <div key={`${filter}:${phase}`} className={styles.swap} data-swap={phase}>
               {body}
             </div>
@@ -412,7 +393,6 @@ export function Search(): JSX.Element {
   );
 }
 
-/** History rows filed by the legacy popup carry no href. */
 function legacyHref(item: SearchHistoryItem): string {
   const id = encodeURIComponent(item.id);
   if (item.type === "artist") return `/artist?id=${id}`;

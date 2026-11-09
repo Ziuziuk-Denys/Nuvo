@@ -1,4 +1,3 @@
-/** The Statistics page's data: everything is computed by the daemon on this device and never leaves it. */
 import { useCallback, useEffect, useState } from "react";
 import { CORE_BASE_URL } from "@/engine/boot";
 import { fromSnapshot } from "@/engine/snapshot";
@@ -91,13 +90,11 @@ export interface StatsDetail {
   topTracks: StatsRow[];
 }
 
-/** Both days or neither; neither is all time. */
 export interface StatsDays {
   from?: string;
   to?: string;
 }
 
-/** The engine's track as the player types have it. */
 export function rowTrack(snapshot: unknown): Track | null {
   const track = fromSnapshot(snapshot);
   return track ? ({ ...track, playCount: track.playCount ?? 0 } as Track) : null;
@@ -124,7 +121,6 @@ function overviewPath({ from, to }: StatsDays): string {
   return `/v1/stats/overview?${params}`;
 }
 
-/** The last answer per range: going back to a range draws at once, and the fresh answer replaces it. */
 const seen = new Map<string, StatsOverview>();
 const reloads = new Set<() => void>();
 
@@ -167,13 +163,11 @@ export function useStatsDetail(kind: "tracks" | "artists", id: string): { data: 
   return { data: answer?.id === id ? answer.data : null, failed: failedId === id };
 }
 
-/** Plays started from each list, album or artist page, by playback context (`album:<id>`); empty when the daemon is down. */
 export async function contextPlays(): Promise<Map<string, { plays: number; lastPlayedAt: string }>> {
   const rows = await read<{ kind: string; id: string; plays: number; lastPlayedAt: string }[]>("/v1/stats/contexts").catch(() => []);
   return new Map(rows.map((row) => [`${row.kind}:${row.id}`, { plays: row.plays, lastPlayedAt: row.lastPlayedAt }]));
 }
 
-/** Deletes the plays of a range, or all of them; the number deleted. */
 export async function deleteStats(days: StatsDays): Promise<number> {
   const { events } = await send<{ events: number }>("POST", "/v1/stats/delete", days.from && days.to ? { from: days.from, to: days.to } : {});
   seen.clear();
@@ -187,7 +181,6 @@ export function exportStats(format: "json" | "csv", days: StatsDays): Promise<st
 
 const pausedListeners = new Set<(paused: boolean) => void>();
 
-/** The Settings switch: while on, plays are not stored at all. */
 export function useStatsPaused(): { paused: boolean | null; setPaused(next: boolean): void } {
   const [paused, setValue] = useState<boolean | null>(null);
   useEffect(() => {
@@ -213,7 +206,6 @@ export function useStatsPaused(): { paused: boolean | null; setPaused(next: bool
 
 export type HistoryFilter = "all" | "completed" | "skipped";
 
-/** One play as History lists it: the song, when it started, and whether it was skipped. */
 export interface HistoryEntry {
   id: string;
   track: Track;
@@ -221,7 +213,6 @@ export interface HistoryEntry {
   skipped: boolean;
 }
 
-/** A page of plays, newest first; plays under 3 s stay out. */
 export async function listeningHistory(
   filter: HistoryFilter,
   cursor: string | null,

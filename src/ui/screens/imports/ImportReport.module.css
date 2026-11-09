@@ -1,4 +1,3 @@
-/* The match report inside the Sheet: a summary line, chips, then one quiet block per song. */
 .body {
   display: flex;
   flex-direction: column;

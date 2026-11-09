@@ -5,7 +5,6 @@ import { useStatusLine } from "./statusLine";
 import { STICKY, useToastStore, visibleToast, type ToastVariant } from "./toastStore";
 import styles from "./Toaster.module.css";
 
-/** The notification motion: a spring in from above, a quick lift out. */
 const SPRING = { type: "spring", stiffness: 480, damping: 38, mass: 0.8 } as const;
 
 function Glyph({ variant }: { variant: ToastVariant }): JSX.Element {
@@ -18,7 +17,6 @@ function Glyph({ variant }: { variant: ToastVariant }): JSX.Element {
   );
 }
 
-/** One notification at a time, centred under the top edge of the window. */
 export function Toaster(): JSX.Element {
   const queue = useToastStore((state) => state.queue);
   const toast = visibleToast(queue);

@@ -21,7 +21,6 @@ function useUpdateView(): UpdateView | null {
   return view;
 }
 
-/** One quiet line in the About card: nothing until an update is downloaded (or, where it cannot install, found). */
 export function UpdateNotice(): JSX.Element | null {
   const { t } = useTranslation();
   const view = useUpdateView();
@@ -43,7 +42,6 @@ export function UpdateNotice(): JSX.Element | null {
   return null;
 }
 
-/** Hidden where updates do not exist (a development run) or main does not answer. */
 export function AutoUpdateRow(): JSX.Element | null {
   const { t } = useTranslation();
   const [on, setOn] = useState<boolean | null>(null);

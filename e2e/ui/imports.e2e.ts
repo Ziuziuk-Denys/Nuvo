@@ -25,7 +25,6 @@ const LOOKS = {
   },
 } as const;
 
-/** What the daemon answers for a long public Spotify playlist: the embed's first 100 songs of 200. */
 const SPOTIFY_LINK = "https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U?si=e2e";
 const SPOTIFY = {
   label: "Rock Classics",
@@ -43,7 +42,6 @@ afterAll(async () => {
   await session?.close();
 });
 
-/** Keeps every outside request pending, so no import ever reaches a live service. */
 async function blockNetwork(live: NuvoSession): Promise<void> {
   await live.page.route(/^https?:\/\/(?!(localhost|127\.0\.0\.1))/, () => new Promise<never>(() => undefined));
 }
@@ -60,7 +58,6 @@ async function closeDialog(live: NuvoSession): Promise<void> {
   await live.page.locator('[role="dialog"]').waitFor({ state: "detached", timeout: 10_000 });
 }
 
-/** The daemon's Spotify route reads Spotify's page; here it answers from the fixture, everything else stays real. */
 async function fakeSpotifyRoute(live: NuvoSession): Promise<void> {
   await live.page.addInitScript((answer) => {
     const real = window.fetch.bind(window);
@@ -88,7 +85,6 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await live.setSize(spec.size);
     await blockNetwork(live);
 
-    // a pasted playlist link in Search opens the import sheet on that link
     await live.go("#/search");
     const field = live.page.locator("input").first();
     await field.waitFor({ timeout: 15_000 });
@@ -98,7 +94,6 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await shot(live, "search-sheet", locale);
     await closeDialog(live);
 
-    // a public Spotify playlist: the daemon's rows, the partial notice, and a real import with the spotify source
     await fakeSpotifyRoute(live);
     await live.page.reload();
     await live.page.waitForLoadState("domcontentloaded");
@@ -120,17 +115,14 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await expect.poll(async () => (await imported()).map(([, label, total]) => [label, total])).toEqual([["Rock Classics", 100]]);
     await shot(live, "spotify-started", locale);
     await closeDialog(live);
-    // without a reload: the new playlist is in the library at once, and the rail shows the import running
     await live.go("#/library");
     await live.page.getByText("Rock Classics", { exact: true }).first().waitFor({ timeout: 10_000 });
     await live.page.getByText(spec.importing).first().waitFor({ timeout: 10_000 });
     await live.page.locator('aside [data-nav="library"] [role="progressbar"]').waitFor({ timeout: 10_000 });
     await shot(live, "library-live", locale);
-    // the next steps count running imports: this one goes
     const [[spotifyId]] = await imported();
     await live.core(`await fetch(base + "/v1/imports/${spotifyId}", { method: "DELETE" });`);
 
-    // New playlist offers the same sheet
     await live.go("#/library");
     await live.page.getByRole("button", { name: spec.create }).first().click();
     await live.page.getByRole("button", { name: spec.fromLink }).waitFor({ timeout: 10_000 });
@@ -142,7 +134,6 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await shot(live, "new-playlist-sheet", locale);
     await closeDialog(live);
 
-    // a running import: 100 rows, 12 already exact, the rest wait for a search that never answers
     await live.core(
       `const rows = Array.from({ length: 100 }, (_, i) => i < 12
          ? { title: "Song " + i, artists: ["Artist"], track: { id: "id" + i, title: "Song " + i, artists: [{ id: "", name: "Artist" }], durationMs: 200000 } }
@@ -165,7 +156,6 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await blockNetwork(live);
     await live.page.getByText(spec.importing).first().waitFor({ timeout: 30_000 });
 
-    // the row's menu cancels it and the row goes back to a plain playlist
     await live.page.locator('[role="button"]', { hasText: spec.importing }).first().click({ button: "right" });
     await live.page.getByRole("menuitem", { name: spec.cancel }).waitFor({ timeout: 10_000 });
     await shot(live, "library-importing-menu", locale);

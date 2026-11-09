@@ -1,4 +1,3 @@
-/** bgutils-js behind the `BotGuard` seam. Runs only in the worker document. */
 import { BotGuardClient } from "bgutils-js/botguard";
 import type { WebPoSignalOutput } from "bgutils-js/shared-types";
 import { WebPoMinter } from "bgutils-js/webpo";

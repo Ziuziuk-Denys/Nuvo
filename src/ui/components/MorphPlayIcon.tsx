@@ -1,7 +1,7 @@
 import type { CSSProperties, JSX } from "react";
 import styles from "./MorphPlayIcon.module.css";
 
-/** Play and pause drawn as two four-point shapes each, so CSS can morph the path between them; the round stroke softens the corners. */
+// Two four-point shapes each, so CSS can morph the path between play and pause
 export const PLAY_PATH = "M9 6 L14 9 L14 15 L9 18 Z M14 9 L19 12 L19 12 L14 15 Z";
 export const PAUSE_PATH = "M6.8 6 L9.2 6 L9.2 18 L6.8 18 Z M14.8 6 L17.2 6 L17.2 18 L14.8 18 Z";
 

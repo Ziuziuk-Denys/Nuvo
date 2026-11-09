@@ -1,11 +1,6 @@
-/**
- * Apple Music playlist and album links: one request for the public
- * page and its embedded page data, no developer token. Rows are metadata only.
- */
 import { HttpError, get, readCapped, type Http } from "./http";
 import { ImportError, MAX_LABEL_CHARS, MAX_ROWS, type ImportRow, type Listing } from "./types";
 
-/** Largest page read; a real playlist page is well under this. */
 const MAX_PAGE_BYTES = 8_000_000;
 
 export interface AppleLink {
@@ -19,7 +14,6 @@ const STOREFRONT = /^[a-z]{2}$/i;
 const PLAYLIST_ID = /^pl\.[A-Za-z0-9-]+$/;
 const ALBUM_ID = /^\d+$/;
 
-/** `/{storefront}/{kind}/{slug}/{id}`, with the storefront and the slug optional; null otherwise. */
 export function parseAppleLink(href: string): AppleLink | null {
   let url: URL;
   let parts: string[];
@@ -97,7 +91,6 @@ function rowOf(item: Obj, albumTitle: string | undefined): ImportRow | null {
   };
 }
 
-/** Reads the page data of one public page into rows. */
 export function parseApplePage(html: string, kind: AppleLink["kind"]): Listing {
   const all = sections(html);
   const header = all.find((s) => s.itemKind === "containerDetailHeaderLockup");
@@ -126,7 +119,6 @@ export function parseApplePage(html: string, kind: AppleLink["kind"]): Listing {
   };
 }
 
-/** Lists an Apple Music link; a 404 in another storefront is retried once with `us`. */
 export async function listApple(href: string, http: Http): Promise<Listing> {
   const link = parseAppleLink(href);
   if (!link) throw new ImportError("bad_link");

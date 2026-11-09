@@ -12,7 +12,6 @@ const client = createLocalClient(CORE_BASE_URL);
 const SCAN_POLL_MS = 500;
 const changed = new Set<() => void>();
 
-/** Folder lists and track lists reload after any change made here or by a finished scan. */
 function notifyLocalChanged(): void {
   changed.forEach((listener) => listener());
 }
@@ -31,7 +30,6 @@ export function isLocalTrackId(id: string): boolean {
   return isLocalId(id);
 }
 
-/** The engine's track as the player types have it (play count always set). */
 export function toPlayerTrack(view: LocalTrackView): Track {
   return { ...view.track, playCount: view.track.playCount ?? 0 } as Track;
 }
@@ -54,7 +52,6 @@ export function useLocalRoots(): { roots: LocalRootView[]; failed: boolean; relo
   return { roots, failed, reload };
 }
 
-/** Polls only while a scan runs; one read after any change starts it again. */
 export function useLocalScan(): LocalScanView | null {
   const [tick] = useReload();
   const [status, setStatus] = useState<LocalScanView | null>(null);
@@ -82,10 +79,6 @@ export function useLocalScan(): LocalScanView | null {
   return status;
 }
 
-/**
- * The full list loads once (and again after a change) and is filtered in memory, so a keystroke costs
- * no daemon request. A search box with a limit still asks the daemon, at once.
- */
 export function useLocalTracks(query: string, limit?: number): { items: LocalTrackView[]; loading: boolean; failed: boolean; reload(): void } {
   const [tick, reload] = useReload();
   const [loaded, setLoaded] = useState<LocalTrackView[]>([]);
@@ -94,7 +87,6 @@ export function useLocalTracks(query: string, limit?: number): { items: LocalTra
   const asked = limit ? query : "";
   useEffect(() => {
     if (limit && !asked) {
-      // a search with nothing typed lists nothing
       setLoaded([]);
       setLoading(false);
       setFailed(false);
@@ -126,7 +118,6 @@ export function useLocalTracks(query: string, limit?: number): { items: LocalTra
   return { items, loading, failed, reload };
 }
 
-/** Opens the folder dialog in main; the error text, or null when added or cancelled. */
 export async function addMusicFolder(): Promise<string | null> {
   const result = await window.nuvoShell?.addMusicFolder();
   if (result && "error" in result) return result.error;

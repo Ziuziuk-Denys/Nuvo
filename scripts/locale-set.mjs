@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// Sets dotted keys in a locale file: node scripts/locale-set.mjs en '{"ui.settings.storage_web":"Web cache"}'
 import fs from "node:fs";
 
 const [locale, json] = process.argv.slice(2);

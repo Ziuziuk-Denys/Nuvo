@@ -2,8 +2,7 @@ use serde_json::{Value, json};
 
 pub const MAX_TRACK_ID_LEN: usize = 256;
 
-/// Columns the daemon indexes. The renderer's snapshot itself is stored verbatim and returned
-/// unchanged, so fields this struct ignores still round-trip.
+// The renderer's snapshot is stored verbatim, so fields this struct ignores still round-trip
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrackFields {
     pub id: String,

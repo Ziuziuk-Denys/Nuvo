@@ -10,7 +10,6 @@ fn span(start_ms: i64, end_ms: i64) -> SetTrim {
 #[test]
 fn trims_are_validated_against_the_track_duration() {
     let (_dir, conn) = common::open();
-    // common::track lasts 200 s.
     let first = SetTrim { start_ms: 0, end_ms: 5000, track: Some(common::track("a", "X")) };
     assert_eq!(trims::set(&conn, "a", &first, 1).unwrap(), TrackTrim { track_id: "a".into(), start_ms: 0, end_ms: 5000 });
     assert!(trims::set(&conn, "a", &span(195_000, 200_000), 2).is_ok(), "the span may end exactly at the duration");

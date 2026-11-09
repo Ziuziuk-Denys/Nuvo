@@ -16,10 +16,7 @@ export {
 /** Parallel lookups against the daemon; more would queue behind the per-host connection limit and time out. */
 const LOOKUPS = 6;
 
-/**
- * Which of these tracks the daemon holds audio for; null while unknown or when `enabled` is false.
- * The cache has no list call, so each id is probed with the one-byte range read playback uses.
- */
+// The cache has no list call, so each id is probed with a one-byte range read
 export function useCachedTrackIds(trackIds: readonly string[], enabled = true): Set<string> | null {
   const [cached, setCached] = useState<Set<string> | null>(null);
   const key = enabled ? trackIds.filter(Boolean).join("\n") : null;
@@ -47,7 +44,6 @@ export function useCachedTrackIds(trackIds: readonly string[], enabled = true): 
   return cached;
 }
 
-/** A station seeded by the artist's top song: the given one, else the first from the catalog. */
 export async function startArtistRadio(artistId: string, seed?: Track): Promise<void> {
   const track = seed ?? (await artistTopTrack(artistId));
   if (track) await playerEngine.startRadioStation(track);

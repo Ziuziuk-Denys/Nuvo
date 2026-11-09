@@ -12,7 +12,7 @@ function daemon(related: unknown): typeof fetch {
   return (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/v1/local/related")) return new Response(JSON.stringify(related), { status: 200 });
-    return new Response(null, { status: 404 }); // rank unavailable: the raw list is used
+    return new Response(null, { status: 404 });
   }) as typeof fetch;
 }
 

@@ -8,7 +8,6 @@ interface SocketPathInput {
   random: string;
 }
 
-/** Where the daemon listens: a unix socket file, or on Windows a named pipe with a random name. */
 export function coreSocketPath({ platform, env, tmpdir, random }: SocketPathInput): string {
   if (env.NUVO_CORE_SOCKET) return env.NUVO_CORE_SOCKET;
   if (platform === "win32") return `\\\\.\\pipe\\nuvo-core-${random}`;

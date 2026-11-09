@@ -1,6 +1,3 @@
-//! Cover URLs: size buckets, the allowed hosts, asking each CDN for the right size, and the
-//! canonical source all buckets of one cover share.
-
 use nuvo_net::Url;
 
 pub const BUCKETS: [u32; 5] = [64, 128, 256, 512, 1024];
@@ -11,7 +8,6 @@ pub enum Cdn {
     SoundCloud,
     Google,
     YouTube,
-    /// Artwork of recognized songs.
     Apple,
 }
 
@@ -40,8 +36,6 @@ pub fn cdn(host: &str) -> Option<Cdn> {
     }
 }
 
-/// `size` rounds up to the next bucket; missing, empty or 0 is 512; above 1024 is 1024.
-/// Anything non-numeric or negative is `None` (400).
 pub fn bucket(size: Option<&str>) -> Option<u32> {
     let size = match size.map(str::trim) {
         None | Some("") => return Some(DEFAULT_BUCKET),
@@ -53,7 +47,6 @@ pub fn bucket(size: Option<&str>) -> Option<u32> {
     Some(BUCKETS.into_iter().find(|b| f64::from(*b) >= size).unwrap_or(1024))
 }
 
-/// The tries for one request, in order, and the cache identity of the cover.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Plan {
     pub canonical: String,

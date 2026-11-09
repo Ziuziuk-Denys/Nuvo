@@ -1,4 +1,3 @@
-/** Bulk playlist edits with Undo. Removal remembers each item's position and date, so Undo restores the order. */
 import { libraryClient, type ItemPlace } from "@/data/library/client";
 import { useToastStore } from "@/ui/feedback/toastStore";
 import { notifyLibraryChanged } from "@/data/library/changes";
@@ -9,7 +8,6 @@ export interface TidyTexts {
   removed: string;
   undo: string;
   undoFailed: string;
-  /** Some, not all, of the items could be put back. */
   undoPartial: string;
   failed: string;
 }
@@ -66,7 +64,6 @@ async function undoing(texts: MoveTexts, run: () => Promise<void>): Promise<void
   notifyLibraryChanged();
 }
 
-/** Moves items to another playlist. Undo takes the new copies out and puts the items back where they were. */
 export async function moveWithUndo(playlistId: string, itemIds: readonly string[], targetId: string, texts: MoveTexts): Promise<void> {
   if (itemIds.length === 0) return;
   const wanted = new Set(itemIds);
@@ -94,7 +91,6 @@ export async function moveWithUndo(playlistId: string, itemIds: readonly string[
   }
 }
 
-/** Adds a playlist's songs to another one, and deletes it when asked. Undo takes the added songs out and brings a deleted playlist back. */
 export async function mergeWithUndo(
   sourceId: string,
   targetId: string,
@@ -128,7 +124,6 @@ export const COVER_PX = 600;
 /** The daemon's limit (`MAX_COVER_BYTES` in routes/playlists.rs). */
 export const MAX_COVER_BYTES = 400 * 1024;
 
-/** The centred square of a width x height image. */
 export function squareCrop(width: number, height: number): { x: number; y: number; size: number } {
   const size = Math.min(width, height);
   return { x: Math.round((width - size) / 2), y: Math.round((height - size) / 2), size };
@@ -136,7 +131,6 @@ export function squareCrop(width: number, height: number): { x: number; y: numbe
 
 export type Encode = (file: Blob, quality: number) => Promise<Blob>;
 
-/** 600 x 600 WebP from the picked image's bytes. */
 export const encodeSquareWebp: Encode = async (file, quality) => {
   const bitmap = await createImageBitmap(file);
   try {
@@ -149,13 +143,12 @@ export const encodeSquareWebp: Encode = async (file, quality) => {
   }
 };
 
-/** Main's native dialog; null when the user cancels or the file is not a usable image. The page never supplies or sees a path. */
+// Main's native dialog picks the file: the page never supplies or sees a path
 export async function pickPlaylistCover(): Promise<Blob | null> {
   const picked = await window.nuvoShell?.pickCoverImage().catch(() => null);
   return picked?.ok ? new Blob([picked.bytes as BlobPart], { type: picked.mime }) : null;
 }
 
-/** Quality 0.86 first, 0.7 when that is over the limit; false with a toast when neither fits or the image is unreadable. */
 export async function setPlaylistCover(playlistId: string, file: Blob, failedText: string, encode: Encode = encodeSquareWebp): Promise<boolean> {
   try {
     for (const quality of [0.86, 0.7]) {
@@ -165,9 +158,7 @@ export async function setPlaylistCover(playlistId: string, file: Blob, failedTex
       notifyLibraryChanged();
       return true;
     }
-  } catch {
-    // unreadable image or a refused upload: same message as too large
-  }
+  } catch {}
   useToastStore.getState().show({ message: failedText, variant: "error" });
   return false;
 }

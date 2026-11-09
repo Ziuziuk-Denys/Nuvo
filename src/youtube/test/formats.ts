@@ -1,5 +1,3 @@
-/** Synthetic `player` answers and audio formats in the shapes the player returns. */
-
 export const STREAM_HOST = "https://rr1---sn-test.googlevideo.com/videoplayback";
 
 export interface FormatSpec {
@@ -53,6 +51,5 @@ export function playerResponse(
   };
 }
 
-/** Body predicate for a `player` request from one client. */
 export const fromClient = (name: string) => (body: Record<string, unknown>) =>
   (body.context as { client?: { clientName?: string } })?.client?.clientName === name;

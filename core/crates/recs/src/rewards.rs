@@ -1,6 +1,3 @@
-//! What a play says about taste (the reward table) and the decayed, smoothed affinities
-//! built from all plays, likes and playlist adds.
-
 use std::collections::HashMap;
 
 use nuvo_contracts::{MAX_TRACK_ID_LEN, RecordPlaybackEvent, local_hour_weekday};
@@ -13,11 +10,9 @@ const PRIOR_COUNT: f64 = 3.0;
 /// Plays older than this weigh under 1 % (exp(-365 / 75)) and are not read.
 pub const HISTORY_DAYS: i64 = 365;
 pub const SKIP_AT_ONCE_MS: i64 = 15_000;
-/// A session needs this many plays before its skip rate can mark it as browsing.
 const BROWSING_MIN_PLAYS: i64 = 5;
 const BROWSING_SKIP_RATE: f64 = 0.6;
 pub const AUTOPLAY_CONTEXTS: [&str; 4] = ["radio", "mix", "search", "continue"];
-/// An artist with fewer plays than this still counts as new for exploration.
 pub const NEW_ARTIST_MAX_PLAYS: u32 = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,7 +47,6 @@ pub struct RewardedPlay {
     pub reward: f64,
 }
 
-/// The stored end reason, derived the way `events::record` does for clients that omit it.
 pub fn end_reason(event: &RecordPlaybackEvent) -> &str {
     match event.end_reason.as_deref() {
         Some(reason) => reason,
@@ -83,8 +77,6 @@ pub fn outcome(play: &Play) -> Outcome {
     }
 }
 
-/// `skip_weight` is the context weight (1.5 autoplay, 0.5 own playlist, else 1) times 0.5 in a
-/// browsing session. It scales penalties only.
 pub fn reward(outcome: Outcome, replay: bool, skip_weight: f64) -> f64 {
     match outcome {
         Outcome::Finished if replay => 1.5,
@@ -107,8 +99,7 @@ fn skip_weight(context: Option<&str>, own_playlist: bool, session_plays: i64, se
     if browsing { context_weight * 0.5 } else { context_weight }
 }
 
-/// Plays since `since` with their rewards, oldest first. Plays of tracks or from playlists
-/// excluded from taste are left out. Call `keys::refresh` first so artist keys are known.
+// Call keys::refresh first so artist keys are known
 pub fn load(conn: &Connection, since: i64, session: Option<&str>) -> Result<Vec<RewardedPlay>, StoreError> {
     let mut stmt = conn.prepare(
         "WITH s AS (SELECT session_id, count(*) AS n, sum(end_reason IN ('skip', 'next')) AS skips
@@ -146,7 +137,6 @@ pub fn load(conn: &Connection, since: i64, session: Option<&str>) -> Result<Vec<
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
-/// 0-3 for each 6-hour slice of the day, plus 4 on weekends.
 pub fn time_bucket(hour: i64, weekday: i64) -> u8 {
     let weekend = weekday == 0 || weekday == 6;
     (hour.clamp(0, 23) / 6) as u8 + if weekend { 4 } else { 0 }
@@ -169,7 +159,6 @@ impl Acc {
         self.weight += weight;
     }
 
-    /// Bayesian average toward 0 with a prior of 3 plays.
     fn smoothed(&self) -> f64 {
         self.weighted / (self.weight + PRIOR_COUNT)
     }
@@ -180,9 +169,7 @@ pub struct Affinity {
     pub track: HashMap<String, f64>,
     pub artist: HashMap<String, f64>,
     pub bucket: HashMap<(String, u8), f64>,
-    /// Plays per track, any outcome.
     pub plays: HashMap<String, u32>,
-    /// Per artist: (finished, skipped at once or scrubbed), for Thompson sampling.
     pub artist_outcomes: HashMap<String, (u32, u32)>,
 }
 
@@ -204,7 +191,6 @@ impl Affinity {
     }
 }
 
-/// Explicit signals outside play events: likes (+3) and playlist adds (+2), by artist key.
 fn explicit(conn: &Connection, since: i64) -> Result<Vec<(String, String, i64, f64)>, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT l.track_id, coalesce(k.artist_key, ''), l.liked_at, 3.0 FROM liked_tracks l
@@ -236,7 +222,6 @@ pub fn affinity(conn: &Connection, now: i64) -> Result<Affinity, StoreError> {
             continue;
         }
         track.entry(p.track_id.clone()).or_default().add(rp.reward, w);
-        // An empty artist key is no artist: nothing to pool across tracks.
         if p.artist_key.is_empty() {
             continue;
         }
@@ -262,7 +247,6 @@ pub fn affinity(conn: &Connection, now: i64) -> Result<Affinity, StoreError> {
     Ok(result)
 }
 
-/// Exclude a playlist or a track from taste ("Exclude from taste").
 pub fn set_excluded(conn: &Connection, kind: &str, id: &str, excluded: bool) -> Result<(), StoreError> {
     if kind != "playlist" && kind != "track" {
         return Err(StoreError::Invalid("kind must be playlist or track".into()));

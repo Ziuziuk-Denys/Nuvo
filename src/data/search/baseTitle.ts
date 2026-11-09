@@ -1,13 +1,6 @@
-/**
- * The comparable core of a title, for the renderer's duplicate finder.
- * The daemon's matcher (core/crates/match/src/text.rs) is the full version with every junk rule;
- * this one covers featuring clauses, the dash qualifier, version markers and the comparison form.
- */
-
 const EXTENSIONS = /\.(flac|ogg|m4a|aac|wav|mp3)\b/gi;
 const FEATURING = "(?:feat\\.?|ft\\.?|featuring)";
 const BRACKETED_FEATURING = new RegExp(`[([{]\\s*(?:${FEATURING}|with)\\s[^)\\]}]*[)\\]}]`, "gi");
-// up to the next bracket or a dash with a space beside it
 const LOOSE_FEATURING = new RegExp(`(^|\\s)${FEATURING}\\s.*?(?=[([{]|\\s[-–—]|[-–—]\\s|$)`, "i");
 const DASH_QUALIFIER =
   /\s*[-–—]\s+(?:mono|stereo|remaster(?:ed)?(?:\s+\d{4})?|ремастер\S*|live(?:\s+at\b.*)?|acoustic|instrumental|radio edit|single version|original mix|album version)\b.*$/i;
@@ -61,7 +54,6 @@ const MARKER_PHRASES = [
   ["басс", "буст"],
 ];
 
-/** Lower case, `ё` as `е`, every run of non-letters and non-digits one space (3.1). */
 export function compareForm(text: string): string {
   return text
     .toLowerCase()

@@ -96,8 +96,6 @@ mod redirects {
         Remote { url, headers: vec![("Cookie".into(), "s=1".into()), ("Referer".into(), "https://x/".into())] }
     }
 
-    /// Stands in for `public_addresses`: refuses any hop whose path starts with /private and
-    /// approves loopback, where the test servers listen.
     async fn no_private(url: String) -> Result<Vec<SocketAddr>, FetchError> {
         if url.contains("/private") {
             return Err(FetchError::InvalidLink);
@@ -130,7 +128,6 @@ mod redirects {
     #[tokio::test]
     async fn credentials_do_not_follow_a_redirect_to_another_host() {
         let port = serve().await;
-        // The route's Location is patched to this server's real port through a second, dynamic route.
         let app = Router::new().route(
             "/hop",
             get(move || async move { (StatusCode::FOUND, [(header::LOCATION, format!("http://localhost:{port}/b"))]) }),

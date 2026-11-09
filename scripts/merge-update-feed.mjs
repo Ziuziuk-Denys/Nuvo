@@ -1,15 +1,7 @@
-/**
- * Joins the latest.yml files of the Windows x64 and arm64 jobs into the one latest.yml that
- * electron-updater requests on Windows. It picks the installer whose name holds its own arch.
- *
- *   node scripts/merge-update-feed.mjs assets/latest.yml assets/latest-win-x64.yml assets/latest-win-arm64.yml
- *
- * The first input keeps its top-level path and sha512 (read by old updaters); the others add their files entries.
- */
+// The first input keeps its top-level path and sha512, which old updaters read
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
-/** The lines of a feed and the range of its `files:` entries. */
 function filesBlock(text) {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
   const start = lines.indexOf("files:");

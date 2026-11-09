@@ -19,8 +19,6 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/recovery/passphrase", post(unlock_with_passphrase))
 }
 
-/// The phrase is derived from the key on demand and served until the user confirms they wrote
-/// it down; after that the route is gone (`404`), so the UI shows the onboarding step once.
 async fn phrase(State(state): State<AppState>) -> Result<Json<RecoveryPhrase>, ApiError> {
     let data = state.data()?;
     let confirmed = data.db.call(|c| settings::get(c, settings::RECOVERY_CONFIRMED)).await?;
@@ -48,7 +46,6 @@ async fn restore(State(state): State<AppState>, JsonBody(body): JsonBody<Restore
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// The way back in when the key file is sealed with a passphrase.
 async fn unlock_with_passphrase(State(state): State<AppState>, JsonBody(body): JsonBody<PassphraseBody>) -> Result<StatusCode, ApiError> {
     if state.is_starting() {
         return Err(ApiError::Starting);

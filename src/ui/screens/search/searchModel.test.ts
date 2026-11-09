@@ -94,7 +94,6 @@ describe("withLocalFiles", () => {
     const streamed = [named("yt1", "Harbor Lights", "Band"), named("yt2", "Harbor", "Band")];
     const files = [named("local:a", "Old Harbor Song", "Band"), named("local:b", "Harbor", "Other")];
     const got = withLocalFiles(streamed, files, "songs", "harbor").map((r) => r.id);
-    // exact title, then title starts with, then title contains; ties keep the file ahead
     expect(got).toEqual(["local:b", "yt2", "yt1", "local:a"]);
   });
 

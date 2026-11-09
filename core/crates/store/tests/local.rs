@@ -6,7 +6,6 @@ use serde_json::json;
 
 const LOCAL_ID: &str = "local:0123456789abcdef0123456789abcdef";
 
-/// Rebuilds the schema as it was before migration 19: old `tracks` CHECK, no local tables.
 const UNDO_LOCAL_MIGRATION: &str = "
 PRAGMA foreign_keys = OFF;
 DROP TABLE IF EXISTS local_files;

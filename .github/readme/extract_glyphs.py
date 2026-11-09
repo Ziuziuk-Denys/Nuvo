@@ -1,8 +1,4 @@
-"""Rebuilds a glyph table from a variable font. Needs fonttools (brotli for woff2) and hb-shape; build.py does not.
-
-    extract_glyphs.py Figtree.ttf glyphs.json
-    extract_glyphs.py golos-text-latin-wght-normal.woff2 glyphs-golos.json 400 600 640
-"""
+"""Needs fonttools and hb-shape: extract_glyphs.py <font> <out.json> [weights...]"""
 import json, subprocess, sys, tempfile
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont

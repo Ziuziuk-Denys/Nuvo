@@ -1,5 +1,3 @@
-/** Accelerators: Electron's "modifiers+key" text in one canonical spelling, built from key positions. */
-
 export const MAX_ACCELERATOR = 64;
 
 const MODIFIER_ORDER = ["Control", "Alt", "Shift", "Super"] as const;
@@ -49,7 +47,6 @@ const NAMED_KEYS: Record<string, string> = {
 
 const PUNCTUATION = new Set(["-", "=", "[", "]", ";", "'", "`", ",", ".", "/", "\\"]);
 
-/** Russian ЙЦУКЕН and Ukrainian letters to the US key in the same place. */
 const CYRILLIC_POSITIONS: Record<string, string> = {
   й: "Q",
   ц: "W",
@@ -167,7 +164,6 @@ function join(modifiers: Iterable<Modifier>, key: string): string {
   return [...MODIFIER_ORDER.filter((modifier) => held.has(modifier)), key].join("+");
 }
 
-/** The canonical form of an accelerator, or null when it does not parse. "Control++" reads as Control+Plus. */
 export function parseAccelerator(text: string): string | null {
   if (!text || text.length > MAX_ACCELERATOR) return null;
   let parts = text.split("+");
@@ -191,7 +187,6 @@ export function parseAccelerator(text: string): string | null {
 export interface KeyLike {
   code: string;
   key: string;
-  /** Set while an input method is composing; such events belong to the input method. */
   isComposing?: boolean;
   keyCode?: number;
   ctrlKey: boolean;
@@ -229,7 +224,6 @@ export function heldModifiers(event: KeyLike): Modifier[] {
   return held;
 }
 
-/** The accelerator a key press makes, from the key's position; null for a modifier alone. */
 export function acceleratorFromEvent(event: KeyLike): string | null {
   if (MODIFIER_KEYS.has(event.key) || MODIFIER_CODE.test(event.code)) return null;
   // the code names the physical key, so the layout does not matter; some virtual keyboards send no code
@@ -238,7 +232,6 @@ export function acceleratorFromEvent(event: KeyLike): string | null {
   return join(heldModifiers(event), key);
 }
 
-/** The key of a canonical accelerator, without its modifiers. */
 export function acceleratorKey(accelerator: string): string {
   return accelerator.slice(accelerator.lastIndexOf("+") + 1);
 }
@@ -247,7 +240,6 @@ export type Platform = "mac" | "other";
 
 export interface Keycap {
   text: string;
-  /** Words for screen readers. */
   label: string;
 }
 
@@ -271,7 +263,6 @@ const KEY_CAPS: Record<string, Keycap> = {
   numdiv: { text: "Num /", label: "Num divide" },
 };
 
-/** Keycaps for display: Ctrl, Alt, Shift, Super on Linux and Windows, ⌃ ⌥ ⇧ ⌘ on macOS. */
 export function formatKeycaps(accelerator: string, platform: Platform): Keycap[] {
   const canonical = parseAccelerator(accelerator);
   if (!canonical) return [];

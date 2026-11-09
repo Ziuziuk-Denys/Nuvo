@@ -1,4 +1,3 @@
-/** One shared InnerTube client, catalog and account per app; playback code loads on the first stream request. */
 import { YtAccount } from "./account";
 import { daemonAccountStore, migrateLegacy } from "./account/store";
 import { createCatalog } from "./catalog";
@@ -44,7 +43,6 @@ export function createRuntime(deps: RuntimeDeps) {
     });
   const loadPlayback = () => {
     if (disposed) return Promise.reject(new Error("youtube module disposed"));
-    // A failed load is forgotten so the next request retries the import.
     const pending = (playback ??= load());
     pending.catch(() => {
       if (playback === pending) playback = null;
@@ -52,7 +50,6 @@ export function createRuntime(deps: RuntimeDeps) {
     return pending;
   };
 
-  // Idempotent: stops the account listener, forgets playback state and closes the worker bridge when it has a close.
   const dispose = () => {
     if (disposed) return;
     disposed = true;

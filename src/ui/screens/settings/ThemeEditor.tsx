@@ -31,21 +31,18 @@ const TRANSLUCENT: readonly RoleKey[] = ["ink2", "ink3", "hair", "tint"];
 const SEEDS: readonly RoleKey[] = ["field", "accent"];
 const CHIP_DEBOUNCE_MS = 120;
 
-/** Whether the docked sheet is showing. The draft lives in the appearance store and outlives the sheet. */
 export const useThemeEditor = create<{ open: boolean; show(): void; hide(): void }>()((set) => ({
   open: false,
   show: () => set({ open: true }),
   hide: () => set({ open: false }),
 }));
 
-/** Opens the sheet over the live app: Settings steps aside so every change shows on the real screens. */
 export function openThemeEditor(theme?: NuvoTheme): void {
   if (theme) useAppearanceStore.getState().setDraft(theme);
   useModalStore.getState().closeSettings();
   useThemeEditor.getState().show();
 }
 
-/** The roles after one change: with Smart start on, a seed change re-derives every role not overridden by hand. */
 export function withRole(theme: NuvoTheme, mode: "light" | "dark", role: RoleKey, value: string, smart: boolean, overridden: ReadonlySet<RoleKey>): NuvoTheme {
   const roles: ThemeRoles = { ...rolesFor(theme, mode), [role]: value };
   let next = roles;
@@ -56,7 +53,6 @@ export function withRole(theme: NuvoTheme, mode: "light" | "dark", role: RoleKey
   return { ...theme, modes: { ...theme.modes, [mode]: next } };
 }
 
-/** Mounted once next to Settings; shows the sheet while it is open and a draft exists. */
 export function ThemeEditorHost(): JSX.Element | null {
   const open = useThemeEditor((s) => s.open);
   const draft = useAppearanceStore((s) => s.draft !== null);
@@ -64,13 +60,11 @@ export function ThemeEditorHost(): JSX.Element | null {
   return createPortal(<ThemeEditor />, document.body);
 }
 
-/** Back to the section the sheet came from; the draft stays for "Open" there. */
 function closeEditor(): void {
   useThemeEditor.getState().hide();
   useModalStore.getState().openSettingsSection("appearance");
 }
 
-/** The docked sheet over the playing app (customization 2). Not modal: the app behind stays live and shows every change. */
 function ThemeEditor(): JSX.Element | null {
   const { t } = useTranslation();
   const draft = useAppearanceStore((s) => s.draft);
@@ -105,7 +99,7 @@ function ThemeEditor(): JSX.Element | null {
   const roles = rolesFor(draft, mode);
   const report = new Map(contrastReport(chipRoles ?? roles).map((line) => [line.role, line]));
   const blocked = blockingModes(draft);
-  // the sheet is painted with the draft too; its own text stays readable, so the way out is never hidden by the colours being fixed
+  // The sheet uses the draft colours too; fixed contrast keeps its own text and exit readable
   const readableInk = fixContrast(roles.ink, roles.raised, 4.5);
   const sheetStyle =
     readableInk === roles.ink ? undefined : ({ "--n-ink": readableInk, "--btn-primary-bg": readableInk, "--btn-primary-text": roles.raised } as CSSProperties);

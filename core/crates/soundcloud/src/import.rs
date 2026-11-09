@@ -1,7 +1,3 @@
-//! SoundCloud links as import rows: a track, a set or a user's likes.
-//! Every track becomes an Exact row whose artist is the publisher's artist when SoundCloud has
-//! one, else the uploader; the title loses a leading "Artist - " naming that artist.
-
 use nuvo_contracts::catalog::ArtistRef;
 use nuvo_net::Url;
 use serde_json::{Value, json};
@@ -12,13 +8,9 @@ use crate::{ScError, ids, map};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ImportListing {
-    /// The set or track title; for likes, the username.
     pub label: String,
-    /// Set for a likes listing, so the renderer can say "{name}: Likes" in the user's language.
     pub likes_of: Option<String>,
-    /// `{title, artists, album?, durationMs?, track}` rows for `POST /v1/imports`.
     pub rows: Vec<Value>,
-    /// A later page failed: the rows read before it are all there is.
     pub partial: bool,
 }
 
@@ -29,7 +21,6 @@ fn text(record: &Value, pointer: &str) -> Option<String> {
     record.pointer(pointer)?.as_str().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string)
 }
 
-/// "Mira Holt - Paper Moons" by Mira Holt is "Paper Moons"; any other title stays.
 pub fn strip_artist(title: &str, artist: &str) -> String {
     for separator in [" - ", " – ", " — "] {
         if let Some((head, rest)) = title.split_once(separator)
@@ -42,7 +33,6 @@ pub fn strip_artist(title: &str, artist: &str) -> String {
     title.trim().to_string()
 }
 
-/// One Exact row. The cover falls back from the track artwork to `set_artwork` to the avatar.
 pub fn import_row(record: &Value, set_artwork: Option<&str>) -> Option<Value> {
     let mut track = map::track(record)?;
     let artist = text(record, "/publisher_metadata/artist").or_else(|| text(record, "/user/username"));
@@ -66,8 +56,7 @@ pub fn import_row(record: &Value, set_artwork: Option<&str>) -> Option<Value> {
 }
 
 impl SoundCloud {
-    /// The canonical `https://soundcloud.com/...` form of a link; short links are followed and
-    /// must land on SoundCloud again.
+    // Short links are followed and must land on SoundCloud again
     async fn canonical_link(&self, input: &str) -> Result<String, ScError> {
         let invalid = || ScError::Invalid(input.trim().to_string());
         match link::parse(input).ok_or_else(invalid)? {
@@ -79,7 +68,6 @@ impl SoundCloud {
         }
     }
 
-    /// Lists a track, set or likes link as import rows.
     pub async fn import_listing(&self, input: &str) -> Result<ImportListing, ScError> {
         let canonical = self.canonical_link(input).await?;
         let url = Url::parse(&canonical).map_err(|_| ScError::Invalid(canonical.clone()))?;
@@ -118,7 +106,6 @@ impl SoundCloud {
         for _ in 0..LIKES_PAGES {
             let page = match self.likes_page(num, next.as_deref()).await {
                 Ok(page) => page,
-                // what the earlier pages brought is kept; only a failing first page is an error
                 Err(_) if !rows.is_empty() => {
                     partial = true;
                     break;

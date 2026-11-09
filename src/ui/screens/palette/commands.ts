@@ -6,9 +6,7 @@ export interface Command {
   id: string;
   group: CommandGroup;
   title: string;
-  /** The title in every language, so a Russian query finds an English command and back. */
   keywords: string[];
-  /** An accelerator such as "Control+Right". */
   shortcut?: string;
   run(): void;
 }
@@ -18,9 +16,7 @@ export type ActionId =
 
 export interface CommandDeps {
   t: TFunction;
-  /** Every locale's text for a key. */
   translations: (key: string) => string[];
-  /** The in-app binding of a registry command, null when it has none. */
   shortcuts: (commandId: string) => string | null;
   settingItems: readonly { tabId: string; titleKey: string }[];
   actions: Record<ActionId, () => void>;
@@ -43,7 +39,6 @@ const ACTIONS: { id: ActionId; group: CommandGroup; shortcut?: string }[] = [
   { id: "tour", group: "window" },
 ];
 
-/** What the empty palette offers, in this order: the commands worth learning a shortcut for. */
 const SUGGESTED = ["play_pause", "lyrics", "search", "next", "settings"];
 
 export function buildCommands({ t, translations, shortcuts, settingItems, actions, openSettings }: CommandDeps): Command[] {
@@ -72,17 +67,14 @@ export interface SoundDeps {
   t: TFunction;
   translations: (key: string) => string[];
   eqOn: boolean;
-  /** Built-in equalizer presets by key, then the user's own by name. */
   eqPresets: readonly string[];
   ownPresets: readonly string[];
-  /** Speed presets with the key of their label. */
   tempoPresets: readonly { key: string; labelKey: string }[];
   toggleEq(): void;
   applyEq(name: string): void;
   applyTempo(key: string): void;
 }
 
-/** The equalizer switch, every equalizer preset and every speed preset, found by the preset's name in any language. */
 export function soundCommands({ t, translations, eqOn, eqPresets, ownPresets, tempoPresets, toggleEq, applyEq, applyTempo }: SoundDeps): Command[] {
   const eqWords = translations("sound.title");
   const eq = (id: string, name: string, keywords: string[]): Command => ({
@@ -106,7 +98,6 @@ export function soundCommands({ t, translations, eqOn, eqPresets, ownPresets, te
   ];
 }
 
-/** Lower case, ё as е, and every run of non-letters as one space. */
 function normalize(text: string): string {
   return text
     .toLowerCase()
@@ -115,10 +106,6 @@ function normalize(text: string): string {
     .trim();
 }
 
-/**
- * The empty query gives the suggestions. Otherwise a command whose title or keywords have a word starting
- * with the query comes first, then one that only contains it; the order within a rank is the given order.
- */
 export function rankCommands(commands: Command[], query: string): Command[] {
   const needle = normalize(query);
   if (!needle) return SUGGESTED.flatMap((id) => commands.filter((command) => command.id === id));

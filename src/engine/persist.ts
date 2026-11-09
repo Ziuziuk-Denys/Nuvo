@@ -1,14 +1,11 @@
-/** Preferences, the saved session and the one-time migration from the old key. */
 import { clampRate, clampSemitones, clampVolume } from "./tempo";
 import type { OutputDevice, QueueEntry, RepeatMode, Track } from "./types";
 
 export const PREFS_KEY = "nuvo.player.prefs.v3";
 export const SESSION_KEY = "nuvo.player.session.v3";
-/** The current entry's position, written apart so progress never rewrites the whole queue. */
 export const POSITION_KEY = "nuvo.player.session.v3.position";
 export const MIGRATED_KEY = "nuvo.player.migrated";
 export const LEGACY_KEY = "nuvo_player_session_v2";
-/** Entries kept around the current one when a full session does not fit. */
 export const TRIMMED_ENTRIES = 500;
 export const SESSION_WRITE_INTERVAL_MS = 1000;
 
@@ -31,7 +28,6 @@ export interface Prefs {
   pauseOnDeviceLoss: boolean;
   restoreSession: boolean;
   output: OutputDevice | null;
-  /** Best quality: the hi-fi YouTube format and the better of YouTube and SoundCloud. */
   bestQuality: boolean;
   crossfadeSeconds: number;
 }
@@ -104,12 +100,9 @@ export function loadPrefs(storage: KeyValue): Prefs {
 export function savePrefs(storage: KeyValue, prefs: Prefs): void {
   try {
     storage.setItem(PREFS_KEY, JSON.stringify(prefs));
-  } catch {
-    // quota or a blocked storage: preferences stay in memory for this run
-  }
+  } catch {}
 }
 
-/** Compact snapshot: the fields the queue and the reports need. */
 function compact(track: Track): Track {
   const { playCount: _playCount, releaseDate: _releaseDate, ...rest } = track;
   return rest;
@@ -156,12 +149,9 @@ export interface SavedPosition {
 export function savePosition(storage: KeyValue, position: SavedPosition): void {
   try {
     storage.setItem(POSITION_KEY, JSON.stringify(position));
-  } catch {
-    // the queue's own position stays
-  }
+  } catch {}
 }
 
-/** Writes the session; on a quota error keeps the 500 entries around the current one and logs once. */
 export function saveSession(storage: KeyValue, session: SavedSession | null, log: (message: string) => void): void {
   storage.removeItem(POSITION_KEY);
   if (!session || session.entries.length === 0) {
@@ -185,11 +175,9 @@ export function saveSession(storage: KeyValue, session: SavedSession | null, log
 }
 
 export interface Migration {
-  /** UI settings that leave the engine, handed on untouched. */
   uiSettings: Record<string, unknown>;
 }
 
-/** One-time copy of the old zustand-persist key; the old key stays for one release, marked migrated. */
 export function migrateLegacy(storage: KeyValue, newId: () => string): Migration | null {
   if (storage.getItem(MIGRATED_KEY)) return null;
   const legacy = parse(storage, LEGACY_KEY) as { state?: Record<string, unknown> } | null;
@@ -235,7 +223,6 @@ export function migrateLegacy(storage: KeyValue, newId: () => string): Migration
   return { uiSettings };
 }
 
-/** At most one session write per second while it changes; `flush` writes at once. */
 export class SessionWriter {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private lastWrite = -Infinity;

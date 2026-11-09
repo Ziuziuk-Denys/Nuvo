@@ -52,7 +52,13 @@ describe("core host", () => {
     const { host, spawn, statuses } = setup((n) => n >= 2);
     await host.start();
     expect(statuses).toEqual(["starting", "ready"]);
-    const [, , options] = spawn.mock.calls[0] as unknown as [string, string[], { env: Record<string, string>; stdio: string[] }];
+    const [, , options] = spawn.mock.calls[0] as unknown as [
+      string,
+      string[],
+      { env: Record<string, string>; stdio: string[]; windowsHide: boolean; detached: boolean },
+    ];
+    expect(options.windowsHide).toBe(true);
+    expect(options.detached).toBe(false);
     expect(options.env.NUVO_CORE_TOKEN).toBe(host.token);
     expect(host.token).toMatch(/^[0-9a-f]{64}$/);
     expect(options.env.NUVO_CORE_SOCKET).toBe("/run/nuvo/core.sock");
@@ -193,7 +199,6 @@ describe("core host", () => {
       children[0].stdin.end = vi.fn();
       children[0].kill = vi.fn();
       const stopped = host.stop();
-      // EOF first, SIGTERM at 1.5 s, SIGKILL 1 s later: the whole stop fits the shutdown's daemon budget
       await vi.advanceTimersByTimeAsync(1499);
       expect(children[0].kill).not.toHaveBeenCalled();
       await vi.advanceTimersByTimeAsync(1);

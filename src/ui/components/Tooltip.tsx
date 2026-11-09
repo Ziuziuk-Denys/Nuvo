@@ -6,11 +6,6 @@ const HOVER_DELAY_MS = 500;
 const GAP_PX = 8;
 const EDGE_PX = 8;
 
-/**
- * A text hint for one focusable child: after 500 ms of hover, or at once on keyboard focus.
- * It describes the child only while shown; the child keeps its own accessible name.
- * The events are caught on a box-less wrapper, so the child keeps its own handlers untouched.
- */
 export function Tooltip({ text, children }: { text: string; children: ReactElement<{ "aria-describedby"?: string }> }): JSX.Element {
   const id = useId();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -59,7 +54,6 @@ export function Tooltip({ text, children }: { text: string; children: ReactEleme
     hide();
   };
 
-  // empty text shows nothing: a button whose popover is open needs no hint over it
   const shown = anchor !== null && text !== "";
   const describedBy = shown ? id : children.props["aria-describedby"];
 
@@ -75,7 +69,6 @@ function Bubble({ id, text, anchor }: { id: string; text: string; anchor: HTMLEl
   const ref = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<{ top: number; left: number } | null>(null);
 
-  // measured before paint: above the anchor, below it when the window top is too close
   useLayoutEffect(() => {
     const bubble = ref.current;
     if (!bubble) return;

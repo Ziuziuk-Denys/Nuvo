@@ -1,4 +1,3 @@
-/* Cache and storage: a category list beside the selection ring, the stepped limit, and the clear action. */
 .storage {
   display: flex;
   flex: 1;

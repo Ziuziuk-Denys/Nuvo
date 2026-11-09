@@ -66,7 +66,6 @@ function readView(): LibraryViewMode {
   }
 }
 
-/** The order chosen per tab; a tab never sorted, or sorted by an order it no longer offers, uses its default. */
 function readSorts(): Partial<Record<LibraryTab, LibrarySort>> {
   try {
     return JSON.parse(localStorage.getItem(SORT_KEY) ?? "{}") as Partial<Record<LibraryTab, LibrarySort>>;
@@ -120,7 +119,6 @@ function useLibraryEntries(t: TFunction) {
   return { entries, loading, failed };
 }
 
-/** Stops the workers of every running import into this playlist and drops them; what already landed stays. */
 function cancelImport(playlistId: string): void {
   const { session } = getImports();
   for (const summary of session.getSnapshot()) {
@@ -167,7 +165,6 @@ function menuItems(entry: LibraryEntry, pinned: { home: boolean; rail: boolean }
   return items;
 }
 
-/** Library: tabs and a filter over Liked songs, playlists, albums and artists, as rows or covers. */
 export function Library(): JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();

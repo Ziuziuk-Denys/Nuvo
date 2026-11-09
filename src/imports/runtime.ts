@@ -1,7 +1,3 @@
-/**
- * The app's one import runtime: the daemon client, the session with its workers, and the
- * screens' actions. The shell calls `bootImports` once, after the YouTube client has booted.
- */
 import { useSyncExternalStore } from "react";
 import type { TFunction } from "@/i18n";
 import { CORE_BASE_URL } from "@/data/core/request";
@@ -19,11 +15,8 @@ export interface ImportsRuntime {
   daemon: ImportsDaemon;
   session: ImportsSession;
   actions: ImportActions;
-  /** Songs for one row's own search in the report. */
   searchSongs(query: string): Promise<CatalogTrack[]>;
-  /** Where a song waiting for its new playlist is kept, in the library, across a restart. */
   pendingStore: PendingStore;
-  /** Null when this build cannot save files (no preload channel). */
   saveReport: ((summary: ImportSummary) => Promise<void>) | null;
 }
 
@@ -55,7 +48,6 @@ async function searchYoutube(query: string, filter: ImportSearch["filter"], sign
   return items.filter((item): item is TrackItem => item.kind === "track").map(toCatalog);
 }
 
-/** A file name a save dialog can offer: the label without path or control characters. */
 export function reportFileName(label: string): string {
   const base = label
     .replace(/[\\/:*?"<>|\p{Cc}]+/gu, " ")
@@ -65,7 +57,7 @@ export function reportFileName(label: string): string {
   return `${base || "import"} report.csv`;
 }
 
-/** Saves and clears one after the other, so a late save never undoes a clear. Failures are quiet. */
+// Saves and clears run in order, so a late save never undoes a clear
 export function createPendingStore(daemon: Pick<ImportsDaemon, "savePendingTrack" | "clearPendingTrack">): PendingStore {
   let queue: Promise<unknown> = Promise.resolve();
   const run = (task: () => Promise<void>) => {
@@ -77,11 +69,7 @@ export function createPendingStore(daemon: Pick<ImportsDaemon, "savePendingTrack
   };
 }
 
-/**
- * Finishes the add of a song saved before a restart. The daemon's bulk add skips a song that is
- * already in the playlist, so a crash between the add and the clear only repeats a no-op. A playlist
- * that no longer exists ends the job instead of retrying at every start.
- */
+// Bulk add skips a song already in the playlist, so a crash between add and clear is a no-op
 export async function resumeSavedSong(
   daemon: Pick<ImportsDaemon, "pendingTrack" | "addToPlaylist">,
   store: PendingStore,
@@ -110,10 +98,6 @@ export async function resumeSavedSong(
 let runtime: ImportsRuntime | null = null;
 let translate: TFunction = (key) => key;
 
-/**
- * Builds the runtime once; later calls only take the current translator, so names given to new
- * playlists follow a language switch. Safe to call on every render of the shell.
- */
 export function bootImports(t: TFunction): ImportsRuntime {
   translate = t;
   if (runtime) return runtime;
@@ -162,7 +146,6 @@ export function getImports(): ImportsRuntime {
   return runtime;
 }
 
-/** The known imports, newest first, for the Library rows and the report. */
 export function useImportSummaries() {
   const { session } = getImports();
   return useSyncExternalStore(session.subscribe, session.getSnapshot);

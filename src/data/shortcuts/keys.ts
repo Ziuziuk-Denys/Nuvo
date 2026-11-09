@@ -1,8 +1,6 @@
-/** In-app key presses to commands, with the guards that keep shortcuts out of fields and controls, and the Escape stack. */
 import { acceleratorFromEvent, acceleratorKey, isComposing } from "./accelerator";
 import type { CommandRegistry } from "./registry";
 
-/** Surfaces that close on Escape push a handler when they open; Escape runs the newest one. */
 export class EscapeStack {
   private readonly handlers: Array<() => void> = [];
   private fallback: (() => boolean) | null = null;
@@ -16,12 +14,10 @@ export class EscapeStack {
     };
   }
 
-  /** What Escape does with nothing open, for example going back from an entity page. */
   setFallback(fallback: (() => boolean) | null): void {
     this.fallback = fallback;
   }
 
-  /** Runs the newest handler, else the fallback; true when something handled Escape. */
   run(): boolean {
     const top = this.handlers[this.handlers.length - 1];
     if (top) {
@@ -36,11 +32,8 @@ export interface KeyHandlerDeps {
   registry: CommandRegistry;
   escape: EscapeStack;
   windowFocused(): boolean;
-  /** A dialog or menu is open: it handles keys itself. */
   overlayOpen(): boolean;
-  /** Something holds the app's escape guard (a field that handles its own Escape). */
   escapeGuarded(): boolean;
-  /** A binding is being recorded: the recorder owns every key, Escape included. */
   recording(): boolean;
 }
 
@@ -93,7 +86,6 @@ export function createKeyHandler(deps: KeyHandlerDeps): (event: KeyboardEvent) =
     if (!command || (event.repeat && !command.repeatable)) return;
     const key = acceleratorKey(accelerator);
     const role = focus ? roleOf(focus) : null;
-    // a focused control that uses Space or the arrows itself keeps them; a plain button does not take Space
     if (role && key === "Space" && SPACE_TAKERS.has(role)) return;
     if (role && ARROWS.has(key) && ARROW_TAKERS.has(role)) return;
     if (deps.registry.run(command.id, "key")) event.preventDefault();

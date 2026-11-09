@@ -1,7 +1,4 @@
-/*
- * The artist ask on an empty Home, centred in the page's area like the empty states. Its top is fixed where the
- * idle ask sits centred (about 220 px tall), so the rows that come with typing grow down and never move the title.
- */
+/* Top fixed where the idle ask sits centred (about 220 px), so rows from typing grow down */
 .ask {
   display: flex;
   flex-direction: column;

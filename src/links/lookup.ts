@@ -1,7 +1,3 @@
-/**
- * Title, artist and length for one song link from services that answer without a token: Apple's iTunes
- * lookup, Deezer's public API and Yandex Music (region dependent). The result is matched by name.
- */
 import { readCapped } from "./capped";
 import type { MatchSource } from "./types";
 
@@ -12,7 +8,6 @@ export type SongLookup = { kind: "song"; source: MatchSource; isrc?: string } | 
 const MAX_TEXT = 300;
 const MAX_BODY_BYTES = 1024 * 1024;
 
-/** Parsed JSON, or null when the body is not JSON or is larger than the cap. */
 async function readJson(response: Response): Promise<unknown> {
   if (!response.body) return null;
   const bytes = await readCapped(response.body, MAX_BODY_BYTES);
@@ -24,7 +19,6 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-/** No cookies, no referrer; status 0 when the request did not complete. */
 export const fetchJson: FetchJson = async (url, signal) => {
   try {
     const response = await fetch(url, {
@@ -122,7 +116,6 @@ export async function lookupYandex(id: string, get: FetchJson, signal: AbortSign
   };
 }
 
-/** A Shazam `/song/<id>` may be an Apple id; otherwise the slug from the URL is the query. */
 export async function lookupShazam(slug: string, id: string | undefined, get: FetchJson, signal: AbortSignal): Promise<SongLookup> {
   if (id) {
     const apple = await lookupApple(id, "us", get, signal);

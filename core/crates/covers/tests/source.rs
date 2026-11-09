@@ -61,7 +61,6 @@ fn youtube_file_names_follow_the_bucket() {
     assert_eq!(tries("https://i.ytimg.com/vi/x/default.jpg", None, 512)[0], "https://i.ytimg.com/vi/x/sddefault.jpg");
 }
 
-/// Review focus 4: SoundCloud artwork without a size token (default avatars) is fetched as given.
 #[test]
 fn tokenless_soundcloud_artwork_is_fetched_as_given() {
     let src = "https://a1.sndcdn.com/images/default_avatar_large.png";

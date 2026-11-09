@@ -1,5 +1,3 @@
-//! The remembered fallback choice per track (store migration 15): one alternative at most.
-
 use rusqlite::{Connection, OptionalExtension};
 
 use crate::StoreError;
@@ -31,8 +29,6 @@ pub fn put(conn: &Connection, track_id: &str, alt: &Alternative, now: i64) -> Re
     Ok(())
 }
 
-/// Forgets `alt_id` everywhere it could come back from: the stored choice for this track, its
-/// stand-in, and any remembered match outcome that proposes it.
 pub fn reject(conn: &Connection, track_id: &str, alt_id: &str) -> Result<(), StoreError> {
     let tx = conn.unchecked_transaction()?;
     tx.execute("DELETE FROM track_alternatives WHERE track_id = ?1 AND alt_id = ?2", (track_id, alt_id))?;

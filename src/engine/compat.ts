@@ -1,7 +1,3 @@
-/**
- * Player names over the engine, for callers still on the old import paths (UI ports, the karaoke
- * view, legacy screens). Shrinks as callers move to `@/engine`; deleted when the last one has moved.
- */
 import { create } from "zustand";
 import { clock, nextRepeat, outputs, player, soundBus } from "./index";
 import { gainFromSlider, sliderFromGain } from "./tempo";
@@ -10,12 +6,11 @@ import { fallbackHover, sourceLabel } from "./stateLine";
 import { streamFormat } from "./streamFormat";
 import { isStation, type PlayerView, type RepeatMode, type Track, type TuningState } from "./types";
 
-/** What old callers read: a play count on every track. */
 type LegacyTrack = Track & { playCount: number };
 
 export type { RepeatMode };
 
-/** Old callers speak the shared Track (play count always set, artist ids optional). One object per engine track keeps React identities stable. */
+// One object per engine track keeps React identities stable
 const legacyTracks = new WeakMap<Track, LegacyTrack>();
 function toLegacy(track: Track): LegacyTrack {
   let legacy = legacyTracks.get(track);
@@ -33,7 +28,6 @@ export type TrackDoubleClickBehavior = "play" | "queue";
 const DOUBLE_CLICK_KEY = "nuvo.ui.trackDoubleClick";
 const OLD_PLAYER_KEY = "nuvo_player_session_v2";
 
-/** A UI setting that left the player: its own key, first seeded from the old player store. */
 function loadDoubleClick(): TrackDoubleClickBehavior {
   try {
     const own = localStorage.getItem(DOUBLE_CLICK_KEY);
@@ -58,24 +52,17 @@ export interface PlayerState extends TuningState {
   shuffle: boolean;
   playbackContext: string | null;
   playbackContextCover: string | null;
-  /** Index of the first continuation entry; null while the queue has none. */
   autoplayFrom: number | null;
-  /** Continuation is unconditional; kept for readers. */
   autoplaySimilar: boolean;
   setAutoplaySimilar(on: boolean): void;
   bestQuality: boolean;
-  /** The chosen device id, null for the system default. */
   outputChosen: string | null;
-  /** The chosen device's name while it plays; null when the default plays. */
   outputLabel: string | null;
-  /** Why the playing track is not heard, when Nuvo knows. */
   outputSilent: "system_muted" | "output_stopped" | null;
-  /** Engine preferences under their old names. */
   pauseOnDeviceChange: boolean;
   setPauseOnDeviceChange(on: boolean): void;
   defaultPlaybackContext: "resume" | "empty";
   setDefaultPlaybackContext(value: "resume" | "empty"): void;
-  /** UI state that used to live in the player store. */
   isFullscreen: boolean;
   fullscreen: boolean;
   setFullscreen(on: boolean): void;
@@ -162,7 +149,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   isFullscreen: false,
   fullscreen: false,
   setFullscreen: (on) => set({ isFullscreen: on, fullscreen: on }),
-  // Continuation is unconditional.
   setAutoplaySimilar: () => undefined,
   pauseOnDeviceChange: true,
   setPauseOnDeviceChange: (on) => {
@@ -178,14 +164,11 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setTrackDoubleClickBehavior: (value) => {
     try {
       localStorage.setItem(DOUBLE_CLICK_KEY, value);
-    } catch {
-      // storage blocked: the choice lasts this session
-    }
+    } catch {}
     set({ trackDoubleClickBehavior: value });
   },
 }));
 
-/** Called once after `startEngine`. */
 export function connectCompat(): () => void {
   const engine = player();
   usePlayerStore.setState({ pauseOnDeviceChange: engine.pauseOnDeviceLoss, defaultPlaybackContext: engine.restoreSession ? "resume" : "empty" });
@@ -204,10 +187,8 @@ export const toVolumeGain = gainFromSlider;
 export const toVolumeLevel = sliderFromGain;
 
 export const playerEngine = {
-  /** The external-store pair, over the mirrored state. */
   subscribe: (listener: () => void) => usePlayerStore.subscribe(listener),
   getSnapshot: () => usePlayerStore.getState(),
-  // The decks resume their audio context when playback starts, so there is nothing to prime.
   primeUserGesture: () => undefined,
   togglePlayPause: () => player().toggle(),
   pause: () => player().pause(),
@@ -236,7 +217,6 @@ export const playerEngine = {
     const entry = player().getView().entries[from];
     if (entry) player().move(entry.entryId, to);
   },
-  /** Old call shape: track, queue, context, cover, index, preserveQueue. */
   playTrack: (legacyTrack: Track, legacyQueue?: Track[], context?: string | null, cover?: string | null, index?: number, preserveQueue?: boolean) => {
     const engine = player();
     const track = fromLegacy(legacyTrack);
@@ -276,16 +256,13 @@ export const playerRuntime = {
   currentStreamFormat: () => streamFormat(player().getView().stream),
   keepVersion: () => player().keepVersion(),
   rejectVersion: (trackId: string) => player().rejectAlternative(trackId),
-  /** The quiet line and its hover when another source stands in for the track; null otherwise. */
   currentFallback: () => {
     const fallback = player().getView().fallback;
     return fallback ? { source: sourceLabel(fallback.usedSource), restarted: fallback.restarted, hover: fallbackHover(fallback) } : null;
   },
   setSleepFade: (multiplier: number) => soundBus().setSleepLevel(multiplier),
   applyPlaybackRateAndPitch: () => undefined,
-  /** Replays the current track from a position (the sign-in flow); a fresh load resolves the source again. */
   loadAndPlay: async (_track: Track, positionMs: number) => player().seekTo(positionMs, { andPlay: true }),
-  // The engine's pre-cache scheduler owns preloading.
   preloadTrack: async (..._args: unknown[]) => undefined,
 };
 

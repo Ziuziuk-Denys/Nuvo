@@ -33,34 +33,24 @@ import searchStyles from "./Search.module.css";
 import styles from "./LinkBlock.module.css";
 
 export interface LinkBlockProps {
-  /** The pasted link, exactly as it is in the field. */
   text: string;
   ports: LinkPorts;
-  /** Plays the song alone, as a search result does. */
   onPlay(track: Track): void;
   onLike(track: Track): void;
   onAddToPlaylist(track: Track, anchor: HTMLElement): void;
-  /** Replaces the field with a normal query. */
   onSearch(query: string): void;
-  /**
-   * Opens the import preview of a playlist or album link (library-imports client). Absent until that
-   * client exists; the block then says the host can't be read yet.
-   */
   onImport?(service: ImportService, url: string): void;
   onShare(share: Share): void;
   onNavigate(path: string): void;
   onOpenExternal(url: string): void;
   onImportFile(): void;
-  /** True once the job has run 300 ms: the screen shows its progress line under the field. */
   onSlow(slow: boolean): void;
 }
 
 type Work = { kind: "route" } | { kind: "listen"; url: string; part: 0 | 1 };
 type State = { phase: "working"; stage: Stage | null } | { phase: "done"; result: LinkResult };
 
-/** The progress line waits this long, so quick answers never flash it. */
 const PROGRESS_DELAY_MS = 300;
-/** The "Choose another" list shows at most this many candidates. */
 const MAX_OTHERS = 5;
 
 const SERVICE_OF_KIND: Partial<Record<LinkRoute["kind"], Service>> = {
@@ -95,7 +85,6 @@ function hostOf(url: string): string | undefined {
   }
 }
 
-/** The search screen's answer to a pasted link: one quiet block in place of the tabs and result groups. */
 export function LinkBlock(props: LinkBlockProps): JSX.Element {
   const { t } = useTranslation();
   const say = ({ key, vars }: Message) => t(key, vars);
@@ -105,7 +94,6 @@ export function LinkBlock(props: LinkBlockProps): JSX.Element {
   const [slow, setSlow] = useState(false);
   const [chosen, setChosen] = useState<CatalogTrack | null>(null);
   const [showOthers, setShowOthers] = useState(false);
-  // the last anchor stays set while the menu fades out; the flag says whether it is up
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const propsRef = useRef(props);
@@ -143,7 +131,6 @@ export function LinkBlock(props: LinkBlockProps): JSX.Element {
       },
       () => {
         window.clearTimeout(timer);
-        // aborted: the field changed or the block closed; anything else must not leave the stage line up
         if (controller.signal.aborted) return;
         setSlow(false);
         setState({ phase: "done", result: { kind: "error", code: "failed", service: routeService(route) } });

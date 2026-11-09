@@ -1,4 +1,3 @@
-/** `player:command` from main. Unknown types and malformed values are ignored. */
 import { volumeAfterDelta } from "./tempo";
 import type { PlayerView, Track } from "./types";
 
@@ -17,7 +16,6 @@ export interface CommandTarget {
 export interface LibraryPort {
   like(trackId: string): void;
   unlike(trackId: string): void;
-  /** "Not interested" in the playing track; absent where recommendations are off. */
   dislike?(track: Track): void;
 }
 

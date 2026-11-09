@@ -52,7 +52,6 @@ describe("NetworkSection", () => {
   it("runs the connection check and lists every row with its cause", async () => {
     await act(async () => root.render(<NetworkSection />));
     await act(async () => byText("ui.settings.check").click());
-    // the headline is the user's language, not the daemon's English summary
     expect(host.textContent).toContain("ui.settings.check_service");
     expect(host.textContent).not.toContain("SoundCloud is blocked on this network.");
     expect(host.textContent).toContain("dns music.youtube.com · ui.settings.check_ok · 12 ms");

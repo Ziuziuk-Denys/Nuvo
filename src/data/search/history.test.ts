@@ -19,7 +19,6 @@ const fetchFake = (async (input: RequestInfo | URL, init?: RequestInit) => {
   return handler ? handler(body) : new Response(null, { status: 503 });
 }) as typeof fetch;
 
-// Response bodies settle over real stream ticks, so wait on timers, not a fixed count of microtasks
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 20));
 let nextId = 0;
 const stored = () => Response.json({ id: `e${(nextId += 1)}`, kind: "query", at: "2026-11-01T10:00:00Z" });

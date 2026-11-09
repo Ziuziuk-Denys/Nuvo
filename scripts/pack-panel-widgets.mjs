@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// Packs the GNOME Shell extension into the zip `gnome-extensions install` takes, at desktop/dist.
-// A small zip writer instead of a library or the gnome-extensions tool, which build machines lack.
+// Own zip writer: build machines lack the gnome-extensions tool
 import { default as fs } from "node:fs";
 import { default as path } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,7 +18,7 @@ function filesUnder(dir, rel = "") {
     });
 }
 
-/** A deflate zip of every file under `dir`, paths relative to it. Fixed timestamps keep it reproducible. */
+// Fixed timestamps keep the zip reproducible
 export function zipDirectory(dir) {
   const locals = [];
   const centrals = [];

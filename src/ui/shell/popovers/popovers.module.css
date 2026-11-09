@@ -1,5 +1,3 @@
-/* The player panels: the sound popovers' spacing (12 px between groups, 4 px between chips). */
-
 .body {
   display: flex;
   flex-direction: column;
@@ -20,8 +18,7 @@
   gap: 4px;
 }
 
-/* The five sleep lengths always keep one row: the Russian labels run a few px past 340, and the chips give
-   those px up from their padding instead of wrapping. */
+/* Russian labels run a few px past 340, so chips give up padding to keep one row */
 .lengths {
   display: flex;
   gap: 4px;
@@ -33,7 +30,6 @@
   justify-content: center;
 }
 
-/* the speed panel's Custom chip holds its place while hidden, so the height never jumps */
 .customChip {
   composes: chip from "./controls.module.css";
   visibility: hidden;
@@ -68,7 +64,6 @@
   gap: 8px 20px;
 }
 
-/* Sleep: the armed line in the header, then the typed length with Start and Cancel */
 .status {
   color: var(--n-accent);
   font: 600 11px/1 var(--n-font);
@@ -113,7 +108,6 @@
   margin-left: auto;
 }
 
-/* Moments: a chip that plays from the mark, then its small cross */
 .moment {
   display: inline-flex;
   align-items: center;
@@ -125,7 +119,6 @@
   font: var(--n-type-label);
 }
 
-/* Volume: a 46 px column over its button in the popover glass */
 .volumeShell {
   position: fixed;
   z-index: 900;
@@ -230,7 +223,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Add to playlist: the track, the search well, 44 px cover rows and New playlist */
 .addBody {
   display: flex;
   flex-direction: column;

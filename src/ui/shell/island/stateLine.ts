@@ -1,17 +1,12 @@
 export interface StateLineInput {
   offline: boolean;
-  /** Remaining sleep-timer time; null when no timer runs or the sound feature is absent. */
   sleepRemainingMs: number | null;
   playbackContext: string | null;
   queueTitles: string[];
   currentIndex: number;
-  /** First queue index appended by "autoplay similar"; null when nothing was appended. */
   autoplayFrom: number | null;
-  /** Why the daemon chose the playing track, already worded; null for the user's own picks. */
   reason?: string | null;
-  /** The "Not interested" confirmation, already worded; it beats everything while it lasts. */
   notice?: string | null;
-  /** Files saved so far across running saves; null when none runs. */
   downloads?: { done: number; total: number } | null;
 }
 
@@ -32,7 +27,6 @@ export function formatClock(ms: number): string {
   return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${seconds}` : `${minutes}:${seconds}`;
 }
 
-/** The island's quiet second line: shown only when it means something, most urgent first. */
 export function stateLine(input: StateLineInput): StateLine | null {
   if (input.notice) return { kind: "notice", text: input.notice };
   if (input.offline) return { kind: "offline" };

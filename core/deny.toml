@@ -1,11 +1,9 @@
-# cargo deny check: known advisories, licences that fit AGPL-3.0-or-later, and crates only from crates.io
 [graph]
 all-features = false
 
 [advisories]
 version = 2
 yanked = "deny"
-# an unmaintained notice fails the check only for crates Nuvo depends on directly
 unmaintained = "workspace"
 
 [licenses]

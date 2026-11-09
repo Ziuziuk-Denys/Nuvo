@@ -63,14 +63,12 @@ fn a_passphrase_seals_the_key_file_and_is_needed_to_open_it() {
     assert!(!on_disk.windows(32).any(|w| w == KEY), "the key must not sit in the file in the clear");
     assert_eq!(dir.path().join("master.key").metadata().unwrap().permissions().mode() & 0o777, 0o600);
 
-    // a new run: the file asks for the passphrase
     let again = FallbackKeyStore::new(MemoryKeyStore::unavailable(), sealed(&dir));
     assert!(matches!(again.load(), Err(KeyStoreError::NeedsPassphrase)));
     assert!(matches!(again.unlock_with_passphrase("wrong"), Err(KeyStoreError::WrongPassphrase)));
     assert!(matches!(again.load(), Err(KeyStoreError::NeedsPassphrase)));
     assert_eq!(again.unlock_with_passphrase("correct horse").unwrap(), KEY);
     assert_eq!(again.load().unwrap(), Some(KEY));
-    // saving after the unlock keeps the file sealed
     again.save(&KEY).unwrap();
     assert_eq!(again.protection(), Protection::Passphrase);
 }

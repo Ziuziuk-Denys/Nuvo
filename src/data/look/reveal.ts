@@ -1,4 +1,3 @@
-/** A look change revealed in a circle from the click point; at once with reduced motion or no View Transitions. */
 const REVEAL_MS = 420;
 
 export function revealThemeChange(apply: () => void, origin?: { x: number; y: number }): void {

@@ -22,7 +22,7 @@ const GB = 1024 ** 3;
 const LIMITS = [0.25 * GB, GB, 2 * GB, 3 * GB, 5 * GB, 10 * GB, 0];
 const DEFAULT_LIMIT_INDEX = 3;
 
-/** A ring segment between two angles (degrees, clockwise from the top) as an SVG path. */
+// Angles are in degrees, clockwise from the top
 export function ringSegment(inner: number, outer: number, from: number, to: number): string {
   const sweep = Math.min(Math.max(to - from, 0.1), 359.99);
   const point = (radius: number, angle: number) => {
@@ -44,7 +44,6 @@ function initialSelection(analytics: StorageAnalytics | null): Set<StorageCatego
   return new Set(analytics.categories.filter((category) => category.bytes > 0).map((category) => category.id));
 }
 
-/** Cache by kind with a ring of the selection, the audio cache limit, and clearing after a confirmation. */
 export function StorageSection(): JSX.Element {
   const { t } = useTranslation();
   const [analytics, setAnalytics] = useState<StorageAnalytics | null>(getCachedStorageAnalytics);

@@ -5,7 +5,6 @@ import { _electron, type ElectronApplication, type Page } from "playwright-core"
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isolate, type Isolation } from "./isolation";
 
-/** Runs against a build: `pnpm build`, then `pnpm exec vitest run --config vitest.e2e.config.ts e2e/shell.e2e.ts`. */
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ELECTRON = createRequire(import.meta.url)("electron") as unknown as string;
 
@@ -84,7 +83,6 @@ function watcherPresent(): boolean {
   }
 }
 
-/** A 440 Hz tone as 16-bit mono WAV. */
 function toneWav(seconds: number): Buffer {
   const rate = 48_000;
   const samples = rate * seconds;
@@ -160,9 +158,7 @@ afterAll(async () => {
   if (pid) {
     try {
       process.kill(pid, "SIGKILL");
-    } catch {
-      // already gone
-    }
+    } catch {}
   }
   isolation?.dispose();
 });
@@ -532,7 +528,6 @@ describe("shell e2e", () => {
       .match(/'([^']+)'/)![1];
     for (const id of ["tray1", "tray2"]) await putTone(main, id, 20);
     await main.evaluate(([a, b]) => handle().engine.playList([a, b]), [track("tray1", 20), track("tray2", 20)]);
-    // the menu follows the player state, so with a track playing it offers Pause
     const readLayout = () =>
       execFileSync("gdbus", [
         "call",

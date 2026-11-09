@@ -1,4 +1,3 @@
-/** Whole-file download for the cache when the daemon cannot fetch the URL itself. */
 import type { FetchLike } from "../http";
 import { YtError, abortError, isAbortError } from "../types";
 
@@ -15,7 +14,6 @@ const isGooglevideo = (url: string) => {
   }
 };
 
-/** The whole file, or `null` when it is not cacheable (partial, empty or refused). Chunk failures reject. */
 export async function downloadWhole(
   fetchFn: FetchLike,
   url: string,

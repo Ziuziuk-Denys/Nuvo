@@ -5,7 +5,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { launchNuvo, passFirstRun, type Look, type NuvoSession } from "./harness";
 import { fixtureCover } from "./seed";
 
-/** The Statistics page in the real app: empty, the first hour, a seeded history, drill-downs, export, delete and the pause switch. */
 const SHOTS = process.env.NUVO_STATS_SHOTS ?? path.join(os.homedir(), ".cache", "stats-shots");
 const LIGHT: Look = { preset: "nuvo", mode: "light" };
 const DARK: Look = { preset: "nuvo", mode: "dark" };
@@ -60,7 +59,6 @@ function catalog(): Seeded[] {
   });
 }
 
-/** Posts plays through the daemon's own route: the same path the player uses. */
 async function post(live: NuvoSession, plays: unknown[]): Promise<void> {
   const chunk = 400;
   for (let at = 0; at < plays.length; at += chunk) {
@@ -118,7 +116,6 @@ function random(seed: number): () => number {
   };
 }
 
-/** Two years of evenings, weekend afternoons and a few favourites, with gaps and a fading old love. */
 function history(days: number, sessionsPerDay = 1.3): unknown[] {
   const tracks = catalog();
   const next = random(7);
@@ -150,11 +147,9 @@ function history(days: number, sessionsPerDay = 1.3): unknown[] {
       const id = `seed-${back}-${s}`;
       const source = next() < 0.7 ? "youtube" : next() < 0.8 ? "soundcloud" : "cache";
       for (let position = 1; position <= length; position += 1) {
-        // favourites stay near the top; the old loves (40 to 43) end two hundred days ago
         const favourite = next() < 0.35 ? Math.floor(next() * next() * 14) : Math.floor(next() * tracks.length);
         const old = 40 + Math.floor(next() * 4);
         const picked = back > 200 && next() < 0.1 ? old : favourite >= 40 && favourite < 44 ? favourite + 4 : favourite;
-        // the newest songs arrive in the last two months
         const track = tracks[picked >= 88 && back > 60 ? picked - 40 : picked];
         const roll = next();
         const reason = roll < 0.74 ? "complete" : roll < 0.9 ? "skip" : "next";
@@ -175,7 +170,6 @@ async function shot(live: NuvoSession, name: string, size: { width: number; heig
     await live.page.screenshot({ path: path.join(SHOTS, `${name}-${size.width}.png`) });
     return;
   }
-  // the page scrolls inside the shell, so the whole of it is read off by stretching the window
   const height = await live.page.evaluate(
     () => (document.querySelector("[data-testid=stats-page],[data-testid=stats-track],[data-testid=stats-artist]") as HTMLElement).scrollHeight,
   );
@@ -234,7 +228,6 @@ describe("the Statistics page", () => {
     await live.page.reload();
     await live.page.locator("[data-testid=stats-lead]").waitFor({ timeout: 15_000 });
     await expect.poll(() => live.page.locator("[data-testid=stats-growing]").count()).toBe(1);
-    // nothing with too little to show
     expect(await live.page.locator("[data-stats-section=calendar]").count()).toBe(0);
     expect(await live.page.locator("[data-stats-section=rhythm]").count()).toBe(0);
     expect(await live.page.locator("[data-stats-row]").count()).toBeGreaterThan(3);

@@ -1,4 +1,3 @@
-/** Recommendations for the UI: the playing pick and its reason, "Not interested" with undo, Home mixes, playlist suggestions. */
 import { catalog, player, usePlayerView } from "@/engine";
 import { createContinuation } from "@/engine/adapters";
 import { useEffect, useState } from "react";
@@ -22,14 +21,12 @@ export type { HomeMix, NotInterestedResult, NotInterestedScope, RecsFailure, Sup
 export type { Suggested } from "@/engine/continuation";
 export type { RankReason, Track } from "@/engine/types";
 
-/** Always on: the engine is the only player. Kept for the UI callers that still check it. */
 export const recsEnabled: boolean = true;
 
 export const recs = createRecsClient(CORE_BASE_URL, (input, init) => fetch(input, init));
 
 const NONE = { track: null, reason: null };
 
-/** The playing track and why the daemon chose it (null for the user's own picks). */
 export const useCurrentPick: () => { track: Track | null; reason: RankReason | null } = recsEnabled
   ? () => {
       const current = usePlayerView((view) => view.current);
@@ -37,18 +34,15 @@ export const useCurrentPick: () => { track: Track | null; reason: RankReason | n
     }
   : () => NONE;
 
-/** Skips the track at once when the radio or continuation chose it, then records the dislike. */
 export function dislike(track: Track, scope: NotInterestedScope): Promise<NotInterestedResult | RecsFailure> {
   if (recsEnabled && skipsOnDislike(player().getView(), track.id)) player().next();
   return recs.notInterested(track, scope);
 }
 
-/** Plays a Home mix from one of its tracks; its continuation context is `continue:<mixId>`. */
 export function playMix(mixId: string, tracks: Track[], startAt: number): void {
   player().playList(tracks, { startAt, context: `mix:${mixId}` });
 }
 
-/** One of the daemon's Home mixes by id: undefined while it answers, null when it has no such mix today. */
 export function useHomeMix(id: string | null): HomeMix | null | undefined {
   const [mix, setMix] = useState<{ id: string; mix: HomeMix | null } | null>(null);
   useEffect(() => {
@@ -64,7 +58,6 @@ export function useHomeMix(id: string | null): HomeMix | null | undefined {
   return id === null ? null : mix?.id === id ? mix.mix : undefined;
 }
 
-/** A song or an artist the user named on the first run. */
 export interface FavoritePick {
   kind: "song" | "artist";
   id: string;
@@ -75,10 +68,8 @@ const STARTER_LIMIT = 15;
 const TOP_TRACKS_PER_ARTIST = 3;
 const SEED_TIMEOUT_MS = 15_000;
 
-/** Fires after the starters changed, so a mounted Home asks for its mixes again. */
 export const recsChanged = new EventTarget();
 
-/** Ids of your playlists left out of recommendations: what plays from them or lands in them does not shape the taste. */
 export async function excludedPlaylists(): Promise<string[]> {
   const body = await coreRequest<{ items: Array<{ kind: string; id: string }> }>("GET", "/v1/recs/excluded");
   return body.items.filter((item) => item.kind === "playlist").map((item) => item.id);
@@ -89,7 +80,6 @@ export async function setPlaylistExcluded(id: string, excluded: boolean): Promis
   recsChanged.dispatchEvent(new Event("change"));
 }
 
-/** The excluded ids, read again after every change; null until the daemon answered. */
 export function useExcludedPlaylists(): string[] | null {
   const [ids, setIds] = useState<string[] | null>(null);
   useEffect(() => {
@@ -109,7 +99,6 @@ export function useExcludedPlaylists(): string[] | null {
   return ids;
 }
 
-/** Sends the first-run picks as cold-start starters: each song itself, each artist's top tracks. Throws when none are saved. */
 export async function seedFavorites(picks: FavoritePick[]): Promise<void> {
   const catalog = getYoutube().catalog;
   const signal = AbortSignal.timeout(SEED_TIMEOUT_MS);
@@ -135,10 +124,6 @@ export async function seedFavorites(picks: FavoritePick[]): Promise<void> {
   recsChanged.dispatchEvent(new Event("change"));
 }
 
-/**
- * Ten suggestions for a playlist: the catalog list of its newest track ranked by the daemon with the playlist
- * as seeds (the daemon adds its stored lists). Empty for an empty playlist and on any failure.
- */
 export async function suggest(playlistId: string, trackIds: readonly string[]): Promise<Suggested[]> {
   if (trackIds.length === 0) return [];
   try {
@@ -148,7 +133,6 @@ export async function suggest(playlistId: string, trackIds: readonly string[]): 
   }
 }
 
-/** Plays suggestions from one of them; the reason stays off the tracks, the context is `suggest:<playlistId>`. */
 export function playSuggestions(playlistId: string, picks: readonly Suggested[], startAt: number): void {
   const tracks = picks.map(({ reason: _reason, ...track }) => track);
   player().playList(tracks, { startAt, context: `suggest:${playlistId}` });

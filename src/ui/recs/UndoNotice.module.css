@@ -1,4 +1,3 @@
-/* Quiet text actions beside the bar's state line: theme tokens only, no surface of their own. */
 .actions {
   display: flex;
   flex: 0 1 auto;
@@ -7,7 +6,6 @@
   /* min-width stays auto: the row never squeezes this box below the Undo word */
 }
 
-/* Undo keeps its whole word; the title, then the hide offer, give way first. */
 .action {
   flex: none;
   white-space: nowrap;

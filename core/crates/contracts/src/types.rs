@@ -1,5 +1,4 @@
-//! Wire types mirroring `src/shared/contracts/*.ts`. Track objects stay `serde_json::Value`
-//! because the daemon stores and returns the renderer's snapshot verbatim.
+// Track objects stay serde_json::Value: the daemon returns the renderer's snapshot verbatim
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -33,12 +32,10 @@ pub struct ApiErrorBody {
 pub struct Health {
     pub status: &'static str,
     pub locked: bool,
-    /// Locked because the key file is sealed with a passphrase: the lock screen asks for it.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub passphrase: bool,
 }
 
-/// Where the master key is kept; `file` is the one Settings warns about.
 #[derive(Serialize, Debug, PartialEq)]
 pub struct KeyStorage {
     pub protection: &'static str,
@@ -75,7 +72,7 @@ impl Serialize for ToolStatusKind {
     }
 }
 
-/// One row of `GET /v1/system/deps`. `status`: `ok`, `missing`, `broken` or `outdated`.
+// `status`: `ok`, `missing`, `broken` or `outdated`
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolStatus {
@@ -93,7 +90,6 @@ pub struct ToolStatus {
 pub struct Deps {
     pub checked_at: String,
     pub tools: Vec<ToolStatus>,
-    /// A running or just failed tool download; the check itself never sets it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub download: Option<ToolDownload>,
 }
@@ -108,8 +104,7 @@ pub struct ToolDownload {
     pub failed: bool,
 }
 
-/// One row of the network check. `check`: `dns`, `tcp`, `https`, `proxy`, `clock` or `tools`;
-/// `code` is an S3 network code (plus `clock` and `tool_missing`) when the row failed.
+// `check`: dns, tcp, https, proxy, clock or tools; `code` is set only when the row failed
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct NetCheckRow {
@@ -126,8 +121,7 @@ pub struct NetCheckRow {
     pub detail: Option<String>,
 }
 
-/// `POST /v1/system/network-check`: the rows, one English summary sentence, and the code and
-/// service behind it (absent when everything works) so the renderer can localise the sentence.
+// Code and service back the summary so the renderer can localise it; absent when all works
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct NetCheck {
@@ -140,8 +134,7 @@ pub struct NetCheck {
     pub service: Option<&'static str>,
 }
 
-/// `GET /v1/system/report`: the daemon section of a bug report, already redacted.
-/// Library fields are absent while the daemon is starting or locked.
+// Daemon section of a bug report, already redacted; library fields are absent while locked
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DaemonReport {
@@ -163,7 +156,7 @@ pub struct DaemonReport {
     pub log: String,
 }
 
-/// Body of `PUT /v1/system/network`. No `Debug`: the URL can carry proxy credentials.
+// No Debug: the URL can carry proxy credentials
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct NetworkSettings {
@@ -185,8 +178,6 @@ pub struct UpdateProfile {
     pub display_name: Option<Option<String>>,
 }
 
-// ---- library ----
-
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LikedTrackItem {
@@ -201,7 +192,6 @@ pub struct LikedTracksPage {
     pub next_cursor: Option<String>,
 }
 
-/// Body of `PUT /v1/me/library/tracks/:id` and `POST .../tracks/:tid`; the renderer sends both keys.
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct TrackBody {
@@ -228,15 +218,12 @@ pub struct Items<T> {
     pub items: Vec<T>,
 }
 
-// ---- imports ----
-
 #[derive(Serialize, Debug, Default, Clone, PartialEq)]
 pub struct ImportCounts {
     pub exact: i64,
     pub likely: i64,
     pub check: i64,
     pub missing: i64,
-    /// Rows whose track the target had already.
     pub already: i64,
 }
 
@@ -254,16 +241,12 @@ pub struct ImportSummary {
     /// `running` or `done`.
     pub status: String,
     pub total: i64,
-    /// Rows with a label, for "Importing 340 of 3,700".
     pub done: i64,
-    /// Check and Missing rows nobody decided on yet.
     pub needs_review: i64,
     pub counts: ImportCounts,
 }
 
-/// One report row. `source` is the line as it was in the file; `track` is the match, or the
-/// best proposal on a Missing row; `reason` is `exact`, `matched`, `already_there` or a
-/// matching reason code.
+// `source` is the original line; `reason`: exact, matched, already_there or a match reason code
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportRow {
@@ -281,7 +264,6 @@ pub struct ImportRow {
     pub candidates: Vec<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub decision: Option<String>,
-    /// For "Length differs by 21 s"; absent when either length is unknown.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub duration_diff_ms: Option<i64>,
 }
@@ -294,7 +276,7 @@ pub struct ImportRowsPage {
     pub next_cursor: Option<String>,
 }
 
-/// `kind`: `new` (a playlist named after the source, the default), `playlist` (with `id`) or `liked`.
+// `kind`: `new` (default, named after the source), `playlist` (with `id`) or `liked`
 #[derive(Deserialize, Debug, Clone)]
 pub struct ImportTarget {
     pub kind: String,
@@ -310,16 +292,13 @@ pub struct ImportFile {
     pub data: String,
 }
 
-/// Body of `POST /v1/imports`: a `file` the page holds, or `source` + `label` + `rows` listed by
-/// the renderer; `POST /v1/fs/imports` (main only) also takes an absolute `path` (`youtube-music`, `soundcloud`, `apple-music`, `deezer`,
-/// `nuvo-link` for a shared Nuvo link, or `legacy` for the old review store).
+// `source`: youtube-music, soundcloud, apple-music, deezer, nuvo-link or legacy
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct StartImport {
     /// Main-only (`/v1/fs/imports`): a file the daemon reads itself.
     #[serde(default)]
     pub path: Option<String>,
-    /// A file the page already holds, sent as base64 bytes.
     #[serde(default)]
     pub file: Option<ImportFile>,
     #[serde(default)]
@@ -332,8 +311,7 @@ pub struct StartImport {
     pub target: Option<ImportTarget>,
 }
 
-/// A search the renderer runs for one row. `filter`: `songs`, `any` or `videos`; `source`:
-/// `youtube` or `soundcloud`. `step` goes back with the candidates.
+// `filter`: songs, any or videos; `source`: youtube or soundcloud; `step` returns with candidates
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportSearch {
@@ -343,7 +321,6 @@ pub struct ImportSearch {
     pub step: usize,
 }
 
-/// `POST /v1/imports/:id/next`.
 #[derive(Serialize, Debug, PartialEq)]
 #[serde(untagged, rename_all_fields = "camelCase")]
 pub enum ImportNext {
@@ -352,7 +329,6 @@ pub enum ImportNext {
     Done { done: bool },
 }
 
-/// Body of `POST /v1/imports/:id/rows/:rowId/candidates`.
 #[derive(Deserialize, Debug)]
 pub struct RowCandidates {
     pub step: usize,
@@ -362,7 +338,7 @@ pub struct RowCandidates {
     pub failed: bool,
 }
 
-/// Body of `PATCH /v1/imports/:id/rows/:rowId`: `use`, `pick` (with `track`), `remove` or `keep`.
+// Accepts `use`, `pick` (with `track`), `remove` or `keep`
 #[derive(Deserialize, Debug)]
 pub struct RowDecision {
     pub decision: String,
@@ -370,13 +346,11 @@ pub struct RowDecision {
     pub track: Option<Value>,
 }
 
-/// Body of `POST /v1/imports/:id/bulk`: `accept-check` or `retry-failed`.
+// Accepts `accept-check` or `retry-failed`
 #[derive(Deserialize, Debug)]
 pub struct ImportBulk {
     pub action: String,
 }
-
-// ---- search history ----
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -386,13 +360,11 @@ pub struct SearchEntry {
     pub kind: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
-    /// The picked result's snapshot (id, title, subtitle, cover URL).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub item: Option<Value>,
     pub at: String,
 }
 
-/// Body of `POST /v1/me/search-history`.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AddSearch {
@@ -403,9 +375,7 @@ pub struct AddSearch {
     pub item: Option<Value>,
 }
 
-// ---- pins and hides ----
-
-/// `GET /v1/me/flags` lists pinned items first, in pin order, then hidden ones.
+// Pinned items come first, in pin order, then hidden ones
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryFlag {
@@ -420,7 +390,7 @@ pub struct LibraryFlag {
     pub updated_at: String,
 }
 
-/// Body of `PUT /v1/me/flags/:kind/:id`; absent fields stay as they are.
+// Absent fields stay as they are
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SetFlag {
@@ -438,13 +408,10 @@ pub struct FlagKey {
     pub id: String,
 }
 
-/// Body of `POST /v1/me/flags/pin-order`.
 #[derive(Deserialize, Debug)]
 pub struct PinOrder {
     pub items: Vec<FlagKey>,
 }
-
-// ---- playlists ----
 
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -466,7 +433,6 @@ pub struct UserPlaylist {
     pub cover_url: Option<String>,
 }
 
-/// One row of `GET /v1/me/playlists`: the playlist, its track count and up to four distinct cover URLs in playlist order.
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaylistListItem {
@@ -497,8 +463,7 @@ pub struct PlaylistWithItems {
     pub next_cursor: Option<String>,
 }
 
-/// `GET /v1/me/playlists/:id/items`: one page in the playlist's stored sort. `nextCursor` is
-/// absent on the last page; `total` counts the items that match `q`.
+// `nextCursor` is absent on the last page; `total` counts the items that match `q`
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaylistItemsPage {
@@ -554,7 +519,6 @@ pub struct MoveItem {
     pub revision: i64,
 }
 
-/// Body of `POST /v1/me/playlists/:id/items/remove`.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemIds {
@@ -568,7 +532,6 @@ pub enum TransferMode {
     Move,
 }
 
-/// Body of `POST /v1/me/playlists/:id/items/transfer`.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TransferItems {
@@ -577,7 +540,6 @@ pub struct TransferItems {
     pub mode: TransferMode,
 }
 
-/// One entry of `POST /v1/me/playlists/:id/items/insert` (undo): the removed item's own values.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct InsertItem {
@@ -595,7 +557,6 @@ fn yes() -> bool {
     true
 }
 
-/// Body of `POST /v1/me/playlists/:id/merge`.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MergePlaylists {
@@ -614,12 +575,10 @@ pub struct MergeResult {
     pub added_item_ids: Vec<String>,
     pub skipped: usize,
     pub deleted_source_ids: Vec<String>,
-    /// The deleted sources, for the undo through `POST /v1/me/playlists/restore`.
     pub snapshots: Vec<PlaylistSnapshot>,
     pub revision: i64,
 }
 
-/// A whole playlist as it was before a merge deleted it: what `restore` needs to bring it back.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaylistSnapshot {
@@ -644,7 +603,6 @@ pub struct CoverSnapshot {
     pub base64: String,
 }
 
-/// Body of `POST /v1/me/playlists/restore`.
 #[derive(Deserialize, Debug)]
 pub struct RestorePlaylists {
     pub snapshots: Vec<PlaylistSnapshot>,
@@ -659,23 +617,18 @@ pub struct RemoveResult {
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TransferResult {
-    /// New items in the target, for undo.
     pub added: Vec<UserPlaylistItem>,
-    /// Selected tracks the target already had.
     pub skipped: usize,
     pub removed: usize,
     pub source_revision: i64,
     pub target_revision: i64,
 }
 
-/// `GET /v1/me/playlists/:id/offline`: how many of the playlist's tracks are in the audio cache.
 #[derive(Serialize, Debug, PartialEq)]
 pub struct OfflineProgress {
     pub cached: i64,
     pub total: i64,
 }
-
-// ---- track trims ----
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -685,7 +638,7 @@ pub struct TrackTrim {
     pub end_ms: i64,
 }
 
-/// Body of `PUT /v1/tracks/:id/trim`. `track` is the snapshot, for tracks the library has not seen yet.
+// `track` is the snapshot, for tracks the library has not seen yet
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SetTrim {
@@ -697,21 +650,18 @@ pub struct SetTrim {
     pub track: Option<Value>,
 }
 
-// ---- last.fm ----
-
 #[derive(Serialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct LastfmStatus {
     pub has_credentials: bool,
     pub connected: bool,
     pub user: Option<String>,
-    /// `false` while the user paused scrobbling.
     pub enabled: bool,
     pub queued: i64,
     pub last_error: Option<String>,
 }
 
-/// Body of `PATCH /v1/lastfm/settings`; every field is optional. No `Debug`: it holds the secret.
+// Every field is optional. No Debug: it holds the secret
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct LastfmSettings {
@@ -727,7 +677,6 @@ pub struct LastfmSettings {
 #[serde(rename_all = "camelCase")]
 pub struct LastfmToken {
     pub token: String,
-    /// Page to open in the browser; the user approves Nuvo there, then the renderer posts the token back.
     pub auth_url: String,
 }
 
@@ -736,7 +685,6 @@ pub struct LastfmSessionRequest {
     pub token: String,
 }
 
-/// Body of `POST /v1/me/playback/now-playing`.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NowPlaying {
@@ -744,8 +692,6 @@ pub struct NowPlaying {
     #[serde(default)]
     pub track_snapshot: Option<Value>,
 }
-
-// ---- playback ----
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct PlaybackContext {
@@ -755,7 +701,6 @@ pub struct PlaybackContext {
     pub id: Option<String>,
 }
 
-/// Old `RecordPlaybackEventRequest` plus the optional extended fields from the local-core spec.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RecordPlaybackEvent {
@@ -817,8 +762,6 @@ pub struct PlaybackHistoryResponse {
     pub items: Vec<PlaybackHistoryItem>,
     pub next_cursor: Option<String>,
 }
-
-// ---- explore and mixes ----
 
 #[derive(Serialize, Debug)]
 pub struct Viewer {
@@ -902,8 +845,6 @@ pub struct DailyMixesResponse {
     pub generated_at: String,
 }
 
-// ---- lyrics ----
-
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct LyricsQuality {
     pub total: f64,
@@ -967,7 +908,6 @@ pub struct LyricsBest {
 pub enum LyricsStreamEvent {
     Metadata {
         track: LyricsTrackMeta,
-        /// The user's timing offset for this track, 0 when none.
         offset_ms: i64,
     },
     Provider {
@@ -990,7 +930,6 @@ pub enum LyricsStreamEvent {
     },
 }
 
-/// Body of `PUT /v1/tracks/:id/lyrics/offset`.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SetLyricsOffset {
@@ -998,7 +937,6 @@ pub struct SetLyricsOffset {
     pub offset_ms: i64,
 }
 
-/// Body of `PUT /v1/tracks/:id/lyrics/user`.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SetUserLyrics {
@@ -1006,26 +944,21 @@ pub struct SetUserLyrics {
     pub content: String,
 }
 
-/// Answer of `PUT /v1/tracks/:id/lyrics/offset`: the stored, clamped value.
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LyricsOffset {
     pub offset_ms: i64,
 }
 
-/// Body of `PUT /v1/lyrics/offsets`: the renderer's legacy per-track map, sent once.
 #[derive(Deserialize, Debug)]
 pub struct ImportLyricsOffsets {
     pub offsets: std::collections::HashMap<String, f64>,
 }
 
-/// Answer of `PUT /v1/lyrics/offsets`.
 #[derive(Serialize, Debug)]
 pub struct ImportedLyricsOffsets {
     pub imported: usize,
 }
-
-// ---- cache and recovery ----
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -1045,7 +978,7 @@ pub struct CoverStats {
     pub limit_bytes: i64,
 }
 
-/// Body of `POST /v1/cache/fetch`. No `Debug`: the URL carries a signed stream address.
+// No Debug: the URL carries a signed stream address
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FetchRequest {
@@ -1087,9 +1020,7 @@ pub struct RestoreRequest {
     pub phrase: String,
 }
 
-// ---- youtube account ----
-
-/// Optional YouTube TV sign-in tokens. No `Debug`: it holds the tokens.
+// No Debug: it holds the tokens
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct YoutubeSession {
@@ -1111,13 +1042,12 @@ pub struct YoutubePreferences {
 }
 
 impl Default for YoutubePreferences {
-    /// `offerSignIn` is off: Nuvo needs no account (product rule 1).
+    // `offerSignIn` is off: Nuvo needs no account
     fn default() -> Self {
         Self { play_through_account: true, offer_sign_in: false, show_account_playlists: true }
     }
 }
 
-/// Body of `PATCH /v1/youtube/account/preferences`; every field is optional.
 #[derive(Deserialize, Default, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct YoutubePreferencesPatch {
@@ -1129,7 +1059,6 @@ pub struct YoutubePreferencesPatch {
     pub show_account_playlists: Option<bool>,
 }
 
-/// Answer of `GET /v1/youtube/account`.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct YoutubeAccount {
@@ -1137,8 +1066,7 @@ pub struct YoutubeAccount {
     pub preferences: YoutubePreferences,
 }
 
-/// `POST /v1/me/library/tracks/bulk`: `added` lists the ids this request liked, which is
-/// exactly what its undo may unlike.
+// `added` lists the ids this request liked, exactly what its undo may unlike
 #[derive(Serialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct BulkLikeResult {
@@ -1147,7 +1075,6 @@ pub struct BulkLikeResult {
     pub rejected: usize,
 }
 
-/// Body of `POST /v1/me/library/tracks/bulk-remove`.
 #[derive(Deserialize, Debug)]
 pub struct TrackIds {
     pub ids: Vec<String>,

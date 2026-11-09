@@ -5,7 +5,6 @@ export interface PositionSample {
   durationMs: number;
 }
 
-/** Position between samples: the player sends at most 4 a second, the island draws every frame. */
 export function positionAt(sample: PositionSample, now: number): number {
   if (!sample.playing) return sample.positionMs;
   const position = sample.positionMs + Math.max(0, now - sample.sampledAt);
@@ -17,7 +16,6 @@ export interface LyricLine {
   text: string;
 }
 
-/** Index of the line being sung at `positionMs`, or -1 before the first line. */
 export function activeLineIndex(lines: LyricLine[], positionMs: number): number {
   let low = 0;
   let high = lines.length - 1;
@@ -34,7 +32,6 @@ export function activeLineIndex(lines: LyricLine[], positionMs: number): number 
   return found;
 }
 
-/** Milliseconds until the next line starts, or null after the last one. Used to arm one timer. */
 export function msUntilNextLine(lines: LyricLine[], positionMs: number): number | null {
   const next = lines[activeLineIndex(lines, positionMs) + 1];
   return next ? Math.max(16, next.timeMs - positionMs) : null;

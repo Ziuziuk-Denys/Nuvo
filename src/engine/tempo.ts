@@ -1,9 +1,6 @@
-/** Rate, pitch and volume arithmetic. Pure. */
-
 export const RATE_MIN = 0.5;
 export const RATE_MAX = 2;
 export const SEMITONES_LIMIT = 12;
-/** Below this magnitude the pitch stage stays dry. */
 export const PITCH_ACTIVE = 0.05;
 
 const round = (value: number, digits: number) => Number(value.toFixed(digits));
@@ -33,7 +30,6 @@ export interface Tempo {
   linked: boolean;
 }
 
-/** Applies a partial change the way the controls do: linked moves both, unlinked moves one. */
 export function nextTempo(current: Tempo, change: { rate?: number; semitones?: number; linked?: boolean }): Tempo {
   let { rate, semitones, linked } = current;
   if (change.linked !== undefined && change.linked !== linked) {
@@ -51,7 +47,6 @@ export function nextTempo(current: Tempo, change: { rate?: number; semitones?: n
   return { rate, semitones, linked };
 }
 
-/** The element preserves pitch only when unlinked; the worklet shifts only when unlinked and audible. */
 export function pitchStageActive(tempo: Tempo): boolean {
   return !tempo.linked && Math.abs(tempo.semitones) >= PITCH_ACTIVE;
 }
@@ -70,7 +65,6 @@ export function sliderFromGain(gain: number): number {
   return Math.sqrt(clampVolume(gain));
 }
 
-/** `volumeDelta` from remote surfaces: clamped, two decimals. */
 export function volumeAfterDelta(volume: number, delta: number): number {
   return round(clampVolume(volume + delta), 2);
 }

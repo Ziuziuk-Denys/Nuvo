@@ -143,7 +143,6 @@ function typeInto(input: HTMLInputElement, value: string) {
   });
 }
 
-/** A paste into the field: the paste event first, then the input it causes. */
 function pasteInto(input: HTMLInputElement, value: string) {
   const paste = new Event("paste", { bubbles: true });
   Object.assign(paste, { clipboardData: { getData: () => value } });
@@ -387,7 +386,6 @@ describe("Search", () => {
 });
 
 describe("shared playlist links", () => {
-  /** Waits on real timers: the share codec's streams settle on later ticks. */
   async function until<T>(find: () => T | undefined | null): Promise<T> {
     for (let i = 0; i < 100; i++) {
       const found = find();
@@ -421,7 +419,6 @@ describe("shared playlist links", () => {
     expect(mocks.startImport).not.toHaveBeenCalled();
     await act(async () => inDialog("ui.links.preview.import").click());
     await until(() => seen.location === "/library/playlist?id=pl1");
-    // a return to search within the minute starts empty, not on the imported link
     act(() => void seen.navigate!("/search"));
     expect(field().value).toBe("");
     expect(dialog()).toBeNull();

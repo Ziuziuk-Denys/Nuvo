@@ -14,9 +14,7 @@ const ROW_STEP = 68;
 
 export interface EntryViewProps {
   entries: LibraryEntry[];
-  /** Key of the entry whose menu is open: it keeps its fill while the menu is up. */
   selected: string | null;
-  /** Key of the entry playing now. */
   playing: string | null;
   onActivate: (entry: LibraryEntry) => void;
   onMenu: (entry: LibraryEntry, anchor: HTMLElement | null, at?: { x: number; y: number }) => void;
@@ -29,13 +27,11 @@ export function entryMeta(entry: LibraryEntry, t: TFunction): string | undefined
   return t(entry.kind === "liked" ? "common.songs" : "common.tracks", { count: entry.count });
 }
 
-/** The entry's artwork at a fixed size, or filling its box when no size is given. */
 export function EntryArt({ entry, size }: { entry: LibraryEntry; size?: number }): JSX.Element {
   if (entry.kind === "liked") return <LikedTile size={size} />;
   return <Cover src={entry.cover ?? ""} size={size ?? 200} radius={8} shape={entry.kind === "artist" ? "circle" : "square"} />;
 }
 
-/** 64 px rows in the page's own scroll, virtualised so a library of thousands keeps a flat DOM. */
 export function LibraryList({ entries, selected, playing, onActivate, onMenu, t }: EntryViewProps): JSX.Element {
   const scroller = useShellScroller();
   const listRef = useRef<HTMLDivElement>(null);

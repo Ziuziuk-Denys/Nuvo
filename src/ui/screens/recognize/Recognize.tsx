@@ -32,17 +32,14 @@ const NO_PEAKS: number[] = [];
 
 function play(track: Track, fromMs = 0): void {
   void playerEngine.playTrack(track, [track]);
-  // the start is still loading, so the engine holds the seek until the audio is there
   if (fromMs > 0) playerEngine.seek(fromMs);
 }
 
-/** "Play from 1:23" when the service said where the heard part starts. */
 function moment(song: RecognizedSong): { ms: number; clock: string } | null {
   const clock = song.offsetMs ? formatDuration(song.offsetMs) : undefined;
   return clock && song.offsetMs ? { ms: song.offsetMs, clock } : null;
 }
 
-/** The screen: the listening panel or the result card, then what was recognized before. */
 export function Recognize(): JSX.Element {
   const { t } = useTranslation();
   const reachable = useOnline();
@@ -50,7 +47,6 @@ export function Recognize(): JSX.Element {
   const found = session.phase === "found" ? session : null;
   const { items, forget } = useRecognizeHistory(found?.id ?? null);
   const [dragging, setDragging] = useState(false);
-  // the link stays after a run, so a failed one can be fixed and sent again
   const [linkOpen, setLinkOpen] = useState(false);
   const [link, setLink] = useState("");
   const picker = useRef<HTMLInputElement>(null);
@@ -289,7 +285,6 @@ function History({ items, onForget }: { items: RecognizedEntry[]; onForget(id: s
   const [add, setAdd] = useState<{ track: Track; anchor: HTMLElement | null } | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [now] = useState(Date.now);
-  // a history row holds what was heard; the catalog's copy is looked up when an action needs it
   const catalog = useRef(new Map<string, Promise<Track | null>>());
   const lookUp = (entry: RecognizedEntry) => {
     const known = catalog.current.get(entry.id);

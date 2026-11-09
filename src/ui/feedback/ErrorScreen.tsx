@@ -24,7 +24,6 @@ function report(error: Error, componentStack: string | null): string {
   return lines.join("\n");
 }
 
-/** The window when rendering failed: the empty frame, and over it the card with Reload and the details folded away. */
 export function ErrorScreen({ error, componentStack, onReload }: ErrorScreenProps): JSX.Element {
   useWindowDrag();
   const { t } = useTranslation();

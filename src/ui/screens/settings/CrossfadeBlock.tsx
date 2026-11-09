@@ -7,7 +7,6 @@ import { SettingBlock } from "./controls";
 const TITLE = "ui.settings.crossfade";
 const DESCRIPTION = "ui.settings.crossfade_desc";
 
-/** 0 keeps gapless seams; a change applies from the next track change. */
 export function CrossfadeBlock(): JSX.Element {
   const { t } = useTranslation();
   const [seconds, setSeconds] = useState(() => playerEngine.crossfadeSeconds());

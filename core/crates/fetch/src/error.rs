@@ -1,4 +1,3 @@
-/// Each variant is one `error {code}` of the recognize stream.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum FetchError {
     #[error("the link is not allowed")]

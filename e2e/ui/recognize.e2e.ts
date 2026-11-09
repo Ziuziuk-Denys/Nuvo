@@ -10,12 +10,6 @@ import { run, searchResponse, shelf, songRow, thumb } from "../../src/youtube/te
 import { launchNuvo, passFirstRun, type Look, type NuvoSession } from "./harness";
 import { fixtureCover, PLAYER_SESSION_KEY } from "./seed";
 
-/*
-  Runs against a `pnpm build`. The daemon is the real one: a real audio file goes through its ffmpeg and fingerprint,
-  only the answer of the recognition service and the catalog are local. ffmpeg's capture devices are stood in for
-  by a wrapper, so the microphone and system paths run on any machine.
-  RECOGNIZE_LIVE_FILE=<a real song> instead sends that file to the real service and the real catalog.
-*/
 const SHOTS = process.env.RECOGNIZE_SHOTS ?? path.join(os.homedir(), ".cache", "recognize-shots");
 const LIVE_FILE = process.env.RECOGNIZE_LIVE_FILE;
 const LIGHT: Look = { preset: "nuvo", mode: "light" };
@@ -46,7 +40,6 @@ let session: NuvoSession | null = null;
 let work = "";
 let shazam: http.Server | null = null;
 let answer: "found" | "none" = "found";
-/** How long the service holds its answer, so the listening state can be looked at. */
 let holdMs = 0;
 const savedEnv = { PATH: process.env.PATH, NUVO_CORE_SHAZAM_URL: process.env.NUVO_CORE_SHAZAM_URL };
 
@@ -64,7 +57,6 @@ async function startShazam(): Promise<string> {
   return `http://127.0.0.1:${(shazam.address() as AddressInfo).port}`;
 }
 
-/** A 20 s stereo clip with a moving signal, and an ffmpeg that reads it in place of the capture devices. */
 function prepareAudio(): string {
   work = fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-recognize-"));
   const clip = path.join(work, "Morning walk.wav");
@@ -89,7 +81,6 @@ exec "${real}" -nostdin -hide_banner -loglevel error -t 12 -i "${clip}" -vn -ac 
   return clip;
 }
 
-/** The catalog answers every search with the recognized song, every other host stays closed. */
 async function installCatalog(page: Page): Promise<void> {
   const search = searchResponse(
     shelf(
@@ -117,10 +108,6 @@ async function installCatalog(page: Page): Promise<void> {
   }, search);
 }
 
-/**
- * The daemon's link job needs yt-dlp and the real sites, so its stream is stood in for here; the file, microphone
- * and system jobs above stay real. The link names the answer: "found", "private" or anything else for no match.
- */
 async function fakeLinkJobs(page: Page): Promise<void> {
   await page.addInitScript((cover) => {
     const real = window.fetch.bind(window);
@@ -176,7 +163,6 @@ async function fakeLinkJobs(page: Page): Promise<void> {
   }, fixtureCover(7));
 }
 
-/** The look stays as it is: changing it reloads the window, which would end the job on screen. */
 async function shot(live: NuvoSession, name: string): Promise<void> {
   fs.mkdirSync(SHOTS, { recursive: true });
   await live.page.evaluate(() => document.fonts.ready.then(() => undefined));
@@ -256,7 +242,6 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
       answer = "found";
       await useLook(live, look);
 
-      // from the Library, one click
       await live.go("#/library");
       await page.locator('[data-nav="recognize"]').click();
       await expect.poll(() => page.evaluate(() => location.hash)).toBe("#/recognize");
@@ -264,7 +249,6 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
       expect(await page.locator('[data-nav="recognize"]').getAttribute("aria-current")).toBe("page");
       await shot(live, name("01-idle"));
 
-      // a real file through the bridge, the grant, ffmpeg and the fingerprint
       await pick(page, clip);
       const card = page.locator("[data-recognize-result]");
       await card.waitFor({ timeout: 30_000 });
@@ -274,12 +258,10 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
       await card.locator("img[data-loaded]").waitFor({ timeout: 10_000 });
       await shot(live, name("02-result"));
 
-      // the row it left in the history
       const row = page.locator("[data-recognize-row]").first();
       await row.waitFor({ timeout: 10_000 });
       expect(await row.innerText()).toContain("Glass Harbour");
 
-      // Like, Add to playlist and Play act on the catalog's copy
       await card.getByRole("button", { name: /^(Like|Remove from liked songs)$/ }).click();
       await card.getByRole("button", { name: "Add to playlist" }).click();
       await page.getByRole("dialog").waitFor();
@@ -291,13 +273,11 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
       await page.getByRole("button", { name: "Recognize another" }).click();
       await panelIs(page, "idle");
 
-      // system audio, through the stand-in device
       holdMs = 3_000;
       await page.getByRole("button", { name: "This computer" }).click();
       await page.getByRole("heading", { name: "Listening…" }).waitFor({ timeout: 5_000 });
       await page.getByRole("heading", { name: "Looking it up" }).waitFor({ timeout: 10_000 });
       await page.getByText("Part 1 of 2").waitFor();
-      // the real peaks: bars of many heights, nothing breathing any more
       const heights = await page
         .locator("[data-recognize] [aria-hidden] i")
         .evaluateAll((bars) => new Set(bars.map((bar) => (bar as HTMLElement).style.getPropertyValue("--peak"))).size);
@@ -307,25 +287,21 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
       holdMs = 0;
       await page.getByRole("button", { name: "Recognize another" }).click();
 
-      // no match
       answer = "none";
       await page.getByRole("button", { name: "Microphone" }).click();
       await page.getByRole("heading", { name: "No match" }).waitFor({ timeout: 30_000 });
       await shot(live, name("05-no-match"));
 
-      // no access to the microphone
       fs.writeFileSync(path.join(work, "no-microphone"), "");
       await page.getByRole("button", { name: "Microphone" }).click();
       await page.getByRole("heading", { name: "Nuvo can’t use the microphone" }).waitFor({ timeout: 15_000 });
       await shot(live, name("06-no-permission"));
       fs.rmSync(path.join(work, "no-microphone"));
 
-      // Stop ends a job at once
       await pick(page, clip);
       await page.getByRole("button", { name: "Stop" }).click();
       await panelIs(page, "idle");
 
-      // offline, with the history still there
       await page.context().setOffline(true);
       await page.evaluate(() => window.dispatchEvent(new Event("offline")));
       await page.getByRole("heading", { name: "You’re offline" }).waitFor({ timeout: 40_000 });
@@ -336,7 +312,6 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
       await page.getByRole("heading", { name: "What’s playing?" }).waitFor({ timeout: 40_000 });
     }
 
-    // a link to a video or post: the form, its reading and listening states, the result, a gone post and no match
     await useLook(live, LIGHT);
     await page.getByRole("button", { name: "From a link" }).click();
     const linkField = page.getByRole("textbox", { name: "Video or post link" });
@@ -367,13 +342,11 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Microphone" }).waitFor();
 
-    // Russian at the narrow window: nothing runs out of the panel
     await page.evaluate(() => localStorage.setItem("nuvo_locale", "ru"));
     await page.reload();
     await live.setSize({ width: 1100, height: 705 });
     await page.getByRole("heading", { name: "Что это за песня?" }).waitFor({ timeout: 30_000 });
     await shot(live, "01-idle-ru-1100");
-    // the four inputs stay on one row in the longer language too
     const rows = await page
       .locator('[data-tour="recognize-sources"] button')
       .evaluateAll((buttons) => new Set(buttons.map((b) => Math.round(b.getBoundingClientRect().top))).size);
@@ -382,7 +355,6 @@ describe.skipIf(LIVE_FILE)("recognize", () => {
     await page.getByRole("textbox", { name: "Ссылка на видео или пост" }).fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
     await shot(live, "08-link-form-ru-1100");
 
-    // the result's widest set of actions stays inside its card in Russian, at 1100 and wide, light and dark
     for (const look of [LIGHT, DARK]) {
       if (look === DARK) {
         await live.setLook(DARK);
@@ -430,7 +402,6 @@ describe.skipIf(LIVE_FILE)("dislike", () => {
       await page.locator("[data-island]").waitFor({ timeout: 30_000 });
       const hidden = () => live.core(`return (await (await fetch(base + "/v1/recs/suppressions")).json()).items.length;`);
 
-      // a playlist: every row has one, by keyboard too
       await live.go(`#/library/playlist?id=${live.seed!.smallPlaylistId}`);
       const rows = page.locator("[data-track-row]");
       await rows.first().waitFor({ timeout: 15_000 });
@@ -442,7 +413,6 @@ describe.skipIf(LIVE_FILE)("dislike", () => {
       expect(await page.evaluate(() => document.activeElement?.hasAttribute("data-dislike"))).toBe(true);
       await shot(live, name("10-playlist-rows"));
 
-      // a press on a row: stored, the notice with Undo, and Undo takes it back
       const before = (await hidden()) as number;
       await rows.nth(3).locator("[data-dislike]").click();
       await expect.poll(hidden).toBe(before + 1);
@@ -452,7 +422,6 @@ describe.skipIf(LIVE_FILE)("dislike", () => {
       await undo.click();
       await expect.poll(hidden).toBe(before);
 
-      // the bar: a dislike skips the playing song and is stored
       const title = page.locator("[data-island-title]");
       const first = await title.innerText();
       await page.locator("[data-island] [data-dislike]").click();
@@ -460,7 +429,6 @@ describe.skipIf(LIVE_FILE)("dislike", () => {
       await expect.poll(hidden).toBe(before + 1);
       await shot(live, name("12-bar"));
 
-      // the queue: the playing row keeps its button without a hover
       await page.locator('[data-tour="queue"]').click();
       const playing = page.locator('aside [aria-current="true"]').first();
       await playing.waitFor();
@@ -469,7 +437,6 @@ describe.skipIf(LIVE_FILE)("dislike", () => {
       await shot(live, name("13-queue"));
       await page.keyboard.press("Escape");
 
-      // karaoke: the same press, and the Undo comes as a toast because the bar is covered
       await live.go("#/player");
       await page.locator("section").getByRole("button", { name: "Dislike" }).click({ timeout: 15_000 });
       await page.locator("[data-toast]").getByRole("button", { name: "Undo" }).waitFor({ timeout: 5_000 });

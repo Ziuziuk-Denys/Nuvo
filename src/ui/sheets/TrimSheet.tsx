@@ -11,7 +11,6 @@ import styles from "./TrimSheet.module.css";
 const STEP_MS = 1000;
 const PAGE_MS = 10_000;
 
-/** The one trim editor of the window: the track menu opens it, the shell hosts it. */
 export const useTrimSheet = create<{ track: Track | null; open(track: Track): void; close(): void }>((set) => ({
   track: null,
   open: (track) => set({ track }),
@@ -20,7 +19,6 @@ export const useTrimSheet = create<{ track: Track | null; open(track: Track): vo
 
 type Handle = "start" | "end";
 
-/** Keeps both handles on the song and at least the daemon's minimum apart; the moved handle gives way, never the other. */
 export function placeHandle(range: { start: number; end: number }, handle: Handle, value: number, durationMs: number): { start: number; end: number } {
   const at = Math.round(Math.min(Math.max(value, 0), durationMs) / STEP_MS) * STEP_MS;
   return handle === "start"
@@ -84,7 +82,6 @@ function TrimRange({
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         const ms = fromPointer(event);
-        // the nearer knob follows the pointer
         dragging.current = Math.abs(ms - value.start) <= Math.abs(ms - value.end) ? "start" : "end";
         event.currentTarget.setPointerCapture(event.pointerId);
         move(dragging.current, ms);

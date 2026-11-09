@@ -5,7 +5,6 @@ import { getPreset, presetIconSvg, resolvePresetMode } from "./presets";
 
 const ICON_SIZE = 512;
 
-/** An SVG drawn onto a canvas and returned as a PNG data URL. */
 export async function iconPng(svg: string): Promise<string> {
   const image = new Image();
   image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -19,7 +18,7 @@ export async function iconPng(svg: string): Promise<string> {
   return canvas.toDataURL("image/png");
 }
 
-/** Drawing the icon takes 40 to 160 ms on the main thread, so it waits until the first paint is done. */
+// Drawing takes 40-160 ms on the main thread, so it waits until after the first paint
 function whenIdle(run: () => void): () => void {
   if (typeof requestIdleCallback !== "function") {
     run();
@@ -29,7 +28,6 @@ function whenIdle(run: () => void): () => void {
   return () => cancelIdleCallback(handle);
 }
 
-/** The window, tray and tab icon follow the preset. */
 export function useAppIconSync(): void {
   const preset = useLookStore((s) => s.preset);
   const { resolvedTheme } = useTheme();

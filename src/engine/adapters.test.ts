@@ -38,7 +38,6 @@ describe("adapters", () => {
     let last: { candidates: Array<{ id: string }>; steps: Array<{ found: number }> } | null = null;
     daemon.on("POST /v1/match/next", async (request) => {
       const body = await request.json();
-      // The daemon's own check (cascade `next`): a mismatch is a 400.
       const counted = body.steps.reduce((sum: number, step: { found: number }) => sum + step.found, 0);
       if (counted !== body.candidates.length) return Response.json({ message: "step counts do not add up to the candidates" }, { status: 400 });
       last = body;

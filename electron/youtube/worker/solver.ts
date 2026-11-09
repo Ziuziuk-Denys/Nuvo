@@ -1,13 +1,4 @@
-/**
- * Production solver: youtubei.js extracts the signature and `n` functions from the player script and asks the
- * host to evaluate the result (`Platform.shim.eval`). This runs YouTube-supplied code, so it lives
- * only in the sandboxed worker.
- *
- * Checked live on 2026-10-27 (player 6b2fce74, youtubei.js 18.1.0): the extracted script is self-contained and
- * ends in `return process(n, sig, ...)`, so evaluating it as a function body gives `{ n, sig }`. youtubei.js
- * cannot parse the TV variant, so it loads the web `base.js` of the same player id; the variants share one
- * build, and the TV script still supplies the signature timestamp.
- */
+// Runs YouTube code: worker only. youtubei.js cannot parse the TV player, so web base.js is used
 import { Platform, Player } from "youtubei.js/web";
 import type { Solver } from "./transform";
 
@@ -21,11 +12,7 @@ const THREAD_SOURCE = `onmessage = (event) => {
   }
 };`;
 
-/**
- * Hard per-call limit: each extracted script runs in a throwaway Web Worker that is terminated at the limit, so
- * a synchronous loop in YouTube's code cannot hang the worker document. A sandboxed preload has no Node
- * `worker_threads`; a Web Worker is the browser's killable thread. Exported for tests.
- */
+// One killable Web Worker per call: sandboxed preloads lack worker_threads, YouTube code may loop
 export function evalInThread(code: string, timeoutMs = EVAL_TIMEOUT_MS): Promise<Record<string, unknown>> {
   const url = URL.createObjectURL(new Blob([THREAD_SOURCE], { type: "text/javascript" }));
   let thread: Worker;

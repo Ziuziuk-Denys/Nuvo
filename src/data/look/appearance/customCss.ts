@@ -2,17 +2,14 @@ import { sanitizeCss } from "./cssSanitizer";
 
 const STYLE_ID = "nuvo-custom-css";
 const GUARD_SHEET_ID = "nuvo-guard-sheet";
-/** Controls custom CSS must never hide (customization 6.3): they carry `data-nuvo-guard="<display type>"`. */
+// Controls custom CSS must never hide carry data-nuvo-guard="<display type>"
 const GUARD = "[data-nuvo-guard]";
 
 /** The attribute carries the control's own display type; `revert` would turn flex controls into inline-block. */
 const GUARD_DISPLAYS = ["flex", "inline-flex", "block", "grid"];
 const GUARD_DISPLAY_RULES = GUARD_DISPLAYS.map((type) => `  ${GUARD}[data-nuvo-guard="${type}"] { display: ${type} !important; }`).join("\n");
 
-/**
- * Declared first, so `nuvo-guard` is the earliest layer: its important declarations beat every later layer,
- * including the important ones of the custom layer. Custom CSS cannot leave its layer (our code wraps it).
- */
+// Declared first: important rules in the earliest layer beat important rules of later layers
 const GUARD_SHEET = `@layer nuvo-guard, nuvo-custom;
 @layer nuvo-guard {
   ${GUARD} {
@@ -26,11 +23,7 @@ const GUARD_SHEET = `@layer nuvo-guard, nuvo-custom;
 ${GUARD_DISPLAY_RULES}
 }`;
 
-/**
- * One pass over the guards: shown, sized, opaque enough and the top-most thing at their centre. No guard on the page fails.
- * While an app dialog is open (Settings, where custom CSS is applied), the guards it covers or scrolls out of view skip
- * the hit test only: custom CSS cannot open a dialog, Escape closes it from script, and its closing re-runs this check.
- */
+// Guards under an open app dialog skip the hit test: CSS cannot open one, closing re-checks
 export function guardsReachable(doc: Document, view: Window): boolean {
   const guards = [...doc.querySelectorAll(GUARD)];
   const dialogOpen = doc.querySelector('[aria-modal="true"]') !== null;
@@ -50,10 +43,7 @@ export function guardsReachable(doc: Document, view: Window): boolean {
 
 export type ApplyResult = { ok: true } | { ok: false; reason: "sanitizer" | "hid_control" | "no_guard" };
 
-/**
- * Sanitizes at apply time (a stored sheet is not trusted either), installs the sheet inside the custom layer
- * and drops it again if it hid a guard. Without a guard on the page there is nothing to verify, so nothing is installed.
- */
+// Sanitized again at apply time: a stored sheet is not trusted either
 export function applyCustomCss(doc: Document, view: Window, css: string): ApplyResult {
   removeCustomCss(doc);
   const checked = sanitizeCss(css);
@@ -84,17 +74,12 @@ export function removeCustomCss(doc: Document): void {
 const RECHECK_MS = [2000, 10000];
 const RECHECK_DEBOUNCE_MS = 200;
 
-/** The `@media` conditions of a sheet, for re-checking when one of them flips. */
 function mediaQueries(css: string): string[] {
   const found = new Set<string>();
   for (const match of css.matchAll(/@media([^{]+)\{/gi)) found.add(match[1].trim());
   return [...found].slice(0, 16);
 }
 
-/**
- * Applies custom CSS once a guarded control is mounted, then re-checks on resize, on media changes of the sheet
- * and after the longest animation could have finished. `onDrop` runs once when the sheet is removed. Returns a stop function.
- */
 export function watchCustomCss(doc: Document, view: Window, css: string, onDrop: (reason: "sanitizer" | "hid_control") => void): () => void {
   const cleanups: Array<() => void> = [];
   let stopped = false;
@@ -110,7 +95,6 @@ export function watchCustomCss(doc: Document, view: Window, css: string, onDrop:
     onDrop(reason);
   };
   const recheck = () => {
-    // a screen without guards cannot hide any; the sheet stays until one is mounted and fails
     if (!stopped && doc.querySelector(GUARD) && !guardsReachable(doc, view)) drop("hid_control");
   };
   const start = (): boolean => {

@@ -1,7 +1,3 @@
-/*
- * The first run's phrase: one centred column in the content area. A title and why it matters, the 24 words
- * as numbered tiles on the soft sheet, a quiet note on keeping them, then the actions on one line.
- */
 .page {
   box-sizing: border-box;
   width: min(640px, 100%);
@@ -55,7 +51,6 @@
   text-wrap: pretty;
 }
 
-/* 24 words, four across and six down, read across like the numbers */
 .words {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

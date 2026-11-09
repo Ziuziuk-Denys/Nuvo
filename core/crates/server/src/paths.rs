@@ -9,12 +9,10 @@ pub struct Paths {
     pub audio: PathBuf,
     pub log: PathBuf,
     pub socket: PathBuf,
-    /// yt-dlp as Nuvo keeps it current.
     pub tools: PathBuf,
 }
 
 impl Paths {
-    /// XDG base directories with the XDG defaults. `get` reads the environment; tests pass a map.
     pub fn from_env(get: impl Fn(&str) -> Option<String>) -> Result<Self, String> {
         let home = get("HOME").or_else(|| get("USERPROFILE")).map(PathBuf::from);
         // The XDG spec says relative values are invalid and must be ignored.
@@ -58,8 +56,6 @@ impl Paths {
     }
 }
 
-/// Creates `dir` and restricts `dir` itself to the current user (0700). Missing parents are
-/// created with the default mode and left as they are.
 pub fn ensure_private_dir(dir: &Path) -> io::Result<()> {
     fs::create_dir_all(dir)?;
     // Windows: a folder under the user profile is already limited to that user by inherited ACLs.

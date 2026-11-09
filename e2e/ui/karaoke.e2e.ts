@@ -4,11 +4,6 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchNuvo, type NuvoSession } from "./harness";
 import { diffRatio } from "./pixels";
 
-/**
- * The karaoke view against the committed references and its rise over the app.
- * The lyrics provider is a local stand-in that knows no song, so the column shows the no-lyrics line as the references do.
- * Runs against a build: `pnpm build`, then `pnpm exec vitest run --config vitest.e2e.config.ts e2e/ui/karaoke.e2e.ts`.
- */
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const DARK = { preset: "nuvo", mode: "dark" } as const;
 const NO_LYRICS = "Looks like we don't have lyrics for this one yet.";
@@ -32,7 +27,6 @@ it("with the background hidden, both sizes differ from the references by at most
   const page = session.page;
   await session.go("#/player");
   await session.setLook(DARK);
-  // the references predate Add lyrics under the no-lyrics line; the comparison keeps to what they show
   await page.addStyleTag({ content: "canvas, [data-add-lyrics] { visibility: hidden !important }" });
   await page.getByText(NO_LYRICS).waitFor({ timeout: 30_000 });
   await page.waitForTimeout(2_000);

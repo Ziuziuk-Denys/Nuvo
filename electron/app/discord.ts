@@ -1,9 +1,7 @@
-/** Discord presence over the documented local RPC protocol. Off by default, no library. */
 import { default as net } from "node:net";
 import { default as path } from "node:path";
 import type { SurfaceState } from "../../src/engine/types";
 
-/** Public application id; empty keeps presence inert ("not configured in this build"). */
 export const DISCORD_APPLICATION_ID = "1568940310556573696";
 export const RETRY_MS = 30_000;
 export const UPDATE_INTERVAL_MS = 4000;
@@ -20,7 +18,6 @@ export function encodeFrame(op: number, payload: unknown): Buffer {
   return Buffer.concat([header, body]);
 }
 
-/** Reassembles frames split across chunks and splits several frames in one chunk. */
 export class FrameDecoder {
   private buffer = Buffer.alloc(0);
 
@@ -40,7 +37,6 @@ export class FrameDecoder {
   }
 }
 
-/** 80 candidates: two bases, four places, ten numbers; on Windows ten named pipes. */
 export function socketCandidates(env: NodeJS.ProcessEnv, platform: NodeJS.Platform = process.platform): string[] {
   if (platform === "win32") return Array.from({ length: 10 }, (_, n) => `\\\\?\\pipe\\discord-ipc-${n}`);
   const bases = [env.XDG_RUNTIME_DIR, "/tmp"].filter((b): b is string => Boolean(b));
@@ -96,7 +92,6 @@ export interface Activity {
   buttons?: Array<{ label: string; url: string }>;
 }
 
-/** Public metadata only; null for pause, idle and no track. */
 export function buildActivity(state: SurfaceState, now: number): Activity | null {
   if (!state.trackId || state.status !== "playing") return null;
   const start = now - state.positionMs;
@@ -284,7 +279,6 @@ export class DiscordPresence {
     }, RETRY_MS);
   }
 
-  /** Disable or quit: a close frame, the socket closes, no timer remains. */
   stop(): void {
     this.enabled = false;
     if (this.retry) clearTimeout(this.retry);

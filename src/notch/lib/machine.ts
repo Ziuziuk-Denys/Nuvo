@@ -16,10 +16,6 @@ const realTimers: Timers = {
   clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
 };
 
-/**
- * Pointer and playback driven island mode. Kept outside React so timing is testable with fake
- * timers and the component only renders `mode`.
- */
 export class IslandMachine {
   private hasTrack = false;
   private inside = false;
@@ -98,7 +94,6 @@ export class IslandMachine {
     });
   }
 
-  /** While the scrubber is dragged the island must not collapse. */
   hold(active: boolean) {
     if (this.disposed) return;
     this.update(() => {

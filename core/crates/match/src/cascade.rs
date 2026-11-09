@@ -1,6 +1,4 @@
-//! The search cascade: which catalog search runs next, and the outcome when it is over. Stateless:
-//! every call replays the steps already run, so the renderer (which owns the YouTube client) can
-//! drive it through `/v1/match/next` and Rust callers through [`run`].
+// Stateless: every call replays the steps already run, so the renderer can drive it
 
 use std::future::Future;
 
@@ -25,7 +23,6 @@ pub struct Step {
     pub filter: Filter,
     #[serde(default)]
     pub failed: bool,
-    /// How many candidates this step appended to the request's `candidates`.
     #[serde(default)]
     pub found: usize,
 }
@@ -43,7 +40,6 @@ impl<'de> Deserialize<'de> for Reason {
     }
 }
 
-/// What `/v1/match/next` answers; `run` never returns `Search`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "status", rename_all = "lowercase")]
 pub enum Answer {
@@ -64,7 +60,6 @@ pub enum Answer {
     },
 }
 
-/// The 3 or 4 searches for a source, in order.
 pub fn plan(source: &Source) -> Vec<(String, Filter)> {
     let q = search_query(&source.title, &source.artists);
     let mut steps = vec![(q.query.clone(), Filter::Songs), (q.query.clone(), Filter::Any)];
@@ -79,7 +74,6 @@ fn is_video_id(id: &str) -> bool {
     id.len() == 11 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
 }
 
-/// An approved YouTube video without a cover gets its thumbnail.
 fn with_cover(mut track: Value) -> Value {
     let id = track.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
     if track.get("cover").is_none_or(Value::is_null) && is_video_id(&id) {
@@ -98,7 +92,6 @@ fn merge(pool: &[Candidate], more: &[Candidate]) -> Vec<Candidate> {
     merged
 }
 
-/// A decision as an answer: the approved track (with a derived cover), or the pending reason and proposal.
 pub fn outcome(pool: &[Candidate], decision: &Decision) -> Answer {
     match decision {
         Decision::Approved { index, score } => Answer::Approved { track: with_cover(pool[*index].raw.clone()), score: *score },
@@ -106,7 +99,6 @@ pub fn outcome(pool: &[Candidate], decision: &Decision) -> Answer {
     }
 }
 
-/// Replays `steps` (whose results are `candidates`, concatenated in step order) and says what to do next.
 pub fn next(source: &Source, candidates: &[Value], steps: &[Step]) -> Result<Answer, String> {
     if source.title.trim().is_empty() {
         return Err("source title must not be blank".into());
@@ -152,8 +144,7 @@ pub fn next(source: &Source, candidates: &[Value], steps: &[Step]) -> Result<Ans
     Ok(Answer::Pending { reason, score: None, proposed_track: None })
 }
 
-/// Drives the whole cascade with `search`, which returns tracks or fails. Dropping the future
-/// cancels it: no outcome, nothing remembered.
+// Dropping the future cancels it: no outcome, nothing remembered
 pub async fn run<F, Fut>(source: &Source, mut search: F) -> Result<Answer, String>
 where
     F: FnMut(String, Filter) -> Fut,

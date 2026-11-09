@@ -1,4 +1,3 @@
-/** System media session (MPRIS through Chromium), transport 4.8. */
 import type { PlayerView } from "./types";
 
 export const DEFAULT_SEEK_OFFSET_S = 10;
@@ -49,10 +48,7 @@ export function bindMediaSession(session: MediaSessionLike, controls: SessionCon
   };
 }
 
-/**
- * The session takes http, https, data and blob artwork, so a cover behind the daemon bridge is handed over
- * as data: the OS surfaces see the picture, never the bridge, its token or a path.
- */
+// Bridge covers go as data URLs: OS surfaces never see the bridge, its token or a path
 export async function artworkData(url: string, doFetch: typeof fetch): Promise<string | null> {
   const response = await doFetch(url);
   if (!response.ok) return null;
@@ -74,14 +70,12 @@ export class MediaSessionMirror {
     private readonly artwork: ArtworkSource = async () => null,
   ) {}
 
-  /** Clears the system session (engine disposal). */
   release(): void {
     this.session.playbackState = "none";
     this.session.metadata = null;
     this.trackId = null;
   }
 
-  /** `deckHoldsCurrent`: the active deck already plays the current entry (position state is only set then). */
   update(view: PlayerView, deckHoldsCurrent: boolean): void {
     const track = view.current?.track ?? null;
     this.session.playbackState = view.status === "idle" ? "none" : view.status === "paused" ? "paused" : "playing";

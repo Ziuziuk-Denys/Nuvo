@@ -1,9 +1,7 @@
-/** The lyrics module's public face: one engine per renderer, its data contract and the view helpers. */
 import type { LyricsEngine } from "./engine";
 
 let current: LyricsEngine | null = null;
 
-/** Installs the app's engine; a previous one (hot reload) is disposed. */
 export function setLyrics(engine: LyricsEngine): void {
   if (current && current !== engine) current.dispose();
   current = engine;

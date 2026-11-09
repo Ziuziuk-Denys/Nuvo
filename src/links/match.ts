@@ -1,8 +1,4 @@
-/**
- * Match by name: drives the daemon's cascade (`POST /v1/match/next`), running each search it asks for in
- * the renderer's YouTube client. shortcut: the engine's `matchTrack` runs the same
- * loop, so share it if both stay.
- */
+// shortcut: the engine's matchTrack runs the same loop, share it if both stay
 import type { CatalogTrack, MatchAnswer, MatchFilter, MatchSource, MatchStep } from "./types";
 
 /** Four steps of 25 stay within the daemon's 100-candidate limit. */
@@ -51,7 +47,6 @@ export async function matchByName(source: MatchSource, ports: MatchPorts, signal
   throw new Error("the match cascade did not finish");
 }
 
-/** Up to five other candidates for "Choose another", in the order the searches found them. */
 export function alternatives(result: MatchResult, limit = 5): CatalogTrack[] {
   const chosen = result.status === "approved" ? result.track.id : result.proposedTrack?.id;
   const seen = new Set(chosen ? [chosen] : []);

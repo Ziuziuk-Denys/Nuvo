@@ -1,4 +1,3 @@
-/** Daemon routes the engine uses, over `fetch`. Every failure degrades to "nothing there". */
 import type { Track } from "../types";
 import { isAbort, SourceFailure, type Alternative, type CacheProbe, type DaemonPort, type FetchJob, type FetchStatusResult, type ScDescriptor } from "./ports";
 
@@ -36,9 +35,7 @@ export function createDaemonClient(base: string, doFetch: typeof fetch = (input,
         headers: body === undefined ? undefined : { "Content-Type": "application/json" },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-    } catch {
-      // the daemon is down or starting; the caller goes on without it
-    }
+    } catch {}
   };
 
   return {
@@ -74,7 +71,6 @@ export function createDaemonClient(base: string, doFetch: typeof fetch = (input,
         });
         void response.body?.cancel().catch(() => undefined);
         if (response.status !== 206 && response.status !== 200) return null;
-        // An entry the daemon reports as empty is a miss.
         const range = response.headers.get("content-range");
         if (range && /\/0\s*$/.test(range)) return null;
         if (response.status === 200 && response.headers.get("content-length") === "0") return null;

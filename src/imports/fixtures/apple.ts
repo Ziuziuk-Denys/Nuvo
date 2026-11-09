@@ -1,4 +1,3 @@
-/** Apple Music page builder for tests: the structure of library-imports.md 5.3, invented names. */
 export interface AppleFixtureTrack {
   title?: string;
   artists?: string[];

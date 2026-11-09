@@ -7,11 +7,6 @@ import { _electron, type ElectronApplication, type Page } from "playwright-core"
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { isolate, type Isolation } from "./isolation";
 
-/**
- * A fixture song with synced lyrics plays through the real app and the lyrics engine moves its active line.
- * The lyrics provider is a local stand-in (NUVO_CORE_LRCLIB_URL) and the audio is a tone in the daemon cache: no live network.
- * Runs against a build: `pnpm build`, then `pnpm exec vitest run --config vitest.e2e.config.ts e2e/lyrics.e2e.ts`.
- */
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ELECTRON = createRequire(import.meta.url)("electron") as unknown as string;
 const SHOTS = path.join(os.homedir(), ".cache", "lyrics-shots");
@@ -83,9 +78,7 @@ afterAll(async () => {
   if (pid) {
     try {
       process.kill(pid, "SIGKILL");
-    } catch {
-      // already gone
-    }
+    } catch {}
   }
   provider?.close();
   isolation?.dispose();
@@ -138,7 +131,6 @@ it("a playing fixture song moves the active line", async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   const notch = app.windows().find((win) => win.url().includes("#/notch"));
   if (notch) {
-    // the expanded Notch shows the active line from the feed this engine sends
     await notch.hover(".island");
     await notch.waitForTimeout(1_200);
   }
@@ -147,14 +139,12 @@ it("a playing fixture song moves the active line", async () => {
 
 it("the karaoke view of a paused, restored song shows its line in full ink, the rest dim", async () => {
   type Player = { engine: { pause(): void; seekTo(ms: number): void } };
-  // "Over the hill" runs from 4 s to 7 s
   await main.evaluate(() => {
     const { engine } = (window as unknown as { __nuvoPlayer: Player }).__nuvoPlayer;
     engine.pause();
     engine.seekTo(5_500);
   });
   await main.waitForTimeout(1_500);
-  // the session comes back paused at 5.5 s: no play and no seek tell the lyrics clock where it is
   await main.reload();
   await main.waitForFunction(() => Boolean((window as unknown as { __nuvoLyrics?: unknown }).__nuvoLyrics), undefined, { timeout: 60_000 });
   await main.evaluate(() => {

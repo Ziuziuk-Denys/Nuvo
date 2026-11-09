@@ -1,4 +1,3 @@
-/** The default commands over small ports, so their arithmetic is tested without an engine. */
 import { DEFAULT_BINDINGS } from "./bindings";
 import type { CommandDefinition, CommandGroup } from "./registry";
 
@@ -8,16 +7,13 @@ export interface PlayerControls {
   next(): void;
   previous(): void;
   positionMs(): number;
-  /** 0 when unknown. */
   durationMs(): number;
   seekTo(positionMs: number): void;
-  /** The engine's perceptual 0-100 scale. */
   volumeLevel(): number;
   setVolumeLevel(level: number): void;
 }
 
 export interface LikeControls {
-  /** null with no track. */
   currentLiked(): boolean | null;
   like(): void;
   unlike(): void;
@@ -46,10 +42,8 @@ export interface NavControls {
 
 export const SEEK_STEP_MS = 5000;
 export const VOLUME_STEP = 5;
-/** Unmute target when no earlier level is known. */
 export const UNMUTE_LEVEL = 70;
 
-/** "player.seek-back" reads "ui.commands.player_seek_back"; the screens that show labels add the strings. */
 export function labelKeyFor(id: string): string {
   return `ui.commands.${id.replace(/[.-]/g, "_")}`;
 }
@@ -62,7 +56,6 @@ function command(id: string, group: CommandGroup, run: () => void, extra: Partia
     group,
     defaultApp: defaults?.app ?? null,
     defaultGlobal: defaults?.global ?? null,
-    // playback and library commands may be bound system-wide
     globalAllowed: group === "playback" || group === "library",
     run,
     ...extra,

@@ -3,7 +3,6 @@ import path from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchNuvo, RECORDING, type NuvoSession } from "./harness";
 
-/** Records what each preset paints on :root in each mode, from the running app. */
 const PRESET_IDS = ["nuvo", "editor", "orbit", "vinyl", "cosmos", "sunset", "amethyst", "y2k", "cassette"];
 const OUT = path.resolve(import.meta.dirname, "..", "..", "src", "data", "look", "presetTokens.json");
 let session: NuvoSession;

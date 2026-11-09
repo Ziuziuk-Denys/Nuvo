@@ -48,7 +48,6 @@ describe("ColdStart", () => {
     mocks.coldStart.mockResolvedValue(true);
     await act(async () => root.render(<ColdStart />));
     act(() => button("start-with-artists")!.click());
-    // the station is already playing, so "nothing to suggest" would be wrong; Home refetches its mixes
     expect(host.textContent).not.toContain("ui.recs.home.empty_title");
     expect(button("start-with-artists")).toBeUndefined();
   });
@@ -115,7 +114,6 @@ describe("ColdStart import", () => {
     const onImport = vi.fn();
     await act(async () => root.render(<ColdStart onImport={onImport} />));
     expect(button("start-with-artists")).toBeDefined();
-    // the ask and its Import share one block, centred in the page's area
     expect(button("ui.library.import")!.closest("[data-cold-ask]")).toBe(button("start-with-artists")!.closest("[data-cold-ask]"));
     expect(host.querySelector("[data-cold-ask]")).not.toBeNull();
     act(() => button("ui.library.import")!.click());

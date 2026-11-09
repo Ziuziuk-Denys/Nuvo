@@ -1,4 +1,3 @@
-/** Which lyrics tool is open, for which track. The track stays set while the sheet fades out. */
 import { create } from "zustand";
 import { toLyricsTrack, type LyricsTrack } from "../../ports/lyricsTools";
 

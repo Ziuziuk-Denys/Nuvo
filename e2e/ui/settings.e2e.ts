@@ -37,7 +37,6 @@ describe("settings", () => {
     sessions.push(live);
     await shootSections(live, WIDE, LOOKS);
 
-    // Discord presence is off until the user turns it on, and only main knows the choice
     await live.go("#/settings?section=discord");
     const discordSwitch = live.page.locator("[role=dialog] [role=switch]").first();
     await discordSwitch.waitFor({ timeout: 10_000 });
@@ -55,7 +54,6 @@ describe("settings", () => {
     await live.page.waitForTimeout(400);
     expect(await live.page.locator("[role=dialog]").count()).toBe(0);
 
-    // the first run only speaks English, so Russian comes after it in the same profile
     await live.page.evaluate(() => localStorage.setItem("nuvo_locale", "ru"));
     await live.page.reload();
     await live.page.waitForLoadState("domcontentloaded");

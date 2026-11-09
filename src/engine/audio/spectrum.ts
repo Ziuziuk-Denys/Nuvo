@@ -1,5 +1,3 @@
-/** Live EQ spectrum and clip light: an analyser that exists only while someone listens. */
-
 export const SPECTRUM_BANDS = 48;
 export const SPECTRUM_FFT = 2048;
 export const SPECTRUM_SMOOTHING = 0.8;
@@ -14,7 +12,6 @@ export interface SpectrumFrame {
 }
 export type SpectrumListener = (frame: SpectrumFrame) => void;
 
-/** Maps FFT bins to log-spaced bands; a band narrower than one bin takes the nearest bin. */
 export function mapBands(bins: Uint8Array, sampleRate: number, out: Float32Array): void {
   const binHz = sampleRate / (bins.length * 2);
   const ratio = Math.pow(SPECTRUM_MAX_HZ / SPECTRUM_MIN_HZ, 1 / out.length);
@@ -39,7 +36,6 @@ export interface SpectrumTap {
   dispose(): void;
 }
 
-/** The analyser is created on the first subscriber and disconnected with the last one. */
 export function createSpectrumTap(context: AudioContext, source: AudioNode): SpectrumTap {
   const listeners = new Set<SpectrumListener>();
   let analyser: AnalyserNode | null = null;

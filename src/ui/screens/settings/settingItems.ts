@@ -1,4 +1,3 @@
-/** The settings tabs; "Hidden" is the recommendations list, not a tab of its own. */
 export type SettingsTabId =
   "Playback" | "Sound" | "Shortcuts" | "Appearance" | "Customization" | "Notch" | "Youtube" | "Lastfm" | "Discord" | "Storage" | "Network" | "About";
 
@@ -9,14 +8,10 @@ export interface SettingItem {
 }
 
 const row = (tabId: SettingsTabId, titleKey: string, descKey?: string): SettingItem => (descKey ? { tabId, titleKey, descKey } : { tabId, titleKey });
-/** The Playback rows share one key base for their title and description. */
 const playback = (base: string): SettingItem => row("Playback", `${base}.title`, `${base}.description`);
 const youtube = (key: string): SettingItem => row("Youtube", `settings.youtube.${key}.title`, `settings.youtube.${key}.description`);
 
-/**
- * Every searchable row of the settings screen with its tab: settings search finds the tab by any of their texts,
- * and the command palette lists them. Keep in step with the rows the sections render.
- */
+// Keep in step with the rows the sections render: settings search and the palette read this list
 export const SETTING_ITEMS: SettingItem[] = [
   playback("settings.autoplay_similar"),
   playback("settings.track_double_click"),

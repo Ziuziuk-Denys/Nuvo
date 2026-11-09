@@ -11,7 +11,6 @@ interface SkipPromptProps {
   onStay: () => void;
 }
 
-/** Skip and Esc ask first: this chapter, the rest for later, or the whole tour */
 export function SkipPrompt({ onChapter, onLater, onAll, onStay }: SkipPromptProps): JSX.Element {
   const { t } = useTranslation();
   const choices = [

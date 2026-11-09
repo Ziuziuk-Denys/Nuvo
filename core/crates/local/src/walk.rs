@@ -1,5 +1,4 @@
-//! Finds audio files under a music folder. Links are never followed (they can point outside the
-//! folder or into a loop) and names starting with a dot are skipped.
+// Links are never followed (they can leave the folder or loop); dot names are skipped
 
 use std::collections::HashMap;
 use std::fs;
@@ -27,7 +26,6 @@ pub struct Found {
     pub size: u64,
     pub mtime_ms: i64,
     pub lrc: Option<PathBuf>,
-    /// The file's folder holds a cover image.
     pub folder_art: bool,
 }
 
@@ -49,7 +47,6 @@ pub fn mtime_ms(meta: &fs::Metadata) -> i64 {
     meta.modified().ok().and_then(|t| t.duration_since(UNIX_EPOCH).ok()).map_or(0, |d| d.as_millis() as i64)
 }
 
-/// Every audio file under `root`, sorted by path, until the limits.
 pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
     let mut out = Walk::default();
     // A root that is itself a link would be followed by read_dir.
@@ -63,7 +60,6 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
             out.unreadable_dirs += 1;
             continue;
         };
-        // lowercase name to real name, for the sidecar lookup
         let mut names: HashMap<String, String> = HashMap::new();
         let mut audio = Vec::new();
         for entry in entries.flatten() {
@@ -109,7 +105,6 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
     out
 }
 
-/// The folder's own cover image (`cover`, `folder`, `front`, `album` as jpg or png), never a link.
 fn art_rank(lower_name: &str) -> Option<usize> {
     let (stem, ext) = lower_name.rsplit_once('.')?;
     if !ART_EXTENSIONS.contains(&ext) {

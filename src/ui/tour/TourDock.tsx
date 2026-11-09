@@ -12,7 +12,6 @@ interface TourDockProps {
   step: number;
   last: boolean;
   waiting: boolean;
-  /** The step's scene has played: the gate starts counting */
   ready: boolean;
   onReady: () => void;
   onNext: () => void;
@@ -20,7 +19,6 @@ interface TourDockProps {
   onSkip: () => void;
 }
 
-/** The small player under the scene: a segment per chapter filled step by step, the chapter, Skip, Back and Next */
 export function TourDock({ chapterIds, chapter, step, last, waiting, ready, onReady, onNext, onBack, onSkip }: TourDockProps): JSX.Element {
   const { t } = useTranslation();
   const id = chapterIds[chapter];

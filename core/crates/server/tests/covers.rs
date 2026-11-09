@@ -40,7 +40,6 @@ fn cover_files(core: &common::TestCore) -> usize {
     std::fs::read_dir(core.dir.path().join("cache/covers")).map_or(0, |d| d.count())
 }
 
-/// The response headers.
 #[tokio::test]
 async fn covers_are_served_with_cache_headers_and_revalidate() {
     let fx = fixture().await;
@@ -61,7 +60,6 @@ async fn covers_are_served_with_cache_headers_and_revalidate() {
     assert!(!std::fs::read(stored).unwrap().windows(4).any(|w| w == b"JFIF"), "cover files are encrypted");
 }
 
-/// Refused sources at the route.
 #[tokio::test]
 async fn bad_requests_use_the_shared_error_shape() {
     let fx = fixture().await;
@@ -107,7 +105,6 @@ async fn clearing_covers_keeps_audio_and_the_other_way_round() {
     assert_eq!(cover_files(&core), 1, "clearing audio leaves covers");
 }
 
-/// Exact totals and the covers limit setting.
 #[tokio::test]
 async fn status_counts_covers_exactly_and_the_limit_is_adjustable() {
     let fx = fixture().await;
@@ -161,7 +158,6 @@ async fn stray_cover_files_are_removed_at_start() {
     assert_eq!(std::fs::read_dir(&covers).unwrap().count(), 0);
 }
 
-/// Review focus 5: while the daemon waits on the keyring, covers still load (memory only).
 #[tokio::test]
 async fn covers_load_while_the_daemon_is_starting() {
     let fx = fixture().await;

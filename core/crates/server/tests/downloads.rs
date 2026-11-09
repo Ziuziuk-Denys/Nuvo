@@ -159,7 +159,6 @@ async fn leftovers_of_a_crashed_save_are_cleaned_when_the_daemon_starts() {
     let core = common::core();
     let out = tempfile::tempdir().unwrap();
     known(&core, "ggggggggggg").await;
-    // a job that was queued when the daemon died, with its part file and its empty reserved name
     let input = nuvo_store::downloads::NewDownload { dir: out.path().to_str().unwrap().into(), format: "original".into(), label: "Mix".into(), playlist_file: false, track_ids: vec!["ggggggggggg".into()] };
     core.state.data().unwrap().db.call(move |c| nuvo_store::downloads::create(c, &input, 1).map(|_| ())).await.unwrap();
     std::fs::write(out.path().join(".nuvo-dead.part"), b"half").unwrap();
@@ -167,7 +166,7 @@ async fn leftovers_of_a_crashed_save_are_cleaned_when_the_daemon_starts() {
     std::fs::write(out.path().join("Notes.txt"), b"").unwrap();
 
     core.state.start().await.unwrap();
-    // cached only now: with the audio in place earlier, a worker woken by the upload could save the job while start() is still cleaning
+    // Cached only now: earlier, a woken worker could save the job while start() is still cleaning
     cache(&core, "ggggggggggg").await;
     settled(&core).await;
     assert!(!out.path().join(".nuvo-dead.part").exists());

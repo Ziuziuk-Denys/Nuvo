@@ -34,9 +34,7 @@ http-body-util = "0.1"
 # Covers are cropped and downscaled at display size; the standard library has no image codecs.
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 keyring = "4"
-# Tags, properties and embedded covers of local files (ID3v2, Vorbis comments, MP4, FLAC, RIFF).
-# MIT OR Apache-2.0. Default features stay on: 0.25.5 does not compile without
-# id3v2_compression_support (a missing import in its no-flate2 path).
+# Default features stay on: lofty 0.25.5 fails to build without id3v2_compression_support
 lofty = "0.25"
 # Last.fm signs every call with md5 (`api_sig`); same RustCrypto family as sha2.
 md-5 = "0.11"

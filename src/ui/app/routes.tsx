@@ -12,7 +12,6 @@ import { Stats } from "../screens/stats/Stats";
 import { History } from "../screens/stats/History";
 import { StatsArtist, StatsTrack } from "../screens/stats/StatsDetail";
 
-/** The app's pages. `/player` renders nothing here: the shell draws the karaoke view over the page. */
 export function AppRoutes(): JSX.Element {
   return (
     <Routes>

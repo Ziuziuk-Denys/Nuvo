@@ -1,4 +1,3 @@
-/* A mix card: a 240 px lead or 175 px daily cover, captioned below. The display type is the system UI face at its largest optical size. */
 .card {
   flex: none;
   width: 175px;

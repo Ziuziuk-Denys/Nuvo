@@ -46,7 +46,6 @@ const electron = vi.hoisted(() => {
       this.destroyed = true;
       this.rec("destroy");
     }
-    // main window API
     restore = vi.fn();
     show = vi.fn();
     focus = vi.fn();
@@ -306,7 +305,6 @@ describe("NotchWindow", () => {
     expect(deps.loadPage).toHaveBeenCalledTimes(4);
     expect(names(lastWindow()).at(-1)).toBe("hide");
     expect(warn.mock.calls.filter((c) => String(c[0]).includes("too often"))).toHaveLength(1);
-    // the window expires, so a later crash reloads again
     vi.advanceTimersByTime(61_000);
     crash();
     expect(deps.loadPage).toHaveBeenCalledTimes(5);

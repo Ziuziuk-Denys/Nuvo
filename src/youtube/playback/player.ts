@@ -1,4 +1,3 @@
-/** Player id, signature timestamp, deciphering through the worker, and the stream probe. */
 import { PLAYER_PATH, WWW_ORIGIN } from "../constants";
 import type { FetchLike } from "../http";
 import { YtError, abortError, isAbortError } from "../types";
@@ -19,7 +18,6 @@ export class PlayerScript {
     private readonly worker: WorkerBridge,
   ) {}
 
-  /** The current player id from `iframe_api`, kept for a few hours or until `reset()`; a failure is not kept. */
   async playerId(signal: AbortSignal): Promise<string> {
     for (;;) {
       if (this.idRequest && Date.now() - this.idAt > PLAYER_ID_TTL_MS) this.idRequest = null;
@@ -59,7 +57,6 @@ export class PlayerScript {
     return { playerId, signatureTimestamp };
   }
 
-  /** A playable URL for `format`: the signature descrambled into `sp` and `n` transformed, both in the worker. */
   async decipher(format: AudioFormat, signal: AbortSignal, playerId?: string): Promise<string> {
     let url = format.url;
     let scrambled: string | null = null;
@@ -95,7 +92,6 @@ export class PlayerScript {
 
 export const PROBE_OFFSET = 1_052_672;
 
-/** One ranged request past the first megabyte; a non-2xx answer is `rejected-stream`. */
 export async function probe(fetchFn: FetchLike, url: string, contentLength: number | undefined, signal: AbortSignal): Promise<void> {
   const offset = contentLength !== undefined && contentLength > PROBE_OFFSET ? PROBE_OFFSET : 0;
   const target = new URL(url);

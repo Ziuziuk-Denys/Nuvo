@@ -1,5 +1,3 @@
-/** Every IPC channel in one table: typed, validated, sender-checked. */
-
 export interface FrameLike {
   url: string;
 }
@@ -17,11 +15,8 @@ export interface IpcMainLike {
 export type Who = "main" | "notch";
 
 export interface IpcGuard {
-  /** The web contents allowed for each sender class right now. */
   contents(who: Who): unknown;
-  /** The page each sender class may load: the packaged file URL and, in development, the dev server origin. */
   page(who: Who): { fileUrl?: string; devOrigin?: string };
-  /** Logged once per channel. */
   refused(channel: string): void;
 }
 
@@ -49,7 +44,6 @@ export class IpcRegistry {
     }
   }
 
-  /** invoke: a wrong sender is rejected. */
   handle(channel: string, who: Who, run: (payload: unknown) => unknown): void {
     this.ipc.handle(channel, (event, payload) => {
       if (!this.allowed(who, event)) {
@@ -60,7 +54,6 @@ export class IpcRegistry {
     });
   }
 
-  /** send: a wrong sender is ignored. */
   on(channel: string, who: Who, run: (payload: unknown) => void): void {
     this.ipc.on(channel, (event, payload) => {
       if (!this.allowed(who, event)) {
@@ -72,7 +65,6 @@ export class IpcRegistry {
   }
 }
 
-/** The channel names of the preload surface. */
 export const CHANNELS = {
   winMinimize: "win:minimize",
   winToggleMaximize: "win:toggle-maximize",

@@ -12,13 +12,9 @@ export interface DeletedPlaylist {
 
 const KEEP = 20;
 
-/**
- * Your playlists deleted in this session, newest first, each with what `restore` needs.
- * shortcut: kept in memory only, so the encrypted library's contents never reach browser storage; a trash in the daemon would keep them across restarts.
- */
+// Memory only, so the encrypted library's contents never reach browser storage
 export const useRecentlyDeleted = create<{ items: DeletedPlaylist[] }>(() => ({ items: [] }));
 
-/** Snapshots your playlist, deletes it through `remove`, and keeps the snapshot for Undo and Recently deleted. */
 export async function deleteKeepingSnapshot(id: string, remove: () => Promise<void>): Promise<DeletedPlaylist> {
   const snapshot = await libraryClient.snapshot(id);
   await remove();
@@ -33,7 +29,6 @@ export async function deleteKeepingSnapshot(id: string, remove: () => Promise<vo
   return entry;
 }
 
-/** Brings a deleted playlist back with its id, songs in place and cover. */
 export async function restoreDeleted(id: string): Promise<void> {
   const entry = useRecentlyDeleted.getState().items.find((item) => item.id === id);
   if (!entry) return;

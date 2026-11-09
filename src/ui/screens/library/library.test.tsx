@@ -39,7 +39,6 @@ const mocks = vi.hoisted(() => {
       external("album", "a2", "Album A", "2026-01-02T00:00:00Z", "Northern Lights"),
     ],
     artists: [external("artist", "r1", "Мурашки", "2026-01-05T00:00:00Z")],
-    // per-test overrides of what the library holds and how its load went
     summaries: [] as unknown[],
     dismiss: vi.fn(() => Promise.resolve()),
     state: { empty: false, liked: 40, loading: false, error: undefined as unknown, albumsLoaded: true, albumsError: undefined as unknown },
@@ -58,7 +57,6 @@ vi.mock("../../ports/i18n", async () => {
   const texts = flattenTexts(en);
   return {
     useTranslation: () => ({
-      // tabs and the filter are built from the tab id, so they read the real text: a missing key shows up here
       t: (key: string, vars?: Record<string, string | number>) => {
         if (/^(ui\.library\.tab_|library\.search_)/.test(key)) return texts.get(key) ?? `missing ${key}`;
         return vars ? `${key}(${Object.values(vars).join(",")})` : key;
@@ -106,7 +104,6 @@ let host: HTMLDivElement;
 
 beforeEach(() => {
   localStorage.clear();
-  // rows are easier to read back than tiles; the default (covers) has its own test
   localStorage.setItem("nuvo_library_view_mode", "list");
   host = document.createElement("div");
   document.body.append(host);
@@ -216,7 +213,6 @@ describe("Library", () => {
   it("offers Delete playlist for an own playlist and Remove from library for a saved album", () => {
     render();
     const more = () => [...host.querySelectorAll('button[aria-label="ui.library.more"]')];
-    // rows in All: liked has a menu too, so the own playlist "Late night drive" is the fourth row
     click(more()[3]);
     expect(menuLabels()).toEqual(["ui.library.open", "ui.library.play", "ui.library.pin", "ui.library.pin_rail", "ui.library.delete_playlist"]);
     click(button("ui.library.delete_playlist"));
@@ -250,7 +246,6 @@ describe("Library imports", () => {
     mocks.summaries = [running];
     render();
     const more = [...host.querySelectorAll('button[aria-label="ui.library.more"]')];
-    // liked, artist, album, then the importing playlist
     click(more[3]);
     expect(menuLabels()).toEqual(["ui.library.cancel_import"]);
     click(button("ui.library.cancel_import"));

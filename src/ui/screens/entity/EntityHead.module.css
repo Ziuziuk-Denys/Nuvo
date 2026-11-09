@@ -1,4 +1,3 @@
-/* The head: a 168 px cover, 22 px, then the title, a line, fact chips and the actions 26 px under them. */
 .head {
   display: flex;
   align-items: flex-start;
@@ -19,7 +18,6 @@
   background: color-mix(in srgb, var(--n-ink) 6%, transparent);
 }
 
-/* the artwork fills the box whatever size it was asked at */
 .cover > span {
   width: 100% !important;
   height: 100% !important;
@@ -32,7 +30,6 @@
   border-radius: 50%;
 }
 
-/* the actions sit on the same line whether or not a subtitle and chips stand above them */
 .column {
   display: flex;
   flex: 1;
@@ -76,7 +73,6 @@
   user-select: text;
 }
 
-/* The description line: 12 px in the soft ink; a click edits it in place. */
 .description {
   min-width: 0;
   margin: 9px 0 1px;

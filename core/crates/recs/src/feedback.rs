@@ -1,5 +1,3 @@
-//! What a recorded play teaches the recommender. Called right after `events::record`.
-
 use nuvo_contracts::RecordPlaybackEvent;
 use nuvo_store::StoreError;
 use rusqlite::{Connection, OptionalExtension, params};
@@ -8,10 +6,9 @@ use crate::model::{self, FEATURES};
 use crate::rewards::{self, Outcome, Play};
 use crate::{savepoint, suppress};
 
-/// A play teaches the model only when the track came from a batch served this recently.
 const SERVED_WINDOW_MS: i64 = 86_400_000;
 
-/// Call only for a newly recorded event (`events::record` returns `is_new`). All or nothing.
+// Call only for a newly recorded event (`events::record` returns `is_new`)
 pub fn after_play(conn: &Connection, event: &RecordPlaybackEvent, now: i64) -> Result<(), StoreError> {
     savepoint(conn, "feedback", || learn_from(conn, event, now))
 }
@@ -29,7 +26,7 @@ fn learn_from(conn: &Connection, event: &RecordPlaybackEvent, now: i64) -> Resul
     let Some((json, rowid)) = served else { return Ok(()) };
     let x: [f64; FEATURES] = match serde_json::from_str::<[f64; FEATURES]>(&json) {
         Ok(arr) if arr.iter().all(|w| w.is_finite()) => arr,
-        _ => return Ok(()), // Skip rows with invalid/non-finite features
+        _ => return Ok(()),
     };
     let play = Play {
         track_id: event.track_id.clone(),

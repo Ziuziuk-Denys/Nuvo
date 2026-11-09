@@ -1,11 +1,8 @@
-//! What an export reads: explicit columns of tracks, likes and playlists, never settings.
-
 use rusqlite::{Connection, params};
 use serde_json::Value;
 
 use crate::{StoreError, tracks};
 
-/// `(snapshot, first local path, added_at)` rows.
 pub type Row = (Value, Option<String>, i64);
 
 const LOCAL_PATH: &str = "(SELECT min(f.path) FROM local_files f WHERE f.track_id = t.id)";
@@ -20,7 +17,6 @@ fn rows(conn: &Connection, sql: &str, param: Option<&str>) -> Result<Vec<Row>, S
     raw.into_iter().map(|(json, path, at)| Ok((tracks::parse(&json)?, path, at))).collect()
 }
 
-/// Title, description and items in the playlist's manual order.
 pub fn playlist(conn: &Connection, id: &str) -> Result<(String, Option<String>, Vec<Row>), StoreError> {
     let (title, description): (String, Option<String>) = conn
         .query_row("SELECT title, description FROM playlists WHERE id = ?1", [id], |r| Ok((r.get(0)?, r.get(1)?)))

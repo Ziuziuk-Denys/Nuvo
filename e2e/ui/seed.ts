@@ -57,7 +57,6 @@ export const LONG_RU = "Очень длинное название трека, �
 const FIXTURE_COVER_HOST = "covers.nuvo.test";
 export const fixtureCover = (seed: number) => `https://${FIXTURE_COVER_HOST}/${seed}.svg`;
 
-/** Answers the app's cover requests for fixture covers with the generated picture, as the daemon cache would. */
 export async function serveFixtureCovers(page: Page): Promise<void> {
   await page.route(/\/v1\/covers\?/, async (route) => {
     const src = new URL(route.request().url()).searchParams.get("src") ?? "";
@@ -70,10 +69,7 @@ export async function serveFixtureCovers(page: Page): Promise<void> {
 
 let coverServer: Promise<number> | null = null;
 
-/**
- * Saved albums and artists pass their cover through mediaUrl, which only keeps http(s) URLs,
- * so those covers come from a loopback server. Tracks use coverUrl and stay on data URLs.
- */
+// mediaUrl keeps only http(s) URLs, so album and artist covers come from a loopback server
 export function coverBase(): Promise<number> {
   coverServer ??= new Promise((resolve) => {
     const server = http.createServer((req, res) => {
@@ -98,10 +94,6 @@ function trackTitle(index: number): string {
   return `${WORDS[index % WORDS.length]} ${NOUNS[(index * 7) % NOUNS.length]}`;
 }
 
-/**
- * The snapshot sent to nuvo-core; the client-side shape also carries coverUrl (a data URL must skip mediaUrl).
- * With withCover it also carries cover.url, the field the daemon's own mixes read, as real tracks do.
- */
 export function trackSnapshot(index: number, withCover = false) {
   const artist = ARTISTS[index % ARTISTS.length];
   return {
@@ -124,7 +116,6 @@ const NEW_ARTISTS = [
   { id: "seed-new-artist-6", name: "Северный ветер" },
 ];
 
-/** A song outside the library, as a radio list would bring one: its own title, a new artist. */
 export function newSong(index: number) {
   const artist = NEW_ARTISTS[index % NEW_ARTISTS.length];
   return {
@@ -137,7 +128,6 @@ export function newSong(index: number) {
   };
 }
 
-/** Radio lists for the liked songs, the way the pool refresher stores them, so New to you and More like have songs offline. */
 export async function seedPools(session: NuvoSession, seeds = 40, perSeed = 12): Promise<void> {
   const lists = Array.from({ length: seeds }, (_, s) => ({
     seedId: trackSnapshot(s + 1).id,
@@ -151,7 +141,6 @@ export async function seedPools(session: NuvoSession, seeds = 40, perSeed = 12):
   );
 }
 
-/** The engine's saved session (src/engine/persist.ts): entries, index, positionMs, durationMs, context, listCover. */
 export const PLAYER_SESSION_KEY = "nuvo.player.session.v3";
 
 function clientTrack(index: number) {

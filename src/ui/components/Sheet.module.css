@@ -1,4 +1,3 @@
-/* A centred dialog. The window behind dims by 15 % under a 2 px blur. */
 .layer {
   position: fixed;
   inset: 0;
@@ -37,7 +36,6 @@
   }
 }
 
-/* The popover motion, scaled from the centre */
 .panel {
   composes: pop from "./Popover.module.css";
   --shift: 4px;

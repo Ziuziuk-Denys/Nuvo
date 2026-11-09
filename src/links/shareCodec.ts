@@ -1,24 +1,16 @@
-/**
- * The `nuvo://share?id=<payload>` payload, version 1: a header byte, then a raw or deflate-raw body with
- * the playlist title, the track count and per track a tag, an optional source id, optional names and an
- * optional duration. Decoding is strict and all-or-nothing.
- */
 import { readCapped } from "./capped";
 
 export type ShareSource = "text" | "youtube" | "soundcloud";
 
 export interface ShareTrack {
   source: ShareSource;
-  /** YouTube: the 11-character video id. SoundCloud: decimal digits. Absent for text tracks. */
   id?: string;
-  /** Names travel together; both are present or both absent. Text tracks always carry them. */
   artist?: string;
   title?: string;
   durationSec?: number;
 }
 
 export interface Share {
-  /** Empty for a single song. */
   title: string;
   tracks: ShareTrack[];
 }
@@ -37,7 +29,6 @@ export const MAX_INFLATED_BYTES = 512 * 1024;
 export const MAX_TRACKS = 5_000;
 export const MAX_TITLE_BYTES = 200;
 export const MAX_NAMES_BYTES = 400;
-/** Longer durations are not songs; the encoder drops them and the decoder refuses them. */
 export const MAX_DURATION_SEC = 86_400;
 
 const FLAG_DEFLATE = 1;
@@ -53,8 +44,6 @@ function fail(code: ShareErrorCode = "bad_share"): never {
   throw new ShareError(code);
 }
 
-/* base64url without padding */
-
 export function toBase64Url(bytes: Uint8Array): string {
   let out = "";
   for (let i = 0; i < bytes.length; i += 3) {
@@ -65,7 +54,6 @@ export function toBase64Url(bytes: Uint8Array): string {
   return out;
 }
 
-/** Null for a character outside the alphabet, an impossible length or non-zero trailing bits. */
 export function fromBase64Url(text: string): Uint8Array | null {
   if (text.length % 4 === 1) return null;
   const out = new Uint8Array(Math.floor((text.length * 6) / 8));
@@ -86,7 +74,7 @@ export function fromBase64Url(text: string): Uint8Array | null {
   return acc === 0 ? out : null;
 }
 
-/* YouTube ids: 11 base64url characters carry 66 bits; real ids use 64, so the last character's low 2 bits are 0 */
+// 11 base64url characters carry 66 bits; real YouTube ids use 64, so the low 2 bits are 0
 
 export function packYoutubeId(id: string): Uint8Array | null {
   if (!YOUTUBE_ID.test(id)) return null;
@@ -124,9 +112,6 @@ export function unpackYoutubeId(bytes: Uint8Array): string {
   return out + B64[acc << 2];
 }
 
-/* text */
-
-/** Tabs, line breaks and other control characters become spaces; runs of spaces collapse. */
 export function cleanText(text: string): string {
   return text
     .replace(/[\p{Cc}\u200e\u200f\u2028-\u202e\u2066-\u2069]/gu, " ")
@@ -134,7 +119,6 @@ export function cleanText(text: string): string {
     .trim();
 }
 
-/** The longest prefix of `text` whose UTF-8 form fits in `maxBytes`, never splitting a character. */
 export function clampUtf8(text: string, maxBytes: number): string {
   if (encoder.encode(text).length <= maxBytes) return text;
   let used = 0;
@@ -147,8 +131,6 @@ export function clampUtf8(text: string, maxBytes: number): string {
   }
   return out;
 }
-
-/* body */
 
 class Writer {
   private bytes: number[] = [];
@@ -199,7 +181,6 @@ class Reader {
     return out;
   }
 
-  /** At most 8 bytes, minimal form only, within the safe integer range. */
   varint(): number {
     let value = 0;
     let scale = 1;
@@ -231,7 +212,6 @@ class Reader {
   }
 }
 
-/** The share exactly as it will decode: cleaned and clamped text, ids that cannot be packed sent as text. */
 export function normalizeShare(share: Share): Share {
   return {
     title: clampUtf8(cleanText(share.title), MAX_TITLE_BYTES).trimEnd(),
@@ -239,7 +219,6 @@ export function normalizeShare(share: Share): Share {
   };
 }
 
-/** True when the track's source id fits the packed form; otherwise it travels as text. */
 export function hasPackableId(track: ShareTrack): boolean {
   if (track.id === undefined) return false;
   if (track.source === "youtube") return packYoutubeId(track.id) !== null;
@@ -280,7 +259,6 @@ function writeBody(share: Share): Uint8Array {
   return writer.done();
 }
 
-/** `artist<TAB>title` within 400 bytes; the title keeps at least half the room when both are long. */
 function namesField(artist: string, title: string): string {
   const cleanTitle = cleanText(title);
   const room = MAX_NAMES_BYTES - 1;
@@ -332,8 +310,6 @@ function readBody(body: Uint8Array): Share {
   return { title, tracks };
 }
 
-/* compression, built into Chromium and Node */
-
 function streamOf(bytes: Uint8Array): ReadableStream<BufferSource> {
   return new ReadableStream({
     start(controller) {
@@ -348,7 +324,6 @@ async function deflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-/** Stops reading as soon as the output passes `limit`; corrupt, truncated or trailing data is `bad_share`. */
 async function inflateRaw(bytes: Uint8Array, limit: number): Promise<Uint8Array> {
   const inflated = streamOf(bytes).pipeThrough(new DecompressionStream("deflate-raw"));
   const out = await readCapped(inflated, limit).catch(() => null);
@@ -356,9 +331,6 @@ async function inflateRaw(bytes: Uint8Array, limit: number): Promise<Uint8Array>
   return out;
 }
 
-/* payload */
-
-/** Whichever of the raw and the deflated body is shorter. */
 export async function encodeShare(share: Share): Promise<string> {
   const body = writeBody(share);
   const deflated = await deflateRaw(body);
@@ -370,7 +342,6 @@ export async function encodeShare(share: Share): Promise<string> {
   return toBase64Url(payload);
 }
 
-/** Throws `ShareError` with `bad_share` or `newer_link`; never returns partial data. */
 export async function decodeShare(payload: string): Promise<Share> {
   if (payload.length < 2 || payload.length > MAX_PAYLOAD_CHARS) fail();
   const bytes = fromBase64Url(payload);

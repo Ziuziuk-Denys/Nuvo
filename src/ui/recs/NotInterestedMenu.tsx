@@ -12,7 +12,6 @@ export interface NotInterestedMenuProps {
   onClose(): void;
 }
 
-/** The three "Not interested" scopes as one plain menu; Menu has no submenus. */
 export function NotInterestedMenu({ track, open, at, onClose }: NotInterestedMenuProps): JSX.Element {
   const { t } = useTranslation();
   const items = notInterestedItems(track, t, (picked, scope) => void markNotInterested(picked, scope));

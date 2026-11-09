@@ -16,14 +16,12 @@ import styles from "./Stats.module.css";
 
 const FILTERS: HistoryFilter[] = ["all", "completed", "skipped"];
 
-/** Today, Yesterday, or the date. */
 function dayLabel(day: string, today: string, locale: string, t: TFunction): string {
   if (day === today) return t("ui.history.today");
   if (day === addDays(today, -1)) return t("ui.history.yesterday");
   return formatInstant(`${day}T12:00:00`, locale);
 }
 
-/** Plays grouped by the local day they started, in the order they came. */
 function byDay(items: HistoryEntry[]): Array<{ day: string; items: HistoryEntry[] }> {
   const groups: Array<{ day: string; items: HistoryEntry[] }> = [];
   for (const item of items) {
@@ -35,7 +33,6 @@ function byDay(items: HistoryEntry[]): Array<{ day: string; items: HistoryEntry[
   return groups;
 }
 
-/** /stats/history: every play on this device, newest first, by day; all, played through or skipped. */
 export function History(): JSX.Element {
   const { t, locale } = useTranslation();
   const navigate = useNavigate();

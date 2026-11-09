@@ -1,5 +1,3 @@
-//! Unencrypted HLS: playlist parsing and in-order segment download into a sink.
-
 use std::future::Future;
 use std::time::Duration;
 
@@ -35,7 +33,6 @@ pub enum HlsError {
     Unsupported(String),
 }
 
-/// Where assembled audio goes. `discard` drops what was written before the next transcoding is tried.
 pub trait AudioSink: Send {
     fn write(&mut self, chunk: &[u8]) -> impl Future<Output = std::io::Result<()>> + Send;
     fn discard(&mut self) -> impl Future<Output = ()> + Send;
@@ -134,7 +131,6 @@ impl From<HlsError> for ScError {
 }
 
 impl SoundCloud {
-    /// One request with one immediate retry on 5xx/429/timeout; other errors fail at once.
     async fn fetch_twice(&self, url: &Url, max_bytes: usize, timeout: Duration) -> Result<Vec<u8>, ScError> {
         let mut last = ScError::Upstream("no attempt".into());
         for attempt in 0..ATTEMPTS {
@@ -157,8 +153,6 @@ impl SoundCloud {
         Err(last)
     }
 
-    /// Downloads the stream at `playlist_url` into `sink`, segments in playlist order with at most
-    /// six requests open, and returns the number of bytes written.
     pub async fn assemble(&self, playlist_url: &Url, sink: &mut impl AudioSink) -> Result<u64, ScError> {
         let mut url = playlist_url.clone();
         let mut fetches = 0;

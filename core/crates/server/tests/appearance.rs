@@ -46,7 +46,6 @@ async fn app_01_defaults_then_round_trip() {
         assert_eq!(read[key], body[key], "{key}");
     }
 
-    // a patch replaces only the keys it names
     let (_, after) = patch(&core, json!({"customCss": {"enabled": false, "text": ""}})).await;
     assert_eq!(after["themes"], body["themes"]);
 }

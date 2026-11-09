@@ -1,6 +1,3 @@
-//! `/v1/shortcuts`: the user's key bindings in the encrypted library. Only differences from the
-//! defaults are stored; `null` means a cleared binding. The renderer owns the defaults and the rules.
-
 use std::collections::BTreeMap;
 
 use axum::extract::State;

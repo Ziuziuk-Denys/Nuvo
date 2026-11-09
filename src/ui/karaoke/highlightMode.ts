@@ -1,11 +1,10 @@
 import { useSyncExternalStore } from "react";
 
-/** Line: the whole line. Word: only the sung word. Fill: a flat fill through the word, sung words stay lit. Step: word by word, sung words stay lit. */
 export const HIGHLIGHT_MODES = ["line", "word", "fill", "step"] as const;
 export type HighlightMode = (typeof HIGHLIGHT_MODES)[number];
 
 const KEY = "nuvo.karaoke.highlight";
-/** The earlier on/off word toggle: off carries over as Line. */
+// Legacy on/off word toggle key: off migrates to Line
 const OLD_KEY = "nuvo.karaoke.words";
 const DEFAULT_MODE: HighlightMode = "fill";
 
@@ -37,7 +36,6 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-/** The owner's choice, from the karaoke switch or Settings; a song without word timing still lights lines. */
 export function useHighlightMode(): HighlightMode {
   return useSyncExternalStore(subscribe, () => mode);
 }

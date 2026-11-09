@@ -5,7 +5,6 @@ use std::sync::Mutex;
 
 pub const LOG_LIMIT_BYTES: u64 = 5 * 1024 * 1024;
 
-/// Append-only log file that moves itself to `<name>.1` once it would exceed `limit`.
 pub struct RotatingFile {
     path: PathBuf,
     file: File,
@@ -45,7 +44,7 @@ impl Write for RotatingFile {
     }
 }
 
-/// Logs go to the file only. Never log lyrics text, request bodies or keys.
+// Never log lyrics text, request bodies or keys
 pub fn init(path: &Path) -> io::Result<()> {
     if let Some(dir) = path.parent() {
         crate::paths::ensure_private_dir(dir)?;

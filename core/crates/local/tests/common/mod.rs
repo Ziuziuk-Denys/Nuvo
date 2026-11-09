@@ -2,7 +2,6 @@
 
 use std::path::Path;
 
-/// A silent mono 16-bit PCM WAV of `seconds` at 8 kHz: real audio lofty can read.
 pub fn wav_bytes(seconds: u32) -> Vec<u8> {
     let rate = 8000u32;
     let data_len = rate * seconds * 2;

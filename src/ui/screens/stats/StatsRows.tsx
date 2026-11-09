@@ -23,7 +23,6 @@ export const artistHref = (key: string) => `/stats/artist?key=${encodeURICompone
 
 const CONTEXT = "stats";
 
-/** Up, down or new since the previous period, quiet beside the numbers. */
 function Move({ row }: { row: StatsRow }): JSX.Element | null {
   const { t } = useTranslation();
   if (row.isNew) return <span className={styles.move}>{t("ui.stats.new")}</span>;
@@ -43,7 +42,6 @@ interface MenuState {
   at?: { x: number; y: number };
 }
 
-/** The song menu and Add to playlist, as every list of songs has them. */
 export function useSongMenu(): {
   open(track: Track, anchor: HTMLElement | null, at?: { x: number; y: number }): void;
   layers: JSX.Element;
@@ -100,7 +98,6 @@ export interface SongRowsProps {
   ranked?: boolean;
 }
 
-/** Songs: a click on the row or its cover plays, the dots and a right click give the usual menu, Song stats among it. */
 export function SongRows({ rows, meta, ranked = false }: SongRowsProps): JSX.Element {
   const { t } = useTranslation();
   const currentId = usePlayerStore((state) => state.currentTrack?.id ?? null);
@@ -160,7 +157,6 @@ export function SongRows({ rows, meta, ranked = false }: SongRowsProps): JSX.Ele
   );
 }
 
-/** Artists, albums, playlists and genres: the row opens what it names, when there is a page for it. */
 export function GroupRows({
   rows,
   meta,

@@ -1,4 +1,4 @@
-/** A set of callbacks: subscribe returns the way out, emit calls a snapshot so a callback may unsubscribe itself. */
+// emit iterates a snapshot so a callback may unsubscribe itself
 export function createListeners<Args extends unknown[] = []>() {
   const callbacks = new Set<(...args: Args) => void>();
   return {

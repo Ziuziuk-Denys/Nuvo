@@ -8,7 +8,6 @@ import sections from "./sections.module.css";
 
 const HOOKS = ["--n-field", "--n-deep", "--n-raised", "--n-ink", "--n-ink-2", "--n-ink-3", "--n-hair", "--n-tint", "--n-accent"];
 
-/** "Advanced: custom CSS": collapsed, applied on demand, every problem listed with its line (customization 2, 6). */
 export function CustomCssBlock(): JSX.Element {
   const { t } = useTranslation();
   const customCss = useAppearanceStore((s) => s.saved.customCss);
@@ -21,7 +20,6 @@ export function CustomCssBlock(): JSX.Element {
     setError((await useAppearanceStore.getState().save({ customCss: next })) ? null : t("appearance.errors.save_failed"));
   };
 
-  // checked here for line numbers; useAppearanceSync installs it through the guarded custom layer
   const apply = () => {
     const result = sanitizeCss(text);
     setProblems(result.ok ? [] : result.problems);
@@ -97,7 +95,6 @@ export function CustomCssBlock(): JSX.Element {
   );
 }
 
-/** Safe mode by hand: the saved look stays, switched off, until the banner turns it back on (customization 6.1). Guarded against custom CSS. */
 export function ResetAppearanceRow(): JSX.Element {
   const { t } = useTranslation();
   const safe = useAppearanceStore((s) => s.safe);

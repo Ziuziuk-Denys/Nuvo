@@ -16,7 +16,6 @@ interface Pick {
   cover: ReactNode;
 }
 
-/** What a pin says under its name: an own playlist's live count, a stored count, "Artist", or what it was pinned with. */
 function pinSubtitle(pin: HomePin, liveCount: number | undefined, t: TFunction): string | undefined {
   if (liveCount !== undefined) return t("ui.home.tracks", { count: liveCount });
   if (pin.kind === "artist") return t("ui.library.kind_artist");
@@ -24,7 +23,6 @@ function pinSubtitle(pin: HomePin, liveCount: number | undefined, t: TFunction):
   return pin.subtitle;
 }
 
-/** Liked songs and the pinned playlists, albums and artists, two to a row. */
 export function QuickPicks({ onOpen }: { onOpen(href: string): void }): JSX.Element {
   const { t } = useTranslation();
   const { data: likedCount, isLoading: likedLoading } = useLikedTrackCount();

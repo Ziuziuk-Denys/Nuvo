@@ -21,10 +21,6 @@ import { openLyricsTool } from "../lyrics/lyricsTools";
 
 export type Unavailable = (track: Track) => string | null;
 
-/**
- * Why a track cannot play here: it has no playable id in the catalog, or the app is offline
- * and the daemon holds no audio for it. Nothing is dimmed while the cache is still being asked.
- */
 export function useUnavailable(tracks: readonly Track[]): Unavailable {
   const { t } = useTranslation();
   const offlineMode = useOfflineMode();
@@ -38,7 +34,6 @@ export function useUnavailable(tracks: readonly Track[]): Unavailable {
   };
 }
 
-/** The entity's playback: Play, Shuffle and a row's play all queue the playable tracks only. */
 export function entityPlayback(tracks: readonly Track[], unavailable: Unavailable, context: string, cover: string) {
   const playable = tracks.filter((track) => unavailable(track) === null);
   return {
@@ -65,7 +60,6 @@ interface MenuState {
 }
 
 export interface EntityTracksProps {
-  /** The rows shown; each index points into `tracks`. */
   shown: TrackMatch<Track>[];
   tracks: readonly Track[];
   unavailable: Unavailable;
@@ -74,7 +68,6 @@ export interface EntityTracksProps {
   hideArtists?: boolean;
 }
 
-/** Track rows of an album or an artist, with the track menu and Add to playlist. */
 export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hideArtists }: EntityTracksProps): JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();

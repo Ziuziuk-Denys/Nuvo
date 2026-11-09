@@ -11,7 +11,6 @@ function currentAccent(): string {
   return getComputedStyle(document.documentElement).getPropertyValue("--n-accent").trim() || "#0071e3";
 }
 
-/** The Liked songs cover, redrawn when the look changes the accent. */
 export function useLikesCover(): string {
   const [cover, setCover] = useState(() => likesCoverSvg(currentAccent()));
   useEffect(() => {

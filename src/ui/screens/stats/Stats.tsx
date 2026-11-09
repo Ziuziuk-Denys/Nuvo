@@ -62,7 +62,6 @@ function percentChange(delta: number, locale: string): string {
 
 const count = (value: number, locale: string) => value.toLocaleString(locale);
 
-/** The small difference beside a number; nothing without a previous period. */
 function Delta({ now, before }: { now: number; before: number | undefined }): JSX.Element | null {
   const { locale } = useTranslation();
   const delta = change(now, before);
@@ -89,7 +88,6 @@ function leadText(key: RangeKey, stats: StatsOverview, t: TFunction, locale: str
   return t(`ui.stats.lead_${key}`);
 }
 
-/** A sentence about the period: when the listening happens, once there is enough to say it. */
 function story(stats: StatsOverview, t: TFunction): string | null {
   if (filled(stats.byHour) < MIN_CHART_BUCKETS) return null;
   const part = dayProfile(stats.byHour).reduce((best, item) => (item.share > best.share ? item : best)).part;
@@ -358,7 +356,6 @@ function SongStories({ stats, range }: { stats: StatsOverview; range: RangeKey }
   );
 }
 
-/** While the history is young: what the page will add, so nothing looks missing. */
 function Growing({ stats }: { stats: StatsOverview }): JSX.Element {
   const { t } = useTranslation();
   const days = stats.calendar.filter((day) => day.plays > 0).length;
@@ -465,7 +462,6 @@ function DeleteSheet({ target, stats, onClose }: { target: "range" | "all" | nul
   );
 }
 
-/** /stats: how much, when, how and which songs, from the plays stored on this device. */
 export function Stats(): JSX.Element {
   const { t, locale } = useTranslation();
   const navigate = useNavigate();

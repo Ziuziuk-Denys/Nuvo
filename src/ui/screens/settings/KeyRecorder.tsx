@@ -12,7 +12,6 @@ interface KeyRecorderProps {
   value: string;
   recording: boolean;
   onRecordingChange: (recording: boolean) => void;
-  /** The message for a refused combination. */
   rejectionText: (rejection: Rejection) => string;
 }
 
@@ -27,10 +26,7 @@ function heldModifiers(event: KeyboardEvent): string[] {
   return held;
 }
 
-/**
- * The binding as keycaps; while recording, the shortcuts recorder takes the next combination and saves it or
- * says why not. Recording holds the escape guard, so Escape cancels it instead of closing Settings.
- */
+// Recording holds the escape guard, so Escape cancels it instead of closing Settings
 export function KeyRecorder({ commandId, scope, value, recording, onRecordingChange, rejectionText }: KeyRecorderProps): JSX.Element {
   const { t } = useTranslation();
   const recorder = useRecorderState();
@@ -51,7 +47,6 @@ export function KeyRecorder({ commandId, scope, value, recording, onRecordingCha
       event.preventDefault();
       event.stopPropagation();
       setHeld(heldModifiers(event));
-      // Escape or a saved combination ends the recording
       if (!recordKey(event)) stop();
     };
     const onKeyUp = (event: KeyboardEvent) => {

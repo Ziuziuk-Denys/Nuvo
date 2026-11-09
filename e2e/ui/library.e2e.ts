@@ -41,7 +41,6 @@ interface Layout {
   tileWidths: number[];
 }
 
-/** Where the title and every visible cover start, row heights, and anything wider than its row. */
 async function measure(page: Page): Promise<Layout> {
   return page.evaluate(() => {
     const title = document.querySelector("h1")!.getBoundingClientRect();
@@ -56,9 +55,7 @@ async function measure(page: Page): Promise<Layout> {
         .map((child) => `${row.textContent?.slice(0, 30)}: ${child.className}`);
     });
     const tiles = [...document.querySelectorAll<HTMLElement>("button[data-kind]")];
-    // tile -> grid (or a virtual grid row) -> its container in the content column
     const column = tiles[0]?.closest("[data-view]")?.getBoundingClientRect();
-    // a card is a raised or bordered box around an entry
     const cards = [...rows, ...tiles].filter((node) => {
       const style = getComputedStyle(node);
       return style.boxShadow !== "none" || style.borderTopWidth !== "0px";
@@ -76,7 +73,6 @@ async function measure(page: Page): Promise<Layout> {
   });
 }
 
-/** The empty state sits in the middle of the page's width and fills the rest of the window without making it scroll. */
 async function expectCentred(page: Page, where: string, selector = "[data-empty-state]"): Promise<void> {
   const box = await page.evaluate((selector) => {
     const area = document.querySelector(selector)!;
@@ -128,7 +124,6 @@ describe("Library", () => {
   });
 
   it("ru at 1100 with a 60-character playlist title keeps every row's controls inside", { timeout: 600_000 }, async () => {
-    // the first-run helper reads English labels, so a seeded profile switches to Russian afterwards
     await session?.close();
     session = null;
     russian = await launchNuvo({ profile: "seeded" });
@@ -155,7 +150,6 @@ describe("Library", () => {
       await live.page.waitForTimeout(300);
       const layout = await measure(live.page);
       expect(layout.overflow, `ru ${view}: nothing spills out of a row`).toEqual([]);
-      // the tools never wrap under the tabs or cover them
       const bar = await live.page.evaluate(() => {
         const tabs = document.querySelector('[role="tablist"]')!.getBoundingClientRect();
         const field = document.querySelector('input[type="text"]')!.getBoundingClientRect();
@@ -166,7 +160,6 @@ describe("Library", () => {
       await live.shoot(STEP, "library-ru-long", view, { looks: [...looks], sizes: [size], prepare });
     }
 
-    // the cover glow: a hovered row, a row with its menu open, and a hovered tile
     const wide = SIZES.find((entry) => entry.width === 1200)!;
     const states = [
       { view: "list", state: "hover", act: () => live.page.locator('[role="button"]').nth(2).hover() },
@@ -203,7 +196,6 @@ describe("Library", () => {
       await live.shoot(STEP, screen, "state", { looks: nuvo, sizes: narrow, prepare });
     };
 
-    // nothing liked, made or saved: the welcome, with nothing overlapping at either width
     const empty = async () => {
       await setView(live.page, "list");
       await openTab(live, "all");
@@ -222,11 +214,9 @@ describe("Library", () => {
       await expectCentred(live.page, `library ${size.width}`);
     }
     await both("library-empty", empty);
-    // Statistics with no plays yet uses the same centred empty state
     await live.go("#/stats");
     await live.page.locator("[data-testid=stats-empty] [data-empty-state]").waitFor({ timeout: 15_000 });
     await expectCentred(live.page, "stats");
-    // Home before any artist is picked or anything imported: the artist ask is centred the same way, at both widths
     await live.go("#/");
     await live.page.locator("[data-cold-ask]").waitFor({ timeout: 30_000 });
     for (const size of SIZES) {
@@ -234,7 +224,6 @@ describe("Library", () => {
       await expectCentred(live.page, `home ask ${size.width}`, "[data-cold-ask]");
     }
 
-    // one playlist and nothing else: the Albums tab names what is missing
     await live.core(
       `const res = await fetch(base + "/v1/me/playlists", { method: "POST", headers: json, body: JSON.stringify({ title: "Morning" }) });
        if (!res.ok) throw new Error("playlist " + res.status);`,
@@ -247,7 +236,6 @@ describe("Library", () => {
     await emptyTab();
     await both("library-empty-tab", emptyTab);
 
-    // a long query that matches nothing wraps beside its Clear filter and never under the tools
     const query = "a query that matches nothing in this library at all";
     const noMatch = async () => {
       await setView(live.page, "list");

@@ -20,10 +20,6 @@ function track(id: string, title: string, artist = "Artist"): CatalogTrack {
 
 type Outcome = "approved" | "pending" | "none";
 
-/**
- * A fake daemon and YouTube client. The cascade asks for one search of the title, then decides by the
- * `outcomes` table (default "none"); every search returns one track named after the query.
- */
 function fakePorts(
   options: {
     inspect?: InspectAnswer;
@@ -391,13 +387,11 @@ describe("other links", () => {
       code: "failed",
       service: "nuvo",
     });
-    // a cascade that never decides ends in matchByName's own error, which is no daemon error either
     const endless = fakePorts({
       fetched: { "https://api.deezer.com/track/3135556": { title: "Harder", duration: 224, artist: { name: "Daft Punk" } } },
     }).ports;
     endless.matchNext = vi.fn(async () => ({ status: "search" as const, query: "again", filter: "songs" as const }));
     expect(await run("https://www.deezer.com/en/track/3135556", endless)).toMatchObject({ kind: "error", code: "failed" });
-    // a daemon error the client has no word for is Nuvo's own failure too, not a gone post
     const broken = fakePorts().ports;
     broken.youtubeTrack = vi.fn(() => Promise.reject(new CoreError(500, "INTERNAL")));
     expect(await run("https://youtu.be/dQw4w9WgXcQ", broken)).toMatchObject({ kind: "error", code: "failed" });

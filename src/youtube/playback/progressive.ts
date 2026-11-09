@@ -1,5 +1,3 @@
-/** Progressive MediaSource feed for the signed-in TV stream. */
-
 export interface SourceBufferLike extends EventTarget {
   updating: boolean;
   appendBuffer(data: Uint8Array): void;
@@ -19,7 +17,6 @@ export interface FeedPlatform {
 }
 
 export const QUOTA_RETRY_MS = 2000;
-/** Queued bytes allowed while overflowed before the live feed is abandoned for the whole-file path. */
 export const MAX_QUEUED_BYTES = 8 * 1024 * 1024;
 
 export interface ProgressiveSource {
@@ -35,11 +32,6 @@ export const browserFeed: FeedPlatform = {
   revokeObjectURL: (url) => URL.revokeObjectURL(url),
 };
 
-/**
- * Feeds `stream` into a MediaSource one append at a time, in order. A quota error keeps the chunk at the head,
- * marks the source overflowed and retries after 2 s. `whole` is the complete file for the cache and the
- * overflow swap.
- */
 export function progressiveSource(
   stream: ReadableStream<Uint8Array>,
   mime: string,
@@ -122,7 +114,6 @@ export function progressiveSource(
           chunks.push(value);
           if (!abandoned) {
             queue.push(value);
-            // Past the cap the live feed is dropped; `chunks` still builds the whole file for the swap.
             if (overflowed && queue.reduce((sum, chunk) => sum + chunk.byteLength, 0) > MAX_QUEUED_BYTES) {
               abandoned = true;
               stopFeeding();

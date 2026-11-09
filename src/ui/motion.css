@@ -11,7 +11,7 @@
   --n-stagger: 60ms;
 }
 
-/* Rise and pop: first visit of a screen, by section. --n-i is the section index, capped at 5 by the caller. */
+/* --n-i is the section index, capped at 5 by the caller */
 @keyframes n-enter {
   from {
     opacity: 0;
@@ -24,7 +24,6 @@
   animation-delay: calc(var(--n-i, 0) * var(--n-stagger));
 }
 
-/* Page transition through same-document View Transitions */
 ::view-transition-old(n-page) {
   animation: n-page-out var(--n-t-quick) var(--n-ease-in) both;
 }
@@ -67,7 +66,6 @@
   }
 }
 
-/* Reduce effects (Settings, Appearance): solid surfaces instead of glass and blur, changes without motion. */
 :root[data-reduce-effects] {
   --n-glass: var(--n-raised) !important;
   --n-glass-blur: none !important;

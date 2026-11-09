@@ -1,5 +1,3 @@
-//! Wire types of the `/v1/recs` routes (sub-project 2).
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -9,7 +7,6 @@ pub struct NotInterestedRequest {
     pub track_id: String,
     /// `exact`, `work`, `artist` or `artist_forever`.
     pub scope: String,
-    /// Stored first when the daemon has never seen the track.
     #[serde(default)]
     pub track: Option<Value>,
 }
@@ -29,7 +26,6 @@ pub struct SuppressionItem {
     pub scope: String,
     /// `user` or `scrub_skip` (added automatically after a scrub-then-skip).
     pub origin: String,
-    /// The track the user acted on, when the daemon still has it.
     pub track: Option<Value>,
     pub penalty: f64,
     /// When the entry stops mattering (penalty under 0.05); `null` for entries that never fade.
@@ -40,8 +36,7 @@ pub struct SuppressionItem {
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct RankRequest {
-    /// `radio:<trackId>`, `continue:<contextId>`, `search:<trackId>`, `suggest:<playlistId>`,
-    /// `mix:mood:<key>` and so on.
+    // `radio:<trackId>`, `continue:<contextId>`, `search:<trackId>`, `mix:mood:<key>` and others
     pub context: String,
     #[serde(default)]
     pub seeds: Vec<String>,
@@ -74,7 +69,6 @@ pub struct RankedItem {
     pub reason: RankReason,
 }
 
-/// What the current listening session contributed: tracks finished, skipped at once, scrubbed then skipped.
 #[derive(Serialize, Debug, Default, Clone, PartialEq)]
 pub struct RankSignals {
     pub liked: usize,
@@ -88,7 +82,6 @@ pub struct RankResponse {
     pub batch_id: String,
     pub items: Vec<RankedItem>,
     pub signals: RankSignals,
-    /// Candidates removed: invalid, repeated, already heard, or suppressed for good.
     pub dropped: usize,
 }
 
@@ -102,7 +95,6 @@ pub struct SeedsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct PoolRequest {
     pub seed_id: String,
-    /// Where the list came from, for example `yt_radio`.
     pub source: String,
     /// Track snapshots in catalog order, at most 100.
     pub items: Vec<Value>,

@@ -30,39 +30,26 @@ pub struct Config {
     pub paths: Paths,
     pub token: String,
     pub lrclib_url: String,
-    /// The word-timed lyrics database; empty or a host off its allowlist turns the source off.
     pub amll_url: String,
     pub shazam_url: String,
     pub lastfm_url: String,
-    /// `Pace::SHAZAM` in production; tests remove the waits.
     pub pace: Pace,
     pub exit_on_stdin_eof: bool,
-    /// Tests only: sends catalog and artwork requests to a local fixture server. `None` in production.
     pub net_rewrite: Option<String>,
-    /// Where the dependency check looks for tools; also names the home directory reports hide.
     pub env: ToolEnv,
-    /// The release yt-dlp is kept current from; `None` turns the daily update off.
     pub tools_url: Option<String>,
     #[doc(hidden)]
     pub test: TestHooks,
 }
 
-/// Seams for tests; production leaves every field at its default.
 #[derive(Clone, Default)]
 pub struct TestHooks {
-    /// Replaces the network check's hosts and resolver.
     pub net: Option<netcheck::Setup>,
-    /// Hosts pre-cache may fetch from over `http` and on private addresses (local mocks).
     pub fetch_hosts: Vec<String>,
-    /// Replaces the overall time limit of one pre-cache job.
     pub job_timeout: Option<std::time::Duration>,
-    /// Replaces `https://www.tiktok.com` for the TikTok extractor.
     pub tiktok_url: Option<String>,
-    /// Replaces the 2 s settle time of folder watch events.
     pub local_debounce: Option<Duration>,
-    /// A media file recognized in place of the system audio recording.
     pub system_clip: Option<std::path::PathBuf>,
-    /// How many of the next saved-file records fail with a database error.
     pub finish_failures: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
@@ -76,15 +63,12 @@ pub enum BootError {
     Io(#[from] std::io::Error),
 }
 
-/// Everything that needs the master key. Absent while the daemon is locked.
 #[derive(Clone)]
 pub struct Unlocked {
     pub master: MasterKey,
     pub db: Db,
     pub cache: AudioCache,
-    /// Encrypted cover files, next to the audio cache (`~/.cache/nuvo/covers`).
     pub cover_files: AudioCache,
-    /// The compact copy of the play events the Statistics page reads.
     pub history: Arc<std::sync::Mutex<nuvo_store::listening::History>>,
 }
 
@@ -93,37 +77,27 @@ pub struct Inner {
     pub paths: Paths,
     pub lrclib: Lrclib,
     pub amll: Option<Amll>,
-    /// One per daemon: its limiter paces every job.
     pub shazam: Shazam,
     pub tiktok: TikTok,
-    /// What `POST /v1/links/inspect` read in the last minute; `POST /v1/recognize` reuses it.
     pub links: LinkCache,
     pub files: FileGrants,
     pub lastfm: Lastfm,
     pub net: Net,
     pub covers: Covers,
     soundcloud: SoundCloud,
-    /// Set once the stored SoundCloud `client_id` has been read from an unlocked library.
     soundcloud_loaded: AtomicBool,
-    /// For the daemon's own requests (pre-cache, network check). Follows the proxy like every client.
     pub http: reqwest::Client,
-    /// The proxy main set through `PUT /v1/system/network`; `None` means direct.
     proxy: Arc<RwLock<Option<Url>>>,
     /// Held while a scrobble batch is in flight, so two flushes never send the same plays.
     pub scrobble_lock: Mutex<()>,
-    /// Held while a dependency check is in flight; prevents parallel checks.
     pub deps_lock: Mutex<()>,
-    /// Held while a network check is in flight; prevents parallel checks.
     pub net_lock: Mutex<Option<std::time::Instant>>,
     pub exit_on_stdin_eof: bool,
     pub started: Instant,
     pub env: ToolEnv,
-    /// The last dependency check; `None` until the first one finishes.
     pub deps: RwLock<Option<Deps>>,
-    /// Timestamp of the last completed check in milliseconds.
     pub deps_checked_at: RwLock<i64>,
     pub net_setup: netcheck::Setup,
-    /// Kept for the bug report.
     pub last_network_check: RwLock<Option<NetCheck>>,
     pub tools_url: Option<String>,
     pub tool_download: RwLock<Option<ToolDownload>>,
@@ -134,7 +108,6 @@ pub struct Inner {
     pub shutdown: Notify,
     keystore: Box<dyn KeyStore>,
     unlocked: RwLock<Option<Unlocked>>,
-    /// True until the start decision is made; the keyring may sit on an unlock prompt meanwhile.
     starting: AtomicBool,
 }
 
@@ -149,9 +122,7 @@ impl Deref for AppState {
     }
 }
 
-/// Every daemon client asks this cell per request, so a new proxy applies without rebuilding them.
-/// shortcut: an idle keep-alive connection opened before a change can be reused until it idles out
-/// (90 s); rebuild the clients if that ever matters.
+// shortcut: an idle keep-alive connection from before a proxy change is reused until it idles out (90 s)
 fn proxy_hook(cell: &Arc<RwLock<Option<Url>>>) -> reqwest::Proxy {
     let cell = cell.clone();
     reqwest::Proxy::custom(move |_| cell.read().expect("proxy lock").clone())
@@ -172,7 +143,6 @@ fn open(paths: &Paths, master: MasterKey) -> Result<Unlocked, StoreError> {
 }
 
 impl AppState {
-    /// A handle that does not keep the daemon alive; background loops hold this.
     pub fn downgrade(&self) -> Weak<Inner> {
         Arc::downgrade(&self.0)
     }
@@ -181,8 +151,6 @@ impl AppState {
         weak.upgrade().map(Self)
     }
 
-    /// A daemon that answers `/health` with `starting` and every data route with `503` until
-    /// [`AppState::start`] finishes.
     pub fn new(config: Config, keystore: Box<dyn KeyStore>) -> Self {
         let proxy = Arc::new(RwLock::new(None));
         let hook = proxy_hook(&proxy);
@@ -243,7 +211,6 @@ impl AppState {
         state
     }
 
-    /// [`AppState::new`] plus the start decision, without the cache sweep. For tests.
     pub fn boot(config: Config, keystore: Box<dyn KeyStore>) -> Result<Self, BootError> {
         let state = Self::new(config, keystore);
         state.open_library()?;
@@ -251,8 +218,6 @@ impl AppState {
         Ok(state)
     }
 
-    /// Opens the library (this may wait on a keyring prompt), drops cache files nothing indexes,
-    /// then lets requests through.
     pub async fn start(&self) -> Result<(), BootError> {
         let state = self.clone();
         tokio::task::spawn_blocking(move || state.open_library()).await.map_err(std::io::Error::other)??;
@@ -274,8 +239,7 @@ impl AppState {
         Ok(())
     }
 
-    /// Decides the start state. The rule that matters: an existing `library.db` is never
-    /// replaced. Without a usable key for it the daemon starts locked and waits for the phrase.
+    // An existing library.db is never replaced: without a usable key the daemon starts locked
     fn open_library(&self) -> Result<(), BootError> {
         let paths = &self.paths;
         if let Some(dir) = paths.db.parent() {
@@ -312,7 +276,6 @@ impl AppState {
         self.starting.load(Ordering::SeqCst)
     }
 
-    /// The unlocked data handles, `503 CORE_STARTING` before the start decision, or `423 LOCKED`.
     pub fn data(&self) -> Result<Unlocked, ApiError> {
         if self.is_starting() {
             return Err(ApiError::Starting);
@@ -320,7 +283,6 @@ impl AppState {
         self.unlocked.read().expect("state lock").clone().ok_or(ApiError::Locked)
     }
 
-    /// Where covers persist: the encrypted cache while unlocked, nowhere (memory only) otherwise.
     pub fn cover_disk(&self) -> Option<Disk> {
         self.data().ok().map(|d| Disk { db: d.db, files: d.cover_files })
     }
@@ -329,7 +291,6 @@ impl AppState {
         self.unlocked.read().expect("state lock").is_none()
     }
 
-    /// The SoundCloud client, with the stored `client_id` loaded on first use once the library is unlocked.
     pub async fn soundcloud(&self) -> &SoundCloud {
         if !self.soundcloud_loaded.load(Ordering::SeqCst)
             && let Ok(data) = self.data()
@@ -349,7 +310,6 @@ impl AppState {
         self.proxy.read().expect("proxy lock").clone()
     }
 
-    /// The proxy URL with its credentials, for yt-dlp and ffmpeg arguments.
     pub fn proxy_url(&self) -> Option<String> {
         self.proxy().map(String::from)
     }
@@ -358,12 +318,10 @@ impl AppState {
         *self.proxy.write().expect("proxy lock") = proxy;
     }
 
-    /// A `reqwest::Proxy` that follows [`AppState::set_proxy`], for clients built per request.
     pub fn proxy_hook(&self) -> reqwest::Proxy {
         proxy_hook(&self.proxy)
     }
 
-    /// Opens the existing library with a key recovered from the phrase.
     pub fn key_protection(&self) -> &'static str {
         match self.keystore.protection() {
             Protection::Keyring => "keyring",
@@ -372,7 +330,6 @@ impl AppState {
         }
     }
 
-    /// Locked only because the key file is sealed: the passphrase, not the phrase, opens it.
     pub fn needs_passphrase(&self) -> bool {
         !self.is_starting() && self.is_locked() && self.keystore.protection() == Protection::Passphrase
     }

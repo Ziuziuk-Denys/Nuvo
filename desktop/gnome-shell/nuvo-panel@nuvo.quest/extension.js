@@ -1,5 +1,3 @@
-// Nuvo in the GNOME top bar. Playback and metadata come from Nuvo's MPRIS player,
-// like, dislike, the lyrics line and "open" from quest.nuvo.Nuvo.Player (see desktop/README.md).
 import Clutter from "gi://Clutter";
 import GdkPixbuf from "gi://GdkPixbuf";
 import Gio from "gi://Gio";
@@ -41,7 +39,6 @@ const PlayerProxy = Gio.DBusProxy.makeProxyWrapper(`<node>
   </interface>
 </node>`);
 
-/* Average of the colourful pixels of the cover, the same idea as the Notch's accent. */
 function coverGlow(uri) {
   try {
     const path = Gio.File.new_for_uri(uri).get_path();
@@ -292,9 +289,7 @@ const NuvoIndicator = GObject.registerClass(
             const fraction = this._length > 0 ? Math.min(1, Math.max(0, position / this._length)) : 0;
             this._fill.width = Math.round(this._rail.width * fraction);
             this._elapsed.text = formatTime(position);
-          } catch {
-            // the player went away between ticks
-          }
+          } catch {}
         },
       );
     }
@@ -317,7 +312,6 @@ const NuvoIndicator = GObject.registerClass(
 export default class NuvoPanelExtension extends Extension {
   enable() {
     this._indicator = new NuvoIndicator(this);
-    // right of the clock: the place the Notch takes on other desktops
     Main.panel.addToStatusArea(this.uuid, this._indicator, 1, "center");
   }
 

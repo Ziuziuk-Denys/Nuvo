@@ -21,7 +21,6 @@ async function start(h: Harness, tracks = list("a", "b", "c"), context?: string)
   await flush();
 }
 
-/** Advances wall time in 250 ms position updates while playing. */
 async function play(h: Harness, ms: number) {
   for (let t = 0; t < ms; t += 250) {
     await vi.advanceTimersByTimeAsync(250);

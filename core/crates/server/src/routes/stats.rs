@@ -1,5 +1,3 @@
-//! `/v1/stats/*`: the Statistics page. Everything is computed here on the device and never sent anywhere.
-
 use std::time::Duration;
 
 use axum::extract::{Path, Query, State};
@@ -19,7 +17,6 @@ const WARM_UP_ROWS: i64 = 20_000;
 const WARM_UP_DELAY: Duration = Duration::from_secs(5);
 const WARM_UP_PAUSE: Duration = Duration::from_millis(50);
 
-/// Reads the history in the background after the start, so the page's first opening does not pay for it.
 pub fn spawn_warm_up(state: AppState) {
     let weak = state.downgrade();
     tokio::spawn(async move {
@@ -63,11 +60,9 @@ pub fn routes() -> Router<AppState> {
 struct OverviewQuery {
     from: Option<String>,
     to: Option<String>,
-    /// `Date.getTimezoneOffset()` of the asking window, for what "today" means.
     tz_offset_min: Option<i64>,
 }
 
-/// Both local days or neither; neither means all time.
 pub fn day_range(from: Option<&str>, to: Option<&str>) -> Result<Option<(i64, i64)>, ApiError> {
     let parse = |text: &str| day_from_iso(text).ok_or_else(|| ApiError::Invalid("dates are YYYY-MM-DD".into()));
     match (from, to) {
@@ -110,7 +105,6 @@ async fn artist(State(state): State<AppState>, Path(key): Path<String>) -> Resul
         data.db
             .call(move |c| {
                 nuvo_recs::keys::refresh(c)?;
-                // an artist's page knows the name only: the key groups "Artist" and "Artist - Topic" where it can
                 let canonical = key.strip_prefix("name:").map(|name| nuvo_recs::canon::canon("", name).artist_key);
                 match canonical.filter(|key| !key.is_empty()).map(|key| listening::artist_detail(c, &key)) {
                     Some(Ok(detail)) => Ok(detail),

@@ -16,7 +16,6 @@ function temp(): string {
   return dir;
 }
 
-/** Resources with a stand-in GNOME zip, so the test does not depend on `pnpm panel:pack`. */
 function resources(): string {
   const dir = temp();
   mkdirSync(path.join(dir, "dist"));
@@ -37,7 +36,6 @@ function recorder(fail: (file: string, args: string[]) => string | null = () => 
   return { calls, exec };
 }
 
-/** Install deps with a pending marker in its own temp folder. */
 function deps(exec: ReturnType<typeof recorder>["exec"], dir = resources()) {
   return { resources: dir, configHome: temp(), exec, pendingFile: path.join(temp(), "pending"), allowed: true };
 }

@@ -2,7 +2,6 @@ import type { CSSProperties } from "react";
 import { useTheme } from "next-themes";
 import { useHasCustomBackground } from "./lookStore";
 
-// 35 % tint, 8 % dim and a 20 px blur, with the pill and button variables tuned to that tint
 const GLASS: CSSProperties = {
   background: "linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)), rgba(10, 10, 10, 0.35)",
   backdropFilter: "blur(20px)",
@@ -14,7 +13,6 @@ const GLASS: CSSProperties = {
   ["--glass-prominent-bg" as string]: "rgba(255, 255, 255, 0.84)",
 };
 
-/** A side surface over the wallpaper: dark tinted glass, only while a wallpaper is set in dark mode. */
 export function wallpaperGlass(wallpaper: boolean, dark: boolean): CSSProperties | undefined {
   return wallpaper && dark ? GLASS : undefined;
 }

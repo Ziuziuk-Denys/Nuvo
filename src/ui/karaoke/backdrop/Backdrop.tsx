@@ -6,14 +6,9 @@ import { useEffectsStore, useReducedEffects } from "../../effects";
 import { createFlowRenderer, type FlowRenderer } from "./shader";
 import styles from "./Backdrop.module.css";
 
-/** A new cover fades in over the old one this long. */
 const COVER_FADE_MS = 800;
 const COVER_PX = 64;
 
-/**
- * The moving cover field behind the karaoke view, with the
- * still two-colour field in its place when there is no cover or no WebGL2, and the view's shade on top.
- */
 export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<FlowRenderer | null>(null);
@@ -117,7 +112,6 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
   animateRef.current = animate;
   useEffect(() => {
     if (!animate) {
-      // a fade cut short by hiding or reduced motion ends on the new cover
       const renderer = rendererRef.current;
       if (renderer && showCanvas) {
         renderer.settle();

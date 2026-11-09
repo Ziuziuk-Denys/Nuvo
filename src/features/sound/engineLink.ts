@@ -1,8 +1,3 @@
-/**
- * The sound module's one link to the player: a small store mirrored from the player
- * and the sound-bus actions. A backend fills both: the engine, or (until it is deleted) the old player.
- * Tests set the store and spy on the actions.
- */
 import { create } from "zustand";
 import type { Engine } from "@/engine/engine";
 import type { EqState } from "@/engine/audio/graph";
@@ -54,7 +49,6 @@ export type SnapshotMirror = (push: (snapshot: PlayerSnapshot) => void) => () =>
 
 let backend: SoundBackend | null = null;
 
-/** Called once by the app after the player starts; returns a function that disconnects. */
 export function connectSound(next: SoundBackend, mirror: SnapshotMirror): () => void {
   backend = next;
   const stop = mirror((snapshot) => usePlayerSnapshot.setState(snapshot));
@@ -72,7 +66,6 @@ interface Bus {
   seekMasked(positionMs: number): void;
 }
 
-/** The engine as a sound backend. */
 export function engineSound(engine: Engine, bus: Bus, livePositionMs: () => number): { backend: SoundBackend; mirror: SnapshotMirror } {
   return {
     backend: {

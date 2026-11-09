@@ -9,16 +9,11 @@ const CARD_GAP = 28;
 /** About what a narrow window shows at once; with no more than this a refresh would bring nothing new. */
 const ROTATES_FROM = 5;
 
-/**
- * A titled row of 175 px covers that scrolls sideways; each opens its album or playlist page.
- * Refresh turns the row on by as many covers as the window shows, so the ones after them come into view.
- */
 export function SavedShelf({ title, items, onOpen }: { title: string; items: MostSavedEntry[]; onOpen(href: string): void }): JSX.Element {
   const row = useRef<HTMLDivElement>(null);
   const [turn, setTurn] = useState({ offset: 0, round: 0 });
   const start = turn.offset % items.length;
   const shown = [...items.slice(start), ...items.slice(0, start)];
-  // the row mounts anew for each round, so it starts at its left edge
   const refresh = () => {
     const box = row.current;
     if (!box) return;

@@ -1,5 +1,4 @@
-/* One line per item, fixed height so a virtual list can place rows without measuring them.
-   Hover and focus only tint; nothing in the row changes size. */
+/* Fixed height so a virtual list can place rows without measuring them */
 .row {
   display: flex;
   align-items: center;
@@ -38,7 +37,6 @@
   background: var(--bg-toolbox-active);
 }
 
-/* keyboard focus is a fill too, never a ring */
 .row:not(.placeholder):focus-visible {
   outline: none;
   background: var(--bg-toolbox-active);
@@ -134,7 +132,6 @@
   visibility: visible;
 }
 
-/* the song that is playing keeps its dislike in view */
 .row[data-active] [data-row-action] {
   visibility: visible;
 }
@@ -148,7 +145,6 @@
   text-align: right;
 }
 
-/* Loading: the same boxes in tint, sized to the lines they stand for */
 .placeholder .leading {
   width: 40px;
   height: 40px;
@@ -165,7 +161,6 @@
   height: 16px;
 }
 
-/* each bar is centred in the line box of the text it stands for: 20 px title, 16 px subtitle */
 .bar {
   display: block;
   width: 44%;

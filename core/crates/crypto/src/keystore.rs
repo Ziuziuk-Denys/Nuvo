@@ -25,14 +25,11 @@ pub enum KeyStoreError {
     NoFile,
 }
 
-/// Where the master key lives, from the weakest protection to the strongest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Protection {
-    /// The system keyring.
     Keyring,
     /// A private file, because there is no keyring: anyone who can read the user's files can read it.
     File,
-    /// A private file sealed with a passphrase only the user knows.
     Passphrase,
 }
 
@@ -44,12 +41,10 @@ pub trait KeyStore: Send + Sync {
         Protection::Keyring
     }
 
-    /// Opens a passphrase-sealed key file; later saves keep it sealed with the same passphrase.
     fn unlock_with_passphrase(&self, _passphrase: &str) -> Result<MasterKey, KeyStoreError> {
         Err(KeyStoreError::NoFile)
     }
 
-    /// Seals the key file with `passphrase`, or writes it plain again for `None`.
     fn set_passphrase(&self, _key: &MasterKey, _passphrase: Option<&str>) -> Result<(), KeyStoreError> {
         Err(KeyStoreError::NoFile)
     }
@@ -60,7 +55,6 @@ const SEALED_MAGIC: &[u8; 4] = b"NKP1";
 pub const KDF_ROUNDS: u32 = 300_000;
 const SEALED_LEN: usize = 4 + 4 + 16 + 12 + 32 + 16;
 
-/// PBKDF2-HMAC-SHA256 for one 32-byte block, with the padded keys hashed once.
 fn pbkdf2(passphrase: &[u8], salt: &[u8], rounds: u32) -> [u8; 32] {
     let mut block = [0u8; 64];
     if passphrase.len() > 64 {
@@ -156,13 +150,10 @@ impl KeyStore for KeyringStore {
     }
 }
 
-/// The master key in a private file, for sessions with no Secret Service. Without a passphrase
-/// nothing could encrypt it, so its protection is the 0600 file in the 0700 data directory: weaker
-/// than a keyring, better than a player that cannot start. A passphrase the user sets seals it.
+// Plain-file fallback: only 0600 in a 0700 dir protects it until a passphrase seals it
 pub struct FileKeyStore {
     path: PathBuf,
     rounds: u32,
-    /// The passphrase of a sealed file, kept in memory once it opened the file.
     passphrase: Mutex<Option<String>>,
 }
 
@@ -171,7 +162,6 @@ impl FileKeyStore {
         Self { path: path.into(), rounds: KDF_ROUNDS, passphrase: Mutex::new(None) }
     }
 
-    /// Fewer rounds, for tests: the real count would make every case take seconds.
     pub fn with_rounds(mut self, rounds: u32) -> Self {
         self.rounds = rounds;
         self
@@ -260,8 +250,7 @@ impl KeyStore for FileKeyStore {
     }
 }
 
-/// The keyring while it answers, the file when it does not. A key that had to live in the file
-/// moves into the keyring as soon as one is there.
+// A key that had to live in the file moves into the keyring as soon as one answers
 pub struct FallbackKeyStore<P> {
     primary: P,
     file: FileKeyStore,
@@ -317,7 +306,6 @@ impl<P: KeyStore> KeyStore for FallbackKeyStore<P> {
     }
 }
 
-/// Test double; `unavailable()` behaves like a session without a Secret Service.
 #[derive(Default)]
 pub struct MemoryKeyStore {
     key: Mutex<Option<MasterKey>>,

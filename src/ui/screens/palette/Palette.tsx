@@ -28,7 +28,6 @@ const TEMPO_LABELS: Record<TempoPresetKey, string> = {
 };
 const TEMPO_KEYS = (Object.keys(TEMPO_PRESETS) as TempoPresetKey[]).map((key) => ({ key, labelKey: TEMPO_LABELS[key] }));
 
-/** Like the equalizer panel: choosing a preset is meant to be heard, so it turns the equalizer on and ends a comparison. */
 function applyEq(name: string): void {
   const store = useSoundStore.getState();
   if (!store.eqEnabled) store.setEnabled(true);
@@ -36,14 +35,12 @@ function applyEq(name: string): void {
   store.applyPreset(name);
 }
 
-/** Ctrl+K (Cmd+K) anywhere toggles the palette: commands, jumps and settings entries, never search results. */
 export function Palette(): JSX.Element | null {
   const [open, setOpen] = useState(false);
   const recording = useRecorderState().kind === "recording";
   const locked = useGateStore((state) => state.locked);
   const phase = usePresence(open);
 
-  // a lock closes the palette, and a locked library never opens it
   if (locked && open) setOpen(false);
 
   useEffect(() => {
@@ -57,7 +54,6 @@ export function Palette(): JSX.Element | null {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [recording]);
 
-  // mounted afresh for each opening, so the query and the selection start empty
   return phase === null ? null : <PalettePanel open={open} phase={phase} onClose={() => setOpen(false)} />;
 }
 
@@ -73,7 +69,6 @@ function PalettePanel({ open, phase, onClose }: { open: boolean; phase: "in" | "
   const ownPresets = useSoundStore((state) => state.customPresets);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
-  // keywords come from every locale; the commands are built again once those have loaded
   const [, setLocalesLoaded] = useState(false);
 
   useEffect(() => {
@@ -130,7 +125,6 @@ function PalettePanel({ open, phase, onClose }: { open: boolean; phase: "in" | "
   });
   commands.push(...sound);
 
-  // grouped by the group of each group's best match, so the best match stays on top
   const groups: { group: CommandGroup; items: Command[] }[] = [];
   for (const command of rankCommands(commands, query).slice(0, LIMIT)) {
     const found = groups.find((entry) => entry.group === command.group);
@@ -152,7 +146,6 @@ function PalettePanel({ open, phase, onClose }: { open: boolean; phase: "in" | "
       const step = event.key === "ArrowDown" ? 1 : -1;
       setSelected((active + step + visible.length) % visible.length);
     } else if (event.key === "Enter" && !event.defaultPrevented && visible[active]) {
-      // a focused row runs itself and prevents the default first
       event.preventDefault();
       run(visible[active]);
     }

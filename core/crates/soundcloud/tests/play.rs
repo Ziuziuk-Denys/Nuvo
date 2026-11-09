@@ -31,7 +31,6 @@ async fn ready(record: Value) -> (Fixture, SoundCloud) {
     (fx, sc)
 }
 
-/// Media URL answer for transcoding `name`.
 fn media(fx: &Fixture, name: &str, url: &str) {
     fx.on(&api(&format!("media/1/{name}")), Reply::json(json!({"url": url})));
 }
@@ -55,7 +54,6 @@ fn formats_follow_mime_and_preset() {
     assert_eq!(play::format_of("abr_sq", "audio/mpegurl").codec, "mp3");
 }
 
-/// The parsing level.
 #[test]
 fn signed_url_expiry() {
     let now = 1_800_000_000_000;
@@ -105,7 +103,6 @@ async fn candidates_are_tried_in_preference_order_and_unusable_ones_never() {
     assert_eq!(tried, ["api-v2.soundcloud.com/media/1/prog-mp3", "api-v2.soundcloud.com/media/1/hls-mp3", "api-v2.soundcloud.com/media/1/hls-aac", "api-v2.soundcloud.com/media/1/hls-opus"]);
 }
 
-/// Reuse of a `direct` answer.
 #[tokio::test]
 async fn progressive_resolves_to_a_direct_url() {
     let mut rec = record(vec![tc("prog", "progressive", "audio/mpeg", "mp3_1_0")]);
@@ -190,7 +187,6 @@ async fn at_most_six_segment_requests_are_open() {
     assert_eq!(fx.max_in_flight(), 6);
 }
 
-/// A segment that fails twice moves on to the next transcoding.
 #[tokio::test]
 async fn a_segment_is_retried_once() {
     let (fx, sc) = ready_hls(3, |_| Duration::ZERO).await;
@@ -334,7 +330,6 @@ async fn assembled_size_cap_and_timeouts_are_enforced() {
     assert_eq!(hls::MAX_ASSEMBLED_BYTES, 300 * 1024 * 1024);
 }
 
-/// Segment retry policy: 5xx and 429 retry once, 404 fails at once.
 #[tokio::test]
 async fn segment_retry_policy_respects_status_codes() {
     let (fx, sc) = ready(record(vec![tc("hls-mp3", "hls", "audio/mpeg", "mp3_1_0")])).await;
@@ -366,7 +361,6 @@ async fn segment_retry_policy_respects_status_codes() {
     assert_eq!(fx3.count(&format!("{HLS}/c/s0.m4s")), 1, "404 fails at once without retry");
 }
 
-/// Progressive URL must be https from an allowed host.
 #[tokio::test]
 async fn progressive_urls_must_be_https_from_allowed_hosts() {
     let (fx, sc) = ready(record(vec![tc("prog", "progressive", "audio/mpeg", "mp3_1_0")])).await;
@@ -377,14 +371,12 @@ async fn progressive_urls_must_be_https_from_allowed_hosts() {
     assert_eq!(sc.resolve("sc:1", &mut Vec::new()).await.unwrap_err(), ScError::Upstream("progressive URL is not https or not from an allowed host".into()));
 }
 
-/// Byte range segments are unsupported.
 #[test]
 fn byte_range_segments_are_rejected() {
     let base = nuvo_net::Url::parse("https://cf-hls-media.sndcdn.com/p/a/list.m3u8").unwrap();
     assert_eq!(hls::parse("#EXTM3U\na.m4s\n#EXT-X-BYTERANGE:1024@0\nb.m4s\n", &base).unwrap_err(), HlsError::Unsupported("byte range segments not supported".into()));
 }
 
-/// #EXT-X-KEY with no METHOD is treated as encrypted (fail closed).
 #[test]
 fn ext_x_key_without_method_is_encrypted() {
     let base = nuvo_net::Url::parse("https://cf-hls-media.sndcdn.com/p/a/list.m3u8").unwrap();
@@ -394,14 +386,12 @@ fn ext_x_key_without_method_is_encrypted() {
     assert_eq!(hls::parse("#EXTM3U\n#EXT-X-KEY:URI=\"ключ\",METHOD=AES-128\na.ts\n", &base).unwrap_err(), HlsError::Encrypted, "multibyte text before METHOD neither panics nor hides it");
 }
 
-/// #EXT-X-SESSION-KEY with METHOD other than NONE is rejected.
 #[test]
 fn ext_x_session_key_must_be_none() {
     let base = nuvo_net::Url::parse("https://cf-hls-media.sndcdn.com/p/a/list.m3u8").unwrap();
     assert_eq!(hls::parse("#EXTM3U\n#EXT-X-SESSION-KEY:METHOD=AES-128\n#EXT-X-STREAM-INF:BANDWIDTH=1\nv.m3u8\n", &base).unwrap_err(), HlsError::Encrypted);
 }
 
-/// HLS playlists with too many segments are rejected.
 #[test]
 fn too_many_segments_are_rejected() {
     let base = nuvo_net::Url::parse("https://cf-hls-media.sndcdn.com/p/a/list.m3u8").unwrap();
@@ -411,7 +401,6 @@ fn too_many_segments_are_rejected() {
     assert!(hls::parse(&format!("#EXTM3U\n{segments}"), &base).is_ok());
 }
 
-/// Direct answer within 30 s before expiry is not reused.
 #[tokio::test]
 async fn direct_reuse_respects_margin() {
     let (fx, sc) = ready(record(vec![tc("prog", "progressive", "audio/mpeg", "mp3_1_0")])).await;
@@ -435,7 +424,6 @@ async fn direct_reuse_respects_margin() {
     assert!(fx2.total() > count_before, "cached answer not reused when 20 s until expiry (within 30 s margin)");
 }
 
-/// Direct cache is bounded at 500 entries.
 #[tokio::test]
 async fn direct_cache_is_bounded() {
     let (fx, sc) = setup().await;

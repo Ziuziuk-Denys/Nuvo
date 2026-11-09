@@ -14,10 +14,6 @@ const LARGEST_IMAGE = 30 * 1024 * 1024;
 const ACCEPTED = "image/png,image/jpeg,image/webp,image/gif,image/avif";
 const KEYS = "settings.customization.";
 
-/**
-  Everything the reset row names: the wallpaper, the Nuvo preset, default fonts and custom CSS off. Saved themes and the
-  CSS text stay, switched off, so nothing typed is lost; with nothing custom left on, safe mode has nothing to hold back
-*/
 export async function resetCustomization(): Promise<void> {
   const look = useCustomizationStore.getState();
   look.resetAll();
@@ -31,7 +27,6 @@ export async function resetCustomization(): Promise<void> {
   if (saved && appearance.safe) await appearance.setSafe(false);
 }
 
-/** The file as a data URL, or null when the reader hands back something else. */
 function asDataUrl(file: File): Promise<string | null> {
   return new Promise((resolve, reject) => {
     const loader = new FileReader();
@@ -41,7 +36,6 @@ function asDataUrl(file: File): Promise<string | null> {
   });
 }
 
-/** The chosen wallpaper, its change and remove buttons on top, and the blur and dimming sliders beside it. */
 function WallpaperEditor({ t, image, onPick, onRemove }: { t: TFunction; image: string; onPick(): void; onRemove(): void }): JSX.Element {
   const { blurPx, dimPercent, setBlurPx, setDimPercent } = useCustomizationStore(
     useShallow((store) => ({
@@ -84,7 +78,6 @@ function WallpaperEditor({ t, image, onPick, onRemove }: { t: TFunction; image: 
   );
 }
 
-/** The empty state: a large target to click or drop an image on. */
 function DropTarget({ t, onPick, onFile }: { t: TFunction; onPick(): void; onFile(file: File | undefined): void }): JSX.Element {
   const [hovering, setHovering] = useState(false);
   const over = (event: DragEvent, inside: boolean) => {
@@ -115,7 +108,6 @@ function DropTarget({ t, onPick, onFile }: { t: TFunction; onPick(): void; onFil
   );
 }
 
-/** The window wallpaper with its blur and dimming, custom CSS, and the two ways back to the default look. */
 export function CustomizationSection(): JSX.Element {
   const { t } = useTranslation();
   const [note, setNote] = useState<string | null>(null);
@@ -126,7 +118,6 @@ export function CustomizationSection(): JSX.Element {
   const picker = useRef<HTMLInputElement | null>(null);
   const openPicker = () => picker.current?.click();
 
-  // checks run before reading; a wallpaper only shows in dark mode, so light mode gets a note
   const accept = (file: File | undefined) => {
     if (!file) return;
     const tooLarge = file.size > LARGEST_IMAGE ? "file_too_large" : null;

@@ -1,5 +1,3 @@
-/* Two faces of one control. Tabs: a soft well with one pill that slides to the chosen item.
-   Navigation: text links 24 px apart with one 2 px accent line 6 px under the active label. */
 .tabs {
   position: relative;
   display: flex;
@@ -40,7 +38,6 @@ a.tab[aria-current="page"] {
   pointer-events: none;
 }
 
-/* Tabs: separate 32 px buttons 8 px apart on a soft fill; the chosen one is the primary button, its fill slides. */
 .tabs[role="tablist"] {
   align-self: flex-start;
   gap: 8px;
@@ -87,7 +84,6 @@ a.tab[aria-current="page"] {
   outline-offset: 1px;
 }
 
-/* Navigation: links, the underline drawn 100 px wide and scaled, so the move animates transform only. */
 nav.tabs {
   gap: var(--n-s-5);
   padding-bottom: 8px;
@@ -99,7 +95,6 @@ a.tab {
   isolation: isolate;
 }
 
-/* a taller, wider hit area than the 18 px line box; neighbours meet in the 24 px gap, and focus fills it */
 a.tab::after {
   content: "";
   position: absolute;

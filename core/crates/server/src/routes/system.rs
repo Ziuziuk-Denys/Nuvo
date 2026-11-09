@@ -27,13 +27,10 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/system/key-passphrase", put(set_key_passphrase))
 }
 
-/// Where the key lives; works while locked, so the lock screen and Settings can both ask.
 async fn key_storage(State(state): State<AppState>) -> Json<KeyStorage> {
     Json(KeyStorage { protection: state.key_protection() })
 }
 
-/// Seals the key file with a passphrase, or writes it plain again for `null`. Only where the key is
-/// in a file: a keyring needs none.
 async fn set_key_passphrase(State(state): State<AppState>, JsonBody(body): JsonBody<SetPassphrase>) -> Result<Json<KeyStorage>, ApiError> {
     if body.passphrase.as_deref().is_some_and(|p| p.chars().count() < 8 || p.len() > 256) {
         return Err(ApiError::Invalid("a passphrase has 8 to 256 characters".into()));
@@ -63,16 +60,13 @@ async fn read_deps(State(state): State<AppState>) -> Json<Deps> {
     Json(deps)
 }
 
-/// "Check again" after the user installed a tool.
 async fn recheck_deps(State(state): State<AppState>) -> Json<Deps> {
     Json(deps::recheck(&state).await)
 }
 
-/// Works locked and while starting: it needs no library. Concurrent POSTs share one run.
 async fn network_check(State(state): State<AppState>) -> Json<NetCheck> {
     let arrived = std::time::Instant::now();
     let mut finished = state.net_lock.lock().await;
-    // A run that finished while this caller waited is fresh enough: share it.
     if finished.is_some_and(|at| at > arrived)
         && let Some(shared) = state.last_network_check.read().expect("network check lock").clone()
     {
@@ -86,7 +80,6 @@ async fn network_check(State(state): State<AppState>) -> Json<NetCheck> {
     Json(result)
 }
 
-/// Never runs a check or touches the network: it reports what the daemon already knows.
 async fn report(State(state): State<AppState>) -> Result<Json<DaemonReport>, ApiError> {
     let home = state.env.home.as_ref().map(|h| h.to_string_lossy().into_owned());
     let hide = |text: &str| redact(text, home.as_deref(), &state.token);

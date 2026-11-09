@@ -5,7 +5,6 @@ import type { IconName } from "../../icons";
 import { useTranslation } from "../../ports/i18n";
 import styles from "./SavedShelf.module.css";
 
-/** A shelf's 24 px heading with its glyph, and at its end a small control that brings other items in. */
 export function ShelfHeading({ icon, title, busy = false, onRefresh }: { icon: IconName; title: string; busy?: boolean; onRefresh?: () => void }): JSX.Element {
   const { t } = useTranslation();
   return (

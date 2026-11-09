@@ -39,7 +39,6 @@ async fn a_csv_import_runs_to_a_report() {
     let id = import["id"].as_str().unwrap().to_string();
     let playlist = import["targetId"].as_str().unwrap().to_string();
 
-    // One worker, as the renderer would run it, answering from the fake catalog.
     let mut searches = 0;
     loop {
         let (_, next) = common::call(&core.app, "POST", &format!("/v1/imports/{id}/next"), None).await;

@@ -1,4 +1,3 @@
-/** The renderer's translation runtime: active locale, lazy locale tables, switching, persistence and listeners. */
 import { localeSources, type LocaleSources } from "./locales";
 import { flattenTexts, interpolate, lookUp, type Table, type Texts, type Vars } from "./text";
 
@@ -7,7 +6,6 @@ export type { LocaleSources } from "./locales";
 export type Locale = "en" | "ru";
 export type TFunction = (key: string, vars?: Vars) => string;
 
-/** Where the chosen language is kept beyond this window; the daemon settings client binds it. */
 export interface LocaleStore {
   read(): Promise<string | null>;
   write(code: Locale): Promise<void>;
@@ -56,7 +54,6 @@ export function isShippedLocale(code: unknown): code is Locale {
   return shippedLocales.some((locale) => locale.code === code);
 }
 
-/** Spec 3.5: the boot copy if shipped, then the first system language whose primary subtag is shipped, then English. */
 export function detectLocale(bootCopy: string | null, systemLanguages: readonly string[]): Locale {
   if (isShippedLocale(bootCopy)) return bootCopy;
   for (const tag of systemLanguages) {
@@ -147,7 +144,6 @@ function commit(code: Locale, persist: boolean): void {
   notifyStore();
 }
 
-/** Translate with the active locale, from React or plain code. Missing everywhere: the key itself. */
 export function translate(key: string, vars?: Vars): string {
   const text = lookUp(tables.get(active), active, english(), key, vars);
   if (text === undefined) {
@@ -169,13 +165,11 @@ export function onLocaleChange(listener: (code: Locale) => void): () => void {
   return () => localeListeners.delete(listener);
 }
 
-/** For React: called on every locale change and on every loading change. */
 export function subscribeI18n(listener: () => void): () => void {
   storeListeners.add(listener);
   return () => storeListeners.delete(listener);
 }
 
-/** Switch now when the texts are in memory, else load first; the last request wins; a failure keeps the current one. */
 export async function setLocale(code: string): Promise<void> {
   if (!isShippedLocale(code)) {
     console.warn(`[i18n] ${code} is not a shipped locale`);
@@ -220,7 +214,6 @@ async function syncWithStore(): Promise<void> {
   await store.write(active).catch(() => undefined);
 }
 
-/** Before the first render: English plus the detected locale in memory; never waits for the daemon. */
 export async function prepareLocale(): Promise<void> {
   english();
   const detected = detectLocale(readBootCopy(), systemLanguages());
@@ -241,7 +234,6 @@ export async function prepareLocale(): Promise<void> {
 
 export const loadLocaleTexts = (code: Locale): Promise<void> => ensureTable(code);
 
-/** Every shipped locale stays in memory for the rest of the session, for search across languages. */
 export async function loadAllLocales(): Promise<void> {
   // shortcut: never released again; fine with two shipped locales, add a release call when a third ships
   keepAll = true;
@@ -249,7 +241,6 @@ export async function loadAllLocales(): Promise<void> {
   notifyStore();
 }
 
-/** The key's text in every locale now in memory, English first. */
 export function textsInEveryLocale(key: string): string[] {
   english();
   return shippedLocales.flatMap(({ code }) => {

@@ -1,7 +1,4 @@
-/**
- * Deezer playlist and album links through the keyless public API.
- * Rows are metadata only. Deezer reports errors inside an HTTP 200 body, so every page is checked.
- */
+// Deezer reports errors inside an HTTP 200 body, so every page is checked
 import { HttpError, drop, get, readCapped, type Http } from "./http";
 import { detectLink } from "./detect";
 import { ImportError, MAX_LABEL_CHARS, MAX_ROWS, type ImportRow, type Listing } from "./types";
@@ -12,9 +9,7 @@ export interface DeezerLink {
 }
 
 const API = "https://api.deezer.com/";
-/** Largest answer read; a page of 100 tracks is far below this. */
 const MAX_ANSWER_BYTES = 2_000_000;
-/** Requests per import, the first included. */
 export const MAX_DEEZER_REQUESTS = 60;
 const SHORT_HOSTS = ["deezer.page.link", "link.deezer.com"];
 const LANG = /^[a-z]{2}(-[a-z]{2})?$/i;
@@ -27,7 +22,6 @@ export function isDeezerShortLink(href: string): boolean {
   }
 }
 
-/** `/{lang}/{kind}/{digits}` with the language optional; null for tracks, artists and the rest. */
 export function parseDeezerLink(href: string): DeezerLink | null {
   if (isDeezerShortLink(href)) return null;
   let parts: string[];
@@ -105,7 +99,6 @@ function rowOf(track: unknown, albumTitle: string | undefined): ImportRow | null
   };
 }
 
-/** Follows a short link to the playlist or album it names; anything else is `bad_link`. */
 async function followShort(href: string, http: Http): Promise<string> {
   let response: Response;
   try {
@@ -157,7 +150,6 @@ export async function listDeezer(href: string, http: Http, onProgress: (count: n
       add(more);
     }
   } catch (error) {
-    // a later page that fails keeps the rows read so far; the notice says how many are missing
     if (!(error instanceof ImportError) || error.code !== "network") throw error;
     failed = true;
   }

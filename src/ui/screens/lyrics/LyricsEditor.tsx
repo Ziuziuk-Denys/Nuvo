@@ -27,7 +27,6 @@ interface LyricsEditorProps {
   onClose(): void;
 }
 
-/** Paste or fix lyrics; plain text can be synced with Space while the track plays. */
 export function LyricsEditor({ open, track, onClose }: LyricsEditorProps): JSX.Element | null {
   const { t } = useTranslation();
   const [text, setText] = useState("");

@@ -1,6 +1,3 @@
-//! The daily yt-dlp update. Silent by design: nothing asks the user anything, a failure keeps the
-//! last good build and tries again in an hour, and playback never waits for it.
-
 use std::path::Path;
 use std::time::Duration;
 
@@ -18,7 +15,6 @@ const RETRY_AFTER: Duration = Duration::from_secs(3600);
 const FIRST_DELAY: Duration = Duration::from_secs(20);
 const STAMP_FILE: &str = ".last-update-check";
 
-/// A build of ours is kept current; otherwise one is fetched only when the system has no working recent copy.
 pub fn wanted(deps: &Deps, have_managed: bool) -> bool {
     have_managed || deps.tools.iter().find(|tool| tool.name == BINARY_NAME).is_none_or(|tool| tool.status != ToolStatusKind::Ok)
 }
@@ -27,7 +23,6 @@ pub fn due(now: i64, last_check: Option<i64>) -> bool {
     last_check.is_none_or(|at| now - at >= DAY_MS || at > now)
 }
 
-/// The pinned ffmpeg is fetched once, and only when the system has no working one.
 pub fn ffmpeg_wanted(deps: &Deps) -> bool {
     deps.tools.iter().find(|tool| tool.name == "ffmpeg").is_none_or(|tool| tool.status == ToolStatusKind::Missing || tool.status == ToolStatusKind::Broken)
 }
@@ -63,7 +58,6 @@ async fn run_once(state: &AppState, url: &str, asset: &'static str) -> Result<Ou
     update_yt_dlp(&client, url, asset, &state.paths.tools, &report).await
 }
 
-/// Runs the check when it is due and says how long to sleep.
 pub async fn tick(state: &AppState, url: &str, asset: &'static str, now: i64) -> Duration {
     let dir = &state.paths.tools;
     if !due(now, read_stamp(dir)) {
@@ -97,8 +91,6 @@ pub async fn tick(state: &AppState, url: &str, asset: &'static str, now: i64) ->
     RETRY_AFTER
 }
 
-/// Fetches the pinned ffmpeg when the system has none. A failure keeps the download line (failed)
-/// until the next try, an hour later.
 pub async fn ensure_ffmpeg(state: &AppState) {
     let Some(build) = ffmpeg_build_for(std::env::consts::OS, std::env::consts::ARCH) else {
         return;

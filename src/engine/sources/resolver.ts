@@ -1,4 +1,3 @@
-/** Where the audio of one start comes from: cache, remembered alternative, primary, fallback. */
 import { idKind, primarySource, type Cause, type FallbackInfo, type SourceKind, type StreamInfo, type Track } from "../types";
 import {
   alternativeStart,
@@ -23,9 +22,7 @@ import {
   type YoutubePort,
 } from "./ports";
 
-/** If the cache probe has not answered by then, the network resolve starts in parallel. */
 export const PROBE_HEAD_START_MS = 150;
-/** Blocked starts in a row before YouTube tracks go straight to the other sources. */
 export const SOURCE_DOWN_AFTER = 2;
 export const SOURCE_DOWN_MS = 2 * 60_000;
 
@@ -35,9 +32,7 @@ export interface AttachedSource {
   url: string;
   mime: string;
   expiresAt?: number;
-  /** The whole file when it is already in memory (path B). */
   bytes?: Blob;
-  /** Progressive sources: the whole file and whether the progressive buffer overflowed. */
   whole?: Promise<Blob>;
   overflowed?: () => boolean;
   release(): void;
@@ -48,19 +43,13 @@ export interface Resolved {
   stream: StreamInfo;
   fallback: FallbackInfo | null;
   startAtMs: number;
-  /** A URL stream the daemon can download itself (path A). */
   fetchable?: { url: string; mime: string; codec: string; bitrateKbps: number; contentLength?: number };
-  /** A new alternative to store once it plays. */
   remember?: Alternative;
-  /** Id of the alternative that plays, when one does ("Don't use this version"). */
   altId?: string;
   altDurationMs?: number;
   altScore?: number;
-  /** The YouTube client behind the stream. */
   client?: string;
-  /** The whole file through the source module, for path B when the daemon cannot fetch the URL. */
   wholeFile?: (signal: AbortSignal) => Promise<Blob>;
-  /** Early starts: runs the probe; settles with this start once it passed, or with the replacement; rejects when none plays. */
   verify?: () => Promise<Resolved>;
 }
 
@@ -79,17 +68,13 @@ export interface ResolveOptions {
   bypassCache: boolean;
   bestQuality: boolean;
   signal: AbortSignal;
-  /** Fallback only: alternatives this start failed on. None is tried again. */
   failedAlts?: ReadonlySet<string>;
-  /** Fallback only: YouTube clients whose stream failed. Set means another client is worth a try. */
   failedClients?: readonly string[];
-  /** Foreground starts: a YouTube URL may play before its probe answers. */
   early?: boolean;
 }
 
 const noop = () => undefined;
 
-/** Resolves null after `ms`, rejects with an AbortError on abort. `cancel` frees the timer and the listener. */
 function headStart(ms: number, signal: AbortSignal): { promise: Promise<null>; cancel(): void } {
   let cancel = noop;
   const promise = new Promise<null>((resolve, reject) => {
@@ -126,7 +111,6 @@ export class SourceResolver {
 
   constructor(private readonly deps: ResolverDeps) {}
 
-  /** Cache writes and probes keep this set, so known ids skip the probe. */
   markCached(trackId: string, probe: CacheProbe = { codec: null, bitrateKbps: null }): void {
     this.cached.set(trackId, probe);
   }
@@ -149,13 +133,11 @@ export class SourceResolver {
     await this.deps.daemon.rejectAlternative(trackId, id);
   }
 
-  /** "Choose source": this version plays the track from now on, ahead of the primary, even one rejected earlier. */
   async choose(trackId: string, alternative: Omit<Alternative, "reason">): Promise<void> {
     this.rejected.get(trackId)?.delete(alternative.altId);
     await this.deps.daemon.putAlternative(trackId, { ...alternative, reason: "pinned" });
   }
 
-  /** "Keep this version": the stand-in that plays comes first for this track from now on, until rejected. */
   async pin(track: Track, resolved: Resolved): Promise<boolean> {
     const source = resolved.stream.source;
     if (!resolved.altId || (source !== "youtube" && source !== "soundcloud")) return false;
@@ -185,7 +167,6 @@ export class SourceResolver {
     if (this.blockedStarts >= SOURCE_DOWN_AFTER) this.youtubeDownUntil = this.deps.now() + SOURCE_DOWN_MS;
   }
 
-  /** Called when a resolved start reaches `playing`: remembers a new alternative. */
   async confirm(track: Track, resolved: Resolved): Promise<void> {
     if (resolved.stream.source === "youtube") this.networkChanged();
     if (resolved.remember) await this.deps.daemon.putAlternative(track.id, resolved.remember);
@@ -214,7 +195,6 @@ export class SourceResolver {
     if ("probe" in first) {
       if (first.probe) {
         if (this.needsNetworkCompare(first.probe, options)) {
-          // The network resolve already runs; reuse it instead of starting a second one.
           return this.fromCacheOrBetter(track, first.probe, options, async () => {
             const run = await networkRun;
             if (!run.ok) throw run.error;
@@ -235,7 +215,6 @@ export class SourceResolver {
     throw first.run.error;
   }
 
-  /** Mid-track failure after recovery: try the other sources, keeping the position when lengths agree. */
   fallback(track: Track, cause: TriggerCause, failedSource: SourceKind, options: Omit<ResolveOptions, "bypassCache">): Promise<Resolved> {
     const tried = new Set<string>(options.failedAlts);
     if (failedSource === "youtube") this.noteBlocked(cause);
@@ -257,7 +236,6 @@ export class SourceResolver {
     };
   }
 
-  /** Best quality skips a cached copy whose known bitrate is below the best reachable stream. */
   private needsNetworkCompare(probe: CacheProbe, options: ResolveOptions): boolean {
     return options.bestQuality && probe.bitrateKbps !== null;
   }
@@ -280,7 +258,6 @@ export class SourceResolver {
   }
 
   private async network(track: Track, options: ResolveOptions): Promise<Resolved> {
-    // Every source below needs the network; asking them only spends the start budget.
     if (!this.deps.online()) throw new SourceFailure("offline");
     const remembered = await this.remembered(track.id);
     const tried = new Set<string>();
@@ -297,7 +274,6 @@ export class SourceResolver {
         if (options.signal.aborted) throw error;
       }
     }
-    // YouTube just refused twice: no third wait; it is still the last resort when nothing else plays.
     if (this.primaryKind(track) === "youtube" && this.deps.now() < this.youtubeDownUntil) {
       try {
         return await this.runFallback(track, "blocked", "youtube", budget ?? new FallbackBudget(this.deps.now), tried, options, false);
@@ -322,7 +298,6 @@ export class SourceResolver {
     return primarySource(track.id);
   }
 
-  /** A file in a music folder plays from the daemon; a gone or undecodable one plays its streamed match. */
   private async local(track: Track, options: ResolveOptions): Promise<Resolved> {
     const answer = await this.deps.daemon.probeLocal(track.id, options.signal);
     if (answer.ok) {
@@ -346,7 +321,6 @@ export class SourceResolver {
   private async primary(track: Track, options: ResolveOptions): Promise<Resolved> {
     const kind = idKind(track.id);
     if (kind === "soundcloud") return this.soundcloud(track, track.id, options.signal);
-    // Best quality compares formats first, so it waits for the probe.
     const early = options.early === true && !options.bestQuality;
     const quality = options.bestQuality ? "hifi" : "normal";
     if (kind === "youtube") return this.youtube(track, track, options.signal, early, quality);
@@ -442,7 +416,6 @@ export class SourceResolver {
       stream,
       fallback: null,
       startAtMs: 0,
-      // A `local` descriptor is already served by the daemon; nothing to fetch.
       fetchable:
         descriptor.kind === "direct"
           ? { url: descriptor.url, mime: descriptor.mimeType, codec: descriptor.codec, bitrateKbps: kbps, contentLength: descriptor.contentLength ?? undefined }
@@ -450,7 +423,6 @@ export class SourceResolver {
     };
   }
 
-  /** Best quality: compare with the known or matchable alternative; the better stream plays. */
   private async bestOf(track: Track, primary: Resolved, remembered: Alternative | null, options: ResolveOptions): Promise<Resolved> {
     const other: "youtube" | "soundcloud" = this.primaryKind(track) === "youtube" ? "soundcloud" : "youtube";
     let alternative = remembered;
@@ -474,7 +446,6 @@ export class SourceResolver {
     return primary;
   }
 
-  /** `reason` is what gets stored; `cause` is what the marker shows. A "bitrate" choice is no fallback and has no marker. */
   private async viaAlternative(
     track: Track,
     alternative: Alternative,
@@ -488,7 +459,6 @@ export class SourceResolver {
       alternative.source === "soundcloud"
         ? await this.soundcloud(track, alternative.altId, options.signal)
         : await this.youtube(track, altTrack, options.signal, false, options.bestQuality ? "hifi" : "normal");
-    // A length that is not known cannot be compared, so a mid-track start restarts.
     const start =
       alternative.durationMs === undefined
         ? { startAtMs: 0, restarted: options.positionMs > 0 }
@@ -520,12 +490,11 @@ export class SourceResolver {
   ): Promise<Resolved> {
     const step = <T>(run: (signal: AbortSignal) => Promise<T>): Promise<T> => run(childSignal(options.signal, budget.msLeft).signal);
 
-    // A start that came through resolve() has already asked the cache.
     if (probeCache && failedSource !== "cache" && idKind(track.id) !== "local" && !options.bypassCache) {
       const hit = this.cached.get(track.id) ?? (await this.probe(track.id, options.signal));
       if (hit) return this.fromCache(track, hit, null, options.positionMs);
     }
-    // The same recording from another YouTube client beats any match; a failed client says the URL, not the video, is bad.
+    // Another YouTube client beats any match: a failed client means the URL is bad, not the video
     if (failedSource === "youtube" && options.failedClients?.length && idKind(track.id) === "youtube" && !budget.exhausted) {
       try {
         return await step((signal) => this.otherClient(track, options, signal));
@@ -544,7 +513,6 @@ export class SourceResolver {
       }
     }
     const other: "youtube" | "soundcloud" = this.primaryKind(track) === "youtube" ? "soundcloud" : "youtube";
-    // The primary is not an alternative to itself.
     tried.add(track.id);
     while (!budget.exhausted) {
       budget.spend();

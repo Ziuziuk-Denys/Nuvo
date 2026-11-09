@@ -8,9 +8,7 @@ const FADE_RESET_DELAY_MS = 400;
 
 interface SleepState {
   plan: SleepPlan | null;
-  /** Track the end-of-track target was armed on. */
   trackId: string | null;
-  /** Time left to the stop, or null while the target is not reachable yet. */
   remainingMs: number | null;
 }
 
@@ -41,12 +39,10 @@ function tick(): void {
   const { plan, trackId } = useSleepStore.getState();
   if (!plan) return;
   const player = usePlayerStore.getState();
-  // A manual skip moves an end-of-track timer to the new track
   const currentId = player.currentTrack?.id ?? null;
   if (plan.target.kind === "end_of_track" && currentId !== trackId) useSleepStore.setState({ trackId: currentId });
 
   const durationMs = player.durationMs > 0 ? player.durationMs : (player.currentTrack?.durationMs ?? 0);
-  // Media time: at a playback rate below 1 the real fade lasts longer than 30 s
   const trackMsLeft = durationMs > 0 ? Math.max(0, durationMs - player.positionMs) : Infinity;
   const isLast = player.currentIndex >= player.queue.length - 1;
   const msLeft = msUntilSleep(plan, Date.now(), trackMsLeft, isLast);
@@ -71,7 +67,6 @@ export function cancelSleepTimer(): void {
   applyFade(1);
 }
 
-/** mm:ss, rounded up so the display reaches 00:00 only when the timer fires. */
 export function formatSleepClock(ms: number): string {
   const totalSeconds = Math.ceil(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);

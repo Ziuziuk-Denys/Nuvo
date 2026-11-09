@@ -1,6 +1,3 @@
-//! Files the library leaves as: M3U8 for players, CSV with Exportify column names (it imports
-//! back), Nuvo JSON that imports back exactly. Only track facts and playlist names go in.
-
 use nuvo_contracts::iso_from_ms;
 use serde_json::{Value, json};
 
@@ -27,7 +24,6 @@ fn one_line(text: &str) -> String {
     text.replace(['\r', '\n'], " ")
 }
 
-/// Where a streamed track lives on the web; `None` for local files and unknown ids.
 pub fn public_url(snapshot: &Value) -> Option<String> {
     let id = snapshot["id"].as_str()?;
     if id.len() == 11 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_') {
@@ -83,7 +79,6 @@ pub fn csv(rows: &[(Option<&str>, &ExportTrack)]) -> String {
     out
 }
 
-/// The snapshot without per-viewer state (`viewer.liked`).
 fn shareable(snapshot: &Value) -> Value {
     let mut snapshot = snapshot.clone();
     if let Some(object) = snapshot.as_object_mut() {

@@ -1,4 +1,3 @@
-/* Shortcuts: scope pills and a small search on top, then wrapping cards with keycaps. */
 .shortcuts {
   display: flex;
   flex-direction: column;

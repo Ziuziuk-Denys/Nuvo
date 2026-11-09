@@ -1,5 +1,3 @@
-/** One-time removal of the old cover service worker, its caches and keys; covers live in the daemon now. */
-
 export const CLEANUP_DONE_KEY = "nuvo.covers.legacy-cleanup";
 const LEGACY_KEY_PREFIXES = ["nuvo:cover:", "nuvo:playlist-covers"];
 
@@ -25,7 +23,6 @@ export function browserCleanupEnv(): CleanupEnv {
   };
 }
 
-/** True when it cleaned now; false when it already ran or a step failed (then it runs again next start). */
 export async function cleanupLegacyCovers(env: CleanupEnv = browserCleanupEnv()): Promise<boolean> {
   const storage = env.storage;
   if (!storage || storage.getItem(CLEANUP_DONE_KEY) === "1") return false;

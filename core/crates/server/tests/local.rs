@@ -69,7 +69,6 @@ async fn the_watcher_follows_new_moved_and_deleted_files() {
 
     fs::create_dir(music.path().join("moved")).unwrap();
     fs::rename(music.path().join("Band - Keep.wav"), music.path().join("moved/Band - Keep.wav")).unwrap();
-    // The page has no paths, so wait for the scan that saw the old path vanish.
     for _ in 0..250 {
         let (_, status) = common::call(&core.app, "GET", "/v1/local/status", None).await;
         if status["scanning"] == false && status["removed"] == 1 {
@@ -163,7 +162,6 @@ async fn a_storm_of_changes_still_gets_scanned() {
     common::add_folder(&core, music.path()).await;
     common::wait_tracks(&core, |p| p["total"] == 1).await;
     let dir = music.path().to_path_buf();
-    // a change every 10 ms for 3 s: each arrives before the 30 ms quiet time ends
     let storm = tokio::task::spawn_blocking(move || {
         for n in 1..300 {
             common::write_wav(&dir.join(format!("Band - {n}.wav")), 1);

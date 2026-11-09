@@ -10,7 +10,6 @@ import { fetchInterpreter, INTERPRETER_MAX_BYTES } from "./script";
 import { MinuteLimit, validateJob } from "./validate";
 import { WORKER_URL, fromWorkerMainFrame, lockDownWorkerContents, lockDownWorkerSession, workerWindowOptions } from "./window";
 
-/** A fake of the few Electron main APIs the service touches. */
 const electron = vi.hoisted(() => {
   const handlers = new Map<string, (...args: any[]) => unknown>();
   const listeners = new Map<string, (...args: any[]) => unknown>();
@@ -134,7 +133,6 @@ beforeEach(() => {
 
 afterEach(() => vi.useRealTimers());
 
-/** Lets the host send the job, then answers it from the current window. */
 async function answer(value: unknown, index = 0) {
   await vi.advanceTimersByTimeAsync(0);
   const window = windows.at(-1)!;
@@ -204,7 +202,6 @@ describe("worker host", () => {
     expect(windows[0].destroyed).toBe(false);
     await vi.advanceTimersByTimeAsync(4_000);
     expect(windows[0].destroyed).toBe(false);
-    // Only the 45 s op timeout (not the idle close) may end it.
     await vi.advanceTimersByTimeAsync(2_000);
     expect(windows[0].destroyed).toBe(true);
   });
@@ -277,7 +274,6 @@ describe("worker host", () => {
         n: Array.from({ length: 17 }, () => "x"),
       }),
     ).rejects.toMatchObject({ code: "bad-input" });
-    // The worker's own limit is 16 per list; main refuses anything more before a window starts.
     expect(
       validateJob("player-transform", {
         playerId: "abcd",
@@ -425,7 +421,6 @@ describe("fix round 1: host", () => {
     await vi.advanceTimersByTimeAsync(10 * 60_000);
     expect(windows[0].destroyed).toBe(false);
     playing = false;
-    // Closes about 3 minutes after the pause, checked every 15 s.
     await vi.advanceTimersByTimeAsync(165_000);
     expect(windows[0].destroyed).toBe(false);
     await vi.advanceTimersByTimeAsync(30_000);
@@ -579,7 +574,6 @@ describe("service: what main starts", () => {
     setDevicePermissionHandler: vi.fn(),
     on: vi.fn(),
   };
-  // The service lives next to this test; main loads the app from ../dist/index.html beside the bundle.
   const indexUrl = pathToFileURL(path.join(import.meta.dirname, "../dist/index.html")).href;
   const appFrame = { url: `${indexUrl}#/library` };
   const app = {
@@ -644,7 +638,6 @@ describe("service: what main starts", () => {
 
   it("serves the app's main frame through the worker's main frame only", async () => {
     const token = call(app, "content-token", { identifier: "a" });
-    // A subframe of the worker cannot signal ready or answer.
     electron.listeners.get("nuvo-yt:hello")!(fromWorker({}));
     await vi.advanceTimersByTimeAsync(0);
     expect(worker().webContents.sent).toHaveLength(0);
@@ -696,11 +689,9 @@ describe("service: what main starts", () => {
     });
     const check = expect(transform).rejects.toThrow("worker-timeout");
     hello();
-    // The worker never answers, as when its solver spins in a synchronous loop.
     await vi.advanceTimersByTimeAsync(45_000);
     await check;
     expect(worker().destroyed).toBe(true);
-    // The next call starts a fresh worker.
     void call(app, "content-token", { identifier: "b" }).catch(() => undefined);
     expect(electron.BrowserWindow.all).toHaveLength(2);
   });

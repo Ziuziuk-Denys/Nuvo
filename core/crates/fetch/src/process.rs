@@ -7,8 +7,7 @@ use tokio::process::Command;
 
 use crate::FetchError;
 
-/// Runs `command` to completion with no stdin. The child is killed when `timeout` passes, when
-/// output exceeds caps, or when the returned future is dropped (a closed recognize stream drops it).
+// The child is killed on timeout, on output over caps, or when the future is dropped
 pub async fn run(
     mut command: Command,
     timeout: Duration,
@@ -21,8 +20,7 @@ pub async fn run(
     #[cfg(windows)]
     command.creation_flags(0x0800_0000);
     command.kill_on_drop(true).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
-    // A script still open for writing somewhere (a tool being updated, or a test writing its fake
-    // while another thread forks) refuses to start for a moment: ETXTBSY.
+    // A script still open for writing refuses to start for a moment (ETXTBSY)
     let mut spawned = command.spawn();
     for _ in 0..5 {
         match &spawned {
@@ -84,7 +82,6 @@ async fn read_limited<R: AsyncReadExt + Unpin>(
     Ok(buf)
 }
 
-/// Kills the child's whole process group when dropped (timeout, size cap, closed stream).
 struct GroupKill(Option<u32>);
 
 impl Drop for GroupKill {

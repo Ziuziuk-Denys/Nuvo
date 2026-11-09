@@ -1,5 +1,4 @@
-//! Encrypted audio files: `<sha256(track_id)>.lac` = magic "LAC1" || 16-byte nonce prefix ||
-//! sealed 64 KiB chunks. The file name hides the track id; the database indexes the files.
+// On disk: <sha256(track_id)>.lac = "LAC1" || 16-byte nonce prefix || sealed 64 KiB chunks
 
 use std::collections::HashSet;
 use std::io::SeekFrom;
@@ -39,7 +38,6 @@ pub struct Finished {
 }
 
 impl AudioCache {
-    /// `master` is the library master key; the audio key is derived from it.
     pub fn new(dir: PathBuf, master: &[u8; 32]) -> Self {
         Self { dir, cipher: Arc::new(ChunkCipher::new(&derive_key(master, AUDIO_KEY_INFO))) }
     }
@@ -60,7 +58,6 @@ impl AudioCache {
         Ok(CacheWriter { cipher: self.cipher.clone(), file, part, path, prefix, buffer: Vec::with_capacity(CHUNK_PLAIN), index: 0, size: 0 })
     }
 
-    /// Plaintext size of a finished file, `None` if it is not cached.
     pub async fn size(&self, track_id: &str) -> Result<Option<u64>, CacheError> {
         match fs::metadata(self.path_for(track_id)).await {
             Ok(meta) => Ok(Some(plain_len(meta.len().saturating_sub(HEADER_LEN)))),
@@ -112,13 +109,10 @@ impl AudioCache {
         remove_if_exists(path).await
     }
 
-    /// Drops uploads that never finished (the app quit mid-track). Returns how many were removed.
     pub async fn remove_partials(&self) -> Result<usize, CacheError> {
         self.remove_where(|path| path.to_string_lossy().ends_with(".part")).await
     }
 
-    /// Drops finished files no index row points at (a row lost to a crash, or a cleared index).
-    /// Returns how many were removed.
     pub async fn remove_unindexed(&self, indexed_track_ids: &[String]) -> Result<usize, CacheError> {
         let keep: HashSet<PathBuf> = indexed_track_ids.iter().map(|id| self.path_for(id)).collect();
         self.remove_where(|path| path.extension().is_some_and(|ext| ext == "lac") && !keep.contains(path)).await
@@ -165,7 +159,6 @@ impl CacheWriter {
         self.size
     }
 
-    /// The temporary file being written, for callers that must remove it if they are dropped mid-write.
     pub fn part_path(&self) -> &Path {
         &self.part
     }
@@ -191,12 +184,10 @@ impl CacheWriter {
         Ok(())
     }
 
-    /// Discards an upload that will not be finished.
     pub async fn abort(self) {
         let _ = fs::remove_file(&self.part).await;
     }
 
-    /// Seals the tail and atomically publishes the file under its final name.
     pub async fn finish(mut self) -> Result<Finished, CacheError> {
         if self.size == 0 {
             let _ = fs::remove_file(&self.part).await;
@@ -218,8 +209,7 @@ impl CacheWriter {
     }
 }
 
-/// A writer dropped without `finish` (a cancelled task) leaves no partial file; the part name is
-/// unique per upload, so after a successful `finish` this removes nothing.
+// A cancelled writer leaves no partial file; the unique part name makes this a no-op after finish
 impl Drop for CacheWriter {
     fn drop(&mut self) {
         let _ = std::fs::remove_file(&self.part);

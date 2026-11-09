@@ -5,15 +5,12 @@ import type { Track } from "../ports/player";
 import { songMenuNotInterested } from "./notInterested";
 
 export interface DislikeButtonProps {
-  /** The song, or how to get it when a row holds only what was heard. */
   track: Track | (() => Promise<Track | null>);
   size?: "m" | "s";
   className?: string;
-  /** After the dislike was sent, as when a suggestion leaves its list. */
   onDisliked?(track: Track): void;
 }
 
-/** One press: "Not this recording", with the Undo notice; the narrower and wider choices stay in the song menu. */
 export function DislikeButton({ track, size, className, onDisliked }: DislikeButtonProps): JSX.Element {
   const { t } = useTranslation();
   const dislike = async () => {

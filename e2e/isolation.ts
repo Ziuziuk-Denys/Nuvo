@@ -1,4 +1,3 @@
-/** A temporary profile for e2e runs: own XDG dirs, own daemon socket (under XDG_RUNTIME_DIR) and a test keyring service. Never the owner's data. */
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";

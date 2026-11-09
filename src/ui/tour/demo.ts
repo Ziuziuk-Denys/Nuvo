@@ -6,10 +6,6 @@ import { useTour } from "./tourStore";
 
 export const DEMO_TRACK_ID = "nuvo-tour-sample";
 
-/*
-  The sample song a demo chapter shows in the player bar when nothing is loaded. It lives only in the bar while
-  the chapter runs: the engine never hears of it, and the tour layer keeps every press off the bar meanwhile
-*/
 export function useTourDemo(): (Track & { playCount: number }) | null {
   const { t } = useTranslation();
   const on = useTour((state) => state.phase === "chapter" && chapterById(state.chapterIds[state.chapter])?.demo === true);

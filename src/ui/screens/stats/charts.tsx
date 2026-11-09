@@ -15,13 +15,11 @@ export interface BarItem {
 
 const TICKS = 6;
 
-/** Which columns carry a label: evenly spread, first and last included. */
 function tickIndexes(count: number): number[] {
   if (count <= TICKS + 2) return Array.from({ length: count }, (_, index) => index);
   return Array.from({ length: TICKS }, (_, index) => Math.round((index * (count - 1)) / (TICKS - 1)));
 }
 
-/** A section's heading, and on its right what the pointer is over. */
 export function Section({ title, aside, children, id }: { title: string; aside?: ReactNode; children: ReactNode; id?: string }): JSX.Element {
   return (
     <section className={styles.section} data-stats-section={id}>
@@ -34,7 +32,6 @@ export function Section({ title, aside, children, id }: { title: string; aside?:
   );
 }
 
-/** Columns from one baseline: the strongest in the accent, the top of the scale named once. */
 export function BarChart({
   items,
   label,
@@ -79,13 +76,11 @@ export function BarChart({
 
 const CELL_LEVELS = [0, 1, 2, 3, 4] as const;
 
-/** Fifty-three weeks of days; the selected period stays lit, the rest of the year steps back. */
 export function Calendar({ days, from, to }: { days: readonly StatsDay[]; from: string | null; to: string }): JSX.Element {
   const { t, locale } = useTranslation();
   const [hover, setHover] = useState<CalendarCell | null>(null);
   const weeks = calendarWeeks(days, to, from, locale);
   const names = weekdays(locale);
-  // a month's name sits over its first week; the very first would run into the second
   const months = weeks.map((week, index) =>
     index > 0 && week[0].day.slice(0, 7) !== weeks[index - 1][0].day.slice(0, 7)
       ? new Date(`${week[0].day}T12:00:00`).toLocaleDateString(locale, { month: "short" })
@@ -148,7 +143,6 @@ export function Calendar({ days, from, to }: { days: readonly StatsDay[]; from: 
   );
 }
 
-/** The day as a dial: midnight on top, each hour a wedge as long as its listening. */
 export function Clock({ byHour }: { byHour: readonly number[] }): JSX.Element {
   const { t, locale } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
@@ -213,7 +207,6 @@ export interface ShareItem {
   note: string;
 }
 
-/** Parts of a whole as thin rows: name, share and the bar under them. */
 export function ShareRows({ items }: { items: ShareItem[] }): JSX.Element {
   const { locale } = useTranslation();
   return (
@@ -242,7 +235,6 @@ export interface CurvePoint {
 
 const CURVE_TOP = 6;
 
-/** A soft area under one line, for a song's months. */
 export function Curve({ points, label, onHover }: { points: CurvePoint[]; label: string; onHover: (point: CurvePoint | null) => void }): JSX.Element {
   const max = Math.max(1, ...points.map((point) => point.value));
   const x = (index: number) => (index / Math.max(1, points.length - 1)) * 100;

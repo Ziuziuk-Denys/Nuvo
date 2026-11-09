@@ -1,4 +1,3 @@
-/** A small in-memory log for the error screen's "Copy details". */
 export type LogLevel = "error" | "warn" | "info";
 
 interface LogEntry {

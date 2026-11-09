@@ -1,5 +1,3 @@
-/* The settings panel: 900 x 700 frosted glass over a lightly dimmed window, a 248 px section list
-   and the open section on an inset 20 px card. */
 .layer {
   position: fixed;
   z-index: 200;
@@ -34,7 +32,6 @@
   max-height: 90vh;
   border-radius: 20px;
   background: color-mix(in srgb, var(--n-raised) 70%, transparent);
-  /* deeper than the popover's 40 px glass: the settings frost */
   -webkit-backdrop-filter: blur(60px) saturate(1.5);
   backdrop-filter: blur(60px) saturate(1.5);
   box-shadow: var(--n-sheet-shadow);
@@ -51,7 +48,6 @@
   animation: panel-out 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Section list */
 .aside {
   display: flex;
   width: 248px;
@@ -227,7 +223,6 @@
   font: 400 12px/1.5 var(--n-font);
 }
 
-/* Open section */
 .main {
   display: flex;
   min-width: 0;

@@ -17,7 +17,6 @@ afterEach(() => {
   for (const dir of temps.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-/** A fake HOME with an empty system data dir, so the test never reads or writes the real ones. */
 function setup(appImage = "/opt/apps/Nuvo-0.2.10-linux-x86_64.AppImage") {
   const home = temp();
   const system = path.join(home, "system");

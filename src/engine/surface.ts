@@ -1,4 +1,3 @@
-/** The `player:state` snapshot and its send rules. */
 import { idKind, primarySource, type PlayerView, type SurfaceState, type SurfaceUpNext } from "./types";
 
 export const SURFACE_STRING_MAX = 256;
@@ -18,7 +17,7 @@ const COVER_URL_MAX = 2048;
 const cut = (text: string) => text.slice(0, SURFACE_STRING_MAX);
 const clampMs = (ms: number) => Math.min(MAX_POSITION_MS, Math.max(0, Number.isFinite(ms) ? ms : 0));
 
-/** Only an https cover on a public image host; never nuvo-core:, data:, blob: or a custom cover. Strips userinfo and query. */
+// Only https covers on public image hosts; never nuvo-core:, data:, blob: or custom covers
 export function publicCover(url: string): string | undefined {
   try {
     const parsed = new URL(url);
@@ -101,7 +100,6 @@ function key(state: SurfaceState): string {
   return [state.trackId, state.status, state.pauseReason, state.liked, state.source, state.upNext.map((u) => u.id).join(",")].join("|");
 }
 
-/** Sends on meaningful changes, seeks over 750 ms and a 2 s heartbeat while playing; at most 4 per second. */
 export class SurfaceSender {
   private last: SurfaceState | null = null;
   private lastSentAt = -Infinity;

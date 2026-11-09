@@ -10,11 +10,9 @@ const GAP = 24;
 const MIN_TILE = 165;
 /** 8 px under the cover, a 21 px title line, a 19.5 px subtitle line and 24 px below. */
 const TEXT_HEIGHT = 8 + 21 + 19.5 + 24;
-/** Up to this many tiles render as one plain grid; past it the grid is virtualised by rows. */
 const PLAIN_MAX = 100;
 const PLACEHOLDER_TILES = 10;
 
-/** Tint tiles in the grid's own columns, so the covers land exactly where they will stand. */
 export function TilePlaceholders(): JSX.Element {
   return (
     <div className={styles.grid} data-placeholder="tile" aria-hidden>
@@ -31,7 +29,6 @@ export function TilePlaceholders(): JSX.Element {
 
 function Tile({ entry, selected, playing, onActivate, onMenu, t }: Omit<EntryViewProps, "entries"> & { entry: LibraryEntry }): JSX.Element {
   const key = entryKey(entry);
-  // a count reads better than the kind under a cover; artists keep their kind
   const subtitle = entry.kind === "artist" ? entry.subtitle : (entryMeta(entry, t) ?? entry.subtitle);
   return (
     <button
@@ -57,7 +54,6 @@ function Tile({ entry, selected, playing, onActivate, onMenu, t }: Omit<EntryVie
   );
 }
 
-/** Columns that fit tiles of at least 165 px, and the width each tile gets. */
 function useColumns(ref: RefObject<HTMLDivElement | null>): { columns: number; tile: number } {
   const [layout, setLayout] = useState({ columns: 1, tile: MIN_TILE });
   useLayoutEffect(() => {
@@ -77,7 +73,6 @@ function useColumns(ref: RefObject<HTMLDivElement | null>): { columns: number; t
   return layout;
 }
 
-/** Covers in columns of at least 165 px that share the full width, 24 px apart. */
 export function LibraryGrid(props: EntryViewProps): JSX.Element {
   const { entries } = props;
   const scroller = useShellScroller();

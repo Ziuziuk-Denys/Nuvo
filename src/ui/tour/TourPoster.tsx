@@ -9,14 +9,11 @@ import styles from "./tour.module.css";
 
 interface TourPosterProps {
   kind: Exclude<PosterKind, "start">;
-  /** The chapter a resumed tour picks up at, or the ones a later offer shows */
   chapters: ChapterId[];
   onWatch: () => void;
-  /** Skip the tour on a resume, Not now on a later offer */
   onSkip: () => void;
 }
 
-/** The card before the chapters on a later launch: the offer to resume, or to show what was left out */
 export function TourPoster({ kind, chapters, onWatch, onSkip }: TourPosterProps): JSX.Element {
   const { t } = useTranslation();
   const names = chapters.map((id) => t(`ui.tour.chapters.${id}`)).join(", ");

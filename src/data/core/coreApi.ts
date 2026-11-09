@@ -1,11 +1,8 @@
 import { coreRequest } from "./request";
 
-/** The daemon calls first run and the lock screen make. */
 export const coreApi = {
   health: () => coreRequest<{ status: string; locked: boolean; passphrase?: boolean }>("GET", "/health"),
-  /** The key file is sealed: the passphrase opens the library. */
   unlockWithPassphrase: (passphrase: string) => coreRequest<void>("POST", "/v1/recovery/passphrase", { passphrase }),
-  /** `keyring`, `file` (no keyring: a private file) or `passphrase` (that file, sealed). */
   keyStorage: () => coreRequest<{ protection: "keyring" | "file" | "passphrase" }>("GET", "/v1/system/key-storage"),
   setKeyPassphrase: (passphrase: string | null) => coreRequest<{ protection: "keyring" | "file" | "passphrase" }>("PUT", "/v1/system/key-passphrase", { passphrase }),
   recoveryPhrase: async () => (await coreRequest<{ phrase: string }>("GET", "/v1/recovery/phrase")).phrase,

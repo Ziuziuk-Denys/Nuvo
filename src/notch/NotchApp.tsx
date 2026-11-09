@@ -95,8 +95,6 @@ export default function NotchApp() {
     if (previous === null && trackId !== null && islandRef.current?.matches(":hover")) machine.pointerEnter();
   }, [machine, trackId, pulseOnTrackChange]);
 
-  // Input region: grow at once (padded for the spring overshoot, since setShape also clips painting)
-  // and tighten once the morph has ended; shrink only after the morph.
   const shapeSize = useRef<IslandSize>(ISLAND_SIZES.idle);
   const shapePadded = useRef(false);
   useEffect(() => {
@@ -141,7 +139,6 @@ export default function NotchApp() {
   const lines = lyrics && lyrics.trackId === trackId ? lyrics.lines : NO_LINES;
   const lyricsActive = mode === "expanded" && lines.length > 0;
 
-  // One timer armed for the next line start; re-armed by every new sample (seek, pause, track).
   useEffect(() => {
     if (!lyricsActive || !sample) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -180,7 +177,6 @@ export default function NotchApp() {
       if (mode !== "expanded" || acc.switched) return;
       acc.x += event.deltaX;
       if (Math.abs(acc.x) < WHEEL_THRESHOLD) return;
-      // One switch per swipe gesture.
       acc.switched = true;
       const index = VIEWS.findIndex((item) => item.id === view);
       const nextIndex = Math.min(VIEWS.length - 1, Math.max(0, index + Math.sign(acc.x)));

@@ -71,7 +71,6 @@ async fn like(State(state): State<AppState>, Path(id): Path<String>, OptionalJso
     let snapshot = body.into_snapshot();
     data.db
         .call(move |c| {
-            // The single and its album copy are one song: the newest like stands for both.
             if let Some(new) = snapshot.as_ref() {
                 for (other, old) in library::liked_snapshots(c)? {
                     if other != id && same_song(new, &old) {
@@ -85,8 +84,6 @@ async fn like(State(state): State<AppState>, Path(id): Path<String>, OptionalJso
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Bulk like that leaves a song's twin alone: the copy already liked (or earlier in the batch)
-/// stands, and the later one counts as already liked.
 fn like_many_distinct(conn: &nuvo_store::Connection, snapshots: &[Value], now: i64) -> Result<BulkLikeResult, nuvo_store::StoreError> {
     let mut index = LikedIndex::load(conn)?;
     let mut kept = Vec::with_capacity(snapshots.len());
@@ -112,7 +109,6 @@ async fn like_many(State(state): State<AppState>, JsonBody(body): JsonBody<BulkT
     Ok(Json(data.db.call(move |c| like_many_distinct(c, &body.tracks, now_ms())).await?))
 }
 
-/// Used only by the undo of a bulk like, with that request's `added` ids.
 async fn unlike_many(State(state): State<AppState>, JsonBody(body): JsonBody<TrackIds>) -> Result<Json<RemovedCount>, ApiError> {
     let data = state.data()?;
     Ok(Json(RemovedCount { removed: data.db.call(move |c| library::unlike_many(c, &body.ids)).await? }))

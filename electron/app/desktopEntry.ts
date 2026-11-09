@@ -1,8 +1,4 @@
-/**
- * The applications-menu entry for an AppImage, which has no installer to write one. GNOME and KDE on Wayland match a
- * window to its .desktop file by app_id, so without it the window has no icon. Only files Nuvo owns are written,
- * in the user's own data folder; a system-installed Nuvo (deb, rpm, Flatpak) is left to its package.
- */
+// GNOME and KDE on Wayland match a window to its .desktop file by app_id: no entry, no icon
 import fs from "node:fs";
 import path from "node:path";
 import { APP_ID } from "./mainWindow";
@@ -14,25 +10,21 @@ const MARK = "X-Nuvo-AppImage=true";
 export interface DesktopEntryDeps {
   env: Record<string, string | undefined>;
   home: string;
-  /** The bundled PNG for `size` (build/icons/<size>x<size>.png inside the app). */
   icon(size: number): Buffer;
   refreshCache(themeDir: string): Promise<void>;
 }
 
-/** The running AppImage's path, when the default data folder is the real one; null otherwise. */
 export function entryTarget(env: Record<string, string | undefined>, home: string): string | null {
   const dataHome = env.XDG_DATA_HOME;
   if (dataHome && path.resolve(dataHome) !== path.resolve(home, ".local", "share")) return null;
   return env.APPIMAGE || null;
 }
 
-/** A system package's own entry for Nuvo, in XDG_DATA_DIRS (Flatpak exports included when listed there). */
 export function systemEntryExists(env: Record<string, string | undefined>, exists: (file: string) => boolean = fs.existsSync): boolean {
   const dirs = (env.XDG_DATA_DIRS || "/usr/local/share:/usr/share").split(":").filter(Boolean);
   return dirs.some((dir) => exists(path.join(dir, "applications", `${APP_ID}.desktop`)));
 }
 
-/** A path as one Exec argument: quoted, with the characters the spec reserves escaped, then escaped again as a string value. */
 export function execArgument(file: string): string {
   const quoted = `"${file.replace(/[\\"`$]/g, (char) => `\\${char}`)}"`;
   return quoted.replace(/\\/g, "\\\\").replace(/%/g, "%%");
@@ -95,10 +87,6 @@ async function remove(deps: DesktopEntryDeps): Promise<boolean> {
   return true;
 }
 
-/**
- * Writes or removes the menu entry and its icons. "skipped" when this is not an AppImage on the real profile, or
- * when a system package already provides the entry (a stale one of ours is then removed).
- */
 export async function syncDesktopEntry(on: boolean, deps: DesktopEntryDeps): Promise<"written" | "current" | "removed" | "skipped"> {
   const appImage = entryTarget(deps.env, deps.home);
   if (!appImage) return "skipped";
@@ -111,9 +99,7 @@ export async function syncDesktopEntry(on: boolean, deps: DesktopEntryDeps): Pro
   let current: string | null = null;
   try {
     current = fs.readFileSync(where.entry, "utf8");
-  } catch {
-    // not written yet
-  }
+  } catch {}
   // a hand-made entry under the same name is the user's, never replaced
   if (current !== null && !current.split("\n").includes(MARK)) return "skipped";
   const iconsPresent = ENTRY_SIZES.every((size) => fs.existsSync(where.icon(size)));

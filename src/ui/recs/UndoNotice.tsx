@@ -6,7 +6,6 @@ import { useTranslation } from "../ports/i18n";
 import { firstArtist, markNotInterested, NOTICE_MS, undoNotInterested, useNotInterestedStore, type NotInterestedNotice } from "./notInterested";
 import styles from "./UndoNotice.module.css";
 
-/** The words for the bar's quiet line; the actions come from UndoNotice beside it. */
 export function noticeText(notice: NotInterestedNotice, t: TFunction): string {
   if (notice.undoFailed) return t(notice.failure === "locked" ? "ui.recs.notice.undo_locked" : "ui.recs.notice.undo_failed");
   if (notice.failure === "locked") return t("ui.recs.notice.locked");
@@ -14,7 +13,6 @@ export function noticeText(notice: NotInterestedNotice, t: TFunction): string {
   return t(`ui.recs.notice.${notice.scope}`, { artist: firstArtist(notice.track), title: notice.track.title });
 }
 
-/** Undo for 8 s, and the hide-artist offer when the daemon makes it. Renders no text of its own. */
 export function UndoNotice(): JSX.Element | null {
   const { t } = useTranslation();
   const notice = useNotInterestedStore((state) => state.notice);
@@ -66,7 +64,6 @@ export function UndoNotice(): JSX.Element | null {
 
 const TOAST_ID = "recs-notice";
 
-/** With no bar on screen (nothing playing, the karaoke view) the same words and Undo come as a toast. */
 export function useUndoToast(barShown: boolean): void {
   const { t } = useTranslation();
   const notice = useNotInterestedStore((state) => state.notice);

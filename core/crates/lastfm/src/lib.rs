@@ -1,5 +1,3 @@
-//! Last.fm client: desktop auth, now playing and batched scrobbles, every call signed with `api_sig`.
-
 use std::fmt;
 use std::time::Duration;
 
@@ -36,7 +34,6 @@ pub enum LastfmError {
 }
 
 impl LastfmError {
-    /// The key, secret or signature is refused; only new credentials or a new session can fix it.
     pub fn is_permanent_auth(&self) -> bool {
         matches!(self, LastfmError::Api { code: AUTH_FAILED | INVALID_API_KEY | INVALID_SIGNATURE | SUSPENDED_API_KEY, .. })
     }
@@ -86,8 +83,7 @@ impl fmt::Debug for Session {
     }
 }
 
-/// md5 hex of the parameters sorted by name and joined as `<name><value>`, followed by the
-/// secret. `format` and `callback` are not part of the signature.
+// md5 of params sorted by name as <name><value>, then the secret; format and callback excluded
 pub fn sign(params: &[(String, String)], secret: &str) -> String {
     let mut signed: Vec<&(String, String)> = params.iter().filter(|(name, _)| name != "format" && name != "callback").collect();
     signed.sort_by(|a, b| a.0.cmp(&b.0));
@@ -122,12 +118,10 @@ pub struct Lastfm {
 }
 
 impl Lastfm {
-    /// Create a client with a custom base URL for testing. Production code should use `official()`.
     pub fn new(base: impl Into<String>) -> Self {
         Self::with_proxy(base, None)
     }
 
-    /// Like [`Lastfm::new`], with every request sent through `proxy`.
     pub fn with_proxy(base: impl Into<String>, proxy: Option<reqwest::Proxy>) -> Self {
         let mut builder = reqwest::Client::builder().user_agent("nuvo-core/0.1 (personal music player)").timeout(Duration::from_secs(15));
         if let Some(proxy) = proxy {
@@ -137,7 +131,6 @@ impl Lastfm {
         Self { client, base: base.into() }
     }
 
-    /// Create a client connected to the official Last.fm API.
     pub fn official() -> Self {
         Self::new(LASTFM_URL)
     }
@@ -162,8 +155,6 @@ impl Lastfm {
         self.call(creds, "track.updateNowPlaying", params).await.map(|_| ())
     }
 
-    /// Sends up to `MAX_BATCH` plays in one request; the caller splits larger queues.
-    /// Returns (accepted, ignored) counts from the response.
     pub async fn scrobble(&self, creds: &Credentials, session_key: &str, batch: &[Scrobble]) -> Result<(i64, i64), LastfmError> {
         if batch.is_empty() || batch.len() > MAX_BATCH {
             return Err(LastfmError::InvalidBatch);

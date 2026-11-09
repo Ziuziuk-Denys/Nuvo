@@ -1,5 +1,4 @@
-// Opaque no-cors request: any answer proves the network works. Only hosts the page policy allows are
-// probed (SoundCloud is reached by the daemon, so a renderer probe is a CSP violation).
+// Only CSP-allowed hosts: a renderer probe of SoundCloud would be a CSP violation
 const PROBES = ["https://music.youtube.com/generate_204"];
 
 export async function probeStreamingHosts(fetchImpl: typeof fetch = fetch): Promise<boolean> {

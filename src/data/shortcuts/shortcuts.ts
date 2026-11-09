@@ -1,4 +1,3 @@
-/** One registry for the app: the user's bindings from the daemon, main's global list kept in step, the key listener. */
 import { createBindingsClient, DEFAULT_BINDINGS, LEGACY_SHORTCUTS_KEY, migrateLegacyBindings } from "./bindings";
 import { GlobalSync, type GlobalShell } from "./globalSync";
 import { createKeyHandler, EscapeStack } from "./keys";
@@ -26,9 +25,7 @@ export interface Shortcuts {
   escape: EscapeStack;
   recorder: Recorder;
   globals: GlobalSync;
-  /** Reads the stored bindings once; retried on window focus while the library is locked or the daemon is down. */
   load(): Promise<void>;
-  /** Installs the key, focus and blur listeners and the app:command route; returns the undo. */
   start(): () => void;
 }
 

@@ -14,7 +14,6 @@ import { canPlaceNotch, notchEnabled, type NotchSession } from "./session";
 
 export const NOTCH_TITLE = "Nuvo Notch";
 
-/** What placement needs from a compositor bridge (Hyprland and sway); both mains pass one of these. */
 export interface OverlayPlacer {
   placeOverlay(request: {
     title: string;
@@ -23,7 +22,6 @@ export interface OverlayPlacer {
     anchor: "top-left" | "top-center" | "top-right";
     pinned: boolean;
     margin: number;
-    /** "monitor": the full output, the same origin notchOrigin gives X11 and KWin. */
     bounds?: "monitor" | "workArea";
   }): Promise<boolean>;
 }
@@ -34,7 +32,6 @@ const CRASH_WINDOW_MS = 60_000;
 
 export interface NotchDeps {
   preloadPath: string;
-  /** The app icon, so a desktop that shows this window anywhere shows Nuvo's. */
   icon?: NativeImage;
   loadPage: (win: BrowserWindow) => Promise<void>;
   session: NotchSession;
@@ -45,7 +42,6 @@ export interface NotchDeps {
 }
 
 export class NotchWindow {
-  /** Resolves after the first placement; replaced when the window is created later. */
   ready: Promise<void> = Promise.resolve();
 
   private win: BrowserWindow | null = null;
@@ -61,7 +57,6 @@ export class NotchWindow {
   private placedDisplayId: number | null = null;
   private moveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly replace = () => void this.place();
-  // Moving the main window within its display changes nothing; only a display switch re-places.
   private readonly replaceIfDisplayChanged = () => {
     if (this.pickDisplay().id !== this.placedDisplayId) this.replace();
   };
@@ -84,7 +79,6 @@ export class NotchWindow {
     return this.deps.session;
   }
 
-  /** Last placement failure (bridge or KWin), null when placement worked. */
   get placementError(): string | null {
     return this.placementFailure;
   }
@@ -101,7 +95,6 @@ export class NotchWindow {
   applySettings(settings: NotchSettings): void {
     this.settings = settings;
     if (!notchEnabled(settings.mode, this.deps.session)) {
-      // a hidden window still holds a renderer process; it is re-created when enabled again
       if (this.win) this.destroy();
       return;
     }
@@ -189,7 +182,6 @@ export class NotchWindow {
       const now = Date.now();
       this.crashTimes = this.crashTimes.filter((t) => now - t < CRASH_WINDOW_MS);
       if (this.crashTimes.length >= MAX_CRASH_RELOADS) {
-        // Crash loop: stop reloading. Logged on the first refusal only.
         if (this.crashTimes.length === MAX_CRASH_RELOADS) {
           console.warn(`[notch] renderer gone (${details.reason}) too often, hiding the Notch`);
           this.crashTimes.push(now);
@@ -199,7 +191,6 @@ export class NotchWindow {
       }
       this.crashTimes.push(now);
       console.warn(`[notch] renderer gone (${details.reason}), reloading`);
-      // The fresh page starts idle and asks for state with notch:hello.
       this.setShape(islandRect(ISLAND_SIZES.idle));
       this.deps.loadPage(win).catch((error) => console.warn("[notch] reload failed:", error));
     });
@@ -264,7 +255,6 @@ export class NotchWindow {
   private async place(): Promise<void> {
     const win = this.win;
     if (!win || win.isDestroyed() || !canPlaceNotch(this.deps.session)) return;
-    // Hidden windows are placed again when they are shown (mode on, fullscreen left).
     if (this.fullscreen || this.settings.mode === "off") return;
     const display = this.pickDisplay();
     this.placedDisplayId = display.id;
@@ -297,7 +287,6 @@ export class NotchWindow {
     }
   }
 
-  // Logged once per distinct failure; the window stays wherever the compositor put it.
   private recordPlacement(ok: boolean, message: string): void {
     const next = ok ? null : message;
     if (next && next !== this.placementFailure) console.warn(`[notch] ${message}`);
@@ -363,7 +352,6 @@ function isValidAction(value: unknown): value is NotchAction {
   }
 }
 
-/** `onAction` turns Notch actions into player commands; the Notch's state comes from main's player relay. `onLyrics` shares the lyrics with the panel widget bus. */
 export function registerNotchIpc(notch: NotchWindow, options: { onAction: (action: NotchAction) => void; onLyrics?: (lyrics: NotchLyrics) => void }): void {
   const fromNotch = (event: { sender: unknown }) => event.sender === notch.webContents;
 

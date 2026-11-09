@@ -1,4 +1,3 @@
-/** Payload shapes for every IPC channel. Unknown keys are dropped; a failing payload is null. */
 import type { NotchAction } from "../../src/notch/contracts";
 import type { SurfaceState } from "../../src/engine/types";
 import { MAX_ACCELERATOR, MAX_BINDINGS, type Binding } from "./shortcuts";
@@ -101,7 +100,6 @@ export function validateBindings(raw: unknown): Binding[] | null {
   return out;
 }
 
-/** A system notification's text: a short title and body, both non-empty. */
 export function validateNotice(raw: unknown): { title: string; body: string } | null {
   if (!isObject(raw) || !text(raw.title, 120) || !text(raw.body, 400) || !raw.title.trim() || !raw.body.trim()) return null;
   return { title: raw.title, body: raw.body };
@@ -111,7 +109,6 @@ export function validateWinDrag(raw: unknown): "start" | "move" | "end" | null {
   return isObject(raw) && oneOf(["start", "move", "end"] as const, raw.phase) ? raw.phase : null;
 }
 
-/** At most `perSecond` payloads are processed per second; later ones in the same second replace each other. */
 export class RateGate<T> {
   private windowStart = -Infinity;
   private count = 0;
@@ -148,7 +145,6 @@ export class RateGate<T> {
   }
 }
 
-/** Logs a refused payload once per channel per minute. */
 export class RefusalLog {
   private last = new Map<string, number>();
   constructor(

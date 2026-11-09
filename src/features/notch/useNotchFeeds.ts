@@ -13,10 +13,6 @@ function pick(settings: NotchSettings): NotchSettings {
   return { mode, expandOn, showLyrics, pulseOnTrackChange, display };
 }
 
-/**
- * The Notch's renderer feeds: lyrics once per track and the settings. Its player state
- * comes from main (the `player:state` relay) and its actions go back as `player:command`.
- */
 export function useNotchFeeds(lyrics: NotchLyricsInput): void {
   const { trackId, lyricsTrackId, lines } = lyrics;
 

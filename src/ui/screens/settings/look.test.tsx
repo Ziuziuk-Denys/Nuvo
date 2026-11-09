@@ -125,7 +125,6 @@ describe("theme editor", () => {
     act(() => useAppearanceStore.getState().setDraft({ ...draft, modes: { light: { ...draft.modes.light!, ink: draft.modes.light!.field } } }));
     expect(button("appearance.editor.save").disabled).toBe(true);
     expect(document.body.textContent).toContain("appearance.contrast.blocked");
-    // the sheet keeps text it can show, so the warning and Fix for me stay readable
     const sheetInk = document.querySelector<HTMLElement>("aside")!.style.getPropertyValue("--n-ink");
     expect(sheetInk).not.toBe("");
     expect(sheetInk).not.toBe(draft.modes.light!.field);

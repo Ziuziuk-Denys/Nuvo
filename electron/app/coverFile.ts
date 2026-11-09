@@ -1,7 +1,6 @@
 /** A playlist cover picked in main's dialog: read with a cap and sniffed by signature; the renderer gets bytes, never a path. */
 import fs from "node:fs";
 
-/** The source image before the renderer shrinks it to 600 x 600. */
 export const MAX_COVER_SOURCE_BYTES = 20 * 1024 * 1024;
 export type CoverRead =
   { ok: true; bytes: Uint8Array; mime: "image/png" | "image/jpeg" | "image/webp" } | { ok: false; error: "cancelled" | "too_large" | "format" | "damaged" };

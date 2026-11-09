@@ -7,14 +7,12 @@ import { CloseToTrayRow, MenuEntryRow } from "./CloseToTrayRow";
 import { Segmented, SettingGroup, SettingRow, Switch } from "./controls";
 import { StatsPauseRow } from "./StatsPauseRow";
 
-/** Title, description and their search keys for a settings row, from the key both share. */
 function rowText(t: TFunction, base: string) {
   const titleKey = base + ".title";
   const descKey = base + ".description";
   return { titleKey, descKey, title: t(titleKey), description: t(descKey) };
 }
 
-/** Segment choices whose labels sit next to the row's own keys: base.<value>. */
 function choices<T extends string>(t: TFunction, base: string, values: readonly T[]) {
   return values.map((value) => ({ value, label: t(base + "." + value) }));
 }

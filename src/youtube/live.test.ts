@@ -1,8 +1,5 @@
 // @vitest-environment node
-/**
- * Live smoke tests against YouTube. Skipped unless
- * NUVO_YT_LIVE=1; never part of the gate. The worker mint and WEB_REMIX need Electron and run by hand.
- */
+// Live YouTube smoke tests, skipped unless NUVO_YT_LIVE=1
 import { resolveObjectURL } from "node:buffer";
 import { Worker as NodeWorker } from "node:worker_threads";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -18,7 +15,6 @@ import { noWorker } from "./playback/worker";
 const LIVE = process.env.NUVO_YT_LIVE === "1";
 const QUERY = process.env.NUVO_YT_QUERY ?? "daft punk one more time";
 
-/** What Electron main does for the renderer: `x-nuvo-ua` becomes `User-Agent`, origin headers follow the host. */
 const shellFetch: FetchLike = (url, init = {}) => {
   const headers = new Headers(init.headers);
   const agent = headers.get("x-nuvo-ua");

@@ -1,7 +1,3 @@
-/**
- * The lyrics engine: follows the playing track, streams versions from the daemon,
- * keeps a small memory cache and publishes one state for the karaoke view, the Notch and the island.
- */
 import type { Track } from "@/engine/types";
 import { clampOffset, shiftLines } from "./timing";
 import { LineTracker, type AudioPort } from "./tracker";
@@ -13,13 +9,11 @@ export const PREFETCH_GIVE_UP_MS = 8000;
 /** A held nudge button makes one daemon write. */
 export const OFFSET_SAVE_DELAY_MS = 400;
 
-/** What is known about one track: its versions, the user's choice, the stream's outcome and the offset. */
 interface Known {
   entries: Entry[];
   chosen: string | null;
   outcome: "ready" | "instrumental" | "none";
   offsetMs: number;
-  /** The user changed the offset this session; the daemon's stored one no longer applies. */
   offsetSet: boolean;
   arrivals: number;
 }
@@ -34,7 +28,6 @@ export interface LyricsDeps {
 
 const blank = (): Known => ({ entries: [], chosen: null, outcome: "none", offsetMs: 0, offsetSet: false, arrivals: 0 });
 
-/** Folds one stream event into a result; true once the stream is complete. */
 function fold(known: Known, event: StreamEvent, trackMs: number): boolean {
   if (event.type === "metadata" && !known.offsetSet) known.offsetMs = clampOffset(event.offsetMs ?? 0);
   if (event.type === "provider") {
@@ -51,10 +44,8 @@ function fold(known: Known, event: StreamEvent, trackMs: number): boolean {
 export class LyricsEngine {
   private state: LyricsState = EMPTY_STATE;
   private readonly listeners = new Set<() => void>();
-  /** Insertion order is recency: the first key is the least recently used. */
   private readonly known = new Map<string, Known>();
   private readonly prefetching = new Map<string, { run: Promise<void>; controller: AbortController }>();
-  /** Tracks whose prefetch gave up; another prefetch would hold one more stream for 8 s. Insertion order is age. */
   private readonly gaveUp = new Set<string>();
   private readonly tracker: LineTracker;
   private track: Track | null = null;
@@ -75,7 +66,6 @@ export class LyricsEngine {
     return this.state;
   }
 
-  /** Views subscribe; the active-line loop runs only while at least one does. */
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     const release = this.tracker.observe();
@@ -85,22 +75,18 @@ export class LyricsEngine {
     };
   }
 
-  /** Position, play state and seeks come from the player engine (3.5); never from the DOM. */
   connectAudio(audio: AudioPort): void {
     this.tracker.connect(audio);
   }
 
-  /** The word-fill clock for views (3.7). */
   clock(): { atMs: number; playing: boolean } {
     return this.tracker.clock.read();
   }
 
-  /** A view's per-frame work, on the engine's one loop. */
   onFrame(listener: () => void): () => void {
     return this.tracker.onFrame(listener);
   }
 
-  /** Called by the player engine on every change of the current entry (3.1). */
   async follow(track: Track | null): Promise<void> {
     if (track && track.id === this.track?.id && this.state.status !== "error") return;
     this.flushOffset();
@@ -139,7 +125,6 @@ export class LyricsEngine {
     await this.stream(track, controller, known);
   }
 
-  /** Fetches the next entry into the memory cache without touching what views show (3.2). */
   async prefetch(track: Track): Promise<void> {
     const streaming = this.track?.id === track.id && this.controller !== null;
     if (this.known.has(track.id) || this.prefetching.has(track.id) || this.gaveUp.has(track.id) || streaming) return;
@@ -160,18 +145,15 @@ export class LyricsEngine {
     }
   }
 
-  /** Forgets what is known about a track after the user saved or removed own lyrics; the shown track streams again. */
   async reload(track: Track): Promise<void> {
     this.known.delete(track.id);
     this.gaveUp.delete(track.id);
     this.prefetching.get(track.id)?.controller.abort();
     if (this.track?.id !== track.id) return;
-    // follow skips the track it already shows
     this.track = null;
     await this.follow(track);
   }
 
-  /** Shows another found version and keeps it for the track, even when better ones arrive later (3.6). */
   chooseVersion(provider: string): void {
     const known = this.live;
     if (!this.track || !known?.entries.some((entry) => entry.candidate.provider === provider)) return;
@@ -179,7 +161,6 @@ export class LyricsEngine {
     this.render(this.track, "ready");
   }
 
-  /** Sets the current track's offset (3.4); the daemon write waits for 400 ms of quiet. */
   changeOffset(ms: number): void {
     const known = this.live;
     if (!this.track || !known) return;
@@ -205,7 +186,6 @@ export class LyricsEngine {
     this.pendingOffset = { trackId, offsetMs, timer: setTimeout(() => this.flushOffset(), OFFSET_SAVE_DELAY_MS) };
   }
 
-  /** A refused write keeps the offset for this session; the daemon has the last value it accepted. */
   private flushOffset(): void {
     const pending = this.pendingOffset;
     if (!pending) return;
@@ -236,7 +216,6 @@ export class LyricsEngine {
       }
       throw new Error("lyrics stream ended before done");
     } catch {
-      // with something shown the failure is ignored; the next follow of an errored track retries
       if (current() && known.entries.length === 0) this.render(track, "error");
     } finally {
       if (current()) this.controller = null;
@@ -252,12 +231,9 @@ export class LyricsEngine {
           return;
         }
       }
-    } catch {
-      // gave up or failed: nothing is stored, and the daemon keeps what it found for a later follow
-    }
+    } catch {}
   }
 
-  /** Publishes the live result: the chosen version, else the best one, shifted by the offset. */
   private render(track: Track, status: LyricsStatus): void {
     const known = this.live ?? blank();
     const entry = known.entries.find((candidate) => candidate.candidate.provider === known.chosen) ?? known.entries[0];

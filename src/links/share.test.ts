@@ -17,7 +17,6 @@ import {
 import { decodeShare, type Share } from "./shareCodec";
 import { randomShare, seeded } from "./shareFixtures";
 
-/** The fixture playlist as the share sheet would see it. */
 function itemsOf(share: Share): ShareItem[] {
   return share.tracks.map((track, index) => ({
     id: track.source === "youtube" ? (track.id as string) : track.source === "soundcloud" ? `sc:${track.id}` : `local:${index}`,
@@ -137,7 +136,7 @@ describe("densities and the budget", () => {
     expect(tooMany).toMatchObject({ link: null, copyAllowed: false });
   }, 30_000);
 
-  // Whole links with this encoder and seed 2026, measured 2026-10-27. A link may not grow by more than 5 %.
+  // Link lengths measured with this encoder and seed 2026; a link may not grow by more than 5 %
   const BASELINE = [
     { tracks: 1, lean: 79, full: 120 },
     { tracks: 10, lean: 315, full: 495 },

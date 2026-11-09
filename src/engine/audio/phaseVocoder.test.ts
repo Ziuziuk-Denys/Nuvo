@@ -5,7 +5,6 @@ import { seededRandom } from "../shuffle";
 
 const RATE = 48_000;
 
-/** Dominant frequency by counting upward zero crossings. */
 function frequency(samples: Float32Array): number {
   let crossings = 0;
   for (let i = 1; i < samples.length; i++) if (samples[i - 1] <= 0 && samples[i] > 0) crossings++;

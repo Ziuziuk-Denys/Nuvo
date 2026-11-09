@@ -92,7 +92,6 @@ describe("dockLeft", () => {
     const top = { top: 14, bottom: 104 };
     expect(dockLeft(null, 1200, 560, top)).toBe(320);
     expect(dockLeft({ x: 6, y: 100, width: 58, height: 52 }, 1200, 560, top)).toBe(320);
-    // under the dock's columns but below its band
     expect(dockLeft({ x: 76, y: 120, width: 420, height: 50 }, 1200, 560, top)).toBe(320);
   });
 

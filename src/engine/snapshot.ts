@@ -1,4 +1,3 @@
-/** The daemon's track snapshot (artists as a list, cover as an object) and the engine's Track, both ways. */
 import type { Track } from "./types";
 
 export interface TrackSnapshot {
@@ -31,7 +30,6 @@ export function toSnapshot(track: Track): TrackSnapshot {
   };
 }
 
-/** A snapshot the daemon returned; null when it has no usable id. Unknown fields are dropped. */
 export function fromSnapshot(value: unknown): Track | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Record<string, unknown>;

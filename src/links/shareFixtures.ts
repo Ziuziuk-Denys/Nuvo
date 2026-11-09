@@ -1,9 +1,3 @@
-/**
- * Seeded playlists for the codec and length tests. The mix is a realistic library: 70 % YouTube
- * ids, 10 % SoundCloud ids, 20 % text only, artists from a pool of 40 (half Cyrillic), titles of 1 to 4
- * words, durations of 2 to 6 minutes. `messy` adds the inputs real names carry: emoji, RTL text, tabs,
- * line breaks, empty artists and fields far over their caps.
- */
 import type { Share, ShareTrack } from "./shareCodec";
 
 export type Random = () => number;

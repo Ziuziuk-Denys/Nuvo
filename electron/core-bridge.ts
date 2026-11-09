@@ -34,7 +34,6 @@ export interface BridgeOptions {
   socketPath: string;
   token: string;
   waitReady: () => Promise<boolean>;
-  /** page origins allowed to call the daemon, e.g. "file://", "null", the dev server origin */
   allowedOrigins: string[];
   readyTimeoutMs?: number;
 }
@@ -63,7 +62,6 @@ export function isMainOnlyPath(pathname: string): boolean {
   return decoded.toLowerCase().split("/").includes("fs");
 }
 
-/** protocol.handle handler: forwards a nuvo-core:// request to the daemon socket and streams the answer back. */
 export async function forwardToCore(request: Request, options: BridgeOptions): Promise<Response> {
   const url = new URL(request.url);
   if (url.hostname !== CORE_HOST) return reply(404, null, { message: "not found", code: "NOT_FOUND", reqId: "" });
@@ -113,7 +111,6 @@ export async function forwardToCore(request: Request, options: BridgeOptions): P
       resolve(new Response(Readable.toWeb(res) as ReadableStream, { status, headers: out }));
     });
     upstream.on("error", () => resolve(unavailable(origin)));
-    // The caller gave up (before headers or mid-stream): drop the daemon connection too.
     request.signal.addEventListener("abort", () => upstream.destroy(), { once: true });
     if (request.body) {
       const body = Readable.fromWeb(request.body as unknown as NodeReadableStream);

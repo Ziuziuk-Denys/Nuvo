@@ -1,4 +1,3 @@
-"""Self-check for the generated artwork: python3 .github/readme/test_build.py"""
 import json
 import re
 import xml.etree.ElementTree as ElementTree
@@ -31,7 +30,6 @@ rows = [row for group in groups for row in group["rows"]]
 assert sorted(build.MATRIX_COLUMNS) == sorted(matrix["apps"])
 assert set(build.MATRIX_PANELS) == {group["name"] for group in groups}
 assert len(rows) == matrix["total"]
-# the art shows columns in its own order, so every cell is checked against its sourced answer by app name
 sources = {(cell["app"], cell["feature"]): cell["answer"] for cell in json.loads((build.HERE / "comparison-sources.json").read_text())["cells"]}
 for row in rows:
     for name, state in zip(build.MATRIX_COLUMNS, build.matrix_cells(row), strict=True):
@@ -43,12 +41,10 @@ for group in groups:
 section = readme.split('<a name="comparison">')[1].split("<details>\n<summary><b>Notes and sources")[0]
 assert section.count("<picture>") == len(groups) + 1 and section.count("<details>") == 1
 assert len(re.findall(r"^\| (?!Feature |---)", section, re.M)) == len(rows)
-# one corner shape: every artboard carries its width-relative radius and no sliced corner is left, except the handed-over banners
 assert "cut_corners" not in (build.HERE / "build.py").read_text()
 for path in build.HERE.glob("*.svg"):
     source = path.read_text()
     width = int(re.search(r'width="(\d+)"', source).group(1))
-    # the two banners the site handed over keep the site's 30 px corner
     radius = 30 if path.name.startswith("banner-") else max(width * build.CORNER, 12)
     assert f'rx="{radius:.1f}"' in source, path
     assert not re.search(r"<polygon (?!clip-path)", source), path
@@ -65,7 +61,6 @@ assert "| Linux arm64 | [.rpm]" in notes and "| macOS universal, not tested |" i
 order = release_notes.install_table(["b.deb", "a.tar.gz", "c.AppImage"], "v1")
 assert order.index("AppImage") < order.index(".deb") < order.index(".tar.gz"), order
 assert "/raw/v1.0.0/.github/readme/release-dark.png" in notes and "The changes." in notes
-# docs/ leaves the public repository: links go to the site through its constant, and nothing relative may point at docs/
 pages = [build.ROOT / source.relative_to(build.PAGES) for source in build.PAGES.rglob("*") if source.is_file()]
 for page in [build.ROOT / "README.md", build.ROOT / ".github/PULL_REQUEST_TEMPLATE.md", *pages]:
     text = page.read_text()

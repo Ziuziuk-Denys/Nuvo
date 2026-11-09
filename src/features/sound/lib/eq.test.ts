@@ -37,11 +37,8 @@ describe("equalizer model", () => {
   });
 
   it("auto preamp leaves 1 dB of the combined response peak", () => {
-    // a lone +6 dB peak: the response tops out at the band, so 5 dB of headroom
     expect(autoPreamp([0, 0, 0, 0, 6, 0, 0, 0, 0, 0])).toBeCloseTo(-5, 2);
-    // two neighbouring +6 dB bands overlap above 6 dB, which the largest single band missed
     expect(autoPreamp([0, 0, 0, 0, 6, 6, 0, 0, 0, 0])).toBeLessThan(-6);
-    // the low shelf plateau sits below 31 Hz, where the band centre alone reads only half the gain
     expect(autoPreamp([6, 0, -3, 0, 0, 0, 0, 0, 0, 0])).toBeLessThan(-3.5);
     expect(autoPreamp([0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0])).toBe(0);
     expect(autoPreamp(BUILT_IN_PRESETS.bass_reducer)).toBe(0);

@@ -1,4 +1,3 @@
-/** Adapters from the engine's ports to the daemon and the YouTube catalog. */
 import type { ContinuationPort, ContinuationRequest, Suggested } from "./continuation";
 import { fromSnapshot, snapshotArtists, toSnapshot } from "./snapshot";
 import { createRecsClient } from "./recsClient";
@@ -9,7 +8,6 @@ export const MAX_MATCH_STEPS = 6;
 export const RADIO_CANDIDATES = 50;
 export const LOCAL_CANDIDATES = 20;
 
-/** The two YouTube catalog calls the adapters need. */
 export interface CatalogPort {
   searchFiltered(query: string, filter: "songs" | "any" | "videos", signal: AbortSignal): Promise<Track[]>;
   radio(id: string, options: { limit: number }, signal: AbortSignal): Promise<Track[]>;
@@ -55,10 +53,6 @@ async function post<T>(doFetch: typeof fetch, url: string, body: unknown, signal
   }
 }
 
-/**
- * YouTube target: the daemon drives the cascade (`/v1/match/next`), the renderer runs each search it asks for.
- * SoundCloud target: the daemon runs the cascade with its own client (`POST /v1/match/approved`).
- */
 export function createMatchAdapter(base: string, catalog: CatalogPort, doFetch: typeof fetch = (i, n) => fetch(i, n)): MatchPort {
   return {
     async approvedOn(target, track, signal, exclude) {
@@ -93,13 +87,8 @@ export function createMatchAdapter(base: string, catalog: CatalogPort, doFetch: 
   };
 }
 
-/** A SoundCloud track id (`sc:<n>`); the YouTube radio cannot start from one. */
 const isSoundCloud = (id: string) => id.startsWith("sc:");
 
-/**
- * Candidates from the seed's catalog list, ranked by the daemon, which adds its stored lists. A list that fails is empty,
- * so the daemon still fills the batch; any daemon failure keeps the raw list.
- */
 const PER_ARTIST = 2;
 
 const names = (artists: string): string[] =>
@@ -108,7 +97,6 @@ const names = (artists: string): string[] =>
     .map((name) => name.trim().toLowerCase())
     .filter(Boolean);
 
-/** Tracks the user hid ("Not interested"), read when ranking is down so the raw list still respects them. */
 async function hiddenBy(base: string, doFetch: typeof fetch, signal: AbortSignal): Promise<(track: Track) => boolean> {
   const client = createRecsClient(base, (input, init) => doFetch(input, { ...init, signal }));
   const list = await client.suppressions();
@@ -136,7 +124,6 @@ function capPerArtist(tracks: Track[]): Track[] {
 }
 
 export function createContinuation(base: string, catalog: CatalogPort, doFetch: typeof fetch = (i, n) => fetch(i, n), match?: MatchPort): ContinuationPort {
-  // SoundCloud related tracks through the daemon for a SoundCloud seed, the YouTube radio otherwise.
   const listFor = async (seed: string, signal: AbortSignal): Promise<Track[]> => {
     try {
       if (!isSoundCloud(seed)) return await catalog.radio(seed, { limit: RADIO_CANDIDATES }, signal);
@@ -148,7 +135,6 @@ export function createContinuation(base: string, catalog: CatalogPort, doFetch: 
       return [];
     }
   };
-  // files from the music folders by the seed's artist or genre, plus the seed's own snapshot
   const localRelated = async (seed: string, signal: AbortSignal): Promise<{ seed?: unknown; items?: unknown[] } | null> => {
     try {
       const response = await doFetch(`${base}/v1/local/related?seed=${encodeURIComponent(seed)}&limit=${LOCAL_CANDIDATES}`, { signal });
@@ -167,7 +153,6 @@ export function createContinuation(base: string, catalog: CatalogPort, doFetch: 
       let related: Awaited<ReturnType<typeof localRelated>>;
       let streamed: Track[];
       if (idKind(seed) === "local") {
-        // a local seed has no catalog radio of its own: its approved YouTube match stands in
         related = await localRelated(seed, signal);
         const seedTrack = related?.seed ? fromSnapshot(related.seed) : null;
         const standIn = seedTrack && match ? await match.approvedOn("youtube", seedTrack, signal).catch(() => null) : null;
@@ -196,7 +181,6 @@ export function createContinuation(base: string, catalog: CatalogPort, doFetch: 
         const hidden = await hiddenBy(base, doFetch, signal);
         return capPerArtist(raw.filter((t) => !hidden(t))).slice(0, request.limit);
       }
-      // Our own candidates keep every field the catalog gave; a pooled or fallback track comes back as a snapshot.
       const byId = new Map(raw.map((t) => [t.id, t]));
       return ranked.items.flatMap((item) => {
         const id = (item.track as { id?: unknown } | null)?.id;

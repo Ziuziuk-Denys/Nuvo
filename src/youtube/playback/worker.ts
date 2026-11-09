@@ -1,4 +1,3 @@
-/** The renderer's view of the hidden worker, over `nuvo-yt:call`. */
 import { YtError, abortError, type YtCode } from "../types";
 
 export interface TvIdentity {
@@ -7,7 +6,6 @@ export interface TvIdentity {
   visitor: string;
   version: string;
   scriptId: string;
-  /** Read with the identity, so a TV track costs one transform call. */
   signatureTimestamp: number;
 }
 
@@ -20,11 +18,8 @@ export interface Transform {
 export interface WorkerBridge {
   contentToken(videoId: string): Promise<string>;
   tvIdentity(): Promise<TvIdentity>;
-  /** `n` and signature values solved with the player script of `playerId`; empty lists read only the timestamp. */
   playerTransform(playerId: string, n: string[], sig: string[]): Promise<Transform>;
-  /** True while the worker window is open and ready; absent or failing means "treat as ready". */
   isReady?(): Promise<boolean>;
-  /** Stops using the worker: later calls reject `worker-closed` without reaching main. */
   close?(): void;
 }
 
@@ -96,14 +91,12 @@ export function ipcWorker(call: WorkerCall): WorkerBridge {
   };
 }
 
-/** Outside the desktop shell (tests, browser preview) every worker op fails fast. */
 export const noWorker: WorkerBridge = {
   contentToken: () => Promise.reject(new YtError("needs-desktop")),
   tvIdentity: () => Promise.reject(new YtError("needs-desktop")),
   playerTransform: () => Promise.reject(new YtError("needs-desktop")),
 };
 
-/** Settles with `promise`, or rejects with `AbortError` as soon as `signal` aborts. */
 export function raceAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   if (signal.aborted) return Promise.reject(abortError());
   return new Promise<T>((resolve, reject) => {

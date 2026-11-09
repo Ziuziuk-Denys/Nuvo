@@ -1,4 +1,3 @@
-/** `YtPlayback`: resolve, whole-file download, warm-up and reset. Loaded on the first stream request. */
 import type { FetchLike, Innertube } from "../http";
 import { YtError } from "../types";
 import { downloadWhole } from "./download";
@@ -53,8 +52,7 @@ export function createPlayback(deps: PlaybackRuntimeDeps): YtPlayback {
       return blob;
     },
     warmUp() {
-      // Visitor data and the player id only; failures are silent. The worker starts on the first
-      // stream that needs it, so an idle app keeps no second renderer.
+      // The worker starts on the first stream that needs it, so an idle app keeps no second renderer
       void deps.yt.visitor.get();
       void player.playerId(new AbortController().signal).catch(() => undefined);
     },

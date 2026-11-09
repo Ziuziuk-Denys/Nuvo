@@ -2,10 +2,8 @@ import { coreRequest } from "@/data/core/request";
 import { fromSnapshot, toSnapshot } from "@/engine/snapshot";
 import type { Track } from "@/engine/types";
 
-/** Typed calls to the daemon's library routes. */
 export type SavedKind = "album" | "artist" | "playlist";
 
-/** The orders the daemon stores per playlist; "manual" is the order you dragged. */
 export const PLAYLIST_SORTS = ["manual", "added", "title", "artist", "album", "duration"] as const;
 export type PlaylistSort = (typeof PLAYLIST_SORTS)[number];
 
@@ -23,7 +21,6 @@ export interface PlaylistSummary {
   trackCount: number;
   covers: string[];
   sortMode: PlaylistSort;
-  /** Kept in the audio cache for offline listening. */
   pinnedOffline: boolean;
 }
 
@@ -64,7 +61,6 @@ interface RawItem {
   addedAt?: string;
 }
 
-/** A playlist item's place, enough to put it back where it was (the daemon's insert route). */
 export interface ItemPlace {
   trackId: string;
   position: number;
@@ -99,7 +95,6 @@ function tracksOf(items: RawItem[]): Track[] {
   return tracks;
 }
 
-/** A whole playlist as the daemon gives it back after a merge deleted it; `restore` takes it as it is. */
 export type PlaylistSnapshot = Record<string, unknown>;
 
 export interface MergeResult {
@@ -143,19 +138,14 @@ export const libraryClient = {
     };
     return summary(await coreRequest<RawPlaylist>("POST", "/v1/me/playlists", body));
   },
-  /** A blank description clears it. */
   setDescription: (id: string, description: string) =>
     coreRequest<void>("PATCH", `/v1/me/playlists/${enc(id)}`, { description: description.trim().slice(0, PLAYLIST_DESCRIPTION_MAX) || null }),
-  /** Recently added comes newest first; every other order runs A to Z or short to long. */
   setSort: (id: string, mode: PlaylistSort) => coreRequest<void>("PATCH", `/v1/me/playlists/${enc(id)}`, { sortMode: mode, sortDesc: mode === "added" }),
-  /** Tracks of a kept playlist stay in the audio cache; the idle fill brings in the missing ones. */
   setPinnedOffline: (id: string, on: boolean) => coreRequest<void>("PATCH", `/v1/me/playlists/${enc(id)}`, { pinnedOffline: on }),
-  /** How many of the playlist's tracks are cached or local. */
   offlineProgress: (id: string) => coreRequest<{ cached: number; total: number }>("GET", `/v1/me/playlists/${enc(id)}/offline`),
   deletePlaylist: (id: string) => coreRequest<void>("DELETE", `/v1/me/playlists/${enc(id)}`),
   addTrack: (playlistId: string, track: Track) =>
     coreRequest<void>("POST", `/v1/me/playlists/${enc(playlistId)}/tracks/${enc(track.id)}`, { track: toSnapshot(track) }),
-  /** Item ids with their track, position and date, in playlist order. */
   async playlistItems(id: string): Promise<Array<ItemPlace & { id: string }>> {
     const raw = await coreRequest<{ items: RawItem[] }>("GET", `/v1/me/playlists/${enc(id)}`);
     return raw.items.flatMap((item) => {
@@ -168,7 +158,6 @@ export const libraryClient = {
     const answer = await coreRequest<{ added: number; rejected: number }>("POST", `/v1/me/playlists/${enc(playlistId)}/items/insert`, { items });
     return { added: answer.added, rejected: answer.rejected };
   },
-  /** Copies or moves items into another playlist; the new items' ids come back for Undo. */
   async transferItems(playlistId: string, itemIds: string[], targetId: string, mode: "copy" | "move"): Promise<{ addedIds: string[]; skipped: number }> {
     const answer = await coreRequest<{ added: Array<{ id: string }>; skipped: number }>("POST", `/v1/me/playlists/${enc(playlistId)}/items/transfer`, {
       itemIds,
@@ -177,10 +166,8 @@ export const libraryClient = {
     });
     return { addedIds: answer.added.map((item) => item.id), skipped: answer.skipped };
   },
-  /** Adds the sources' songs to the target, skipping songs it has; `deleteSources` removes them and hands back their snapshots. */
   merge: (targetId: string, sourceIds: string[], deleteSources: boolean) =>
     coreRequest<MergeResult>("POST", `/v1/me/playlists/${enc(targetId)}/merge`, { sourceIds, skipDuplicates: true, deleteSources }),
-  /** The whole playlist as `restore` takes it: fields, item places and the custom cover's bytes. */
   async snapshot(id: string): Promise<PlaylistSnapshot> {
     const raw = await coreRequest<{ playlist: Record<string, unknown>; items: RawItem[] }>("GET", `/v1/me/playlists/${enc(id)}`);
     const { coverUrl, ownerId: _owner, updatedAt: _updated, ...head } = raw.playlist;
@@ -198,7 +185,6 @@ export const libraryClient = {
     }
     return { ...head, items, ...(cover ? { cover } : {}) };
   },
-  /** Brings deleted playlists back from their snapshots, with their ids, items and covers. */
   restore: (snapshots: PlaylistSnapshot[]) => coreRequest<unknown>("POST", "/v1/me/playlists/restore", { snapshots }).then(() => undefined),
   setCover: (playlistId: string, image: Blob) => coreRequest<unknown>("PUT", `/v1/me/playlists/${enc(playlistId)}/cover`, image).then(() => undefined),
   removeCover: (playlistId: string) => coreRequest<void>("DELETE", `/v1/me/playlists/${enc(playlistId)}/cover`),

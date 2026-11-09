@@ -10,7 +10,6 @@ import { Toaster } from "../feedback/Toaster";
 import { QueuePanel } from "../shell/queue/QueuePanel";
 import { SignInSheet } from "../shell/SignInSheet";
 
-/** Everything the shell hosts above the page that is not a screen. */
 export function Overlays(): JSX.Element {
   return (
     <>

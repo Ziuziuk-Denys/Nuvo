@@ -18,7 +18,6 @@ import styles from "./LyricsPane.module.css";
 /** The module only scrolls here: it needs no tick per frame, only the mark on the sung word does. */
 const TICK_MS = 250;
 
-/** Engine lines as @braccato/core lyrics: in word mode words become parts; a companion line joins the line before as background. */
 export function toBraccatoLines(lines: Line[], wordMode: boolean, romanize?: ((text: string) => string) | null): Lyric[] {
   const out: Lyric[] = [];
   for (const line of lines) {
@@ -39,7 +38,6 @@ export function toBraccatoLines(lines: Line[], wordMode: boolean, romanize?: ((t
   return romanize ? out.map((lyric) => withRomanization(lyric, romanize)) : out;
 }
 
-/** The romanized text rides under the line as a quiet background part; the line keeps its own words. */
 function withRomanization(lyric: Lyric, romanize: (text: string) => string): Lyric {
   const romanized = romanize(lyric.words);
   if (romanized === lyric.words || !romanized.trim()) return lyric;
@@ -81,7 +79,7 @@ export function LyricsPane({
     let tickedAtMs = Number.NEGATIVE_INFINITY;
     const stopFrames = lyricsCommands.onFrame(() => {
       const { atMs, playing } = lyricsCommands.clock();
-      // measured against the output: the change is on screen about 25 ms after this write, so half a tick ahead still lands after the voice
+      // On screen about 25 ms after this write, so half a tick ahead still lands after the voice
       mark.update(playing ? atMs + FRAME_MS / 2 : atMs);
       if (playing === element.playing && Math.abs(atMs - tickedAtMs) < TICK_MS) return;
       tickedAtMs = atMs;

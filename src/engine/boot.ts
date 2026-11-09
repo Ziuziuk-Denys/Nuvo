@@ -1,4 +1,3 @@
-/** Renderer composition of the engine: decks, sources, output, media session and the shell link. */
 import { createContinuation, createMatchAdapter, type CatalogPort } from "./adapters";
 import { OutputController, type MediaDevicesLike, type SinkTarget } from "./audio/output";
 import { DeckController } from "./audio/decks";
@@ -22,7 +21,6 @@ const REPORTS_FLUSH_DELAY_MS = 3000;
 
 export const CORE_BASE_URL = "nuvo-core://local";
 
-/** The ten bands of `src/features/sound/lib/eq.ts`, passed in so the engine does not depend on the sound module. */
 export interface EqBand {
   type: BiquadFilterType;
   frequency: number;
@@ -34,14 +32,12 @@ export interface BootDeps {
   catalog: CatalogPort;
   library: LibraryPort & { isLiked(trackId: string): boolean; onLikedChange(listener: () => void): () => void };
   lyrics: { follow(track: Track | null): void; prefetch(track: Track): void };
-  /** `drawn`: a cover as the renderer loads it, at the size media surfaces show. */
   covers: { warm(url: string): void; drawn(url: string): string };
   notify(notice: { kind: "error" | "info"; text: string; detail?: string }): void;
   askForSignIn(): void;
   offerSignIn(): boolean;
   network: { checkSoon(cause: Cause | "http_403"): void };
   eqBands: EqBand[];
-  /** Read by the transition policy (sound part B owns these values). */
   transitionContext: ConstructorParameters<typeof DeckController>[0]["transitionContext"];
 }
 
@@ -51,15 +47,11 @@ export interface Booted {
   output: OutputController;
   resolver: SourceResolver;
   precache: PrecacheScheduler;
-  /** Caches the tracks a save to files is waiting for. */
   downloads: DownloadFetcher;
-  /** The YouTube catalog the engine was booted with; playlist suggestions reuse the continuation adapter with it. */
   catalog: CatalogPort;
-  /** Tears down every listener, timer and link the boot created; safe to call twice. */
   dispose(): void;
 }
 
-/** The slice of `window.nuvoShell` the engine uses. The shell's onAppCommand carries app-level commands for the UI shell (settings, navigation), so the app layer wires it, not the engine. */
 interface ShellLike {
   sendPlayerState(state: SurfaceState): void;
   onRemoteCommand(callback: (command: RemoteCommand) => void): () => void;
@@ -76,7 +68,6 @@ interface DevAudio {
   sources: WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>;
 }
 
-/** Development hot reload finds the same context, elements and source nodes; packaged builds keep no global. */
 function devAudio(): DevAudio {
   const fresh: DevAudio = { context: null, elements: null, sources: new WeakMap() };
   if (!import.meta.env.DEV) return fresh;
@@ -85,7 +76,6 @@ function devAudio(): DevAudio {
   return holder.__nuvoAudio;
 }
 
-/** A track the next deck may preload: a cached stream, or a local file the daemon can still read and the player can decode. */
 export function fullyCachedCheck(
   daemon: { probeLocal(trackId: string): Promise<{ ok: boolean }>; probeCache(trackId: string): Promise<unknown | null> },
   resolver: { isKnownCached(trackId: string): boolean },
@@ -134,7 +124,6 @@ export function bootEngine(deps: BootDeps): Booted {
         }
       },
     },
-    // a local file is whole on disk: gapless and crossfade treat it like a cached track
     cacheUrl: (trackId) => (isLocalId(trackId) ? daemon.localUrl(trackId) : daemon.cacheUrl(trackId)),
     isFullyCached: fullyCachedCheck(daemon, resolver),
     dropCached: (trackId) => (isLocalId(trackId) ? Promise.resolve() : resolver.dropCached(trackId)),
@@ -155,7 +144,6 @@ export function bootEngine(deps: BootDeps): Booted {
     ensureCached: (track, signal) => precache.ensureCached(track, signal),
     log: (message, error) => console.warn(message, error ?? ""),
   });
-  // resumes a save left from the last session
   downloads.kick();
   const sessionArtwork = async (cover: string) => {
     const url = deps.covers.drawn(cover);
@@ -226,7 +214,7 @@ export function bootEngine(deps: BootDeps): Booted {
     () => {
       const context = decks.audioContext as (AudioContext & SinkTarget) | null;
       const sinks: SinkTarget[] = elements as unknown as SinkTarget[];
-      // Once the graph exists the elements feed the context, and Chromium rejects setSinkId on such an element (AbortError): the context sink alone moves the sound.
+      // Chromium rejects setSinkId on an element feeding a context (AbortError): move the context sink
       return context && typeof context.setSinkId === "function" ? [context] : sinks;
     },
     {
@@ -257,7 +245,6 @@ export function bootEngine(deps: BootDeps): Booted {
   );
   void output.init().catch((error) => console.warn("output devices unavailable", error));
 
-  // Session setup off the first start: once idle and online, and after every network change.
   const warmUp = () => navigator.onLine && deps.youtube.warmUp();
   const idle = "requestIdleCallback" in window ? window.requestIdleCallback(warmUp, { timeout: 5000 }) : null;
   const warmTimer = idle === null ? setTimeout(warmUp, 2000) : null;
@@ -267,7 +254,6 @@ export function bootEngine(deps: BootDeps): Booted {
   };
   window.addEventListener("online", networkChanged);
 
-  // Links to the shell; every unsubscribe is released on dispose.
   const releases: Array<() => void> = [offlineMode.subscribe(networkChanged)];
   const shell = (window as unknown as { nuvoShell?: ShellLike }).nuvoShell;
   let sender: SurfaceSender | null = null;

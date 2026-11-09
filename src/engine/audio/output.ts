@@ -1,20 +1,14 @@
-/** Output device choice, remembered device, and the pause when the active device disappears. */
 import { SYSTEM_DEFAULT, type OutputDevice, type OutputView, type Status } from "../types";
 
 export const DEVICE_DEBOUNCE_MS = 300;
 export const AUTO_RESUME_MS = 120_000;
-/** First look after playback starts, then the pace while it plays. */
 export const HEALTH_FIRST_MS = 1500;
 export const HEALTH_EVERY_MS = 5000;
 
-/** Why a playing track is not heard: the system mixer muted Nuvo, or the audio output stopped running. */
 export type SilentCause = "system_muted" | "output_stopped";
 
-/** What the output can see beyond the device list. */
 export interface SoundProbe {
-  /** The AudioContext state; null before the first play built it. */
   contextState(): string | null;
-  /** True when the system mixer holds Nuvo's stream muted; null when it cannot tell. */
   systemMuted(): Promise<boolean | null>;
   unmuteSystem(): Promise<void>;
 }
@@ -53,7 +47,6 @@ interface Physical {
   label: string;
 }
 
-/** "System default (Speakers)" first, then every other output once per physical device. */
 export function outputList(devices: DeviceInfo[]): OutputDevice[] {
   const outputs = devices.filter((d) => d.kind === "audiooutput");
   const fallback = outputs.find((d) => d.deviceId === "default");
@@ -108,7 +101,7 @@ export class OutputController {
     });
   }
 
-  /** Resolves the remembered device: id first, then the same label (ids are re-salted after a profile reset). */
+  // Label is the fallback: device ids are re-salted after a profile reset
   async init(): Promise<void> {
     this.devices = await this.media.enumerateDevices();
     const remembered = this.host.remembered();
@@ -148,7 +141,6 @@ export class OutputController {
     this.lost = null;
   }
 
-  /** Lifts the system mixer's mute from Nuvo's stream, then looks again. */
   async unmute(): Promise<void> {
     await this.probe?.unmuteSystem();
     await this.lookAtHealth();
@@ -170,7 +162,6 @@ export class OutputController {
     this.setSilent(undefined);
   }
 
-  /** A context that is not running twice in a row, or a mixer mute, turns the silent "playing" into a cause the UI can name. */
   private async lookAtHealth(): Promise<void> {
     if (!this.probe || this.disposed) return;
     const state = this.probe.contextState();
@@ -189,7 +180,7 @@ export class OutputController {
 
   async choose(id: string | null): Promise<void> {
     const device = id ? this.devices.find((d) => d.deviceId === id) : undefined;
-    if (id && !device) return; // reject unknown id, keep current device
+    if (id && !device) return;
     this.chosen = id && device ? { id, label: device.label } : null;
     this.fellBack = false;
     this.lost = null;
@@ -199,7 +190,6 @@ export class OutputController {
     this.publish();
   }
 
-  /** Applies a sink to the context and both elements; a refusal falls back to the default with an error. */
   private async apply(id: string): Promise<void> {
     this.error = undefined;
     try {
@@ -217,7 +207,6 @@ export class OutputController {
     }
   }
 
-  /** The physical device actually playing: the chosen one, or whatever the default entry points at. */
   private physical(): Physical | null {
     const outputs = this.devices.filter((d) => d.kind === "audiooutput");
     if (this.applied) {

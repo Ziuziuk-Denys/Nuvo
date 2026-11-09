@@ -20,7 +20,6 @@ fn the_check_runs_once_a_day() {
     assert!(due(1000, None));
     assert!(!due(1000 + DAY_MS - 1, Some(1000)));
     assert!(due(1000 + DAY_MS, Some(1000)));
-    // a clock set back must not stop updates for good
     assert!(due(1000, Some(5000)));
 }
 

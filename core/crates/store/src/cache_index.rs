@@ -6,8 +6,6 @@ use crate::{StoreError, tracks};
 
 const RECENT_MS: i64 = 30 * 86_400_000;
 
-/// A cached track is kept regardless of the size limit when it is liked, sits in a playlist
-/// pinned for offline use, or completed at least 3 times in the last 30 days (`?1` = window start).
 const KEPT: &str = "(c.track_id IN (SELECT track_id FROM liked_tracks)
     OR c.track_id IN (SELECT i.track_id FROM playlist_items i JOIN playlists p ON p.id = i.playlist_id WHERE p.pinned_offline = 1)
     OR (SELECT count(*) FROM play_events e WHERE e.track_id = c.track_id AND e.end_reason = 'complete' AND e.started_at >= ?1) >= 3)";
@@ -66,7 +64,6 @@ pub fn total_bytes(conn: &Connection) -> Result<i64, StoreError> {
     Ok(conn.query_row("SELECT coalesce(sum(size_bytes), 0) FROM cache_entries", [], |row| row.get(0))?)
 }
 
-/// Entries outside the keep rules, cheapest to lose first: fewest recent plays, then oldest play.
 pub fn eviction_candidates(conn: &Connection, now: i64) -> Result<Vec<CacheEntry>, StoreError> {
     let mut stmt = conn.prepare(&format!(
         "SELECT c.* FROM cache_entries c WHERE NOT {KEPT}
@@ -89,7 +86,6 @@ pub fn status(conn: &Connection, now: i64, limit_bytes: i64) -> Result<CacheStat
     Ok(CacheStatus { used_bytes, limit_bytes, entries, pinned, covers: CoverStats::default() })
 }
 
-/// Liked or pinned tracks that are not cached yet, for background prefetch.
 pub fn missing_keep_tracks(conn: &Connection, limit: usize) -> Result<Vec<Value>, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT t.snapshot_json FROM tracks t

@@ -21,27 +21,20 @@ import styles from "./SharePreview.module.css";
 export interface SharePreviewProps {
   share: Share;
   ports: ImportPorts;
-  /** The person's playlists, for "Add to". */
   playlists: { id: string; title: string }[];
   onClose(): void;
   onImported(summary: ImportSummary, unreadable: number): void;
 }
 
-/**
- * A shared playlist before anything happens: title, count, the first 12 songs and where they go.
- * Nothing is imported before Import. Mount it with `key` per share, so its state starts fresh.
- */
 export function SharePreview({ share, ports, playlists, onClose, onImported }: SharePreviewProps): JSX.Element {
   const { t } = useTranslation();
   const [looked, setLooked] = useState<Map<number, CatalogTrack>>(new Map());
   const [target, setTarget] = useState<ImportTarget>({ kind: "new" });
-  // the last anchor stays set while the menu fades out; the flag says whether it is up
   const [pickerAnchor, setPickerAnchor] = useState<HTMLElement | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  // names for the id-only songs on screen; closing the sheet stops the lookups
   useEffect(() => {
     const controller = new AbortController();
     const first = share.tracks.slice(0, PREVIEW_ROWS).map((_, index) => index);

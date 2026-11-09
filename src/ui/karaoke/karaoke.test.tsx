@@ -123,14 +123,12 @@ afterEach(() => {
 describe("karaoke view", () => {
   it("the rise curve over the measured duration follows the measured samples", () => {
     const { samples, sampleTimesMs, durationMs } = look.overlay;
-    // the first moved frame is stamped before it was drawn, so the comparison starts one frame later
     const points = samples
       .map((top, i) => [sampleTimesMs[i], top] as const)
       .filter(([, top]) => top < 1)
       .slice(1);
     const error = (startMs: number) =>
       Math.max(...points.map(([at, top]) => Math.abs(top - (1 - bezierY(Math.min(1, Math.max(0, (at - startMs) / durationMs)), RISE_CURVE)))));
-    // the rise started somewhere between the last still sample and the first moved one
     const best = Math.min(...Array.from({ length: sampleTimesMs[1] + 1 }, (_, startMs) => error(startMs)));
     expect(best).toBeLessThan(0.03);
   });
@@ -161,7 +159,6 @@ describe("karaoke view", () => {
   it("no lyrics: one quiet line in the lyric column, no lines; found lyrics show the lines", () => {
     current = { id: "t", title: "Song", artists: "Ann", coverUrl: "" };
     const empty = mount(<Karaoke onClose={() => undefined} />);
-    // a restored, never played track has no lyrics looked up yet: the open view asks for them
     expect(lyricsCalls.follow).toHaveBeenCalledWith(current);
     expect(empty.host.textContent).toContain("ui.karaoke.no_lyrics");
     expect(empty.host.textContent).not.toContain("lyric lines");
@@ -202,7 +199,6 @@ describe("karaoke view", () => {
     act(() => button.click());
     const items = [...document.querySelectorAll<HTMLButtonElement>('[role="menu"] [role="menuitem"]')];
     expect(items.map((item) => item.textContent)).toEqual(["version line_level", "version word_level"]);
-    // the shown version carries the tick, the other none
     expect(items.map((item) => item.querySelector("svg") !== null)).toEqual([true, false]);
     act(() => items[1].click());
     expect(lyricsCalls.chooseVersion).toHaveBeenCalledWith("amll");

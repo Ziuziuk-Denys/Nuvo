@@ -18,16 +18,10 @@ export const useRomanizedChoice = create<{ on: boolean; toggle(): void }>((set, 
     set({ on });
     try {
       localStorage.setItem(KEY, on ? "1" : "0");
-    } catch {
-      // the choice still holds for this run
-    }
+    } catch {}
   },
 }));
 
-/**
- * Romanized lyrics: `available` when the song is Korean, Chinese or Japanese, `romanize` set while the
- * choice is on. `kanaOnly` for Japanese, where kanji stays as written and the toggle says so.
- */
 export function useRomanization(): { available: boolean; kanaOnly: boolean; on: boolean; toggle(): void; romanize: ((text: string) => string) | null } {
   const lines = useLyrics((state) => state.lines);
   const plainText = useLyrics((state) => state.plainText);

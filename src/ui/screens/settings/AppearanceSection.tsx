@@ -20,7 +20,6 @@ function revealOrigin(event: MouseEvent<HTMLElement>) {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 }
 
-/** The theme tiles; the first run shows the same grid. */
 export function PresetGrid(): JSX.Element {
   const { t } = useTranslation();
   const active = useCustomizationStore((state) => state.preset);
@@ -30,7 +29,6 @@ export function PresetGrid(): JSX.Element {
 
   const pick = (id: (typeof PRESETS)[number]["id"]) => {
     setPreset(id);
-    // a saved theme in force wins over presets, so picking one leaves it
     if (custom) void useAppearanceStore.getState().save({ active: { presetId: id } });
   };
   const gridRef = useRef<HTMLDivElement>(null);
@@ -85,7 +83,6 @@ export function PresetGrid(): JSX.Element {
   );
 }
 
-/** A tiny window drawn in one mode: a sidebar with traffic lights and lines, a content area with tiles. */
 function WindowSketch({ mode }: { mode: "light" | "dark" }): JSX.Element {
   return (
     <span className={styles.sketch} data-mode={mode}>
@@ -310,7 +307,6 @@ function AppearanceGroup(): JSX.Element {
   );
 }
 
-/** Theme, mode, fonts and language: the Appearance section. */
 export function AppearanceSection(): JSX.Element {
   return (
     <>

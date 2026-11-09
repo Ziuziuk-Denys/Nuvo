@@ -1,12 +1,7 @@
-/**
- * Typed client for the daemon's import routes and the SoundCloud import
- * listing. Calls go through Electron main's `nuvo-core://local` bridge, which adds the token.
- */
 import type { CatalogTrack, Decision, ImportNext, ImportRow, ImportSummary, ImportTarget, Listing, ReportRow, RowSource, RowsFilter, RowsPage } from "./types";
 import type { FetchLike } from "./http";
 import type { PendingJob } from "./pending";
 
-/** A failed daemon call: `status` 0 when the daemon could not be reached. */
 export class CoreError extends Error {
   constructor(
     readonly status: number,
@@ -16,7 +11,6 @@ export class CoreError extends Error {
     this.name = "CoreError";
   }
 
-  /** The cases a caller tells apart: a locked vault, a daemon still starting, a hung or unreachable one. */
   get kind(): "locked" | "starting" | "timeout" | "down" | "http" {
     if (this.status === 423) return "locked";
     if (this.status === 503) return "starting";
@@ -37,7 +31,6 @@ export type StartBody =
 
 export interface ImportsDaemon {
   start(body: StartBody, signal?: AbortSignal): Promise<ImportSummary[]>;
-  /** A later page of a listing posted in pages; earlier pages stay whatever happens. */
   appendRows(id: string, rows: ImportRow[], signal?: AbortSignal): Promise<ImportSummary>;
   list(signal?: AbortSignal): Promise<ImportSummary[]>;
   summary(id: string, signal?: AbortSignal): Promise<ImportSummary>;
@@ -48,20 +41,13 @@ export interface ImportsDaemon {
   decide(id: string, rowId: number, decision: Decision, track?: CatalogTrack): Promise<ReportRow>;
   bulk(id: string, action: "accept-check" | "retry-failed"): Promise<ImportSummary>;
   reportCsv(id: string): Promise<string>;
-  /**
-   * Adds one track at the end of a playlist (the waiting song of "Add to playlist"). Goes through
-   * the bulk route, which skips a song already there, so repeating the call is harmless.
-   */
+  // Bulk route skips a song already there, so repeating the call is harmless
   addToPlaylist(playlistId: string, track: CatalogTrack): Promise<void>;
-  /** The song waiting for its new playlist, kept in the library across a restart. */
   pendingTrack(): Promise<PendingJob | null>;
   savePendingTrack(job: PendingJob): Promise<void>;
   clearPendingTrack(): Promise<void>;
-  /** `GET /v1/sc/import`: a SoundCloud track, set or likes link as Exact rows. */
   soundcloudListing(url: string, signal?: AbortSignal): Promise<Listing>;
-  /** `GET /v1/spotify/import`: a public Spotify playlist or album link, read by the daemon from the embed page and, past 100 songs, the web player's query. */
   spotifyListing(url: string, signal?: AbortSignal): Promise<Listing>;
-  /** `GET /v1/sc/search`: the cascade's SoundCloud step. */
   soundcloudSearch(query: string, signal?: AbortSignal): Promise<CatalogTrack[]>;
 }
 

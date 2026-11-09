@@ -11,7 +11,6 @@ export interface EqBand {
   q: number;
 }
 
-/** Shelves at the ends, peaking filters between, so the curve can tilt as well as bend. */
 export function eqBands(): EqBand[] {
   return EQ_FREQUENCIES.map((frequency, index) => ({
     type: index === 0 ? "lowshelf" : index === EQ_FREQUENCIES.length - 1 ? "highshelf" : "peaking",
@@ -44,7 +43,6 @@ export function clampGain(db: number): number {
   return Math.min(EQ_MAX_DB, Math.max(EQ_MIN_DB, db));
 }
 
-/** Snap to 0.5 dB normally, 0.1 dB when fine-tuning. */
 export function snapGain(db: number, fine = false): number {
   const step = fine ? 0.1 : 0.5;
   let result = clampGain(Math.round(db / step) * step);
@@ -55,16 +53,11 @@ export function snapGain(db: number, fine = false): number {
 // Band centres plus a log grid, so overlapping boosts and the shelf plateaus past 31 Hz and 16 kHz count
 const PREAMP_PROBE = new Float32Array([...EQ_FREQUENCIES, ...logFrequencies(64)]);
 
-/** Lowers the preamp by the peak of the combined response minus 1 dB so a boosted curve cannot clip. */
 export function autoPreamp(gains: EqGains): number {
   const peak = Math.max(0, ...responseDb(gains, PREAMP_PROBE));
   return peak > 1 ? -(peak - 1) : 0;
 }
 
-/**
- * "Sculpt": dragging empty space at frequency `hz` by `deltaDb` bends the two nearest bands,
- * each in proportion to how close it is (log-frequency distance).
- */
 export function sculpt(gains: EqGains, hz: number, deltaDb: number): EqGains {
   if (!Number.isFinite(hz) || !Number.isFinite(deltaDb)) return gains;
   const position = Math.log2(hz);
@@ -84,7 +77,6 @@ export function sculpt(gains: EqGains, hz: number, deltaDb: number): EqGains {
   return next;
 }
 
-/** Log-spaced frequencies for drawing the response curve and the spectrum. */
 export function logFrequencies(count: number, min = 20, max = 20000): Float32Array {
   const out = new Float32Array(count);
   const ratio = Math.log(max / min);
@@ -92,11 +84,7 @@ export function logFrequencies(count: number, min = 20, max = 20000): Float32Arr
   return out;
 }
 
-/**
- * Magnitude response of the ten bands in dB, using the same biquad formulas as the
- * Web Audio specification (shelves ignore Q). Computed from target gains rather than read from
- * the live graph, whose parameters ramp and would draw one step behind.
- */
+// Computed from target gains: live graph params ramp and would draw one step behind
 export function responseDb(gains: EqGains, frequencies: Float32Array, sampleRate = 48000): Float32Array {
   const out = new Float32Array(frequencies.length);
   eqBands().forEach((band, index) => {
@@ -132,7 +120,6 @@ export function responseDb(gains: EqGains, frequencies: Float32Array, sampleRate
   return out;
 }
 
-/** Profile lookup order: track beats artist beats global. */
 export function resolveProfile<T>(trackId: string | null, artist: string | null, byTrack: Record<string, T>, byArtist: Record<string, T>, global: T): T {
   if (trackId && byTrack[trackId] !== undefined) return byTrack[trackId];
   if (artist && byArtist[artist.toLowerCase()] !== undefined) return byArtist[artist.toLowerCase()];

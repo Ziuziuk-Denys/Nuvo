@@ -2,7 +2,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { fetchJson, lookupApple, lookupDeezer, lookupShazam, lookupYandex, type FetchJson } from "./lookup";
 
-/** Answers each URL from the table; anything else is a 404. */
 function fixture(table: Record<string, { status: number; body: unknown }>): FetchJson & { urls: string[] } {
   const urls: string[] = [];
   const get = async (url: string) => {

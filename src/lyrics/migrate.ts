@@ -1,4 +1,3 @@
-/** One-time move of renderer-side lyrics data to the daemon. */
 import { clampOffset } from "./timing";
 
 export const LEGACY_SESSION_KEY = "nuvo_lyrics_session_v1";
@@ -7,7 +6,6 @@ export const OFFSETS_PER_IMPORT = 10_000;
 /** Cached copies only, no user data. */
 const LEGACY_CACHE_KEY = /^nuvo_lyrics_(v2_index|v2_item_.*|lru_index|item_.*)$/;
 
-/** The non-zero numeric offsets of a legacy session, clamped; anything unreadable gives an empty map. */
 export function legacyOffsets(raw: string): Record<string, number> {
   let parsed: unknown;
   try {
@@ -26,7 +24,6 @@ export function legacyOffsets(raw: string): Record<string, number> {
   return offsets;
 }
 
-/** True when nothing legacy is left; false when the daemon refused, so the next start tries again. */
 export async function migrateLegacyLyrics(storage: Storage, sendOffsets: (offsets: Record<string, number>) => Promise<void>): Promise<boolean> {
   const raw = storage.getItem(LEGACY_SESSION_KEY);
   if (raw !== null) {

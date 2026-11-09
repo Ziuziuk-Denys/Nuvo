@@ -10,7 +10,6 @@ import { matchesQuery } from "./sections";
 import { ClearGlyph } from "./SectionIcon";
 import styles from "./shortcuts.module.css";
 
-/** Each row: the registry command, the scope it is bound in, and the name its texts use. */
 const ACTIONS: { id: string; scope: ShortcutScope; action: string; icon: IconName }[] = [
   { id: "player.toggle", scope: "app", action: "playPause", icon: "play" },
   { id: "player.next", scope: "app", action: "nextTrack", icon: "next" },
@@ -30,7 +29,6 @@ const ACTIONS: { id: string; scope: ShortcutScope; action: string; icon: IconNam
   { id: "library.like-toggle", scope: "global", action: "quickLikeSong", icon: "liked" },
 ];
 
-/** settings.shortcuts.play_pause for playPause. */
 function labelKey(action: string): string {
   return `settings.shortcuts.${action.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
 }
@@ -44,7 +42,6 @@ export function ShortcutsSection(): JSX.Element {
   const [recording, setRecording] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  // a press outside the recording row stops recording
   useEffect(() => {
     if (!recording) return;
     const onPointerDown = (event: MouseEvent) => {

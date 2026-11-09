@@ -1,5 +1,4 @@
-//! Remembered outcomes (approved 90 days, pending 1 day) and the playback stand-in map, in the
-//! encrypted library. Tables come from store migration 13.
+// Remembered outcomes: approved for 90 days, pending for 1 day
 
 use nuvo_store::{Connection, StoreError, settings};
 use rusqlite::OptionalExtension;
@@ -16,7 +15,6 @@ const DAY_MS: i64 = 86_400_000;
 const APPROVED_TTL_MS: i64 = 90 * DAY_MS;
 const PENDING_TTL_MS: i64 = DAY_MS;
 
-/// Normalised title, normalised first artist and duration rounded to the second.
 pub fn key(source: &Source) -> String {
     let artist = source.artists.first().map(|a| normalize(a)).unwrap_or_default();
     let seconds = source.duration_ms.filter(|ms| *ms > 0).map_or(0, |ms| (ms + 500) / 1000);
@@ -67,13 +65,11 @@ pub fn put(conn: &Connection, source: &Source, answer: &Answer, now: i64) -> Res
     Ok(())
 }
 
-/// The remembered stand-in for a Nuvo track, as an approved answer.
 pub fn standin(conn: &Connection, nuvo_track_id: &str) -> Result<Option<Answer>, StoreError> {
     let row: Option<(String, i64)> = conn.query_row("SELECT track_json, score FROM match_standins WHERE track_id = ?1", [nuvo_track_id], |r| Ok((r.get(0)?, r.get(1)?))).optional()?;
     Ok(row.and_then(|(json, score)| serde_json::from_str(&json).ok().map(|track| Answer::Approved { track, score })))
 }
 
-/// Remembers an approved stand-in; other answers are ignored.
 pub fn put_standin(conn: &Connection, nuvo_track_id: &str, answer: &Answer, now: i64) -> Result<(), StoreError> {
     let Answer::Approved { track, score } = answer else { return Ok(()) };
     let Some(video_id) = track_id(Some(track)) else { return Ok(()) };

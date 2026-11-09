@@ -1,7 +1,3 @@
-//! The import job: rows in the library database, leased one search at a time to the renderer's
-//! workers, labelled from the cascade outcome and added to the target as they are decided.
-//! Everything lives in SQLite, so closing the window or restarting resumes where it stopped.
-
 use nuvo_contracts::{
     CreatePlaylist, ImportCounts, ImportNext, ImportRow, ImportRowsPage, ImportSearch, ImportSummary, TrackFields, iso_from_ms,
 };
@@ -18,14 +14,12 @@ use crate::{MAX_ROWS, Parsed, SourceRow};
 /// A crashed worker loses its row for this long, then another worker gets it.
 pub const LEASE_MS: i64 = 60_000;
 pub const MAX_CANDIDATES: usize = 100;
-/// Sources the renderer lists itself and posts as rows.
 pub const ROW_SOURCES: [&str; 7] = ["youtube-music", "soundcloud", "apple-music", "deezer", "spotify", "nuvo-link", "legacy"];
 const LEGACY_REASONS: [&str; 5] = ["low_confidence_match", "ambiguous_match", "duration_mismatch", "no_catalog_candidates", "catalog_lookup_failed"];
 const ROWS_PAGE_MAX: usize = 500;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Target {
-    /// A new playlist named after the source.
     New,
     Playlist(String),
     Liked,
@@ -35,7 +29,6 @@ struct Meta {
     target_id: Option<String>,
     base_position: f64,
     created_at: i64,
-    /// The liked songs, read the first time a song is added to Liked songs.
     liked: RefCell<Option<LikedIndex>>,
 }
 
@@ -51,7 +44,6 @@ fn playlist_exists(conn: &Connection, id: &str) -> Result<bool, StoreError> {
     Ok(conn.query_row("SELECT EXISTS(SELECT 1 FROM playlists WHERE id = ?1)", [id], |row| row.get(0))?)
 }
 
-/// A playlist target that was deleted ends the job: nothing can be added any more.
 fn require_target(conn: &Connection, meta: &Meta) -> Result<(), StoreError> {
     match &meta.target_id {
         Some(id) if !playlist_exists(conn, id)? => Err(StoreError::NotFound("playlist")),
@@ -59,7 +51,6 @@ fn require_target(conn: &Connection, meta: &Meta) -> Result<(), StoreError> {
     }
 }
 
-/// One revision bump per batch of changes, not per row.
 fn touch_target(conn: &Connection, meta: &Meta, now: i64) -> Result<(), StoreError> {
     if let Some(id) = &meta.target_id {
         conn.execute("UPDATE playlists SET revision = revision + 1, updated_at = ?2 WHERE id = ?1", params![id, now])?;
@@ -67,8 +58,6 @@ fn touch_target(conn: &Connection, meta: &Meta, now: i64) -> Result<(), StoreErr
     Ok(())
 }
 
-/// Adds `track` at the row's place in source order. Returns what to undo it by (the playlist
-/// item id, or the liked track id), or `None` when the target had the track already.
 fn add_to_target(conn: &Connection, meta: &Meta, position: i64, track: &Value, now: i64) -> Result<Option<String>, StoreError> {
     let fields = TrackFields::from_snapshot(track)?;
     match &meta.target_id {
@@ -124,10 +113,8 @@ fn remove_from_target(conn: &Connection, meta: &Meta, item_ref: &str) -> Result<
     Ok(())
 }
 
-/// The reason and proposal of a row from the legacy review store.
 pub type LegacyReview = (Option<String>, Option<Value>);
 
-/// A row the renderer posted: a `SourceRow`, and for `legacy` also `reason` and `proposal`.
 fn legacy_parts(value: &Value) -> Result<LegacyReview, StoreError> {
     let reason = value.get("reason").and_then(Value::as_str).map(String::from);
     if reason.as_deref().is_some_and(|r| !LEGACY_REASONS.contains(&r)) {
@@ -136,7 +123,6 @@ fn legacy_parts(value: &Value) -> Result<LegacyReview, StoreError> {
     Ok((reason, value.get("proposal").filter(|p| p.is_object()).cloned()))
 }
 
-/// Rows posted by the renderer for a link import or the legacy review store.
 pub fn parse_rows(source: &str, label: &str, rows: &[Value]) -> Result<(Parsed, Vec<LegacyReview>), StoreError> {
     let source_kind = ROW_SOURCES.iter().find(|s| **s == source).ok_or_else(|| StoreError::Invalid(format!("source must be one of: {}", ROW_SOURCES.join(", "))))?;
     if rows.len() > MAX_ROWS {
@@ -156,8 +142,6 @@ pub fn parse_rows(source: &str, label: &str, rows: &[Value]) -> Result<(Parsed, 
     Ok((Parsed { source_kind, label: label.to_string(), liked: false, rows: parsed }, legacy))
 }
 
-/// Creates the import, its target and its rows in one transaction. Rows that name a playable
-/// track are added at once; legacy review rows arrive as Missing; the rest wait for searches.
 pub fn start(conn: &Connection, parsed: &Parsed, legacy: &[LegacyReview], target: Option<Target>, now: i64) -> Result<ImportSummary, StoreError> {
     let target = target.unwrap_or(if parsed.liked { Target::Liked } else { Target::New });
     let tx = conn.unchecked_transaction()?;
@@ -187,8 +171,6 @@ pub fn start(conn: &Connection, parsed: &Parsed, legacy: &[LegacyReview], target
     Ok(result)
 }
 
-/// Writes `rows` from `first` on: rows that name a playable track are added at once, legacy
-/// review rows arrive as Missing, the rest wait for searches.
 fn insert_rows(tx: &Connection, id: &str, first: i64, parsed: &Parsed, legacy: &[LegacyReview], now: i64) -> Result<(), StoreError> {
     let meta = meta(tx, id)?;
     let mut added_any = false;
@@ -219,8 +201,6 @@ fn insert_rows(tx: &Connection, id: &str, first: i64, parsed: &Parsed, legacy: &
     Ok(())
 }
 
-/// Adds a later page of a listing that is posted in pages. What earlier pages brought stays,
-/// whatever happens to the rest of the listing.
 pub fn append(conn: &Connection, id: &str, rows: &[SourceRow], legacy: &[LegacyReview], now: i64) -> Result<ImportSummary, StoreError> {
     let tx = conn.unchecked_transaction()?;
     let meta = meta(&tx, id)?;
@@ -243,7 +223,6 @@ fn finish_if_done(conn: &Connection, id: &str) -> Result<bool, StoreError> {
     Ok(!pending)
 }
 
-/// One aggregate query for one import (`Some(id)`) or all of them, newest first.
 fn summaries(conn: &Connection, only: Option<&str>) -> Result<Vec<ImportSummary>, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT i.id, i.source_kind, i.label, i.target_kind, i.target_id, i.created_at, i.status, r.label, count(r.id),
@@ -306,12 +285,10 @@ pub fn summary(conn: &Connection, id: &str) -> Result<ImportSummary, StoreError>
     summaries(conn, Some(id))?.pop().ok_or(StoreError::NotFound("import"))
 }
 
-/// Newest first.
 pub fn list(conn: &Connection) -> Result<Vec<ImportSummary>, StoreError> {
     summaries(conn, None)
 }
 
-/// "Done" on the report: the rows go, the playlist stays.
 pub fn delete(conn: &Connection, id: &str) -> Result<(), StoreError> {
     conn.execute("DELETE FROM imports WHERE id = ?1", [id])?;
     Ok(())
@@ -331,7 +308,6 @@ fn to_pending((id, source, cascade): (i64, String, String)) -> Result<Pending, S
     Ok(Pending { id, source: serde_json::from_str(&source)?, cascade: serde_json::from_str(&cascade)? })
 }
 
-/// Labels a row from its cascade outcome and adds the match to the target.
 fn finalize(conn: &Connection, meta: &Meta, row: &Pending, position: i64, now: i64) -> Result<(), StoreError> {
     let outcome = cascade::outcome(&row.source, &row.cascade);
     let mut label = outcome.label;
@@ -361,8 +337,6 @@ fn finalize(conn: &Connection, meta: &Meta, row: &Pending, position: i64, now: i
     Ok(())
 }
 
-/// Hands the next search to a worker and leases its row for `LEASE_MS`. `Wait` when every
-/// undecided row is leased; `Done` when none is left.
 pub fn next(conn: &Connection, id: &str, now: i64) -> Result<ImportNext, StoreError> {
     let tx = conn.unchecked_transaction()?;
     let meta = meta(&tx, id)?;
@@ -382,7 +356,6 @@ pub fn next(conn: &Connection, id: &str, now: i64) -> Result<ImportNext, StoreEr
                 ImportNext::Search { row_id: row.id, search }
             }
             None => {
-                // Decided but not labelled (cannot happen through `record`); label it and ask again.
                 let position: i64 = tx.query_row("SELECT position FROM import_rows WHERE id = ?1", [row.id], |r| r.get(0))?;
                 finalize(&tx, &meta, &row, position, now)?;
                 ImportNext::Wait { wait: 100 }
@@ -403,9 +376,7 @@ pub fn next(conn: &Connection, id: &str, now: i64) -> Result<ImportNext, StoreEr
     Ok(answer)
 }
 
-/// Records the candidates of one search. `step` must be the step the worker was given, so a late
-/// answer from an expired lease cannot count twice. When the cascade is decided, the row is
-/// labelled and its match added to the target in the same transaction.
+// `step` must match the step given, so a late answer from an expired lease cannot count twice
 pub fn post_candidates(conn: &Connection, id: &str, row_id: i64, step: usize, candidates: Vec<Value>, failed: bool, now: i64) -> Result<ImportRow, StoreError> {
     if candidates.len() > MAX_CANDIDATES {
         return Err(StoreError::Invalid(format!("at most {MAX_CANDIDATES} candidates per search")));
@@ -447,7 +418,6 @@ const CSV_PAGE: usize = 500;
 const CSV_SELECT: &str = "SELECT id, position, source_json, label, score, reason, chosen_track_json, '[]', decision FROM import_rows";
 const ROW_SELECT: &str = "SELECT id, position, source_json, label, score, reason, chosen_track_json, candidates_json, decision FROM import_rows";
 
-/// `ROW_SELECT` columns before the JSON is parsed.
 type RawRow = (i64, i64, String, Option<String>, Option<i64>, Option<String>, Option<String>, String, Option<String>);
 
 fn row_from_sql(row: &Row) -> rusqlite::Result<RawRow> {
@@ -481,8 +451,6 @@ fn report_row(conn: &Connection, id: &str, row_id: i64) -> Result<ImportRow, Sto
     to_report_row(raw)
 }
 
-/// Report rows in source order. `filter`: `review` (Check and Missing nobody decided on, the
-/// default chip), `matched`, `all`, or one label. The cursor is the last position served.
 pub fn rows(conn: &Connection, id: &str, filter: &str, cursor: Option<&str>, limit: usize) -> Result<ImportRowsPage, StoreError> {
     meta(conn, id)?;
     let condition = match filter {
@@ -509,9 +477,6 @@ pub fn rows(conn: &Connection, id: &str, filter: &str, cursor: Option<&str>, lim
     Ok(ImportRowsPage { items, next_cursor })
 }
 
-/// One click on a report row, applied to the target in the same transaction:
-/// `use` adds a Missing row's proposal, `pick` swaps in another track, `remove` takes the match
-/// out of the target, `keep` marks a Check row as reviewed.
 pub fn decide(conn: &Connection, id: &str, row_id: i64, decision: &str, track: Option<&Value>, now: i64) -> Result<ImportRow, StoreError> {
     let tx = conn.unchecked_transaction()?;
     let meta = meta(&tx, id)?;
@@ -562,8 +527,6 @@ pub fn decide(conn: &Connection, id: &str, row_id: i64, decision: &str, track: O
     Ok(result)
 }
 
-/// `accept-check` keeps every undecided Check row; `retry-failed` sends rows whose search failed
-/// back to the workers (for example after setting a proxy).
 pub fn bulk(conn: &Connection, id: &str, action: &str) -> Result<ImportSummary, StoreError> {
     let tx = conn.unchecked_transaction()?;
     meta(&tx, id)?;
@@ -587,8 +550,7 @@ pub fn bulk(conn: &Connection, id: &str, action: &str) -> Result<ImportSummary, 
     Ok(result)
 }
 
-/// A spreadsheet cell: quoted when needed, and a leading `=`, `+`, `-`, `@`, tab or CR gets a `'`
-/// so a spreadsheet never runs a title as a formula.
+// A leading =, +, -, @, tab or CR gets a ' so a spreadsheet never runs it as a formula
 fn csv_cell(text: &str) -> String {
     let text = if text.starts_with(['=', '+', '-', '@', '\t', '\r']) { format!("'{text}") } else { text.to_string() };
     if text.contains([',', '"', '\n', '\r']) { format!("\"{}\"", text.replace('"', "\"\"")) } else { text }
@@ -598,7 +560,6 @@ fn names(track: &Value) -> String {
     track["artists"].as_array().into_iter().flatten().filter_map(|a| a["name"].as_str()).collect::<Vec<_>>().join("; ")
 }
 
-/// Every source and match field, the label, the score and the reason, one row per source line.
 pub fn report_csv(conn: &Connection, id: &str) -> Result<String, StoreError> {
     meta(conn, id)?;
     let mut out = String::from("position,source_title,source_artists,source_album,source_duration_ms,label,score,reason,decision,match_id,match_title,match_artists,match_duration_ms\n");

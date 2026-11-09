@@ -1,6 +1,4 @@
-// Nuvo for Waybar: add "group/nuvo" to modules-left, modules-center or modules-right,
-// and paste these module definitions into your config. The path assumes Nuvo's one-click
-// setup, which copies this folder to ~/.config/waybar/nuvo.
+// Add group/nuvo to a modules list; the path assumes the one-click setup in ~/.config/waybar/nuvo
 {
   "group/nuvo": {
     "orientation": "horizontal",

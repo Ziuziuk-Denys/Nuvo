@@ -1,4 +1,3 @@
-/** Start-up helpers and the main window controller. Electron objects come in as narrow interfaces. */
 import path from "node:path";
 import {
   chromiumSwitches,
@@ -25,8 +24,7 @@ export interface AppLike {
 /** Reverse DNS of nuvo.quest: build.appId, the .desktop name, the Flatpak and AppStream id, and the Windows AppUserModelID. */
 export const APP_ID = "quest.nuvo.Nuvo";
 
-/** The profile lives at <appData>/@nuvo/client, fixed: neither the package name nor the app name ("Nuvo", MPRIS identity) may move it.
- * An explicit --user-data-dir (dev and test runs) is honoured, so they never touch the real profile. */
+// Fixed profile path: no package or app name may move it; an explicit --user-data-dir is honoured
 export function keepUserData(app: AppLike): void {
   const explicit = app.commandLine.hasSwitch("user-data-dir") ? app.commandLine.getSwitchValue("user-data-dir") : "";
   const dir = explicit || path.join(app.getPath("appData"), "@nuvo", "client");
@@ -38,7 +36,6 @@ export function applySwitches(app: AppLike, nativeWayland: boolean): void {
   for (const [name, value] of chromiumSwitches(nativeWayland)) app.commandLine.appendSwitch(name, value);
 }
 
-/** Without the lock: one line, quit, no window. */
 export function takeInstanceLock(app: AppLike, print: (line: string) => void): boolean {
   if (app.requestSingleInstanceLock()) return true;
   print("Nuvo is already running");
@@ -101,7 +98,6 @@ export class MainWindowController {
     return this.win && !this.win.isDestroyed() ? this.win : null;
   }
 
-  /** The only way the window comes back: create, restore, show, focus. */
   show(): void {
     if (!this.window) this.win = this.build();
     const win = this.win!;
@@ -192,7 +188,6 @@ export class MainWindowController {
   }
 }
 
-/** A second launch: relaunch when quitting, else show and deliver the link. */
 export function onSecondInstance(
   argv: string[],
   deps: { quitting: boolean; app: AppLike; show(): void; receiveLink(raw: string | null): void; findLink(argv: string[]): string | null },
@@ -206,7 +201,6 @@ export function onSecondInstance(
   deps.receiveLink(deps.findLink(argv));
 }
 
-/** The first crash in a minute reloads; a repeat leaves the window up with a notice instead of a silent dead page. */
 export function crashRecovery(reloadAllowed: boolean): "reload" | "notice" {
   return reloadAllowed ? "reload" : "notice";
 }
@@ -218,7 +212,6 @@ export interface Rect {
   height: number;
 }
 
-/** Saved bounds are kept only when they still overlap a display; the size is clamped to that display's work area. Otherwise: default size, centred on the primary display. */
 export function restoreBounds(saved: Rect | null, workAreas: Rect[], primary: Rect, defaults: { width: number; height: number }): Rect {
   const fit = (area: Rect, size: { width: number; height: number }): Rect => {
     const width = Math.min(size.width, area.width);
@@ -226,7 +219,6 @@ export function restoreBounds(saved: Rect | null, workAreas: Rect[], primary: Re
     return { x: area.x + Math.round((area.width - width) / 2), y: area.y + Math.round((area.height - height) / 2), width, height };
   };
   if (!saved || !(saved.width > 0 && saved.height > 0) || ![saved.x, saved.y].every(Number.isFinite)) return fit(primary, defaults);
-  // a window counts as visible when at least 100 px of it overlap a work area
   const target = workAreas.find(
     (a) =>
       Math.min(saved.x + saved.width, a.x + a.width) - Math.max(saved.x, a.x) >= 100 &&
@@ -245,10 +237,6 @@ export interface ContentsLike {
   setWindowOpenHandler(handler: (details: { url: string }) => { action: "deny" }): void;
 }
 
-/**
- * Applied to every web contents the app creates (main, Notch, YouTube worker): no window ever opens and navigation stays
- * on the `allowed` pages. Only blocks; the main window's controller adds its browser rule for the user's own clicks.
- */
 export function guardContents(contents: ContentsLike, allowed: (url: string) => boolean): void {
   contents.setWindowOpenHandler(() => ({ action: "deny" }));
   for (const name of ["will-navigate", "will-frame-navigate", "will-redirect"]) {

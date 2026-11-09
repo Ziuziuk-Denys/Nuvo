@@ -31,7 +31,6 @@ interface HeadLayout {
   actionsOverlap: boolean;
 }
 
-/** The head's boxes, the title's line count, whether it is lit, and the rows' numerals and spill. */
 async function measure(page: Page): Promise<HeadLayout> {
   return page.evaluate(() => {
     const head = document.querySelector<HTMLElement>("header:has(h1)")!;
@@ -58,7 +57,6 @@ async function measure(page: Page): Promise<HeadLayout> {
         })
         .map((child) => `${row.textContent?.slice(0, 30)}: ${child.className}`);
     });
-    // the column's last block holds the actions: the buttons, then the tools on the right
     const actions = head.children[1].lastElementChild!;
     const buttons = actions.children[0].getBoundingClientRect();
     const tools = actions.children[1]?.getBoundingClientRect();
@@ -68,11 +66,9 @@ async function measure(page: Page): Promise<HeadLayout> {
       coverSize: cover.width,
       titleLines: lineTops.size,
       playBottom: play.bottom,
-      // a lit page runs on under the glass player instead of stopping above it
       lit: document.querySelector("[data-player-below]") === null,
       glass,
       rowHeights: visible.map((row) => row.getBoundingClientRect().height),
-      // the leading cell (cover or number) and the meta (duration, the row's last child) keep one edge each
       numberRights: visible.map((row) => row.firstElementChild!.getBoundingClientRect().right),
       durationRights: visible.map((row) => row.lastElementChild!.getBoundingClientRect().right),
       rowsInDom: rows.length,
@@ -83,7 +79,6 @@ async function measure(page: Page): Promise<HeadLayout> {
 }
 
 function expectSharedLayout(layout: HeadLayout, where: string): void {
-  // every shot size is under the wide-gutter width
   expect(layout.coverLeft, `${where}: cover 4 px in from the gutter`).toBe(contentLeft(1200) + ENTITY_OFFSET.x);
   expect(layout.coverSize, `${where}: 168 px cover, 144 for an artist`).toBe(where.startsWith("artist") ? COVER.heroCircle : COVER.hero);
   expect(layout.glass, `${where}: no glass in the head`).toEqual([]);
@@ -103,7 +98,6 @@ async function openPlaylist(live: NuvoSession, id: string, title: string): Promi
   await live.page.waitForTimeout(600);
 }
 
-/** The player resumes a track from the 24-song playlist, so that page is lit by the song playing from it. */
 async function playFromSmall(page: Page, smallId: string): Promise<void> {
   // a pending debounced store write would land after ours and replace it, so let it flush first
   await page.waitForTimeout(1_100);
@@ -141,7 +135,6 @@ describe("Playlist page", () => {
         const layout = await measure(live.page);
         const where = `${playlist.screen} ${size.width}`;
         expectSharedLayout(layout, where);
-        // seeded tracks carry real covers, so the playlist's cover lights the page under the default cover glow
         expect(layout.lit, `${where}: lit`).toBe(true);
         if (playlist.screen === "playlist-300") expect(layout.rowsInDom, `${where}: virtualised`).toBeLessThan(60);
         expect(layout.playBottom, `${where}: Play above the fold`).toBeLessThan(size.height - 96);
@@ -149,7 +142,6 @@ describe("Playlist page", () => {
       await live.shoot(STEP, playlist.screen, "rest", { prepare });
     }
 
-    // the playing row under the pointer shows pause; a hovered row shows like, add and more
     const wide = SIZES.find((entry) => entry.width === 1200)!;
     const prepare = async () => {
       await openPlaylist(live, seed.smallPlaylistId, "Morning");
@@ -164,7 +156,6 @@ describe("Playlist page", () => {
     const live = session ?? (await launchNuvo({ profile: "seeded" }));
     session = live;
     const port = await coverBase();
-    // http covers survive mediaUrl, so this playlist has a cover of its own to be lit by (seeds 9-11: blue, violet, green)
     const tracks = [9, 10, 11].map((index) => ({ ...trackSnapshot(index), cover: { url: `http://127.0.0.1:${port}/${index}.svg` } }));
     const id = (await live.core(
       `const created = await fetch(base + "/v1/me/playlists", { method: "POST", headers: json, body: JSON.stringify({ title: ${JSON.stringify(LONG_RU)} }) });
@@ -213,7 +204,6 @@ interface HeadBox {
   coverRadius: string;
 }
 
-/** The head's cover and title boxes, measured with the page scrolled to the top. */
 async function headBox(page: Page): Promise<HeadBox> {
   return page.evaluate(() => {
     const head = document.querySelector<HTMLElement>("header:has(h1)")!;
@@ -244,7 +234,6 @@ describe("Album and artist pages", () => {
     const openArtist = async () => {
       await live.go(`#/artist?id=${QUEEN}`);
       await live.page.locator("[data-entity=artist] h1").filter({ hasText: "Queen" }).waitFor({ timeout: 30_000 });
-      // a cold catalog can take a while on the first visit
       await live.page.locator("[data-track-row]").first().waitFor({ timeout: 60_000 });
       await live.page.waitForTimeout(600);
     };
@@ -303,7 +292,6 @@ describe("Album and artist pages", () => {
         const sheet = document.querySelector('[class*="_tracks_"]')!.getBoundingClientRect();
         return { dx: line.left + line.width / 2 - (sheet.left + sheet.width / 2), inside: line.top > sheet.top && line.bottom < sheet.bottom };
       });
-      // the empty line sits in the middle of the tracks' sheet
       expect(Math.abs(place.dx), `empty ${size.width}: centred in the sheet`).toBeLessThan(1);
       expect(place.inside, `empty ${size.width}: inside the sheet`).toBe(true);
     }

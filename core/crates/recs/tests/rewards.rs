@@ -60,7 +60,6 @@ fn skip_penalties_follow_context_and_browsing() {
     assert_eq!(reward_of(&conn, "own"), -0.5);
     assert_eq!(reward_of(&conn, "foreign"), -1.0);
 
-    // Four skips in five plays: browsing, so penalties are halved; the finished play keeps +1.
     for i in 0..4 {
         play(&conn, &format!("b{i}"), "B", "browse", t + 10 + i, skip(1000));
     }

@@ -1,10 +1,8 @@
-/** Linux: Nuvo's playback streams as the system mixer (PulseAudio or PipeWire) holds them, to tell a stream muted there from a silent one. */
 import { execFile } from "node:child_process";
 
 export interface MixerInput {
   index: number;
   muted: boolean;
-  /** Every channel at 0 %: as silent as a mute. */
   zeroVolume: boolean;
 }
 

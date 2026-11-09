@@ -5,7 +5,6 @@
   min-width: 0;
 }
 
-/* a 20 px hit area around the 4 px track */
 .control {
   position: relative;
   flex: 1;
@@ -30,7 +29,6 @@
   background: var(--n-switch);
 }
 
-/* The rail spans the knob centre's travel (7 px in from each end); --p moves its left edge along it. */
 .rail {
   position: absolute;
   inset: 0 7px;
@@ -38,7 +36,6 @@
   pointer-events: none;
 }
 
-/* ends at the knob centre and reaches back past the track start; the track clips it */
 .fill {
   position: absolute;
   top: 0;

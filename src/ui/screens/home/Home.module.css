@@ -1,21 +1,17 @@
-/* Home: the mix row, the quick picks and the shelves, one column under the shell's top band. */
 .home {
   display: flex;
   flex-direction: column;
   gap: 22px;
 }
 
-/* a text button's words start on the column's edge; its hover tint reaches into the margin */
 .textAction {
   margin-inline-start: -16px;
 }
 
-/* a slot or shelf with nothing to show takes no gap */
 .home > :empty {
   display: none;
 }
 
-/* the lead mix and the daily mixes share one sideways row, captions on one baseline */
 .mixes {
   display: flex;
   align-items: flex-end;

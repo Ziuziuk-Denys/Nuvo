@@ -1,4 +1,3 @@
-/** Plain texts for failed imports and listing notices, as i18n keys under `ui.imports`. */
 import type { Message } from "./report";
 import { ImportError, type ListingNotice, type RowSource } from "./types";
 

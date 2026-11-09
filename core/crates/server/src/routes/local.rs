@@ -1,5 +1,4 @@
-//! `/v1/local/*` for the renderer and `/v1/fs/local/*` for Electron main (the bridge refuses
-//! `fs` paths, so only native dialogs choose folders).
+// The bridge refuses fs paths, so only native dialogs choose folders
 
 use std::io::SeekFrom;
 use std::path::{Path as FsPath, PathBuf};
@@ -38,11 +37,9 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/fs/local/tracks/{id}/path", get(file_path))
 }
 
-/// System folders are never music folders.
 const SYSTEM_DIRS: [&str; 12] = ["/proc", "/sys", "/dev", "/run", "/boot", "/etc", "/usr", "/bin", "/sbin", "/lib", "/lib64", "/var/lib"];
 
-/// Why `path` (canonical) cannot be a music folder; `own` are Nuvo's data and cache folders. A
-/// folder that holds them is refused too: a scan would read the library and cache files.
+// A folder that holds Nuvo's own folders is refused: a scan would read the library and cache
 pub fn refused_folder(path: &FsPath, own: &[&FsPath]) -> Option<&'static str> {
     if own.iter().filter(|dir| !dir.as_os_str().is_empty()).any(|dir| dir.starts_with(path)) {
         return Some("a folder that holds Nuvo's own data cannot be a music folder");
@@ -50,7 +47,6 @@ pub fn refused_folder(path: &FsPath, own: &[&FsPath]) -> Option<&'static str> {
     refused_target(path, own)
 }
 
-/// Why `path` (canonical) cannot receive saved files: the disk root, system folders, Nuvo's own data.
 pub fn refused_target(path: &FsPath, own: &[&FsPath]) -> Option<&'static str> {
     if path == FsPath::new("/") {
         return Some("the whole disk cannot be a music folder");
@@ -154,8 +150,7 @@ pub(crate) struct Opened {
     pub path: PathBuf,
 }
 
-/// Opens a scanned file only while it is still a regular file at its scanned place inside its
-/// music folder: not a link, no parent swapped for a link, the same inode that was checked.
+// Opens only a regular file at its scanned place: no link, no swapped parent, the same inode
 pub(crate) async fn open_inside(path: &str, root: &str) -> Result<Opened, ApiError> {
     let gone = || ApiError::NotFound("the file is gone".into());
     let (checked, checked_root) = (PathBuf::from(path), PathBuf::from(root));
@@ -234,7 +229,6 @@ async fn cover(State(state): State<AppState>, Path(id): Path<String>, Query(q): 
     local_cover(&state, id, bucket, &headers).await
 }
 
-/// A local file's cover at a display bucket: embedded, else the folder's image.
 pub(crate) async fn local_cover(state: &AppState, id: String, bucket: u32, headers: &HeaderMap) -> Result<Response, ApiError> {
     let local = found(state, id.clone()).await?;
     let opened = open_inside(&local.row.path, &local.root_path).await?;
@@ -266,7 +260,6 @@ struct FilePath {
     path: String,
 }
 
-/// Main only: where a local track lives, to show it in the file manager.
 async fn file_path(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<FilePath>, ApiError> {
     let local = found(&state, id).await?;
     let opened = open_inside(&local.row.path, &local.root_path).await?;

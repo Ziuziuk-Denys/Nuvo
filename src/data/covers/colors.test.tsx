@@ -91,7 +91,6 @@ describe("createCoverColors", () => {
   it("shows the defaults until the colours are read", async () => {
     let finish!: (value: Uint8ClampedArray) => void;
     const { useCoverColors } = createCoverColors(() => new Promise<Uint8ClampedArray>((resolve) => (finish = resolve)));
-    // a holder, because TypeScript keeps a `let x = null` narrowed to null across the render callback
     const seen: { colors: CoverColors | null } = { colors: null };
     function Probe({ url }: { url?: string }) {
       seen.colors = useCoverColors(url);

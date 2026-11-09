@@ -1,6 +1,5 @@
 import recorded from "./presetTokens.json";
 
-/** The built-in looks: colours recorded from the running app, icons from the brand set. */
 export type PresetId = "nuvo" | "editor" | "orbit" | "vinyl" | "cosmos" | "sunset" | "amethyst" | "y2k" | "cassette";
 export type PresetMode = "light" | "dark";
 export type Tokens = Record<string, string>;

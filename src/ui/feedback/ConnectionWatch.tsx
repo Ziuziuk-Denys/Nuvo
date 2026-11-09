@@ -7,11 +7,7 @@ import { useToastStore } from "./toastStore";
 
 const FIRST_CHECK_MS = 5000;
 
-/**
- * Runs the network check once after start and whenever playback asks; says each thing once until the network changes.
- * The first check waits for the tour: a toast under its layer would fade unread, and a first launch is where a blocked
- * YouTube matters most.
- */
+// The first check waits for the tour: a toast under its layer would fade unread
 export function ConnectionWatch() {
   const { t } = useTranslation();
   const tourOff = useTour((state) => state.phase === "off");

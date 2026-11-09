@@ -1,5 +1,4 @@
-/* The state card: the window behind dims and softly blurs, one sheet of the dialog glass floats in the middle.
-   Above the sheets (900), under the toast slot (1000), so a status line can still speak over it. */
+/* Above the sheets (900), under the toast slot (1000), so a status line still shows over it */
 .layer {
   position: fixed;
   inset: 0;
@@ -25,7 +24,6 @@
   background: rgba(0, 0, 0, 0.35);
 }
 
-/* the strip the top bar drags by, with the window buttons drawn sharp over the dim */
 .top {
   position: fixed;
   top: 0;

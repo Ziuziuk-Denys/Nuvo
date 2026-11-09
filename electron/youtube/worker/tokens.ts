@@ -1,4 +1,3 @@
-/** PO token minting and the TV identity, inside the worker document. */
 import { COBALT_UA, CONTENT_REQUEST_KEY, PLAYER_PATH, UA_HEADER, WEB } from "../../../src/youtube/constants";
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -14,7 +13,6 @@ export interface Minter {
   mint(identifier: string): Promise<string>;
 }
 
-/** The BotGuard VM and minter, behind a seam so the flow runs under fakes. Production: bgutils-js. */
 export interface BotGuard {
   snapshot(challenge: Challenge, interpreter: string): Promise<{ response: string; signalOutput: unknown[] }>;
   minter(integrityToken: string, ttlSecs: number, refreshSecs: number | undefined, signalOutput: unknown[]): Promise<Minter>;
@@ -22,7 +20,6 @@ export interface BotGuard {
 
 export interface TokenEnv {
   fetch: FetchLike;
-  /** Interpreter script text, downloaded by main (`nuvo-yt:script`). */
   loadInterpreter(url: string): Promise<string>;
   botguard: BotGuard;
   apiKey: string;
@@ -38,7 +35,6 @@ export function deadlineFor(now: number, ttlSecs: number | null | undefined): nu
   return Math.max(now + ttl * 1000 - DEADLINE_MARGIN_MS, now + MIN_LIFETIME_MS);
 }
 
-/** Reads a `bgChallenge` object in the shape YouTube sends it. */
 export function readChallenge(raw: unknown): Challenge {
   const value = raw as Record<string, Record<string, string> | string | undefined> | undefined;
   const program = value?.program;
@@ -56,7 +52,6 @@ export function readChallenge(raw: unknown): Challenge {
 
 const websafe = (token: string) => token.replace(/\+/g, "-").replace(/\//g, "_");
 
-/** Challenge → BotGuard → GenerateIT → minter; returns the minter with its deadline. */
 async function createMinter(env: TokenEnv, challenge: Challenge, requestKey: string): Promise<{ minter: Minter; deadline: number }> {
   const interpreter =
     challenge.interpreterJavascript ??
@@ -81,7 +76,6 @@ async function createMinter(env: TokenEnv, challenge: Challenge, requestKey: str
   return { minter, deadline: deadlineFor((env.now ?? Date.now)(), ttl) };
 }
 
-/** One value with a deadline, created single flight; a failure or an expired deadline goes back to empty. */
 class Slot<T> {
   private current: { value: T; deadline: number } | null = null;
   private creating: Promise<{ value: T; deadline: number }> | null = null;
@@ -152,7 +146,6 @@ export interface TvIdentity {
   signatureTimestamp: number;
 }
 
-/** A JSON string body as it appears in the page, with escapes such as `=` resolved. */
 const unescape = (raw: string) => JSON.parse(`"${raw}"`) as string;
 
 function pageField(page: string, name: string): string {

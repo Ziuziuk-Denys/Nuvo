@@ -62,7 +62,6 @@ fn side_gate_envelope_and_channel_math() {
     assert_eq!(plan::envelope(&[]), vec![0.0; 48]);
 }
 
-/// Stereo test audio: identical channels, or a different tone on each side.
 struct Fake {
     wide: bool,
     silent: bool,

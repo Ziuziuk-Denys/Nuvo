@@ -1,5 +1,3 @@
-//! Catalog reads: tracks, related tracks, sets, artist pages, link lookup, and the raw reads imports need.
-
 use std::collections::HashMap;
 
 use nuvo_contracts::catalog::{AlbumDetails, ArtistDetails, Page, PlaylistDetails, SearchResult, SetSummary, Track, TrackDetails};
@@ -85,19 +83,15 @@ impl SoundCloud {
         map::track_details(&record).ok_or(ScError::NotFound)
     }
 
-    /// Track records matching a text query, newest API order; any failure is an error for the caller to count.
     pub async fn search_tracks(&self, query: &str, limit: usize) -> Result<Vec<Value>, ScError> {
         let listing = self.record("search/tracks", &[("q", query.to_string()), ("limit", limit.to_string())]).await?;
         Ok(collection(&listing).0)
     }
 
-    /// Radio seeds. Any failure of the listing is an empty list.
     pub async fn related(&self, id: &str, limit: usize) -> Result<Vec<Track>, ScError> {
         Ok(self.try_related(id, limit).await.unwrap_or_default())
     }
 
-    /// Related tracks where an empty list means SoundCloud has none (also a track it no longer knows)
-    /// and any other failure stays an error, so callers can tell a miss from an outage.
     pub async fn try_related(&self, id: &str, limit: usize) -> Result<Vec<Track>, ScError> {
         let num = track_num(id)?;
         let listing = match self.api(&format!("tracks/{num}/related"), &linked(limit)).await {
@@ -108,7 +102,6 @@ impl SoundCloud {
         Ok(collection(&listing).0.iter().filter_map(map::track).take(limit).collect())
     }
 
-    /// Up to 50 full track records in one call, for imports and placeholder filling.
     pub async fn tracks_by_ids(&self, nums: &[u64]) -> Result<Vec<Value>, ScError> {
         let joined = nums.iter().map(u64::to_string).collect::<Vec<_>>().join(",");
         let answer = self.api("tracks", &[("ids", joined)]).await?;
@@ -209,7 +202,6 @@ impl SoundCloud {
         Ok(map::cover(user.get("avatar_url").and_then(Value::as_str)).map(|c| c.url))
     }
 
-    /// The raw entity behind a SoundCloud link (`kind` decides what it is).
     pub async fn resolve_raw(&self, input: &str) -> Result<Value, ScError> {
         let canonical = match link::parse(input).ok_or_else(|| ScError::Invalid(input.trim().to_string()))? {
             Link::Canonical(url) => url,
@@ -225,7 +217,6 @@ impl SoundCloud {
         Some(url.to_string())
     }
 
-    /// Zero or one result; every failure is "no results".
     pub async fn lookup(&self, input: &str, filter: TypeFilter) -> Vec<SearchResult> {
         let Ok(entity) = self.resolve_raw(input).await else { return Vec::new() };
         let result = match entity.get("kind").and_then(Value::as_str) {
@@ -246,7 +237,6 @@ impl SoundCloud {
         result.into_iter().filter(|r| filter.accepts(r)).collect()
     }
 
-    /// One page of a user's likes (50 per page); `next` is the previous page's `next`.
     pub async fn likes_page(&self, user: u64, next: Option<&str>) -> Result<LikesPage, ScError> {
         let path = match next {
             Some(next) => {

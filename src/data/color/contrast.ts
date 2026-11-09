@@ -20,7 +20,6 @@ export function parseColor(value: string): Rgba {
   throw new Error(`unsupported color ${value}`);
 }
 
-/** Paints `top` over an opaque `bottom`. */
 export function composite(top: Rgba, bottom: Rgba): Rgba {
   const mix = (t: number, b: number) => t * top.a + b * (1 - top.a);
   return { r: mix(top.r, bottom.r), g: mix(top.g, bottom.g), b: mix(top.b, bottom.b), a: 1 };
@@ -35,7 +34,6 @@ export function luminance({ r, g, b }: Rgba): number {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
-/** WCAG contrast ratio of a possibly translucent foreground over an opaque background. */
 export function contrastRatio(foreground: string, background: string): number {
   const bg = parseColor(background);
   const fg = composite(parseColor(foreground), bg);

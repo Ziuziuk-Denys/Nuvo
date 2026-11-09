@@ -1,7 +1,3 @@
-//! `POST /v1/links/inspect`: what a pasted link holds, without downloading audio. TikTok posts are read
-//! by the TikTok extractor, short links of a few services are followed, everything else goes to yt-dlp
-//! with recognize's fixed argument list. Failures answer `200 {"error": code}` with recognize's codes.
-
 use std::time::Instant;
 
 use axum::extract::State;
@@ -18,7 +14,6 @@ use crate::extract::JsonBody;
 use crate::links::Inspected;
 use crate::state::AppState;
 
-/// Short-link hosts whose redirects are followed (each hop checked); the renderer routes the target.
 pub const SHORT_HOSTS: [&str; 4] = ["deezer.page.link", "link.deezer.com", "spotify.link", "on.soundcloud.com"];
 
 pub fn routes() -> Router<AppState> {
@@ -76,7 +71,6 @@ pub fn is_short_link(host: &str) -> bool {
     SHORT_HOSTS.contains(&host)
 }
 
-/// The post's own address, which TikTok's extractor reads without a redirect.
 fn tiktok_url(id: &str) -> String {
     format!("https://www.tiktok.com/@i/video/{id}")
 }

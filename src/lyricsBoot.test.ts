@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { LRC_TWO, track } from "./lyrics/test/events";
 
-// the player engine as lyricsBoot sees it: a position, a play state and a tempo that tests move
 const player = {
   position: 0,
   status: "paused",

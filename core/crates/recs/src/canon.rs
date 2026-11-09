@@ -1,10 +1,6 @@
-//! Canonical keys: one work key per song across its uploads, plus the variant an upload is.
-
 use deunicode::deunicode;
 
-/// Variant tags in the order of `VERSION_PATTERNS` in `src/shared/media/matching/versionTags.ts`.
-/// Spellings are word sequences matched on the lower-cased title before transliteration, so the
-/// Russian forms match too.
+// Order and spellings must match VERSION_PATTERNS in src/shared/media/matching/versionTags.ts
 const VARIANT_TAGS: &[(&str, &[&str])] = &[
     ("remix", &["remix", "remixed", "ремикс", "rmx"]),
     ("vip", &["vip", "v i p"]),
@@ -23,7 +19,6 @@ const VARIANT_TAGS: &[(&str, &[&str])] = &[
     ("bass_boosted", &["bass boost", "bass boosted", "bassboost", "bassboosted", "басс буст"]),
 ];
 
-/// Words that start a credit clause; everything from them to the end of the title is dropped.
 const CREDIT_WORDS: [&str; 4] = ["feat", "ft", "featuring", "prod"];
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,7 +34,6 @@ pub struct Canon {
     pub variant: Option<Variant>,
 }
 
-/// Lower-cased words, split on anything that is not a letter or digit (any script).
 fn words(text: &str) -> Vec<String> {
     text.to_lowercase()
         .split(|c: char| !c.is_alphanumeric())
@@ -48,7 +42,6 @@ fn words(text: &str) -> Vec<String> {
         .collect()
 }
 
-/// Position of the first occurrence of `phrase` (space-separated words) in `words`.
 fn find_phrase(words: &[String], phrase: &str) -> Option<(usize, usize)> {
     let needle: Vec<&str> = phrase.split(' ').collect();
     words
@@ -57,7 +50,6 @@ fn find_phrase(words: &[String], phrase: &str) -> Option<(usize, usize)> {
         .map(|start| (start, needle.len()))
 }
 
-/// ASCII transliteration, lower case, words joined by single spaces.
 pub fn normalize(text: &str) -> String {
     deunicode(text)
         .to_ascii_lowercase()
@@ -77,7 +69,6 @@ pub fn version_tags(title: &str) -> Vec<&'static str> {
         .collect()
 }
 
-/// The first tag in `segment` and who made it: the words before the tag, or after "by".
 fn variant_of(segment: &str) -> Option<Variant> {
     let words = words(segment);
     let (kind, start, len) = VARIANT_TAGS.iter().find_map(|(tag, spellings)| {
@@ -93,7 +84,6 @@ fn variant_of(segment: &str) -> Option<Variant> {
     Some(Variant { kind, by: (!by.is_empty()).then_some(by) })
 }
 
-/// The channel or primary artist without " - Topic" and a trailing "VEVO".
 pub fn artist_key(artist: &str) -> String {
     let trimmed = artist.trim();
     let cut = trimmed.len().saturating_sub(8);
@@ -105,8 +95,7 @@ pub fn artist_key(artist: &str) -> String {
     }
 }
 
-/// Numbers of an untagged bracket segment that tell works apart: "Part 2", "Vol. 3". Years
-/// ("2019 Remaster"), "4K" and credit clauses ("feat. 2 Chainz") are not part of the work.
+// Years ("2019 Remaster"), "4K" and credit clauses ("feat. 2 Chainz") are not part of the work
 fn work_numbers(segment: &str, numbers: &mut Vec<String>) {
     let text = normalize(segment);
     let words: Vec<&str> = text.split(' ').collect();
@@ -128,8 +117,6 @@ pub fn canon(title: &str, artist: &str) -> Canon {
     let mut rest = String::new();
     let mut segment = String::new();
     let mut depth = 0usize;
-    // Bracketed segments are dropped; the first one carrying a tag names the variant, and
-    // untagged ones keep their numbers.
     for ch in title.chars() {
         match ch {
             '(' | '[' | '{' | '【' => {
@@ -181,10 +168,7 @@ pub fn canon(title: &str, artist: &str) -> Canon {
     Canon { work_key, artist_key: channel, variant }
 }
 
-/// How strongly two uploads are the same song: 1.0 same work, 0.5 a cover (same title, other
-/// artist), 0.0 different. Short titles (4 characters or fewer) must match exactly; a fuzzy
-/// title match needs the same artist, the same numbers ("Part 1" is not "Part 2") and, when both
-/// durations are known, lengths within 3 %.
+// 1.0 same work, 0.5 a cover (same title, other artist), 0.0 different
 pub fn same_work(a: (&str, &str, i64), b: (&str, &str, i64)) -> f64 {
     let (a_work, a_artist, a_ms) = a;
     let (b_work, b_artist, b_ms) = b;

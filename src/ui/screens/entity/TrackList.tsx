@@ -14,32 +14,22 @@ import { formatDuration, type TrackMatch } from "./entityModel";
 import type { TrackSelection } from "./trackSelection";
 import styles from "./TrackList.module.css";
 
-/** A cover row, and a numbered row with no artist line. */
 const ROW_PX = 64;
 const SHORT_ROW_PX = 44;
-/** Up to this many rows render in full; past it the list keeps a flat DOM on the shell scroller. */
 const VIRTUAL_FROM = 100;
 
 export interface TrackListProps {
-  /** The rows shown, each with its place in the full list (a filter keeps the original numbers). */
   tracks: TrackMatch<Track>[];
-  /** Album order: the track number instead of the cover. */
   numbered?: boolean;
-  /** One artist made every track: no artist line under the titles. */
   hideArtists?: boolean;
   currentId: string | null;
-  /** Whether the current track is sounding: its index turns into pause or play on hover. */
   playing?: boolean;
-  /** Plays from the track at this place in the full list. */
   onPlay: (index: number) => void;
   onTogglePlay?: () => void;
-  /** Own playlists in their own order: drag, or Alt+ArrowUp/Down, moves a row. */
   onReorder?: (from: number, to: number) => void;
   unavailable?: (track: Track) => string | null;
   onMenu: (track: Track, anchor: HTMLElement | null, at?: { x: number; y: number }) => void;
-  /** The row whose menu is open: it keeps its fill while the menu is up. */
   selectedKey?: string | null;
-  /** Shift, Ctrl and keyboard selection; absent where a list has no bulk actions. */
   selection?: TrackSelection;
 }
 
@@ -47,7 +37,6 @@ export function trackKey(match: TrackMatch<Track>): string {
   return match.track.playlistItemId ?? `${match.track.id}:${match.index}`;
 }
 
-// a press on the index glyph is the glyph's, never the row's
 function stop(event: SyntheticEvent) {
   event.stopPropagation();
 }
@@ -74,7 +63,6 @@ function IndexCell({ number, current, playing, onToggle, t }: { number: number; 
   );
 }
 
-/** 64 px track rows: cover (or number), title over artist, duration and the dots; 44 px when numbered without artists. */
 export function TrackList({
   tracks,
   numbered = false,
@@ -119,7 +107,6 @@ export function TrackList({
   });
   const listTop = drag.isDragging ? (listRef.current?.getBoundingClientRect().top ?? 0) : 0;
 
-  // where a row sits while another is dragged: rows between the gap and the grab make room
   const offsetOf = (position: number): number => {
     const { dragIndex, dropIndex } = drag;
     if (!drag.isDragging || dragIndex === null || dropIndex === null) return 0;
@@ -128,7 +115,6 @@ export function TrackList({
     return 0;
   };
 
-  // Ctrl and Shift pick rows for the bulk bar; a plain click plays and lets the picks go
   const onRowClick = (event: MouseEvent<HTMLDivElement>, position: number) => {
     if (!selection) return;
     const ctrl = event.ctrlKey || event.metaKey;

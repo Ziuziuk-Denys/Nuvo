@@ -1,12 +1,7 @@
-/**
- * The Nuvo icon set: closed name list, raw SVG markup and the stroke per optical size.
- * Drawings live in ./svg on a 24 grid with currentColor. Filled glyphs come from MingCute (Apache-2.0) and
- * Solar by 480 Design (CC BY 4.0), line glyphs from Lucide (ISC); filled paths carry stroke="none".
- */
+// Filled glyphs: MingCute (Apache-2.0), Solar by 480 Design (CC BY 4.0); line: Lucide (ISC)
 const files = import.meta.glob<string>("./svg/*.svg", { query: "?raw", import: "default", eager: true });
 
 export const ICON_NAMES = [
-  // transport
   "play",
   "pause",
   "next",
@@ -20,7 +15,6 @@ export const ICON_NAMES = [
   "lyrics",
   "playlist-add",
   "now-playing",
-  // sound
   "equalizer",
   "speed",
   "sleep",
@@ -34,7 +28,6 @@ export const ICON_NAMES = [
   "recognize",
   "radio",
   "reverb",
-  // navigation
   "home",
   "library",
   "search",
@@ -45,7 +38,6 @@ export const ICON_NAMES = [
   "chevron-up",
   "history",
   "stats",
-  // entity
   "playlist",
   "album",
   "artist",
@@ -54,7 +46,6 @@ export const ICON_NAMES = [
   "folder-add",
   "image",
   "bookmark",
-  // action
   "add",
   "remove",
   "close",
@@ -88,14 +79,12 @@ export const ICON_NAMES = [
   "drag",
   "expand",
   "collapse",
-  // status
   "warning",
   "info",
   "offline",
   "lock",
   "clock",
   "verified-badge",
-  // settings sections
   "palette",
   "gallery",
   "widget",
@@ -103,19 +92,16 @@ export const ICON_NAMES = [
   "youtube",
   "database",
   "info-circle",
-  // window
   "window-minimize",
   "window-maximize",
   "window-restore",
   "window-close",
-  // brand
   "nuvo-mark",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
 export type IconSize = 14 | 16 | 18 | 20 | 24 | 26;
 
-/** Stroke in viewBox units for the line glyphs (Lucide's 2); filled glyphs ignore it. */
 export const ICON_STROKE: Record<IconSize, number> = { 14: 2, 16: 2, 18: 2, 20: 2, 24: 2, 26: 2 };
 
 export const ICON_SVG = Object.fromEntries(ICON_NAMES.map((name) => [name, files[`./svg/${name}.svg`]])) as Record<IconName, string>;

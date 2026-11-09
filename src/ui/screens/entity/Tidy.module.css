@@ -1,4 +1,3 @@
-/* The duplicate list inside the sheet: quiet rows, scrolls past ten groups. */
 .groups {
   display: flex;
   max-height: 320px;

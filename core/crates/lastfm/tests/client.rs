@@ -14,8 +14,7 @@ fn pairs(list: &[(&str, &str)]) -> Vec<(String, String)> {
 
 #[test]
 fn signature_matches_the_lastfm_docs_example() {
-    // https://www.last.fm/api/desktopauth, "Sign your calls": the docs' example string is
-    // "api_keyxxxxxxxxmethodauth.getSessiontokenxxxxxxxmysecret"; its md5 was computed with coreutils md5sum.
+    // Example from last.fm/api/desktopauth "Sign your calls"; its md5 is from coreutils md5sum
     let params = pairs(&[("token", "xxxxxxx"), ("method", "auth.getSession"), ("api_key", "xxxxxxxx")]);
     assert_eq!(sign(&params, "mysecret"), "68afb32bee072407a63b6c41f3e1e2b4");
     let with_format = pairs(&[("format", "json"), ("api_key", "xxxxxxxx"), ("token", "xxxxxxx"), ("method", "auth.getSession")]);
@@ -28,7 +27,6 @@ fn auth_page_url() {
     assert_eq!(auth_url("k1", "t1"), "https://www.last.fm/api/auth/?api_key=k1&token=t1");
 }
 
-/// Mock Last.fm: checks every signature and records each call's parameters.
 async fn mock() -> (String, Arc<Mutex<Vec<Vec<(String, String)>>>>) {
     let calls = Arc::new(Mutex::new(Vec::new()));
     let seen = calls.clone();

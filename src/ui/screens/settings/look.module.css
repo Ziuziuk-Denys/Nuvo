@@ -1,13 +1,9 @@
-/* The look tools inside Settings: saved themes, the docked theme editor, the colour picker, fonts and custom CSS.
-   Same language as the sections around them: soft ink fills, 10 px corners, 13 px controls, colours from tokens only. */
-
 .library {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* A saved theme in the preset tile frame: its background, a card and an accent dot */
 .themeIcon {
   position: relative;
   overflow: hidden;
@@ -194,7 +190,6 @@
   white-space: pre;
 }
 
-/* Docked editor: right side, 360 px, between the top bar and the window edge, in the settings panel's frost */
 .editor {
   position: fixed;
   z-index: 150;
@@ -355,7 +350,6 @@
   font-weight: 400;
 }
 
-/* Colour picker in its popover */
 .picker {
   display: flex;
   flex-direction: column;
@@ -414,7 +408,6 @@
   flex: 1;
 }
 
-/* Fonts */
 .fontControls {
   display: flex;
   align-items: center;
@@ -539,7 +532,6 @@
   background: var(--n-focus);
 }
 
-/* Custom CSS */
 .cssHead {
   display: flex;
   align-items: center;

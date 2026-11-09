@@ -1,8 +1,3 @@
-/**
- * The link import flow: detect, list, post, then hand the new imports to the
- * workers. Listing and posting are separate so the preview can show the rows before anything is
- * written; `importFromLink` runs both. A cancel during listing posts nothing.
- */
 import { listApple } from "./apple";
 import { CoreError, type ImportsDaemon } from "./core";
 import { listDeezer } from "./deezer";
@@ -12,7 +7,6 @@ import { ImportError, MAX_LABEL_CHARS, MAX_ROWS, type ImportSummary, type Import
 import { listYoutube, type YoutubeLister } from "./youtube";
 
 export interface ListPorts {
-  /** Requests to the public sources (Apple Music pages, Deezer's API). */
   fetch: FetchLike;
   sleep?: Sleep;
   youtube: YoutubeLister;
@@ -21,17 +15,13 @@ export interface ListPorts {
 
 export interface PostPorts {
   daemon: Pick<ImportsDaemon, "start"> & Partial<Pick<ImportsDaemon, "appendRows">>;
-  /** Translated names for a listing without a title, and "{name}: Likes". */
   labels: { fallback(source: RowSource): string; likes(name: string): string };
-  /** New imports: shown at once, and the ones still matching get workers. */
   started(summaries: ImportSummary[]): void;
 }
 
 export const PROGRESS_EVERY_MS = 120;
-/** A listing is posted in pages of this many rows. */
 export const POST_PAGE_ROWS = 500;
 
-/** Calls `fn` at most once per `everyMs`. */
 export function throttle(fn: (count: number) => void, everyMs: number, now: () => number = Date.now): (count: number) => void {
   let last = -Infinity;
   return (count) => {
@@ -48,7 +38,6 @@ function daemonError(error: unknown): unknown {
   return new ImportError("daemon");
 }
 
-/** A listing the daemon reads; its statuses become the import's error codes. */
 async function listByDaemon(read: () => Promise<Listing>): Promise<Listing> {
   try {
     return await read();
@@ -62,7 +51,6 @@ async function listByDaemon(read: () => Promise<Listing>): Promise<Listing> {
   }
 }
 
-/** Public playlists and albums by link; Liked songs, tracks and profiles only through the export file. */
 function spotifyReadable(url: string): boolean {
   const { hostname, pathname } = new URL(url);
   if (hostname === "spotify.link") return true;
@@ -71,7 +59,6 @@ function spotifyReadable(url: string): boolean {
   return parts.length === 2 && (parts[0] === "playlist" || parts[0] === "album");
 }
 
-/** Reads a pasted link into rows. Nothing is written. */
 export async function listLink(text: string, ports: ListPorts, signal: AbortSignal, onProgress: (count: number) => void = () => {}): Promise<Listing> {
   const detected = detectLink(text);
   if ("error" in detected) throw new ImportError(detected.error, detected.host);
@@ -116,7 +103,6 @@ export async function listLink(text: string, ports: ListPorts, signal: AbortSign
 
 const SOUNDCLOUD_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 
-/** The likes field: a bare name (with or without "@") or a SoundCloud link. */
 export function soundcloudLikesUrl(nameOrUrl: string): string {
   const value = nameOrUrl.trim().replace(/^@/, "");
   if (!value) throw new ImportError("missing_name");
@@ -132,7 +118,6 @@ export function labelOf(listing: Listing, labels: PostPorts["labels"]): string {
   return [...label].slice(0, MAX_LABEL_CHARS).join("");
 }
 
-/** Posts listed rows as one import; the workers start on the answer. */
 export async function postListing(listing: Listing, target: ImportTarget | undefined, ports: PostPorts, signal?: AbortSignal): Promise<ImportSummary[]> {
   let summaries: ImportSummary[];
   try {
@@ -149,7 +134,6 @@ export async function postListing(listing: Listing, target: ImportTarget | undef
     throw daemonError(error);
   }
   ports.started(summaries);
-  // the rest follows page by page; a page that fails leaves the earlier ones imported
   const first = summaries[0];
   if (listing.rows.length > POST_PAGE_ROWS && first && ports.daemon.appendRows) {
     try {
@@ -191,7 +175,6 @@ export async function importSoundCloudLikes(
   return importFromLink(soundcloudLikesUrl(nameOrUrl), ports, options);
 }
 
-/** A picked file (Spotify export, M3U, Nuvo JSON) sent as base64 bytes, never as a path; one import per playlist inside. */
 export async function importFile(
   file: { name: string; data: string },
   target: ImportTarget | undefined,

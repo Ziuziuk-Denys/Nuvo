@@ -20,7 +20,6 @@ function fakeRenderer() {
   return { setCover: vi.fn(), settle: vi.fn(), draw: vi.fn(), resize: vi.fn(), dispose: vi.fn() };
 }
 
-/** Animation frames driven by hand, one per call of step(ms). */
 function fakeFrames() {
   let now = 0;
   let next = 1;
@@ -113,7 +112,6 @@ describe("Backdrop", () => {
     const frames = fakeFrames();
     await act(async () => root.render(<Backdrop cover="c.jpg" open />));
     renderer.draw.mockClear();
-    // one second of a 120 Hz display
     act(() => {
       for (let i = 0; i < 120; i += 1) frames.step(1000 / 120);
     });

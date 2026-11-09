@@ -1,7 +1,6 @@
 import { CORE_BASE_URL, coreRequest } from "@/data/core/request";
 import { CoreError } from "@/imports/core";
 
-/** What Nuvo keeps on disk, by category, and how to clear it. */
 export type StorageCategoryId = "audio" | "covers" | "web";
 
 export interface StorageCategory {

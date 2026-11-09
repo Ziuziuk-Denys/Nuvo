@@ -5,7 +5,6 @@ import { afterAll, describe, expect, it } from "vitest";
 import { isolate } from "../isolation";
 import { passFirstRun } from "./harness";
 
-/** On demand (NUVO_STATS_PERF=<a file for the numbers>, with a release nuvo-core): opening the page at 200 000 plays, from click to painted. */
 const report = (line: string) => fs.appendFileSync(process.env.NUVO_STATS_PERF ?? "/dev/null", `${line}\n`);
 const EVENTS = 200_000;
 const TRACKS = 8000;
@@ -78,7 +77,6 @@ async function seed(live: Live): Promise<void> {
   }
 }
 
-/** Reload to an empty page cache, then time the hash change to the second frame with the lead number in it. */
 async function open(live: Live, range: string): Promise<number> {
   await live.page.evaluate(() => {
     location.hash = "#/";
@@ -111,7 +109,6 @@ describe.skipIf(!process.env.NUVO_STATS_PERF)("the Statistics page at 200 000 pl
     report(`seeded in ${Math.round((Date.now() - started) / 1000)} s`);
     await quit();
 
-    // a new daemon: the warm-up fills the copy a few seconds after the start
     const fresh = await launch();
     await fresh.page.locator("[data-nav=stats]").waitFor({ timeout: 30_000 });
     await fresh.page.waitForTimeout(12_000);
@@ -123,7 +120,6 @@ describe.skipIf(!process.env.NUVO_STATS_PERF)("the Statistics page at 200 000 pl
     for (const range of ["week", "month", "year", "all"]) {
       const runs = [await open(fresh, range), await open(fresh, range), await open(fresh, range)];
       report(`${range}: page ${runs.map((ms) => Math.round(ms)).join(", ")} ms`);
-      // the middle run: a busy machine or Home's library calls can hold one opening back
       expect(runs.sort((a, b) => a - b)[1]).toBeLessThan(150);
     }
   });

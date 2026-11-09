@@ -5,7 +5,6 @@ import { useTranslation } from "../../ports/i18n";
 import { usePlaylistsList } from "../../ports/library";
 import styles from "./popovers.module.css";
 
-/** Your other playlists, most recently changed first, with the Add to playlist list's search and rows; a pick hands its id back. */
 export function PlaylistPicker({ exclude, onPick }: { exclude: string; onPick(id: string, title: string): void }): JSX.Element {
   const { t } = useTranslation();
   const { data } = usePlaylistsList();

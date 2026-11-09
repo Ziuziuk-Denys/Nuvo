@@ -4,32 +4,25 @@ import { Icon } from "../icons/Icon";
 import styles from "./MediaRow.module.css";
 
 export interface MediaRowProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
-  /** A 48 px cover, or a track number drawn in the cover's box. */
   leading?: ReactNode;
   number?: boolean;
   title: string;
-  /** A mark right after the title, such as Explicit; it stays in view when the title is cut. */
   badge?: ReactNode;
   subtitle?: ReactNode;
-  /** Right-aligned quiet text: a duration or a count. */
   meta?: string;
-  /** The vertical dots at the end of the row; absent when the row has no menu. */
   menuLabel?: string;
   onMenu?: (anchor: HTMLElement) => void;
-  /** Something of the row's own before the dots, such as a numeral's play glyph. */
   extra?: ReactNode;
   active?: boolean;
   unavailableReason?: string;
-  /** One click or Enter. A click whose default an outer handler prevented, such as a Ctrl or Shift pick, does not activate. */
+  // A click whose default an outer handler prevented (a Ctrl or Shift pick) does not activate
   onActivate?: () => void;
 }
 
-// a press on the dots is the dots', never the row's
 function stop(event: SyntheticEvent) {
   event.stopPropagation();
 }
 
-/** A 64 px row: cover, title over subtitle, then the quiet meta and the dots. A numbered row without a subtitle is 44 px. */
 export function MediaRow({
   leading,
   number = false,
@@ -109,7 +102,6 @@ export function MediaRow({
   return unavailable ? <Tooltip text={unavailableReason}>{row}</Tooltip> : row;
 }
 
-/** The loading state of a MediaRow: the same height, a tint cover and two quiet bars. */
 export function MediaRowPlaceholder(): JSX.Element {
   return (
     <div aria-hidden className={`${styles.row} ${styles.placeholder}`}>

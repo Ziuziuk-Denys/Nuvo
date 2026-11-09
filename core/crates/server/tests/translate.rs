@@ -25,7 +25,6 @@ async fn serve(app: Router) -> String {
     format!("http://{addr}")
 }
 
-/// An OpenAI-compatible double on loopback that answers `replies` in turn (the last one repeats).
 async fn mock_model(replies: Vec<&'static str>) -> Mock {
     let hits = Arc::new(AtomicUsize::new(0));
     let requests = Arc::new(Mutex::new(Vec::new()));
@@ -137,7 +136,6 @@ async fn refuses_targets_off_the_machine_or_in_disguise() {
     ] {
         assert_eq!(point_at(&core, endpoint).await, 400, "{endpoint:?}");
     }
-    // nothing was stored by the refusals
     let (_, stored) = common::call(&core.app, "GET", TRANSLATOR, None).await;
     assert_eq!(stored["endpoint"], Value::Null);
 }
@@ -167,7 +165,6 @@ async fn says_when_nothing_is_set_or_no_local_model_runs() {
     let (status, answer) = common::call(&core.app, "POST", TRANSLATE, Some(lines())).await;
     assert_eq!((status.as_u16(), answer["message"].as_str()), (409, Some("no_translator")));
 
-    // a port that was open a moment ago and is closed now
     let closed = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap().local_addr().unwrap();
     point_at(&core, &format!("http://{closed}")).await;
     let (status, answer) = common::call(&core.app, "POST", TRANSLATE, Some(lines())).await;

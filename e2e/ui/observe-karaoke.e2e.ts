@@ -4,11 +4,6 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchNuvo, RECORDING, SIZES, type NuvoSession } from "./harness";
 import { PLAYER_SESSION_KEY } from "./seed";
 
-/**
- * Measures what the current karaoke view shows. Observation only: boxes, fonts, colours
- * of visible output, and frames of the moving background. Needs the network: the song is a real one, so
- * the player can stream it (muted) and the lyrics provider can find synced lines for it.
- */
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const OUT = path.join(ROOT, "src", "ui", "karaoke", "look.json");
 const FRAMES = path.join(ROOT, "e2e", "artifacts", "ui", "karaoke-observed");
@@ -20,7 +15,6 @@ beforeAll(async () => {
 });
 afterAll(async () => session?.close());
 
-/** Clicks the visible, topmost button with this label (the island under the view has the same labels). */
 async function press(label: string): Promise<void> {
   const found = await session.page.evaluate((name) => {
     for (const button of document.querySelectorAll("button")) {
@@ -41,7 +35,6 @@ it.runIf(RECORDING)("measures the karaoke view", async () => {
   const page = session.page;
   fs.mkdirSync(FRAMES, { recursive: true });
   await session.setLook({ preset: "nuvo", mode: "dark" });
-  // the second queue entry becomes the real song; Next makes it current, which is when lyrics are looked up
   await page.waitForTimeout(1_100);
   await page.evaluate(
     ([key, song]) => {
@@ -59,7 +52,6 @@ it.runIf(RECORDING)("measures the karaoke view", async () => {
   await page.waitForTimeout(1_500);
   await press("Next track");
   await page.getByText("Is this the real life?", { exact: false }).first().waitFor({ timeout: 30_000 });
-  // a few lines in, so there are lines before and after the active one
   await page.waitForTimeout(40_000);
 
   const sizes: Record<string, unknown> = {};
@@ -76,7 +68,6 @@ it.runIf(RECORDING)("measures the karaoke view", async () => {
         return box.width > 0 && box.height > 0 && box.bottom > 0 && box.top < innerHeight && style.visibility !== "hidden" && Number(style.opacity) > 0.02;
       };
       const round = (n: number) => Math.round(n * 10) / 10;
-      // only what is on top: the island and the page under the view keep their own copies of these texts
       const onTop = (el: Element) => {
         const box = el.getBoundingClientRect();
         const hit = document.elementFromPoint(Math.min(box.x + box.width / 2, innerWidth - 1), Math.min(box.y + box.height / 2, innerHeight - 1));
@@ -137,7 +128,6 @@ it.runIf(RECORDING)("measures the karaoke view", async () => {
     });
   }
 
-  // the moving background alone, every 2 s for 20 s, to describe its motion and to compare our own against
   await session.setSize(SIZES[0]);
   await page.setViewportSize(SIZES[0]);
   const style = await page.addStyleTag({ content: "#root * { visibility: hidden !important } #root canvas { visibility: visible !important }" });
@@ -146,7 +136,6 @@ it.runIf(RECORDING)("measures the karaoke view", async () => {
     await page.waitForTimeout(2_000);
   }
   await style.evaluate((node) => (node as Element).remove());
-  // the full-window layers of the view, bottom to top: what paints over the moving canvas
   const layers = await page.evaluate(() =>
     [...document.querySelectorAll('body [data-theme="dark"] *')]
       .filter((el) => {
@@ -173,7 +162,6 @@ it.runIf(RECORDING)("measures the karaoke view", async () => {
 
   await session.go("#/");
   await page.waitForTimeout(800);
-  // the overlay's rise: the top edge of the full-window dark view, sampled every frame from the click
   const samples = await page.evaluate(async () => {
     const opener = [...document.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === "Open lyrics") as HTMLButtonElement | undefined;
     opener?.click();

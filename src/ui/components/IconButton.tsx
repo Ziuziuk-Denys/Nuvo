@@ -6,13 +6,10 @@ import { Tooltip } from "./Tooltip";
 
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> {
   icon: IconName;
-  /** The accessible name and the tooltip text. */
   label: string;
   size?: "m" | "s";
   tone?: "field" | "island";
-  /** A mode that is on (shuffle, liked). Exposed as aria-pressed when given. */
   active?: boolean;
-  /** False hides the hover hint, as while the button's own popover is open. */
   tooltip?: boolean;
 }
 

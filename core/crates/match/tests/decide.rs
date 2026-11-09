@@ -11,7 +11,6 @@ fn source(value: &Value) -> Source {
     }
 }
 
-/// Decisions from the fixture shared with the renderer.
 #[test]
 fn shared_decision_cases() {
     let cases: Vec<Value> = serde_json::from_str(include_str!("../../contracts/fixtures/match_cases.json")).unwrap();
@@ -56,7 +55,6 @@ fn reason_codes_are_the_persisted_strings() {
     assert_eq!(Reason::parse("ambiguous_match"), Some(Reason::Ambiguous));
 }
 
-/// Review focus 2: renderer tracks without artists, with fractional or missing durations.
 #[test]
 fn loose_renderer_tracks_are_still_candidates() {
     let src = Source { title: "Night Drive".into(), artists: vec!["Someone".into()], duration_ms: Some(200_000) };
@@ -77,7 +75,6 @@ fn long_text_is_cut_before_processing() {
     assert!(matches!(evaluate(&src, &[candidate]), Decision::Approved { score, .. } if score >= 95));
 }
 
-/// Section 6: under 2 ms per source against 50 candidates in a release build.
 #[test]
 fn fifty_candidates_decide_quickly() {
     let candidates: Vec<Candidate> = (0..50)
@@ -93,7 +90,6 @@ fn fifty_candidates_decide_quickly() {
     assert!(per_source.as_millis() < budget_ms, "{per_source:?}");
 }
 
-/// Containment lifts the title score only on word boundaries: "Light" is not inside "Lights".
 #[test]
 fn containment_needs_a_word_boundary() {
     let src = Source { title: "Light".into(), artists: vec!["Someone".into()], duration_ms: Some(200_000) };
@@ -104,7 +100,6 @@ fn containment_needs_a_word_boundary() {
     assert!(light_song > lights);
 }
 
-/// `rank` lists every candidate best first, ties in the given order.
 #[test]
 fn rank_orders_candidates() {
     let src = Source { title: "Levels".into(), artists: vec!["Avicii".into()], duration_ms: Some(199_000) };

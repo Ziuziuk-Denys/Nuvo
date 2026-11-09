@@ -33,7 +33,6 @@ describe("soundStore", () => {
   it("evicts the oldest loudness entries by timestamp, not key order", () => {
     const seeded = Object.fromEntries(Array.from({ length: 5000 }, (_, i) => [String(i), { db: 1, at: 1000 + i }]));
     useSoundStore.setState({ loudness: seeded });
-    // Re-setting the oldest numeric key makes it newest; key "1" becomes the oldest.
     useSoundStore.getState().setLoudness("0", 2);
     useSoundStore.getState().setLoudness("5000", 1);
     const loudness = useSoundStore.getState().loudness;

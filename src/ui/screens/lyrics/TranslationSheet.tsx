@@ -12,7 +12,6 @@ interface TranslationSheetProps {
   onClose(): void;
 }
 
-/** Each line with its translation from a local model under it. Nothing is sent off the machine. */
 export function TranslationSheet({ open, track, onClose }: TranslationSheetProps): JSX.Element | null {
   const { t } = useTranslation();
   const [view, setView] = useState<View>({ kind: "loading" });

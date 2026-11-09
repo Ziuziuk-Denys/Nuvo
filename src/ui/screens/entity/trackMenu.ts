@@ -16,19 +16,13 @@ export interface TrackMenuActions {
   goToArtist(artistId: string): void;
   goToAlbum(albumId: string): void;
   remove(track: Track): void;
-  /** Wired only when the engine is on: records "Not interested" through the recs port. */
   notInterested?(track: Track, scope: NotInterestedScope): void;
-  /** Opens the lyrics editor; screens without it show no entry. */
   editLyrics?(track: Track): void;
-  /** Opens the translation sheet; screens without it show no entry. */
   translateLyrics?(track: Track): void;
-  /** Wired where saves are available: one track as a file in a folder the user picks. */
   saveAsFile?(track: Track): void;
-  /** Local files only: the file in the system file manager. */
   showInFolder?(track: Track): void;
 }
 
-/** The track menu, text only. "Remove from this playlist" comes last, apart, and only in your own playlists. */
 export function trackMenuItems(track: Track, context: { playlistId?: string }, actions: TrackMenuActions): MenuItem[] {
   const { t } = actions;
   const artistId = track.artistId;
@@ -47,7 +41,6 @@ export function trackMenuItems(track: Track, context: { playlistId?: string }, a
   if (actions.translateLyrics) items.push({ label: t("ui.lyrics.translate"), onSelect: () => actions.translateLyrics?.(track) });
   // the daemon trims only a song whose length it knows
   items.push({ label: t("ui.trim.menu"), disabled: !(track.durationMs > 0), onSelect: () => useTrimSheet.getState().open(track) });
-  // a file on this computer has one source
   if (!track.id.startsWith("local:")) items.push({ label: t("ui.source.menu"), onSelect: () => useSourceSheet.getState().open(track) });
   const extra: MenuItem[] = [];
   if (actions.saveAsFile) extra.push({ label: t("ui.export.save_file"), onSelect: () => actions.saveAsFile?.(track) });

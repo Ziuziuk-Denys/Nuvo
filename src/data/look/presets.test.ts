@@ -78,7 +78,6 @@ function parseColor(value: string): Rgba {
   return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), rgb[4] === undefined ? 1 : Number(rgb[4])];
 }
 
-/** A translucent colour as it looks over an opaque one. */
 function over(front: Rgba, back: Rgba): Rgba {
   const alpha = front[3];
   return [0, 1, 2].map((i) => front[i] * alpha + back[i] * (1 - alpha)).concat(1) as Rgba;

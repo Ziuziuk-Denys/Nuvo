@@ -12,7 +12,6 @@ const KEY_STEP = 5;
 const DEFAULT_RESTORE_PERCENT = 70;
 const COLUMN_HEIGHT = 120;
 const WIDTH_PX = 46;
-// survives the popover closing, so unmute after reopening still returns to the old level
 let restorePercent = DEFAULT_RESTORE_PERCENT;
 
 const percentOf = (gain: number) => Math.round(toVolumeLevel(gain) * 100);
@@ -23,7 +22,6 @@ function apply(next: number): void {
   playerEngine.setVolume(toVolumeGain(clamped / 100));
 }
 
-/** One wheel notch, 5 % up or down. The island wires it over the Volume button and the whole popover. */
 export function wheelVolume(gain: number, deltaY: number): void {
   apply(percentOf(gain) + (deltaY < 0 ? WHEEL_STEP : -WHEEL_STEP));
 }
@@ -35,7 +33,6 @@ interface VolumePopoverProps {
   onWheel?(event: WheelEvent<HTMLDivElement>): void;
 }
 
-/** A small glass column over the Volume button: the level fills from the bottom, the speaker on top mutes. */
 export function VolumePopover(props: VolumePopoverProps): JSX.Element | null {
   const phase = usePresence(props.open);
   return phase === null ? null : <VolumeColumn {...props} phase={phase} />;
@@ -54,7 +51,6 @@ function VolumeColumn({ open, anchor, onClose, onWheel, phase }: VolumePopoverPr
   useLayoutEffect(() => {
     if (!anchor) return;
     const update = () => {
-      // like the other player panels: over the button, 10 px above the player bar
       const box = anchor.getBoundingClientRect();
       const top = anchor.closest("[data-island]")?.getBoundingClientRect().top ?? box.top;
       setPlace({ left: box.left + box.width / 2 - WIDTH_PX / 2, bottom: window.innerHeight - top + POPOVER.islandGap });
@@ -148,7 +144,6 @@ function VolumeColumn({ open, anchor, onClose, onWheel, phase }: VolumePopoverPr
           </button>
           <span className={styles.percent}>{percent}%</span>
         </div>
-        {/* the same face in the field colour, revealed over the fill */}
         <div className={`${styles.face} ${styles.faceOnFill}`} style={{ clipPath: `inset(${100 - percent}% 0 0 0)` }} aria-hidden="true">
           <span className={styles.mute}>
             <Icon name={icon} size={16} />

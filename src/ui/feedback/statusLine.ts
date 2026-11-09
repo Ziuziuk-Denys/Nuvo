@@ -9,10 +9,8 @@ import { STICKY, useToastStore } from "./toastStore";
 const DAEMON_ID = "status-daemon";
 const OFFLINE_ID = "status-offline";
 const OFFLINE_MS = 8000;
-/** A start shorter than this passes without a word. */
 const SLOW_START_MS = 1500;
 
-/** A slow start, daemon trouble and the first offline moment, told in the toast slot at the top of the window. */
 export function useStatusLine(): void {
   const { t } = useTranslation();
   const core = useCoreStatus();
@@ -44,7 +42,6 @@ export function useStatusLine(): void {
         description: t("ui.status.offline_hint"),
         variant: "info",
         duration: OFFLINE_MS,
-        // the action closes the toast; nothing else to do
         action: { label: t("ui.status.dismiss"), onClick: () => undefined },
       });
     }

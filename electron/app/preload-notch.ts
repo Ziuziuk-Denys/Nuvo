@@ -1,4 +1,3 @@
-/** Notch window preload: the Notch's own channels only (ours, kept). Same method names the Notch page already uses. */
 import { ipcRenderer, contextBridge } from "electron";
 import type { NotchAction, NotchHello, NotchLyrics, NotchSettings, NotchState, ShapeRect } from "../../src/notch/contracts";
 

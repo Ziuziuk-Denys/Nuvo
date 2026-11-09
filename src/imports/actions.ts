@@ -1,7 +1,3 @@
-/**
- * What the import screens call: list a link or a likes name, post a listing, import a picked
- * file. Built once from the flow's ports and the session, so the screens never see the daemon.
- */
 import { importFile, listLink, postListing, soundcloudLikesUrl, type ListPorts, type PostPorts } from "./flow";
 import { ImportError, type ImportSummary, type ImportTarget, type Listing } from "./types";
 

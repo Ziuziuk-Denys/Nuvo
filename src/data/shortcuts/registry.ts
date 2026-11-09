@@ -1,4 +1,3 @@
-/** One list of commands that keys, global keys, the palette, the tray and the Notch all run. */
 import { acceleratorKey, parseAccelerator } from "./accelerator";
 
 export type Scope = "app" | "global";
@@ -13,10 +12,8 @@ export interface CommandDefinition {
   defaultGlobal?: string | null;
   globalAllowed?: boolean;
   repeatable?: boolean;
-  /** Listed in the palette; true when left out. */
   palette?: boolean;
   keywords?: string[];
-  /** Whether it can run now; always when left out. */
   enabled?: () => boolean;
   run(source: CommandSource): void;
 }
@@ -33,7 +30,6 @@ export interface CommandView {
   global: string | null;
 }
 
-/** What the daemon stores: only the differences from the defaults; null means cleared. */
 export interface StoredBindings {
   version: 1;
   app: Record<string, string | null>;
@@ -45,12 +41,10 @@ export type BindingResult = { ok: true; accelerator: string | null } | { ok: fal
 
 const COMMAND_ID = /^[a-z0-9.-]{1,64}$/;
 const RESERVED_GLOBAL = new Set(["Alt+Tab", "Alt+F4", "Control+Alt+Delete"]);
-/** Keys a global binding may use without a modifier. */
 const STANDALONE_GLOBAL = /^F([1-9]|1[0-9]|2[0-4])$/;
 
 const STORED_ID = /^[a-z0-9.-]{1,64}$/;
 
-/** Keeps entries with a well-formed id and a null or parseable accelerator, written canonically. */
 function validScope(scope: Record<string, string | null> | undefined): Record<string, string | null> {
   const out: Record<string, string | null> = {};
   for (const [id, value] of Object.entries(scope ?? {})) {
@@ -76,7 +70,6 @@ export class CommandRegistry {
   register(definition: CommandDefinition): () => void {
     if (!COMMAND_ID.test(definition.id)) throw new Error(`command id must be 1-64 of a-z, 0-9, "." and "-": ${definition.id}`);
     if (this.commands.has(definition.id)) {
-      // a second registration throws in development and is ignored in production
       if (this.strict) throw new Error(`command registered twice: ${definition.id}`);
       return () => undefined;
     }
@@ -93,13 +86,11 @@ export class CommandRegistry {
     return this.commands.get(id) ?? null;
   }
 
-  /** The effective binding: the custom one, none when cleared, else the default. */
   bindingFor(id: string, scope: Scope): string | null {
     const custom = this.custom[scope];
     if (Object.hasOwn(custom, id)) return custom[id];
     const fallback = this.defaultFor(id, scope);
     if (!fallback) return null;
-    // another command's custom binding wins over this default
     for (const [other, accelerator] of Object.entries(custom)) {
       if (other !== id && accelerator === fallback && this.commands.has(other)) return null;
     }
@@ -120,7 +111,6 @@ export class CommandRegistry {
     }));
   }
 
-  /** The registered command bound to this canonical accelerator, if any. */
   find(accelerator: string, scope: Scope): CommandDefinition | null {
     for (const command of this.commands.values()) {
       if (this.bindingFor(command.id, scope) === accelerator) return command;
@@ -128,7 +118,6 @@ export class CommandRegistry {
     return null;
   }
 
-  /** Runs the command when it exists and is enabled; true when it ran. */
   run(id: string, source: CommandSource): boolean {
     const command = this.commands.get(id);
     if (!command || !(command.enabled?.() ?? true)) return false;
@@ -136,7 +125,6 @@ export class CommandRegistry {
     return true;
   }
 
-  /** Validity and conflicts of a candidate; conflicts compare canonical forms across both scopes. */
   checkCandidate(id: string, scope: Scope, text: string): BindingResult {
     const accelerator = parseAccelerator(text);
     if (!accelerator) return { ok: false, reason: "invalid" };
@@ -161,7 +149,6 @@ export class CommandRegistry {
     return { ok: true, accelerator };
   }
 
-  /** Changes a binding after the checks; null clears it. Saves on success. */
   setBinding(id: string, scope: Scope, text: string | null): BindingResult {
     if (text === null) {
       this.custom[scope] = { ...this.custom[scope], [id]: null };
@@ -190,7 +177,6 @@ export class CommandRegistry {
     this.changed();
   }
 
-  /** The daemon's copy; ids of commands not registered yet are kept for later. Does not save. */
   load(stored: StoredBindings): void {
     this.custom = { app: validScope(stored.app), global: validScope(stored.global) };
     this.emit();

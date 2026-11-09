@@ -16,11 +16,8 @@ export interface MarkLine {
 
 interface Mark {
   fromMs: number;
-  /** Where the voice ends. */
   sungMs: number;
-  /** Where the mark lets go: a short hold after the voice, never into the next mark. */
   toMs: number;
-  /** Where the sung words of its line let go. */
   lineToMs: number;
   line: number;
   element: HTMLElement;
@@ -34,7 +31,7 @@ const HOLD_MS = 120;
 /** A move further than this is a seek, not the clock going on. */
 const JUMP_MS = 250;
 
-/** The words of a word-timed line, else the line itself. A part as long as the whole line next to others is the romanized row. */
+// A part as long as the whole line, next to other parts, is the romanized row
 function marksOf(source: MarkLine, line: number, words: boolean): Mark[] {
   const mark = (fromMs: number, sungMs: number, element: HTMLElement) => ({ fromMs, sungMs, toMs: sungMs, lineToMs: sungMs, line, element });
   const fromMs = source.time * 1000;
@@ -45,11 +42,7 @@ function marksOf(source: MarkLine, line: number, words: boolean): Mark[] {
   return sung.map((part) => mark(part.time * 1000, (part.time + Math.max(0, part.duration)) * 1000, part.lyricElement));
 }
 
-/**
- * Lights what is being sung, from the audio clock, by the chosen mode. Attributes on the few elements that
- * change, only when they change: no layout, no React. Sung words stay lit within their line and go with it.
- * shortcut: two voices at once light only the later one; add a mark per voice if duets need both.
- */
+// shortcut: two voices at once light only the later one; add a mark per voice for duets
 export class NowMark {
   private readonly marks: Mark[];
   private readonly keeps: boolean;

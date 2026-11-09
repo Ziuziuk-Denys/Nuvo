@@ -1,5 +1,4 @@
-//! Home mixes (For you, artist mixes, Recent likes, moods) and the mood map behind mood radio.
-//! Ids keep the `daily-mix-` prefix the renderer's collection route recognises.
+// Ids keep the `daily-mix-` prefix the renderer's collection route recognises
 
 use std::collections::{HashMap, HashSet};
 
@@ -22,9 +21,7 @@ const ARTIST_MIXES: usize = 3;
 const FOR_YOU_PER_ARTIST: usize = 3;
 const LIBRARY_WINDOW_MS: i64 = 90 * DAY_MS;
 const DAY_MS: i64 = 86_400_000;
-/// A track shown on Home on an earlier day (within 48 h) scores this much lower today.
 const HOME_REPEAT_PENALTY: f64 = 0.5;
-/// Best-loved library tracks whose candidate lists feed "New to you".
 const DISCOVER_SEEDS: usize = 12;
 const DISCOVER_PER_ARTIST: usize = 2;
 
@@ -37,14 +34,11 @@ const TEMPO: usize = 0;
 const BRIGHTNESS: usize = 2;
 const LOUDNESS: usize = 8;
 
-/// Upper median; enough to split a library in halves.
 fn median(values: &mut [f64]) -> f64 {
     values.sort_by(f64::total_cmp);
     values[values.len() / 2]
 }
 
-/// Mood of every analysed track: quadrants of energy (tempo and loudness) against brightness,
-/// split at the library's medians. Empty until 200 tracks are analysed.
 pub fn moods(conn: &Connection) -> Result<HashMap<String, &'static str>, StoreError> {
     let ids: Vec<String> = {
         let mut stmt = conn.prepare("SELECT track_id FROM track_features WHERE version = ?1")?;
@@ -79,13 +73,10 @@ struct Scored {
     snapshot: Value,
     artist_key: String,
     artist_name: String,
-    /// How much the user likes it; the order also pushes Home repeats back.
     taste: f64,
     score: f64,
 }
 
-/// Library tracks (liked, or played to a count in the last 90 days) not excluded from taste and
-/// not hidden by a suppression, best first. Call `keys::refresh` first.
 fn library(conn: &Connection, now: i64, affinity: &Affinity, repeat_from_home: &HashSet<String>) -> Result<Vec<Scored>, StoreError> {
     let suppressions = Suppressions::load(conn, now)?;
     let mut stmt = conn.prepare(
@@ -111,7 +102,6 @@ fn library(conn: &Connection, now: i64, affinity: &Affinity, repeat_from_home: &
     Ok(scored)
 }
 
-/// Best-loved library tracks of a mood: the seeds of a mood radio. Call `keys::refresh` first.
 pub fn mood_seeds(conn: &Connection, moods: &HashMap<String, &'static str>, mood: &str, affinity: &Affinity, now: i64) -> Result<Vec<String>, StoreError> {
     Ok(library(conn, now, affinity, &HashSet::new())?.into_iter().filter(|t| moods.get(&t.id) == Some(&mood)).take(5).map(|t| t.id).collect())
 }
@@ -131,9 +121,6 @@ fn push_mix(mixes: &mut Vec<DailyMixItem>, id: String, title: String, descriptio
     });
 }
 
-/// "New to you": tracks from the candidate lists of the best-loved library tracks that were never
-/// played or liked, and are not another upload of a song that was. Scored with the ranker's model
-/// on the features known without a session, at most 2 per artist. Empty until the pool has lists.
 fn discover(conn: &Connection, now: i64, affinity: &Affinity, library: &[Scored], shown_before: &HashSet<String>) -> Result<Vec<(String, Value)>, StoreError> {
     let mut seeds: Vec<String> = library.iter().filter(|t| t.taste > 0.0).take(DISCOVER_SEEDS).map(|t| t.id.clone()).collect();
     // A young library borrows the starters' and playlists' taste until it has enough of its own.
@@ -175,8 +162,6 @@ fn discover(conn: &Connection, now: i64, affinity: &Affinity, library: &[Scored]
         }
         let Some(penalty) = suppressions.penalty(&id, key).filter(|p| *p < HIDDEN_AT) else { continue };
         let similar: f64 = seeds.iter().map(|seed| pmi.get(seed, &id)).sum();
-        // The ranker's features: never played, so no track affinity; no time block without the
-        // caller's time zone; no audio vectors yet.
         let x = [0.0, affinity.artist(&key.artist), 0.0, similar.min(MAX_PMI_SUM), 0.0, 1.0, 1.0 - best_rank as f64 / MAX_POOL_ITEMS as f64];
         let repeat = if shown_before.contains(&id) { HOME_REPEAT_PENALTY } else { 0.0 };
         fresh.push((suppressed(model.score(&x), penalty) - repeat, id, key.artist.clone(), raw));
@@ -222,8 +207,7 @@ pub fn daily_mixes(conn: &Connection, now: i64) -> Result<DailyMixesResponse, St
         })
         .take(MIX_SIZE)
         .collect();
-    // A candidate with a broken snapshot must not take the whole Home down: New to you is just left out.
-    // A database failure is not that, and passes through.
+    // A broken snapshot only drops New to you; a database failure still passes through
     let discover = match discover(conn, now, &affinity, &library, &shown_before) {
         Ok(picked) => picked,
         Err(StoreError::Json(_)) => Vec::new(),

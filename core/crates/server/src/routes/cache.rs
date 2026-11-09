@@ -49,8 +49,6 @@ fn check_id(id: &str) -> Result<(), ApiError> {
 #[derive(Debug, PartialEq)]
 pub struct Unsatisfiable;
 
-/// Parses a single `bytes=` range. `Ok(None)` serves the whole file (no header, multi-range or
-/// garbage); `Err` is an unsatisfiable range (`416`).
 pub fn parse_range(value: &str, size: u64) -> Result<Option<(u64, u64)>, Unsatisfiable> {
     if size == 0 {
         return Err(Unsatisfiable);
@@ -99,7 +97,6 @@ async fn read(State(state): State<AppState>, Path(id): Path<String>, headers: He
     serve(&state.data()?, id, &headers).await
 }
 
-/// Serves a cached file, whole or as one `Range`. Also behind `/v1/sc/tracks/{id}/audio`.
 pub(crate) async fn serve(data: &Unlocked, id: String, headers: &HeaderMap) -> Result<Response, ApiError> {
     let lookup = id.clone();
     let entry = data.db.call(move |c| cache_index::get(c, &lookup)).await?.ok_or_else(|| ApiError::NotFound("audio is not cached".into()))?;
@@ -204,7 +201,6 @@ async fn forget(data: &Unlocked, id: &str) -> Result<(), ApiError> {
     Ok(())
 }
 
-/// Deletes entries outside the keep rules until the cache fits its limit.
 pub(crate) async fn evict(data: &Unlocked, protected_id: Option<&str>) -> Result<(), ApiError> {
     let now = now_ms();
     let (limit, mut total, victims) = data
@@ -256,7 +252,6 @@ async fn status(State(state): State<AppState>) -> Result<Json<CacheStatus>, ApiE
     Ok(Json(cache_status(&state.data()?).await?))
 }
 
-/// `0` is unlimited; other values are raised to `min`.
 fn limit_value(value: i64, min: i64, name: &str) -> Result<i64, ApiError> {
     if value < 0 {
         return Err(ApiError::Invalid(format!("{name} must not be negative")));
@@ -296,7 +291,6 @@ async fn missing(State(state): State<AppState>, Query(q): Query<MissingQuery>) -
     Ok(Json(Items { items }))
 }
 
-/// `202` with the status while a fetch runs, `200` when the track is cached already.
 async fn fetch(State(state): State<AppState>, JsonBody(body): JsonBody<FetchRequest>) -> Result<(StatusCode, Json<FetchStatus>), ApiError> {
     check_id(&body.track_id)?;
     let data = state.data()?;

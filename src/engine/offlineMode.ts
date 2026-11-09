@@ -3,7 +3,6 @@ import type { KeyValue } from "./persist";
 
 const KEY = "nuvo.offlineMode";
 
-/** The offline switch: while on, nothing is asked of the network and only saved, cached and local tracks play. */
 export function createOfflineMode(storage: KeyValue) {
   let on = storage.getItem(KEY) === "1";
   const listeners = createListeners();
@@ -14,9 +13,7 @@ export function createOfflineMode(storage: KeyValue) {
       on = next;
       try {
         storage.setItem(KEY, next ? "1" : "0");
-      } catch {
-        // the switch still holds for this run
-      }
+      } catch {}
       listeners.emit();
     },
     subscribe: listeners.subscribe,

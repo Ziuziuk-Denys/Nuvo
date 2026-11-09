@@ -1,6 +1,3 @@
-//! `/v1/match/*`: deciding and the search cascade. The renderer runs the YouTube searches the
-//! daemon asks for; outcomes are remembered in the library when it is unlocked.
-
 use axum::extract::{DefaultBodyLimit, State};
 use axum::routing::post;
 use axum::{Json, Router};
@@ -46,7 +43,6 @@ struct MatchBody {
     candidates: Vec<Value>,
     #[serde(default)]
     steps: Vec<Step>,
-    /// The Nuvo track this match stands in for during playback; its approved answer is remembered.
     #[serde(default)]
     stand_in_for: Option<String>,
 }
@@ -128,7 +124,6 @@ struct ApprovedBody {
     exclude: Vec<String>,
 }
 
-/// Runs the whole cascade in-process against SoundCloud; ids in `exclude` never become candidates.
 async fn approved(State(state): State<AppState>, JsonBody(body): JsonBody<ApprovedBody>) -> Result<Json<Answer>, ApiError> {
     if body.target != "soundcloud" {
         return Err(ApiError::Invalid("target must be soundcloud".into()));

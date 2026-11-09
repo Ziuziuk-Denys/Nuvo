@@ -1,4 +1,3 @@
-/** The one active-line loop: it runs only while synced lyrics play. */
 import { activeLine, leadStarts } from "./timing";
 import type { Line } from "./types";
 import { LyricsClock, type AudioTime } from "./view";
@@ -6,11 +5,8 @@ import { LyricsClock, type AudioTime } from "./view";
 export interface AudioPort {
   positionMs(): number;
   playing(): boolean;
-  /** Playback speed; 1 when absent. */
   rate?(): number;
-  /** The output's clock; null while no audio context runs. */
   audioTime?(): AudioTime | null;
-  /** Fires on play, pause, seek and track changes. */
   subscribe(listener: () => void): () => void;
 }
 
@@ -39,14 +35,12 @@ export class LineTracker {
     this.clock = new LyricsClock(deps.now, () => this.audio?.audioTime?.() ?? null);
   }
 
-  /** Called on every frame of the one loop and on every player event, so a view needs no loop of its own. */
   onFrame(listener: () => void): () => void {
     this.frameListeners.add(listener);
     listener();
     return () => this.frameListeners.delete(listener);
   }
 
-  /** The loop runs only while at least one observer is registered; returns the release function. */
   observe(): () => void {
     this.observers += 1;
     this.reportClock();
@@ -77,7 +71,6 @@ export class LineTracker {
     this.sync();
   }
 
-  /** Takes shifted lines; `timed` means ready, synced lyrics. Returns the active line without publishing it. */
   setLines(lines: Line[], timed: boolean, durationMs: number): number | null {
     this.lines = lines;
     this.leads = leadStarts(lines);
@@ -129,7 +122,6 @@ export class LineTracker {
     return positionMs;
   }
 
-  /** One evaluation; publishes only when the line changes. */
   private evaluate(): void {
     const positionMs = this.reportClock();
     if (positionMs === null) return;

@@ -1,5 +1,3 @@
-//! `track_keys`: canonical keys per stored track, computed lazily.
-
 use std::collections::HashMap;
 
 use nuvo_store::StoreError;
@@ -32,7 +30,6 @@ impl TrackKey {
     }
 }
 
-/// Computes keys for tracks that have none yet or whose snapshot changed since.
 pub fn refresh(conn: &Connection) -> Result<usize, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT t.id, t.title, t.artist, t.updated_at FROM tracks t LEFT JOIN track_keys k ON k.track_id = t.id
@@ -58,7 +55,6 @@ pub fn refresh(conn: &Connection) -> Result<usize, StoreError> {
     })
 }
 
-/// Keys for `ids` (call [`refresh`] first). Unknown ids are absent from the map.
 pub fn load(conn: &Connection, ids: &[String]) -> Result<HashMap<String, TrackKey>, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT k.track_id, k.work_key, k.artist_key, k.variant_type, k.variant_by, t.duration_ms

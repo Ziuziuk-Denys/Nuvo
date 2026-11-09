@@ -7,22 +7,18 @@ import { ArtistLead, CoverShelf, ShuffleCard } from "./SongCovers";
 import { SongsShelf } from "./SongsShelf";
 import { useShelf } from "./useShelf";
 
-/** Songs a shelf holds: three or four even columns of rows at the usual widths, or a row of covers to scroll. */
 const SHELF_SIZE = 12;
 const LIKE_COVER = 140;
 const STYLE_COVER = 175;
-/** Fewer songs than this make no shelf. */
 const MIN_SONGS = 4;
 
 const notIn = (taken: Set<string>) => (track: Track) => !taken.has(track.id);
 
-/** The seeds turned by one per round, so each refresh asks the radio of another song. */
 function rotate(seeds: readonly string[], round: number): string[] {
   const by = seeds.length === 0 ? 0 : round % seeds.length;
   return [...seeds.slice(seeds.length - by), ...seeds.slice(0, seeds.length - by)];
 }
 
-/** Songs from the Home mixes, a few from each in turn; a click plays the song's mix from that song. */
 export function SongsForYou({ mixes }: { mixes: HomeMix[] }): JSX.Element | null {
   const { t } = useTranslation();
   const all = homeSongs(mixes, Infinity);
@@ -40,7 +36,6 @@ export function SongsForYou({ mixes }: { mixes: HomeMix[] }): JSX.Element | null
   return <SongsShelf name="songs" title={t("ui.home.songs_for_you")} icon="track" shelf={shelf} songs={songs} onPlay={play} />;
 }
 
-/** A random dozen of the liked songs and your playlists' songs. */
 export function ShuffleShelf(): JSX.Element | null {
   const { t } = useTranslation();
   const pool = useRef<Promise<Track[]> | null>(null);
@@ -54,7 +49,6 @@ export function ShuffleShelf(): JSX.Element | null {
   return <ShuffleCard title={t("ui.home.shuffle")} shelf={shelf} songs={songs} onPlay={(index) => playSongs(songs, index, "home:shuffle")} />;
 }
 
-/** Songs by other artists, close to one the daemon knows you love; fills in once the radio and the ranking answer. */
 export function LikeShelf({ artist }: { artist: LikeArtist }): JSX.Element | null {
   const { t } = useTranslation();
   const context = `home:like:${artist.name}`;
@@ -78,7 +72,6 @@ export function LikeShelf({ artist }: { artist: LikeArtist }): JSX.Element | nul
   );
 }
 
-/** Your own files of the genre tag you play and like most; nothing while no played or liked file has one. */
 export function StyleShelf(): JSX.Element | null {
   const { t } = useTranslation();
   const [genre, setGenre] = useState("");

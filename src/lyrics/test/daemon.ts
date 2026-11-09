@@ -2,7 +2,6 @@ import type { Track } from "@/engine/types";
 import type { StreamEvent } from "../types";
 import { done } from "./events";
 
-/** A scripted step: an event, "hold" until `release(trackId)`, or "fail" to break the stream. */
 export type Step = StreamEvent | "hold" | "fail";
 
 const aborted = () => new DOMException("aborted", "AbortError");

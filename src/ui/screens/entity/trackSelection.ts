@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 
 export interface Selection {
   keys: ReadonlySet<string>;
-  /** The row a shift range grows from. */
   anchor: number | null;
 }
 
@@ -17,7 +16,6 @@ function range(order: readonly string[], from: number, to: number): string[] {
   return order.slice(Math.min(from, to), Math.max(from, to) + 1);
 }
 
-/** What a click on the row at `index` does. A plain click only matters once something is selected. */
 export function pickRow(selection: Selection, order: readonly string[], index: number, modifiers: Modifiers): Selection {
   const key = order[index];
   if (key === undefined) return selection;
@@ -35,7 +33,6 @@ export function pickRow(selection: Selection, order: readonly string[], index: n
   return { keys: new Set([key]), anchor: index };
 }
 
-/** Shift+Arrow from the row at `from`: the range between the anchor and the neighbour. */
 export function stepSelection(selection: Selection, order: readonly string[], from: number, direction: 1 | -1): Selection {
   const to = Math.min(order.length - 1, Math.max(0, from + direction));
   const anchor = selection.anchor ?? from;
@@ -46,7 +43,6 @@ export function selectAll(order: readonly string[]): Selection {
   return { keys: new Set(order), anchor: order.length ? 0 : null };
 }
 
-/** The selection without rows that left the list; the same object when nothing left. */
 export function dropMissing(selection: Selection, order: readonly string[]): Selection {
   if (selection.keys.size === 0) return selection;
   const present = new Set(order);
@@ -62,7 +58,6 @@ export interface TrackSelection {
   clear(): void;
 }
 
-/** Selection state for one list: `order` holds the row keys top to bottom. */
 export function useTrackSelection(order: readonly string[]): TrackSelection {
   const [selection, setSelection] = useState<Selection>(emptySelection);
   const signature = order.join("\u0000");

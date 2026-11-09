@@ -129,7 +129,6 @@ mod ffmpeg {
     use nuvo_fetch::update::{FfmpegBuild, Outcome, UpdateError, ffmpeg_build_for, install_ffmpeg};
     use sha2::{Digest, Sha256};
 
-    /// A tar.xz holding `ffmpeg-7.0.2-test/ffmpeg`, the way the pinned archives are laid out.
     fn archive(dir: &Path, script: &str) -> Vec<u8> {
         let root = dir.join("src");
         std::fs::create_dir_all(root.join("ffmpeg-7.0.2-test")).unwrap();

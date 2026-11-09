@@ -1,4 +1,4 @@
-/** Motion tokens. motion.css mirrors these values; foundations.test.ts keeps the two in step. */
+// motion.css mirrors these values; foundations.test.ts keeps them in step
 
 export const EASE = {
   out: [0.2, 0.7, 0.2, 1],
@@ -28,7 +28,6 @@ export const DRIFT_PERIOD_MS = 24_000;
 export const SCROLLBAR_FADE_MS = 800;
 export const SLOW_DATA_MS = 400;
 
-/** Sections after the sixth enter together with the sixth. */
 export function entranceDelayMs(index: number): number {
   return Math.min(Math.max(index, 0), MAX_STAGGERED - 1) * STAGGER_MS;
 }

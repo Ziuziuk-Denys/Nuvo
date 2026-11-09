@@ -1,4 +1,3 @@
-/* The field: the preset canvas, a page cover or the wallpaper behind every screen. */
 .field {
   position: fixed;
   inset: 0;
@@ -17,7 +16,6 @@
   transition: background-color 380ms ease-out;
 }
 
-/* The cover fills the top half and fades out towards its foot. */
 .cover {
   position: absolute;
   inset: 0 0 50%;
@@ -44,7 +42,6 @@
   opacity: 0.45;
 }
 
-/* Light mode washes the whole window in the white surface. */
 .veil {
   position: absolute;
   inset: 0;

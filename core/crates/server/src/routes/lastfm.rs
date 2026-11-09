@@ -22,7 +22,6 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/me/playback/now-playing", post(now_playing))
 }
 
-/// Last.fm keys, secrets and tokens are short alphanumeric strings.
 fn checked(value: &str, name: &str) -> Result<String, ApiError> {
     let value = value.trim();
     if value.is_empty() || value.len() > 64 || !value.bytes().all(|b| b.is_ascii_alphanumeric()) {
@@ -109,12 +108,11 @@ async fn auth_session(State(state): State<AppState>, JsonBody(body): JsonBody<La
             scrobbler::status(c)
         })
         .await?;
-    // Plays queued before a reconnect go out now.
     scrobbler::spawn_flush(&state);
     Ok(Json(status))
 }
 
-/// Keeps the key and secret. The queue is cleared so another account never receives these plays.
+// The queue is cleared so another account never receives these plays
 async fn disconnect(State(state): State<AppState>) -> Result<Json<LastfmStatus>, ApiError> {
     let data = state.data()?;
     Ok(Json(

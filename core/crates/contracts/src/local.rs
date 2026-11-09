@@ -1,5 +1,3 @@
-//! Wire types for local music folders and saved files.
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -48,7 +46,6 @@ pub struct LocalRelated {
     pub items: Vec<Value>,
 }
 
-/// The genre tag of the local songs played and liked most, with some of its songs.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct LocalStyle {
     pub genre: Option<String>,
@@ -88,7 +85,6 @@ pub struct StartDownload {
     pub playlist_id: Option<String>,
     #[serde(default)]
     pub liked: bool,
-    /// Also write `<label>.m3u8` next to the files, with relative names.
     #[serde(default)]
     pub playlist_file: bool,
 }
@@ -105,7 +101,6 @@ pub struct DownloadSummary {
     pub total: i64,
     pub done: i64,
     pub failed: i64,
-    /// Queued items whose audio is not in the cache yet.
     pub waiting: i64,
     pub created_at: i64,
 }

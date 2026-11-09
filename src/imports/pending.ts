@@ -1,14 +1,6 @@
-/**
- * "Add to playlist" can create a playlist from a link while a song waits to be added.
- * The waiting song goes in once, as soon as a summary first names the
- * new playlist (right after the import starts, before its rows are matched); an import that
- * fails before that drops it. A failed add is retried a few times, and the song is saved until
- * it is in so a restart can finish the job.
- */
 import type { Sleep } from "./http";
 import type { CatalogTrack, ImportSummary } from "./types";
 
-/** Tries per add, and the pause between them. */
 export const ADD_TRIES = 3;
 export const ADD_RETRY_MS = 2_000;
 
@@ -17,7 +9,6 @@ export interface PendingJob {
   track: CatalogTrack;
 }
 
-/** Where a song waits across a restart; the host picks the storage. */
 export interface PendingStore {
   save(job: PendingJob): void;
   clear(): void;
@@ -35,13 +26,10 @@ export interface PendingPorts {
 }
 
 export interface PendingTrack {
-  /** Feed every summary of the import; only the first with a playlist id adds the song. */
   summary(summary: ImportSummary): void;
-  /** The import failed before a playlist existed. */
   dropped(): void;
 }
 
-/** The player's track shape, as far as a playlist snapshot needs it. */
 export interface PlayerTrackLike {
   id: string;
   title: string;
@@ -51,7 +39,6 @@ export interface PlayerTrackLike {
   durationMs?: number;
 }
 
-/** A daemon snapshot of a player track, so the playlist can hold a song the library has not seen. */
 export function snapshotOf(track: PlayerTrackLike): CatalogTrack {
   const artists = track.artistList?.length
     ? track.artistList.map((artist) => ({
@@ -80,7 +67,6 @@ const realSleep: Sleep = (ms, signal) =>
     });
   });
 
-/** Adds the song, retrying a few times; a saved song stays saved when every try fails. */
 async function addWithRetry(job: PendingJob, ports: PendingPorts, options: PendingOptions): Promise<void> {
   const sleep = options.sleep ?? realSleep;
   const signal = new AbortController().signal;
@@ -97,7 +83,6 @@ async function addWithRetry(job: PendingJob, ports: PendingPorts, options: Pendi
   ports.failed();
 }
 
-/** Finishes a saved add after a restart. */
 export function resumePendingTrack(job: PendingJob, ports: PendingPorts, options: PendingOptions = {}): Promise<void> {
   return addWithRetry(job, ports, options);
 }

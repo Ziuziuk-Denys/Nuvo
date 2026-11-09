@@ -1,4 +1,3 @@
-/** Main window preload: exposes `window.nuvoShell` and nothing else. Sandboxed. */
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type { NuvoShell } from "../../src/shell/nuvoShell";
 

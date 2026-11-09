@@ -1,4 +1,3 @@
-/** Fallback and best-quality decisions. Pure. */
 import type { Cause, FallbackInfo } from "../types";
 
 export const FALLBACK_MAX_ALTERNATIVES = 2;
@@ -8,7 +7,6 @@ export const APPROVED_SCORE = 75;
 
 export type TriggerCause = FallbackInfo["cause"];
 
-/** Causes that send a start to another source. `offline` waits for the network instead. */
 export function isFallbackTrigger(cause: TriggerCause): boolean {
   return (
     cause === "unavailable" ||
@@ -22,7 +20,6 @@ export function isFallbackTrigger(cause: TriggerCause): boolean {
   );
 }
 
-/** What the user is told when no source played: a refusal is the network's doing, a stall a timeout. */
 export function displayCause(cause: TriggerCause): Cause {
   if (cause === "http_403") return "blocked";
   if (cause === "stall") return "timeout";
@@ -30,7 +27,6 @@ export function displayCause(cause: TriggerCause): Cause {
   return cause;
 }
 
-/** Stored reasons that put the remembered alternative before the primary. */
 export function isLastingReason(reason: string, bestQuality: boolean): boolean {
   if (reason === "pinned" || reason === "unavailable" || reason === "drm" || reason === "sign_in_required") return true;
   return bestQuality && reason === "bitrate";
@@ -48,26 +44,22 @@ function codecRank(codec: string): number {
   return CODEC_RANK[key] ?? 0;
 }
 
-/** Higher bitrate wins; at equal bitrate Opus beats AAC beats MP3. True when `a` is better than `b`. */
 export function betterFormat(a: Format, b: Format): boolean {
   if (a.bitrateKbps !== b.bitrateKbps) return a.bitrateKbps > b.bitrateKbps;
   return codecRank(a.codec) > codecRank(b.codec);
 }
 
-/** A cached copy is skipped in best-quality mode only when its bitrate is known and lower. */
 export function cacheGoodEnough(cachedKbps: number | null, bestReachableKbps: number | null): boolean {
   if (cachedKbps === null || bestReachableKbps === null) return true;
   return cachedKbps >= bestReachableKbps;
 }
 
-/** Where an alternative starts after a mid-track failure. */
 export function alternativeStart(failedAtMs: number, primaryDurationMs: number, alternativeDurationMs: number): { startAtMs: number; restarted: boolean } {
   if (failedAtMs <= 0) return { startAtMs: 0, restarted: false };
   if (Math.abs(primaryDurationMs - alternativeDurationMs) <= SAME_POSITION_TOLERANCE_MS) return { startAtMs: failedAtMs, restarted: false };
   return { startAtMs: 0, restarted: true };
 }
 
-/** At most two alternatives and fifteen seconds per start. */
 export class FallbackBudget {
   private used = 0;
   private readonly deadline: number;
@@ -89,7 +81,6 @@ export class FallbackBudget {
   }
 }
 
-/** Rounds a bits-per-second figure (average when known, else nominal) to whole kbps. */
 export function kbpsOf(bitrateBps: number): number {
   return Math.round(bitrateBps / 1000);
 }

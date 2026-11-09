@@ -50,7 +50,6 @@ async fn scanning_20k_files_keeps_audio_requests_fast() {
     assert!(no_change < Duration::from_secs(3), "no-change rescan {no_change:?}");
 }
 
-/// Listing the whole library the way the Library tab does (pages of 500) and typing in its filter.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore]
 async fn listing_and_searching_20k_files_stays_quick() {

@@ -1,5 +1,3 @@
-//! yt-dlp stderr to an error code, by marker lists.
-
 use crate::FetchError;
 
 const DRM: &[&str] = &["drm protected", "drm-protected", "this video is drm", "protected by drm"];
@@ -32,8 +30,7 @@ const NETWORK: &[&str] = &[
 ];
 const UNSUPPORTED: &[&str] = &["unsupported url", "no suitable extractor", "no video formats found", "requested format is not available"];
 
-/// First matching list wins, in this order. The "gone" markers (private video, removed,
-/// unavailable) and anything unrecognised both end as `Unavailable`.
+// First matching list wins, in order; unrecognised stderr ends as Unavailable
 pub fn classify(stderr: &str) -> FetchError {
     let text = stderr.to_lowercase();
     let has = |marks: &[&str]| marks.iter().any(|mark| text.contains(mark));

@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Fills release-notes.template.md for one tag. Standard library only.
-
-    python3 .github/readme/release_notes.py v0.3.0 assets notes.md > release-notes.md
-
-The install table lists only files in the assets folder, because a Windows or macOS job may fail
-without blocking the release.
-"""
+"""Usage: release_notes.py <tag> <assets-dir> <changes.md> > release-notes.md"""
 
 import json
 import re
@@ -19,7 +13,6 @@ ORDER = ["Linux x64", "Linux arm64", "Windows x64", "Windows arm64", "macOS univ
 
 
 def describe(name):
-    """System, architecture and label of a release file, or None for anything that is not an installer."""
     extension = next((item for item in SYSTEMS if name.endswith(item)), None)
     if extension is None:
         return None
@@ -33,7 +26,6 @@ def describe(name):
 
 
 def rank(name):
-    """AppImage first on Linux and the installer first on Windows, in the order of SYSTEMS."""
     return next((index for index, item in enumerate(SYSTEMS) if name.endswith(item)), len(SYSTEMS)), "Setup" not in name
 
 

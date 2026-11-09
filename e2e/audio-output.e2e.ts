@@ -7,13 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isolate, type Isolation } from "./isolation";
 import { passFirstRun } from "./ui/harness";
 
-/**
- * Real sound reaches the system mixer: Nuvo plays a search result into a private null sink this test creates and removes,
- * and the sink's monitor must carry sound. Nothing is muted and nothing reaches the speakers: PULSE_SINK routes the app
- * to the private sink, and a stream that shows up anywhere else ends the run at once.
- * Never mute or move a Nuvo stream with pactl in a test: PipeWire remembers both per app name and the installed app starts silent.
- * NUVO_E2E_APP=<packaged binary or AppImage> runs the same check against a packaged build.
- */
+// Never mute or move a Nuvo stream with pactl: PipeWire remembers both per app name
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ELECTRON = createRequire(import.meta.url)("electron") as unknown as string;
 const PACKAGED = process.env.NUVO_E2E_APP ?? "";
@@ -35,7 +29,7 @@ interface SinkInput {
   properties: Record<string, string>;
 }
 
-/** The app's streams, found by its own profile on the owning process's command line: an AppImage forks the app off its launcher. */
+// Matched by profile on the command line: an AppImage forks the app off its launcher
 function appInputs(userData: string): SinkInput[] {
   const inputs = JSON.parse(pactl("-f", "json", "list", "sink-inputs")) as SinkInput[];
   return inputs.filter((input) => {
@@ -47,13 +41,10 @@ function appInputs(userData: string): SinkInput[] {
   });
 }
 
-/** Every process of this run's app, the AppImage's forked main process too. */
 function stopApp(userData: string, signal: "TERM" | "KILL"): void {
   try {
     execFileSync("pkill", [`-${signal}`, "-f", "--", `--user-data-dir=${userData}`]);
-  } catch {
-    // none left
-  }
+  } catch {}
 }
 
 function rmsOf(raw: Buffer): number {
@@ -66,7 +57,6 @@ function rmsOf(raw: Buffer): number {
   return Math.sqrt(sum / Math.max(1, samples));
 }
 
-/** Records the private sink's monitor for `ms`. */
 function record(ms: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -94,7 +84,6 @@ describe.skipIf(!linux)("audio output", () => {
     sinkIndex = (JSON.parse(pactl("-f", "json", "list", "short", "sinks")) as Array<{ index: number; name: string }>).find((s) => s.name === SINK)!.index;
 
     isolation = isolate("nuvo-audio");
-    // playback may fetch its tools on first use, the way a fresh install does
     delete isolation.env.NUVO_CORE_TOOLS_URL;
     const args = [`--user-data-dir=${isolation.userData}`, "--remote-debugging-port=0"];
     child = spawn(binary, PACKAGED ? args : [ROOT, "--no-sandbox", ...args], {
@@ -114,7 +103,6 @@ describe.skipIf(!linux)("audio output", () => {
       });
     });
 
-    // a stream on any other sink would be heard: stop the app at once and fail
     guard = setInterval(() => {
       try {
         const stray = appInputs(isolation.userData).find((input) => input.sink !== sinkIndex);
@@ -122,9 +110,7 @@ describe.skipIf(!linux)("audio output", () => {
           strayStream = `stream ${stray.index} on sink ${stray.sink}`;
           stopApp(isolation.userData, "KILL");
         }
-      } catch {
-        // pactl busy for a moment; the next look decides
-      }
+      } catch {}
     }, 50);
 
     browser = await chromium.connectOverCDP(endpoint);
@@ -162,7 +148,6 @@ describe.skipIf(!linux)("audio output", () => {
     await first.waitFor({ timeout: 30_000 });
     await first.click();
 
-    // playing, with the position moving
     const pause = page.getByRole("button", { name: "Pause", exact: true });
     await pause.waitFor({ timeout: 60_000 });
     await expect
@@ -186,7 +171,6 @@ describe.skipIf(!linux)("audio output", () => {
     expect(strayStream).toBe("");
     expect(rms).toBeGreaterThan(RMS_FLOOR);
 
-    // the app sees its own stream in the mixer and finds it audible
     expect(await page.evaluate(() => (window as unknown as { nuvoShell: { systemMuted(): Promise<boolean | null> } }).nuvoShell.systemMuted())).toBe(false);
     expect(
       await page

@@ -282,7 +282,6 @@ describe("the shared playlist preview", () => {
       expect.objectContaining({ label: "Shared playlist", target: { kind: "playlist", id: "p1" } }),
       expect.anything(),
     );
-    // the gone song is not posted, only the readable one
     expect((importPorts.startImport as ReturnType<typeof vi.fn>).mock.calls[0][0].rows).toHaveLength(1);
     await act(async () => finish({ items: [] }));
     await settle();
@@ -291,7 +290,6 @@ describe("the shared playlist preview", () => {
   });
 });
 
-/** Waits (real timers) until `find` returns something; the encoder's streams settle on later ticks. */
 async function until<T>(find: () => T | undefined | null): Promise<T> {
   for (let i = 0; i < 50; i++) {
     const found = find();
@@ -322,7 +320,6 @@ describe("the share sheet", () => {
       "https://youtu.be/dQw4w9WgXcQ",
     ]);
     expect(document.body.textContent).toContain("Link copied");
-    // one song has no list to copy or save
     expect(buttonNamed("Copy as text")).toBeUndefined();
   });
 

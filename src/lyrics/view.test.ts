@@ -17,7 +17,6 @@ function audioClock(latencyMs = 0) {
   return {
     clock,
     audio,
-    /** Audio time moves, the wall clock runs on its own: a slow frame must not move the fill. */
     advanceAudio: (ms: number) => (audio.nowMs += ms),
     advanceWall: (ms: number) => (wall += ms),
     setLive: (next: boolean) => (live = next),
@@ -98,7 +97,6 @@ describe("LyricsClock on the audio clock", () => {
     let last = clock.read().atMs;
     for (let frame = 0; frame < 300; frame += 1) {
       advanceAudio(16);
-      // the media position runs 40 ms ahead of the audio estimate from the first frame on
       position += 16;
       clock.report(position + 40, true, 200_000);
       const now = clock.read().atMs;

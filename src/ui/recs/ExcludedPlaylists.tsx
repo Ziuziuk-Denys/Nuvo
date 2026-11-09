@@ -6,7 +6,6 @@ import { setPlaylistExcluded, useExcludedPlaylists } from "../ports/recs";
 import { SettingGroup, SettingRow } from "../screens/settings/controls";
 import styles from "./HiddenList.module.css";
 
-/** Settings > Hidden: the playlists left out of recommendations, each with Use again. */
 export function ExcludedPlaylists(): JSX.Element | null {
   const { t } = useTranslation();
   const ids = useExcludedPlaylists();

@@ -1,6 +1,3 @@
-//! Cold start: up to 15 top tracks of artists the owner named stand
-//! in for taste seeds until his own likes and plays exist. Playlist tracks (imports included) come next.
-
 use nuvo_store::{StoreError, tracks};
 use rusqlite::{Connection, params};
 use serde_json::Value;
@@ -13,7 +10,7 @@ const MAX_ARTISTS: usize = 16;
 /// A YouTube id is 11 characters; the bound leaves room without admitting paths or spaces.
 const MAX_YT_ID_LEN: usize = 32;
 
-/// A cold-start pick comes from the renderer: `sc:<digits>` or a plain YouTube id, bounded names.
+// Picks come from the renderer: only sc:<digits> or a plain YouTube id, with bounded names
 fn check_pick(pick: &Value) -> Result<(), StoreError> {
     let invalid = |what: &str| Err(StoreError::Invalid(format!("starter {what}")));
     let id = pick["id"].as_str().unwrap_or("");
@@ -34,7 +31,6 @@ fn check_pick(pick: &Value) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// True when nothing tells the taste yet: no like, no counted play, no starter, no playlist track.
 pub fn needed(conn: &Connection) -> Result<bool, StoreError> {
     let known: bool = conn.query_row(
         "SELECT EXISTS(SELECT 1 FROM liked_tracks)
@@ -47,7 +43,6 @@ pub fn needed(conn: &Connection) -> Result<bool, StoreError> {
     Ok(!known)
 }
 
-/// Replaces the starters with `picks` (snapshots, 1-15). Returns how many were stored.
 pub fn replace(conn: &Connection, picks: &[Value], now: i64) -> Result<usize, StoreError> {
     if picks.is_empty() || picks.len() > MAX_STARTERS {
         return Err(StoreError::Invalid(format!("1-{MAX_STARTERS} tracks")));
@@ -64,8 +59,6 @@ pub fn replace(conn: &Connection, picks: &[Value], now: i64) -> Result<usize, St
     })
 }
 
-/// Seeds for a library with too few of its own: starters first, then tracks of playlists not excluded
-/// from taste, newest additions first; never one in `skip`, excluded or dismissed.
 pub fn fallback_seeds(conn: &Connection, limit: usize, skip: &[String]) -> Result<Vec<String>, StoreError> {
     let mut stmt = conn.prepare(
         "SELECT f.track_id FROM (

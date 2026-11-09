@@ -1,8 +1,4 @@
-/**
- * What a pasted text is: a normal search (null), or one route of the links spec. Deny by
- * default: only http, https and nuvo; known hosts match exactly or as a subdomain; unknown web hosts
- * go only to the daemon's yt-dlp inspection. Pure, no network.
- */
+// Deny by default: only http, https and nuvo; unknown web hosts go only to yt-dlp inspection
 
 export type Service = "nuvo" | "tiktok" | "youtube" | "soundcloud" | "apple-music" | "deezer" | "spotify" | "yandex" | "vk" | "shazam" | "web";
 
@@ -40,7 +36,6 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const TRACKING = /^(si|utm_.*|_r|_t|is_from_webapp|sender_device|feature|igsh|fbclid)$/i;
 const DANGEROUS_SCHEME = /^(javascript|data|file|vbscript|blob|about|chrome|ftp|ws|wss):/i;
 
-/** Domains a scheme-less text may start with, and the service each belongs to. */
 const KNOWN_HOSTS: [string, Service][] = [
   ["tiktok.com", "tiktok"],
   ["youtube.com", "youtube"],
@@ -71,7 +66,6 @@ function serviceOf(host: string): Service | null {
   return KNOWN_HOSTS.find(([domain]) => matches(host, domain))?.[1] ?? null;
 }
 
-/** Drops tracking parameters and the fragment. */
 export function cleanUrl(url: URL): string {
   const out = new URL(url.href);
   out.hash = "";
@@ -94,7 +88,6 @@ function isAddressLiteral(host: string): boolean {
 
 export function routeLink(input: string): LinkRoute | null {
   const text = input.trim();
-  // the copied share message is pasted whole: its "Open in Nuvo" line carries the link
   const shared = /(?:^|\s)(nuvo:\/\/share\?id=\S*)/.exec(text);
   if (shared && /\s/.test(text)) return routeNuvo(shared[1]);
   if (!text || /\s/.test(text)) return null;
@@ -220,7 +213,6 @@ function routeDeezer(host: string, path: string[], url: string): LinkRoute {
   return { kind: "error", code: "unsupported", service: "deezer", host };
 }
 
-/** Public playlists and albums are read by link; Liked songs and the rest stay on the export file. */
 function routeSpotify(host: string, path: string[], url: string): LinkRoute {
   if (host === "spotify.link") return { kind: "short", service: "spotify", url };
   const parts = path[0]?.startsWith("intl-") ? path.slice(1) : path;

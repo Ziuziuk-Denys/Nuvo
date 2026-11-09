@@ -1,10 +1,7 @@
-//! Title and artist text: normalisation, junk removal, base titles, artist and title parsing,
-//! version markers, transliteration, similarity and artist equality. Word boundaries are Unicode
-//! aware everywhere (any letter or digit is a word character), so Cyrillic words work like Latin ones.
+// Word boundaries are Unicode aware, so Cyrillic words work like Latin ones
 
 use unicode_normalization::UnicodeNormalization;
 
-/// Longer titles and artist names are cut before processing.
 pub const MAX_TEXT_CHARS: usize = 300;
 
 const AUDIO_EXTENSIONS: [&str; 6] = ["flac", "ogg", "m4a", "aac", "wav", "mp3"];
@@ -15,7 +12,6 @@ const PRODUCER: [&[&str]; 3] = [&["prod"], &["produced", "by"], &["beat", "by"]]
 const DETERMINERS: [&str; 10] = ["the", "a", "an", "my", "your", "our", "his", "her", "their", "this"];
 const FEATURING: [&str; 3] = ["feat", "ft", "featuring"];
 
-/// Promo and edition phrases: a bracket containing one of them is removed.
 const BRACKET_JUNK: &[&[&str]] = &[
     &["free", "download"],
     &["free", "dl"],
@@ -58,7 +54,6 @@ const BRACKET_JUNK: &[&[&str]] = &[
     &["из", "фильма"],
 ];
 
-/// Words after a trailing dash or pipe that make the rest of the title promo.
 const TRAILING_PROMO: &[&[&str]] = &[
     &["out", "now"],
     &["premiere"],
@@ -76,7 +71,6 @@ const TRAILING_PROMO: &[&[&str]] = &[
     &["produced", "by"],
 ];
 
-/// Words after a trailing dash that only qualify the recording (base title drops them).
 const DASH_QUALIFIERS: [&[&str]; 12] = [
     &["mono"],
     &["stereo"],
@@ -92,7 +86,6 @@ const DASH_QUALIFIERS: [&[&str]; 12] = [
     &["ремастеринг"],
 ];
 
-/// Version marker vocabulary: (marker, word sequences in normalised form).
 pub const MARKERS: [(&str, &[&[&str]]); 15] = [
     ("remix", &[&["remix"], &["remixed"], &["rmx"], &["ремикс"]]),
     ("vip", &[&["vip"], &["v", "i", "p"]]),
@@ -111,7 +104,6 @@ pub const MARKERS: [(&str, &[&[&str]]); 15] = [
     ("bass-boost", &[&["bass", "boost"], &["bass", "boosted"], &["басс", "буст"]]),
 ];
 
-/// Curated aliases transliteration cannot bridge, in comparison form.
 const ALIASES: [&[&str]; 4] = [
     &["кино", "виктор цой", "в цой", "цой"],
     &["король и шут", "горшок", "михаил горшенев", "князь", "андрей князев"],
@@ -119,13 +111,11 @@ const ALIASES: [&[&str]; 4] = [
     &["pharaoh", "фараон"],
 ];
 
-/// NFC, then cut to the input cap. Every public entry point starts here, so the helpers below
-/// only ever see composed text of bounded length.
+// Every public entry point starts here, so helpers only see NFC text of bounded length
 fn prepare(text: &str) -> String {
     text.nfc().take(MAX_TEXT_CHARS).collect()
 }
 
-/// Lower case, every run of non-alphanumeric characters becomes one space, trimmed.
 pub fn normalize(text: &str) -> String {
     let text = prepare(text);
     let mut out = String::with_capacity(text.len());
@@ -144,7 +134,6 @@ pub fn normalize(text: &str) -> String {
     out
 }
 
-/// The form scoring compares: `ё` folded to `е`, audio extensions removed, then normalised.
 pub fn compare_form(text: &str) -> String {
     normalize(&strip_extensions(&prepare(text))).replace('ё', "е")
 }
@@ -159,7 +148,6 @@ struct Token {
     end: usize,
 }
 
-/// Alphanumeric runs of `raw`, lower-cased, with their byte ranges.
 fn tokens(raw: &str) -> Vec<Token> {
     let mut out: Vec<Token> = Vec::new();
     let mut current: Option<Token> = None;
@@ -231,8 +219,6 @@ enum Verdict {
     Replace(String),
 }
 
-/// Byte offset of the bracket closing the one at `open_at`, honouring nesting; mismatched
-/// closers are ignored and `None` means the opener is never closed.
 fn matching_close(rest: &str, open_at: usize, open: char) -> Option<usize> {
     let from = open_at + open.len_utf8();
     let mut stack = vec![closer(open)?];
@@ -249,7 +235,6 @@ fn matching_close(rest: &str, open_at: usize, open: char) -> Option<usize> {
     None
 }
 
-/// Applies `judge` to every bracket group, innermost first. An unmatched opener is plain text.
 fn strip_brackets(raw: &str, judge: &dyn Fn(&str) -> Verdict) -> String {
     let mut out = String::new();
     let mut rest = raw;
@@ -278,7 +263,6 @@ fn is_russian_remaster(word: &str) -> bool {
     word.starts_with("ремастер") || word.starts_with("ремастир")
 }
 
-/// `content` without its promo and edition words, leaving everything else as written.
 fn without_promo_words(content: &str) -> String {
     let toks = tokens(content);
     let mut out = String::new();
@@ -299,8 +283,7 @@ fn without_promo_words(content: &str) -> String {
     out.trim_matches(|c: char| !c.is_alphanumeric()).to_string()
 }
 
-/// Socials, handles, links and producer credits go whole; promo and edition words go alone when
-/// the bracket also carries a version marker ("Remastered Remix" keeps "Remix").
+// A bracket with a version marker loses only its promo words: "Remastered Remix" keeps Remix
 fn junk_verdict(content: &str) -> Verdict {
     let trimmed = content.trim();
     let list = words(trimmed);
@@ -345,8 +328,7 @@ fn strip_handles_and_links(raw: &str) -> String {
     out
 }
 
-/// `tg: name`, `inst/name` and the like outside brackets (a separator is required there, so
-/// ordinary words such as "Instant" or a lone "X" are never touched).
+// A separator is required outside brackets, so words like "Instant" or a lone "X" stay
 fn strip_social(raw: &str) -> String {
     let toks = tokens(raw);
     let mut out = raw.to_string();
@@ -362,7 +344,6 @@ fn strip_social(raw: &str) -> String {
     out
 }
 
-/// Producer credits outside brackets run to the end of the title.
 fn strip_producer(raw: &str) -> String {
     let toks = tokens(raw);
     let credit = |i: usize| PRODUCER.iter().any(|p| token_phrase_at(&toks, i, p)) && !(i > 0 && toks[i].text == "beat" && DETERMINERS.contains(&toks[i - 1].text.as_str()));
@@ -372,8 +353,6 @@ fn strip_producer(raw: &str) -> String {
     }
 }
 
-/// Byte offsets of separators: a dash with a space on at least one side, or `|` (plus `:` and `~`
-/// when `all` is set, for artist and title parsing).
 fn separators(raw: &str, all: bool) -> Vec<(usize, usize)> {
     let chars: Vec<(usize, char)> = raw.char_indices().collect();
     let mut found = Vec::new();
@@ -405,8 +384,6 @@ fn tidy(raw: &str) -> String {
     collapsed.trim_matches(|c: char| c.is_whitespace() || matches!(c, '-' | '–' | '—' | '|' | '~' | ':')).to_string()
 }
 
-/// Removes uploader noise from a raw title: extensions, social tags, handles, producer credits,
-/// promo and edition brackets, trailing promo, asterisk tags and empty brackets.
 pub fn remove_junk(raw: &str) -> String {
     let text = strip_extensions(&prepare(raw));
     let text = strip_asterisks(&text);
@@ -460,14 +437,11 @@ fn without_markers(list: &[String]) -> Vec<String> {
     out
 }
 
-/// The comparable core of a title: junk, featuring clauses, a trailing dash qualifier and every
-/// version marker word removed, in comparison form.
 pub fn base_title(raw: &str) -> String {
     let text = strip_dash_qualifier(&strip_featuring(&remove_junk(raw)));
     compare_form(&without_markers(&words(&text)).join(" "))
 }
 
-/// The parts of a junk-free title between separators (`-` with a space beside it, `:`, `|`, `~`).
 pub fn title_parts(cleaned: &str) -> Vec<String> {
     let cleaned = &prepare(cleaned);
     let mut parts = Vec::new();
@@ -480,13 +454,11 @@ pub fn title_parts(cleaned: &str) -> Vec<String> {
     parts
 }
 
-/// Junk removal that never empties a title: a title made only of junk is kept as written.
 pub fn clean_title(raw: &str) -> String {
     let cleaned = remove_junk(raw);
     if cleaned.is_empty() { tidy(&prepare(raw)) } else { cleaned }
 }
 
-/// Splits an uploaded title into `(artist, title)` after junk removal.
 pub fn artist_and_title(raw: &str) -> (Option<String>, String) {
     let cleaned = clean_title(raw);
     let parts = title_parts(&cleaned);
@@ -500,7 +472,6 @@ pub fn artist_and_title(raw: &str) -> (Option<String>, String) {
     (None, cleaned)
 }
 
-/// Version markers of a title, in vocabulary order.
 pub fn markers(raw: &str) -> Vec<&'static str> {
     let list = words(&remove_junk(raw));
     MARKERS.iter().filter(|(_, forms)| forms.iter().any(|p| contains_phrase(&list, p))).map(|(name, _)| *name).collect()
@@ -509,7 +480,6 @@ pub fn markers(raw: &str) -> Vec<&'static str> {
 pub struct Query {
     pub artist: String,
     pub title: String,
-    /// What step 1, 2 and 4 of the cascade search for.
     pub query: String,
 }
 
@@ -558,8 +528,6 @@ fn translit_char(c: char) -> Option<&'static str> {
     })
 }
 
-/// Cyrillic to Latin plus folding of common spelling variants, applied to both sides of a
-/// comparison: "Моргенштерн" and "Morgenshtern" give the same string.
 pub fn translit(text: &str) -> String {
     let mut latin = String::new();
     for c in compare_form(text).chars() {
@@ -601,8 +569,7 @@ fn word_similarity(a: &str, b: &str) -> f64 {
     1.0 - levenshtein(&a, &b) as f64 / a.len().max(b.len()) as f64
 }
 
-/// 0 to 100 on comparison forms; word order does not matter. Inputs must already be in
-/// comparison form (see [`compare_form`] or [`translit`]).
+// Inputs must already be in comparison form (see compare_form or translit)
 pub fn similarity_of_forms(a: &str, b: &str) -> f64 {
     let capped = |s: &str| s.char_indices().nth(MAX_TEXT_CHARS).map_or(s.to_string(), |(i, _)| s[..i].to_string());
     let (a, b) = (capped(a), capped(b));
@@ -629,8 +596,6 @@ pub fn similarity_of_forms(a: &str, b: &str) -> f64 {
     score.min(100.0)
 }
 
-/// Average best spelling match of each word of `from` among the words of `to`; words that match
-/// worse than 0.8 count as missing.
 fn covered_quality(from: &[&str], to: &[&str]) -> f64 {
     from.iter().map(|w| to.iter().map(|l| word_similarity(w, l)).fold(0.0, f64::max)).filter(|best| *best >= 0.8).sum::<f64>() / from.len() as f64
 }
@@ -643,7 +608,6 @@ fn alias_group(form: &str) -> Option<usize> {
     ALIASES.iter().position(|group| group.contains(&form))
 }
 
-/// Whether two artist names are the same artist (3.7). Empty names never match.
 pub fn same_artist(a: &str, b: &str) -> bool {
     let (fa, fb) = (compare_form(a), compare_form(b));
     if fa.is_empty() || fb.is_empty() {

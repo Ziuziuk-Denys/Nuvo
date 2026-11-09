@@ -3,14 +3,12 @@ use serde_json::Value;
 
 use crate::StoreError;
 
-/// Older recognitions beyond this many are deleted on insert.
 pub const KEEP: i64 = 500;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Recognition {
     pub id: String,
     pub created_at: i64,
-    /// The `RecognizedTrack` JSON as the renderer receives it.
     pub result: Value,
 }
 
@@ -43,7 +41,6 @@ pub fn insert(conn: &Connection, id: &str, created_at: i64, input_kind: &str, in
     }
 }
 
-/// Newest first.
 pub fn list(conn: &Connection, limit: i64) -> Result<Vec<Recognition>, StoreError> {
     let clamped_limit = limit.clamp(1, 500);
     let mut statement = conn.prepare("SELECT id, created_at, result_json FROM recognitions ORDER BY created_at DESC, rowid DESC LIMIT ?1")?;

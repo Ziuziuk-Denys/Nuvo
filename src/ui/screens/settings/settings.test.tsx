@@ -9,7 +9,6 @@ import { Settings } from "./Settings";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mocks = vi.hoisted(() => {
-  /** A zustand-shaped hook over a plain object: select reads it, getState returns it. */
   function store<T extends object>(state: T) {
     const hook = (select?: (value: T) => unknown) => (select ? select(state) : state);
     return Object.assign(hook, { getState: () => state });
@@ -205,7 +204,6 @@ vi.mock("../../ports/storage", () => ({
   setAudioCacheLimitBytes: mocks.storage.setLimit,
 }));
 vi.mock("../../ports/shortcuts", async () => {
-  // the real registry and recorder over two commands, so recording is tested end to end
   const { CommandRegistry } = await import("@/data/shortcuts/registry");
   const { Recorder } = await import("@/data/shortcuts/recorder");
   const { formatKeycaps } = await import("@/data/shortcuts/accelerator");

@@ -1,6 +1,5 @@
 import type { ElectronApplication } from "playwright-core";
 
-/** Share of pixels whose largest channel difference exceeds the tolerance; different sizes return 1. */
 export async function diffRatio(app: ElectronApplication, a: string, b: string, channelTolerance = 16): Promise<number> {
   return app.evaluate(
     ({ nativeImage }, [pathA, pathB, tolerance]) => {

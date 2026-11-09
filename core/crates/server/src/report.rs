@@ -1,6 +1,3 @@
-//! The daemon section of the bug report (`GET /v1/system/report`). Main adds its own section,
-//! redacts the whole text again and saves it where the user picks. Nothing is uploaded.
-
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::path::Path;
 
@@ -9,9 +6,6 @@ use nuvo_fetch::link::is_public;
 pub const LOG_TAIL_BYTES: usize = 200 * 1024;
 const SECRET_HEADERS: [&str; 4] = ["proxy-authorization:", "authorization:", "set-cookie:", "cookie:"];
 
-/// Applies every redaction rule: the home directory becomes `~`, the daemon token, header values
-/// of `Authorization` and `Cookie` and `Bearer` tokens go, URLs lose credentials, query and
-/// fragment, public IP addresses become `<ip>` and e-mail addresses `<email>`.
 pub fn redact(text: &str, home: Option<&str>, token: &str) -> String {
     text.split_inclusive('\n').map(|line| redact_line(line, home, token)).collect()
 }
@@ -43,7 +37,7 @@ fn redact_line(line: &str, home: Option<&str>, token: &str) -> String {
     body + newline
 }
 
-/// Replaces `path` with `~` where it ends a path component: `/home/denys2` is another user.
+// Only where it ends a path component: /home/user2 is another user
 fn replace_path(text: &str, path: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
@@ -58,7 +52,6 @@ fn replace_path(text: &str, path: &str) -> String {
     out
 }
 
-/// The form a path takes inside a `file://` URL.
 fn percent_encode_path(path: &str, upper: bool) -> String {
     let mut out = String::new();
     for byte in path.bytes() {
@@ -73,7 +66,6 @@ fn percent_encode_path(path: &str, upper: bool) -> String {
     out
 }
 
-/// Every `Bearer <token>` on the line, in any letter case, loses its token.
 fn redact_bearer(line: &str) -> String {
     let lower = line.to_ascii_lowercase();
     let mut out = String::with_capacity(line.len());
@@ -91,7 +83,6 @@ fn redact_bearer(line: &str) -> String {
     out
 }
 
-/// A public IPv4 address, also with zero-padded octets and a trailing or leading dot.
 fn replace_ipv4(word: &str) -> String {
     let core = word.trim_matches('.');
     let lead = word.len() - word.trim_start_matches('.').len();
@@ -108,7 +99,6 @@ fn replace_ipv4(word: &str) -> String {
     word.to_string()
 }
 
-/// A public IPv6 address, also with a trailing or leading colon from the text around it.
 fn replace_ipv6(word: &str) -> String {
     let end = word.trim_end_matches(['.', ':']).len();
     let start = end - word[..end].trim_start_matches(':').len();
@@ -124,7 +114,6 @@ fn replace_ipv6(word: &str) -> String {
     word.to_string()
 }
 
-/// Every `scheme://...` run loses its credentials, query string and fragment.
 fn redact_urls(line: &str) -> String {
     let mut out = String::with_capacity(line.len());
     let mut rest = line;
@@ -147,7 +136,6 @@ fn redact_urls(line: &str) -> String {
     out
 }
 
-/// Rewrites each run of non-separator characters with `f`, keeping the separators.
 fn map_words(text: &str, is_separator: impl Fn(char) -> bool, f: impl Fn(&str) -> String) -> String {
     let mut out = String::with_capacity(text.len());
     let mut word = String::new();
@@ -173,7 +161,6 @@ fn is_email(word: &str) -> bool {
         && domain.chars().all(|c| c.is_ascii_alphanumeric() || ".-".contains(c))
 }
 
-/// The last `LOG_TAIL_BYTES` of `core.log.1` followed by `core.log`, starting at a whole line.
 pub fn log_tail(log: &Path) -> String {
     let mut rotated = log.as_os_str().to_owned();
     rotated.push(".1");

@@ -1,15 +1,5 @@
 #!/bin/sh
-# Nuvo for Waybar (Hyprland, Sway and other wlroots desktops). Needs busctl (systemd) and jq.
-# Playback and metadata come from Nuvo's MPRIS player; like, dislike, the lyrics line and "open"
-# from quest.nuvo.Nuvo.Player on the session bus.
-#
-#   nuvo-waybar follow                 the title module: one JSON line per change (Waybar custom, return-type json)
-#   nuvo-waybar button NAME            one control: previous, play, next, like or dislike (signal-driven)
-#   nuvo-waybar cover                  the cover path for the Waybar image module
-#   nuvo-waybar ACTION                 play-pause, next, previous, like, dislike or open
-#
-# The follower sends SIGRTMIN+N to Waybar when the song, the play state or the like changes, so the
-# buttons and the cover refresh at once. N is 8, or NUVO_WAYBAR_SIGNAL.
+# Usage: nuvo-waybar follow | button NAME | cover | ACTION; needs busctl and jq
 set -u
 
 NUVO=quest.nuvo.Nuvo.Player
@@ -19,7 +9,6 @@ PLAYER=org.mpris.MediaPlayer2.Player
 PROPS=org.freedesktop.DBus.Properties
 SIGNAL=${NUVO_WAYBAR_SIGNAL:-8}
 
-# The whole state as one flat object; status "Stopped" when Nuvo is not running.
 snapshot() {
   nuvo=$(busctl --user --json=short call "$NUVO" "$NUVO_PATH" "$PROPS" GetAll s "$NUVO" 2>/dev/null) || nuvo='{"data":[{}]}'
   name=$(printf '%s' "$nuvo" | jq -r '.data[0].MprisName.data // empty')
@@ -44,8 +33,6 @@ snapshot() {
     | .live = (.title != "" and .status != "Stopped")'
 }
 
-# The title module: text, tooltip with lyrics and a progress line, and a pN class (0 to 100 in steps of 5)
-# that style.css turns into a thin progress line under the module.
 # shellcheck disable=SC2016 # a jq program, not shell
 render='
   def clock: (. / 1000000 | floor) as $s | "\($s / 60 | floor):\($s % 60 | tostring | if length < 2 then "0" + . else . end)";

@@ -1,6 +1,3 @@
-//! The cover index in the library database (store migration 14). The files themselves live in
-//! the encrypted cache, named by the cache key.
-
 use nuvo_store::{Connection, StoreError, settings};
 use rusqlite::{OptionalExtension, Row};
 
@@ -44,7 +41,6 @@ pub fn delete(conn: &Connection, key: &str) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Every cached bucket of one cover.
 pub fn for_source(conn: &Connection, source: &str) -> Result<Vec<Entry>, StoreError> {
     let mut stmt = conn.prepare("SELECT * FROM cover_entries WHERE source = ?1 ORDER BY bucket")?;
     Ok(stmt.query_map([source], entry)?.collect::<Result<_, _>>()?)
@@ -56,7 +52,6 @@ pub fn by_last_served(conn: &Connection) -> Result<Vec<Entry>, StoreError> {
     Ok(stmt.query_map([], entry)?.collect::<Result<_, _>>()?)
 }
 
-/// `(bytes, count)`, exact.
 pub fn totals(conn: &Connection) -> Result<(i64, i64), StoreError> {
     Ok(conn.query_row("SELECT coalesce(sum(size_bytes), 0), count(*) FROM cover_entries", [], |r| Ok((r.get(0)?, r.get(1)?)))?)
 }

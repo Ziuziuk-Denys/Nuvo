@@ -22,7 +22,6 @@ struct Mock {
     file_hits: Arc<AtomicUsize>,
 }
 
-/// A stand-in for the repository: the index at its real path, files by name; "moved.ttml" redirects.
 async fn mock(index: String) -> Mock {
     let index_hits = Arc::new(AtomicUsize::new(0));
     let file_hits = Arc::new(AtomicUsize::new(0));

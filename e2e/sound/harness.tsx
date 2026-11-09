@@ -13,7 +13,7 @@ import { SpeedPanel } from "@/ui/shell/popovers/SpeedPanel";
 import { TEMPO_PRESETS } from "@/features/sound/lib/tempo";
 import { setLocale } from "@/i18n";
 
-// Renders the EQ panel in its popover shell with a synthetic spectrum: ?theme=dark&lang=ru&scene=custom|off|paused|clip|sleep|speed|speed-custom (sleep=1 and loop=1 arm the timer and the A-B loop in any scene)
+// Query params: theme, lang, scene=custom|off|paused|clip|sleep|speed|speed-custom, sleep=1, loop=1
 const params = new URLSearchParams(location.search);
 const scene = params.get("scene") ?? "preset";
 document.documentElement.dataset.theme = params.get("theme") ?? "light";
@@ -52,7 +52,6 @@ connectSound(
   () => noop,
 );
 
-// The sound panels read the sound link's snapshot; the speed picker reads the compat store
 function setPlayer(state: Record<string, unknown>) {
   usePlayerSnapshot.setState(state);
   usePlayerStore.setState(state);
@@ -65,13 +64,11 @@ setPlayer({
   positionMs: 84_000,
 });
 if (scene === "sleep" || params.get("sleep")) {
-  // State only: no interval runs in the harness
   useSleepStore.setState({
     plan: { target: { kind: "minutes", minutes: 30 }, stopAt: Date.now() + 754_000 },
     remainingMs: 754_000,
   });
 }
-// set after the first render, as the player bar once cleared the loop on mount
 if (params.get("loop")) {
   setTimeout(() => {
     useAbLoopStore.getState().setPoint("a", 96_000);
@@ -103,7 +100,6 @@ if (scene === "custom") {
 const dark = document.documentElement.dataset.theme === "dark";
 document.documentElement.classList.toggle("dark", dark);
 document.documentElement.dataset.ui = "nuvo";
-// the default preset's colour roles, as the app's look sync writes them
 applyPresetTokens(document.documentElement, getPreset("nuvo"), dark ? "dark" : "light");
 const width = scene === "speed" || scene === "speed-custom" ? 300 : scene === "sleep" ? 340 : 560;
 const skeleton = dark ? "rgb(255 255 255 / 0.08)" : "rgb(0 0 0 / 0.06)";

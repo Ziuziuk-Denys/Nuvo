@@ -1,5 +1,3 @@
-//! Music folders and the files found in them. Paths are written only by the daemon's scanner.
-
 use nuvo_contracts::{LocalRelated, LocalRoot, LocalStyle, LocalTrackItem, LocalTracksPage};
 use rusqlite::{Connection, OptionalExtension, Row, params};
 use serde_json::Value;
@@ -33,7 +31,6 @@ pub struct KnownFile {
     pub size_bytes: i64,
     pub mtime_ms: i64,
     pub has_lrc: bool,
-    /// `None`: scanned before this was kept, so the file's cover state is unknown.
     pub folder_art: Option<bool>,
 }
 
@@ -45,7 +42,6 @@ pub struct LocalFile {
 
 const ROOT_SELECT: &str = "SELECT r.id, r.path, r.added_at, r.last_scan_at, r.status,
   (SELECT count(*) FROM local_files f WHERE f.root_id = r.id) FROM local_roots r";
-/// The listing order as one string, for the row of the track `?3` names (see migration 22).
 const SORT_KEY: &str = "(SELECT nuvo_fold(t.artist) || char(31) || nuvo_fold(coalesce(t.album, '')) || char(31)
       || printf('%06d', coalesce(json_extract(t.snapshot_json, '$.local.discNo'), 0)) || char(31)
       || printf('%06d', coalesce(json_extract(t.snapshot_json, '$.local.trackNo'), 0)) || char(31) || nuvo_fold(t.title)
@@ -78,8 +74,6 @@ fn inside(parent: &str, child: &str) -> bool {
     child.strip_prefix(parent).is_some_and(|rest| rest.starts_with('/'))
 }
 
-/// The same folder again returns it; a folder inside a known one is refused; a folder around
-/// known ones takes their files over, so the files keep their track ids.
 pub fn add_root(conn: &Connection, path: &str, now: i64) -> Result<LocalRoot, StoreError> {
     let tx = conn.unchecked_transaction()?;
     let existing = roots(&tx)?;
@@ -103,7 +97,7 @@ pub fn add_root(conn: &Connection, path: &str, now: i64) -> Result<LocalRoot, St
     root(conn, id)?.ok_or(StoreError::NotFound("music folder"))
 }
 
-/// File rows go with the folder; `tracks` rows stay, since likes and playlists point at them.
+// tracks rows stay: likes and playlists point at them
 pub fn remove_root(conn: &Connection, id: i64) -> Result<(), StoreError> {
     match conn.execute("DELETE FROM local_roots WHERE id = ?1", [id])? {
         0 => Err(StoreError::NotFound("music folder")),
@@ -127,7 +121,6 @@ pub fn known_files(conn: &Connection, root_id: i64) -> Result<Vec<KnownFile>, St
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
-/// One batch of a scan, in one transaction: new and changed files with their snapshots, then removals.
 pub fn apply(conn: &Connection, root_id: i64, rows: &[(FileRow, Value)], removed: &[String], now: i64) -> Result<(), StoreError> {
     let tx = conn.unchecked_transaction()?;
     for (row, snapshot) in rows {
@@ -151,7 +144,6 @@ pub fn apply(conn: &Connection, root_id: i64, rows: &[(FileRow, Value)], removed
     Ok(())
 }
 
-/// The file to play for a track: the first copy in a reachable folder.
 pub fn file_for(conn: &Connection, track_id: &str) -> Result<Option<LocalFile>, StoreError> {
     let sql = format!(
         "SELECT {FILE_COLUMNS}, r.path FROM local_files f JOIN local_roots r ON r.id = f.root_id
@@ -171,8 +163,6 @@ fn escape_like(text: &str) -> String {
     text.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
 }
 
-/// A page cursor is the last row's sort key and path, each in hex: the next page continues after it, so
-/// a scan writing rows in between cannot shift or repeat anything and a late page costs as much as the first.
 fn hex(text: &str) -> String {
     text.bytes().map(|b| format!("{b:02x}")).collect()
 }
@@ -182,7 +172,6 @@ fn unhex(text: &str) -> Option<String> {
     String::from_utf8(bytes).ok()
 }
 
-/// It also carries the total counted for the first page, so later pages do not count again.
 fn encode_cursor(total: i64, sort_key: &str, path: &str) -> String {
     format!("{total}.{}.{}", hex(sort_key), hex(path))
 }
@@ -193,7 +182,6 @@ fn decode_cursor(cursor: &str) -> Option<(i64, String, String)> {
     Some((total.parse().ok()?, unhex(key)?, unhex(path)?))
 }
 
-/// One row per track (its first copy), in reachable folders, ordered artist, album, disc, track.
 pub fn list(conn: &Connection, query: Option<&str>, cursor: Option<&str>, limit: usize) -> Result<LocalTracksPage, StoreError> {
     let limit = limit.clamp(1, MAX_PAGE);
     let after = cursor.map(|c| decode_cursor(c).ok_or_else(|| StoreError::Invalid("bad cursor".into()))).transpose()?;
@@ -203,7 +191,6 @@ pub fn list(conn: &Connection, query: Option<&str>, cursor: Option<&str>, limit:
           AND (?1 IS NULL OR f.search_key LIKE ?1 ESCAPE '\\')";
     let total: i64 = match &after {
         Some((total, ..)) => *total,
-        // without a filter the rows are the distinct tracks of reachable folders: no per-row lookups
         None if pattern.is_none() => conn.query_row("SELECT count(DISTINCT f.track_id) FROM local_files f JOIN local_roots r ON r.id = f.root_id AND r.status = 'ok'", [], |r| r.get(0))?,
         None => conn.query_row(&format!("SELECT count(*) {from}"), [&pattern], |r| r.get(0))?,
     };
@@ -233,8 +220,6 @@ pub fn list(conn: &Connection, query: Option<&str>, cursor: Option<&str>, limit:
     Ok(LocalTracksPage { items, next_cursor, total })
 }
 
-/// The genre tag most of the played and liked local songs carry, as first tagged, and up to
-/// `limit` playable local songs of it in random order. No genre while no such song has a tag.
 pub fn style(conn: &Connection, limit: usize) -> Result<LocalStyle, StoreError> {
     let genre: Option<String> = conn
         .query_row(
@@ -260,7 +245,6 @@ pub fn style(conn: &Connection, limit: usize) -> Result<LocalStyle, StoreError> 
     Ok(LocalStyle { genre: Some(genre), items })
 }
 
-/// Playable local tracks by the seed's artist first, then of its genre; the seed may be streamed.
 pub fn related(conn: &Connection, seed_id: &str, limit: usize) -> Result<LocalRelated, StoreError> {
     let Some(seed) = tracks::snapshot(conn, seed_id)? else { return Ok(LocalRelated { seed: None, items: Vec::new() }) };
     let artist = seed.pointer("/artists/0/name").and_then(Value::as_str).unwrap_or("").to_lowercase();

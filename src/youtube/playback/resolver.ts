@@ -1,4 +1,3 @@
-/** The resolution chain for one video. SoundCloud ids and stand-ins belong to the engine. */
 import { ANDROID_VR, TVHTML5, VISIONOS, WEB_REMIX, type ClientContext } from "../constants";
 import { YtError, isAbortError, throwIfAborted, type YtAttempt } from "../types";
 import { fallbackAttempt, webRemixAttempt, type PlaybackDeps, type StreamHit } from "./attempts";
@@ -8,15 +7,12 @@ import { report, validUntilMs, type CodecPreference, type Quality } from "./form
 
 export interface ResolveOptions {
   progressive: boolean;
-  /** Return a URL before its probe when the client's last probe passed; `verify` runs the rest. */
   early?: boolean;
   quality?: Quality;
   codec?: CodecPreference;
-  /** Clients whose stream already failed for this start. */
   avoid?: string[];
 }
 
-/** What `resolve` hands back: the engine's `PlayableSource` fields plus what the player bar shows. */
 export interface YtSource {
   url?: string;
   expiresAt?: number;
@@ -36,11 +32,7 @@ export interface YtSource {
   loudnessDb?: number;
   servedBy: string;
   itag?: number;
-  /**
-   * Early starts only. Runs this source's probe (once, however often it is called) and settles with the source when it
-   * passes, or with the next client's probed source when it fails; rejects like `resolve`. The caller starts it once
-   * the stream answered, because googlevideo serves the two requests one after the other.
-   */
+  // Start verify once the stream answered: googlevideo serves the two requests one after the other
   verify?: () => Promise<YtSource>;
 }
 
@@ -52,7 +44,6 @@ export interface SignedInStep {
 export const WEB_REMIX_ATTEMPTS = 2;
 export const COOLDOWN_AFTER = 3;
 export const COOLDOWN_MS = 5 * 60 * 1000;
-/** One client's request or probe; a hanging client must leave time for the next one. */
 export const CLIENT_BUDGET_MS = 3000;
 const FALLBACKS: ClientContext[] = [TVHTML5, VISIONOS, ANDROID_VR];
 
@@ -94,11 +85,9 @@ export class StreamResolver {
   private failures = 0;
   private coolingUntil = 0;
   private lastWebRemixError = "";
-  /** Clients whose stream was refused with 403 (a server limit): skipped until `reset()`, with the refusal text. */
   private down = new Map<string, string>();
   private lastGood: string | null = null;
   private perTrack = new Map<string, string>();
-  /** Clients whose last probe passed in this session. */
   private probedOk = new Set<string>();
   private warming = false;
 
@@ -113,7 +102,6 @@ export class StreamResolver {
     },
   ) {}
 
-  /** Forgets the last good client and the WEB_REMIX health (network change, sign-in, sign-out). */
   reset(): void {
     this.failures = 0;
     this.coolingUntil = 0;
@@ -157,8 +145,7 @@ export class StreamResolver {
       let step = await chain.next();
       while (!step.done) {
         const hit = step.value;
-        // A client whose last probe passed plays at once; its probe runs when the caller asks.
-        // A cold first track plays VISIONOS before its probe too: the known-good client, and the worker is not ready.
+        // A cold first track trusts VISIONOS before its probe: known good and needs no worker
         const trusted = this.probedOk.has(hit.client) || (cold && hit.client === VISIONOS.clientName);
         if (options.early && trusted) {
           let verified: Promise<YtSource> | null = null;
@@ -178,14 +165,12 @@ export class StreamResolver {
     }
   }
 
-  /** The rest of an early start: this hit's probe, then the chain where it left off. Never started: the chain is dropped. */
   private async finish(chain: AsyncGenerator<StreamHit, YtSource, unknown>, hit: StreamHit, signal: AbortSignal): Promise<YtSource> {
     let step = await chain.next(await this.probeHit(hit, signal));
     while (!step.done) step = await chain.next(await this.probeHit(step.value, signal));
     return step.value;
   }
 
-  /** Runs one client step; running out of time is that client's failure, never an abort of the start. */
   private async withinBudget<T>(run: (signal: AbortSignal) => Promise<T>, signal: AbortSignal): Promise<T> {
     const limit = new AbortController();
     const timer = setTimeout(() => limit.abort(), CLIENT_BUDGET_MS);
@@ -199,7 +184,6 @@ export class StreamResolver {
     }
   }
 
-  /** `undefined` when the probe passed, else its error. */
   private async probeHit(hit: StreamHit, signal: AbortSignal): Promise<unknown> {
     try {
       await this.withinBudget((limited) => probe(this.deps.fetch, hit.url, Number(hit.format.contentLength) || undefined, limited), signal);
@@ -212,7 +196,6 @@ export class StreamResolver {
     }
   }
 
-  /** The worker is not ready yet (first track, closed after idle, or still warming). One that cannot tell counts as ready. */
   private async workerCold(signal: AbortSignal): Promise<boolean> {
     if (this.warming) return true;
     const isReady = this.deps.worker.isReady?.bind(this.deps.worker);
@@ -225,7 +208,6 @@ export class StreamResolver {
     }
   }
 
-  /** Opens the worker and warms the minter and the player script; one run at a time, failures are silent. */
   private warmWorker(videoId: string): void {
     if (this.warming) return;
     const done = () => {
@@ -235,7 +217,6 @@ export class StreamResolver {
     void Promise.allSettled([this.deps.worker.contentToken(videoId), this.deps.player.signatureTimestamp(new AbortController().signal)]).then(done);
   }
 
-  /** A 403 at the probe or the stream marks the client down for the session. */
   private markIfRefused(client: string, error: unknown): boolean {
     const { status, text } = describe(error);
     if (status !== 403) return false;
@@ -243,7 +224,6 @@ export class StreamResolver {
     return true;
   }
 
-  /** Yields each client's stream URL in order; the caller sends back the probe failure, or nothing when it passed. */
   private async *chain(videoId: string, options: ResolveOptions, signal: AbortSignal, cold: boolean): AsyncGenerator<StreamHit, YtSource, unknown> {
     const choice = {
       quality: options.quality ?? "normal",

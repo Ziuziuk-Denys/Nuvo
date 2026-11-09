@@ -29,7 +29,6 @@ fn sort(conn: &Connection, id: &str, mode: &str, desc: bool) {
     playlists::update(conn, id, &input, 3).unwrap();
 }
 
-/// Item ids of every page, in order, and the totals each page reported.
 fn walk(conn: &Connection, id: &str, limit: usize, q: Option<&str>) -> (Vec<String>, Vec<usize>) {
     let (mut ids, mut totals, mut cursor) = (Vec::new(), Vec::new(), None);
     loop {
@@ -84,7 +83,6 @@ fn pages_stay_stable_across_inserts_and_removals() {
     let id = playlist_with(&conn, 10);
     let first = playlists::items_page(&conn, &id, None, 4, None).unwrap();
     let all_before = detail_ids(&conn, &id);
-    // Remove an item already served and append a new one while the user scrolls.
     playlists::remove_items(&conn, &id, std::slice::from_ref(&first.items[1].id), 4).unwrap();
     playlists::add_tracks(&conn, &id, vec![snapshot(99)], 5).unwrap();
     let cursor = first.next_cursor.clone().unwrap();
@@ -121,7 +119,6 @@ fn the_filter_ignores_case_in_any_script() {
     assert_eq!(playlists::items_page(&conn, &id, None, 50, Some("nothing like this")).unwrap().total, 0);
 }
 
-/// `cargo test --release -p nuvo-store --test paging -- --nocapture` checks the paging budget.
 #[cfg(not(debug_assertions))]
 #[test]
 fn a_page_of_ten_thousand_costs_under_20_ms_in_release() {

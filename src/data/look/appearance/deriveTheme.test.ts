@@ -9,7 +9,6 @@ import { SAMPLE } from "./sampleTheme";
 const theme = (roles: Partial<ThemeRoles>): NuvoTheme =>
   (validateTheme({ ...SAMPLE, modes: { light: { ...SAMPLE.modes.light, ...roles } } }) as { value: NuvoTheme }).value;
 
-/** Deterministic pseudo-random fields, so a failure reproduces. */
 function fields(count: number): string[] {
   let seed = 7;
   const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -44,7 +43,6 @@ describe("derive", () => {
     const [h1, s1] = rgbToHsl(0x8a, 0x8f, 0x99);
     const { r, g, b } = parseColor(fixed);
     const [h2, s2] = rgbToHsl(r, g, b);
-    // hue is in degrees; an 8-bit grey-blue can only keep it within a few degrees
     expect(Math.abs(h2 - h1)).toBeLessThan(3);
     expect(s2).toBeCloseTo(s1, 1);
     expect(fixContrast(fixed, "#9aa0aa", 4.5)).toBe(fixed);

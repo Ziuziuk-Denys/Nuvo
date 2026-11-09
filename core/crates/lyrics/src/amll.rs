@@ -1,6 +1,4 @@
-//! Word-timed TTML from the AMLL TTML database: a public repository of hand-timed lyrics, CC0 for what
-//! its contributors wrote, read as plain files without a key. Entries are found through its index by
-//! title and artist, and a file only counts when its timing fits the length of the playing track.
+// AMLL TTML database (CC0); a file counts only when its timing fits the playing track
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -22,7 +20,6 @@ const MAX_INDEX_BYTES: usize = 16 * 1024 * 1024;
 const MAX_FILE_BYTES: usize = 256 * 1024;
 /// The index lists a song more than once when it was redone, newest last.
 const MAX_FILES_PER_LOOKUP: usize = 3;
-/// Lyrics may not run past the track by more than this.
 const END_SLACK_MS: i64 = 3000;
 
 #[derive(Deserialize)]
@@ -49,8 +46,7 @@ pub struct Amll {
     index: Mutex<Option<Index>>,
 }
 
-/// Deny by default: https on the default port of the one allowed host, without credentials.
-/// Plain http only for a stand-in on this machine.
+// Deny by default: https on the one allowed host; plain http only for a local stand-in
 fn allowed(base: &str) -> bool {
     let Ok(url) = Url::parse(base) else { return false };
     if url.host_str() == Some("127.0.0.1") {
@@ -65,12 +61,10 @@ fn safe_file(name: &str) -> bool {
 }
 
 impl Amll {
-    /// `None` when `base` is off the allowlist.
     pub fn new(base: &str) -> Option<Self> {
         Self::with_proxy(base, None)
     }
 
-    /// Like [`Amll::new`], with every request sent through `proxy`.
     pub fn with_proxy(base: &str, proxy: Option<reqwest::Proxy>) -> Option<Self> {
         if !allowed(base) {
             return None;
@@ -83,7 +77,6 @@ impl Amll {
         Some(Self { client, base: base.trim_end_matches('/').to_string(), index: Mutex::new(None) })
     }
 
-    /// `Err` when the index cannot be read, which says nothing about the song; a file that fails is passed over.
     pub async fn lookup(&self, query: &Query) -> Result<Option<LyricsCandidate>, LyricsError> {
         let title = plain_title(&query.title);
         let artist = plain(&query.artist);
@@ -127,7 +120,6 @@ impl Amll {
     }
 }
 
-/// `None` once the body passes `limit`.
 async fn read_capped(mut response: reqwest::Response, limit: usize) -> Result<Option<Vec<u8>>, reqwest::Error> {
     let mut bytes = Vec::new();
     while let Some(chunk) = response.chunk().await? {
@@ -151,12 +143,10 @@ fn field(row: &Row, key: &str, clean: fn(&str) -> String) -> Vec<String> {
     values.map(|value| clean(value)).filter(|value| !value.is_empty()).collect()
 }
 
-/// Letters and digits only, lower case.
 fn plain(text: &str) -> String {
     text.chars().filter(|c| c.is_alphanumeric()).flat_map(char::to_lowercase).collect()
 }
 
-/// A title without its bracketed notes, like "(feat. Someone)"; a title that is all brackets stays whole.
 fn plain_title(title: &str) -> String {
     let mut depth = 0usize;
     let bare: String = title
@@ -177,13 +167,11 @@ fn plain_title(title: &str) -> String {
     if bare.is_empty() { plain(title) } else { bare }
 }
 
-/// `mm:ss.mmm`, `hh:mm:ss.mmm` or seconds, with an optional `s`.
 fn time_ms(text: &str) -> Option<i64> {
     let seconds = text.trim_end_matches('s').split(':').try_fold(0.0, |total: f64, part| part.parse::<f64>().ok().map(|value| total * 60.0 + value))?;
     seconds.is_finite().then(|| (seconds * 1000.0).round() as i64)
 }
 
-/// The end of the last timed word; `None` without a timed word.
 fn last_word_end(ttml: &str) -> Option<i64> {
     ttml.split("<span").skip(1).filter_map(|span| {
         let tag = span.split('>').next()?;

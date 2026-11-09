@@ -1,6 +1,3 @@
-// Synthetic music folder for the local-files benchmark: tiny WAV files with RIFF INFO tags
-// (Latin and Cyrillic), nested folders, a few broken files, a symlink and a FIFO. No real music.
-// usage: node scripts/bench/local-fixture.mjs <dir> [count]
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -18,7 +15,6 @@ function infoChunk(id, text) {
   return Buffer.concat([head, padded]);
 }
 
-// a 0.05 s mono WAV with a LIST/INFO chunk after the data
 function taggedWav(title, artist, album, track) {
   const wav = toneWav(0.05, 8000);
   const info = Buffer.concat([

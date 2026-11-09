@@ -10,7 +10,6 @@ function saved(): { status: string; at: unknown; missed: string[] } {
   return JSON.parse(localStorage.getItem(TOUR_KEY) ?? "{}").state;
 }
 
-/* A new launch: memory forgets everything the store does not persist, then reads the saved part back */
 async function relaunch() {
   settingsStorage.flush();
   const kept = localStorage.getItem(TOUR_KEY);

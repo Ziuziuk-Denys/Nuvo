@@ -1,8 +1,3 @@
-/**
- * Builders for synthetic InnerTube JSON in the shapes InnerTube returns. The named fixtures
- * (`search-mixed-card-track.json` and so on) are built from these in the tests that use them; titles and
- * ids are invented, and only the fields the mappers read are present.
- */
 type Obj = Record<string, unknown>;
 
 export const SEP = { text: " • " };
@@ -66,7 +61,6 @@ export interface SongRow {
   extra?: string[];
   thumbnail?: Obj;
   explicit?: boolean;
-  /** Plain artist text with no link. */
   artistText?: string;
 }
 
@@ -206,7 +200,6 @@ export function responsiveHeader(options: {
   };
 }
 
-/** A browse page: a header plus a shelf of rows, optionally with a continuation token. */
 export function browsePage(header: Obj | undefined, rows: Obj[], token?: string, extra: Obj = {}): Obj {
   return {
     contents: {
@@ -243,7 +236,6 @@ export const continuationItem = (token: string) => ({
   },
 });
 
-/** A continuation page in the `onResponseReceivedActions` shape. */
 export function continuationPage(rows: Obj[], token?: string): Obj {
   return {
     onResponseReceivedActions: [

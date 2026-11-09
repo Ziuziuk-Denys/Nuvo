@@ -19,7 +19,7 @@ function onlyElectronRequires(): Plugin {
   };
 }
 
-/** Each preload is its own single-file CommonJS build, so no chunk is shared between them. */
+// Each preload is a single-file CommonJS build: a sandboxed preload cannot load shared chunks
 function preload(name: string, input: string, alias: Record<string, string> = {}) {
   return {
     input: { [name]: input },
@@ -39,7 +39,6 @@ export default defineConfig({
     electron({
       main: {
         entry: { main: "electron/app/entry.ts" },
-        // shipped in node_modules next to the bundle, not inlined
         vite: { build: { rolldownOptions: { external: ["electron-updater"] } } },
         onstart: async ({ startup }) => {
           await startup(process.env.NUVO_X11 ? [".", "--no-sandbox", "--ozone-platform=x11"] : undefined);

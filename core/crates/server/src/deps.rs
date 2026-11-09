@@ -1,6 +1,3 @@
-//! The dependency check: yt-dlp, a JavaScript runtime for it, ffmpeg and its PulseAudio input.
-//! Playback needs none of them, so nothing ever waits for this.
-
 use std::time::Duration;
 
 use nuvo_contracts::{Deps, ToolStatus, ToolStatusKind, iso_from_ms, ms_from_iso};
@@ -12,7 +9,6 @@ use crate::state::AppState;
 pub const CHECK_TIMEOUT: Duration = Duration::from_secs(5);
 /// YouTube changes break old yt-dlp releases within weeks.
 pub const OUTDATED_AFTER_MS: i64 = 90 * 86_400_000;
-/// Cache age threshold for single-flight: if the last check was < 2 s ago, reuse it.
 pub const SINGLE_FLIGHT_CACHE_MS: i64 = 2000;
 
 /// yt-dlp versions are release dates: `2026.10.21`; nightly builds add `.232807`.
@@ -25,7 +21,6 @@ pub fn ytdlp_release_ms(version: &str) -> Option<i64> {
     ms_from_iso(&format!("{year}-{month:0>2}-{day:0>2}T00:00:00Z"))
 }
 
-/// Wire rows, with a working yt-dlp older than 90 days marked `outdated`.
 pub fn to_wire(checks: Vec<ToolCheck>, now: i64) -> Deps {
     let tools = checks
         .into_iter()
@@ -82,7 +77,6 @@ pub async fn recheck(state: &AppState) -> Deps {
     do_check(state).await
 }
 
-/// The cached result, or a fresh check when none ran yet.
 pub async fn current(state: &AppState) -> Deps {
     let cached = state.deps.read().expect("deps lock").clone();
     match cached {

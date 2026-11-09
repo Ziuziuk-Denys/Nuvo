@@ -22,7 +22,6 @@ interface BriefProps {
   onWatch: () => void;
 }
 
-/** The short version for users who skip: five rows, ten seconds to read on the first run, the tour one press away */
 export function Brief({ waiting, onReady, onDone, onWatch }: BriefProps): JSX.Element {
   const { t } = useTranslation();
   return (

@@ -1,5 +1,3 @@
-/** Deny-by-default checks for everything that crosses `nuvo-yt:*`. Pure. */
-
 export type WorkerOp = "content-token" | "tv-identity" | "player-transform";
 
 export interface Job {
@@ -23,7 +21,6 @@ const listOf = (value: unknown, pattern: RegExp): string[] | null => {
   return value.every((item) => typeof item === "string" && pattern.test(item)) ? (value as string[]) : null;
 };
 
-/** A validated job, or `null` when anything is off. */
 export function validateJob(op: unknown, args: unknown): Job | null {
   if (op === "content-token") {
     if (!isRecord(args) || typeof args.identifier !== "string" || !IDENTIFIER.test(args.identifier)) return null;
@@ -55,7 +52,6 @@ export function interpreterUrlAllowed(url: unknown): url is string {
   }
 }
 
-/** Sliding one-minute window: at most `limit` calls. */
 export class MinuteLimit {
   private stamps: number[] = [];
 

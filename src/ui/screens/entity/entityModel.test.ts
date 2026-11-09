@@ -18,7 +18,6 @@ describe("formatTotal", () => {
   });
 });
 
-// moved from the legacy in-playlist search: the filter keeps each track's place in the full list
 const TRACKS = [
   { title: "ДИНАСТИЯ", artists: "VILLIAN, madk1d", durationMs: 200_000, playCount: 3 },
   { title: "Дві весни", artists: "Jerry Heil", durationMs: 150_000, playCount: 9 },

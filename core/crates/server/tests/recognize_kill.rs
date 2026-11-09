@@ -1,5 +1,4 @@
-//! Closing the SSE stream must leave no yt-dlp or ffmpeg child behind. Own test binary: it replaces
-//! `PATH` with fake tools that record their pid and sleep.
+// Own test binary: it replaces PATH with fake tools that record their pid and sleep
 
 #![cfg(unix)]
 mod common;
@@ -31,7 +30,6 @@ async fn pid_of(dir: &Path, name: &str) -> String {
     panic!("{name} never started");
 }
 
-/// Gone, or a zombie waiting to be reaped.
 fn is_dead(pid: &str) -> bool {
     match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
         Ok(stat) => stat.rsplit(')').next().is_some_and(|rest| rest.trim_start().starts_with('Z')),
@@ -44,7 +42,6 @@ async fn assert_killed_after_drop(core: &common::TestCore, tools: &Path, tool: &
     let mut stream = response.into_body();
     let pid = pid_of(tools, tool).await;
     assert!(!is_dead(&pid), "{tool} should be running while the stream is open");
-    // One frame is read first so the job is known to be live, then the client goes away.
     let _ = tokio::time::timeout(Duration::from_secs(5), stream.frame()).await;
     drop(stream);
     for _ in 0..100 {

@@ -1,6 +1,3 @@
-//! Import jobs: start from a picked file or from rows the renderer listed, hand searches to the
-//! renderer's workers, and serve the report. The job itself lives in `nuvo-import`.
-
 use std::path::Path as FsPath;
 
 use axum::body::Bytes;
@@ -46,7 +43,7 @@ fn target(input: Option<ImportTarget>) -> Result<Option<Target>, ApiError> {
     }
 }
 
-/// The page's start: a path would make the daemon read any file, so only main's route takes one.
+// A path would let the daemon read any file, so only main's route takes one
 async fn start(State(state): State<AppState>, body: Result<Bytes, BytesRejection>) -> Result<Json<Items<ImportSummary>>, ApiError> {
     let body = parse_start(body)?;
     if body.path.is_some() {
@@ -63,7 +60,6 @@ fn parse_start(body: Result<Bytes, BytesRejection>) -> Result<StartImport, ApiEr
     serde_json::from_slice(&body.map_err(body_error)?).map_err(|e| ApiError::Invalid(e.to_string()))
 }
 
-/// One import per playlist in the input: a Spotify playlist file can hold many.
 async fn begin(state: AppState, body: StartImport) -> Result<Json<Items<ImportSummary>>, ApiError> {
     let data = state.data()?;
     let target = target(body.target)?;
@@ -100,7 +96,6 @@ async fn begin(state: AppState, body: StartImport) -> Result<Json<Items<ImportSu
         }
         _ => return Err(ApiError::Invalid("send a file, or a source with a label and rows".into())),
     };
-    // A path line naming a file in a music folder is that local track, not a search.
     let mut imports = imports;
     let paths: Vec<String> = imports.iter().flat_map(|(p, _)| p.rows.iter().filter(|r| r.track.is_none()).filter_map(|r| r.path.clone())).collect();
     if !paths.is_empty() {
@@ -148,7 +143,6 @@ struct PendingTrack {
     track: Value,
 }
 
-/// The song waiting for the playlist an import creates; it survives a restart until it is added.
 async fn pending_get(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
     let data = state.data()?;
     let job = data.db.call(|c| settings::get(c, settings::IMPORT_PENDING_TRACK)).await?;
@@ -198,7 +192,6 @@ struct RowsQuery {
     limit: Option<usize>,
 }
 
-/// `label` defaults to `review`, the report's "Needs a look" chip.
 async fn rows(State(state): State<AppState>, Path(id): Path<String>, Query(q): Query<RowsQuery>) -> Result<Json<ImportRowsPage>, ApiError> {
     let data = state.data()?;
     let label = q.label.unwrap_or_else(|| "review".into());
@@ -211,7 +204,6 @@ struct AppendRows {
     rows: Vec<SourceRow>,
 }
 
-/// A later page of a listing posted in pages; earlier pages stay whatever happens to the rest.
 async fn append(State(state): State<AppState>, Path(id): Path<String>, body: Result<Bytes, BytesRejection>) -> Result<Json<ImportSummary>, ApiError> {
     let data = state.data()?;
     let body: AppendRows = serde_json::from_slice(&body.map_err(body_error)?).map_err(|e| ApiError::Invalid(e.to_string()))?;

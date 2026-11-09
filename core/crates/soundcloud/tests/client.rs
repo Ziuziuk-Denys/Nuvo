@@ -16,7 +16,6 @@ fn scripts_and_client_ids_are_found_in_page_text() {
     assert_eq!(find_client_id("client_id:\"short\", client_id:\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\""), None);
 }
 
-/// Scripts are read from the last one backwards, and the found id is used.
 #[tokio::test]
 async fn discovery_reads_scripts_from_last_to_first() {
     let fx = Fixture::start().await;
@@ -35,7 +34,6 @@ async fn discovery_reads_scripts_from_last_to_first() {
     assert_eq!(sc.client_id().as_deref(), Some(ID_A));
 }
 
-/// Protocol-relative script URLs are fetched over https.
 #[tokio::test]
 async fn protocol_relative_scripts_are_fetched() {
     let (fx, sc) = setup().await;
@@ -44,7 +42,6 @@ async fn protocol_relative_scripts_are_fetched() {
     assert_eq!(fx.count(&script_url("49-b.js")), 1);
 }
 
-/// A stored id rejected with 401 is replaced once and the new id is reported.
 #[tokio::test]
 async fn a_rejected_id_is_rediscovered_and_retried_once() {
     let (fx, sc) = setup().await;
@@ -60,7 +57,6 @@ async fn a_rejected_id_is_rediscovered_and_retried_once() {
     assert_eq!(*stored.lock().unwrap(), vec![ID_A.to_string()]);
 }
 
-/// When discovery finds the same id, the caller gets the failure without a second call.
 #[tokio::test]
 async fn the_same_id_after_rediscovery_is_not_retried() {
     let (fx, sc) = setup().await;
@@ -79,7 +75,6 @@ async fn failed_discovery_is_unavailable() {
     assert_eq!(sc.client_id(), None);
 }
 
-/// Ten cold requests share one discovery.
 #[tokio::test]
 async fn concurrent_cold_requests_discover_once() {
     let (fx, sc) = setup().await;

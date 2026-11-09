@@ -1,12 +1,6 @@
-/**
- * GET requests to the public sources (Apple Music pages, Deezer's API, short links): 15 s per
- * attempt and one retry after 1 s on a network error or a 5xx answer.
- */
-
 export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 export type Sleep = (ms: number, signal: AbortSignal) => Promise<void>;
 
-/** A failed source request; `status` is 0 when no answer arrived. */
 export class HttpError extends Error {
   constructor(readonly status: number) {
     super(`HTTP ${status}`);
@@ -38,7 +32,6 @@ export const sleep: Sleep = (ms, signal) =>
     );
   });
 
-/** What a live body still needs: the attempt's abort signal and the cleanup of its timer. */
 const open = new WeakMap<Response, { signal: AbortSignal; release(): void }>();
 
 async function attempt(url: string, http: Http): Promise<Response> {
@@ -61,7 +54,6 @@ async function attempt(url: string, http: Http): Promise<Response> {
       void response.body?.cancel().catch(() => {});
       throw new HttpError(response.status);
     }
-    // the timer and the cancel listener stay until the body is read or dropped
     open.set(response, { signal: controller.signal, release });
     return response;
   } catch (error) {
@@ -71,7 +63,6 @@ async function attempt(url: string, http: Http): Promise<Response> {
   }
 }
 
-/** Ends the attempt of a response whose body will not be read. */
 export function drop(response: Response): void {
   void response.body?.cancel().catch(() => {});
   open.get(response)?.release();
@@ -79,7 +70,6 @@ export function drop(response: Response): void {
 
 const retryable = (error: unknown) => error instanceof HttpError && (error.status === 0 || error.status >= 500);
 
-/** The answer of a GET, or `HttpError`; an abort rejects with the signal's reason. */
 export async function get(url: string, http: Http): Promise<Response> {
   try {
     return await attempt(url, http);
@@ -90,11 +80,6 @@ export async function get(url: string, http: Http): Promise<Response> {
   }
 }
 
-/**
- * The body as text, or null when it is longer than `maxBytes`; a page is never read whole first.
- * A response from `get` is read under its attempt's timeout and the caller's cancel: a stalled
- * body rejects with `HttpError(0)` and a cancel with the abort reason.
- */
 export async function readCapped(response: Response, maxBytes: number): Promise<string | null> {
   const reader = response.body?.getReader();
   if (!reader) {

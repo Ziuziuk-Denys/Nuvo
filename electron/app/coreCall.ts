@@ -25,7 +25,6 @@ export function coreCall(socketPath: string, token: string, method: string, path
   });
 }
 
-/** The daemon's `{ message }` from an error answer. */
 export function coreError(answer: CoreAnswer): string {
   try {
     return (JSON.parse(answer.body.toString("utf8")) as { message?: string }).message ?? `nuvo-core answered ${answer.status}`;

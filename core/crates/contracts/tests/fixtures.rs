@@ -1,5 +1,4 @@
-//! Writes one JSON fixture per response type into `fixtures/`. The vitest suite
-//! (`src/shared/contracts/coreFixtures.test.ts`) checks them against the TypeScript contracts.
+// src/shared/contracts/coreFixtures.test.ts checks these fixtures against the TS contracts
 
 use nuvo_contracts::*;
 use serde::Serialize;

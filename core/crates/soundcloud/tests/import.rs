@@ -60,7 +60,6 @@ async fn a_set_link_lists_every_track_in_set_order() {
     assert_eq!(fx.hits(&api("resolve"))[0].query["url"], "https://soundcloud.com/nightowl/sets/late-drive");
 }
 
-/// The likes path walks the user's likes.
 #[tokio::test]
 async fn a_likes_link_walks_the_likes_pages() {
     let (fx, sc) = setup().await;
@@ -94,7 +93,6 @@ async fn links_that_are_not_tracks_sets_or_likes_are_invalid() {
     assert!(matches!(sc.import_listing("https://soundcloud.com/nightowl").await, Err(ScError::Invalid(_))));
 }
 
-/// A page that fails after the first keeps what was read and says so; likes past 1,000 are read.
 #[tokio::test]
 async fn a_failing_likes_page_keeps_the_rows_read_so_far() {
     let (fx, sc) = setup().await;

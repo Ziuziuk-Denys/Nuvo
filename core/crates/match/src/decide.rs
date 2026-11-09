@@ -1,11 +1,7 @@
-//! Scoring candidates against a source and deciding: approved with a score, or pending with a
-//! persisted reason and the best proposal.
-
 use serde_json::Value;
 
 use crate::text::{artist_and_title, base_title, clean_title, compare_form, markers, same_artist, similarity_of_forms, title_parts, translit};
 
-/// Longer titles and artist names are cut before processing.
 pub const MAX_TEXT_CHARS: usize = crate::text::MAX_TEXT_CHARS;
 const DISQUALIFY_MS: i64 = 15_000;
 
@@ -49,12 +45,10 @@ pub struct Candidate {
     pub title: String,
     pub artists: Vec<String>,
     pub duration_ms: Option<i64>,
-    /// The track as the caller sent it, returned unchanged (plus a cover when one is derived).
     pub raw: Value,
 }
 
 impl Candidate {
-    /// A renderer `Track`: `id`, `title`, `artists[{ id, name }]`, `durationMs`.
     pub fn from_track(track: &Value) -> Option<Self> {
         let id = track.get("id")?.as_str().filter(|s| !s.is_empty())?.to_string();
         let title = track.get("title")?.as_str().filter(|s| !s.trim().is_empty())?.to_string();
@@ -66,7 +60,6 @@ impl Candidate {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Decision {
-    /// `index` points into the candidate list that was evaluated.
     Approved { index: usize, score: i64 },
     Pending { reason: Reason, score: Option<i64>, proposal: Option<usize> },
 }
@@ -85,7 +78,6 @@ fn known(ms: Option<i64>) -> Option<i64> {
     ms.filter(|ms| *ms > 0)
 }
 
-/// A comparison form and its transliterated twin.
 struct Form {
     plain: String,
     latin: String,
@@ -108,7 +100,6 @@ fn forms(list: Vec<String>) -> Vec<Form> {
     seen.into_iter().map(Form::new).collect()
 }
 
-/// Everything about one title that scoring reads, computed once.
 struct View {
     titles: Vec<Form>,
     whole: Form,
@@ -121,7 +112,6 @@ struct View {
     video: bool,
 }
 
-/// Word sequences, in comparison form, that mark the sound of a video.
 const VIDEO_WORDS: [&str; 4] = ["official video", "music video", "official music video", "клип"];
 
 /// A video stands in for a record only at the record's length.
@@ -167,7 +157,6 @@ fn artist_similarity(a: &str, b: &str) -> f64 {
     pair_similarity(&Form::new(compare_form(a)), &Form::new(compare_form(b)))
 }
 
-/// `artist` as a whole word sequence inside `title`; returns the title without it.
 fn without_artist(title: &str, artist: &str) -> Option<String> {
     if artist.chars().count() < 3 {
         return None;
@@ -241,7 +230,6 @@ fn within(diff: Option<i64>, ms: i64) -> bool {
     diff.is_none_or(|d| d <= ms)
 }
 
-/// The same song liked twice from two releases: one recording in the same version.
 pub fn same_liked_track(a_title: &str, a_artists: &[String], a_ms: Option<i64>, b_title: &str, b_artists: &[String], b_ms: Option<i64>) -> bool {
     let (a, b) = (View::new(a_title, a_artists, a_ms), View::new(b_title, b_artists, b_ms));
     let mut markers = (a.markers.clone(), b.markers.clone());
@@ -250,7 +238,6 @@ pub fn same_liked_track(a_title: &str, a_artists: &[String], a_ms: Option<i64>, 
     a.duration_ms.is_some() && markers.0 == markers.1 && same_recording(&a, &b)
 }
 
-/// Same base title, same artist and durations within 3 s: two uploads of one recording.
 fn same_recording(a: &View, b: &View) -> bool {
     let durations = match (a.duration_ms, b.duration_ms) {
         (Some(x), Some(y)) => (x - y).abs() <= 3_000,
@@ -261,7 +248,6 @@ fn same_recording(a: &View, b: &View) -> bool {
     !a.base.is_empty() && a.base == b.base && artists && durations
 }
 
-/// Views of the source and the candidates, and the candidates scored best first (ties keep their order).
 fn score_all(source: &Source, candidates: &[Candidate]) -> (View, Vec<View>, Vec<Scored>) {
     let src = View::new(&source.title, &source.artists, source.duration_ms);
     let views: Vec<View> = candidates.iter().map(|c| View::new(&c.title, &c.artists, c.duration_ms)).collect();
@@ -270,7 +256,7 @@ fn score_all(source: &Source, candidates: &[Candidate]) -> (View, Vec<View>, Vec
     (src, views, ranked)
 }
 
-/// Candidate indexes with their scores, best first; ties keep the given order.
+// Best first; ties keep the given order
 pub fn rank(source: &Source, candidates: &[Candidate]) -> Vec<(usize, i64)> {
     score_all(source, candidates).2.iter().map(|s| (s.index, s.score)).collect()
 }
@@ -349,7 +335,6 @@ mod tests {
         assert!(!same_liked_track("Skyline", &artists, None, "Skyline", &artists, None));
     }
 
-    /// A title that is only a marker word has an empty base title; two such titles are not one recording.
     #[test]
     fn empty_base_titles_are_never_the_same_recording() {
         let artists = ["A".to_string()];

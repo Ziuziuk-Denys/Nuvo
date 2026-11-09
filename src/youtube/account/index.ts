@@ -1,4 +1,3 @@
-/** `YtAccount`: the optional YouTube account. Nothing in Nuvo requires it. */
 import type { FetchLike, Innertube } from "../http";
 import { YtError, type DeviceCode, type PlaylistPage } from "../types";
 import { loadCredentials, pollForTokens, raceAbort, refreshTokens, requestDeviceCode, revoke, type Credentials } from "./oauth";
@@ -44,12 +43,10 @@ export class YtAccount {
     return this.session !== null;
   }
 
-  /** The "offer sign-in" preference: playback may open the sign-in sheet (SignInOffer). */
   enabled(): boolean {
     return this.prefs.offerSignIn;
   }
 
-  /** True when the last sign-out could not remove the tokens from the daemon store. */
   signOutIncomplete(): boolean {
     return this.dropFailed;
   }
@@ -77,7 +74,6 @@ export class YtAccount {
     await this.store(session);
   }
 
-  /** `"<type> <token>"`, refreshed within 60 s of expiry by one shared request; `null` when signed out. */
   async authorization(signal?: AbortSignal): Promise<string | null> {
     const session = this.session;
     if (!session) return null;
@@ -156,9 +152,7 @@ export class YtAccount {
       try {
         await this.deps.store.dropSession();
         return;
-      } catch {
-        // retry once
-      }
+      } catch {}
     }
     this.dropFailed = true;
     this.emit();

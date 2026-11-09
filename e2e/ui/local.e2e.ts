@@ -5,7 +5,6 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { launchNuvo, passFirstRun, type NuvoSession } from "./harness";
 
-/** Music folders end to end: add a generated folder, play a file, find it in search, save a cached streamed track as a file. */
 const SHOTS = process.env.NUVO_LOCAL_SHOTS ?? path.join(os.homedir(), ".cache", "local-shots");
 const LIGHT = { preset: "nuvo", mode: "light" } as const;
 const STREAMED = "e2eSaveTst1";
@@ -20,7 +19,6 @@ function ffmpeg(args: string[]): void {
   execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", ...args]);
 }
 
-/** Two FLAC files and an MP3 with tags, an ALAC file the player cannot decode, and folder art; beside them one file with art of its own and one with none. */
 function makeMusicFolder(dir: string): void {
   ffmpeg(["-f", "lavfi", "-i", "color=c=0x2E9E6B:s=300x300:d=1", "-frames:v", "1", path.join(dir, "cover.jpg")]);
   const tone = (seconds: number, hz: number) => ["-f", "lavfi", "-i", `sine=frequency=${hz}:duration=${seconds}`];
@@ -62,7 +60,6 @@ function makeMusicFolder(dir: string): void {
   ffmpeg([...tone(8, 880), ...tags("Bare Wire", 6), "-c:a", "libmp3lame", path.join(bare, "06 Bare Wire.mp3")]);
 }
 
-/** Main's folder dialog answers with this folder from now on; the renderer still never sends a path. */
 async function pickFolder(live: NuvoSession, folder: string): Promise<void> {
   await live.app.evaluate(({ dialog }, value) => {
     dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [value] })) as typeof dialog.showOpenDialog;
@@ -118,7 +115,6 @@ describe("local files", () => {
     await live.page.locator("[data-track-row]").first().hover();
     await shot(live, "local-files-en", 1200, 780);
 
-    // a local file takes a dislike like any song; with nothing playing the Undo comes as a toast
     expect(await live.page.locator("[data-track-row] [data-dislike]").count()).toBe(6);
     await live.page.locator("[data-track-row] [data-dislike]").first().click();
     const undo = live.page.locator("[data-toast]").getByRole("button", { name: "Undo" });

@@ -1,5 +1,3 @@
-//! SoundCloud's public catalog and streams, without an account.
-
 mod catalog;
 mod client;
 pub mod hls;
@@ -15,7 +13,6 @@ pub use hls::AudioSink;
 pub use import::{ImportListing, import_row, strip_artist};
 pub use play::{Format, Playable};
 
-/// Why a track cannot be played; the player falls back to another source for every one of them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reason {
     Gone,
@@ -45,7 +42,6 @@ pub enum ScError {
     Invalid(String),
     #[error("not found on SoundCloud")]
     NotFound,
-    /// A non-2xx answer to a primary read, after the `client_id` and `Retry-After` retries.
     #[error("SoundCloud answered {0}")]
     Status(u16),
     #[error("{0}")]

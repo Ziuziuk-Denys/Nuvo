@@ -66,15 +66,13 @@ pub async fn run(config: Config, keystore: Box<dyn KeyStore>) -> Result<(), Boot
     // Bind first: a second daemon must give up before it touches the database.
     let listener = socket::bind(&config.paths.socket).await?;
     let socket_path = config.paths.socket.clone();
-    // Serve at once and boot behind it: an unlock prompt can hold the keyring for as long as the
-    // user takes, and a silent socket would look like a dead daemon to Electron.
+    // Serve before boot: an unlock prompt can hold the keyring and a silent socket looks dead to Electron
     let state = AppState::new(config, keystore);
     let boot = tokio::spawn({
         let state = state.clone();
         async move {
             let result = state.start().await;
             if result.is_ok() {
-                // After `/health` says ok, in the background: tools are never on the start path.
                 let state = state.clone();
                 let updater = state.clone();
                 routes::stats::spawn_warm_up(state.clone());
@@ -92,15 +90,13 @@ pub async fn run(config: Config, keystore: Box<dyn KeyStore>) -> Result<(), Boot
         .with_graceful_shutdown(wait_for_exit(state))
         .await?;
     let _ = std::fs::remove_file(socket_path);
-    // A boot still waiting on the keyring is abandoned; main exits without joining it.
     if boot.is_finished() {
         boot.await.map_err(std::io::Error::other)??;
     }
     Ok(())
 }
 
-/// Shutdown route, SIGTERM, Ctrl-C, or (when Electron spawned us) stdin closing because the
-/// parent died. The stdin signal is what stops an orphaned daemon after an Electron crash.
+// Stdin closing is what stops an orphaned daemon after an Electron crash
 async fn wait_for_exit(state: AppState) {
     #[cfg(unix)]
     let mut term = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).expect("SIGTERM handler");

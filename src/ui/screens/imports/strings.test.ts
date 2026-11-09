@@ -13,7 +13,6 @@ const SOURCES = [
   "src/ui/screens/imports/ImportsHost.tsx",
 ];
 
-/** Keys built from a value at run time, with every value they can take. */
 const DYNAMIC: Record<string, string[]> = {
   "ui.imports.chip": ["review", "matched", "all"],
   "ui.imports.label": ["exact", "likely", "check", "missing", "already"],

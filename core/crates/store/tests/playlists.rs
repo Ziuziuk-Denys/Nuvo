@@ -100,8 +100,6 @@ fn repeated_moves_into_the_same_gap_stay_ordered() {
     for id in ["a", "b", "c"] {
         playlists::add_track(&conn, &pid, id, Some(common::track(id, "X")), 2000).unwrap();
     }
-    // Alternating moves keep halving the gap between the first two items until positions
-    // collapse; the store must renumber instead of producing ties.
     for round in 0..80 {
         let view = playlists::get(&conn, &pid).unwrap();
         let ids: Vec<_> = view.items.iter().map(|i| i.id.clone()).collect();

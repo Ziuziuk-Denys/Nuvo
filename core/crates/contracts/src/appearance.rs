@@ -1,5 +1,4 @@
-//! Appearance settings (customization design 3). Typed with unknown fields refused, so the
-//! renderer cannot keep other data under `appearance.*`.
+// Unknown fields are refused so the renderer cannot store other data under appearance.*
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -105,7 +104,6 @@ pub struct CustomCss {
     pub text: String,
 }
 
-/// `GET /v1/appearance`: every key, defaults for the ones never written.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Appearance {
@@ -128,7 +126,6 @@ impl Default for Appearance {
     }
 }
 
-/// `PATCH /v1/appearance`: each present key replaces the stored one.
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AppearancePatch {

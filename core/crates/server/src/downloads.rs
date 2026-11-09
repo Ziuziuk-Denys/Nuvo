@@ -1,6 +1,3 @@
-//! Saves queued tracks as files: decrypted from the cache (or copied from a music folder) into a
-//! hidden part file, remuxed or converted by ffmpeg when asked, tagged, then given a free name.
-
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use std::sync::{OnceLock, Weak};
@@ -25,7 +22,6 @@ pub struct Worker {
     tx: OnceLock<mpsc::UnboundedSender<()>>,
 }
 
-/// Wakes the worker (a new job, a new cache entry, a failed fetch) and starts it on first use.
 pub fn poke(state: &AppState) {
     let tx = state.downloads.tx.get_or_init(|| {
         let (tx, rx) = mpsc::unbounded_channel();
@@ -53,7 +49,6 @@ async fn run(weak: Weak<Inner>, mut rx: mpsc::UnboundedReceiver<()>) {
             let closed = match record(&state, &data, &item, result).await {
                 Ok(closed) => closed,
                 Err(()) => {
-                    // The record cannot be written: the item is never run again by this process.
                     stuck.insert(key);
                     tokio::time::sleep(FINISH_BACKOFF).await;
                     break;
@@ -69,8 +64,6 @@ async fn run(weak: Weak<Inner>, mut rx: mpsc::UnboundedReceiver<()>) {
 const FINISH_BACKOFF: Duration = Duration::from_secs(5);
 const FINISH_TRIES: u64 = 3;
 
-/// Writes the outcome of one item. When the database refuses it, the file just produced is deleted
-/// and the item is recorded as failed instead; `Err` when even that cannot be written.
 async fn record(state: &AppState, data: &Unlocked, item: &Ready, result: Result<String, String>) -> Result<bool, ()> {
     let mut result = result;
     for attempt in 1..=FINISH_TRIES {
@@ -90,8 +83,7 @@ async fn record(state: &AppState, data: &Unlocked, item: &Ready, result: Result<
     Err(())
 }
 
-/// After a crash: part files nobody finished, and the empty names a save had reserved but never
-/// filled (only those a still-queued track would be saved under; other empty files are the user's).
+// Only empty names a still-queued track would be saved under are removed; other empty files are the user's
 pub async fn clean_stale(data: &Unlocked) {
     let Ok(dirs) = data.db.call(downloads::dirs).await else { return };
     let Ok(queued) = data.db.call(downloads::queued).await else { return };
@@ -116,7 +108,6 @@ pub async fn clean_stale(data: &Unlocked) {
     tracing::info!(removed, "removed leftovers of interrupted saves");
 }
 
-/// `stem.ext` or `stem (2).ext`: a name `publish` could have reserved.
 fn names_stem(name: &str, stem: &str) -> bool {
     let Some((base, _)) = name.rsplit_once('.') else { return false };
     base == stem || base.strip_prefix(stem).and_then(|rest| rest.strip_prefix(" (")).and_then(|rest| rest.strip_suffix(')')).is_some_and(|n| n.parse::<u32>().is_ok())
@@ -184,7 +175,6 @@ async fn save_item(state: &AppState, data: &Unlocked, item: &Ready) -> Result<St
     publish(&part, &dir, &file_name(&artists, &title, &ext))
 }
 
-/// Writes the audio into `out`; returns the extension of what was written.
 async fn copy_audio(data: &Unlocked, item: &Ready, dir: &Path, out: &mut tokio::fs::File) -> Result<String, String> {
     if item.local {
         let lookup = item.track_id.clone();
@@ -209,14 +199,12 @@ async fn copy_audio(data: &Unlocked, item: &Ready, dir: &Path, out: &mut tokio::
     Ok(extension_for(&mime, item.codec.as_deref()).to_string())
 }
 
-/// Room for the copy, one conversion of it next to it and a little for tags and the playlist.
 const ROOM_MARGIN: u64 = 16 * 1024 * 1024;
 
 fn has_room(free: u64, size: u64) -> bool {
     free >= size.saturating_mul(2).saturating_add(ROOM_MARGIN)
 }
 
-/// Free bytes for an ordinary user on the volume holding `dir`; `None` when the system will not say.
 #[cfg(unix)]
 fn free_bytes(dir: &Path) -> Option<u64> {
     use std::os::unix::ffi::OsStrExt;
@@ -281,7 +269,6 @@ async fn transcode(tool: &Path, input: &Path, from: &str, to: &str, dir: &Path) 
     }
 }
 
-/// The streamed track's cover at 1024 px, JPEG or PNG only.
 async fn cover_for(state: &AppState, snapshot: &Value) -> Option<(Vec<u8>, String)> {
     let url = snapshot.pointer("/cover/url").and_then(Value::as_str).filter(|u| u.starts_with("https://"))?;
     let request = nuvo_covers::prepare(Some(url), None, Some("1024")).ok()?;
@@ -289,8 +276,7 @@ async fn cover_for(state: &AppState, snapshot: &Value) -> Option<(Vec<u8>, Strin
     matches!(cover.content_type.as_str(), "image/jpeg" | "image/png").then(|| (cover.bytes, cover.content_type))
 }
 
-/// Reserves the first free name (`name.ext`, `name (2).ext` …) and moves the part file onto it.
-/// Reserving with `create_new` never overwrites and works on FAT drives that refuse hard links.
+// Reserving with create_new never overwrites and works on FAT drives that refuse hard links
 fn publish(part: &Path, dir: &Path, name: &str) -> Result<String, String> {
     let (stem, ext) = name.rsplit_once('.').unwrap_or((name, ""));
     for n in 1..=99 {
@@ -315,7 +301,6 @@ fn publish(part: &Path, dir: &Path, name: &str) -> Result<String, String> {
     Err("too many files with this name".into())
 }
 
-/// `<label>.m3u8` next to the saved files, with names relative to it.
 async fn write_playlist(data: &Unlocked, id: &str) -> Result<(), String> {
     let id = id.to_string();
     let (label, dir, wanted, files) = data.db.call(move |c| downloads::saved_files(c, &id)).await.map_err(|e| e.to_string())?;

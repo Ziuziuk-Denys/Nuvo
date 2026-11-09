@@ -15,7 +15,6 @@ type ShelfState = Pick<Shelf, "round" | "arrived" | "busy" | "refresh">;
 const order = (index: number) => ({ "--i": index }) as CSSProperties;
 const rowClass = (state: ShelfState, base: string) => (state.arrived ? `${base} ${shelf.arrive}` : base);
 
-/** A song as a cover with its name and artist under it; a click plays the shelf from it. */
 function SongCard({ track, size, index, onPlay }: { track: Track; size: number; index: number; onPlay(): void }): JSX.Element {
   return (
     <button type="button" className={`${shelf.card} ${styles.card}`} style={{ ...order(index), width: size }} data-song={track.id} onClick={onPlay}>
@@ -32,21 +31,17 @@ export interface CoverShelfProps {
   icon: IconName;
   shelf: ShelfState;
   songs: Track[];
-  /** Cover size in the row. */
   size: number;
-  /** A tile before the covers, as the artist a "More like" shelf starts from. */
   lead?: ReactNode;
   onPlay(index: number): void;
 }
 
-/** A titled row of song covers that scrolls sideways, optionally led by a tile. */
 export function CoverShelf({ name, title, icon, shelf: state, songs, size, lead, onPlay }: CoverShelfProps): JSX.Element {
   return (
     <section className={shelf.shelf} aria-label={title} data-shelf={name}>
       <ShelfHeading icon={icon} title={title} busy={state.busy} onRefresh={state.refresh} />
       <div className={shelf.row}>
         {lead}
-        {/* a new round mounts new covers, which ease in one after another */}
         <div key={state.round} className={rowClass(state, styles.covers)}>
           {songs.map((track, index) => (
             <SongCard key={track.id} track={track} size={size} index={index} onPlay={() => onPlay(index)} />
@@ -57,7 +52,6 @@ export function CoverShelf({ name, title, icon, shelf: state, songs, size, lead,
   );
 }
 
-/** The artist a "More like" shelf starts from: their cover as a circle, their name, and a play for the shelf. */
 export function ArtistLead({ name, cover, size, onPlay }: { name: string; cover: string; size: number; onPlay(): void }): JSX.Element {
   const { t } = useTranslation();
   return (
@@ -72,7 +66,6 @@ export function ArtistLead({ name, cover, size, onPlay }: { name: string; cover:
 const STACK = 4;
 const STACK_SIZE = 148;
 
-/** The shuffle as one wide card: a stack of its first covers, whose artists it brings, and Play. */
 export function ShuffleCard({
   title,
   shelf: state,

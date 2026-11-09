@@ -1,4 +1,4 @@
-/** The proxy in force, read from the system. Only ever what the owner configured: nothing is bundled, guessed or scanned. */
+// Only what the owner configured: nothing is bundled, guessed or scanned
 
 type Env = Record<string, string | undefined>;
 
@@ -6,14 +6,12 @@ const PAC_SCHEMES: Record<string, string> = { PROXY: "http", HTTP: "http", HTTPS
 const ENV_NAMES = ["HTTPS_PROXY", "https_proxy", "ALL_PROXY", "all_proxy", "HTTP_PROXY", "http_proxy"];
 const USABLE_SCHEMES = ["http:", "https:", "socks5:", "socks5h:"];
 
-/** The first entry of `session.resolveProxy`'s PAC-style answer; null for DIRECT. */
 export function pacToUrl(pac: string): string | null {
   const [kind, hostPort] = pac.split(";")[0].trim().split(/\s+/);
   const scheme = PAC_SCHEMES[kind?.toUpperCase() ?? ""];
   return scheme && hostPort ? `${scheme}://${hostPort}` : null;
 }
 
-/** A proxy value as people write it, or null when the daemon could not use it. */
 function usable(value: string | undefined): string | null {
   const text = value?.trim();
   if (!text) return null;
@@ -80,7 +78,6 @@ export async function detectSystemProxy(sources: ProxySources): Promise<{ url: s
   return { url, chromiumSees: false };
 }
 
-/** Body of the daemon's `PUT /v1/system/network`. */
 export function networkBody(url: string | null): string {
   return JSON.stringify({ proxyUrl: url });
 }

@@ -19,8 +19,6 @@ const NOW: i64 = 1_700_000_000_000;
 
 type Calls = Arc<Mutex<Vec<Vec<(String, String)>>>>;
 
-/// Mock Last.fm. Checks signatures, records every call, answers `track.scrobble` with error 16
-/// while `failures` is above zero and with error 9 for the session key "revoked".
 async fn mock() -> (String, Calls, Arc<AtomicUsize>) {
     let calls: Calls = Arc::default();
     let failures = Arc::new(AtomicUsize::new(0));
@@ -74,8 +72,7 @@ async fn connect(core: &common::TestCore) {
     assert_eq!((status, body["connected"].as_bool()), (StatusCode::OK, Some(true)));
 }
 
-/// Stores a session directly. Connecting over HTTP starts a background flush, which would race
-/// the explicit `flush` calls these tests make.
+// Connecting over HTTP starts a background flush that would race the explicit flush calls
 async fn connect_quietly(core: &common::TestCore, session_key: &'static str) {
     let db = core.state.data().unwrap().db;
     db.call(move |c| {
@@ -91,7 +88,6 @@ fn methods(calls: &Calls, method: &str) -> Vec<Vec<(String, String)>> {
     calls.lock().unwrap().iter().filter(|c| c.iter().any(|(k, v)| k == "method" && v == method)).cloned().collect()
 }
 
-/// Records a qualifying play straight through the store, so no background flush races the test.
 async fn record_plays(core: &common::TestCore, count: i64) {
     let db = core.state.data().unwrap().db;
     db.call(move |c| {
@@ -231,7 +227,6 @@ async fn recorded_plays_and_now_playing_reach_lastfm() {
 
     let event = json!({"listeningSessionId": "s", "trackId": "np", "playedDurationMs": 180000, "trackDurationMs": 180000, "completed": true});
     assert_eq!(common::call(&core.app, "POST", "/v1/me/playback/events", Some(event)).await.0, StatusCode::NO_CONTENT);
-    // The route already started a background flush; this one waits for it and then finds nothing left.
     scrobbler::flush(&core.state, nuvo_store::now_ms()).await.unwrap();
     assert_eq!(methods(&calls, "track.scrobble").len(), 1);
     assert_eq!(status(&core).await["queued"], 0);

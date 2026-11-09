@@ -1,22 +1,16 @@
-/** Two colours from a cover for the page light: the strongest hue and a darker second one (Nuvo UI "Gradient language"). */
 import { useEffect, useState } from "react";
 import { contrastRatio } from "@/data/color/contrast";
 
 export interface CoverColors {
-  /** The darker second colour. */
   color1: string;
-  /** The bright dominant hue. */
   color2: string;
 }
 
-/** Shown while a cover loads or when it cannot be read; the page light treats these as "no cover". */
 export const DEFAULT_COVER_COLORS: CoverColors = { color1: "rgb(24, 26, 32)", color2: "rgb(128, 144, 176)" };
 
 const HUE_BINS = 12;
-/** Below this channel spread a pixel is grey and its hue is noise. */
 const MIN_CHROMA = 24;
 const MIN_BRIGHTNESS = 32;
-/** A second colour needs this share of the first one's weight. */
 const SECOND_SHARE = 0.15;
 const SAMPLE_PX = 32;
 const RETRY_MS = 250;
@@ -49,7 +43,6 @@ function binDistance(a: number, b: number): number {
   return Math.min(distance, HUE_BINS - distance);
 }
 
-/** RGBA pixels to the two colours; null when no pixel is opaque. Pure. */
 export function pickCoverColors(pixels: Uint8ClampedArray): CoverColors | null {
   const bins: Bin[] = Array.from({ length: HUE_BINS }, () => ({ weight: 0, r: 0, g: 0, b: 0 }));
   const all: Bin = { weight: 0, r: 0, g: 0, b: 0 };
@@ -65,7 +58,6 @@ export function pickCoverColors(pixels: Uint8ClampedArray): CoverColors | null {
     const max = Math.max(r, g, b);
     const chroma = max - Math.min(r, g, b);
     if (chroma < MIN_CHROMA || max < MIN_BRIGHTNESS) continue;
-    // saturated, bright pixels say more about a cover than muddy ones
     const weight = (chroma / 255) * (max / 255);
     const bin = bins[Math.floor(hueOf(r, g, b, max, chroma) / (360 / HUE_BINS)) % HUE_BINS];
     bin.weight += weight;
@@ -85,7 +77,6 @@ export function pickCoverColors(pixels: Uint8ClampedArray): CoverColors | null {
   return { color2: mean(top.bin), color1: second ? mean(second.bin, 0.6) : mean(top.bin, 0.45) };
 }
 
-/** The mix card: a shade in the darker colour and the Nuvo mark in the bright hue, white when that hue would not read on black. */
 export function mixCardColors(colors: CoverColors): { color1: string; logoColor: string } {
   const readable = contrastRatio(colors.color2, "rgb(0, 0, 0)") >= 4.5;
   return { color1: colors.color1, logoColor: readable ? colors.color2 : "#fff" };
@@ -116,11 +107,9 @@ export function createCoverColors(read: PixelReader) {
     return Promise.race([work, timeout]).finally(() => clearTimeout(timer));
   }
 
-  /** One read per URL at a time; a result is kept, a failure is not, so the next request tries again. */
   function colorsFor(url: string): Promise<CoverColors> {
     const known = cache.get(url);
     if (known) {
-      // used again: move to the newest end
       cache.delete(url);
       cache.set(url, known);
       return Promise.resolve(known);
@@ -164,7 +153,7 @@ export function createCoverColors(read: PixelReader) {
   return { colorsFor, useCoverColors };
 }
 
-/** Draws the cover small and reads it; daemon covers are readable because the bridge echoes the page origin (covers 3.5). */
+// Daemon covers are readable because the bridge echoes the page origin
 export async function readCoverPixels(url: string): Promise<Uint8ClampedArray> {
   const image = new Image();
   image.crossOrigin = "anonymous";

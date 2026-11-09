@@ -1,4 +1,3 @@
-/** BotGuard interpreter download for the worker: https only, two Google hosts, 20 s, 2xx only. */
 import { interpreterUrlAllowed } from "./validate";
 
 export const INTERPRETER_TIMEOUT_MS = 20_000;
@@ -6,7 +5,6 @@ export const INTERPRETER_TIMEOUT_MS = 20_000;
 export const INTERPRETER_MAX_BYTES = 4_000_000;
 const MAX_REDIRECTS = 3;
 
-/** Reads the body and stops as soon as the cap is crossed. */
 async function readCapped(response: Response): Promise<string> {
   const declared = Number(response.headers.get("content-length"));
   if (declared > INTERPRETER_MAX_BYTES) throw new Error("interpreter too large");

@@ -1,5 +1,4 @@
-/* Nuvo for Waybar. Import it at the end of your style.css: @import "nuvo/style.css";
-   Nuvo spacing (4, 8, 12) and radii; colours follow your bar, the line and the like use the Nuvo accent (dark preset). */
+/* Import at the end of your Waybar style.css: @import "nuvo/style.css"; */
 
 @define-color nuvo-accent #afc8f7;
 

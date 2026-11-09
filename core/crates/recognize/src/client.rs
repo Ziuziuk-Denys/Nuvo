@@ -50,7 +50,6 @@ impl Shazam {
         Self::with_proxy(base, pace, None)
     }
 
-    /// Like [`Shazam::new`], with every request sent through `proxy`.
     pub fn with_proxy(base: impl Into<String>, pace: Pace, proxy: Option<reqwest::Proxy>) -> Self {
         let mut builder = reqwest::Client::builder().user_agent(USER_AGENT).connect_timeout(Duration::from_secs(10)).timeout(Duration::from_secs(20));
         if let Some(proxy) = proxy {
@@ -60,12 +59,10 @@ impl Shazam {
         Self { client, base: base.into().trim_end_matches('/').to_string(), limiter: Limiter::new(pace.spacing), pace }
     }
 
-    /// One recognition request, paced by the daemon-wide limiter.
     pub async fn send(&self, signature: &Signature) -> Result<Reply, ShazamError> {
         self.limiter.run(self.post(signature)).await
     }
 
-    /// After a 429: every job in the daemon waits `wait` before its next request.
     pub async fn defer(&self, wait: Duration) {
         self.limiter.defer(wait).await;
     }
@@ -103,7 +100,6 @@ impl Shazam {
     }
 }
 
-/// Random UUID v4, hyphenated lowercase.
 pub fn uuid_v4() -> String {
     let mut b: [u8; 16] = nuvo_crypto::random_bytes();
     b[6] = (b[6] & 0x0f) | 0x40;
@@ -112,7 +108,6 @@ pub fn uuid_v4() -> String {
     format!("{}-{}-{}-{}-{}", &h[0..8], &h[8..12], &h[12..16], &h[16..20], &h[20..32])
 }
 
-/// A reply without `track.title`, `track.subtitle` and `track.key` is no match.
 fn parse(body: &Value) -> Reply {
     let track = &body["track"];
     let text = |value: &Value| value.as_str().map(str::trim).filter(|s| !s.is_empty()).map(String::from);
@@ -131,7 +126,6 @@ fn parse(body: &Value) -> Reply {
     let cover_url = text(&track["images"]["coverarthq"])
         .or_else(|| text(&track["images"]["coverart"]))
         .map(|url| url.replace("400x400", "600x600"));
-    // Keep `?i=<song id>`, drop the tracking parameters after it.
     let apple_music_url = track["hub"]["options"]
         .as_array()
         .into_iter()

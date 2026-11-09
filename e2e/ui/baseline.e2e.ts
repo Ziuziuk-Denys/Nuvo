@@ -40,7 +40,6 @@ describe("baseline screenshots", () => {
     const live = await launchNuvo({ profile: "seeded" });
     session = live;
     const page = live.page;
-    // the seed is checked by hand through the PNGs; this guards the data itself
     const report = live.seed!;
 
     await live.go("#/");
@@ -64,7 +63,6 @@ describe("baseline screenshots", () => {
     await live.go("#/");
     await live.shoot(STEP, "search", "queen", {
       prepare: async () => {
-        // "/" focuses the search field, whichever UI draws it
         await page.keyboard.press("/");
         await page.waitForTimeout(400);
         await page.keyboard.type("queen");
@@ -122,7 +120,6 @@ describe("baseline screenshots", () => {
     expect(fs.existsSync(home) && fs.existsSync(library)).toBe(true);
     const app = session!.app;
     expect(await diffRatio(app, home, home)).toBe(0);
-    // Home and the library share the frame, so two different screens differ by a few per cent
     expect(await diffRatio(app, home, library)).toBeGreaterThan(0.01);
   });
 

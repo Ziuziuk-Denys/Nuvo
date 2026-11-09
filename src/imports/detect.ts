@@ -1,8 +1,4 @@
-/**
- * Link detection for imports. Deny by default: only http and https, no
- * credentials, no explicit ports, and only the hosts in the table; everything else is refused
- * before any request is made.
- */
+// Deny by default: only http(s), no credentials or explicit ports, only listed hosts
 import type { ImportErrorCode } from "./types";
 
 export type LinkKind = "youtube" | "soundcloud" | "apple-music" | "deezer" | "spotify" | "yandex-music" | "vk";
@@ -14,12 +10,10 @@ export type Detected =
       host?: string;
     };
 
-/** Longer text is never a link worth reading. */
 export const MAX_LINK_CHARS = 2_048;
 
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
-/** A host matches a domain when it equals it or ends with "." plus the domain. */
 export function hostMatches(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
 }

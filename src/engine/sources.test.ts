@@ -685,7 +685,6 @@ describe("review focus", () => {
         return http === 200 ? Response.json({ state: "done", bytes: 10 }) : new Response(null, { status: http });
       });
       await armNext(h);
-      // Audio keeps moving, or the stall watchdog takes the track away.
       for (let t = 0; t < 10_000; t += 500) {
         h.deck.emit("timeupdate", { positionMs: 41_000 + t });
         await advance(500, 500);

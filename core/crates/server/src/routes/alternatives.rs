@@ -1,6 +1,3 @@
-//! `/v1/tracks/{id}/alternative`: the fallback choice the player remembers per track. Like the
-//! matching routes, a locked library answers "nothing remembered" instead of failing.
-
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};

@@ -14,7 +14,6 @@ pub fn like(conn: &Connection, id: &str, snapshot: Option<Value>, now: i64) -> R
     Ok(())
 }
 
-/// Every liked track with its snapshot, for comparing a new like against them.
 pub fn liked_snapshots(conn: &Connection) -> Result<Vec<(String, Value)>, StoreError> {
     let mut stmt = conn.prepare("SELECT t.id, t.snapshot_json FROM liked_tracks l JOIN tracks t ON t.id = l.track_id")?;
     let rows = stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?;
@@ -33,12 +32,9 @@ pub fn unlike(conn: &Connection, id: &str) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Per request; the renderer splits bigger sets.
 pub const MAX_BULK_LIKES: usize = 5000;
 
-/// Likes every valid snapshot in one transaction; tracks already liked stay as they were.
-/// Liked songs list newest first, so `liked_at` counts down from `now` in input order and the
-/// first track of a playlist stays on top.
+// liked_at counts down from now in input order, so the first track of a playlist stays on top
 pub fn like_many(conn: &Connection, snapshots: &[Value], now: i64) -> Result<BulkLikeResult, StoreError> {
     if snapshots.len() > MAX_BULK_LIKES {
         return Err(StoreError::Invalid(format!("at most {MAX_BULK_LIKES} tracks per request")));
@@ -63,7 +59,6 @@ pub fn like_many(conn: &Connection, snapshots: &[Value], now: i64) -> Result<Bul
     Ok(BulkLikeResult { added, already_liked, rejected })
 }
 
-/// Undo of `like_many`: unlikes exactly these ids. Returns how many were liked.
 pub fn unlike_many(conn: &Connection, ids: &[String]) -> Result<usize, StoreError> {
     if ids.len() > MAX_BULK_LIKES {
         return Err(StoreError::Invalid(format!("at most {MAX_BULK_LIKES} ids per request")));
@@ -81,14 +76,12 @@ pub fn is_liked(conn: &Connection, id: &str) -> Result<bool, StoreError> {
     Ok(conn.query_row("SELECT EXISTS(SELECT 1 FROM liked_tracks WHERE track_id = ?1)", [id], |row| row.get(0))?)
 }
 
-/// Every liked track id, newest like first: the renderer's "is liked" set.
 pub fn liked_ids(conn: &Connection) -> Result<Vec<String>, StoreError> {
     let mut stmt = conn.prepare("SELECT track_id FROM liked_tracks ORDER BY liked_at DESC, track_id DESC")?;
     let ids = stmt.query_map([], |row| row.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()?;
     Ok(ids)
 }
 
-/// Keyset paging, newest first. The cursor is `<liked_at>|<track_id>` of the last item served.
 pub fn liked_page(conn: &Connection, limit: usize, cursor: Option<&str>) -> Result<LikedTracksPage, StoreError> {
     let limit = limit.clamp(1, 500);
     let (after_ms, after_id) = match cursor {
@@ -163,7 +156,6 @@ pub fn save_item(conn: &Connection, kind: SavedKind, id: &str, snapshot: Option<
     Ok(())
 }
 
-/// Items in the shape `useExternalItems` reads: `{ "<kind>": snapshot, "savedAt": iso }`.
 pub fn list_saved(conn: &Connection, kind: SavedKind) -> Result<Vec<Value>, StoreError> {
     let mut stmt = conn.prepare("SELECT snapshot_json, saved_at FROM saved_items WHERE kind = ?1 ORDER BY saved_at DESC")?;
     let rows = stmt

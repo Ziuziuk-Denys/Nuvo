@@ -58,7 +58,6 @@ async fn swapped_for_a_link_is_not_served() {
     let page = scanned(&core, music.path(), 1).await;
     let id = page["items"][0]["track"]["id"].as_str().unwrap().to_string();
 
-    // the file itself becomes a link
     fs::remove_file(&file).unwrap();
     symlink(secret.path().join("secret.txt"), &file).unwrap();
     for route in ["audio", "cover"] {
@@ -66,7 +65,6 @@ async fn swapped_for_a_link_is_not_served() {
         assert_eq!(status, StatusCode::NOT_FOUND, "{route}");
         assert!(!String::from_utf8_lossy(&body).contains("private"));
     }
-    // the folder becomes a link to a folder that has a file of the same name
     fs::remove_file(&file).unwrap();
     fs::rename(music.path().join("album"), music.path().join("elsewhere")).unwrap();
     common::write_wav(&secret.path().join("Band - One.wav"), 1);

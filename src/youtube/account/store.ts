@@ -1,4 +1,3 @@
-/** Token and preference storage in the daemon's encrypted settings, plus the one-time migration. */
 import type { FetchLike } from "../http";
 
 export interface StoredSession {
@@ -63,10 +62,6 @@ function readJson(storage: Pick<Storage, "getItem">, key: string): unknown {
   }
 }
 
-/**
- * Moves the old renderer keys into the encrypted store and deletes them. Idempotent; a key whose move failed
- * stays for the next start, and a key that cannot be parsed is dropped.
- */
 export async function migrateLegacy(storage: Pick<Storage, "getItem" | "removeItem">, store: AccountStore): Promise<void> {
   const session = readJson(storage, LEGACY_SESSION_KEY) as Partial<StoredSession> | null | undefined;
   if (session !== undefined) {

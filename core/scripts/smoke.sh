@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Runs the real binary against throwaway directories and a test keyring item, then cleans up.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 cargo build -q -p nuvo-server

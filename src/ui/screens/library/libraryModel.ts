@@ -11,16 +11,11 @@ export interface LibraryEntry {
   subtitle: string;
   cover: string | null;
   count?: number;
-  /** Percent done for a playlist that is still importing. */
   importing?: number;
   href: string;
-  /** ISO time it was added or last changed: the library lists newest first. */
   addedAt: string;
-  /** One of your own playlists: it can be deleted, not just removed. */
   own?: boolean;
-  /** Mirrored from an account (YouTube Music): it cannot be removed here. */
   external?: boolean;
-  /** Who made it, for the sort by artist: the album's artist, the playlist's owner, the artist itself. */
   creator?: string;
 }
 
@@ -29,9 +24,7 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 export interface BuildInput {
   likedCount: number;
   playlists: LibraryPlaylistSummary[];
-  /** Saved albums, artists and playlists, including the ones mirrored from an account. */
   items: LibraryItemViewModel[];
-  /** Running imports by target playlist id (done and total songs). */
   importing?: ReadonlyMap<string, { done: number; total: number }>;
   t: Translate;
 }
@@ -100,7 +93,6 @@ export function buildEntries({ likedCount, playlists, items, importing, t }: Bui
   return entries;
 }
 
-/** Lower case without diacritics, with ё read as е, so "ёлка" finds "Елка" and "cafe" finds "Café". */
 export function foldForFilter(text: string): string {
   return text
     .toLocaleLowerCase()
@@ -114,13 +106,11 @@ const TAB_KINDS: Record<LibraryTab, LibraryEntry["kind"][]> = {
   playlists: ["liked", "playlist"],
   albums: ["album"],
   artists: ["artist"],
-  // files on this computer have their own view, not library entries
   local: [],
 };
 
 const newestFirst = (a: LibraryEntry, b: LibraryEntry) => (b.addedAt > a.addedAt ? 1 : b.addedAt < a.addedAt ? -1 : 0);
 
-/** The entries one tab shows for a filter, newest first. Liked songs leads whenever the tab shows it. */
 export function visibleEntries(entries: LibraryEntry[], tab: LibraryTab, query: string): LibraryEntry[] {
   const kinds = TAB_KINDS[tab];
   const needle = foldForFilter(query.trim());
@@ -131,18 +121,15 @@ export function visibleEntries(entries: LibraryEntry[], tab: LibraryTab, query: 
 }
 
 export type LibrarySort = "added" | "title" | "artist" | "played" | "plays" | "album";
-/** The orders each view offers, its default first; files on this computer come in artist order from the scan. */
 export const ENTRY_SORTS: LibrarySort[] = ["added", "title", "artist", "played", "plays"];
 export const LOCAL_SORTS: LibrarySort[] = ["artist", "title", "album", "plays"];
 
 export const sortsFor = (tab: LibraryTab): LibrarySort[] => (tab === "local" ? LOCAL_SORTS : ENTRY_SORTS);
 
-/** Plays started from an entry's page and the last one, by its playback context. */
 export type ContextPlays = ReadonlyMap<string, { plays: number; lastPlayedAt: string }>;
 
 const byText = (left: string, right: string) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
 
-/** The entries in another order; ties and never played entries keep the newest first order they came in. Liked songs stays first. */
 export function sortEntries(entries: LibraryEntry[], sort: LibrarySort, plays: ContextPlays): LibraryEntry[] {
   if (sort === "added" || sort === "album") return entries;
   const stat = (entry: LibraryEntry) => plays.get(entryContext(entry));
@@ -156,7 +143,6 @@ export function sortEntries(entries: LibraryEntry[], sort: LibrarySort, plays: C
   return [...liked, ...entries.filter((entry) => entry.kind !== "liked").sort(compare[sort])];
 }
 
-/** Files on this computer in another order; "artist" is the order the scan keeps. */
 export function sortLocal<T extends { title: string; artists: string; album?: { title: string }; playCount?: number }>(tracks: T[], sort: LibrarySort): T[] {
   if (sort === "title") return [...tracks].sort((a, b) => byText(a.title, b.title));
   if (sort === "album") return [...tracks].sort((a, b) => byText(a.album?.title ?? "", b.album?.title ?? ""));
@@ -164,7 +150,6 @@ export function sortLocal<T extends { title: string; artists: string; album?: { 
   return tracks;
 }
 
-/** The playback context the entry's own page sets, so the playing entry can be found and marked. */
 export function entryContext(entry: LibraryEntry): string {
   if (entry.kind === "liked") return "playlist:likes";
   return `${entry.kind}:${entry.id}`;

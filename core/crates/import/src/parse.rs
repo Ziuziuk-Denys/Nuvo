@@ -1,14 +1,9 @@
-//! Readers for the import sources that arrive as files: Spotify's Exportify CSV and privacy
-//! export JSON, M3U and Nuvo JSON. Links (YouTube Music, SoundCloud, Apple Music, Deezer) are
-//! listed by the renderer and arrive as rows already; Spotify links are read in [`crate::spotify`].
-
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 pub const MAX_FILE_BYTES: u64 = 10 * 1024 * 1024;
 pub const MAX_ROWS: usize = 20_000;
 
-/// One line of the user's source, as it was. A row with `track` already names a playable track.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceRow {
@@ -23,12 +18,10 @@ pub struct SourceRow {
     pub isrc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub track: Option<Value>,
-    /// An absolute file path from an M3U line; the daemon maps it to a local track it knows.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
 
-/// One import read from a file. `liked` marks Spotify's library file, whose target is Liked songs.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Parsed {
     pub source_kind: &'static str,
@@ -93,8 +86,6 @@ fn utf16be_to_string(bytes: &[u8]) -> Result<String, ParseError> {
     Ok(result)
 }
 
-/// Reads one picked file by its extension. A Spotify playlist file can hold many playlists,
-/// so the answer is a list.
 pub fn parse_file(name: &str, bytes: &[u8]) -> Result<Vec<Parsed>, ParseError> {
     if bytes.len() as u64 > MAX_FILE_BYTES {
         return Err(ParseError::TooLarge);
@@ -110,7 +101,6 @@ pub fn parse_file(name: &str, bytes: &[u8]) -> Result<Vec<Parsed>, ParseError> {
     })
 }
 
-/// RFC 4180: quoted fields with doubled quotes, commas and line breaks inside quotes, CRLF or LF.
 pub fn csv_records(text: &str) -> Result<Vec<Vec<String>>, ParseError> {
     let (mut records, mut record, mut field) = (Vec::new(), Vec::new(), String::new());
     let (mut quoted, mut chars) = (false, text.chars().peekable());
@@ -149,8 +139,7 @@ pub fn csv_records(text: &str) -> Result<Vec<Vec<String>>, ParseError> {
     Ok(records)
 }
 
-/// "Tyler, The Creator, Kali Uchis" gives the whole string and each part, so an artist whose
-/// name has a comma still matches.
+// The whole string plus each part, so an artist with a comma in the name still matches
 pub fn artist_list(text: &str) -> Vec<String> {
     let whole = text.trim();
     if whole.is_empty() {
@@ -164,7 +153,6 @@ pub fn artist_list(text: &str) -> Vec<String> {
     artists
 }
 
-/// Milliseconds from `215000`, `215000.0` or `3:35`.
 fn duration_ms(text: &str) -> Option<i64> {
     let text = text.trim();
     if let Some((minutes, seconds)) = text.split_once(':') {
@@ -185,7 +173,6 @@ fn duration_ms(text: &str) -> Option<i64> {
     (ms > 0).then_some(ms)
 }
 
-/// Exportify CSV: columns found by header name in any order and letter case; others are ignored.
 pub fn parse_exportify(label: &str, text: &str) -> Result<Parsed, ParseError> {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let mut records = csv_records(text)?.into_iter();
@@ -217,7 +204,6 @@ fn text(value: &Value, key: &str) -> Option<String> {
     value.get(key)?.as_str().map(str::trim).filter(|s| !s.is_empty()).map(String::from)
 }
 
-/// Spotify's privacy export (`YourLibrary.json`, `Playlist1.json`) or a Nuvo playlist export.
 pub fn parse_json(text_in: &str) -> Result<Vec<Parsed>, ParseError> {
     let doc: Value = serde_json::from_str(text_in).map_err(|_| unreadable("the file is not valid JSON"))?;
     if doc.get("format").and_then(Value::as_str) == Some("nuvo-playlist") {
@@ -271,8 +257,6 @@ pub fn parse_json(text_in: &str) -> Result<Vec<Parsed>, ParseError> {
     Err(unreadable("this JSON is neither a Spotify export nor a Nuvo playlist"))
 }
 
-/// `{"format": "nuvo-playlist", "version": 1, "title", "description"?, "tracks": [snapshot]}`,
-/// the library tools export. Every snapshot with an id is a playable row.
 fn parse_nuvo(doc: &Value) -> Result<Parsed, ParseError> {
     if doc.get("version").and_then(Value::as_i64) != Some(1) {
         return Err(unreadable("the Nuvo playlist version must be 1"));
@@ -304,7 +288,6 @@ fn parse_nuvo(doc: &Value) -> Result<Parsed, ParseError> {
     Ok(Parsed { source_kind: "nuvo-json", label: text(doc, "title").unwrap_or_else(|| "Imported playlist".into()), liked: false, rows })
 }
 
-/// `{"format": "nuvo-library", "version": 1, "liked": [snapshot], "playlists": [nuvo-playlist]}`.
 fn parse_nuvo_library(doc: &Value) -> Result<Vec<Parsed>, ParseError> {
     if doc.get("version").and_then(Value::as_i64) != Some(1) {
         return Err(unreadable("the Nuvo library version must be 1"));
@@ -321,7 +304,6 @@ fn parse_nuvo_library(doc: &Value) -> Result<Vec<Parsed>, ParseError> {
     Ok(out)
 }
 
-/// The 11-character video id of a YouTube or YouTube Music watch, short or youtu.be link.
 pub fn youtube_id(url: &str) -> Option<String> {
     let rest = url.trim().strip_prefix("https://").or_else(|| url.trim().strip_prefix("http://"))?;
     let (host, path) = rest.split_once('/').unwrap_or((rest, ""));
@@ -341,7 +323,6 @@ pub fn youtube_id(url: &str) -> Option<String> {
     (id.len() == 11 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')).then(|| id.to_string())
 }
 
-/// "Artist - Title" from an `#EXTINF` display or a file name; without a dash it is all title.
 fn artist_and_title(display: &str) -> (Vec<String>, String) {
     match display.split_once(" - ") {
         Some((artist, title)) if !artist.trim().is_empty() && !title.trim().is_empty() => (artist_list(artist), title.trim().to_string()),
@@ -349,9 +330,6 @@ fn artist_and_title(display: &str) -> (Vec<String>, String) {
     }
 }
 
-/// M3U and M3U8. YouTube links are playable rows; `#EXTINF` entries with another location become
-/// metadata rows (with the length); a local path without `#EXTINF` is read from its file name.
-/// Other lines are ignored.
 pub fn parse_m3u(label: &str, text: &str) -> Result<Parsed, ParseError> {
     let mut rows = Vec::new();
     let mut info: Option<(Option<i64>, String)> = None;

@@ -26,10 +26,8 @@ const GROUP_ORDER: GroupKey[] = ["songs", "albums", "artists", "playlists"];
 export interface SearchGroupsProps {
   groups: Groups;
   filter: SearchFilter;
-  /** Under All, whether a group's tab has more than its capped rows. */
   hasMore: (key: GroupKey) => boolean;
   onShowAll: (key: GroupKey) => void;
-  /** A song plays, anything else opens; the screen also files it in the history. */
   onActivate: (result: SearchResult) => void;
 }
 
@@ -46,14 +44,12 @@ interface MenuState {
   at?: { x: number; y: number };
 }
 
-/** Song rows: 48 px covers, double click or Enter plays, the dots open the track menu. */
 function SongRows({ songs, onActivate }: { songs: SearchResult[]; onActivate: (result: SearchResult) => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const currentId = usePlayerStore((state) => state.currentTrack?.id ?? null);
   const tracks = songs.map((song) => song.track!);
   const unavailable = useUnavailable(tracks);
-  // the last menu and add target stay set while they fade out; the flags say whether they are up
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [add, setAdd] = useState<{ track: Track; anchor: HTMLElement | null } | null>(null);
@@ -130,7 +126,6 @@ function EntityCover({ result }: { result: SearchResult }) {
   return <Cover src={result.cover} size={48} radius={8} shape={result.kind === "artist" ? "circle" : "square"} fetchPriority="low" />;
 }
 
-/** Albums, artists (round covers) and playlists: rows that open on one click. */
 function EntityRows({ results, onActivate }: { results: SearchResult[]; onActivate: (result: SearchResult) => void }) {
   return (
     <div className={styles.rows}>
@@ -147,7 +142,6 @@ function EntityRows({ results, onActivate }: { results: SearchResult[]; onActiva
   );
 }
 
-/** The result groups: Top result, then Songs, Albums, Artists and Playlists, each closed by Show all under All. */
 export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }: SearchGroupsProps): JSX.Element {
   const { t } = useTranslation();
   const top = groups.top;

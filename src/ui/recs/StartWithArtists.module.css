@@ -1,4 +1,3 @@
-/* The empty Home's type centred over the playlist's search field and track rows, in one 560 px column. */
 .start {
   display: flex;
   flex-direction: column;
@@ -22,7 +21,6 @@
   text-wrap: pretty;
 }
 
-/* as wide as the rows and the foot, so the count and Listen line up under it */
 .field {
   width: 100%;
   margin-top: var(--n-s-4);
@@ -50,7 +48,6 @@
   color: var(--n-ink);
 }
 
-/* three are picked: the rest stay readable but take no more */
 .spare {
   opacity: 0.5;
   cursor: default;

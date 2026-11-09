@@ -6,12 +6,9 @@ use crate::{StoreError, listening, scrobbles, tracks};
 const END_REASONS: [&str; 6] = ["complete", "skip", "next", "seek", "error", "stop"];
 const SOURCES: [&str; 4] = ["youtube", "soundcloud", "cache", "local"];
 
-/// What recording a play did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Recorded {
-    /// False when the same play (track, session and start) was stored before: a re-sent event.
     pub is_new: bool,
-    /// Queued for Last.fm.
     pub queued: bool,
 }
 
@@ -30,7 +27,6 @@ pub fn record(conn: &Connection, event: &RecordPlaybackEvent, now: i64) -> Resul
     let source = event.source.as_deref().filter(|source| SOURCES.contains(source)).unwrap_or(source_of(&event.track_id));
     let tx = conn.unchecked_transaction()?;
     tracks::ensure(&tx, &event.track_id, event.track_snapshot.as_ref(), now)?;
-    // Paused: the play stays out of the store; Last.fm keeps its own switch.
     if listening::collection_paused(&tx)? {
         let queued = scrobbles::enqueue_play(&tx, &event.track_id, started_at, played_ms, event.track_duration_ms)?;
         tx.commit()?;
@@ -65,8 +61,6 @@ pub fn record(conn: &Connection, event: &RecordPlaybackEvent, now: i64) -> Resul
     Ok(Recorded { is_new, queued })
 }
 
-/// Newest first; the cursor is the id of the last event served. `filter` is `all`, `completed`
-/// or `skipped` (the same rule as the `completed` and `skipped` fields of each item).
 pub fn history(conn: &Connection, limit: usize, cursor: Option<&str>, filter: Option<&str>) -> Result<PlaybackHistoryResponse, StoreError> {
     let limit = limit.clamp(1, 200);
     let before: Option<i64> = cursor

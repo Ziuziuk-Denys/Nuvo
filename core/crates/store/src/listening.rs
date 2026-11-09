@@ -1,8 +1,3 @@
-//! The Statistics page. One pass over the events in Rust answers everything a period needs, because
-//! first plays, streaks and forgotten favourites depend on the whole history anyway. The pass runs over
-//! a compact copy (`History`, about 40 bytes per event) that only ever reads the rows it has not seen:
-//! decoding 200 000 rows from SQLCipher costs more than the page's whole budget on every range switch.
-
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -26,7 +21,6 @@ const FORGOTTEN_SILENT_DAYS: i64 = 60;
 const MOST_SKIPPED_MIN: i64 = 2;
 const DAY_MS: i64 = 86_400_000;
 
-/// First and last local day (both inside) and today, as day numbers. `None` bounds mean all time.
 #[derive(Debug, Clone, Copy)]
 pub struct Period {
     pub from: Option<i64>,
@@ -73,7 +67,6 @@ impl Default for TrackTally {
 struct Rates {
     ms: i64,
     plays: i64,
-    /// Plays that had a chance: failed starts and skips before any sound do not.
     heard: i64,
     skipped: i64,
     completed: i64,
@@ -86,7 +79,6 @@ struct Session {
     counted: i64,
 }
 
-/// Text to a small number, so a pass over 200 000 rows stores no strings.
 #[derive(Default)]
 struct Interner {
     ids: HashMap<String, u32>,
@@ -128,7 +120,6 @@ const REASON_ERROR: u8 = 2;
 const REASON_OTHER: u8 = 3;
 const NO_PLAYLIST: u32 = u32::MAX;
 
-/// One row of `play_events`, as the pass needs it.
 #[derive(Clone, Copy)]
 struct Event {
     started_at: i64,
@@ -148,8 +139,7 @@ struct Event {
 const CONTEXTS: [&str; 8] = ["playlist", "album", "artist", "radio", "mix", "search", "local", "other"];
 const ORIGINS: [&str; 4] = ["stream", "cache", "local", "other"];
 
-/// The compact copy of `play_events`. Rows are never edited, only added or deleted, so catching up
-/// is reading ids above the last one; a delete empties it.
+// Rows are never edited, only added or deleted, so catching up reads ids above the last one
 #[derive(Default)]
 pub struct History {
     events: Vec<Event>,
@@ -158,12 +148,10 @@ pub struct History {
     playlists: Interner,
     metas: Vec<Option<Meta>>,
     last_id: i64,
-    /// Everything is read once: from here on an event also refreshes its track's names.
     caught_up: bool,
 }
 
 impl History {
-    /// Reads up to `limit` unseen rows. True when none are left, so a warm-up can give way in between.
     pub fn catch_up(&mut self, conn: &Connection, limit: i64) -> Result<bool, StoreError> {
         let mut stmt = conn.prepare_cached(
             "SELECT id, track_id, session_id, started_at, played_ms, end_reason, context, CASE WHEN context = 'playlist' THEN context_id END,
@@ -218,12 +206,10 @@ impl History {
     }
 }
 
-/// What a play counts as: a completed or 30 s play is one, a repeat-one play as many as it looped.
 fn listens(completed: bool, played_ms: i64, loops: i64) -> i64 {
     if completed || played_ms >= COUNTED_MS { loops.max(1) } else { 0 }
 }
 
-/// The page's name for a play's context; the free text older builds stored is `other`.
 fn context_kind(kind: Option<&str>) -> &'static str {
     match kind {
         Some("playlist") => "playlist",
@@ -259,7 +245,6 @@ fn rate(part: i64, whole: i64) -> f64 {
     if whole > 0 { part as f64 / whole as f64 } else { 0.0 }
 }
 
-/// A stored track's fields for grouping and rows.
 struct Meta {
     title: String,
     artist: String,
@@ -307,7 +292,6 @@ fn first_artist_id(artists_json: &str) -> Option<String> {
     artists.get(0)?.get("id")?.as_str().filter(|id| !id.is_empty()).map(str::to_string)
 }
 
-/// Tracks of one artist, album or genre added up; the most played track gives the row its face.
 struct Group {
     id: String,
     title: String,
@@ -340,7 +324,6 @@ fn order(left: &Tally, right: &Tally) -> std::cmp::Ordering {
     (right.plays, right.ms).cmp(&(left.plays, left.ms))
 }
 
-/// Rows of everything played in the period, best first, with their move since the previous period.
 fn ranked(groups: Vec<Group>, has_previous: bool, limit: usize) -> Vec<StatsRow> {
     let mut before: Vec<&Group> = groups.iter().filter(|g| g.before.plays > 0).collect();
     before.sort_by(|a, b| order(&a.before, &b.before).then_with(|| a.id.cmp(&b.id)));
@@ -370,7 +353,6 @@ fn ranked(groups: Vec<Group>, has_previous: bool, limit: usize) -> Vec<StatsRow>
         .collect()
 }
 
-/// The stored snapshots of the track rows, in one go at the end.
 fn attach_snapshots<'a>(conn: &Connection, rows: impl Iterator<Item = &'a mut StatsRow>) -> Result<(), StoreError> {
     let mut stmt = conn.prepare_cached("SELECT snapshot_json FROM tracks WHERE id = ?1")?;
     for row in rows {
@@ -601,7 +583,6 @@ pub fn overview(conn: &Connection, history: &mut History, period: Period) -> Res
         }
     };
 
-    // with nothing played before there is nothing to be new against
     let has_previous = previous.is_some() && before.plays > 0;
     let mut top_tracks = ranked(track_groups, has_previous, TOP_ROWS);
     let track_row = |index: usize| -> Option<StatsRow> {
@@ -722,7 +703,6 @@ fn playlist_rows(conn: &Connection, playlists: HashMap<u32, (Tally, Tally)>, ids
     for (index, (now, before)) in playlists {
         let id = ids[index as usize].to_string();
         let found: Option<(String, Option<String>)> = stmt.query_row([&id], |r| Ok((r.get(0)?, r.get(1)?))).optional()?;
-        // the liked list has no row of its own, the page names it; a playlist deleted since stays out
         if found.is_none() && id != "likes" {
             continue;
         }
@@ -789,7 +769,6 @@ impl DetailTally {
         if plays > 0 {
             self.days.insert(day);
         }
-        // a month is one bucket per calendar month, keyed by its sortable text
         let month_text = iso_day(day)[..7].to_string();
         let month_key = month_text.replace('-', "").parse::<i64>().unwrap_or_default();
         let month = self.months.entry(month_key).or_insert((0, 0, month_text));
@@ -829,7 +808,6 @@ impl DetailTally {
 
 const DETAIL_COLUMNS: &str = "e.started_at, e.played_ms, e.end_reason, e.loop_count, e.context, e.tz_offset_min, e.hour, e.weekday";
 
-/// One track's whole history; `NotFound` when the daemon has never stored it.
 pub fn track_detail(conn: &Connection, id: &str) -> Result<StatsDetail, StoreError> {
     let (title, artist, cover_url, raw): (String, String, Option<String>, String) = conn
         .query_row("SELECT title, artist, cover_url, snapshot_json FROM tracks WHERE id = ?1", [id], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)))
@@ -844,7 +822,6 @@ pub fn track_detail(conn: &Connection, id: &str) -> Result<StatsDetail, StoreErr
     Ok(tally.into_detail(title, Some(artist), cover_url, Some(tracks::parse(&raw)?), None, Vec::new()))
 }
 
-/// One artist's whole history by `track_keys.artist_key`, or by the plain name for a `name:` key.
 pub fn artist_detail(conn: &Connection, key: &str) -> Result<StatsDetail, StoreError> {
     let track_ids: Vec<String> = match key.strip_prefix("name:") {
         Some(name) => {
@@ -901,7 +878,6 @@ pub fn artist_detail(conn: &Connection, key: &str) -> Result<StatsDetail, StoreE
     Ok(tally.into_detail(title, None, cover, None, open_id, top))
 }
 
-/// One event of an export, with the names the track had when it was last stored.
 pub struct ExportEvent {
     pub started_at: i64,
     pub local_day: i64,
@@ -925,7 +901,6 @@ fn day_bounds(range: Option<(i64, i64)>) -> (Option<i64>, Option<i64>) {
 
 const IN_RANGE: &str = "(?1 IS NULL OR e.started_at - e.tz_offset_min * 60000 >= ?1) AND (?2 IS NULL OR e.started_at - e.tz_offset_min * 60000 < ?2)";
 
-/// Every event of the local days in `range`, oldest first; `None` is everything.
 pub fn export_events(conn: &Connection, range: Option<(i64, i64)>) -> Result<Vec<ExportEvent>, StoreError> {
     let (from, to) = day_bounds(range);
     let mut stmt = conn.prepare(&format!(
@@ -955,9 +930,6 @@ pub fn export_events(conn: &Connection, range: Option<(i64, i64)>) -> Result<Vec
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
-/// Deletes the events of the local days in `range` (`None` is everything) and what only they left
-/// behind (the caller drops its `History`): pending scrobbles, automatic scrub-skip penalties and tracks nothing else refers to.
-/// Everything else recommendations use is read live from `play_events`, so they follow by themselves.
 pub fn delete(conn: &Connection, range: Option<(i64, i64)>) -> Result<i64, StoreError> {
     let (from, to) = day_bounds(range);
     conn.execute_batch("PRAGMA secure_delete = ON")?;
@@ -999,7 +971,6 @@ pub fn delete(conn: &Connection, range: Option<(i64, i64)>) -> Result<i64, Store
     Ok(events)
 }
 
-/// Plays per list, album or artist page they were started from (completed or 30 s), with the last one.
 pub fn context_plays(conn: &Connection) -> Result<Vec<StatsContextPlays>, StoreError> {
     let mut stmt = conn.prepare_cached(
         "SELECT context, context_id, COUNT(*), MAX(started_at) FROM play_events

@@ -15,7 +15,6 @@ const PRESET_LABELS: Record<TempoPresetKey, string> = {
 };
 const PRESET_KEYS = Object.keys(TEMPO_PRESETS) as TempoPresetKey[];
 
-/** Ruler ranges: speed and pitch reset to neutral from the pill, the reverb amount has no reset. */
 const SPEED_RANGE = { min: 0.5, max: 2, step: 0.05, neutral: 1 };
 const PITCH_RANGE = { min: -12, max: 12, step: 0.5, neutral: 0 };
 const REVERB_RANGE = { min: 0.05, max: 1, step: 0.05 };
@@ -37,7 +36,6 @@ function percentText(share: number): string {
   return Math.round(share * 100) + "%";
 }
 
-/** Speed, pitch and reverb, live through the engine: preset chips, two rulers, three option rows and the remember switches. */
 export function SpeedPanel(): JSX.Element {
   const { t } = useTranslation();
   const live = usePlayerState();
@@ -92,7 +90,6 @@ export function SpeedPanel(): JSX.Element {
             {t(PRESET_LABELS[key])}
           </PanelChip>
         ))}
-        {/* kept in the row so the panel height never jumps when no preset matches */}
         <span className={styles.customChip} data-pressed="" data-shown={active === null ? "" : undefined} aria-hidden={active !== null ? true : undefined}>
           {t("sound.custom")}
         </span>

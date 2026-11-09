@@ -3,7 +3,6 @@ import { CoreError } from "@/imports/core";
 import { isArtworkHost, resizeArtwork } from "@/youtube/catalog/map";
 import type { LibraryClient, PlaylistSummary, SavedEntry, SavedKind } from "./client";
 
-/** Own playlists and saved albums, artists and playlists. */
 export interface LibraryItemViewModel {
   kind: SavedKind;
   type: SavedKind;
@@ -16,7 +15,6 @@ export interface LibraryItemViewModel {
   href: string;
   addedAt: string;
   owned: false;
-  /** Mirrored from an account; it cannot be removed here. */
   source?: "youtube";
 }
 

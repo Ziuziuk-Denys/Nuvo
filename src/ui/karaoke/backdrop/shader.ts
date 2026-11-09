@@ -1,8 +1,3 @@
-/**
- * WebGL2 field for the karaoke background: a small, pre-blurred copy of the
- * cover, zoomed in, carried through two layers of slow sine flow under a slow turn, darker toward the
- * corners. A new cover fades in over the old one.
- */
 const VERTEX = `#version 300 es
 in vec2 position;
 out vec2 uv;
@@ -53,9 +48,7 @@ void main() {
 const TEXTURE_PX = 64;
 
 export interface FlowRenderer {
-  /** Shows a new cover; with fadeMs it fades in over the previous one during later draws. False when the browser refuses the image (a tainted canvas). */
   setCover(image: TexImageSource, fadeMs?: number): boolean;
-  /** Ends a running fade at once, so a stopped loop never leaves the old cover on screen. */
   settle(): void;
   draw(timeMs: number): void;
   resize(width: number, height: number): void;
@@ -80,7 +73,6 @@ function createTexture(gl: WebGL2RenderingContext): WebGLTexture | null {
   return texture;
 }
 
-/** Null when WebGL2 or the shaders are not available; the caller then shows the still field. */
 export function createFlowRenderer(canvas: HTMLCanvasElement): FlowRenderer | null {
   const gl = canvas.getContext("webgl2", { antialias: false, alpha: false, depth: false, powerPreference: "low-power" });
   if (!gl) return null;
@@ -101,7 +93,6 @@ export function createFlowRenderer(canvas: HTMLCanvasElement): FlowRenderer | nu
   gl.enableVertexAttribArray(position);
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
 
-  // texture unit 0 holds the current cover, unit 1 the one it fades in over
   let current = createTexture(gl);
   let previous = createTexture(gl);
   gl.uniform1i(gl.getUniformLocation(program, "current"), 0);

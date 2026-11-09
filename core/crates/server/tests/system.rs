@@ -85,7 +85,6 @@ async fn shutdown_route_signals_the_server() {
     tokio::time::timeout(std::time::Duration::from_secs(1), notified).await.unwrap().unwrap();
 }
 
-/// Lets a test keep a handle on the store it gave to the daemon.
 struct SharedStore(std::sync::Arc<MemoryKeyStore>);
 
 impl KeyStore for SharedStore {
@@ -97,7 +96,6 @@ impl KeyStore for SharedStore {
     }
 }
 
-/// A keyring that blocks in `load` until the test lets it go, like an open unlock prompt.
 struct PromptStore {
     answer: Mutex<mpsc::Receiver<()>>,
     inner: MemoryKeyStore,

@@ -18,7 +18,6 @@ afterEach(() => {
   dirs = [];
 });
 
-/** A fake Hyprland socket answering by request prefix and recording every request. */
 async function fakeHyprland(answer: (request: string) => string | null): Promise<{ path: string; requests: string[] }> {
   const dir = mkdtempSync(path.join(tmpdir(), "hypr-"));
   dirs.push(dir);

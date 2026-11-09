@@ -62,7 +62,6 @@ import pageStyles from "./EntityPage.module.css";
 import { openLyricsTool } from "../lyrics/lyricsTools";
 
 const SORTS: TrackOrder[] = ["default", "title", "duration"];
-/** Your own playlist's orders, stored in the daemon; "manual" reads as the playlist's own order. */
 const PLAYLIST_SORTS: PlaylistSort[] = ["manual", "added", "title", "artist", "album", "duration"];
 const sortLabel = (mode: PlaylistSort) => `ui.entity.sort_${mode === "manual" ? "default" : mode}`;
 
@@ -72,17 +71,12 @@ interface PlaylistData {
   cover: string;
   tracks: Track[];
   revision: number;
-  /** True only for a cover the user set; the collage is not one. */
   customCover: boolean;
-  /** The stored order of your own playlist; the items come in it. */
   sortMode?: PlaylistSort;
-  /** Your own playlist is kept in the audio cache. */
   keptOffline?: boolean;
-  /** When your own playlist last changed; Liked songs has no single time. */
   updatedAt?: string;
 }
 
-/** Your own playlist, or Liked songs, from the route: the data, and whether it is still loading. */
 function usePlaylistData(id: string | null, liked: boolean, t: TFunction): { data: PlaylistData | null; loading: boolean } {
   const playlist = usePlaylist(liked ? null : id);
   const likes = useLikedTracks();
@@ -100,7 +94,6 @@ function usePlaylistData(id: string | null, liked: boolean, t: TFunction): { dat
       data: {
         title: detail.title || t("ui.entity.untitled"),
         description: detail.description || undefined,
-        // the cover the user set wins over the first song's artwork, as in the Library grid
         cover: detail.coverUrl || detail.coverUrls?.[0] || "",
         tracks: detail.tracks,
         revision: detail.revision,
@@ -114,8 +107,6 @@ function usePlaylistData(id: string | null, liked: boolean, t: TFunction): { dat
   }, [liked, likes, likesCover, playlist, t]);
 }
 
-/** The line under your playlist's title: its description, or Add description. A click edits it in place;
-    Enter or leaving the field saves, Escape keeps the old text. */
 function DescriptionLine({ id, text, editing, onEditing }: { id: string; text?: string; editing: boolean; onEditing(editing: boolean): void }): JSX.Element {
   const { t } = useTranslation();
   if (!editing) {
@@ -156,7 +147,6 @@ interface TrackMenuState {
   at?: { x: number; y: number };
 }
 
-/** /library/playlist?id=: one page per playlist, so the filter, sort and order reset when the id changes. */
 export function Playlist(): JSX.Element {
   const [params] = useSearchParams();
   const id = params.get("id");
@@ -191,8 +181,7 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
   const status = usePlayerStore((state) => state.status);
 
-  // the server's order wins again when a new revision arrives, but not under moves still queued:
-  // a refresh between two of them would show the old order for a frame
+  // Server order wins on a new revision, but not under queued moves: it would flash the old order
   useEffect(() => {
     if (pendingMoves.current === 0) setOptimistic(null);
     revision.current = Math.max(revision.current, data?.revision ?? 0);
@@ -204,7 +193,6 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
   usePageBackdrop(cover || undefined);
 
   const source = optimistic ?? data?.tracks ?? [];
-  // your own playlist arrives in its stored order; Liked songs sort here
   const sortMode = own ? (data?.sortMode ?? "manual") : null;
   const sorted = useMemo(() => orderTracks(source, own ? "default" : sort), [source, own, sort]);
   const matches = useMemo(() => matchTracks(sorted, deferredQuery), [sorted, deferredQuery]);
@@ -256,7 +244,6 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
     if (!id) return;
     const texts = { ...undoTexts, done: () => t("ui.library.merged", { title }), failed: t("ui.library.merge_failed") };
     void mergeWithUndo(id, targetId, deleteAfterMerge, texts).then((merged) => {
-      // the page of a deleted playlist is gone, so the merged one opens
       if (merged && deleteAfterMerge) navigateWithTransition(navigate, playlistHref(targetId));
     });
   };
@@ -333,7 +320,6 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
             onSelect: () => void setPlaylistExcluded(id, !excluded).catch(() => undefined),
           },
           { label: t(data.description ? "common.edit_description" : "common.add_description"), onSelect: () => setEditingDescription(true) },
-          // the playlist's own order, whatever sort or filter the page shows
           {
             label: t("ui.links.share.title"),
             disabled: data.tracks.length === 0,

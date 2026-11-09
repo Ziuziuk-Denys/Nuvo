@@ -1,4 +1,3 @@
-/** The system tray: a watcher probe over D-Bus, a menu built purely from the latest state. */
 import type { SurfaceState } from "../../src/engine/types";
 import type { Exec } from "./compositor";
 
@@ -65,17 +64,13 @@ export function trayMenu(state: SurfaceState, labels: TrayLabels = TRAY_LABELS_E
   ];
 }
 
-/** Rebuilds only when the track, the playing group or liked changes; never for position updates. */
 export function menuKey(state: SurfaceState): string {
   return [state.trackId, state.status === "playing" || state.status === "loading", state.liked, state.title, state.artists].join("|");
 }
 
 export type TrayIconStyle = "mono-on-dark" | "mono-on-light" | "app";
 
-/**
- * GNOME's top bar and the Plasma panel draw tray icons as one-colour glyphs, so Nuvo shows its mono glyph there
- * (GNOME's bar is always dark). Other trays show the app icon, in the chosen preset.
- */
+// GNOME's bar and the Plasma panel draw tray icons as one-colour glyphs; GNOME's bar is always dark
 export function trayIconStyle(desktop: string, darkTheme: boolean): TrayIconStyle {
   const names = desktop.toUpperCase().split(":");
   if (names.some((name) => name === "GNOME" || name.endsWith("-GNOME") || name === "UNITY")) return "mono-on-dark";
@@ -83,7 +78,6 @@ export function trayIconStyle(desktop: string, darkTheme: boolean): TrayIconStyl
   return "app";
 }
 
-/** `NameHasOwner org.kde.StatusNotifierWatcher` on the session bus; anything but "(true,)" is false. */
 export async function probeWatcher(exec: Exec): Promise<boolean> {
   try {
     const out = await exec(
@@ -108,7 +102,6 @@ export async function probeWatcher(exec: Exec): Promise<boolean> {
 }
 
 export interface TrayHost {
-  /** Creates the Electron tray; returns a handle to set the menu, listen for activation, and destroy it. */
   create(onActivate: () => void): { setMenu(items: TrayMenuItem[]): void; destroy(): void };
   onClick(id: TrayItemId): void;
   /** Called when availability changes (the window must never stay hidden with no tray). */

@@ -1,4 +1,3 @@
-/** Radio and continuation requests (transport 4.4): debounced, one at a time, shared by every waiter. */
 import type { RankReason, Track } from "./types";
 
 export const REFILL_DEBOUNCE_MS = 400;
@@ -14,7 +13,6 @@ export interface ContinuationRequest {
   limit: number;
 }
 
-/** A continuation track with the daemon's reason, when it ranked the batch. */
 export type Suggested = Track & { reason?: RankReason };
 
 export interface ContinuationPort {
@@ -35,7 +33,6 @@ export class Refill {
     return this.running !== null;
   }
 
-  /** A burst of triggers within 400 ms asks once. */
   trigger(): void {
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
@@ -44,7 +41,6 @@ export class Refill {
     }, REFILL_DEBOUNCE_MS);
   }
 
-  /** Runs at once, or joins the request already running. */
   now(): Promise<void> {
     if (this.timer) {
       clearTimeout(this.timer);

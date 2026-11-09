@@ -1,20 +1,4 @@
-"""Nuvo app, theme and tray icons from the Puffy N. Run: python3 build/icons/build.py [brand-dir], or with --platform for nuvo.ico and nuvo.icns alone
-
-The nine theme icons are the brand's own (brand/app-icons, made by its build.py) and are used as they are, not redrawn.
-This script adds what the brand set lacks: the light Nuvo tile and the tray glyphs.
-
-Writes, next to this file:
-  NxN.png             the default (Nuvo dark) icon at 16-512, the set electron-builder reads (build.linux.icon)
-  nuvo.svg            the same icon as SVG (freedesktop scalable)
-  nuvo.ico            Windows: every shell size, 16-256 (build.win.icon)
-  nuvo.icns           macOS: the tile on Apple's 824-of-1024 grid with a soft shadow (build.mac.icon)
-  ../background.png   the dmg window, 540x380, and background@2x.png for Retina (build.dmg)
-  themes/<id>.svg     ten theme icons: the nine brand themes plus nuvo-light
-  themes/<id>-N.png   each at 16-512
-  tray/nuvo-symbolic.svg          monochrome 16 px symbolic icon for icon themes (GTK recolours it)
-  tray/nuvo-tray-on-dark-N.png    white glyph for dark panels, 16 / 22 / 24 / 32 / 48
-  tray/nuvo-tray-on-light-N.png   Night glyph for light panels
-"""
+"""Usage: python3 build/icons/build.py [brand-dir] [--platform]"""
 import pathlib
 import re
 import shutil
@@ -30,7 +14,6 @@ BRAND = pathlib.Path(ARGS[0] if ARGS else "~/IT/Projects/Apps/Nuvo/design/brand"
 THEMES = ["nuvo", "editor", "orbit", "vinyl", "cosmos", "sunset", "amethyst", "y2k", "cassette"]
 SIZES = [16, 32, 48, 64, 128, 256, 512]
 TRAY_SIZES = [16, 22, 24, 32, 48]
-# the glyph outline, read by main() from the brand set; --platform needs only nuvo.svg
 PATH = ""
 
 # Same tile as the brand set: 512 box, 22 % corner radius, glyph at 1.12 scale in the centre
@@ -41,7 +24,6 @@ GLYPH_AT = f'transform="translate(256 256) scale({GLYPH_SCALE}) translate(-128 -
 
 
 def nuvoLight():
-    """Ice tile, Night glyph with a Sky halo: the dark Nuvo icon with its roles swapped."""
     return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img">'
             '<title>Nuvo Light icon</title><defs>'
             f'<clipPath id="tile"><rect width="512" height="512" rx="{RADIUS:.2f}"/></clipPath>'
@@ -57,14 +39,12 @@ def nuvoLight():
 
 
 def trayGlyph(fill, box=16, pad=1):
-    """The bare N on a transparent square, `pad` units of air on every side."""
     scale = (box - 2 * pad) / 192
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {box} {box}" width="{box}" height="{box}">'
             f'<path d="{PATH}" fill="{fill}" transform="translate({pad} {pad}) scale({scale:.6f}) translate(-32 -32)"/></svg>')
 
 
 def render(svgText, sizes, name, outDir):
-    """Render once at 1024 with headless Chromium, then downscale with Pillow (the brand build's method)."""
     browser = next((b for b in ("chromium-browser", "chromium", "google-chrome") if shutil.which(b)), None)
     if browser is None:
         raise SystemExit("No Chromium found")
@@ -83,7 +63,6 @@ def render(svgText, sizes, name, outDir):
 
 
 def platformIcons():
-    """nuvo.ico and nuvo.icns from nuvo.svg. The brand PNGs are used where they exist; other sizes come from a 1024 render."""
     with tempfile.TemporaryDirectory() as tmp:
         render((HERE / "nuvo.svg").read_text(), [1024], "master-{size}.png", pathlib.Path(tmp))
         master = Image.open(pathlib.Path(tmp) / "master-1024.png").convert("RGBA")
@@ -106,8 +85,7 @@ def platformIcons():
 
 
 def dmgBackground():
-    """Light dmg window: a soft blue glow under the app icon and a thin arrow to Applications.
-    Icon centres match build.dmg.contents (140,180) and (400,180)."""
+    """Icon centres match build.dmg.contents (140,180) and (400,180)"""
     from PIL import ImageDraw
 
     for scale, name in ((1, "background.png"), (2, "background@2x.png")):
@@ -115,7 +93,6 @@ def dmgBackground():
         image = Image.new("RGB", (width, height), "#ffffff")
         draw = ImageDraw.Draw(image)
         for y in range(height):
-            # white at the top to Apple's #f5f5f7 at the bottom
             t = y / (height - 1)
             draw.line([(0, y), (width, y)], fill=tuple(round(255 + (c - 255) * t) for c in (0xF5, 0xF5, 0xF7)))
         glow = Image.new("L", (width, height), 0)

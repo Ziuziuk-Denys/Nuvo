@@ -1,9 +1,3 @@
-/**
- * Turns a routed link into what the search screen shows: one track row (sure or "probably"), an import
- * preview, a shared playlist, a page to open, a plain "not found" with its reason, or an error code.
- * TikTok follows the owner's order: the post's named sound first, then listening to the clean sound,
- * then to the video.
- */
 import { CoreError, type Heard, type InspectAnswer, type ListenVia, type SoundCloudItem } from "./core";
 import { lookupApple, lookupDeezer, lookupShazam, lookupYandex, type FetchJson, type SongLookup } from "./lookup";
 import { alternatives, matchByName, type MatchPorts, type MatchResult } from "./match";
@@ -14,7 +8,6 @@ import type { CatalogTrack, MatchSource } from "./types";
 export interface LinkPorts extends MatchPorts {
   inspect(url: string, signal: AbortSignal): Promise<InspectAnswer>;
   recognize(url: string, part: 0 | 1, signal: AbortSignal, onListening: (via: ListenVia) => void): Promise<Heard>;
-  /** The YouTube client's track by id; null when the video is gone. */
   youtubeTrack(id: string, signal: AbortSignal): Promise<CatalogTrack | null>;
   soundcloudLookup(url: string, signal: AbortSignal): Promise<SoundCloudItem | null>;
   soundcloudTrack(id: string, signal: AbortSignal): Promise<CatalogTrack | null>;
@@ -24,7 +17,6 @@ export interface LinkPorts extends MatchPorts {
 export type Stage =
   { stage: "reading_tiktok" } | { stage: "reading_link" } | { stage: "looking"; title: string } | { stage: "listening_sound" } | { stage: "listening_video" };
 
-/** The "how it was found" line under the row. */
 export type FoundVia = "link" | "tiktok_name" | "recognized_sound" | "recognized_video" | "by_name" | "media_tags" | "share_gone";
 
 export type LinkResult =
@@ -32,12 +24,9 @@ export type LinkResult =
       kind: "track";
       track: CatalogTrack;
       via: FoundVia;
-      /** False shows "Probably this song" and the "Choose another" list. */
       sure: boolean;
       others: CatalogTrack[];
-      /** A post or video Nuvo can listen to: "Not this song? Listen to the video". */
       listenUrl?: string;
-      /** A YouTube playlist the video was opened from: the quiet "Import the playlist" action. */
       playlistUrl?: string;
     }
   | { kind: "import"; service: ImportService; url: string }
@@ -49,7 +38,6 @@ export type LinkResult =
       title?: string;
       author?: string;
       proposal?: CatalogTrack;
-      /** "Try another part": the recognizer has more windows. */
       more: boolean;
       listenUrl?: string;
     }
@@ -86,7 +74,6 @@ function fromMatch(result: MatchResult, via: FoundVia, extra: { listenUrl?: stri
   return null;
 }
 
-/** A daemon status as an error code; anything else that failed (a client bug, a cascade that never ended) is Nuvo's own failure. */
 function coreCode(caught: unknown): string {
   if (!(caught instanceof CoreError)) return "failed";
   if (caught.status === 0 || caught.status === 503) return "core_down";
@@ -94,7 +81,6 @@ function coreCode(caught: unknown): string {
   return "failed";
 }
 
-/** Never throws for a failed service; an abort still rejects with the signal's reason. */
 export async function resolveLink(route: LinkRoute, ports: LinkPorts, report: Report, signal: AbortSignal): Promise<LinkResult> {
   try {
     return await resolveRoute(route, ports, report, signal, true);
@@ -122,7 +108,6 @@ async function resolveRoute(route: LinkRoute, ports: LinkPorts, report: Report, 
         via: "link",
         sure: true,
         others: [],
-        // a vlog or an edit plays some other song: the row's menu can listen to the video
         listenUrl: route.url,
         ...(route.playlistId
           ? {
@@ -285,7 +270,6 @@ async function resolveMedia(url: string, host: string, ports: LinkPorts, report:
   return fromMedia(answer.canonicalUrl, answer.media, "web", ports, report, signal, host);
 }
 
-/** yt-dlp's `track` and `artist` play the named sound's part; then the video is listened to. */
 async function fromMedia(
   canonicalUrl: string,
   media: {
@@ -353,7 +337,6 @@ async function matchHeard(heard: Extract<Heard, { kind: "found" }>, ports: LinkP
   return fromMatch(result, heard.via === "clean" ? "recognized_sound" : "recognized_video");
 }
 
-/** "Try another part" and "Not this song? Listen to the video": listen again, part 0 or 1. */
 export async function listenAgain(url: string, part: 0 | 1, ports: LinkPorts, report: Report, signal: AbortSignal): Promise<LinkResult> {
   try {
     const heard = await listen(url, part, ports, report, signal, "listening_video");
