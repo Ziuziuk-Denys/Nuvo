@@ -68,7 +68,14 @@ fn events(body: &[u8]) -> Vec<Value> {
 #[tokio::test]
 async fn a_licensed_tiktok_sound_is_read_once_and_shared_with_recognize() {
     let (base, hits) = mock_tiktok().await;
-    let core = common::boot_config(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), |config| config.test.tiktok_url = Some(base));
+    // recognize looks for yt-dlp before it judges the address, so the test brings its own instead of relying on the machine having one
+    let tools = tempfile::tempdir().unwrap();
+    fake_yt_dlp(tools.path(), include_str!("../../fetch/tests/fixtures/ytdlp-tagged.json"));
+    let path = tools.path().as_os_str().to_owned();
+    let core = common::boot_config(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), |config| {
+        config.test.tiktok_url = Some(base);
+        config.env = ToolEnv { path: Some(path), home: None, managed: None };
+    });
     let pasted = format!("https://www.tiktok.com/@someone/video/{LICENSED_ID}?is_from_webapp=1");
     let canonical = format!("https://www.tiktok.com/@i/video/{LICENSED_ID}");
     let answer = inspect(&core, &pasted).await;
