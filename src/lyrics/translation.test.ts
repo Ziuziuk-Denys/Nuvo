@@ -7,6 +7,12 @@ describe("translation helpers", () => {
     expect(textLines({ format: "lrc", content: "[00:01.00] <00:01.00>One <00:01.50>two\n[00:03.00]\n[Chorus]\nThree" })).toEqual(["One two", "Three"]);
   });
 
+  it("leaves no angle bracket behind when tags are nested", () => {
+    const lines = textLines({ format: "lrc", content: "<<b>b>Hello\n<scr<script>ipt>alert(1)\n<<<x" });
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) expect(line).not.toMatch(/[<>]/);
+  });
+
   it("translates Russian lyrics into English and everything else into Russian", () => {
     expect(targetLanguage(["Привет, мир", "ok"])).toBe("English");
     expect(targetLanguage(["Hello world"])).toBe("Russian");

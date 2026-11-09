@@ -3,13 +3,23 @@ import type { RawLyrics } from "./types";
 /** At most what the daemon accepts in one request. */
 export const MAX_TRANSLATED_LINES = 400;
 
+// One pass can leave a new tag behind (<<b>b>), so repeat until nothing changes
+function stripAll(text: string, pattern: RegExp): string {
+  let current = text;
+  let next = current.replace(pattern, "");
+  while (next !== current) {
+    current = next;
+    next = current.replace(pattern, "");
+  }
+  return current;
+}
+
 export function textLines(raw: RawLyrics): string[] {
   return raw.content
     .split("\n")
     .map((line) =>
-      line
-        .replace(/\[[^\]]*\]/g, "")
-        .replace(/<[^>]*>/g, "")
+      stripAll(stripAll(line, /\[[^\]]*\]/g), /<[^>]*>/g)
+        .replace(/[<>]/g, "")
         .replace(/\s+/g, " ")
         .trim(),
     )
