@@ -125,6 +125,7 @@ const NuvoIndicator = GObject.registerClass(
     _buildCard() {
       const item = new PopupMenu.PopupBaseMenuItem({ activate: false, hover: false, can_focus: false, style_class: "nuvo-card-item" });
       const card = new St.BoxLayout({ style_class: "nuvo-card", vertical: true, x_expand: true });
+      this._card = card;
 
       const head = new St.BoxLayout({ style_class: "nuvo-head" });
       this._cover = new St.Button({ style_class: "nuvo-cover", accessible_name: "Open Nuvo", can_focus: true });
@@ -232,7 +233,11 @@ const NuvoIndicator = GObject.registerClass(
       this._title.text = title;
       this._artist.text = artists;
       const line = this._nuvo.LyricsLine ?? "";
-      this._lyrics.text = line;
+      if (line !== this._lyrics.text) {
+        this._lyrics.text = line;
+        this._lyrics.opacity = 0;
+        this._lyrics.ease({ opacity: 255, duration: 300, mode: Clutter.AnimationMode.EASE_OUT_QUAD });
+      }
       this._lyrics.visible = line !== "";
       this._length = Number(meta["mpris:length"] ?? 0);
       this._total.text = this._length > 0 ? formatTime(this._length) : "";
@@ -245,6 +250,8 @@ const NuvoIndicator = GObject.registerClass(
         this._thumb.style = picture;
         this._cover.style = `${picture} box-shadow: 0 6px 22px 0 rgba(${r}, ${g}, ${b}, 0.55);`;
         this._fill.style = `background-color: rgb(${r}, ${g}, ${b});`;
+        this._card.style = `background-gradient-start: rgba(${r}, ${g}, ${b}, 0.16); background-gradient-end: rgba(${r}, ${g}, ${b}, 0);`;
+        this._play.style = `border: 1.5px solid rgba(${r}, ${g}, ${b}, 0.7); box-shadow: 0 0 14px 0 rgba(${r}, ${g}, ${b}, 0.3);`;
         this._thumb.child = artUrl ? null : new St.Icon({ gicon: this._icon("nuvo-symbolic"), style_class: "nuvo-thumb-icon" });
       }
       this._play.child.gicon = Gio.ThemedIcon.new(status === "Playing" ? "media-playback-pause-symbolic" : "media-playback-start-symbolic");

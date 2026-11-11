@@ -20,3 +20,11 @@ NUVO_SHOT_DIR=$out dbus-run-session -- sh -c '
 ' sh "$here" "$out" "$work/nuvo-panel@nuvo.quest.shell-extension.zip"
 
 cat "$out/result.json"
+node -e '
+const { controls } = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+const small = Object.entries(controls).filter(([, c]) => c.width < 32);
+if (small.length || controls.play.width <= controls.like.width) {
+  console.error("controls too small or play not the largest:", JSON.stringify(controls));
+  process.exit(1);
+}
+' "$out/result.json"

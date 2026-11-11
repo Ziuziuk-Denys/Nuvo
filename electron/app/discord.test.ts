@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import type { SurfaceState } from "../../src/engine/types";
-import { buildActivity, DiscordPresence, encodeFrame, FrameDecoder, OP, socketCandidates } from "./discord";
+import { buildActivity, DiscordPresence, encodeFrame, FrameDecoder, OP, SITE_BUTTON, socketCandidates } from "./discord";
 
 const state = (extra: Partial<SurfaceState> = {}): SurfaceState => ({
   trackId: "dQw4w9WgXcQ",
@@ -147,22 +147,35 @@ describe("discord presence", () => {
     expect(Array.from(activity.details).length).toBeLessThanOrEqual(128);
   });
 
-  it("one button for a public page; the cover or the uploaded asset", () => {
+  it("the track page button comes first and the Nuvo site button is always there", () => {
     const yt = buildActivity(state({ sourcePageUrl: "https://music.youtube.com/watch?v=dQw4w9WgXcQ", publicCoverUrl: "https://i.ytimg.com/vi/x/hq.jpg" }), 0)!;
-    expect(yt.buttons).toEqual([{ label: "Open track", url: "https://music.youtube.com/watch?v=dQw4w9WgXcQ" }]);
+    expect(yt.buttons).toEqual([{ label: "Open track", url: "https://music.youtube.com/watch?v=dQw4w9WgXcQ" }, SITE_BUTTON]);
     expect(yt.assets.large_image).toBe("https://i.ytimg.com/vi/x/hq.jpg");
-    const bare = buildActivity(state(), 0)!;
-    expect(bare.buttons).toBeUndefined();
-    expect(bare.assets.large_image).toBe("nuvo");
+    const local = buildActivity(state({ trackId: "local:abc", source: "local" }), 0)!;
+    expect(local.buttons).toEqual([{ label: "Get Nuvo", url: "https://nuvo.quest" }]);
+    expect(local.assets.large_image).toBe("nuvo");
+  });
+
+  it("a YouTube track whose cover is not usable shows its video thumbnail", () => {
+    const long = `https://lh3.googleusercontent.com/${"a".repeat(260)}=w544-h544`;
+    expect(buildActivity(state({ publicCoverUrl: long }), 0)!.assets.large_image).toBe("https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
+    expect(buildActivity(state(), 0)!.assets.large_image).toBe("https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
+  });
+
+  it("a cover found in a catalog is used when the track has none", () => {
+    const local = state({ trackId: "local:abc", source: "local" });
+    const found = "https://cdn-images.dzcdn.net/images/cover/c95a/1000x1000-000000-80-0-0.jpg";
+    expect(buildActivity(local, 0, found)!.assets.large_image).toBe(found);
+    expect(buildActivity(local, 0, "https://evil.example/cover.jpg")!.assets.large_image).toBe("nuvo");
   });
 
   it("privacy: image only from approved hosts, page url https with no userinfo", () => {
-    const badImage = buildActivity(state({ publicCoverUrl: "https://evil.com/img.jpg" }), 0)!;
+    const badImage = buildActivity(state({ trackId: "local:abc", publicCoverUrl: "https://evil.com/img.jpg" }), 0)!;
     expect(badImage.assets.large_image).toBe("nuvo");
     const httpUrl = buildActivity(state({ sourcePageUrl: "http://music.youtube.com/watch?v=dQw4w9WgXcQ" }), 0)!;
-    expect(httpUrl.buttons).toBeUndefined();
+    expect(httpUrl.buttons).toEqual([SITE_BUTTON]);
     const userinfo = buildActivity(state({ sourcePageUrl: "https://user:pass@music.youtube.com/watch" }), 0)!;
-    expect(userinfo.buttons).toBeUndefined();
+    expect(userinfo.buttons).toEqual([SITE_BUTTON]);
     const approvedImage = buildActivity(state({ publicCoverUrl: "https://i.ytimg.com/vi/x/hq.jpg" }), 0)!;
     expect(approvedImage.assets.large_image).toBe("https://i.ytimg.com/vi/x/hq.jpg");
   });
@@ -175,8 +188,42 @@ describe("discord presence", () => {
   it("button URL is capped to 512 chars", () => {
     const longPath = "q=".repeat(260);
     const activity = buildActivity(state({ sourcePageUrl: `https://music.youtube.com/watch?${longPath}` }), 0)!;
-    expect(activity.buttons).toBeUndefined();
+    expect(activity.buttons).toEqual([SITE_BUTTON]);
   });
+
+  it("sends the activity again with the cover once the lookup finds one", async () => {
+    const dir = tempDir();
+    const server = await fakeDiscord(dir);
+    const found = "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/55/x.jpg/512x512bb.jpg";
+    let answer: (url: string | null) => void = () => undefined;
+    const findCover = vi.fn(() => new Promise<string | null>((resolve) => (answer = resolve)));
+    const p = new DiscordPresence({
+      applicationId: "123",
+      candidates: () => [path.join(dir, "discord-ipc-0")],
+      connect: (s) => net.createConnection(s),
+      now: () => Date.now(),
+      pid: 4242,
+      log: vi.fn(),
+      findCover,
+    });
+    p.setEnabled(true);
+    await settle();
+    p.update(state({ trackId: "local:abc", title: "портреты (Acoustic)", artists: "zhanulka", source: "local" }));
+    await settle();
+    const images = () =>
+      server.frames
+        .filter((f) => f.payload.cmd === "SET_ACTIVITY")
+        .map((f) => (f.payload.args as { activity: { assets: { large_image: string } } }).activity.assets.large_image);
+    expect(images()).toEqual(["nuvo"]);
+    expect(findCover).toHaveBeenCalledWith("zhanulka", "портреты (Acoustic)");
+    answer(found);
+    await settle(4200);
+    expect(images()).toEqual(["nuvo", found]);
+    p.update(state({ trackId: "local:abc", title: "портреты (Acoustic)", artists: "zhanulka", source: "local" }));
+    expect(findCover).toHaveBeenCalledTimes(1);
+    p.stop();
+    await server.close();
+  }, 10_000);
 
   it("five track changes in 3 s send two activities", async () => {
     const dir = tempDir();

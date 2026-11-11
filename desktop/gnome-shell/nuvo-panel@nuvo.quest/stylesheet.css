@@ -19,7 +19,7 @@
 }
 
 .nuvo-card-item {
-  padding: 4px;
+  padding: 0;
 }
 
 .nuvo-card-item:hover,
@@ -30,7 +30,9 @@
 .nuvo-card {
   width: 320px;
   spacing: 12px;
-  padding: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background-gradient-direction: vertical;
 }
 
 .nuvo-head {
@@ -92,7 +94,7 @@
 }
 
 .nuvo-controls {
-  spacing: 12px;
+  spacing: 14px;
 }
 
 .nuvo-button {
@@ -110,18 +112,14 @@
 }
 
 .nuvo-button-icon {
-  icon-size: 18px;
+  icon-size: 20px;
 }
 
 .nuvo-play {
   padding: 12px;
-  background-color: rgba(127, 127, 127, 0.16);
+  border: 1px solid rgba(127, 127, 127, 0.5);
 }
 
 .nuvo-play .nuvo-button-icon {
-  icon-size: 22px;
-}
-
-.nuvo-side .nuvo-button-icon {
-  icon-size: 16px;
+  icon-size: 26px;
 }

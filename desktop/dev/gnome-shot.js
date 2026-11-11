@@ -43,6 +43,9 @@ export async function run() {
   indicator.menu.open();
   await Scripting.sleep(2500);
   result.open = read(indicator);
+  result.controls = Object.fromEntries(
+    ["_dislike", "_like", "_play"].map((name) => [name.slice(1), { width: indicator[name].width, icon: indicator[name].child.width }]),
+  );
   await shot("2-card");
   indicator._like.emit("clicked", 1);
   indicator._play.emit("clicked", 1);
