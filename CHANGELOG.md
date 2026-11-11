@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.11-beta.5
+
+- **The song cover always shows in Discord,** and there is a Get Nuvo button on the card.
+- **Larger GNOME panel controls** with a card tinted by the cover.
+- **Notch buttons work on Windows.**
+- **macOS builds are signed ad hoc** and open after Open Anyway in Privacy & Security.
+
 ## 0.2.11-beta.4
 
 - **Move the window from the whole top band.** Drag anywhere along the top to move it, and double click to maximize. It works on Wayland too.
