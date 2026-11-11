@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import type { SurfaceState } from "../../src/engine/types";
-import { buildActivity, DiscordPresence, encodeFrame, FrameDecoder, OP, socketCandidates } from "./discord";
+import { buildActivity, DiscordPresence, encodeFrame, FrameDecoder, OP, SITE_BUTTON, socketCandidates } from "./discord";
 
 const state = (extra: Partial<SurfaceState> = {}): SurfaceState => ({
   trackId: "dQw4w9WgXcQ",
@@ -147,12 +147,12 @@ describe("discord presence", () => {
     expect(Array.from(activity.details).length).toBeLessThanOrEqual(128);
   });
 
-  it("one button for a public page; the cover or the uploaded asset", () => {
+  it("the track page button comes first and the Nuvo site button is always there", () => {
     const yt = buildActivity(state({ sourcePageUrl: "https://music.youtube.com/watch?v=dQw4w9WgXcQ", publicCoverUrl: "https://i.ytimg.com/vi/x/hq.jpg" }), 0)!;
-    expect(yt.buttons).toEqual([{ label: "Open track", url: "https://music.youtube.com/watch?v=dQw4w9WgXcQ" }]);
+    expect(yt.buttons).toEqual([{ label: "Open track", url: "https://music.youtube.com/watch?v=dQw4w9WgXcQ" }, SITE_BUTTON]);
     expect(yt.assets.large_image).toBe("https://i.ytimg.com/vi/x/hq.jpg");
     const local = buildActivity(state({ trackId: "local:abc", source: "local" }), 0)!;
-    expect(local.buttons).toBeUndefined();
+    expect(local.buttons).toEqual([{ label: "Get Nuvo", url: "https://nuvo.quest" }]);
     expect(local.assets.large_image).toBe("nuvo");
   });
 
@@ -173,9 +173,9 @@ describe("discord presence", () => {
     const badImage = buildActivity(state({ trackId: "local:abc", publicCoverUrl: "https://evil.com/img.jpg" }), 0)!;
     expect(badImage.assets.large_image).toBe("nuvo");
     const httpUrl = buildActivity(state({ sourcePageUrl: "http://music.youtube.com/watch?v=dQw4w9WgXcQ" }), 0)!;
-    expect(httpUrl.buttons).toBeUndefined();
+    expect(httpUrl.buttons).toEqual([SITE_BUTTON]);
     const userinfo = buildActivity(state({ sourcePageUrl: "https://user:pass@music.youtube.com/watch" }), 0)!;
-    expect(userinfo.buttons).toBeUndefined();
+    expect(userinfo.buttons).toEqual([SITE_BUTTON]);
     const approvedImage = buildActivity(state({ publicCoverUrl: "https://i.ytimg.com/vi/x/hq.jpg" }), 0)!;
     expect(approvedImage.assets.large_image).toBe("https://i.ytimg.com/vi/x/hq.jpg");
   });
@@ -188,7 +188,7 @@ describe("discord presence", () => {
   it("button URL is capped to 512 chars", () => {
     const longPath = "q=".repeat(260);
     const activity = buildActivity(state({ sourcePageUrl: `https://music.youtube.com/watch?${longPath}` }), 0)!;
-    expect(activity.buttons).toBeUndefined();
+    expect(activity.buttons).toEqual([SITE_BUTTON]);
   });
 
   it("sends the activity again with the cover once the lookup finds one", async () => {

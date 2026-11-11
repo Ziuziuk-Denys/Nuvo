@@ -110,8 +110,10 @@ export interface Activity {
   state: string;
   timestamps: { start: number; end: number };
   assets: { large_image: string; large_text?: string };
-  buttons?: Array<{ label: string; url: string }>;
+  buttons: Array<{ label: string; url: string }>;
 }
+
+export const SITE_BUTTON = { label: "Get Nuvo", url: "https://nuvo.quest" };
 
 export function buildActivity(state: SurfaceState, now: number, foundCover?: string | null): Activity | null {
   if (!state.trackId || state.status !== "playing") return null;
@@ -123,7 +125,7 @@ export function buildActivity(state: SurfaceState, now: number, foundCover?: str
     state: fit(state.artists),
     timestamps: { start, end: start + state.durationMs },
     assets: { large_image: activityImage(state, foundCover), ...(state.album ? { large_text: fit(state.album) } : {}) },
-    ...(pageUrl ? { buttons: [{ label: capLabel("Open track"), url: pageUrl }] } : {}),
+    buttons: [...(pageUrl ? [{ label: capLabel("Open track"), url: pageUrl }] : []), SITE_BUTTON],
   };
 }
 
