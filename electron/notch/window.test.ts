@@ -75,6 +75,7 @@ const electron = vi.hoisted(() => {
       screen: {
         getPrimaryDisplay: vi.fn(() => display),
         getDisplayMatching: vi.fn(() => display),
+        getCursorScreenPoint: vi.fn(() => ({ x: 0, y: 900 })),
         on: (e: string, h: () => void) => screenEvents.on(e, h),
         removeListener: (e: string, h: () => void) => screenEvents.removeListener(e, h),
       },
@@ -84,6 +85,7 @@ const electron = vi.hoisted(() => {
 
 vi.mock("electron", () => electron.module);
 import { DEFAULT_NOTCH_SETTINGS as OFF_BY_DEFAULT, type NotchState } from "../../src/notch/contracts";
+import { ISLAND_SIZES, islandRect } from "../../src/notch/lib/geometry";
 import type { NotchSession } from "./session";
 import { NOTCH_TITLE, NotchWindow, registerNotchIpc } from "./window";
 
@@ -118,6 +120,7 @@ afterEach(() => {
   electron.screenEvents.removeAllListeners();
   vi.useRealTimers();
   electron.module.screen.getDisplayMatching.mockImplementation(() => electron.display);
+  electron.module.screen.getCursorScreenPoint.mockImplementation(() => ({ x: 0, y: 900 }));
 });
 
 describe("NotchWindow", () => {
@@ -348,6 +351,35 @@ describe("NotchWindow", () => {
       expect(names(win)).not.toContain("setShape");
       notch.destroy();
     }
+  });
+
+  it("on Windows takes the mouse while the cursor is on the island, whatever the renderer last said", async () => {
+    vi.useFakeTimers();
+    const { notch } = createNotch({ session: "windows" });
+    await vi.advanceTimersByTimeAsync(200);
+    await notch.ready;
+    const win = lastWindow();
+    win.getBounds = () => ({ x: 712, y: 0, width: 496, height: 200 });
+    const pill = islandRect(ISLAND_SIZES.idle);
+    const onPill = { x: 712 + pill.x + pill.width / 2, y: pill.y + pill.height / 2 };
+    const ignores = () => win.calls.filter((c) => c[0] === "setIgnoreMouseEvents").map((c) => c[1]);
+
+    electron.module.screen.getCursorScreenPoint.mockImplementation(() => onPill);
+    await vi.advanceTimersByTimeAsync(150);
+    expect(notch.capturesMouse).toBe(true);
+
+    notch.setCapture(true);
+    notch.setCapture(false);
+    expect(notch.capturesMouse).toBe(true);
+
+    electron.module.screen.getCursorScreenPoint.mockImplementation(() => ({ x: 0, y: 900 }));
+    await vi.advanceTimersByTimeAsync(150);
+    expect(notch.capturesMouse).toBe(false);
+    expect(ignores()).toEqual([true, false, true]);
+
+    notch.destroy();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(ignores()).toEqual([true, false, true]);
   });
 
   it("asks for always-on-top again until the window manager keeps it", async () => {

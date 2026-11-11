@@ -8,7 +8,7 @@ import {
   type NotchState,
   type ShapeRect,
 } from "../../src/notch/contracts";
-import { ISLAND_SIZES, NOTCH_WINDOW, islandRect } from "../../src/notch/lib/geometry";
+import { ISLAND_SIZES, NOTCH_WINDOW, capturesPointer, islandRect } from "../../src/notch/lib/geometry";
 import { kwinScript, notchOrigin } from "./placement";
 import { canPlaceNotch, clicksPassThrough, notchEnabled, type NotchSession } from "./session";
 
@@ -31,6 +31,7 @@ const ON_TOP_TRIES = 10;
 const ON_TOP_RETRY_MS = 100;
 const MAX_CRASH_RELOADS = 3;
 const CRASH_WINDOW_MS = 60_000;
+const CAPTURE_POLL_MS = 100;
 
 export interface NotchDeps {
   preloadPath: string;
@@ -53,6 +54,8 @@ export class NotchWindow {
   private lyrics: NotchLyrics | null = null;
   private shape: ShapeRect | null = null;
   private capturing = false;
+  private wantsCapture = false;
+  private capturePoll: ReturnType<typeof setInterval> | null = null;
   private loaded = false;
   private placementFailure: string | null = null;
   private listening = false;
@@ -135,9 +138,26 @@ export class NotchWindow {
   }
 
   setCapture(capture: boolean): void {
-    if (typeof capture !== "boolean" || !this.win || this.win.isDestroyed() || !clicksPassThrough(this.deps.session)) return;
+    if (typeof capture !== "boolean" || !clicksPassThrough(this.deps.session)) return;
+    this.wantsCapture = capture;
+    this.syncCapture();
+  }
+
+  private syncCapture(): void {
+    const win = this.win;
+    if (!win || win.isDestroyed()) return;
+    // Windows can drop forwarded moves or send a stray mouseleave, so the cursor position also counts.
+    const capture = this.wantsCapture || this.cursorOnShape(win);
+    if (capture === this.capturing) return;
     this.capturing = capture;
-    this.win.setIgnoreMouseEvents(!capture, { forward: true });
+    win.setIgnoreMouseEvents(!capture, { forward: true });
+  }
+
+  private cursorOnShape(win: BrowserWindow): boolean {
+    if (!this.shape || !win.isVisible()) return false;
+    const cursor = screen.getCursorScreenPoint();
+    const bounds = win.getBounds();
+    return capturesPointer({ x: cursor.x - bounds.x, y: cursor.y - bounds.y }, this.shape, this.capturing);
   }
 
   hello(): NotchHello {
@@ -154,6 +174,8 @@ export class NotchWindow {
 
   destroy(): void {
     if (this.moveTimer) clearTimeout(this.moveTimer);
+    if (this.capturePoll) clearInterval(this.capturePoll);
+    this.capturePoll = null;
     this.detachMain();
     screen.removeListener("display-metrics-changed", this.replace);
     screen.removeListener("display-added", this.replace);
@@ -190,7 +212,12 @@ export class NotchWindow {
     });
     this.win = win;
     this.capturing = false;
-    if (clicksPassThrough(this.deps.session)) win.setIgnoreMouseEvents(true, { forward: true });
+    this.wantsCapture = false;
+    if (clicksPassThrough(this.deps.session)) {
+      win.setIgnoreMouseEvents(true, { forward: true });
+      if (this.capturePoll) clearInterval(this.capturePoll);
+      this.capturePoll = setInterval(() => this.syncCapture(), CAPTURE_POLL_MS);
+    }
     // The title is the join key compositors use to find this window.
     win.on("page-title-updated", (event) => event.preventDefault());
     win.webContents.on("render-process-gone", (_event, details) => {
