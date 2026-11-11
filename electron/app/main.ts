@@ -36,6 +36,7 @@ import { createCompositorBridge, detectCompositor, type Exec } from "./composito
 import { findLinkArg, LinkInbox } from "./deeplink";
 import { countsAsFailedStart, isShiftAtStart, SAFE_FLAG, StartWatch } from "./appearanceSafeMode";
 import { FC_LIST_MAX_BYTES, fontResponse, FontStore, MAX_FONT_FILE_BYTES, parseFcList, readCapped, SystemFonts, type FontImport } from "./fonts";
+import { findCover } from "./coverLookup";
 import { DISCORD_APPLICATION_ID, DiscordPresence, socketCandidates } from "./discord";
 import { CHANNELS, IpcRegistry } from "./ipc";
 import { chromiumRule, credentialsOf, detectSystemProxy, networkBody, withCredentials, type ProxySources } from "./proxy";
@@ -283,6 +284,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     now: Date.now,
     pid: process.pid,
     log,
+    findCover: (artist, title) => findCover(artist, title),
   });
   const icons = new IconInstaller({
     packaged: app.isPackaged,

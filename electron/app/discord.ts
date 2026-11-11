@@ -1,6 +1,6 @@
 import { default as net } from "node:net";
 import { default as path } from "node:path";
-import type { SurfaceState } from "../../src/engine/types";
+import { idKind, type SurfaceState } from "../../src/engine/types";
 
 export const DISCORD_APPLICATION_ID = "1568940310556573696";
 export const RETRY_MS = 30_000;
@@ -52,18 +52,39 @@ function fit(text: string): string {
   return cut.length >= 2 ? cut : cut.padEnd(2, " ");
 }
 
-function sanitizeImageUrl(url?: string): string | undefined {
+const IMAGE_HOSTS = [
+  "i.ytimg.com",
+  "lh3.googleusercontent.com",
+  "yt3.googleusercontent.com",
+  "yt3.ggpht.com",
+  "cdn-images.dzcdn.net",
+  "e-cdns-images.dzcdn.net",
+];
+export const IMAGE_URL_MAX = 256;
+
+function sanitizeImageUrl(url?: string | null): string | undefined {
   if (!url) return undefined;
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:") return undefined;
     if (parsed.username || parsed.password) return undefined;
     const host = parsed.hostname || "";
-    if (!["i.ytimg.com", "lh3.googleusercontent.com", "yt3.googleusercontent.com"].includes(host)) return undefined;
-    return parsed.toString();
+    const known = IMAGE_HOSTS.includes(host) || host.endsWith(".sndcdn.com") || /^is\d+-ssl\.mzstatic\.com$/.test(host);
+    if (!known) return undefined;
+    const href = parsed.toString();
+    return href.length <= IMAGE_URL_MAX ? href : undefined;
   } catch {
     return undefined;
   }
+}
+
+function youtubeThumbnail(state: SurfaceState): string | undefined {
+  if (!state.trackId || idKind(state.trackId) !== "youtube") return undefined;
+  return `https://i.ytimg.com/vi/${state.trackId}/hqdefault.jpg`;
+}
+
+export function activityImage(state: SurfaceState, foundCover?: string | null): string {
+  return sanitizeImageUrl(state.publicCoverUrl) ?? youtubeThumbnail(state) ?? sanitizeImageUrl(foundCover) ?? "nuvo";
 }
 
 function sanitizePageUrl(url?: string, maxLen = 512): string | undefined {
@@ -92,19 +113,22 @@ export interface Activity {
   buttons?: Array<{ label: string; url: string }>;
 }
 
-export function buildActivity(state: SurfaceState, now: number): Activity | null {
+export function buildActivity(state: SurfaceState, now: number, foundCover?: string | null): Activity | null {
   if (!state.trackId || state.status !== "playing") return null;
   const start = now - state.positionMs;
-  const imageUrl = sanitizeImageUrl(state.publicCoverUrl) ?? "nuvo";
   const pageUrl = sanitizePageUrl(state.sourcePageUrl);
   return {
     type: 2,
     details: fit(state.title),
     state: fit(state.artists),
     timestamps: { start, end: start + state.durationMs },
-    assets: { large_image: imageUrl, ...(state.album ? { large_text: fit(state.album) } : {}) },
+    assets: { large_image: activityImage(state, foundCover), ...(state.album ? { large_text: fit(state.album) } : {}) },
     ...(pageUrl ? { buttons: [{ label: capLabel("Open track"), url: pageUrl }] } : {}),
   };
+}
+
+function activityKey(state: SurfaceState, activity: Activity | null): string {
+  return activity ? `${state.trackId}|${state.status}|${activity.assets.large_image}` : "none";
 }
 
 export type DiscordStatus = { state: "off" | "connecting" | "connected" | "no_client" | "error"; message?: string };
@@ -116,7 +140,10 @@ export interface PresenceDeps {
   now(): number;
   pid: number;
   log(message: string): void;
+  findCover?(artist: string, title: string): Promise<string | null>;
 }
+
+const COVER_CACHE_MAX = 200;
 
 export class DiscordPresence {
   private enabled = false;
@@ -133,6 +160,8 @@ export class DiscordPresence {
   private loggedNoClient = false;
   private connectGen = 0;
   private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
+  private covers = new Map<string, string | null>();
+  private looking = new Set<string>();
 
   constructor(private readonly deps: PresenceDeps) {}
 
@@ -154,12 +183,30 @@ export class DiscordPresence {
   update(state: SurfaceState): void {
     this.latest = state;
     if (!this.ready) return;
-    const activity = buildActivity(state, this.deps.now());
-    const key = activity ? `${state.trackId}|${state.status}` : "none";
+    const activity = buildActivity(state, this.deps.now(), this.coverFor(state));
+    const key = activityKey(state, activity);
     const drifted =
       activity && this.lastSentActivity ? Math.abs(activity.timestamps.start - this.lastSentActivity.timestamps.start) > SEEK_THRESHOLD_MS : false;
     if (key === this.lastSentKey && !drifted) return;
     this.schedule();
+  }
+
+  private coverFor(state: SurfaceState): string | null | undefined {
+    if (!state.trackId || activityImage(state) !== "nuvo" || !this.deps.findCover) return undefined;
+    const key = `${state.artists}\n${state.title}`;
+    if (this.covers.has(key)) return this.covers.get(key);
+    if (this.looking.has(key)) return undefined;
+    this.looking.add(key);
+    this.deps
+      .findCover(state.artists, state.title)
+      .catch(() => null)
+      .then((url) => {
+        this.looking.delete(key);
+        if (this.covers.size >= COVER_CACHE_MAX) this.covers.delete(this.covers.keys().next().value!);
+        this.covers.set(key, url);
+        if (this.latest && this.enabled) this.update(this.latest);
+      });
+    return undefined;
   }
 
   private schedule(): void {
@@ -174,8 +221,8 @@ export class DiscordPresence {
 
   private send(): void {
     if (!this.socket || !this.ready || !this.latest) return;
-    const activity = buildActivity(this.latest, this.deps.now());
-    this.lastSentKey = activity ? `${this.latest.trackId}|${this.latest.status}` : "none";
+    const activity = buildActivity(this.latest, this.deps.now(), this.coverFor(this.latest));
+    this.lastSentKey = activityKey(this.latest, activity);
     this.lastSentActivity = activity;
     this.lastSentAt = this.deps.now();
     this.socket.write(encodeFrame(OP.frame, { cmd: "SET_ACTIVITY", args: { pid: this.deps.pid, activity }, nonce: String(++this.nonce) }));
