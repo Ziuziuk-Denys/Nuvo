@@ -136,7 +136,7 @@ Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, emp
 - Save streamed tracks as files, original or MP3, and export playlists and the library
 - Paste links from Apple Music, Deezer, Yandex Music (songs), Shazam or TikTok, and share compact links
 - Recognize a song from a video link (YouTube, TikTok, SoundCloud and more), a file or the microphone
-- Last.fm scrobbling (with your own API key) and a Discord status, both off until you turn them on
+- Last.fm scrobbling (with your own API key, off until you turn it on) and a Discord status (on by default, switch it off in Settings)
 
 {{pic:band-e}}
 

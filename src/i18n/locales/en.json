@@ -1837,7 +1837,7 @@
       "description": "Show the song you play on your Discord profile",
       "enabled": {
         "title": "Show what I'm listening to in Discord",
-        "description": "Off until you turn it on. The Discord desktop app must be running. For a song with no web cover, Nuvo asks Apple Music and Deezer for one by artist and title."
+        "description": "On by default. The Discord desktop app must be running, and only your Discord friends see it. For a song with no web cover, Nuvo asks Apple Music and Deezer for one by artist and title."
       },
       "status": {
         "connecting": "Connecting to Discord…",

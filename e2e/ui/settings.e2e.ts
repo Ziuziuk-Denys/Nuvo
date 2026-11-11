@@ -40,13 +40,13 @@ describe("settings", () => {
     await live.go("#/settings?section=discord");
     const discordSwitch = live.page.locator("[role=dialog] [role=switch]").first();
     await discordSwitch.waitFor({ timeout: 10_000 });
-    expect(await discordSwitch.getAttribute("aria-checked")).toBe("false");
-    await discordSwitch.click();
-    await live.page.waitForTimeout(300);
-    expect(await live.page.evaluate(async () => (await window.nuvoShell!.getMainSettings()).discord.enabled)).toBe(true);
+    expect(await discordSwitch.getAttribute("aria-checked")).toBe("true");
     await discordSwitch.click();
     await live.page.waitForTimeout(300);
     expect(await live.page.evaluate(async () => (await window.nuvoShell!.getMainSettings()).discord.enabled)).toBe(false);
+    await discordSwitch.click();
+    await live.page.waitForTimeout(300);
+    expect(await live.page.evaluate(async () => (await window.nuvoShell!.getMainSettings()).discord.enabled)).toBe(true);
 
     await live.go("#/settings?section=about");
     expect(await live.page.locator("[role=dialog] a[href]").count()).toBe(0);

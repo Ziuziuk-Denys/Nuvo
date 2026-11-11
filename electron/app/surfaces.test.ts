@@ -110,7 +110,7 @@ describe("main settings", () => {
     expect(new MainSettingsStore(file, safe(true), () => undefined).view().keepInTray).toBe(false);
     fs.writeFileSync(file, "{not json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    expect(store.view().discord.enabled).toBe(false);
+    expect(store.view().discord.enabled).toBe(true);
     expect(fs.existsSync(`${file}.bad`)).toBe(true);
   });
 
