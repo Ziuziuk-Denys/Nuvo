@@ -195,13 +195,16 @@ jobs:
           MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
           MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
         run: |
+          extra=()
           if [ -n "$MAC_CSC_LINK" ]; then
             export CSC_LINK="$MAC_CSC_LINK" CSC_KEY_PASSWORD="$MAC_CSC_KEY_PASSWORD"
           else
+            # Apple silicon does not run a bundle whose signature is broken, so sign it ad hoc
             export CSC_IDENTITY_AUTO_DISCOVERY=false
+            extra+=("-c.mac.identity=-" "-c.mac.hardenedRuntime=false")
           fi
           # shellcheck disable=SC2086
-          pnpm exec electron-builder $BUILDER --publish never
+          pnpm exec electron-builder $BUILDER --publish never "${extra[@]}"
 
       - name: Check the macOS apps start
         if: matrix.os == 'macos'
