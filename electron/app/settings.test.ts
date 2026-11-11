@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -26,8 +26,18 @@ describe("autoUpdate setting", () => {
 });
 
 describe("discord setting", () => {
-  it("is off by default", () => {
-    expect(open().view().discord).toEqual({ enabled: false });
+  it("is on by default", () => {
+    expect(open().view().discord).toEqual({ enabled: true });
+  });
+
+  it("turns on for a file that stored the old default, and keeps a switch the user flipped", () => {
+    const file = path.join(dir, "main-settings.json");
+    writeFileSync(file, JSON.stringify({ keepInTray: true, discord: { enabled: false } }));
+    expect(open().value.discord.enabled).toBe(true);
+    const store = open();
+    store.set("discord", { enabled: false });
+    expect(open().value.discord).toEqual({ enabled: false, chosen: true });
+    expect(open().value.keepInTray).toBe(true);
   });
 
   it("accepts only an object with a boolean and keeps the choice across restarts", () => {
@@ -35,9 +45,9 @@ describe("discord setting", () => {
     expect(store.set("discord", true).ok).toBe(false);
     expect(store.set("discord", null).ok).toBe(false);
     expect(store.set("discord", { enabled: "yes" }).ok).toBe(false);
-    expect(store.value.discord.enabled).toBe(false);
-    expect(store.set("discord", { enabled: true })).toEqual({ ok: true });
-    expect(open().value.discord.enabled).toBe(true);
+    expect(store.value.discord.enabled).toBe(true);
+    expect(store.set("discord", { enabled: false })).toEqual({ ok: true });
+    expect(open().value.discord.enabled).toBe(false);
   });
 });
 

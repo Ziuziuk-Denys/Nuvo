@@ -139,7 +139,7 @@ Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, 
 - Save streamed tracks as files, original or MP3, and export playlists and the library
 - Paste links from Apple Music, Deezer, Yandex Music (songs), Shazam or TikTok, and share compact links
 - Recognize a song from a video link (YouTube, TikTok, SoundCloud and more), a file or the microphone
-- Last.fm scrobbling (with your own API key) and a Discord status, both off until you turn them on
+- Last.fm scrobbling (with your own API key, off until you turn it on) and a Discord status (on by default, switch it off in Settings)
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/band-e-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/band-e-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/band-e-dark.svg"><img src=".github/readme/band-e-light.svg" width="100%" alt="Security: 24-word recovery phrase. No account to lose."></picture>
 

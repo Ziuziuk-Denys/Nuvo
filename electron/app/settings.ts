@@ -15,7 +15,7 @@ export interface MainSettings {
   keepInTray: boolean;
   trayHintShown: boolean;
   proxy: ProxySettings;
-  discord: { enabled: boolean };
+  discord: { enabled: boolean; chosen?: true };
   trackChangeNotice: boolean;
   autoUpdate: boolean;
   menuEntry: boolean;
@@ -37,7 +37,7 @@ export const DEFAULT_MAIN_SETTINGS: MainSettings = {
   keepInTray: false,
   trayHintShown: false,
   proxy: { mode: "system" },
-  discord: { enabled: false },
+  discord: { enabled: true },
   trackChangeNotice: false,
   autoUpdate: true,
   menuEntry: true,
@@ -72,8 +72,9 @@ function repair(raw: Record<string, unknown>, log: (message: string) => void): M
   const out: MainSettings = structuredClone(DEFAULT_MAIN_SETTINGS);
   for (const key of BOOLEAN_KEYS) if (typeof raw[key] === "boolean") out[key] = raw[key] as boolean;
   out.zoomLevel = validZoom(raw.zoomLevel);
-  const discord = raw.discord as { enabled?: unknown } | undefined;
-  if (typeof discord?.enabled === "boolean") out.discord = { enabled: discord.enabled };
+  // only a switch the user flipped (chosen) outranks the default; older files stored the old default as a plain false
+  const discord = raw.discord as { enabled?: unknown; chosen?: unknown } | undefined;
+  if (discord?.chosen === true && typeof discord.enabled === "boolean") out.discord = { enabled: discord.enabled, chosen: true };
   const proxy = raw.proxy as ProxySettings | undefined;
   if (proxy && ["system", "none", "manual"].includes(proxy.mode)) {
     out.proxy = { mode: proxy.mode };
@@ -146,7 +147,7 @@ export class MainSettingsStore {
     } else if (key === "discord") {
       const enabled = (value as { enabled?: unknown } | null)?.enabled;
       if (typeof enabled !== "boolean") return { ok: false, error: "discord.enabled must be a boolean" };
-      next.discord = { enabled };
+      next.discord = { enabled, chosen: true };
     } else if (key === "proxy") {
       const proxy = value as { mode?: unknown; url?: unknown; username?: unknown; password?: unknown } | null;
       if (!proxy || !["system", "none", "manual"].includes(proxy.mode as string)) return { ok: false, error: "proxy.mode is invalid" };
