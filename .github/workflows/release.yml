@@ -203,6 +203,19 @@ jobs:
           # shellcheck disable=SC2086
           pnpm exec electron-builder $BUILDER --publish never
 
+      - name: Check the macOS apps start
+        if: matrix.os == 'macos'
+        shell: bash
+        run: |
+          for app in release/mac*/Nuvo.app; do
+            codesign --verify --deep --strict --verbose=2 "$app"
+          done
+          release/mac-arm64/Nuvo.app/Contents/MacOS/Nuvo &
+          pid=$!
+          sleep 15
+          kill -0 "$pid"
+          kill "$pid"
+
       - name: Check notarization secrets
         id: notary
         if: matrix.os == 'macos'
