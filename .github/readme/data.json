@@ -1,8 +1,9 @@
 {
-  "repo": "https://github.com/Ziuziuk-Denys/nuvo",
+  "repo": "https://github.com/Ziuziuk-Denys/Nuvo",
   "version": "0.2.10",
+  "prerelease": "0.2.11-beta.5",
   "site": "https://nuvo.quest",
-  "unsigned": "Builds are unsigned for now. Code signing costs money every year and Nuvo is free, so your system may warn you the first time:\n\n- **Windows:** in SmartScreen, choose **More info**, then **Run anyway**.\n- **macOS:** open Nuvo once, go to **System Settings**, **Privacy & Security**, and press **Open Anyway**.\n- **Linux:** make the AppImage executable and run it.",
+  "unsigned": "Builds are not signed with a paid certificate yet. A certificate costs money every year and Nuvo is free, so your system may warn you the first time:\n\n- **Windows:** in SmartScreen, choose **More info**, then **Run anyway**.\n- **macOS:** open Nuvo once. When macOS blocks it, go to **System Settings**, **Privacy & Security**, and press **Open Anyway**.\n- **Linux:** make the AppImage executable and run it.",
   "pendingLabel": "not measured",
   "tagline": "The local-first music player.",
   "build": {
@@ -352,7 +353,7 @@
       "Yes and Partly cells have a source in .github/readme/comparison-sources.json. No cells rest on a repository we read or a limit the product's own docs state.",
       "Riff cells come from its README and settings page at commit 33fa5ff. Liner cells come from its README, docs and source at commit eea9a6a. Both may have changed since.",
       "Spotify, YouTube Music and Apple Music cells come from their help pages, except three cells sourced from SlashGear. Several rows carry over from an earlier pass whose source was not recorded; they are marked in the sources file.",
-      "Nuvo: the Windows and macOS builds exist and are untested. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.",
+      "Nuvo cells describe the app on Linux, its main platform. The Windows and macOS builds are the same app, except that MPRIS, the panel widgets and recognition from the microphone or system sound are Linux only. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.",
       "The rows are the features of the Nuvo app, so they favour Nuvo by construction. A feature another app has and Nuvo lacks is not listed here."
     ],
     "sources": [
@@ -442,7 +443,7 @@
             "cells": "yyuuuuu"
           },
           {
-            "label": "Double-click and default playback context options",
+            "label": "Click to play or queue, and what plays on launch",
             "cells": "yyuuuuu"
           },
           {
@@ -906,24 +907,25 @@
           "Playback, EQ, karaoke, mixes",
           "Imports, local files, statistics",
           "Themes, the Notch, panel widgets",
-          "Last.fm, Discord, English and Russian"
+          "Last.fm, Discord, English and Russian",
+          "Linux, Windows and macOS"
         ]
       },
       {
         "title": "Planned",
         "items": [
-          "Whisper-based lyric alignment",
+          "Lyric timing for songs that have none",
           "Search by a lyric line",
           "Music map and year recap",
           "Genre mixes and mood mixes",
-          "Tested and signed Windows and macOS builds"
+          "Signed Windows and macOS builds"
         ]
       },
       {
         "title": "Weighing",
         "items": [
           "Device sync with no Nuvo account",
-          "Jellyfin and Plex",
+          "Self-hosted music servers",
           "Plugins, phone remote and a CLI",
           "Room correction",
           "Per-device output routing"

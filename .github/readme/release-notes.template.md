@@ -8,7 +8,7 @@
 |---|---|
 {{install}}
 
-You need a Secret Service keyring such as GNOME Keyring or KWallet. Full steps: [the install guide]({{site}}/docs/install).
+On Linux, Nuvo keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Full steps: [the install guide]({{site}}/docs/install).
 
 ## Unsigned builds
 

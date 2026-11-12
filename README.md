@@ -5,15 +5,15 @@
 
 <picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/badges/Linux-Dark.svg"><img src=".github/readme/badges/Linux-Light.svg" height="38" alt="Linux"></picture>&nbsp;<img src=".github/readme/badges/Rust.svg" height="38" alt="Rust">&nbsp;<img src=".github/readme/badges/Electron.svg" height="38" alt="Electron">&nbsp;<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/badges/React-Dark.svg"><img src=".github/readme/badges/React-Light.svg" height="38" alt="React"></picture>&nbsp;<img src=".github/readme/badges/TypeScript.svg" height="38" alt="TypeScript">&nbsp;<img src=".github/readme/badges/SQLite.svg" height="38" alt="SQLite">
 
-<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/badges/version-dark.svg"><img src=".github/readme/badges/version-light.svg" height="20" alt="Version 0.2.10 beta"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/badges/version-dark.svg"><img src=".github/readme/badges/version-light.svg" height="20" alt="Version 0.2.10"></picture>
 <picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/badges/licence-dark.svg"><img src=".github/readme/badges/licence-light.svg" height="20" alt="Licence AGPL-3.0-or-later"></picture>
 
 <br>
 
-**Nuvo is a local-first desktop music player for Linux. It plays YouTube Music, SoundCloud and your local files, with synced lyrics, karaoke and a 10-band equalizer.**
-A free, open source Spotify alternative. Your library, playlists and listening history stay in an encrypted database on your own machine. You never make an account, and there is no Nuvo server.
+**Nuvo is a local-first desktop music player for Linux, Windows and macOS. It plays YouTube Music, SoundCloud and your local files, with synced lyrics, karaoke and a 10-band equalizer.**
+Free and open source. Your library, playlists and listening history stay in an encrypted database on your own machine. You never make an account, and there is no Nuvo server.
 
-<a href="https://github.com/Ziuziuk-Denys/nuvo/releases/latest"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/button-download-dark.svg"><img src=".github/readme/button-download-light.svg" height="54" alt="Download"></picture></a>&nbsp;<a href="https://nuvo.quest/docs"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/button-docs-dark.svg"><img src=".github/readme/button-docs-light.svg" height="54" alt="Read the docs"></picture></a>
+<a href="https://github.com/Ziuziuk-Denys/Nuvo/releases"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/button-download-dark.svg"><img src=".github/readme/button-download-light.svg" height="54" alt="Download"></picture></a>&nbsp;<a href="https://nuvo.quest/docs"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/button-docs-dark.svg"><img src=".github/readme/button-docs-light.svg" height="54" alt="Read the docs"></picture></a>
 
 </div>
 
@@ -44,7 +44,7 @@ These numbers come from [`scripts/bench/`](scripts/bench/), on a packaged build,
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/numbers-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/numbers-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/numbers-dark.svg"><img src=".github/readme/numbers-light.svg" width="100%" alt="Window with text visible: p50 421 ms, high 462 ms; Home shown: p50 452 ms, high 484 ms; Statistics page, first open after a restart: p50 79 ms, high 79 ms; Statistics page, switch to all plays: p50 68 ms, high 73 ms; Memory at idle: p50 381.1 MB, high 386.2 MB; Memory while playing: p50 443.8 MB, high 453.3 MB; CPU at idle: p50 0.2 %, high 0.23 %; CPU while playing: p50 2.7 %, high 2.75 %"></picture>
 
-Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, GNOME on Wayland, Electron 44.0.0. Median of 5 runs on 2026-11-07, empty profile, whole process tree including the daemon. The bar ends mark the highest run. These are Nuvo's later set; an earlier session on the same build read 336 MB at idle. We have not measured an uncached track start, a start with a dropped page cache, or any other machine.
+Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, GNOME on Wayland, Electron 44.0.0. Median of 5 runs on 2026-11-07, empty profile, whole process tree including the daemon. The bar ends mark the highest run. These are Nuvo's later set; an earlier session on the same build read 336 MB at idle. We have not measured an uncached track start, a start with a dropped page cache, Windows, macOS or any other machine.
 
 </details>
 
@@ -113,9 +113,10 @@ Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, 
 - Likes, saved albums and artists, playlists with custom covers, a duplicate finder
 - Playlists you can merge, sort six ways, keep offline and restore after a delete, and pin to the sidebar
 - Gapless playback, crossfade of 1 to 12 seconds, queue, shuffle, repeat, radio from any track
+- One click on a song plays it in its list. Settings can make a click add it to the queue instead
 - Mixes on Home from your plays and likes, "Not interested" with undo, a dislike button on every song
 - Statistics with a listening history, which you can pause, export or delete
-- Media keys and MPRIS
+- Media keys, and MPRIS on Linux
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/band-b-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/band-b-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/band-b-dark.svg"><img src=".github/readme/band-b-light.svg" width="100%" alt="Sound: Ten bands on one curve over a live spectrum, twelve presets, auto gain."></picture>
 
@@ -130,21 +131,22 @@ Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, 
 - Karaoke highlight by line, word, fill or step
 - Romanized lyrics for Korean, Chinese and Japanese kana (kanji stays as written)
 - Translation through a local model on your machine
-- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and CSV (including Exportify files), JSON and M3U
-- A long Spotify playlist or album comes in full when Spotify answers. If it does not, you get the first 100 songs and a notice
+- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and files: Spotify exports (CSV or JSON), M3U and Nuvo playlists
+- A public Spotify playlist or album comes in full by link. If Spotify does not send the whole list, you get the first 100 songs and a notice
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/band-d-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/band-d-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/band-d-dark.svg"><img src=".github/readme/band-d-light.svg" width="100%" alt="Local files: Watched folders. Moved files keep their likes. Links: Paste a song link into Search."></picture>
 
 - Tags, covers and `.lrc` files read from your folders
 - Save streamed tracks as files, original or MP3, and export playlists and the library
 - Paste links from Apple Music, Deezer, Yandex Music (songs), Shazam or TikTok, and share compact links
-- Recognize a song from a video link (YouTube, TikTok, SoundCloud and more), a file or the microphone
-- Last.fm scrobbling (with your own API key, off until you turn it on) and a Discord status (on by default, switch it off in Settings)
+- Recognize a song from a video link (YouTube, TikTok, SoundCloud and more), a file, the microphone or the sound your computer plays. The last two work on Linux
+- Last.fm scrobbling with your own API key, off until you turn it on
+- A Discord status with the song cover and a Get Nuvo button. It is on by default, and you can turn it off in Settings, Discord
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/band-e-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/band-e-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/band-e-dark.svg"><img src=".github/readme/band-e-light.svg" width="100%" alt="Security: 24-word recovery phrase. No account to lose."></picture>
 
 - SQLCipher database, encrypted audio cache, key in your system keyring
-- Local API on a private unix socket with a per-launch token
+- Local API on a private unix socket (a named pipe on Windows) with a per-launch token
 - Network check, HTTP, HTTPS and SOCKS5 proxy
 - The update check contacts github.com. It is on by default, and you can turn it off in Settings, About
 
@@ -156,8 +158,10 @@ Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, 
 
 - A colour editor with contrast checks, theme files, system or custom fonts
 - Custom CSS with a strict checker and a safe mode, wallpaper with glass blur
-- The Notch on KDE, Hyprland, Sway and X11, and a panel widget for GNOME, Plasma and Waybar where the Notch cannot be pinned
-- A tray, rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian
+- The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11. It is off until you turn it on, and clicks outside it go to the window below
+- A panel widget for the GNOME top bar, the Plasma panel and Waybar
+- Keep Nuvo in the tray when you close the window, off by default. Drag the window from anywhere along its top band
+- Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian
 - What's new after an update and Report a problem, both in Settings
 
 <br>
@@ -170,7 +174,7 @@ Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, 
 Window (Electron renderer, React)      screens, playback engine, equalizer
   │  IPC
 Electron main                          tray, the Notch, file dialogs, security policy
-  │  unix socket, bearer token
+  │  unix socket (named pipe on Windows), bearer token
 nuvo-core (Rust)                       library, ranking, imports, local files, lyrics, caches
   ├── library.db                       SQLCipher, key in your system keyring
   ├── audio cache                      XChaCha20-Poly1305
@@ -228,7 +232,7 @@ More in [the architecture overview](https://nuvo.quest/docs/architecture/overvie
 | Sleep timer | Yes | Yes | No | Partly | Yes | *unknown* | *unknown* |
 | A-B loop (set start, set end, clear) | Yes | No | No | *unknown* | *unknown* | *unknown* | *unknown* |
 | Pause on device change | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Double-click and default playback context options | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
+| Click to play or queue, and what plays on launch | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
 | Offline mode | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 | Saved audio with a cache size limit | Yes | Yes | Yes | Partly | Partly | Partly | Yes |
 | Keep this version / Not this one (fix a wrong match) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
@@ -358,7 +362,7 @@ More in [the architecture overview](https://nuvo.quest/docs/architecture/overvie
 - Yes and Partly cells have a source in .github/readme/comparison-sources.json. No cells rest on a repository we read or a limit the product's own docs state.
 - Riff cells come from its README and settings page at commit 33fa5ff. Liner cells come from its README, docs and source at commit eea9a6a. Both may have changed since.
 - Spotify, YouTube Music and Apple Music cells come from their help pages, except three cells sourced from SlashGear. Several rows carry over from an earlier pass whose source was not recorded; they are marked in the sources file.
-- Nuvo: the Windows and macOS builds exist and are untested. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.
+- Nuvo cells describe the app on Linux, its main platform. The Windows and macOS builds are the same app, except that MPRIS, the panel widgets and recognition from the microphone or system sound are Linux only. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.
 - The rows are the features of the Nuvo app, so they favour Nuvo by construction. A feature another app has and Nuvo lacks is not listed here.
 
 Checked 2026-11-07. Sources: [Riff](https://github.com/rootscripts/riff), [Liner](https://github.com/tryliner/desktop), [Strawberry](https://github.com/strawberrymusicplayer/strawberry), [Spotify help](https://support.spotify.com/), [YouTube Music help](https://support.google.com/youtubemusic), [Apple Music guide](https://support.apple.com/guide/music-windows/). If a cell is wrong, open an issue.
@@ -403,16 +407,21 @@ We publish a number only when we measured the apps the same way on the same day.
 
 <div align="center">
 
-<a href="https://github.com/Ziuziuk-Denys/nuvo/releases/latest"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/banner-download-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/banner-download-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/banner-download-dark.svg"><img src=".github/readme/banner-download-light.svg" width="592" alt="Download Nuvo. Free, for Linux, Windows and macOS."></picture></a>
+<a href="https://github.com/Ziuziuk-Denys/Nuvo/releases"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/banner-download-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/banner-download-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/banner-download-dark.svg"><img src=".github/readme/banner-download-light.svg" width="592" alt="Download Nuvo. Free, for Linux, Windows and macOS."></picture></a>
 
 </div>
 
-Get an AppImage, `.deb` or `.rpm` from the [releases page](https://github.com/Ziuziuk-Denys/nuvo/releases). Windows and macOS builds are there too, and we have not tested them. You need a Secret Service keyring such as GNOME Keyring or KWallet.
+Download Nuvo from the [releases page](https://github.com/Ziuziuk-Denys/Nuvo/releases). Linux is the main platform. 0.2.10 is the latest stable release, with the Linux builds, which also run on a Chromebook. The Windows and macOS builds are in the prereleases; the newest is 0.2.11-beta.5.
 
-Builds are unsigned for now. Code signing costs money every year and Nuvo is free, so your system may warn you the first time:
+- **Linux:** AppImage, `.deb` or `.rpm`, for x64 and arm64. Nuvo keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file, and you can seal it with a passphrase in Settings, Storage.
+- **Windows:** the installer (`.exe`) or the portable `.zip`, for x64 and arm64. Windows is fully supported: many testers use it, and the bugs they report get fixed.
+- **macOS:** the `.dmg`, for Apple silicon or Intel. macOS is supported, and we are looking for beta testers. Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat).
+- **Chromebook:** turn on Linux in ChromeOS settings, then install the Linux `.deb` for your processor.
+
+Builds are not signed with a paid certificate yet. A certificate costs money every year and Nuvo is free, so your system may warn you the first time:
 
 - **Windows:** in SmartScreen, choose **More info**, then **Run anyway**.
-- **macOS:** open Nuvo once, go to **System Settings**, **Privacy & Security**, and press **Open Anyway**.
+- **macOS:** open Nuvo once. When macOS blocks it, go to **System Settings**, **Privacy & Security**, and press **Open Anyway**.
 - **Linux:** make the AppImage executable and run it.
 
 Each release lists SHA-256 checksums. Full steps and building from source: [the install guide](https://nuvo.quest/docs/install).
@@ -421,7 +430,7 @@ Each release lists SHA-256 checksums. Full steps and building from source: [the 
 
 <a name="roadmap"></a>
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/section-roadmap-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/section-roadmap-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/section-roadmap-dark.svg"><img src=".github/readme/section-roadmap-light.svg" width="100%" alt="Today: Encrypted library and audio cache, Playback, EQ, karaoke, mixes, Imports, local files, statistics, Themes, the Notch, panel widgets, Last.fm, Discord, English and Russian; Planned: Whisper-based lyric alignment, Search by a lyric line, Music map and year recap, Genre mixes and mood mixes, Tested and signed Windows and macOS builds; Weighing: Device sync with no Nuvo account, Jellyfin and Plex, Plugins, phone remote and a CLI, Room correction, Per-device output routing; Never: A Nuvo account or server, Hosting or selling music, Telemetry"></picture>
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/section-roadmap-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/section-roadmap-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/section-roadmap-dark.svg"><img src=".github/readme/section-roadmap-light.svg" width="100%" alt="Today: Encrypted library and audio cache, Playback, EQ, karaoke, mixes, Imports, local files, statistics, Themes, the Notch, panel widgets, Last.fm, Discord, English and Russian, Linux, Windows and macOS; Planned: Lyric timing for songs that have none, Search by a lyric line, Music map and year recap, Genre mixes and mood mixes, Signed Windows and macOS builds; Weighing: Device sync with no Nuvo account, Self-hosted music servers, Plugins, phone remote and a CLI, Room correction, Per-device output routing; Never: A Nuvo account or server, Hosting or selling music, Telemetry"></picture>
 
 This is what comes next, and it is not a schedule. Details in [the roadmap](https://nuvo.quest/docs/roadmap).
 
@@ -439,9 +448,15 @@ This is what comes next, and it is not a schedule. Details in [the roadmap](http
 
 <br>
 
-## Documentation
+## Documentation and links
 
 The docs live on [the Nuvo site](https://nuvo.quest/docs). Start with [the introduction](https://nuvo.quest/docs/introduction).
+
+- Site: [nuvo.quest](https://nuvo.quest)
+- Telegram channel with news and releases: [@getnuvo](https://t.me/getnuvo)
+- Chat for questions and bug reports: [@getnuvo_chat](https://t.me/getnuvo_chat)
+- Bot that sends the install files: [@NuvoAppBot](https://t.me/NuvoAppBot)
+- Bug reports and ideas on GitHub: [Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues)
 
 ## Contributing and security
 

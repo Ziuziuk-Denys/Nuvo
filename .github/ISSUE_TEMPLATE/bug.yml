@@ -6,9 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.com/Ziuziuk-Denys/nuvo/raw/main/.github/readme/page-head-dark.png"><img src="https://github.com/Ziuziuk-Denys/nuvo/raw/main/.github/readme/page-head-light.png" width="100%" alt="Nuvo"></picture>
+        <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.com/Ziuziuk-Denys/Nuvo/raw/main/.github/readme/page-head-dark.png"><img src="https://github.com/Ziuziuk-Denys/Nuvo/raw/main/.github/readme/page-head-light.png" width="100%" alt="Nuvo"></picture>
 
-        Search existing issues first. For a security problem, use the [private route](https://github.com/Ziuziuk-Denys/nuvo/blob/main/SECURITY.md) instead.
+        Search existing issues first. For a security problem, use the [private route](https://github.com/Ziuziuk-Denys/Nuvo/blob/main/SECURITY.md) instead.
   - type: textarea
     id: what
     attributes:
