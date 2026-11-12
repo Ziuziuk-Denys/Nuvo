@@ -6,7 +6,7 @@
   "description": "Nuvo, a local-first desktop music player",
   "author": {
     "name": "Denys Ziuziuk",
-    "email": "denys.ziuziuk.w@gmail.com"
+    "email": "hello@nuvo.quest"
   },
   "homepage": "https://nuvo.quest",
   "repository": {
@@ -91,7 +91,7 @@
     "linux": {
       "executableName": "nuvo",
       "syncDesktopName": true,
-      "maintainer": "Denys Ziuziuk <denys.ziuziuk.w@gmail.com>",
+      "maintainer": "Denys Ziuziuk <hello@nuvo.quest>",
       "vendor": "Denys Ziuziuk",
       "synopsis": "Local-first music player",
       "description": "Local-first music player",
