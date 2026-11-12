@@ -347,7 +347,7 @@
     },
     {
       "app": "Liner",
-      "feature": "Double-click and default playback context options",
+      "feature": "Click to play or queue, and what plays on launch",
       "answer": "yes",
       "sources": [
         "https://github.com/tryliner/desktop/blob/eea9a6a/src/languages/locales/en.json"

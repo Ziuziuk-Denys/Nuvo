@@ -1298,7 +1298,7 @@ def badges():
         else:
             icons.append(f'<img src="{base}/{name}.svg" height="38" alt="{name}">')
     shields = []
-    for name, alt in (("version", f"Version {DATA['version']} beta"), ("licence", "Licence AGPL-3.0-or-later")):
+    for name, alt in (("version", f"Version {DATA['version']}"), ("licence", "Licence AGPL-3.0-or-later")):
         shields.append(f'<picture><source media="(prefers-color-scheme: dark)" srcset="{base}/{name}-dark.svg"><img src="{base}/{name}-light.svg" height="20" alt="{alt}"></picture>')
     return "&nbsp;".join(icons) + "\n\n" + "\n".join(shields)
 
@@ -1369,10 +1369,10 @@ def build_readme():
     values = {
         "hero": picture("hero", "Nuvo. " + DATA["tagline"] + " The Home window with mixes rises in front of the name."),
         "badges": badges(),
-        "download": f'<a href="{DATA["repo"]}/releases/latest">{inline("button-download", "Download", 54)}</a>',
+        "download": f'<a href="{DATA["repo"]}/releases">{inline("button-download", "Download", 54)}</a>',
         "docs": f'<a href="{DATA["site"]}/docs">{inline("button-docs", "Read the docs", 54)}</a>',
         "support": f'<a href="{DATA["site"]}/donate">{picture("banner-support", "Support the author. Nuvo stays free.", BANNER_WIDE + BANNER_MARGIN[0] * 2)}</a>',
-        "download-card": f'<a href="{DATA["repo"]}/releases/latest">{picture("banner-download", "Download Nuvo. Free, for Linux, Windows and macOS.", BANNER_WIDE + BANNER_MARGIN[0] * 2)}</a>',
+        "download-card": f'<a href="{DATA["repo"]}/releases">{picture("banner-download", "Download Nuvo. Free, for Linux, Windows and macOS.", BANNER_WIDE + BANNER_MARGIN[0] * 2)}</a>',
         "telegram-card": f'<a href="https://t.me/getnuvo">{picture("banner-telegram", "Join the Nuvo channel on Telegram: @getnuvo, news and releases.", BANNER_WIDE + BANNER_MARGIN[0] * 2)}</a>',
         "shot-themes": media("themes", "webp", "One Home window cut into nine strips, each a real capture of one theme preset"),
         "gif-karaoke": media("karaoke", "gif", "The karaoke view lighting up an invented demo song word by word"),
@@ -1394,6 +1394,8 @@ def build_readme():
         "build-runs": str(build["runs"]),
         "repo": DATA["repo"],
         "site": DATA["site"],
+        "version": DATA["version"],
+        "prerelease": DATA["prerelease"],
         "unsigned": DATA["unsigned"],
         "pending": DATA["pendingLabel"],
     }
