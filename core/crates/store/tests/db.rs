@@ -229,3 +229,20 @@ fn a_database_already_at_16_with_old_source_names_is_renamed_by_17() {
     assert_eq!(sources(&conn, "pool_fetches"), [pair("s1", "yt_radio"), pair("s2", "sc_related")]);
     assert_eq!(sources(&conn, "candidate_edges").iter().filter(|(_, s)| s.contains('-')).count(), 0);
 }
+
+#[test]
+fn opens_a_database_written_by_an_older_sqlcipher() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("library.db");
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/library-sqlcipher-4.19.db");
+    std::fs::copy(fixture, &path).unwrap();
+    let conn = open_connection(&path, &[7u8; 32], &dir.path().join("backups")).unwrap();
+    assert_eq!(settings::get(&conn, "fixture").unwrap(), Some(json!({"library": "kept"})));
+    let pragma = |name: &str| conn.query_row(&format!("PRAGMA {name}"), [], |r| r.get::<_, String>(0)).unwrap();
+    assert_eq!(pragma("cipher_page_size"), "4096");
+    assert_eq!(pragma("cipher_kdf_algorithm"), "PBKDF2_HMAC_SHA512");
+    assert_eq!(pragma("cipher_hmac_algorithm"), "HMAC_SHA512");
+    assert_eq!(pragma("cipher_default_kdf_iter"), "256000");
+    assert_eq!(pragma("cipher_plaintext_header_size"), "0");
+    assert_eq!(pragma("cipher_use_hmac"), "1");
+}
