@@ -124,3 +124,12 @@ fn reads_song_tags_when_the_site_gives_them() {
     assert_eq!((live.is_live, live.duration_ms, live.artist.as_deref()), (true, None, Some("DJ")));
     assert_eq!(parse_tags(b"not json"), Err(FetchError::Unavailable));
 }
+
+#[test]
+fn a_recorded_youtube_answer_resolves_to_its_stream() {
+    let resolved = parse_info(include_bytes!("fixtures/ytdlp-youtube.json")).unwrap();
+    assert_eq!(resolved.title.as_deref(), Some("Queen \u{2013} Bohemian Rhapsody (Official Video Remastered)"));
+    assert_eq!(resolved.duration_ms, Some(359_000));
+    assert!(resolved.remote.url.starts_with("https://rr1---sn-uigxx03-45ce.googlevideo.com/videoplayback?"));
+    assert!(resolved.remote.headers.iter().any(|(name, _)| name == "User-Agent"));
+}
