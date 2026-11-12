@@ -57,7 +57,7 @@ for theme in build.THEMES:
 files = ["Nuvo-1.0.0-x64.AppImage", "nuvo_1.0.0_amd64.deb", "Nuvo-1.0.0-aarch64.rpm", "Nuvo-Setup-1.0.0-x64.exe", "Nuvo-1.0.0-universal.dmg", "SHA256SUMS"]
 notes = release_notes.render("v1.0.0", files, "The changes.\n")
 assert notes.count("releases/download/v1.0.0/") == 5 and "SHA256SUMS)" not in notes, notes
-assert "| Linux arm64 | [.rpm]" in notes and "| macOS universal, not tested |" in notes and "Windows arm64" not in notes, notes
+assert "| Linux arm64 | [.rpm]" in notes and "| macOS universal |" in notes and "Windows arm64" not in notes, notes
 order = release_notes.install_table(["b.deb", "a.tar.gz", "c.AppImage"], "v1")
 assert order.index("AppImage") < order.index(".deb") < order.index(".tar.gz"), order
 assert "/raw/v1.0.0/.github/readme/release-dark.png" in notes and "The changes." in notes

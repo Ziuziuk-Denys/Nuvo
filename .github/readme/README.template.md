@@ -7,8 +7,8 @@
 
 <br>
 
-**Nuvo is a local-first desktop music player for Linux. It plays YouTube Music, SoundCloud and your local files, with synced lyrics, karaoke and a 10-band equalizer.**
-A free, open source Spotify alternative. Your library, playlists and listening history stay in an encrypted database on your own machine. You never make an account, and there is no Nuvo server.
+**Nuvo is a local-first desktop music player for Linux, Windows and macOS. It plays YouTube Music, SoundCloud and your local files, with synced lyrics, karaoke and a 10-band equalizer.**
+Free and open source. Your library, playlists and listening history stay in an encrypted database on your own machine. You never make an account, and there is no Nuvo server.
 
 {{download}}&nbsp;{{docs}}
 
@@ -41,7 +41,7 @@ These numbers come from [`scripts/bench/`](scripts/bench/), on a {{build-label}}
 
 {{pic:numbers}}
 
-Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, empty profile, whole process tree including the daemon. The bar ends mark the highest run. These are Nuvo's later set; an earlier session on the same build read 336 MB at idle. We have not measured an uncached track start, a start with a dropped page cache, or any other machine.
+Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, empty profile, whole process tree including the daemon. The bar ends mark the highest run. These are Nuvo's later set; an earlier session on the same build read 336 MB at idle. We have not measured an uncached track start, a start with a dropped page cache, Windows, macOS or any other machine.
 
 </details>
 
@@ -110,9 +110,10 @@ Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, emp
 - Likes, saved albums and artists, playlists with custom covers, a duplicate finder
 - Playlists you can merge, sort six ways, keep offline and restore after a delete, and pin to the sidebar
 - Gapless playback, crossfade of 1 to 12 seconds, queue, shuffle, repeat, radio from any track
+- One click on a song plays it in its list. Settings can make a click add it to the queue instead
 - Mixes on Home from your plays and likes, "Not interested" with undo, a dislike button on every song
 - Statistics with a listening history, which you can pause, export or delete
-- Media keys and MPRIS
+- Media keys, and MPRIS on Linux
 
 {{pic:band-b}}
 
@@ -127,21 +128,22 @@ Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, emp
 - Karaoke highlight by line, word, fill or step
 - Romanized lyrics for Korean, Chinese and Japanese kana (kanji stays as written)
 - Translation through a local model on your machine
-- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and CSV (including Exportify files), JSON and M3U
-- A long Spotify playlist or album comes in full when Spotify answers. If it does not, you get the first 100 songs and a notice
+- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and files: Spotify exports (CSV or JSON), M3U and Nuvo playlists
+- A public Spotify playlist or album comes in full by link. If Spotify does not send the whole list, you get the first 100 songs and a notice
 
 {{pic:band-d}}
 
 - Tags, covers and `.lrc` files read from your folders
 - Save streamed tracks as files, original or MP3, and export playlists and the library
 - Paste links from Apple Music, Deezer, Yandex Music (songs), Shazam or TikTok, and share compact links
-- Recognize a song from a video link (YouTube, TikTok, SoundCloud and more), a file or the microphone
-- Last.fm scrobbling (with your own API key, off until you turn it on) and a Discord status (on by default, switch it off in Settings)
+- Recognize a song from a video link (YouTube, TikTok, SoundCloud and more), a file, the microphone or the sound your computer plays. The last two work on Linux
+- Last.fm scrobbling with your own API key, off until you turn it on
+- A Discord status with the song cover and a Get Nuvo button. It is on by default, and you can turn it off in Settings, Discord
 
 {{pic:band-e}}
 
 - SQLCipher database, encrypted audio cache, key in your system keyring
-- Local API on a private unix socket with a per-launch token
+- Local API on a private unix socket (a named pipe on Windows) with a per-launch token
 - Network check, HTTP, HTTPS and SOCKS5 proxy
 - The update check contacts github.com. It is on by default, and you can turn it off in Settings, About
 
@@ -153,8 +155,10 @@ Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, emp
 
 - A colour editor with contrast checks, theme files, system or custom fonts
 - Custom CSS with a strict checker and a safe mode, wallpaper with glass blur
-- The Notch on KDE, Hyprland, Sway and X11, and a panel widget for GNOME, Plasma and Waybar where the Notch cannot be pinned
-- A tray, rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian
+- The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11. It is off until you turn it on, and clicks outside it go to the window below
+- A panel widget for the GNOME top bar, the Plasma panel and Waybar
+- Keep Nuvo in the tray when you close the window, off by default. Drag the window from anywhere along its top band
+- Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian
 - What's new after an update and Report a problem, both in Settings
 
 <br>
@@ -167,7 +171,7 @@ Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, emp
 Window (Electron renderer, React)      screens, playback engine, equalizer
   │  IPC
 Electron main                          tray, the Notch, file dialogs, security policy
-  │  unix socket, bearer token
+  │  unix socket (named pipe on Windows), bearer token
 nuvo-core (Rust)                       library, ranking, imports, local files, lyrics, caches
   ├── library.db                       SQLCipher, key in your system keyring
   ├── audio cache                      XChaCha20-Poly1305
@@ -226,7 +230,12 @@ We publish a number only when we measured the apps the same way on the same day.
 
 </div>
 
-Get an AppImage, `.deb` or `.rpm` from the [releases page]({{repo}}/releases). Windows and macOS builds are there too, and we have not tested them. You need a Secret Service keyring such as GNOME Keyring or KWallet.
+Download Nuvo from the [releases page]({{repo}}/releases). Linux is the main platform. {{version}} is the latest stable release, with the Linux builds, which also run on a Chromebook. The Windows and macOS builds are in the prereleases; the newest is {{prerelease}}.
+
+- **Linux:** AppImage, `.deb` or `.rpm`, for x64 and arm64. Nuvo keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file, and you can seal it with a passphrase in Settings, Storage.
+- **Windows:** the installer (`.exe`) or the portable `.zip`, for x64 and arm64. Windows is fully supported: many testers use it, and the bugs they report get fixed.
+- **macOS:** the `.dmg`, for Apple silicon or Intel. macOS is supported, and we are looking for beta testers. Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat).
+- **Chromebook:** turn on Linux in ChromeOS settings, then install the Linux `.deb` for your processor.
 
 {{unsigned}}
 
@@ -254,9 +263,15 @@ This is what comes next, and it is not a schedule. Details in [the roadmap]({{si
 
 <br>
 
-## Documentation
+## Documentation and links
 
 The docs live on [the Nuvo site]({{site}}/docs). Start with [the introduction]({{site}}/docs/introduction).
+
+- Site: [nuvo.quest]({{site}})
+- Telegram channel with news and releases: [@getnuvo](https://t.me/getnuvo)
+- Chat for questions and bug reports: [@getnuvo_chat](https://t.me/getnuvo_chat)
+- Bot that sends the install files: [@NuvoAppBot](https://t.me/NuvoAppBot)
+- Bug reports and ideas on GitHub: [Issues]({{repo}}/issues)
 
 ## Contributing and security
 

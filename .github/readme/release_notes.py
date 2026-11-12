@@ -40,8 +40,7 @@ def install_table(names, tag):
     lines = []
     for system in ORDER:
         if system in rows:
-            status = "" if system.startswith("Linux") else ", not tested"
-            lines.append(f"| {system}{status} | {' · '.join(rows[system])} |")
+            lines.append(f"| {system} | {' · '.join(rows[system])} |")
     return "\n".join(lines)
 
 

@@ -18,7 +18,7 @@ You will find your way around Nuvo if you have used any modern player. That is t
 
 These parts have their own design and their own code in this repository.
 
-- **A local daemon as the data layer.** A Rust service `nuvo-core` owns the library in an encrypted SQLCipher database. The window talks to it over a unix socket with a per-launch token. There is no Nuvo server and no Nuvo account.
+- **A local daemon as the data layer.** A Rust service `nuvo-core` owns the library in an encrypted SQLCipher database. The window talks to it over a unix socket (a named pipe on Windows) with a per-launch token. There is no Nuvo server and no Nuvo account.
 - **A recovery phrase.** The master key lives in the system keyring and maps to a 24-word phrase that restores the library.
 - **An encrypted audio cache.** Audio is stored in 64 KiB sealed chunks, so seeking works without decrypting the whole file.
 - **The Notch.** A small island at the top of the screen with the current track, live lyrics and controls, placed per desktop session.
