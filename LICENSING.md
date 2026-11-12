@@ -25,7 +25,7 @@ Using Nuvo outside the AGPL-3.0-or-later is copyright infringement. Section 8 of
 
 ## Commercial licence
 
-If the AGPL does not fit your product, ask the author for a separate commercial licence: denys.ziuziuk.w@gmail.com.
+If the AGPL does not fit your product, ask the author for a separate commercial licence: hello@nuvo.quest.
 
 Contributions are accepted under a Developer Certificate of Origin sign-off, which lets the author offer such licences. See `CONTRIBUTING.md`.
 
