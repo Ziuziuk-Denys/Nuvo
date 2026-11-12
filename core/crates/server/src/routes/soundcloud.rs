@@ -1,4 +1,5 @@
 use std::io;
+use std::time::Duration;
 
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
@@ -9,8 +10,9 @@ use nuvo_cache::CacheWriter;
 use nuvo_contracts::Items;
 use nuvo_contracts::catalog::{ArtistDetails, Page, SearchResult, SetSummary, StreamDescriptor, Track, TrackDetails};
 use nuvo_contracts::iso_from_ms;
+use nuvo_fetch::ytdlp;
 use nuvo_soundcloud::play::format_of;
-use nuvo_soundcloud::{AudioSink, Format, Playable, TypeFilter, ids};
+use nuvo_soundcloud::{AudioSink, Format, Playable, Reason, ScError, TypeFilter, ids};
 use nuvo_store::cache_index::{self, CacheEntry};
 use nuvo_store::now_ms;
 use serde::Deserialize;
@@ -22,6 +24,7 @@ use crate::state::{AppState, Unlocked};
 
 const RELATED_DEFAULT: usize = 25;
 const RELATED_MAX: usize = 50;
+const YT_DLP_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub fn routes() -> Router<AppState> {
     Router::new()
@@ -137,7 +140,9 @@ async fn search(State(state): State<AppState>, Query(q): Query<SearchQuery>) -> 
     let query = q.q.as_deref().map(str::trim).filter(|q| !q.is_empty() && q.chars().count() <= 200).ok_or_else(|| ApiError::Invalid("q is required, at most 200 characters".into()))?;
     let limit = q.limit.unwrap_or(SEARCH_DEFAULT).clamp(1, SEARCH_MAX);
     let records = state.soundcloud().await.search_tracks(query, limit).await?;
-    Ok(Json(Items { items: records.iter().filter_map(nuvo_soundcloud::map::track).take(limit).collect() }))
+    let mut items: Vec<Track> = records.iter().filter_map(nuvo_soundcloud::map::track).take(limit).collect();
+    items.sort_by_key(|track| track.preview.is_some());
+    Ok(Json(Items { items }))
 }
 
 struct CacheSink {
@@ -229,7 +234,18 @@ async fn stream(State(state): State<AppState>, Path(id): Path<String>) -> Result
         return Ok(Json(local(&key, format_of(entry.codec.as_deref().unwrap_or_default(), &entry.mime), size)));
     }
     let mut sink = CacheSink { data, key: key.clone(), writer: None, refused: false };
-    match state.soundcloud().await.resolve(&key, &mut sink).await {
+    let sc = state.soundcloud().await;
+    let resolved = match sc.resolve(&key, &mut sink).await {
+        Err(err) if !sink.refused && worth_yt_dlp(&err) => match yt_dlp_info(&state, num).await {
+            Some(info) => sc.resolve_external(&key, &info, &mut sink).await.map_err(|fallback| {
+                tracing::info!(%fallback, "SoundCloud: yt-dlp could not play the track either");
+                err
+            }),
+            None => Err(err),
+        },
+        other => other,
+    };
+    match resolved {
         Ok(Playable::Direct { url, expires_ms, format }) => Ok(Json(StreamDescriptor {
             kind: "direct",
             url,
@@ -246,6 +262,20 @@ async fn stream(State(state): State<AppState>, Path(id): Path<String>) -> Result
         Err(_) if sink.refused => Err(ApiError::Locked),
         Err(err) => Err(err.into()),
     }
+}
+
+fn worth_yt_dlp(err: &ScError) -> bool {
+    !matches!(
+        err,
+        ScError::Unplayable(Reason::Gone | Reason::RegionBlocked | Reason::Preview | Reason::StreamDisabled | Reason::Drm) | ScError::NotFound | ScError::Invalid(_) | ScError::RateLimited
+    )
+}
+
+async fn yt_dlp_info(state: &AppState, num: u64) -> Option<Value> {
+    let yt_dlp = state.env.find("yt-dlp")?;
+    let url = format!("https://api.soundcloud.com/tracks/{num}");
+    let json = tokio::time::timeout(YT_DLP_TIMEOUT, ytdlp::info(&yt_dlp, &url, state.proxy_url().as_deref())).await.ok()?.ok()?;
+    serde_json::from_slice(&json).ok()
 }
 
 async fn audio(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Result<Response, ApiError> {

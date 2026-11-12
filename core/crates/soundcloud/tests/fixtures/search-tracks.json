@@ -1,0 +1,212 @@
+{
+ "collection": [
+  {
+   "id": 254111945,
+   "kind": "track",
+   "title": "Get Lucky (feat. Pharrell Williams and Nile Rodgers)",
+   "duration": 30000,
+   "full_duration": 369659,
+   "policy": "SNIP",
+   "streamable": true,
+   "artwork_url": "https://i1.sndcdn.com/artworks-duVRhtVsSn91-0-large.jpg",
+   "permalink_url": "https://soundcloud.com/daftpunkofficialmusic/get-lucky",
+   "publisher_metadata": {
+    "id": 254111945,
+    "explicit": false
+   },
+   "user": {
+    "id": 203812859,
+    "kind": "user",
+    "username": "Daft Punk",
+    "avatar_url": "https://i1.sndcdn.com/avatars-000212547066-q3gomi-large.jpg",
+    "permalink_url": "https://soundcloud.com/daftpunkofficialmusic"
+   },
+   "media": {
+    "transcodings": [
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:254111945/30c4be46-b455-4555-a1a2-92cca6494227/preview/hls",
+      "preset": "mp3_1_0",
+      "duration": 30000,
+      "snipped": true,
+      "format": {
+       "protocol": "hls",
+       "mime_type": "audio/mpeg"
+      },
+      "quality": "sq"
+     },
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:254111945/30c4be46-b455-4555-a1a2-92cca6494227/preview/progressive",
+      "preset": "mp3_1_0",
+      "duration": 30000,
+      "snipped": true,
+      "format": {
+       "protocol": "progressive",
+       "mime_type": "audio/mpeg"
+      },
+      "quality": "sq"
+     }
+    ]
+   },
+   "track_authorization": "recorded-token"
+  },
+  {
+   "id": 88335161,
+   "kind": "track",
+   "title": "Get Lucky [Original Version] - Daft Punk",
+   "duration": 246381,
+   "full_duration": 246382,
+   "policy": "MONETIZE",
+   "streamable": true,
+   "artwork_url": "https://i1.sndcdn.com/artworks-000045765973-c2x8ko-large.jpg",
+   "permalink_url": "https://soundcloud.com/eldjkb/get-lucky-original-version",
+   "publisher_metadata": {
+    "id": 88335161,
+    "explicit": false
+   },
+   "user": {
+    "id": 8882898,
+    "kind": "user",
+    "username": "DJ KB",
+    "avatar_url": "https://i1.sndcdn.com/avatars-000394976541-fi0tut-large.jpg",
+    "permalink_url": "https://soundcloud.com/eldjkb"
+   },
+   "media": {
+    "transcodings": [
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:88335161/d5d47a09-5e2b-4293-b274-8f0037c676b9/stream/hls",
+      "preset": "aac_96k",
+      "duration": 246381,
+      "snipped": false,
+      "format": {
+       "protocol": "hls",
+       "mime_type": "audio/mp4; codecs=\"mp4a.40.2\""
+      },
+      "quality": "lq"
+     },
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:88335161/ba7b90b0-634e-4171-ac80-81eb40b7a6f5/stream/hls",
+      "preset": "abr_sq",
+      "duration": 246381,
+      "snipped": false,
+      "format": {
+       "protocol": "hls",
+       "mime_type": "audio/mpegurl"
+      },
+      "quality": "sq"
+     }
+    ]
+   },
+   "track_authorization": "recorded-token"
+  },
+  {
+   "id": 2360861477,
+   "kind": "track",
+   "title": "Daft Punk - Get Lucky #nightcore #bassboosted #dnr",
+   "duration": 107822,
+   "full_duration": 107775,
+   "policy": "MONETIZE",
+   "streamable": true,
+   "artwork_url": "https://i1.sndcdn.com/artworks-qBK760GRkcIbLE8G-gzuvmg-large.jpg",
+   "permalink_url": "https://soundcloud.com/niki-39860010/daft-punk-get-lucky-nightcore",
+   "publisher_metadata": {
+    "id": 2360861477
+   },
+   "user": {
+    "id": 1448972504,
+    "kind": "user",
+    "username": "999333",
+    "avatar_url": "https://i1.sndcdn.com/avatars-yhJfUCmPpMb7ZIlU-ptpzIA-large.jpg",
+    "permalink_url": "https://soundcloud.com/niki-39860010"
+   },
+   "media": {
+    "transcodings": [
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:2360861477/fc9042cd-4132-4978-a91e-58f334308bf8/stream/hls",
+      "preset": "aac_160k",
+      "duration": 107822,
+      "snipped": false,
+      "format": {
+       "protocol": "hls",
+       "mime_type": "audio/mp4; codecs=\"mp4a.40.2\""
+      },
+      "quality": "sq"
+     },
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:2360861477/c29fa6ea-7507-421a-b05f-fe95502146bc/stream/hls",
+      "preset": "aac_96k",
+      "duration": 107822,
+      "snipped": false,
+      "format": {
+       "protocol": "hls",
+       "mime_type": "audio/mp4; codecs=\"mp4a.40.2\""
+      },
+      "quality": "lq"
+     },
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:2360861477/f6c2f5ca-9fc1-49e9-8b24-57c0e177115e/stream/hls",
+      "preset": "abr_sq",
+      "duration": 107822,
+      "snipped": false,
+      "format": {
+       "protocol": "hls",
+       "mime_type": "audio/mpegurl"
+      },
+      "quality": "sq"
+     }
+    ]
+   },
+   "track_authorization": "recorded-token"
+  },
+  {
+   "id": 254111762,
+   "kind": "track",
+   "title": "Get Lucky (Radio Edit - feat. Pharrell Williams and Nile Rodgers)",
+   "duration": 30000,
+   "full_duration": 248451,
+   "policy": "SNIP",
+   "streamable": true,
+   "artwork_url": "https://i1.sndcdn.com/artworks-r4voNWJ0oGAz-0-large.jpg",
+   "permalink_url": "https://soundcloud.com/daftpunkofficialmusic/get-lucky-radio-edit",
+   "publisher_metadata": {
+    "id": 254111762,
+    "explicit": false
+   },
+   "user": {
+    "id": 203812859,
+    "kind": "user",
+    "username": "Daft Punk",
+    "avatar_url": "https://i1.sndcdn.com/avatars-000212547066-q3gomi-large.jpg",
+    "permalink_url": "https://soundcloud.com/daftpunkofficialmusic"
+   },
+   "media": {
+    "transcodings": [
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:254111762/f5349d95-86e5-4f80-90a2-0c24d6427ace/preview/hls",
+      "preset": "mp3_1_0",
+      "duration": 30000,
+      "snipped": true,
+      "format": {
+       "protocol": "hls",
+       "mime_type": "audio/mpeg"
+      },
+      "quality": "sq"
+     },
+     {
+      "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:254111762/f5349d95-86e5-4f80-90a2-0c24d6427ace/preview/progressive",
+      "preset": "mp3_1_0",
+      "duration": 30000,
+      "snipped": true,
+      "format": {
+       "protocol": "progressive",
+       "mime_type": "audio/mpeg"
+      },
+      "quality": "sq"
+     }
+    ]
+   },
+   "track_authorization": "recorded-token"
+  }
+ ],
+ "next_href": null,
+ "query_urn": null
+}

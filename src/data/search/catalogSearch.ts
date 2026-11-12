@@ -12,23 +12,38 @@ export interface SearchOptions {
   debounceMs?: number;
 }
 
-export interface CatalogSearch {
-  items: SearchItem[];
+export interface Search<T> {
+  items: T[];
   loading: boolean;
   hasLoaded: boolean;
   runNow(): void;
 }
 
+export type CatalogSearch = Search<SearchItem>;
+
+export type SearchLoad<T> = (text: string, signal: AbortSignal) => Promise<T[]>;
+
 export const MIN_QUERY = 2;
 const DEFAULT_LIMIT = 20;
 const DEFAULT_DEBOUNCE_MS = 300;
-const NONE: SearchItem[] = [];
+const NONE: never[] = [];
+
+const CATALOG_LOADS = Object.fromEntries(
+  (["all", "track", "artist", "album", "playlist"] as const).map((kind) => [
+    kind,
+    (text: string, signal: AbortSignal) => catalogSource()?.search(text, kind, signal) ?? Promise.resolve(NONE),
+  ]),
+) as Record<SearchKind, SearchLoad<SearchItem>>;
 
 export function useCatalogSearch(query: string, kind: SearchKind, options: SearchOptions = {}): CatalogSearch {
+  return useSearch(query, CATALOG_LOADS[kind], options);
+}
+
+export function useSearch<T>(query: string, load: SearchLoad<T>, options: SearchOptions = {}): Search<T> {
   const { enabled = true, limit = DEFAULT_LIMIT, debounceMs = DEFAULT_DEBOUNCE_MS } = options;
   const text = query.trim();
   const active = enabled && text.length >= MIN_QUERY;
-  const [result, setResult] = useState<{ query: string; items: SearchItem[] } | null>(null);
+  const [result, setResult] = useState<{ query: string; items: T[] } | null>(null);
   const [urgent, setUrgent] = useState<{ text: string } | null>(null);
 
   useEffect(() => {
@@ -36,12 +51,7 @@ export function useCatalogSearch(query: string, kind: SearchKind, options: Searc
     const controller = new AbortController();
     const timer = window.setTimeout(
       () => {
-        const catalog = catalogSource();
-        if (!catalog) {
-          setResult({ query: text, items: NONE });
-          return;
-        }
-        catalog.search(text, kind, controller.signal).then(
+        load(text, controller.signal).then(
           (items) => {
             if (!controller.signal.aborted) setResult({ query: text, items: items.slice(0, limit) });
           },
@@ -56,7 +66,7 @@ export function useCatalogSearch(query: string, kind: SearchKind, options: Searc
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [active, text, kind, limit, debounceMs, urgent]);
+  }, [active, text, load, limit, debounceMs, urgent]);
 
   return {
     items: active && result ? result.items : NONE,

@@ -50,10 +50,11 @@ vi.mock("../../ports/i18n", () => ({
 }));
 vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: vi.fn() }));
-vi.mock("../../ports/network", () => ({ useStreamingReachable: () => mocks.state.online, useOfflineMode: () => false }));
+vi.mock("../../ports/network", () => ({ useStreamingReachable: () => mocks.state.online, useOnline: () => mocks.state.online, useOfflineMode: () => false }));
 vi.mock("../../ports/player", () => ({
   usePlayerStore: (select: (state: typeof mocks.player) => unknown) => select(mocks.player),
   playerEngine: mocks.engine,
+  isSoundCloudId: (id: string) => id.startsWith("sc:"),
 }));
 vi.mock("../../ports/catalog", () => ({
   useCollection: (...args: unknown[]) => {

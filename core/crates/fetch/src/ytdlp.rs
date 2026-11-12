@@ -62,6 +62,11 @@ pub async fn resolve(yt_dlp: &Path, url: &str, proxy: Option<&str>) -> Result<Re
 }
 
 pub async fn resolve_full(yt_dlp: &Path, url: &str, proxy: Option<&str>) -> Result<(Resolved, MediaTags), FetchError> {
+    let json = info(yt_dlp, url, proxy).await?;
+    Ok((parse_info(&json)?, parse_tags(&json)?))
+}
+
+pub async fn info(yt_dlp: &Path, url: &str, proxy: Option<&str>) -> Result<Vec<u8>, FetchError> {
     if !(url.starts_with("https://") || url.starts_with("http://")) {
         return Err(FetchError::InvalidLink);
     }
@@ -85,7 +90,7 @@ pub async fn resolve_full(yt_dlp: &Path, url: &str, proxy: Option<&str>) -> Resu
     if !output.status.success() {
         return Err(classify(&String::from_utf8_lossy(&output.stderr)));
     }
-    Ok((parse_info(&output.stdout)?, parse_tags(&output.stdout)?))
+    Ok(output.stdout)
 }
 
 pub fn parse_info(json: &[u8]) -> Result<Resolved, FetchError> {

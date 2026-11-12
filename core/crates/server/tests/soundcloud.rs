@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use axum::http::StatusCode;
 use nuvo_crypto::MemoryKeyStore;
+use nuvo_fetch::tools::ToolEnv;
 use nuvo_net::fixture::{Fixture, Reply};
 use nuvo_store::settings;
 use serde_json::{Value, json};
@@ -267,4 +268,67 @@ async fn stream_answers_starting_not_locked_while_the_core_starts() {
     let (_dir, app) = common::starting();
     let (status, body) = common::call(&app, "GET", "/v1/sc/tracks/sc:1/stream", None).await;
     assert_eq!((status, body["code"].as_str()), (StatusCode::SERVICE_UNAVAILABLE, Some("CORE_STARTING")));
+}
+
+#[tokio::test]
+async fn search_marks_previews_and_lists_full_tracks_first() {
+    let fx = fixture().await;
+    fx.on(&api("search/tracks"), Reply::json(serde_json::from_str::<Value>(include_str!("../../soundcloud/tests/fixtures/search-tracks.json")).unwrap()));
+    let core = core(&fx);
+    let (status, body) = common::call(&core.app, "GET", "/v1/sc/search?q=daft%20punk%20get%20lucky", None).await;
+    assert_eq!(status, StatusCode::OK);
+    let order: Vec<(&str, bool)> = body["items"].as_array().unwrap().iter().map(|t| (t["id"].as_str().unwrap(), t["preview"] == json!(true))).collect();
+    assert_eq!(order, [("sc:88335161", false), ("sc:2360861477", false), ("sc:254111945", true), ("sc:254111762", true)]);
+}
+
+#[cfg(unix)]
+fn fake_yt_dlp(dir: &std::path::Path, json: &str) -> std::ffi::OsString {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::write(dir.join("out.json"), json).unwrap();
+    let script = dir.join("yt-dlp");
+    std::fs::write(&script, format!("#!/bin/sh\necho \"$*\" >> '{0}/runs.txt'\ncat '{0}/out.json'\n", dir.display())).unwrap();
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+    dir.as_os_str().to_owned()
+}
+
+#[cfg(unix)]
+fn core_with_yt_dlp(fx: &Fixture, tools: &std::path::Path) -> common::TestCore {
+    let path = fake_yt_dlp(tools, include_str!("../../soundcloud/tests/fixtures/ytdlp-full.json"));
+    common::boot_config(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), |config| {
+        config.net_rewrite = Some(fx.base.clone());
+        config.env = ToolEnv { path: Some(path), home: None, managed: None };
+    })
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn yt_dlp_plays_the_track_when_the_web_api_fails() {
+    let fx = Fixture::start().await;
+    fx.on(HOME, Reply::status(500));
+    let base = "https://playback.media-streaming.soundcloud.cloud/XBV0hffTtBI4/aac_96k/d5d47a09-5e2b-4293-b274-8f0037c676b9";
+    fx.on(&format!("{base}/playlist.m3u8"), Reply::text("#EXTM3U\n#EXT-X-MAP:URI=\"init.mp4\"\ns0.m4s\n"));
+    fx.on(&format!("{base}/init.mp4"), Reply::bytes("audio/mp4", "II"));
+    fx.on(&format!("{base}/s0.m4s"), Reply::bytes("audio/mp4", "a"));
+    let tools = tempfile::tempdir().unwrap();
+    let core = core_with_yt_dlp(&fx, tools.path());
+    let (status, body) = common::call(&core.app, "GET", "/v1/sc/tracks/sc:88335161/stream", None).await;
+    assert_eq!((status, body["kind"].as_str(), body["codec"].as_str(), body["contentLength"].as_u64()), (StatusCode::OK, Some("local"), Some("aac"), Some(3)), "{body}");
+    let argv = std::fs::read_to_string(tools.path().join("runs.txt")).unwrap();
+    assert!(argv.trim_end().ends_with("-- https://api.soundcloud.com/tracks/88335161"), "{argv}");
+    let (_, bytes, _) = common::send(&core.app, common::request("GET", "/v1/sc/tracks/sc:88335161/audio", None)).await;
+    assert_eq!(bytes, b"IIa");
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn previews_never_reach_yt_dlp() {
+    let fx = fixture().await;
+    let listing: Value = serde_json::from_str(include_str!("../../soundcloud/tests/fixtures/search-tracks.json")).unwrap();
+    fx.on(&api("tracks/254111945"), Reply::json(listing["collection"][0].clone()));
+    let tools = tempfile::tempdir().unwrap();
+    let core = core_with_yt_dlp(&fx, tools.path());
+    let (status, body) = common::call(&core.app, "GET", "/v1/sc/tracks/sc:254111945/stream", None).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert!(body.to_string().contains("preview"), "{body}");
+    assert!(!tools.path().join("runs.txt").exists());
 }

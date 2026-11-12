@@ -151,6 +151,32 @@ pub fn expiry_ms(url: &str, now: i64) -> i64 {
     }
 }
 
+pub fn external_record(info: &Value) -> Value {
+    let formats = info.get("formats").and_then(Value::as_array).cloned().unwrap_or_default();
+    let transcodings: Vec<Value> = formats
+        .iter()
+        .filter_map(|f| {
+            let id = f.get("format_id")?.as_str()?;
+            let url = f.get("url")?.as_str()?;
+            let protocol = match f.get("protocol")?.as_str()? {
+                "http" | "https" => "progressive",
+                "m3u8" | "m3u8_native" => "hls",
+                _ => return None,
+            };
+            let mime = match f.get("ext").and_then(Value::as_str)? {
+                "mp3" => "audio/mpeg",
+                "m4a" | "aac" | "mp4" => "audio/mp4",
+                "opus" | "ogg" => "audio/ogg; codecs=\"opus\"",
+                _ => return None,
+            };
+            let snipped = id.contains("preview") || id.starts_with("hls-aes") || url.contains("/encrypted-hls");
+            let preset = id.split_once('_').map_or(id, |(_, rest)| rest);
+            Some(serde_json::json!({"url": url, "preset": preset, "snipped": snipped, "format": {"protocol": protocol, "mime_type": mime}}))
+        })
+        .collect();
+    serde_json::json!({"media": {"transcodings": transcodings}})
+}
+
 impl SoundCloud {
     async fn media_url(&self, transcoding: &Transcoding, authorization: Option<&str>) -> Result<String, ScError> {
         let params: Vec<(&str, String)> = authorization.map(|a| ("track_authorization", a.to_string())).into_iter().collect();
@@ -176,18 +202,9 @@ impl SoundCloud {
         let authorization = record.get("track_authorization").and_then(Value::as_str);
         let mut last = ScError::Unplayable(Reason::NoFormat);
         for transcoding in candidates(&record) {
-            let format = format_of(&transcoding.preset, &transcoding.mime);
             let attempt = async {
                 let media = self.media_url(&transcoding, authorization).await?;
-                if transcoding.protocol == "progressive" {
-                    let url = Url::parse(&media).map_err(|e| ScError::Upstream(e.to_string()))?;
-                    if url.scheme() != "https" || !url.host_str().is_some_and(host_allowed) {
-                        return Err(ScError::Upstream("progressive URL is not https or not from an allowed host".into()));
-                    }
-                    return Ok(Playable::Direct { expires_ms: expiry_ms(&media, now_ms()), url: media, format });
-                }
-                let url = Url::parse(&media).map_err(|e| ScError::Upstream(e.to_string()))?;
-                Ok(Playable::Assembled { bytes: self.assemble(&url, sink).await?, format })
+                self.play_media(&media, &transcoding, sink).await
             };
             match attempt.await {
                 Ok(playable) => {
@@ -202,6 +219,36 @@ impl SoundCloud {
             }
         }
         Err(last)
+    }
+
+    pub async fn resolve_external(&self, id: &str, info: &Value, sink: &mut impl AudioSink) -> Result<Playable, ScError> {
+        let num = ids::track_num(id).ok_or(ScError::Unplayable(Reason::Gone))?;
+        let mut last = ScError::Unplayable(Reason::NoFormat);
+        for transcoding in candidates(&external_record(info)) {
+            match self.play_media(&transcoding.url, &transcoding, sink).await {
+                Ok(playable) => {
+                    self.remember_direct(num, &playable);
+                    return Ok(playable);
+                }
+                Err(err) => {
+                    sink.discard().await;
+                    last = err;
+                }
+            }
+        }
+        Err(last)
+    }
+
+    async fn play_media(&self, media: &str, transcoding: &Transcoding, sink: &mut impl AudioSink) -> Result<Playable, ScError> {
+        let format = format_of(&transcoding.preset, &transcoding.mime);
+        let url = Url::parse(media).map_err(|e| ScError::Upstream(e.to_string()))?;
+        if transcoding.protocol == "progressive" {
+            if url.scheme() != "https" || !url.host_str().is_some_and(host_allowed) {
+                return Err(ScError::Upstream("progressive URL is not https or not from an allowed host".into()));
+            }
+            return Ok(Playable::Direct { expires_ms: expiry_ms(media, now_ms()), url: media.to_string(), format });
+        }
+        Ok(Playable::Assembled { bytes: self.assemble(&url, sink).await?, format })
     }
 
     fn cached_direct(&self, num: u64) -> Option<Playable> {

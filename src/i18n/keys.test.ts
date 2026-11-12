@@ -186,6 +186,7 @@ const DYNAMIC: Record<string, string[]> = {
   "ui.recs.notice.": ["exact", "work", "artist", "artist_forever"],
   "ui.settings.proxy.": ["system", "none", "manual"],
   "ui.search.tab_": ["all", "songs", "albums", "artists", "playlists"],
+  "ui.search.source_": ["all", "youtube", "soundcloud"],
 };
 
 const JOINED = [

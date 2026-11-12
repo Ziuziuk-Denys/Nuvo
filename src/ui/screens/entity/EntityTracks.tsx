@@ -5,10 +5,10 @@ import { Popover } from "../../components/Popover";
 import { useLikeTrack } from "../../ports/library";
 import { useCachedTrackIds } from "../../ports/catalog";
 import { useTranslation } from "../../ports/i18n";
-import { useOfflineMode, useStreamingReachable } from "../../ports/network";
+import { useOfflineMode, useOnline, useStreamingReachable } from "../../ports/network";
 import { saveAsFiles } from "../../ports/exports";
 import { revealLocalTrack } from "../../ports/localFiles";
-import { playerEngine, usePlayerStore, type Track } from "../../ports/player";
+import { isSoundCloudId, playerEngine, usePlayerStore, type Track } from "../../ports/player";
 import { navigateWithTransition } from "../../shell/navigate";
 import { AddToPlaylistPopover } from "../../shell/popovers/AddToPlaylistPopover";
 import type { TrackMatch } from "./entityModel";
@@ -25,10 +25,12 @@ export function useUnavailable(tracks: readonly Track[]): Unavailable {
   const { t } = useTranslation();
   const offlineMode = useOfflineMode();
   const online = useStreamingReachable() && !offlineMode;
+  const soundCloudOnline = useOnline() && !offlineMode;
   const ids = useMemo(() => tracks.map((track) => track.id), [tracks]);
   const cached = useCachedTrackIds(ids, !online);
   return (track) => {
     if (!track.id) return t("ui.entity.unavailable");
+    if (soundCloudOnline && isSoundCloudId(track.id)) return null;
     if (cached && !cached.has(track.id)) return t(offlineMode ? "ui.entity.unavailable_offline_mode" : "ui.entity.unavailable_offline");
     return null;
   };

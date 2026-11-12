@@ -17,9 +17,10 @@ const mocks = vi.hoisted(() => {
   return {
     track,
     ytTrack,
-    state: { online: true, offlineMode: false },
+    state: { online: true, offlineMode: false, browserOnline: null as boolean | null },
     liked: [track("l1", "Bohemian Rhapsody", "Queen"), track("l2", "Ёлка", "Звери")],
     search: vi.fn(),
+    scSearch: vi.fn(),
     startImport: vi.fn(),
     engine: {
       playTrack: vi.fn(() => Promise.resolve()),
@@ -38,10 +39,19 @@ vi.mock("../../ports/i18n", () => ({
   }),
 }));
 vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
-vi.mock("../../ports/network", () => ({ useStreamingReachable: () => mocks.state.online, useOfflineMode: () => mocks.state.offlineMode }));
+vi.mock("../../ports/network", () => ({
+  useStreamingReachable: () => mocks.state.online,
+  useOnline: () => mocks.state.browserOnline ?? mocks.state.online,
+  useOfflineMode: () => mocks.state.offlineMode,
+}));
+vi.mock("@/data/search/soundcloudSearch", async () => {
+  const { useSearch } = await import("@/data/search/catalogSearch");
+  return { useSoundCloudSearch: (query: string, options: object) => useSearch(query, mocks.scSearch, options) };
+});
 vi.mock("../../ports/catalog", () => ({ useCachedTrackIds: () => null }));
 vi.mock("../../ports/player", () => ({
   playerEngine: mocks.engine,
+  isSoundCloudId: (id: string) => id.startsWith("sc:"),
   usePlayerStore: (select: (state: { currentTrack: null }) => unknown) => select({ currentTrack: null }),
 }));
 vi.mock("../../ports/links", async (importOriginal) => {
@@ -99,6 +109,8 @@ beforeEach(() => {
   mockHistoryAdd = vi.spyOn(useSearchHistoryStore.getState(), "addItem");
   mocks.search.mockReset();
   mocks.search.mockReturnValue(new Promise(() => undefined));
+  mocks.scSearch.mockReset();
+  mocks.scSearch.mockResolvedValue([]);
   host = document.createElement("div");
   document.body.append(host);
 });
@@ -112,6 +124,7 @@ afterEach(() => {
   vi.useRealTimers();
   mocks.state.online = true;
   mocks.state.offlineMode = false;
+  mocks.state.browserOnline = null;
 });
 
 function renderSearch(entry = "/search") {
@@ -447,5 +460,72 @@ describe("shared playlist links", () => {
     act(() => inDialog("common.cancel").click());
     await until(() => !dialog());
     expect(field().value).toBe("");
+  });
+});
+
+describe("Search with SoundCloud", () => {
+  const hits = () => [
+    { track: mocks.track("sc:88335161", "Get Lucky [Original Version]", "DJ KB"), preview: false },
+    { track: mocks.track("sc:254111945", "Get Lucky", "Daft Punk"), preview: true },
+  ];
+  const marks = () => host.querySelectorAll('[aria-label="ui.search.from_soundcloud"]').length;
+  const tabs = (label: string) => [...host.querySelectorAll(`[role="tablist"][aria-label="${label}"] [role="tab"]`)].map((tab) => tab.textContent);
+  const sourcePill = () => host.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!;
+  const chooseSource = (id: string) => {
+    act(() => sourcePill().click());
+    const item = [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find((node) => node.textContent === `ui.search.source_${id}`)!;
+    act(() => item.click());
+  };
+
+  it("lists SoundCloud songs in their own group, marked, with previews named", async () => {
+    mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Get Lucky")]);
+    mocks.scSearch.mockResolvedValue(hits());
+    renderSearch();
+    typeInto(field(), "get lucky");
+    await settle(320);
+    expect(mocks.scSearch).toHaveBeenCalledWith("get lucky", expect.any(AbortSignal));
+    expect(host.querySelector('[aria-label="ui.search.source_soundcloud"]')?.textContent).toContain("Get Lucky [Original Version]");
+    expect(marks()).toBe(2);
+    expect(host.querySelectorAll('[title="ui.search.preview_hint"]')).toHaveLength(1);
+    expect(sourcePill().getAttribute("aria-label")).toBe("ui.search.sources: ui.search.source_all");
+  });
+
+  it("the SoundCloud source asks SoundCloud only, offers its kinds only and plays its tracks", async () => {
+    mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Get Lucky")]);
+    mocks.scSearch.mockResolvedValue(hits());
+    renderSearch();
+    typeInto(field(), "get lucky");
+    act(() => button("ui.search.tab_artists").click());
+    chooseSource("soundcloud");
+    await settle(320);
+    expect(mocks.search).not.toHaveBeenCalled();
+    expect(tabs("ui.search.tabs")).toEqual(["ui.search.tab_all", "ui.search.tab_songs"]);
+    expect(sourcePill().getAttribute("aria-label")).toBe("ui.search.sources: ui.search.source_soundcloud");
+    expect(rowTitles()).toHaveLength(2);
+    expect(rowTitles()[0]).toBe("Get Lucky [Original Version]");
+    const row = [...host.querySelectorAll('[role="button"]')].find((node) => node.textContent?.includes("[Original Version]"))!;
+    act(() => row.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect((mocks.engine.playTrack.mock.calls[0] as unknown as [{ id: string }])[0].id).toBe("sc:88335161");
+  });
+
+  it("the YouTube source never asks SoundCloud", async () => {
+    mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Get Lucky")]);
+    renderSearch();
+    typeInto(field(), "get lucky");
+    chooseSource("youtube");
+    await settle(320);
+    expect(mocks.scSearch).not.toHaveBeenCalled();
+    expect(marks()).toBe(0);
+  });
+
+  it("still finds SoundCloud songs when YouTube cannot be reached", async () => {
+    mocks.state.online = false;
+    mocks.state.browserOnline = true;
+    mocks.scSearch.mockResolvedValue(hits());
+    renderSearch();
+    typeInto(field(), "get lucky");
+    await settle(320);
+    expect(text()).not.toContain("ui.search.offline");
+    expect(marks()).toBe(2);
   });
 });

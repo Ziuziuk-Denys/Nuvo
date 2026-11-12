@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SearchResult } from "../../ports/search";
 import type { Track } from "../../ports/player";
-import { groupResults, isEmpty, localResults, withLocalFiles } from "./searchModel";
+import { groupResults, isEmpty, localResults, withLocalFiles, withSoundCloud } from "./searchModel";
 
 const hit = (kind: SearchResult["kind"], id: string): SearchResult => ({ kind, id, title: id, subtitle: "", cover: "" });
 const many = (kind: SearchResult["kind"], count: number) => Array.from({ length: count }, (_, index) => hit(kind, `${kind}${index}`));
@@ -101,5 +101,19 @@ describe("withLocalFiles", () => {
     const results = [{ ...named("ar", "Band", ""), kind: "artist" as const }, named("yt1", "Band Song", "Band")];
     const got = withLocalFiles(results, [named("local:a", "Band", "Band")], "all", "band").map((r) => r.id);
     expect(got[0]).toBe("ar");
+  });
+});
+
+describe("withSoundCloud", () => {
+  const found = many("song", 9).map((result) => ({ ...result, id: `sc:${result.id}` }));
+
+  it("adds a SoundCloud group capped like songs under All and whole under Songs", () => {
+    expect(withSoundCloud(groupResults([], "all"), found, "all").soundcloud).toHaveLength(6);
+    expect(withSoundCloud(groupResults([], "songs"), found, "songs").soundcloud).toHaveLength(9);
+    expect(isEmpty(withSoundCloud(groupResults([], "all"), found, "all"))).toBe(false);
+  });
+
+  it("stays out of the album, artist and playlist views", () => {
+    expect(withSoundCloud(groupResults([], "albums"), found, "albums").soundcloud).toBeUndefined();
   });
 });
