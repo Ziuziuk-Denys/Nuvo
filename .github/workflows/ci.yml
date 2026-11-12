@@ -28,6 +28,32 @@ jobs:
       - run: pnpm check
       - run: NUVO_CORE_KEYRING_SERVICE=nuvo-core-test pnpm core:test
 
+  # The helper tools are fetched per platform; Linux runs the full suite above
+  core-portable:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-2025, macos-15]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: core
+          key: portable-${{ matrix.runner }}
+      - shell: bash
+        run: |
+          # Git's perl lacks modules that OpenSSL's Configure needs; Strawberry Perl has them.
+          if [ "$RUNNER_OS" = "Windows" ] && [ -d /c/Strawberry/perl/bin ]; then export PATH="/c/Strawberry/perl/bin:$PATH"; fi
+          cargo clippy --locked --manifest-path core/Cargo.toml -p nuvo-fetch -p nuvo-server -- -D warnings
+          cargo test --locked --manifest-path core/Cargo.toml -p nuvo-fetch --test archive
+
   audit:
     runs-on: ubuntu-latest
     steps:

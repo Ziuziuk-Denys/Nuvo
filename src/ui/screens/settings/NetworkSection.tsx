@@ -7,21 +7,19 @@ import {
   appFacts,
   onNetworkChanged,
   readProxy,
-  readTools,
   runNetworkCheck,
   saveProxy,
   systemReport,
-  toolNotes,
   type NetCheck,
   type NetCheckRow,
   type ProxyMode,
   type ProxyView,
-  type ToolsView,
 } from "../../ports/system";
 import { OfflineModeRow } from "./OfflineModeRow";
 import { formatReport } from "./report";
 import { Segmented, SettingBlock, SettingGroup, SettingRow } from "./controls";
 import styles from "./sections.module.css";
+import { ToolsGroup } from "./ToolsGroup";
 
 const MODES: readonly ProxyMode[] = ["system", "none", "manual"];
 
@@ -47,24 +45,6 @@ export function NetworkSection(): JSX.Element {
   const [check, setCheck] = useState<NetCheck | null>(null);
   const [checking, setChecking] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const [tools, setTools] = useState<ToolsView | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const read = async () => {
-      const value = await readTools();
-      if (!live) return;
-      setTools(value);
-      if (value?.download && !value.download.failed) timer = setTimeout(() => void read(), 1000);
-    };
-    void read();
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-  }, []);
 
   useEffect(() => {
     let live = true;
@@ -123,108 +103,102 @@ export function NetworkSection(): JSX.Element {
   const headline = check ? checkHeadline(check) : null;
 
   return (
-    <SettingGroup>
-      <OfflineModeRow />
-      {proxy ? (
+    <>
+      <SettingGroup>
+        <OfflineModeRow />
+        {proxy ? (
+          <SettingRow
+            title={t("ui.settings.proxy.title")}
+            description={proxyNote(proxy, t)}
+            titleKey="ui.settings.proxy.title"
+            explained
+            control={
+              <Segmented
+                label={t("ui.settings.proxy.title")}
+                options={MODES.map((mode) => ({ value: mode, label: t(`ui.settings.proxy.${mode}`) }))}
+                value={proxy.mode}
+                onChange={chooseMode}
+              />
+            }
+          />
+        ) : null}
+        {proxy?.mode === "manual" ? (
+          <SettingBlock
+            title={t("ui.settings.proxy_url")}
+            description={t("ui.settings.proxy_url_desc")}
+            titleKey="ui.settings.proxy_url"
+            descKey="ui.settings.proxy_url_desc"
+          >
+            <TextField
+              value={url}
+              onChange={setUrl}
+              label={t("ui.settings.proxy_url")}
+              placeholder="socks5://127.0.0.1:1080"
+              maxLength={300}
+              onSubmit={saveManual}
+            />
+            <TextField
+              value={username}
+              onChange={setUsername}
+              label={t("ui.settings.proxy_username")}
+              placeholder={t("ui.settings.proxy_username")}
+              maxLength={256}
+              onSubmit={saveManual}
+            />
+            <TextField
+              value={password}
+              onChange={setPassword}
+              label={t("ui.settings.proxy_password")}
+              placeholder={t("ui.settings.proxy_password")}
+              type="password"
+              maxLength={256}
+              onSubmit={saveManual}
+            />
+            <Button size="s" variant="primary" onClick={saveManual}>
+              {t("ui.settings.proxy_save")}
+            </Button>
+          </SettingBlock>
+        ) : null}
+        {error ? (
+          <p className={styles.note} role="alert">
+            {error}
+          </p>
+        ) : null}
         <SettingRow
-          title={t("ui.settings.proxy.title")}
-          description={proxyNote(proxy, t)}
-          titleKey="ui.settings.proxy.title"
+          title={t("ui.settings.connection")}
+          description={t("ui.settings.connection_desc")}
+          titleKey="ui.settings.connection"
+          descKey="ui.settings.connection_desc"
           explained
           control={
-            <Segmented
-              label={t("ui.settings.proxy.title")}
-              options={MODES.map((mode) => ({ value: mode, label: t(`ui.settings.proxy.${mode}`) }))}
-              value={proxy.mode}
-              onChange={chooseMode}
-            />
+            <Button size="s" disabled={checking} onClick={() => void runCheck()}>
+              {t(checking ? "ui.settings.checking" : "ui.settings.check")}
+            </Button>
           }
         />
-      ) : null}
-      {proxy?.mode === "manual" ? (
-        <SettingBlock
-          title={t("ui.settings.proxy_url")}
-          description={t("ui.settings.proxy_url_desc")}
-          titleKey="ui.settings.proxy_url"
-          descKey="ui.settings.proxy_url_desc"
-        >
-          <TextField
-            value={url}
-            onChange={setUrl}
-            label={t("ui.settings.proxy_url")}
-            placeholder="socks5://127.0.0.1:1080"
-            maxLength={300}
-            onSubmit={saveManual}
-          />
-          <TextField
-            value={username}
-            onChange={setUsername}
-            label={t("ui.settings.proxy_username")}
-            placeholder={t("ui.settings.proxy_username")}
-            maxLength={256}
-            onSubmit={saveManual}
-          />
-          <TextField
-            value={password}
-            onChange={setPassword}
-            label={t("ui.settings.proxy_password")}
-            placeholder={t("ui.settings.proxy_password")}
-            type="password"
-            maxLength={256}
-            onSubmit={saveManual}
-          />
-          <Button size="s" variant="primary" onClick={saveManual}>
-            {t("ui.settings.proxy_save")}
-          </Button>
-        </SettingBlock>
-      ) : null}
-      {error ? (
-        <p className={styles.note} role="alert">
-          {error}
-        </p>
-      ) : null}
-      <SettingRow
-        title={t("ui.settings.connection")}
-        description={t("ui.settings.connection_desc")}
-        titleKey="ui.settings.connection"
-        descKey="ui.settings.connection_desc"
-        explained
-        control={
-          <Button size="s" disabled={checking} onClick={() => void runCheck()}>
-            {t(checking ? "ui.settings.checking" : "ui.settings.check")}
-          </Button>
-        }
-      />
-      {check ? (
-        <SettingBlock title={t(headline!.key, headline!.vars)}>
-          <ul className={styles.note}>
-            {check.rows.map((row, index) => (
-              <li key={`${row.check}-${row.host ?? ""}-${index}`}>{rowText(row, t)}</li>
-            ))}
-          </ul>
-        </SettingBlock>
-      ) : null}
-      {tools && toolNotes(tools).length > 0 ? (
-        <SettingBlock title={t("ui.settings.tools.title")}>
-          <ul className={styles.note}>
-            {toolNotes(tools).map((note) => (
-              <li key={note.key}>{t(note.key, note.vars)}</li>
-            ))}
-          </ul>
-        </SettingBlock>
-      ) : null}
-      <SettingRow
-        title={t("ui.settings.report")}
-        description={t("ui.settings.report_desc")}
-        titleKey="ui.settings.report"
-        descKey="ui.settings.report_desc"
-        explained
-        control={
-          <Button size="s" onClick={() => void copyReport().catch(() => setError(t("ui.settings.report_failed")))}>
-            {t(copied ? "ui.settings.report_copied" : "ui.settings.report_copy")}
-          </Button>
-        }
-      />
-    </SettingGroup>
+        {check ? (
+          <SettingBlock title={t(headline!.key, headline!.vars)}>
+            <ul className={styles.note}>
+              {check.rows.map((row, index) => (
+                <li key={`${row.check}-${row.host ?? ""}-${index}`}>{rowText(row, t)}</li>
+              ))}
+            </ul>
+          </SettingBlock>
+        ) : null}
+        <SettingRow
+          title={t("ui.settings.report")}
+          description={t("ui.settings.report_desc")}
+          titleKey="ui.settings.report"
+          descKey="ui.settings.report_desc"
+          explained
+          control={
+            <Button size="s" onClick={() => void copyReport().catch(() => setError(t("ui.settings.report_failed")))}>
+              {t(copied ? "ui.settings.report_copied" : "ui.settings.report_copy")}
+            </Button>
+          }
+        />
+      </SettingGroup>
+      <ToolsGroup />
+    </>
   );
 }

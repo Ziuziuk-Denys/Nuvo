@@ -75,7 +75,7 @@ const DYNAMIC: Record<string, string[]> = {
   "ui.local.unsupported_": ["unreadable", "alac", "format", "wav_codec"],
   "ui.network_advice.": ["offline", "proxy_failed", "blocked", "refused", "tls_intercepted", "clock"],
   "ui.recs.hidden.scope_": ["exact", "work", "artist", "artist_forever"],
-  "ui.settings.tools.": ["ffmpeg", "js_runtime", "yt_dlp"],
+  "ui.settings.tools.status_": ["ok", "outdated", "missing", "broken"],
   "ui.recognize.error.": ["no_capture", "network", "busy", "tool_missing", "decode_failed", "unavailable", "unsupported", "core_down", "locked", "failed"],
   "ui.recognize.error_link.": [
     "invalid_link",

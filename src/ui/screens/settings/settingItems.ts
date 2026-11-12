@@ -59,4 +59,5 @@ export const SETTING_ITEMS: SettingItem[] = [
   row("Network", "ui.settings.proxy_url", "ui.settings.proxy_url_desc"),
   row("Network", "ui.settings.connection", "ui.settings.connection_desc"),
   row("Network", "ui.settings.report", "ui.settings.report_desc"),
+  row("Network", "ui.settings.tools.title", "ui.settings.tools.description"),
 ];

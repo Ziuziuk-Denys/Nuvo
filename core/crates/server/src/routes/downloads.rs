@@ -31,7 +31,8 @@ async fn start(State(state): State<AppState>, JsonBody(body): JsonBody<StartDown
         return Err(ApiError::Invalid("format is original or mp3".into()));
     }
     if format == "mp3" && state.env.find("ffmpeg").is_none() {
-        return Err(ApiError::Conflict("install ffmpeg to save as MP3".into()));
+        crate::tool_update::request(&state, None);
+        return Err(ApiError::Conflict("ffmpeg is still downloading; try MP3 again in a minute".into()));
     }
     let raw = PathBuf::from(&body.dir);
     if !raw.is_absolute() {

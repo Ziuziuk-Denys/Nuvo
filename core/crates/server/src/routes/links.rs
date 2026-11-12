@@ -108,8 +108,12 @@ async fn read(state: &AppState, link: &Link) -> Result<Inspected, FetchError> {
     } else {
         ensure_public(&link.url).await?;
     }
-    let yt_dlp = state.env.find("yt-dlp").ok_or(FetchError::ToolMissing("yt-dlp"))?;
-    let (resolved, tags) = ytdlp::resolve_full(&yt_dlp, &link.url, state.proxy_url().as_deref()).await?;
+    let (yt_dlp, runtime) = (state.env.find("yt-dlp"), state.env.js_runtime());
+    if yt_dlp.is_none() || runtime.is_none() {
+        crate::tool_update::request(state, None);
+    }
+    let yt_dlp = yt_dlp.ok_or(FetchError::ToolMissing("yt-dlp"))?;
+    let (resolved, tags) = ytdlp::resolve_full(&yt_dlp, runtime.as_deref(), &link.url, state.proxy_url().as_deref()).await?;
     Ok(Inspected::Media(resolved, tags))
 }
 

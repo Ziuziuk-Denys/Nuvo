@@ -1620,6 +1620,7 @@ name = "nuvo-fetch"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "flate2",
  "libc",
  "nuvo-crypto",
  "reqwest",
