@@ -8,7 +8,7 @@ import { BUSY_MS, downloadText, TOAST_ID, useToolDownloadToast } from "./useTool
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const system = vi.hoisted(() => ({ readTools: vi.fn() }));
-vi.mock("../ports/system", () => system);
+vi.mock("../ports/system", async (original) => ({ ...(await original<typeof import("../ports/system")>()), ...system }));
 vi.mock("../ports/i18n", () => ({
   useTranslation: () => ({ t: (key: string, vars?: Record<string, unknown>) => `${key} ${JSON.stringify(vars ?? {})}` }),
 }));
@@ -51,6 +51,15 @@ describe("tool download toast", () => {
     await flush();
     await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
     expect(useToastStore.getState().queue.filter((item) => item.variant === "error")).toHaveLength(1);
+    act(() => root.unmount());
+  });
+
+  it("names Deno by its name", async () => {
+    system.readTools.mockResolvedValue({ tools: [], download: { tool: "deno", received: 0, failed: true } });
+    const root = createRoot(document.createElement("div"));
+    act(() => root.render(<Probe />));
+    await flush();
+    expect(useToastStore.getState().queue.find((item) => item.variant === "error")?.message).toBe('ui.settings.tools.failed {"tool":"Deno"}');
     act(() => root.unmount());
   });
 

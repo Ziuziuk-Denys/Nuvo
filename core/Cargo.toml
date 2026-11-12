@@ -28,6 +28,8 @@ axum = "0.8"
 bip39 = "3"
 chacha20poly1305 = "0.11"
 deunicode = "1.6"
+# Unpacks the zip archives of the helper tools (Deno, ffmpeg on Windows and macOS); already in the lockfile through lofty and png.
+flate2 = "1"
 futures = "0.3"
 hkdf = "0.13"
 http-body-util = "0.1"

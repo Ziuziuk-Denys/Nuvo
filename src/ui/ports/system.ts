@@ -82,9 +82,22 @@ export interface NetCheck {
   service?: string;
 }
 
+export type ToolRowName = "yt-dlp" | "js-runtime" | "ffmpeg";
+export type ToolStatus = "ok" | "outdated" | "missing" | "broken";
+
 export interface ToolsView {
-  tools: Array<{ name: string; status: "ok" | "outdated" | "missing" | "broken"; version?: string }>;
+  tools: Array<{ name: string; status: ToolStatus; version?: string }>;
   download?: { tool: string; received: number; total?: number; failed: boolean };
+}
+
+export const TOOL_ROWS: readonly ToolRowName[] = ["yt-dlp", "js-runtime", "ffmpeg"];
+
+/** The program a Settings row downloads; a download names the program. */
+export const ROW_PROGRAM: Record<ToolRowName, string> = { "yt-dlp": "yt-dlp", "js-runtime": "deno", ffmpeg: "ffmpeg" };
+
+export function programLabel(program: string): string {
+  if (program === "deno") return "Deno";
+  return program === "ffmpeg" ? "ffmpeg" : "yt-dlp";
 }
 
 export async function readTools(fetcher: typeof fetch = fetch): Promise<ToolsView | null> {
@@ -92,25 +105,9 @@ export async function readTools(fetcher: typeof fetch = fetch): Promise<ToolsVie
   return response?.ok ? ((await response.json()) as ToolsView) : null;
 }
 
-export function toolNotes(view: ToolsView): Array<{ key: string; vars?: Record<string, string | number> }> {
-  const notes: Array<{ key: string; vars?: Record<string, string | number> }> = [];
-  const { download } = view;
-  if (download && !download.failed) {
-    const percent = download.total ? Math.floor((download.received / download.total) * 100) : null;
-    notes.push(
-      percent === null
-        ? { key: "ui.settings.tools.downloading", vars: { tool: download.tool } }
-        : { key: "ui.settings.tools.progress", vars: { tool: download.tool, percent } },
-    );
-  }
-  if (download?.failed) notes.push({ key: "ui.settings.tools.failed", vars: { tool: download.tool } });
-  for (const tool of view.tools) {
-    if (tool.status === "ok" || tool.name === "ffmpeg-pulse") continue;
-    // yt-dlp looks after itself; a note would only repeat the download line
-    if (tool.name === download?.tool) continue;
-    notes.push({ key: `ui.settings.tools.${tool.name === "js-runtime" ? "js_runtime" : tool.name === "ffmpeg" ? "ffmpeg" : "yt_dlp"}` });
-  }
-  return notes;
+export async function downloadTool(name: ToolRowName, fetcher: typeof fetch = fetch): Promise<boolean> {
+  const response = await fetcher(`${CORE_URL}/v1/system/tools/${name}/download`, { method: "POST" }).catch(() => null);
+  return response?.ok === true;
 }
 
 export async function runNetworkCheck(fetcher: typeof fetch = fetch): Promise<NetCheck> {

@@ -188,6 +188,9 @@ async fn run(state: AppState, data: Unlocked, job: Job, part: u8, tx: UnboundedS
 
 async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Result<Prepared, FetchError> {
     let tools = found_tools(state);
+    if tools.ffmpeg.is_none() || tools.yt_dlp.is_none() || tools.js_runtime.is_none() {
+        crate::tool_update::request(state, None);
+    }
     let ffmpeg = tools.require_ffmpeg()?.to_path_buf();
     let (proxy, hook) = (state.proxy_url(), state.proxy_hook());
     match job {
@@ -246,7 +249,7 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
             }
             let resolved = match seen_media {
                 Some(resolved) => resolved,
-                None => ytdlp::resolve(tools.require_yt_dlp()?, &link.url, proxy.as_deref()).await?,
+                None => ytdlp::resolve(tools.require_yt_dlp()?, tools.js_runtime.as_deref(), &link.url, proxy.as_deref()).await?,
             };
             let remote = follow_public(&resolved.remote, Some(&hook)).await?;
             // The history keeps no credentials or query string from the link.

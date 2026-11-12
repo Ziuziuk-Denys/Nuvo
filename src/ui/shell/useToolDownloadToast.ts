@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useToastStore, STICKY } from "../feedback/toastStore";
 import { useTranslation, type TFunction } from "../ports/i18n";
-import { readTools, type ToolsView } from "../ports/system";
+import { programLabel, readTools, type ToolsView } from "../ports/system";
 
 export const TOAST_ID = "tool-download";
 export const BUSY_MS = 1000;
@@ -10,7 +10,7 @@ export const IDLE_MS = 30_000;
 type Download = NonNullable<ToolsView["download"]>;
 
 export function downloadText(download: Download, t: TFunction): string {
-  const tool = download.tool === "ffmpeg" ? "ffmpeg" : "yt-dlp";
+  const tool = programLabel(download.tool);
   if (!download.total) return t("ui.settings.tools.downloading", { tool });
   return t("ui.settings.tools.progress", { tool, percent: Math.floor((download.received / download.total) * 100) });
 }
@@ -40,7 +40,7 @@ export function useToolDownloadToast(): void {
           toasts.show({
             id: `${TOAST_ID}-failed`,
             variant: "error",
-            message: t("ui.settings.tools.failed", { tool: download.tool === "ffmpeg" ? "ffmpeg" : "yt-dlp" }),
+            message: t("ui.settings.tools.failed", { tool: programLabel(download.tool) }),
           });
         }
         if (!download) failedFor = null;

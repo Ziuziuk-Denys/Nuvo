@@ -101,6 +101,9 @@ pub struct Inner {
     pub last_network_check: RwLock<Option<NetCheck>>,
     pub tools_url: Option<String>,
     pub tool_download: RwLock<Option<ToolDownload>>,
+    /// Wakes the tool downloader before its hourly round: a feature found a tool missing, or Settings asked.
+    pub tool_wake: Notify,
+    pub tool_requests: std::sync::Mutex<Vec<&'static str>>,
     pub test: TestHooks,
     pub fetches: precache::Jobs,
     pub local: crate::local::LocalService,
@@ -187,6 +190,8 @@ impl AppState {
             last_network_check: RwLock::new(None),
             tools_url: config.tools_url,
             tool_download: RwLock::new(None),
+            tool_wake: Notify::new(),
+            tool_requests: Default::default(),
             test: config.test,
             fetches: precache::Jobs::default(),
             local: Default::default(),
