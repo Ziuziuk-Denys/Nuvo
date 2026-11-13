@@ -90,7 +90,8 @@ jobs:
         shell: bash
         run: |
           curl -fsSL --retry 3 -o "$RUNNER_TEMP/ggml-base-q8_0.bin" https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base-q8_0.bin
-          sum=$( (sha256sum "$RUNNER_TEMP/ggml-base-q8_0.bin" 2>/dev/null || shasum -a 256 "$RUNNER_TEMP/ggml-base-q8_0.bin") | cut -d' ' -f1)
+          # read from stdin: on Windows sha256sum escapes a path with backslashes by prefixing the line with one
+          sum=$( (sha256sum 2>/dev/null || shasum -a 256) < "$RUNNER_TEMP/ggml-base-q8_0.bin" | cut -d' ' -f1)
           test "$sum" = c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9
       - name: Build the daemon and time the fixtures for each target
         shell: bash
