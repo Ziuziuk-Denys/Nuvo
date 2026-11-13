@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="1" xmlns="http://xspf.org/ns/0/">
+  <title>Road &lt;Trip&gt;</title>
+  <trackList>
+    <track>
+      <location>https://www.youtube.com/watch?v=FGBhQbmPwH8</location>
+      <title>One More Time</title>
+      <creator>Daft Punk</creator>
+      <duration>320357</duration>
+    </track>
+    <track>
+      <location>file:///home/u/My%20Music/teardrop.flac</location>
+      <title><![CDATA[Teardrop & Co]]></title>
+      <creator>Massive Attack</creator>
+      <album>Mezzanine</album>
+      <duration>330000</duration>
+    </track>
+    <track>
+      <title>Rock &#x26; Roll &#8211; Live</title>
+      <creator>Led Zeppelin</creator>
+    </track>
+  </trackList>
+</playlist>

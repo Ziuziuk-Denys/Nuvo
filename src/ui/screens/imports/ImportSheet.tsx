@@ -31,7 +31,7 @@ export interface ImportSheetProps {
 }
 
 const PREVIEW_ROWS = 5;
-const FILE_TYPES = ".csv,.json,.m3u,.m3u8";
+const FILE_TYPES = ".csv,.json,.m3u,.m3u8,.xspf,.txt";
 
 export function ImportSheet({ open, onClose, actions, initialLink, initialMode, target, onStarted, note, onOpenReport }: ImportSheetProps): JSX.Element | null {
   const { t } = useTranslation();

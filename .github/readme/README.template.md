@@ -128,7 +128,7 @@ Machine: {{build-machine}}. Median of {{build-runs}} runs on {{build-date}}, emp
 - Karaoke highlight by line, word, fill or step
 - Romanized lyrics for Korean, Chinese and Japanese kana (kanji stays as written)
 - Translation through a local model on your machine
-- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and files: Spotify exports (CSV or JSON), M3U and Nuvo playlists
+- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and files: Spotify, Soundiiz, TuneMyMusic and Google Takeout exports, M3U, XSPF, CSV, TXT and Nuvo playlists
 - A public Spotify playlist or album comes in full by link. If Spotify does not send the whole list, you get the first 100 songs and a notice
 
 {{pic:band-d}}

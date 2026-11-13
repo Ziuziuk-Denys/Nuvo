@@ -345,7 +345,7 @@ describe("importFile", () => {
   it("explains a file the daemon cannot read", async () => {
     const { daemon, started } = setup();
     daemon.startAnswer = new CoreError(400, "INVALID_INPUT");
-    await expect(importFile({ name: "x.txt", data: "" }, undefined, { daemon, started })).rejects.toEqual(new ImportError("bad_file"));
+    await expect(importFile({ name: "x.pdf", data: "" }, undefined, { daemon, started })).rejects.toEqual(new ImportError("bad_file"));
   });
 });
 
