@@ -227,8 +227,13 @@ function WordTimingControl({ trackId, lineOnly }: { trackId: string | null; line
   const failure = view.enabled && lineOnly && job?.state === "failed" ? t(FAILURE_TEXT[job.code ?? ""] ?? "ui.karaoke.word_timing.failed") : null;
   let label = t("ui.karaoke.word_timing.switch");
   if (running) {
-    const key = job.state === "waiting" ? "waiting" : job.model === "whisper-small" ? "improving" : "running";
-    label = t(`ui.karaoke.word_timing.${key}`, { percent: Math.round(job.progress * 100) });
+    const key =
+      job.state === "waiting"
+        ? "ui.karaoke.word_timing.waiting"
+        : job.model === "whisper-small"
+          ? "ui.karaoke.word_timing.improving"
+          : "ui.karaoke.word_timing.running";
+    label = t(key, { percent: Math.round(job.progress * 100) });
   }
   return (
     <>
