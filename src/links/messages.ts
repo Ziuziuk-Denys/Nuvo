@@ -51,7 +51,6 @@ const ERROR_CODES = new Set([
   "newer_link",
   "bad_share",
   "spotify_file_only",
-  "yandex_lists",
   "core_down",
   "locked",
   "proxy_unsupported",

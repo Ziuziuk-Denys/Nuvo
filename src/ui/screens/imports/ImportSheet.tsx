@@ -218,7 +218,7 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
       break;
     }
     case "error": {
-      const spotify = phase.error instanceof ImportError && phase.error.code === "spotify_file_only";
+      const fileRoute = phase.error instanceof ImportError && (phase.error.code === "spotify_file_only" || phase.error.code === "region_blocked");
       sheetActions = [
         { label: t("ui.imports.close"), onClick: close },
         { label: t("ui.imports.try_again"), onClick: reset, primary: true },
@@ -228,7 +228,7 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
           <p className={styles.line} role="alert">
             {message(errorMessage(phase.error))}
           </p>
-          {spotify ? (
+          {fileRoute ? (
             <Button
               variant="secondary"
               size="s"

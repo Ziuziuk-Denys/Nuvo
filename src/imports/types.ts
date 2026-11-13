@@ -17,7 +17,7 @@ export interface ImportRow {
   track?: CatalogTrack;
 }
 
-export type RowSource = "youtube-music" | "soundcloud" | "apple-music" | "deezer" | "spotify";
+export type RowSource = "youtube-music" | "soundcloud" | "apple-music" | "deezer" | "spotify" | "yandex-music";
 
 export type ImportTarget = { kind: "new" } | { kind: "liked" } | { kind: "playlist"; id: string };
 
@@ -94,7 +94,7 @@ export type ImportErrorCode =
   | "unsupported_host"
   | "bad_link"
   | "spotify_file_only"
-  | "yandex_lists"
+  | "region_blocked"
   | "login_required"
   | "missing_name"
   | "bad_file"

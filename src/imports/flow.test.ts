@@ -89,9 +89,8 @@ describe("importFromLink", () => {
     await expect(listLink("https://spotify.link/abc", ports, signal())).rejects.toEqual(new ImportError("network"));
   });
 
-  it("refuses Yandex Music lists and VK Music with their own codes", async () => {
+  it("refuses VK Music with its own code", async () => {
     const { ports, fetch } = setup();
-    await expect(listLink("https://music.yandex.ru/users/a/playlists/3", ports, signal())).rejects.toEqual(new ImportError("yandex_lists"));
     await expect(listLink("https://vk.com/music/playlist/-1_2", ports, signal())).rejects.toEqual(new ImportError("login_required"));
     await expect(listLink("https://example.org/x", ports, signal())).rejects.toEqual(new ImportError("unsupported_host", "example.org"));
     expect(fetch).not.toHaveBeenCalled();

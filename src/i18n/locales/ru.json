@@ -179,7 +179,7 @@
       "tab_likes": "Лайки SoundCloud",
       "tab_file": "Файл",
       "link_label": "Ссылка на плейлист или альбом",
-      "link_placeholder": "Вставьте ссылку из Spotify, YouTube Music, SoundCloud, Apple Music или Deezer",
+      "link_placeholder": "Вставьте ссылку из Spotify, YouTube Music, SoundCloud, Apple Music, Deezer или Яндекс Музыки",
       "likes_label": "Имя пользователя SoundCloud",
       "likes_placeholder": "@имя",
       "file_hint": "Подойдут экспорты из Spotify, Soundiiz, TuneMyMusic и Google Takeout, а также плейлисты M3U, XSPF, CSV и TXT. Плейлист из Яндекс Музыки, Звука, Apple Music, Deezer или Tidal сначала выгрузите через Soundiiz или TuneMyMusic.",
@@ -205,14 +205,16 @@
         "soundcloud": "SoundCloud",
         "apple-music": "Apple Music",
         "deezer": "Deezer",
-        "spotify": "Spotify"
+        "spotify": "Spotify",
+        "yandex-music": "Яндекс Музыки"
       },
       "fallback": {
         "youtube-music": "Плейлист YouTube",
         "soundcloud": "Плейлист SoundCloud",
         "apple-music": "Плейлист Apple Music",
         "deezer": "Плейлист Deezer",
-        "spotify": "Плейлист Spotify"
+        "spotify": "Плейлист Spotify",
+        "yandex-music": "Плейлист Яндекс Музыки"
       },
       "likes_name": "{name}: лайки",
       "target": "Куда импортировать",
@@ -248,7 +250,7 @@
         "unsupported_host": "Nuvo не умеет импортировать с {host}.",
         "bad_link": "Вставьте ссылку на плейлист или альбом.",
         "spotify_file_only": "По ссылке Nuvo читает открытые плейлисты и альбомы Spotify. Любимые треки и остальное экспортируйте в файл и импортируйте файл.",
-        "yandex_lists": "Плейлисты Яндекс Музыки пока нельзя импортировать.",
+        "region_blocked": "Яндекс Музыка не отвечает из вашего региона или через VPN. Откройте ссылку без VPN или выгрузите плейлист в файл через Soundiiz или TuneMyMusic и импортируйте файл.",
         "login_required": "Эта ссылка требует входа, поэтому Nuvo не может её прочитать. Сделайте плейлист публичным и попробуйте снова.",
         "missing_name": "Введите имя пользователя SoundCloud.",
         "bad_file": "Nuvo не может прочитать этот файл. Выберите плейлист в формате M3U, XSPF, CSV, TXT или JSON.",
@@ -504,7 +506,6 @@
         "newer_link": "Ссылку создала более новая версия Nuvo. Обновите Nuvo, чтобы её открыть.",
         "bad_share": "Ссылка Nuvo повреждена. Попросите прислать её ещё раз.",
         "spotify_file_only": "По ссылке Nuvo читает открытые плейлисты и альбомы Spotify. Любимые треки и остальное экспортируйте в файл и импортируйте файл.",
-        "yandex_lists": "Плейлисты Яндекс Музыки пока нельзя импортировать. Поищите трек по названию.",
         "core_down": "Фоновая служба Nuvo не отвечает. Перезапустите Nuvo.",
         "locked": "Сначала разблокируйте медиатеку, затем вставьте ссылку снова.",
         "proxy_unsupported": "Слушать можно только через HTTP-прокси. Смените прокси в настройках и попробуйте снова.",

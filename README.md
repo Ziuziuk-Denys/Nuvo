@@ -131,14 +131,14 @@ Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, 
 - Karaoke highlight by line, word, fill or step
 - Romanized lyrics for Korean, Chinese and Japanese kana (kanji stays as written)
 - Translation through a local model on your machine
-- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and files: Spotify, Soundiiz, TuneMyMusic and Google Takeout exports, M3U, XSPF, CSV, TXT and Nuvo playlists
+- Playlist links from YouTube, SoundCloud, Apple Music, Deezer, Spotify and Yandex Music (public, where Yandex is reachable), and files: Spotify, Soundiiz, TuneMyMusic and Google Takeout exports, M3U, XSPF, CSV, TXT and Nuvo playlists
 - A public Spotify playlist or album comes in full by link. If Spotify does not send the whole list, you get the first 100 songs and a notice
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/band-d-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/band-d-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/band-d-dark.svg"><img src=".github/readme/band-d-light.svg" width="100%" alt="Local files: Watched folders. Moved files keep their likes. Links: Paste a song link into Search."></picture>
 
 - Tags, covers and `.lrc` files read from your folders
 - Save streamed tracks as files, original or MP3, and export playlists and the library
-- Paste links from Apple Music, Deezer, Yandex Music (songs), Shazam or TikTok, and share compact links
+- Paste links from Apple Music, Deezer, Yandex Music, Shazam or TikTok, and share compact links
 - Recognize a song from a video link (YouTube, TikTok, SoundCloud and more), a file, the microphone or the sound your computer plays. The last two work on Linux
 - Last.fm scrobbling with your own API key, off until you turn it on
 - A Discord status with the song cover and a Get Nuvo button. It is on by default, and you can turn it off in Settings, Discord

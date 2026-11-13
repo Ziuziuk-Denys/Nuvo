@@ -1,0 +1,94 @@
+{
+  "invocationInfo": {
+    "req-id": "1794604151202625-9734620697409354179",
+    "hostname": "music-web-default-production-music-97.vla.yp-c.yandex.net",
+    "exec-duration-millis": 9
+  },
+  "result": {
+    "owner": {
+      "uid": 103372440,
+      "login": "music-blog",
+      "name": "Яндекс Музыка",
+      "verified": true
+    },
+    "playlistUuid": "a7c5e2f0-3b1d-4e8a-9c6f-2d4b8e1a0f37",
+    "available": true,
+    "uid": 103372440,
+    "kind": 2393,
+    "title": "Вечные хиты",
+    "revision": 41,
+    "snapshot": 41,
+    "trackCount": 3,
+    "visibility": "public",
+    "collective": false,
+    "created": "2019-04-11T12:00:00+00:00",
+    "modified": "2026-10-02T09:30:00+00:00",
+    "isBanner": false,
+    "isPremiere": false,
+    "durationMs": 773740,
+    "tracks": [
+      {
+        "id": 38634572,
+        "albumId": 4766,
+        "timestamp": "2026-10-02T09:30:00+00:00"
+      },
+      {
+        "id": 609676,
+        "albumId": 60111,
+        "timestamp": "2026-10-02T09:30:00+00:00",
+        "track": {
+          "id": "609676",
+          "realId": "609676",
+          "title": "Never Gonna Give You Up",
+          "trackSource": "OWN",
+          "available": true,
+          "availableForPremiumUsers": true,
+          "availableFullWithoutPermission": false,
+          "availableForOptions": [],
+          "durationMs": 212740,
+          "previewDurationMs": 30000,
+          "artists": [
+            {
+              "id": 29473,
+              "name": "Rick Astley",
+              "various": false,
+              "composer": false,
+              "available": true,
+              "cover": {
+                "type": "from-artist-photos",
+                "uri": "avatars.yandex.net/get-music-content/29473/a.p.29473/%%",
+                "prefix": "a.p.29473/"
+              },
+              "genres": [],
+              "disclaimers": []
+            }
+          ],
+          "albums": [
+            {
+              "id": 60111,
+              "title": "Whenever You Need Somebody",
+              "metaType": "music",
+              "year": 1988,
+              "coverUri": "avatars.yandex.net/get-music-content/60111/c.a.60111-1/%%",
+              "genre": "rusrock",
+              "trackCount": 10,
+              "available": true,
+              "trackPosition": {
+                "volume": 1,
+                "index": 1
+              }
+            }
+          ],
+          "coverUri": "avatars.yandex.net/get-music-content/1/x/%%",
+          "lyricsAvailable": true,
+          "type": "music"
+        }
+      },
+      {
+        "id": 27373847,
+        "albumId": 3214,
+        "timestamp": "2026-10-02T09:30:00+00:00"
+      }
+    ]
+  }
+}

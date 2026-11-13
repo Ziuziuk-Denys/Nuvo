@@ -100,6 +100,10 @@ async fn rows_from_a_link_and_bad_starts() {
     let liked = common::call(&core.app, "GET", "/v1/me/library/tracks", None).await.1;
     assert_eq!(liked["items"][0]["track"]["id"], "dQw4w9WgXcQ");
 
+    let yandex = json!([{"title": "Группа крови", "artists": ["Кино"], "durationMs": 286000}]);
+    let (status, started) = common::call(&core.app, "POST", "/v1/imports", Some(json!({"source": "yandex-music", "label": "Вечные хиты", "rows": yandex}))).await;
+    assert_eq!((status, started["items"][0]["sourceKind"].as_str()), (StatusCode::OK, Some("yandex-music")), "{started}");
+
     let folder = core.dir.path().to_string_lossy().into_owned();
     let bad = [
         json!({"path": "relative.csv"}),

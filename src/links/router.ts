@@ -2,9 +2,9 @@
 
 export type Service = "nuvo" | "tiktok" | "youtube" | "soundcloud" | "apple-music" | "deezer" | "spotify" | "yandex" | "vk" | "shazam" | "web";
 
-export type ImportService = "youtube" | "soundcloud" | "apple-music" | "deezer" | "spotify";
+export type ImportService = "youtube" | "soundcloud" | "apple-music" | "deezer" | "spotify" | "yandex";
 
-export type RouteErrorCode = "invalid_link" | "bad_share" | "unsupported" | "login_required" | "spotify_file_only" | "yandex_lists";
+export type RouteErrorCode = "invalid_link" | "bad_share" | "unsupported" | "login_required" | "spotify_file_only";
 
 export type LinkRoute =
   | { kind: "share"; payload: string }
@@ -224,7 +224,7 @@ function routeSpotify(host: string, path: string[], url: string): LinkRoute {
 function routeYandex(path: string[], url: string, host: string): LinkRoute {
   const track = path[0] === "track" ? path[1] : path[0] === "album" && path[2] === "track" ? path[3] : undefined;
   if (track && /^\d+$/.test(track)) return { kind: "yandex-track", id: track, url };
-  if (path[0] === "album" || path.includes("playlists")) return { kind: "error", code: "yandex_lists", service: "yandex" };
+  if (path[0] === "album" || path[0] === "playlists" || (path[0] === "users" && path[2] === "playlists")) return { kind: "import", service: "yandex", url };
   return { kind: "error", code: "unsupported", service: "yandex", host };
 }
 
