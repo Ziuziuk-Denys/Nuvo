@@ -1,9 +1,12 @@
 use serde_json::Value;
 
-use crate::text::{artist_and_title, base_title, clean_title, compare_form, markers, same_artist, similarity_of_forms, title_parts, translit};
+use crate::relevance::{self, Song, copy_points, variant_markers};
+use crate::text::{artist_and_title, base_title, clean_title, compare_form, same_artist, similarity_of_forms, title_parts, translit};
 
 pub const MAX_TEXT_CHARS: usize = crate::text::MAX_TEXT_CHARS;
 const DISQUALIFY_MS: i64 = 15_000;
+/// How far below the best match a better copy of the same song may score and still lead.
+const COPY_MARGIN: i64 = 10;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reason {
@@ -45,16 +48,22 @@ pub struct Candidate {
     pub title: String,
     pub artists: Vec<String>,
     pub duration_ms: Option<i64>,
+    /// How good a copy it is; decides between equally good matches.
+    pub copy: f64,
     pub raw: Value,
 }
 
 impl Candidate {
+    /// A 30-second preview never stands in for a song.
     pub fn from_track(track: &Value) -> Option<Self> {
-        let id = track.get("id")?.as_str().filter(|s| !s.is_empty())?.to_string();
-        let title = track.get("title")?.as_str().filter(|s| !s.trim().is_empty())?.to_string();
-        let artists = track.get("artists").and_then(Value::as_array).map(|list| list.iter().filter_map(|a| a.get("name")?.as_str().map(str::to_string)).collect()).unwrap_or_default();
-        let duration_ms = track.get("durationMs").and_then(Value::as_f64).map(|ms| ms.round() as i64);
-        Some(Self { id, title, artists, duration_ms, raw: track.clone() })
+        Self::ranked(track, None)
+    }
+
+    /// `rank` is the candidate's place in YouTube's own answer.
+    pub fn ranked(track: &Value, rank: Option<usize>) -> Option<Self> {
+        let song = Song::from_track(track).filter(|s| !s.preview)?;
+        let copy = copy_points(&song, rank);
+        Some(Self { id: song.id, title: song.title, artists: song.artists, duration_ms: song.duration_ms, copy, raw: track.clone() })
     }
 }
 
@@ -125,12 +134,13 @@ impl View {
         let base = base_title(&parsed_title);
         let mut all_artists: Vec<String> = artists.iter().map(|a| cut(a.trim())).filter(|a| !a.is_empty()).collect();
         all_artists.extend(parsed_artist);
+        let markers = variant_markers(&title, &all_artists);
         View {
+            markers,
             titles: forms(vec![base.clone(), base_title(&title), compare_form(&parsed_title), compare_form(&cleaned)]),
             whole: Form::new(compare_form(&cleaned)),
             base,
             artists: all_artists,
-            markers: markers(&title),
             parts: title_parts(&cleaned),
             duration_ms: known(duration_ms),
             video: {
@@ -169,6 +179,7 @@ fn without_artist(title: &str, artist: &str) -> Option<String> {
 struct Scored {
     index: usize,
     score: i64,
+    copy: f64,
     title: f64,
     artist_matched: bool,
     artist_similarity: f64,
@@ -177,7 +188,7 @@ struct Scored {
     agree: bool,
 }
 
-fn score(source: &View, candidate: &View, index: usize) -> Scored {
+fn score(source: &View, candidate: &View, index: usize, copy: f64) -> Scored {
     let mut extra: Vec<Form> = Vec::new();
     let mut artist_matched = source.artists.iter().any(|s| candidate.artists.iter().any(|c| same_artist(s, c)));
     for artist in &candidate.artists {
@@ -223,7 +234,7 @@ fn score(source: &View, candidate: &View, index: usize) -> Scored {
     };
     let artist_points = if artist_matched { 25.0 } else { artist_similarity * 0.25 };
     let total = title * 0.6 + artist_points + duration_points + version_points;
-    Scored { index, score: total.round().clamp(0.0, 100.0) as i64, title, artist_matched, artist_similarity, diff_ms, disqualified, agree }
+    Scored { index, score: total.round().clamp(0.0, 100.0) as i64, copy, title, artist_matched, artist_similarity, diff_ms, disqualified, agree }
 }
 
 fn within(diff: Option<i64>, ms: i64) -> bool {
@@ -251,12 +262,30 @@ fn same_recording(a: &View, b: &View) -> bool {
 fn score_all(source: &Source, candidates: &[Candidate]) -> (View, Vec<View>, Vec<Scored>) {
     let src = View::new(&source.title, &source.artists, source.duration_ms);
     let views: Vec<View> = candidates.iter().map(|c| View::new(&c.title, &c.artists, c.duration_ms)).collect();
-    let mut ranked: Vec<Scored> = views.iter().enumerate().map(|(i, v)| score(&src, v, i)).collect();
-    ranked.sort_by_key(|s| std::cmp::Reverse(s.score));
+    let mut ranked: Vec<Scored> = views.iter().enumerate().map(|(i, v)| score(&src, v, i, candidates[i].copy)).collect();
+    ranked.sort_by(|a, b| b.score.cmp(&a.score).then(b.copy.total_cmp(&a.copy)));
+    // Of one song's copies near the top the better copy leads; another song never wins on its copy
+    if let Some(top) = ranked.first() {
+        let better = (1..ranked.len())
+            .filter(|&at| {
+                let c = &ranked[at];
+                c.score + COPY_MARGIN >= top.score && c.agree && !c.disqualified && c.copy > top.copy && same_song(&candidates[c.index], &candidates[top.index])
+            })
+            .max_by(|&a, &b| ranked[a].copy.total_cmp(&ranked[b].copy));
+        if let Some(at) = better {
+            let lead = ranked.remove(at);
+            ranked.insert(0, lead);
+        }
+    }
     (src, views, ranked)
 }
 
-// Best first; ties keep the given order
+fn same_song(a: &Candidate, b: &Candidate) -> bool {
+    let song = |c: &Candidate| Song { id: c.id.clone(), title: c.title.clone(), artists: c.artists.clone(), duration_ms: c.duration_ms, album: false, preview: false, plays: None, verified: false };
+    relevance::same_song(&song(a), &song(b))
+}
+
+// Best first; equal matches and close copies of the top song go by the better copy, then the given order
 pub fn rank(source: &Source, candidates: &[Candidate]) -> Vec<(usize, i64)> {
     score_all(source, candidates).2.iter().map(|s| (s.index, s.score)).collect()
 }
@@ -276,6 +305,7 @@ pub fn evaluate(source: &Source, candidates: &[Candidate]) -> Decision {
         && best.score - runner.score <= 10
         && !runner.disqualified
         && !same_recording(&views[best.index], &views[runner.index])
+        && !same_song(&candidates[best.index], &candidates[runner.index])
         && !clear_winner
         && (best.title < 90.0 || !best.agree)
     {
@@ -285,7 +315,8 @@ pub fn evaluate(source: &Source, candidates: &[Candidate]) -> Decision {
         let floor = if best.title >= 85.0 && best.artist_matched && within(best.diff_ms, 10_000) {
             Some(95)
         } else if best.title >= 88.0 && src.base.chars().count() >= 4 && best.diff_ms.is_some_and(|d| d <= 3_000) {
-            Some(88)
+            // Another artist's song of that name and length is only worth a check
+            Some(if src.artists.is_empty() || views[best.index].artists.is_empty() || best.artist_matched { 88 } else { 80 })
         } else if best.artist_matched && within(best.diff_ms, 4_000) && best.title >= 70.0 {
             Some(85)
         } else if best.score >= 75 && best.title >= 75.0 && (best.artist_matched || best.artist_similarity >= 70.0) && within(best.diff_ms, 8_000) {
@@ -309,7 +340,7 @@ mod tests {
     }
 
     fn candidate(title: &str, ms: i64) -> Candidate {
-        Candidate { id: "x".into(), title: title.into(), artists: vec!["Nova".into()], duration_ms: Some(ms), raw: serde_json::Value::Null }
+        Candidate { id: "x".into(), title: title.into(), artists: vec!["Nova".into()], duration_ms: Some(ms), copy: 0.0, raw: serde_json::Value::Null }
     }
 
     #[test]

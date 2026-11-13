@@ -46,6 +46,7 @@ export const MAX_RENDERED_ROWS = 400;
 
 const names = (artists: { name: string }[] | string[]) => artists.map((a) => (typeof a === "string" ? a : a.name)).join(", ");
 
+const matchSource = (id: string) => (id.startsWith("sc:") ? "soundcloud" : id.startsWith("local:") ? null : "youtube-music");
 const trackLabel = (track: CatalogTrack) => `${track.title} · ${names(track.artists)}${track.durationMs ? ` · ${formatDuration(track.durationMs)}` : ""}`;
 
 function RowSearch({ search, onPick }: { search: (query: string) => Promise<CatalogTrack[]>; onPick: (track: CatalogTrack) => void }): JSX.Element {
@@ -254,12 +255,13 @@ export function ImportReport({ open, onClose, summary, ports }: ImportReportProp
             const heading =
               (source.artists.length ? `${source.title} · ${names(source.artists)}` : source.title) +
               (source.durationMs ? ` · ${formatDuration(source.durationMs)}` : "");
+            const origin = row.track ? matchSource(row.track.id) : null;
             const matched =
               row.track && row.decision !== "remove"
                 ? t("ui.imports.matched_to", {
                     title: row.track.title,
                     artist: names(row.track.artists),
-                  })
+                  }) + (origin ? ` · ${t(`ui.imports.source.${origin}`)}` : "")
                 : null;
             const why = `${row.label ? `${t(`ui.imports.label.${row.label}`)} · ` : ""}${reason ? t(reason.key, reason.vars) : t("ui.imports.matching")}`;
             return (

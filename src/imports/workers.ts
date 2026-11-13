@@ -89,8 +89,42 @@ export class ImportRunner {
     return (this.options.sleep ?? realSleep)(ms, signal);
   }
 
-  private async runSearch(search: ImportSearch, signal: AbortSignal): Promise<CatalogTrack[]> {
-    return search.source === "youtube" ? this.search.youtube(search.query, search.filter, signal) : this.search.soundcloud(search.query, signal);
+  private async runSearch(search: ImportSearch, signal: AbortSignal): Promise<{ candidates: CatalogTrack[]; failed: boolean }> {
+    for (let tries = 0; ; tries += 1) {
+      try {
+        const found = await (search.source === "youtube"
+          ? this.search.youtube(search.query, search.filter, signal)
+          : this.search.soundcloud(search.query, signal));
+        return { candidates: found.slice(0, MAX_CANDIDATES), failed: false };
+      } catch (error) {
+        if (isAbort(error, signal)) throw error;
+        if (isRateLimit(error) && tries < RATE_LIMIT_RETRIES) {
+          await this.wait(RETRY_MS * 2 ** tries, signal);
+          continue;
+        }
+        return { candidates: [], failed: true };
+      }
+    }
+  }
+
+  // Posts as soon as its search answers; a post that decides the row cancels the other source's search
+  private async answer(
+    id: string,
+    rowId: number,
+    search: ImportSearch,
+    signal: AbortSignal,
+    round: AbortController,
+  ): Promise<"posted" | "skipped" | { error: unknown }> {
+    try {
+      const { candidates, failed } = await this.runSearch(search, signal);
+      const row = await this.daemon.postCandidates(id, rowId, { step: search.step, candidates, ...(failed ? { failed: true } : {}) }, signal);
+      if (row?.label) round.abort(new DOMException("decided", "AbortError"));
+      return "posted";
+    } catch (error) {
+      if (round.signal.aborted) return "skipped";
+      if (isAbort(error, signal)) throw error;
+      return { error };
+    }
   }
 
   private async loop(id: string, signal: AbortSignal): Promise<StopReason> {
@@ -125,7 +159,7 @@ export class ImportRunner {
         if (stop) return stop;
         continue;
       }
-      if (!answer || typeof answer !== "object") {
+      if (!answer || typeof answer !== "object" || ("rowId" in answer && !Array.isArray(answer.searches))) {
         const stop = await failed(new CoreError(200, "UPSTREAM"));
         if (stop) return stop;
         continue;
@@ -139,49 +173,28 @@ export class ImportRunner {
         await this.wait(Math.min(Math.max(answer.wait, 100), MAX_WAIT_MS), signal);
         continue;
       }
-      let candidates: CatalogTrack[] = [];
-      let searchFailed = false;
-      for (let tries = 0; ; tries += 1) {
-        try {
-          candidates = (await this.runSearch(answer.search, signal)).slice(0, MAX_CANDIDATES);
-          break;
-        } catch (error) {
-          if (isAbort(error, signal)) throw error;
-          if (isRateLimit(error) && tries < RATE_LIMIT_RETRIES) {
-            await this.wait(RETRY_MS * 2 ** tries, signal);
-            continue;
-          }
-          searchFailed = true;
-          break;
-        }
-      }
-      try {
-        await this.daemon.postCandidates(
-          id,
-          answer.rowId,
-          {
-            step: answer.search.step,
-            candidates,
-            ...(searchFailed ? { failed: true } : {}),
-          },
-          signal,
-        );
-        failures = 0;
-        conflicts = 0;
-        startingMs = 0;
-        startingSteps = 0;
-      } catch (error) {
-        // 409: lease expired and another worker answered; repeated 409s mean an unhealthy daemon
-        if (error instanceof CoreError && error.status === 409) {
-          conflicts += 1;
-          if (conflicts >= MAX_FAILURES) return "error";
-          if (conflicts > 1) await this.wait(RETRY_MS, signal);
-          continue;
-        }
-        const stop = await failed(error);
+      const round = new AbortController();
+      const roundSignal = AbortSignal.any([signal, round.signal]);
+      const results = await Promise.all(answer.searches.map((search) => this.answer(id, answer.rowId, search, roundSignal, round)));
+      signal.throwIfAborted();
+      const errors = results.flatMap((result) => (typeof result === "object" ? [result.error] : []));
+      const other = errors.find((error) => !(error instanceof CoreError && error.status === 409));
+      if (other !== undefined) {
+        const stop = await failed(other);
         if (stop) return stop;
         continue;
       }
+      // 409: lease expired and another worker answered; repeated 409s mean an unhealthy daemon
+      if (errors.length > 0 && !results.includes("posted")) {
+        conflicts += 1;
+        if (conflicts >= MAX_FAILURES) return "error";
+        if (conflicts > 1) await this.wait(RETRY_MS, signal);
+        continue;
+      }
+      failures = 0;
+      conflicts = 0;
+      startingMs = 0;
+      startingSteps = 0;
       try {
         this.options.onRow?.(id);
       } catch {}

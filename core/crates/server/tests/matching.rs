@@ -122,3 +122,22 @@ async fn approved_validates_its_request() {
         assert_eq!((status, answer["code"].as_str()), (StatusCode::BAD_REQUEST, Some("INVALID_INPUT")));
     }
 }
+
+#[tokio::test]
+async fn rank_orders_search_songs_and_keeps_one_copy() {
+    let core = common::core();
+    let mut official = track("sc:1", "Numb", "Linkin Park", 187_000);
+    official["verified"] = json!(true);
+    let songs = json!([
+        track("sc:2", "Numb (Slowed + Reverb)", "someone", 220_000),
+        track("abcdefghijk", "Numb", "Linkin Park", 187_000),
+        official,
+        track("sc:3", "Numb / Encore", "Linkin Park", 206_000),
+    ]);
+    let (status, answer) = common::call(&core.app, "POST", "/v1/match/rank", Some(json!({"query": "linkin park numb", "songs": songs}))).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(answer["ids"], json!(["abcdefghijk", "sc:3", "sc:2"]));
+    let many: Vec<Value> = (0..201).map(|i| track(&format!("c{i}"), "x", "y", 1000)).collect();
+    let (status, _) = common::call(&core.app, "POST", "/v1/match/rank", Some(json!({"query": "x", "songs": many}))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}

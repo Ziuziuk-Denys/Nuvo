@@ -87,7 +87,8 @@ export interface ImportSearch {
   step: number;
 }
 
-export type ImportNext = { rowId: number; search: ImportSearch } | { wait: number } | { done: true };
+/** One round of searches for a row: run them together and post each answer with its own step. */
+export type ImportNext = { rowId: number; searches: ImportSearch[] } | { wait: number } | { done: true };
 
 export type ImportErrorCode =
   | "not_a_link"

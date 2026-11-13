@@ -12,8 +12,19 @@ const track = (id: string): CatalogTrack => ({
 });
 const search = (rowId: number, step = 0, source: "youtube" | "soundcloud" = "youtube"): ImportNext => ({
   rowId,
-  search: { query: "Mira Holt Paper Moons", filter: "songs", source, step },
+  searches: [{ query: "Mira Holt Paper Moons", filter: source === "youtube" ? "songs" : "any", source, step }],
 });
+const round = (rowId: number): ImportNext => ({
+  rowId,
+  searches: [
+    { query: "Mira Holt Paper Moons", filter: "songs", source: "youtube", step: 0 },
+    { query: "Mira Holt Paper Moons", filter: "any", source: "soundcloud", step: 1 },
+  ],
+});
+const hang = (_query: string, ...rest: unknown[]) => {
+  const signal = rest.at(-1) as AbortSignal;
+  return new Promise<CatalogTrack[]>((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true }));
+};
 
 function runner(daemon: FakeDaemon, ports: Partial<SearchPorts> = {}, workers = 4) {
   const slept: number[] = [];
@@ -51,6 +62,35 @@ describe("ImportRunner", () => {
     expect(daemon.posted.map((p) => [p.rowId, p.step, p.candidates.length])).toEqual([
       [1, 0, 1],
       [1, 1, 1],
+    ]);
+    expect(stopped).toEqual([["i1", "done"]]);
+  });
+
+  it("asks YouTube and SoundCloud together and posts each answer", async () => {
+    const daemon = new FakeDaemon();
+    daemon.script.set("i1", [round(1)]);
+    const soundcloud = vi.fn(async () => [track("sc:42")]);
+    const { runner: r, done, stopped, searchPorts } = runner(daemon, { soundcloud }, 1);
+    r.add(["i1"]);
+    await done;
+    expect(searchPorts.youtube).toHaveBeenCalledOnce();
+    expect(soundcloud).toHaveBeenCalledOnce();
+    expect(daemon.posted.map((p) => p.step).sort()).toEqual([0, 1]);
+    expect(stopped).toEqual([["i1", "done"]]);
+  });
+
+  it("cancels the other source once an answer decides the row", async () => {
+    const daemon = new FakeDaemon();
+    daemon.script.set("i1", [round(1), search(2)]);
+    daemon.decideAt.set(1, 0);
+    const soundcloud = vi.fn(hang);
+    const { runner: r, done, stopped } = runner(daemon, { soundcloud }, 1);
+    r.add(["i1"]);
+    await done;
+    expect(soundcloud).toHaveBeenCalledOnce();
+    expect(daemon.posted.map((p) => [p.rowId, p.step])).toEqual([
+      [1, 0],
+      [2, 0],
     ]);
     expect(stopped).toEqual([["i1", "done"]]);
   });

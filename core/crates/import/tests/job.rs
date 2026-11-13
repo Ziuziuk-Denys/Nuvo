@@ -68,9 +68,10 @@ fn leases_hand_out_each_row_once_and_expire() {
     let id = job::start(&conn, &parsed(vec![meta_row("One", "A", None), meta_row("Two", "A", None)]), &[], None, 1000).unwrap().id;
     let first = job::next(&conn, &id, 5000).unwrap();
     let second = job::next(&conn, &id, 5000).unwrap();
-    let (ImportNext::Search { row_id: a, search }, ImportNext::Search { row_id: b, .. }) = (&first, &second) else { panic!("{first:?} {second:?}") };
+    let (ImportNext::Search { row_id: a, searches }, ImportNext::Search { row_id: b, .. }) = (&first, &second) else { panic!("{first:?} {second:?}") };
     assert_ne!(a, b);
-    assert_eq!((search.query.as_str(), search.filter.as_str(), search.source.as_str(), search.step), ("A One", "songs", "youtube", 0));
+    let asked: Vec<_> = searches.iter().map(|s| (s.query.as_str(), s.filter.as_str(), s.source.as_str(), s.step)).collect();
+    assert_eq!(asked, [("A One", "songs", "youtube", 0), ("A One", "any", "soundcloud", 1)], "both sources at once");
     assert_eq!(job::next(&conn, &id, 5000).unwrap(), ImportNext::Wait { wait: job::LEASE_MS as u64 });
     let again = job::next(&conn, &id, 5000 + job::LEASE_MS).unwrap();
     assert!(matches!(again, ImportNext::Search { row_id, .. } if row_id == *a), "a crashed worker's row comes back");
@@ -142,10 +143,35 @@ fn a_restart_resumes_at_the_next_step() {
     job::post_candidates(&conn, &id, row, 0, vec![], false, 1000).unwrap();
     drop(conn);
     let conn = open_connection(&path, &[5u8; 32], &dir.path().join("backups")).unwrap();
-    let ImportNext::Search { search, .. } = job::next(&conn, &id, 2000).unwrap() else { panic!() };
-    assert_eq!((search.step, search.filter.as_str()), (1, "any"));
+    let ImportNext::Search { searches, .. } = job::next(&conn, &id, 2000).unwrap() else { panic!() };
+    assert_eq!(searches.iter().map(|s| (s.step, s.source.as_str())).collect::<Vec<_>>(), [(1, "soundcloud")]);
     let stale = job::post_candidates(&conn, &id, row, 0, vec![], false, 2000);
     assert!(matches!(stale, Err(StoreError::Conflict(_))), "a late answer for step 0 does not count twice");
+}
+
+#[test]
+fn a_round_keeps_its_lease_until_every_answer_is_in() {
+    let (_dir, conn) = open();
+    let id = job::start(&conn, &parsed(vec![meta_row("Teardrop", "Massive Attack", Some(330_000))]), &[], None, 1000).unwrap().id;
+    let ImportNext::Search { row_id, .. } = job::next(&conn, &id, 2000).unwrap() else { panic!() };
+    job::post_candidates(&conn, &id, row_id, 0, vec![], false, 2000).unwrap();
+    assert!(matches!(job::next(&conn, &id, 2000).unwrap(), ImportNext::Wait { .. }), "SoundCloud is still being asked");
+    job::post_candidates(&conn, &id, row_id, 1, vec![], false, 2000).unwrap();
+    let ImportNext::Search { searches, .. } = job::next(&conn, &id, 2000).unwrap() else { panic!() };
+    assert_eq!(searches.iter().map(|s| (s.step, s.filter.as_str())).collect::<Vec<_>>(), [(2, "any")]);
+}
+
+#[test]
+fn a_sure_answer_decides_the_row_and_the_other_answer_is_late() {
+    let (_dir, conn) = open();
+    let id = job::start(&conn, &parsed(vec![meta_row("Teardrop", "Massive Attack", Some(330_000))]), &[], None, 1000).unwrap().id;
+    let ImportNext::Search { row_id, .. } = job::next(&conn, &id, 2000).unwrap() else { panic!() };
+    let mut official = track("sc:1", "Teardrop", "Massive Attack", 330_000);
+    official["verified"] = serde_json::json!(true);
+    let row = job::post_candidates(&conn, &id, row_id, 1, vec![official], false, 2000).unwrap();
+    assert_eq!(row.label.as_deref(), Some("likely"));
+    let late = job::post_candidates(&conn, &id, row_id, 0, vec![], false, 2000);
+    assert!(matches!(late, Err(StoreError::Conflict(_))));
 }
 
 #[test]
@@ -223,9 +249,9 @@ fn the_report_filters_pages_and_exports_csv() {
 
     let csv = job::report_csv(&conn, &id).unwrap();
     let lines: Vec<&str> = csv.lines().collect();
-    assert_eq!(lines[0], "position,source_title,source_artists,source_album,source_duration_ms,label,score,reason,decision,match_id,match_title,match_artists,match_duration_ms");
-    assert_eq!(lines[1], "0,\"'=HYPERLINK(\"\"x\"\")\",\"Evil, Inc\",,1000,missing,,no_catalog_candidates,,,,,");
-    assert_eq!(lines[3], "2,Song e0,A,,,exact,,exact,,e0,Song e0,A,200000");
+    assert_eq!(lines[0], "position,source_title,source_artists,source_album,source_duration_ms,label,score,reason,decision,match_id,match_title,match_artists,match_duration_ms,match_source");
+    assert_eq!(lines[1], "0,\"'=HYPERLINK(\"\"x\"\")\",\"Evil, Inc\",,1000,missing,,no_catalog_candidates,,,,,,");
+    assert_eq!(lines[3], "2,Song e0,A,,,exact,,exact,,e0,Song e0,A,200000,youtube");
     assert_eq!(lines.len(), 8);
 }
 

@@ -46,6 +46,7 @@ const BRACKET_JUNK: &[&[&str]] = &[
     &["deluxe", "edition"],
     &["anniversary", "edition"],
     &["original", "mix"],
+    &["original", "song"],
     &["album", "version"],
     &["single", "version"],
     &["ost"],
@@ -69,6 +70,7 @@ const TRAILING_PROMO: &[&[&str]] = &[
     &["remastered"],
     &["prod"],
     &["produced", "by"],
+    &["original", "song"],
 ];
 
 const DASH_QUALIFIERS: [&[&str]; 12] = [
@@ -86,22 +88,35 @@ const DASH_QUALIFIERS: [&[&str]; 12] = [
     &["ремастеринг"],
 ];
 
-pub const MARKERS: [(&str, &[&[&str]]); 15] = [
+/// Versions that are not the record. Search sinks them and import matches them only to the same version.
+pub const MARKERS: [(&str, &[&[&str]]); 27] = [
     ("remix", &[&["remix"], &["remixed"], &["rmx"], &["ремикс"]]),
     ("vip", &[&["vip"], &["v", "i", "p"]]),
     ("flip", &[&["flip"], &["флип"]]),
     ("bootleg", &[&["bootleg"], &["бутлег"]]),
     ("mashup", &[&["mashup"], &["mash", "up"], &["мэшап"], &["мешап"]]),
     ("edit", &[&["edit"], &["эдит"]]),
-    ("slowed", &[&["slowed"], &["слоу"]]),
+    ("slowed", &[&["slowed"], &["слоу"], &["замедлен"]]),
     ("reverb", &[&["reverb"], &["реверб"]]),
-    ("sped-up", &[&["sped", "up"], &["speed", "up"], &["spedup"], &["speedup"], &["спид", "ап"], &["спидап"]]),
+    ("sped-up", &[&["sped", "up"], &["speed", "up"], &["spedup"], &["speedup"], &["спид", "ап"], &["спидап"], &["ускорен"], &["speed", "song"]]),
     ("nightcore", &[&["nightcore"], &["найткор"]]),
-    ("instrumental", &[&["instrumental"], &["inst"], &["инструментал"]]),
+    ("instrumental", &[&["instrumental"], &["inst"], &["инструментал"], &["минус"]]),
     ("acoustic", &[&["acoustic"], &["акустика"]]),
     ("live", &[&["live"], &["лайв"], &["концерт"]]),
-    ("cover", &[&["cover"], &["кавер"]]),
-    ("bass-boost", &[&["bass", "boost"], &["bass", "boosted"], &["басс", "буст"]]),
+    ("cover", &[&["cover"], &["кавер"], &["remake"]]),
+    ("bass-boost", &[&["bass", "boost"], &["bass", "boosted"], &["bassboosted"], &["басс", "буст"]]),
+    ("8d", &[&["8d"]]),
+    ("karaoke", &[&["karaoke"], &["караоке"], &["in", "the", "style", "of"], &["originally", "performed"], &["backing", "track"], &["play", "along"]]),
+    ("tribute", &[&["tribute"]]),
+    ("lullaby", &[&["lullaby"], &["колыбельная"]]),
+    ("voice-swap", &[&["женская", "версия"], &["мужская", "версия"]]),
+    ("piano", &[&["piano", "version"]]),
+    ("fan-made", &[&["fan", "made"]]),
+    ("chiptune", &[&["soundfont"], &["sega"], &["8", "bit"]]),
+    ("footage", &[&["footage"]]),
+    ("translated", &[&["translated"], &["traducida"], &["sub", "espanol"]]),
+    ("reaction", &[&["reaction"], &["реакция"]]),
+    ("tutorial", &[&["tutorial"], &["урок"]]),
 ];
 
 const ALIASES: [&[&str]; 4] = [

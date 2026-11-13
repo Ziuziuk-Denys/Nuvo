@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SearchResult } from "../../ports/search";
 import type { Track } from "../../ports/player";
-import { groupResults, isEmpty, localResults, withLocalFiles, withSoundCloud } from "./searchModel";
+import { groupResults, isEmpty, localResults, songsToRank, withLocalFiles, withSoundCloud } from "./searchModel";
 
 const hit = (kind: SearchResult["kind"], id: string): SearchResult => ({ kind, id, title: id, subtitle: "", cover: "" });
 const many = (kind: SearchResult["kind"], count: number) => Array.from({ length: count }, (_, index) => hit(kind, `${kind}${index}`));
@@ -108,22 +108,27 @@ describe("withSoundCloud", () => {
   const named = (id: string, title: string, artists: string) => ({ kind: "song" as const, id, title, subtitle: artists, cover: "", durationMs: 200_000 });
   const found = Array.from({ length: 9 }, (_, index) => named(`sc:${index}`, `Song number ${index}`, `Band ${index}`));
 
-  it("merges SoundCloud songs into the one song list", () => {
-    const merged = withSoundCloud(many("song", 3), found, "all", "song");
+  it("ranks the songs of both sources together and puts them where the songs were", () => {
+    const youtube = many("song", 3);
+    const songs = songsToRank(youtube, found, "all");
+    expect(songs).toHaveLength(12);
+    const merged = withSoundCloud(youtube, songs, "all");
     expect(merged.filter((result) => result.id.startsWith("sc:"))).toHaveLength(9);
     expect(groupResults(merged, "all").songs.length).toBeGreaterThan(0);
-    expect(isEmpty(groupResults(withSoundCloud([], found, "all", "song"), "all"))).toBe(false);
+    expect(isEmpty(groupResults(withSoundCloud([], found, "all"), "all"))).toBe(false);
   });
 
-  it("ranks the better match first whatever its source", () => {
+  it("keeps the ranked order whatever the source", () => {
     const youtube = named("yt1", "Harbor Lights (Karaoke Version)", "Sing Along");
     const cloud = named("sc:1", "Harbor Lights", "Nova");
-    expect(withSoundCloud([youtube], [cloud], "songs", "nova harbor lights").map((r) => r.id)).toEqual(["sc:1", "yt1"]);
+    expect(withSoundCloud([youtube], [cloud, youtube], "songs").map((r) => r.id)).toEqual(["sc:1", "yt1"]);
   });
 
   it("keeps a leading artist first and stays out of the album, artist and playlist views", () => {
     const artist = { ...named("ar", "Nova", ""), kind: "artist" as const };
-    expect(withSoundCloud([artist, named("yt1", "Song", "Nova")], found, "all", "nova")[0].id).toBe("ar");
-    expect(withSoundCloud([], found, "albums", "song")).toEqual([]);
+    const results = [artist, named("yt1", "Song", "Nova")];
+    expect(withSoundCloud(results, songsToRank(results, found, "all"), "all")[0].id).toBe("ar");
+    expect(songsToRank([], found, "albums")).toEqual([]);
+    expect(withSoundCloud([], [], "albums")).toEqual([]);
   });
 });

@@ -45,12 +45,16 @@ async fn a_csv_import_runs_to_a_report() {
         if next["done"] == true {
             break;
         }
-        let search = &next["search"];
-        let found = if search["source"] == "youtube" && search["filter"] == "songs" { catalog.get(search["query"].as_str().unwrap()).cloned().unwrap_or_default() } else { vec![] };
-        let url = format!("/v1/imports/{id}/rows/{}/candidates", next["rowId"]);
-        let (status, _) = common::call(&core.app, "POST", &url, Some(json!({"step": search["step"], "candidates": found}))).await;
-        assert_eq!(status, StatusCode::OK);
-        searches += 1;
+        for search in next["searches"].as_array().unwrap() {
+            let found = if search["source"] == "youtube" && search["filter"] == "songs" { catalog.get(search["query"].as_str().unwrap()).cloned().unwrap_or_default() } else { vec![] };
+            let url = format!("/v1/imports/{id}/rows/{}/candidates", next["rowId"]);
+            let (status, row) = common::call(&core.app, "POST", &url, Some(json!({"step": search["step"], "candidates": found}))).await;
+            assert_eq!(status, StatusCode::OK);
+            searches += 1;
+            if row["label"].is_string() {
+                break;
+            }
+        }
     }
     assert!(searches < 50 * 5, "approved rows stop after one search ({searches})");
 

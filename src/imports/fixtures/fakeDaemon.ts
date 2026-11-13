@@ -68,7 +68,9 @@ export class FakeDaemon implements ImportsDaemon {
   spotify = new Map<string, Listing | CoreError>();
   addedToPlaylist: { playlistId: string; track: CatalogTrack }[] = [];
   nextCalls = 0;
-  private leased = new Map<string, number>();
+  /** Row id to the step whose answer decides that row. */
+  decideAt = new Map<number, number>();
+  private leased = new Map<string, Set<number>>();
 
   async start(body: StartBody): Promise<ImportSummary[]> {
     this.started.push(body);
@@ -98,20 +100,21 @@ export class FakeDaemon implements ImportsDaemon {
     this.nextCalls += 1;
     const answer = this.script.get(id)?.shift() ?? { done: true };
     if (answer instanceof CoreError) throw answer;
-    if ("rowId" in answer) this.leased.set(`${id}:${answer.rowId}`, answer.search.step);
+    if ("rowId" in answer) this.leased.set(`${id}:${answer.rowId}`, new Set(answer.searches.map((search) => search.step)));
     return answer;
   }
   async postCandidates(id: string, rowId: number, body: { step: number; candidates: CatalogTrack[]; failed?: boolean }): Promise<ReportRow> {
     if (body.candidates.length > 100) throw new CoreError(400, "INVALID_INPUT");
     if (body.candidates.some((c) => !c.id)) throw new CoreError(400, "INVALID_INPUT");
-    const key = `${id}:${rowId}`;
-    const step = this.leased.get(key);
-    if (step === undefined) throw new CoreError(404, "NOT_FOUND");
-    if (step !== body.step) throw new CoreError(409, "CONFLICT");
+    const open = this.leased.get(`${id}:${rowId}`);
+    if (open === undefined) throw new CoreError(404, "NOT_FOUND");
+    if (!open.has(body.step)) throw new CoreError(409, "CONFLICT");
     this.posted.push({ id, rowId, ...body });
     if (this.postError) throw this.postError;
-    this.leased.set(key, step + 1);
-    return reportRow(rowId);
+    open.delete(body.step);
+    if (this.decideAt.get(rowId) !== body.step) return reportRow(rowId);
+    open.clear();
+    return reportRow(rowId, { label: "likely" });
   }
   async rows(id: string, filter: RowsFilter, cursor?: string): Promise<RowsPage> {
     this.rowsCalls.push({ id, filter, cursor });

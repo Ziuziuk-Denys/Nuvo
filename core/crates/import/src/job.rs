@@ -5,6 +5,7 @@ use nuvo_store::{Connection, StoreError, library, new_id, playlists, tracks};
 use std::cell::RefCell;
 
 use nuvo_match::LikedIndex;
+use nuvo_match::relevance::Song;
 use rusqlite::{OptionalExtension, Row, params};
 use serde_json::Value;
 
@@ -349,18 +350,18 @@ pub fn next(conn: &Connection, id: &str, now: i64) -> Result<ImportNext, StoreEr
         )
         .optional()?;
     let answer = match free.map(to_pending).transpose()? {
-        Some(row) => match cascade::next_search(&row.source, &row.cascade) {
-            Some(search) => {
-                tx.execute("UPDATE import_rows SET lease_until = ?2 WHERE id = ?1", params![row.id, now + LEASE_MS])?;
-                let search = ImportSearch { query: search.query, filter: search.filter.into(), source: search.source.into(), step: row.cascade.steps.len() };
-                ImportNext::Search { row_id: row.id, search }
-            }
-            None => {
+        Some(row) => {
+            let searches = cascade::next_searches(&row.source, &row.cascade);
+            if searches.is_empty() {
                 let position: i64 = tx.query_row("SELECT position FROM import_rows WHERE id = ?1", [row.id], |r| r.get(0))?;
                 finalize(&tx, &meta, &row, position, now)?;
                 ImportNext::Wait { wait: 100 }
+            } else {
+                tx.execute("UPDATE import_rows SET lease_until = ?2 WHERE id = ?1", params![row.id, now + LEASE_MS])?;
+                let searches = searches.into_iter().map(|(step, s)| ImportSearch { query: s.query, filter: s.filter.into(), source: s.source.into(), step }).collect();
+                ImportNext::Search { row_id: row.id, searches }
             }
-        },
+        }
         None => {
             let earliest: Option<i64> = tx.query_row("SELECT min(lease_until) FROM import_rows WHERE import_id = ?1 AND label IS NULL", [id], |row| row.get(0))?;
             match earliest {
@@ -376,7 +377,7 @@ pub fn next(conn: &Connection, id: &str, now: i64) -> Result<ImportNext, StoreEr
     Ok(answer)
 }
 
-// `step` must match the step given, so a late answer from an expired lease cannot count twice
+// `step` must be an open search of the row, so a late answer from an expired lease cannot count twice
 pub fn post_candidates(conn: &Connection, id: &str, row_id: i64, step: usize, candidates: Vec<Value>, failed: bool, now: i64) -> Result<ImportRow, StoreError> {
     if candidates.len() > MAX_CANDIDATES {
         return Err(StoreError::Invalid(format!("at most {MAX_CANDIDATES} candidates per search")));
@@ -399,15 +400,19 @@ pub fn post_candidates(conn: &Connection, id: &str, row_id: i64, step: usize, ca
         return Err(StoreError::Conflict("this row is decided already"));
     }
     let mut row = to_pending(raw)?;
-    if row.cascade.steps.len() != step {
-        return Err(StoreError::Conflict("this search step was answered already"));
-    }
-    cascade::record(&row.source, &mut row.cascade, candidates, failed);
+    let open = cascade::next_searches(&row.source, &row.cascade);
+    let round = open.iter().find(|(i, _)| *i == step).map(|(_, s)| s.round).ok_or(StoreError::Conflict("this search step was answered already"))?;
+    cascade::record(&row.source, &mut row.cascade, step, candidates, failed);
     if cascade::is_finished(&row.source, &row.cascade) {
         finalize(&tx, &meta, &row, position, now)?;
         finish_if_done(&tx, id)?;
     } else {
-        tx.execute("UPDATE import_rows SET cascade_json = ?2, lease_until = 0 WHERE id = ?1", params![row.id, serde_json::to_string(&row.cascade)?])?;
+        // The worker still holds the round's other searches; the next round is free for anyone
+        let round_open = cascade::next_searches(&row.source, &row.cascade).iter().any(|(_, s)| s.round == round);
+        tx.execute(
+            "UPDATE import_rows SET cascade_json = ?2, lease_until = CASE WHEN ?3 THEN lease_until ELSE 0 END WHERE id = ?1",
+            params![row.id, serde_json::to_string(&row.cascade)?, round_open],
+        )?;
     }
     let result = report_row(&tx, id, row_id)?;
     tx.commit()?;
@@ -562,7 +567,7 @@ fn names(track: &Value) -> String {
 
 pub fn report_csv(conn: &Connection, id: &str) -> Result<String, StoreError> {
     meta(conn, id)?;
-    let mut out = String::from("position,source_title,source_artists,source_album,source_duration_ms,label,score,reason,decision,match_id,match_title,match_artists,match_duration_ms\n");
+    let mut out = String::from("position,source_title,source_artists,source_album,source_duration_ms,label,score,reason,decision,match_id,match_title,match_artists,match_duration_ms,match_source\n");
     let mut after = -1;
     loop {
         // Pages by position and skips the candidate lists, so a 20,000 row report stays small in memory.
@@ -590,6 +595,7 @@ pub fn report_csv(conn: &Connection, id: &str) -> Result<String, StoreError> {
             csv_cell(track["title"].as_str().unwrap_or("")),
             csv_cell(&names(&track)),
             number(track["durationMs"].as_f64().map(|ms| ms.round() as i64)),
+            Song::from_track(&track).map(|s| s.origin().as_str()).unwrap_or_default().to_string(),
         ];
         out.push_str(&cells.join(","));
         out.push('\n');

@@ -26,6 +26,7 @@ import {
   useSearchHistoryStore,
   useSearchPlaylists,
   useSearchTracks,
+  useRankedSongs,
   useSoundCloudSearch,
   type SearchHistoryItem,
   type SearchResult,
@@ -44,6 +45,7 @@ import {
   localResults,
   SEARCH_SOURCES,
   withLocalFiles,
+  songsToRank,
   withSoundCloud,
   type GroupKey,
   type SearchFilter,
@@ -71,6 +73,7 @@ const SOURCE_ICONS: Record<SearchSource, IconName> = { all: "filter", youtube: "
 
 const lastQuery = { text: "", leftAt: 0 };
 const resultCache = new Map<string, SearchResult[]>();
+const NO_RESULTS: SearchResult[] = [];
 const CACHED_SEARCHES = 20;
 
 function initialQuery(params: URLSearchParams): string {
@@ -206,10 +209,10 @@ export function Search(): JSX.Element {
     () => withLocalFiles(online ? shownOnline : local, fileResults, filter, trimmed),
     [online, shownOnline, local, fileResults, filter, trimmed],
   );
-  const groups = useMemo(
-    () => groupResults(withSoundCloud(soundCloudOnly ? [] : results, soundCloudResults, filter, trimmed), filter),
-    [soundCloudOnly, soundCloudResults, results, filter, trimmed],
-  );
+  const streamed = soundCloudOnly ? NO_RESULTS : results;
+  const toRank = useMemo(() => songsToRank(streamed, soundCloudResults, filter), [streamed, soundCloudResults, filter]);
+  const rankedSongs = useRankedSongs(trimmed, toRank);
+  const groups = useMemo(() => groupResults(withSoundCloud(streamed, rankedSongs, filter), filter), [streamed, rankedSongs, filter]);
   const remote = youtubeActive || soundCloudActive;
   const loading = (youtubeActive && source.loading) || (soundCloudActive && soundCloud.loading);
   const allSettled = (!youtubeActive || settled) && (!soundCloudActive || (soundCloud.hasLoaded && !soundCloud.loading));

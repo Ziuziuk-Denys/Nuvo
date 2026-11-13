@@ -1,7 +1,6 @@
 import { playlistHref } from "../../app/hrefs";
 import { filterTracks, normalizeForSearch, songResult, type SearchKind, type SearchResult } from "../../ports/search";
 import type { Track } from "../../ports/player";
-import { rankSongs } from "./rank";
 
 export type SearchFilter = "all" | "songs" | "albums" | "artists" | "playlists";
 
@@ -42,11 +41,15 @@ export function groupResults(all: readonly SearchResult[], filter: SearchFilter)
   return groups;
 }
 
-export function withSoundCloud(results: readonly SearchResult[], found: readonly SearchResult[], filter: SearchFilter, query: string): SearchResult[] {
+export function songsToRank(results: readonly SearchResult[], found: readonly SearchResult[], filter: SearchFilter): SearchResult[] {
+  return filter === "all" || filter === "songs" ? [...results.filter((result) => result.kind === "song"), ...found] : [];
+}
+
+/** Puts the ranked songs from every source where the first song was. */
+export function withSoundCloud(results: readonly SearchResult[], songs: readonly SearchResult[], filter: SearchFilter): SearchResult[] {
   if (filter !== "all" && filter !== "songs") return [...results];
   const firstSong = results.findIndex((result) => result.kind === "song");
   const at = firstSong === -1 ? results.length : firstSong;
-  const songs = rankSongs(query, [...results.filter((result) => result.kind === "song"), ...found]);
   const others = results.filter((result) => result.kind !== "song");
   const before = others.filter((result) => results.indexOf(result) < at);
   return [...before, ...songs, ...others.slice(before.length)];

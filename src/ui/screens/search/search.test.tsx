@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     liked: [track("l1", "Bohemian Rhapsody", "Queen"), track("l2", "Ёлка", "Звери")],
     search: vi.fn(),
     scSearch: vi.fn(),
+    rank: vi.fn(async (_query: string, songs: readonly { id: string }[]) => songs.map((song) => song.id)),
     startImport: vi.fn(),
     engine: {
       playTrack: vi.fn(() => Promise.resolve()),
@@ -48,6 +49,7 @@ vi.mock("@/data/search/soundcloudSearch", async () => {
   const { useSearch } = await import("@/data/search/catalogSearch");
   return { useSoundCloudSearch: (query: string, options: object) => useSearch(query, mocks.scSearch, options) };
 });
+vi.mock("@/data/search/rankSongs", () => ({ rankSongIds: mocks.rank }));
 vi.mock("../../ports/catalog", () => ({ useCachedTrackIds: () => null }));
 vi.mock("../../ports/player", () => ({
   playerEngine: mocks.engine,
@@ -476,6 +478,23 @@ describe("Search with SoundCloud", () => {
     const item = [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find((node) => node.textContent === `ui.search.source_${id}`)!;
     act(() => item.click());
   };
+
+  it("shows the songs of both sources in the order the daemon ranks them", async () => {
+    mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Get Lucky")]);
+    mocks.scSearch.mockResolvedValue(hits());
+    mocks.rank.mockImplementationOnce(async () => ["sc:88335161", "s1"]);
+    renderSearch();
+    typeInto(field(), "get lucky");
+    await settle(320);
+    expect(mocks.rank).toHaveBeenLastCalledWith(
+      "get lucky",
+      expect.arrayContaining([expect.objectContaining({ id: "sc:254111945", preview: true })]),
+      expect.any(AbortSignal),
+    );
+    const titles = [...host.querySelectorAll('[role="button"]')].map((row) => row.textContent ?? "");
+    expect(titles.findIndex((text) => text.includes("Original Version"))).toBeLessThan(titles.findIndex((text) => text.includes("Queen")));
+    expect(host.querySelectorAll('[title="ui.search.preview_hint"]')).toHaveLength(0);
+  });
 
   it("merges SoundCloud songs into the song list, marked, with previews named and last", async () => {
     mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Get Lucky")]);
