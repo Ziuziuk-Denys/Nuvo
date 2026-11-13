@@ -6,6 +6,7 @@ import { usePlayerStore } from "../../ports/player";
 import { CloseToTrayRow, MenuEntryRow } from "./CloseToTrayRow";
 import { Segmented, SettingGroup, SettingRow, Switch } from "./controls";
 import { StatsPauseRow } from "./StatsPauseRow";
+import { WordTimingRow } from "./WordTimingRow";
 
 function rowText(t: TFunction, base: string) {
   const titleKey = base + ".title";
@@ -78,6 +79,7 @@ export function PlaybackSection(): JSX.Element {
           <Segmented label={lyricsHighlight.title} options={choices(t, LYRICS_HIGHLIGHT, HIGHLIGHT_MODES)} value={highlightMode} onChange={setHighlightMode} />
         }
       />
+      <WordTimingRow />
       <SettingRow {...devicePause} control={<Switch checked={prefs.devicePause} label={devicePause.title} onChange={prefs.onDevicePause} />} />
       <CloseToTrayRow />
       <MenuEntryRow />

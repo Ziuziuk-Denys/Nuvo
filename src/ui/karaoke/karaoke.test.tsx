@@ -14,6 +14,13 @@ const romanizeKana = vi.hoisted(() => (text: string) => text);
 let wordTimed = false;
 let synced = true;
 let twoVersions = false;
+let activeVersion = "lrclib";
+const timing = vi.hoisted(() => ({
+  view: null as null | { enabled: boolean; models: string[]; job?: { trackId: string; model: string; state: string; progress: number; code?: string } },
+  setWordTiming: vi.fn(async () => undefined),
+  timeWords: vi.fn(async () => undefined),
+  auto: vi.fn(),
+}));
 const pane = vi.hoisted(() => ({ modes: [] as string[] }));
 const engine = vi.hoisted(() => ({
   togglePlayPause: vi.fn(),
@@ -65,7 +72,7 @@ vi.mock("../ports/lyrics", () => ({
               ...(twoVersions ? [{ provider: "amll", label: null, syncLevel: "word_level", quality: 0.9, topPriority: false }] : []),
             ]
           : [],
-      activeVersion: "lrclib",
+      activeVersion,
       offsetMs: 0,
       lines: koreanLines ? [{ text: "안녕" }] : japaneseLines ? [{ text: "さよなら" }] : [],
       plainText: null,
@@ -80,6 +87,15 @@ vi.mock("../ports/lyrics", () => ({
     texts.some((text) => /[가-힣]/.test(text)) ? (text: string) => text : texts.some((text) => /[ぁ-ん]/.test(text)) ? romanizeKana : null,
 }));
 vi.mock("./backdrop/Backdrop", () => ({ Backdrop: () => null }));
+vi.mock("../ports/wordTiming", () => ({
+  useWordTiming: () => timing.view,
+  useAutoWordTiming: timing.auto,
+  setWordTiming: timing.setWordTiming,
+  timeWords: timing.timeWords,
+  isLocalTiming: (provider: string | null) => provider === "whisper-base" || provider === "whisper-small",
+  isRunning: (job: { trackId: string; state: string } | undefined, trackId: string | null) =>
+    job?.trackId === trackId && (job?.state === "waiting" || job?.state === "running"),
+}));
 const openLyricsTool = vi.hoisted(() => vi.fn());
 vi.mock("../screens/lyrics/lyricsTools", () => ({ openLyricsTool }));
 vi.mock("./LyricsPane", () => ({
@@ -342,6 +358,82 @@ describe("highlight modes", () => {
     const view = mount(<Karaoke onClose={() => undefined} />);
     expect(switchOf(view.host)).toEqual([]);
     expect(view.host.textContent).not.toContain("ui.karaoke.highlight_line_only");
+    view.unmount();
+  });
+});
+
+describe("word timing in the lyrics view", () => {
+  const song = { title: "Song", artists: "Artist", coverUrl: "", id: "t1" };
+  const control = (host: HTMLElement) => [...host.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "ui.karaoke.word_timing.switch");
+  const improve = (host: HTMLElement) =>
+    [...host.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "ui.karaoke.word_timing.improve");
+
+  afterEach(() => {
+    timing.view = null;
+    activeVersion = "lrclib";
+    timing.setWordTiming.mockClear();
+    timing.timeWords.mockClear();
+  });
+
+  it("is a switch that turns it on and times the song, next to the line-only note", async () => {
+    current = song;
+    lyricsStatus = "ready";
+    timing.view = { enabled: false, models: [] };
+    const view = mount(<Karaoke onClose={() => undefined} />);
+    expect(control(view.host)?.getAttribute("aria-pressed")).toBe("false");
+    expect(view.host.textContent).toContain("ui.karaoke.highlight_line_only");
+    expect(timing.auto).toHaveBeenLastCalledWith("t1", true);
+    await act(async () => control(view.host)?.click());
+    expect(timing.setWordTiming).toHaveBeenCalledWith(true);
+    expect(timing.timeWords).toHaveBeenCalledWith("t1");
+    view.unmount();
+  });
+
+  it("shows the progress of this song's job and keeps the row in sight", () => {
+    current = song;
+    lyricsStatus = "ready";
+    timing.view = { enabled: true, models: ["whisper-base"], job: { trackId: "t1", model: "whisper-base", state: "running", progress: 0.4 } };
+    const view = mount(<Karaoke onClose={() => undefined} />);
+    expect(view.host.querySelector('[role="status"]')?.textContent).toBe("ui.karaoke.word_timing.running");
+    expect(view.host.querySelector("[data-busy]")).not.toBeNull();
+    expect(control(view.host)?.getAttribute("aria-pressed")).toBe("true");
+    view.unmount();
+  });
+
+  it("says why a song could not be timed", () => {
+    current = song;
+    lyricsStatus = "ready";
+    timing.view = { enabled: true, models: [], job: { trackId: "t1", model: "whisper-base", state: "failed", progress: 0, code: "lyrics_mismatch" } };
+    const view = mount(<Karaoke onClose={() => undefined} />);
+    expect(view.host.textContent).toContain("ui.karaoke.word_timing.mismatch");
+    expect(view.host.querySelector("[data-busy]")).toBeNull();
+    view.unmount();
+  });
+
+  it("offers the larger model once the fast timing is shown", () => {
+    current = song;
+    lyricsStatus = "ready";
+    wordTimed = true;
+    activeVersion = "whisper-base";
+    timing.view = { enabled: true, models: ["whisper-base"] };
+    const view = mount(<Karaoke onClose={() => undefined} />);
+    act(() => improve(view.host)?.click());
+    expect(timing.timeWords).toHaveBeenCalledWith("t1", true);
+    activeVersion = "whisper-small";
+    view.unmount();
+    const better = mount(<Karaoke onClose={() => undefined} />);
+    expect(improve(better.host)).toBeUndefined();
+    better.unmount();
+  });
+
+  it("stays out of the way when the song brings its own word timing", () => {
+    current = song;
+    lyricsStatus = "ready";
+    wordTimed = true;
+    activeVersion = "amll";
+    timing.view = { enabled: true, models: [] };
+    const view = mount(<Karaoke onClose={() => undefined} />);
+    expect(control(view.host)).toBeUndefined();
     view.unmount();
   });
 });
