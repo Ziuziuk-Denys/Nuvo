@@ -2,6 +2,8 @@
 
 use reqwest::Url;
 
+use crate::FetchError;
+
 const SCHEMES: [&str; 4] = ["http", "https", "socks5", "socks5h"];
 
 // Credentials go through environment variables, never command arguments
@@ -30,7 +32,23 @@ fn explicit_port(text: &str) -> Option<u16> {
     port.parse().ok().filter(|port| *port > 0)
 }
 
-/// ffmpeg's `-http_proxy` speaks only plain HTTP proxies.
-pub fn ffmpeg_proxy(url: &str) -> Option<&str> {
-    url.starts_with("http://").then_some(url)
+/// ffmpeg speaks only plain HTTP proxies, so SOCKS goes through the loopback bridge.
+pub fn ffmpeg_proxy(proxy: Option<&Url>, bridge: Option<&str>) -> Result<Option<String>, FetchError> {
+    match proxy.map(Url::scheme) {
+        None => Ok(None),
+        Some("http") => Ok(proxy.map(Url::to_string)),
+        Some("socks5" | "socks5h") => bridge.map(|url| Some(url.to_string())).ok_or(FetchError::ProxyUnsupported),
+        Some(_) => Err(FetchError::ProxyUnsupported),
+    }
+}
+
+/// Proxy errors can echo the proxy URL; its login stays out of messages and logs.
+pub fn without_login(text: &str) -> String {
+    text.split(' ')
+        .map(|word| match (word.find("://"), word.rfind('@')) {
+            (Some(scheme), Some(at)) if at > scheme => format!("{}://***{}", &word[..scheme], &word[at..]),
+            _ => word.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }

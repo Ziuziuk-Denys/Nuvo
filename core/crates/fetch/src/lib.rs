@@ -1,3 +1,4 @@
+pub mod bridge;
 pub mod classify;
 mod error;
 pub mod ffmpeg;
@@ -11,7 +12,7 @@ pub mod ytdlp;
 
 pub use classify::classify;
 pub use error::FetchError;
-pub use link::{Link, ensure_public, follow_public, parse_link, public_addresses};
+pub use link::{Link, checked_addresses, ensure_public, follow_public, parse_link, public_addresses};
 pub use tiktok::{Sound, TIKTOK_URL, TikTok, TikTokPost};
 pub use tools::Tools;
 

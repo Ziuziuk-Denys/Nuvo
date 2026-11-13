@@ -160,6 +160,15 @@ describe("network", () => {
     await expect.poll(() => resolvedBy(app, null)).toBe(`PROXY 127.0.0.1:${proxy.port}`);
   });
 
+  it("a SOCKS proxy with a login reaches Chromium through the daemon's loopback bridge", async (context) => {
+    const stored = await setProxy(page, { mode: "manual", url: "socks5h://127.0.0.1:1", username: "me", password: "p@ss" });
+    if (!stored.ok) context.skip();
+    await expect.poll(() => resolvedBy(app, "persist:nuvo-yt")).toMatch(/^PROXY 127\.0\.0\.1:\d+$/);
+    expect(await resolvedBy(app, null)).toBe(await resolvedBy(app, "persist:nuvo-yt"));
+    await setProxy(page, { mode: "manual", url: `http://127.0.0.1:${proxy.port}` });
+    await expect.poll(() => resolvedBy(app, null)).toBe(`PROXY 127.0.0.1:${proxy.port}`);
+  });
+
   it("the daemon logs in to the proxy with the stored password", async (context) => {
     const stored = await setProxy(page, { mode: "manual", url: `http://127.0.0.1:${proxy.port}`, username: "me", password: "p@ss" });
     if (!stored.ok) context.skip();

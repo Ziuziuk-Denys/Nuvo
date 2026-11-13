@@ -28,7 +28,7 @@ fn first_line_redacted(stderr: &str) -> String {
 }
 
 // -ss before -i so ffmpeg seeks the input; CR/LF headers from remote sites are dropped
-pub fn decode_args(input: &Input, start_ms: u64, len_ms: Option<u64>, _proxy: Option<&str>) -> Vec<OsString> {
+pub fn decode_args(input: &Input, start_ms: u64, len_ms: Option<u64>, proxy: Option<&str>) -> Vec<OsString> {
     let mut args: Vec<OsString> = Vec::new();
     let push = |args: &mut Vec<OsString>, items: &[&str]| args.extend(items.iter().map(OsString::from));
     push(&mut args, &["-nostdin", "-hide_banner", "-loglevel", "error"]);
@@ -60,7 +60,9 @@ pub fn decode_args(input: &Input, start_ms: u64, len_ms: Option<u64>, _proxy: Op
             if let Some(len) = len_ms {
                 push(&mut args, &["-t", &seconds(len)]);
             }
-            push(&mut args, &["-protocol_whitelist", "http,https,tcp,tls,crypto", "-max_redirects", "0", "-i", &remote.url]);
+            // TLS reaches an HTTP proxy through ffmpeg's `httpproxy` protocol.
+            let whitelist = if proxy.is_some() { "http,https,tcp,tls,crypto,httpproxy" } else { "http,https,tcp,tls,crypto" };
+            push(&mut args, &["-protocol_whitelist", whitelist, "-max_redirects", "0", "-i", &remote.url]);
         }
     }
     push(&mut args, &["-vn", "-ac", "2", "-ar", "16000", "-f", "s16le", "-"]);
@@ -68,32 +70,19 @@ pub fn decode_args(input: &Input, start_ms: u64, len_ms: Option<u64>, _proxy: Op
 }
 
 pub async fn decode(ffmpeg: &Path, input: &Input<'_>, start_ms: u64, len_ms: Option<u64>, proxy: Option<&str>) -> Result<Vec<i16>, FetchError> {
-    if let Input::Remote(remote) = input {
-        if !(remote.url.starts_with("https://") || remote.url.starts_with("http://")) {
-            return Err(FetchError::InvalidLink);
-        }
-        if let Some(proxy_url) = proxy {
-            // ffmpeg only supports http:// proxies
-            if !proxy_url.starts_with("http://") {
-                return Err(FetchError::ProxyUnsupported);
-            }
-        }
+    if let Input::Remote(remote) = input
+        && !(remote.url.starts_with("https://") || remote.url.starts_with("http://"))
+    {
+        return Err(FetchError::InvalidLink);
     }
     let max_stdout = len_ms.map_or(10 * 60 * 16000 * 2 * 2, |l| l as usize * 64) + 64 * 1024;
     let mut command = Command::new(ffmpeg);
     command.args(decode_args(input, start_ms, len_ms, proxy));
-    if let Some(proxy_url) = proxy
-        && let Ok(parsed) = reqwest::Url::parse(proxy_url)
-        && (parsed.scheme() == "http" || parsed.scheme() == "https")
-    {
-        // ffmpeg only uses http_proxy and https_proxy, socks not supported
-        let proxy_without_creds = if let Some(port) = parsed.port() {
-            format!("{}://{}:{}", parsed.scheme(), parsed.host_str().unwrap_or(""), port)
-        } else {
-            format!("{}://{}", parsed.scheme(), parsed.host_str().unwrap_or(""))
-        };
-        command.env(format!("{}_proxy", parsed.scheme()), &proxy_without_creds);
-    }
+    // `proxy` is a plain HTTP proxy, a login included; the environment keeps the login out of argv.
+    match proxy {
+        Some(proxy) => command.env("http_proxy", proxy),
+        None => command.env_remove("http_proxy"),
+    };
     let output = run(command, TIMEOUT, max_stdout, 64 * 1024).await?;
     let stderr = String::from_utf8_lossy(&output.stderr);
     if !output.status.success() {

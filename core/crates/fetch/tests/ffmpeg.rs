@@ -26,11 +26,9 @@ fn seeks_before_the_input_and_writes_raw_stereo_16k() {
     assert_eq!(args[4..16], ["-headers", "Referer: https://www.tiktok.com/\r\n", "-ss", "1.500", "-t", "12.000", "-protocol_whitelist", "http,https,tcp,tls,crypto", "-max_redirects", "0", "-i", "https://cdn/a.m4a"]);
 
     let proxied = strings(decode_args(&Input::Remote(&remote), 0, None, Some("http://user:pass@10.0.0.2:3128")));
-    assert_eq!(proxied[8..12], ["-protocol_whitelist", "http,https,tcp,tls,crypto", "-max_redirects", "0"]);
+    assert_eq!(proxied[8..12], ["-protocol_whitelist", "http,https,tcp,tls,crypto,httpproxy", "-max_redirects", "0"]);
     assert!(!proxied.contains(&"user".to_string()), "no credentials in argv");
     assert!(!proxied.contains(&"pass".to_string()), "no credentials in argv");
-    let socks = strings(decode_args(&Input::Remote(&remote), 0, None, Some("socks5://10.0.0.2:1080")));
-    assert_eq!(socks[8..12], ["-protocol_whitelist", "http,https,tcp,tls,crypto", "-max_redirects", "0"]);
     let file_proxied = strings(decode_args(&Input::File(Path::new("/m/a.wav")), 0, None, Some("http://10.0.0.2:3128")));
     assert_eq!(file_proxied[4..9], ["-ss", "0.000", "-protocol_whitelist", "file,crypto", "-i"]);
 

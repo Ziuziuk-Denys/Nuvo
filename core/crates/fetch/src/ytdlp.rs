@@ -79,19 +79,11 @@ pub async fn info(yt_dlp: &Path, runtime: Option<&Path>, url: &str, proxy: Optio
     }
     let mut command = Command::new(yt_dlp);
     command.args(args(url, runtime));
-    if let Some(proxy_url) = proxy
-        && let Ok(parsed) = reqwest::Url::parse(proxy_url)
-    {
-        let scheme = parsed.scheme();
-        let mut proxy_without_creds = format!("{}://{}", scheme, parsed.host_str().unwrap_or(""));
-        if let Some(port) = parsed.port() {
-            proxy_without_creds = format!("{}:{}", proxy_without_creds, port);
+    // The environment, not argv: other users can read a process's arguments, never its environment.
+    if let Some(proxy) = proxy {
+        for name in ["http_proxy", "https_proxy", "all_proxy"] {
+            command.env(name, proxy);
         }
-        command.env(match scheme {
-            "https" => "https_proxy",
-            "socks5" | "socks5h" => "all_proxy",
-            _ => "http_proxy",
-        }, &proxy_without_creds);
     }
     let output = run(command, TIMEOUT, 8 * 1024 * 1024, 64 * 1024).await?;
     if !output.status.success() {

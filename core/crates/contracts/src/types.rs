@@ -163,6 +163,13 @@ pub struct NetworkSettings {
     pub proxy_url: Option<String>,
 }
 
+// No Debug: the bridge URL carries its login
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkApplied {
+    pub bridge_url: Option<String>,
+}
+
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PublicUser {

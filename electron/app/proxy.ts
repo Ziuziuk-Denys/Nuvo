@@ -87,6 +87,24 @@ export function chromiumRule(url: string): string {
   return url.replace(/^socks5h:/, "socks5:").replace(/\/\/.*@/, "//");
 }
 
+/** Chromium has no SOCKS login: such a proxy is reached through the daemon's loopback bridge, which has an HTTP one. */
+export function chromiumProxy(base: Electron.ProxyConfig, url: string | null, bridgeUrl: string | null): Electron.ProxyConfig {
+  if (!url || !/^socks5h?:/.test(url) || !credentialsOf(url)) return base;
+  // Without the bridge yet, the bare SOCKS rule fails at the login instead of going direct.
+  return { proxyRules: chromiumRule(bridgeUrl ?? url), proxyBypassRules: "<local>" };
+}
+
+/** The daemon answers the bridge URL for a SOCKS proxy, `null` otherwise. */
+export function bridgeOf(body: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as { bridgeUrl?: unknown };
+    const url = parsed.bridgeUrl;
+    return typeof url === "string" && /^http:\/\/[^@/]+@127\.0\.0\.1:\d+$/.test(url) ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export function withCredentials(url: string, username: string | undefined, password: string | undefined): string {
   if (!username) return url;
   const secret = password ? `:${encodeURIComponent(password)}` : "";

@@ -192,9 +192,10 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
         crate::tool_update::request(state, None);
     }
     let ffmpeg = tools.require_ffmpeg()?.to_path_buf();
-    let (proxy, hook) = (state.proxy_url(), state.proxy_hook());
+    let (proxy, hook) = (state.proxy_url(), state.active_proxy_hook());
     match job {
         Job::Link(url) => {
+            let ffmpeg_proxy = state.ffmpeg_proxy()?;
             emit(tx, json!({"type": "stage", "name": "resolving"}));
             let link = parse_link(&url)?;
             let mut hint = None;
@@ -214,12 +215,12 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
                         hint = sound.as_ref().map(|s| (s.title.clone(), s.author.clone()));
                         // Every media URL is checked, redirects included, before ffmpeg reads it.
                         let video = match post.video {
-                            Some(remote) => Some(follow_public(&remote, Some(&hook)).await?),
+                            Some(remote) => Some(follow_public(&remote, hook.as_ref()).await?),
                             None => None,
                         };
                         let sound = match sound {
                             Some(mut sound) => {
-                                sound.remote = follow_public(&sound.remote, Some(&hook)).await?;
+                                sound.remote = follow_public(&sound.remote, hook.as_ref()).await?;
                                 Some(sound)
                             }
                             None => None,
@@ -231,7 +232,7 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
                             clean_ms: sound.as_ref().map(|s| known_or_window(s.duration_ms)),
                             source: Source {
                                 ffmpeg,
-                                proxy,
+                                proxy: ffmpeg_proxy,
                                 main: video.map(|remote| Origin::new(Owned::Remote(remote), main_ms.unwrap_or(0))),
                                 clean: sound.map(|s| Origin::new(Owned::Remote(s.remote), known_or_window(s.duration_ms))),
                             },
@@ -245,19 +246,19 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
                     Err(other) => return Err(other),
                 }
             } else if seen_media.is_none() {
-                ensure_public(&link.url).await?;
+                ensure_public(&link.url, proxy.is_some()).await?;
             }
             let resolved = match seen_media {
                 Some(resolved) => resolved,
                 None => ytdlp::resolve(tools.require_yt_dlp()?, tools.js_runtime.as_deref(), &link.url, proxy.as_deref()).await?,
             };
-            let remote = follow_public(&resolved.remote, Some(&hook)).await?;
+            let remote = follow_public(&resolved.remote, hook.as_ref()).await?;
             // The history keeps no credentials or query string from the link.
             let label = resolved.title.clone().unwrap_or_else(|| nuvo_fetch::link::bare_url(&link.url));
             emit(tx, json!({"type": "stage", "name": "fetching", "detail": label}));
             let main_ms = resolved.duration_ms.unwrap_or(WINDOW_MS);
             Ok(Prepared {
-                source: Source { ffmpeg, proxy, main: Some(Origin::new(Owned::Remote(remote), main_ms)), clean: None },
+                source: Source { ffmpeg, proxy: ffmpeg_proxy, main: Some(Origin::new(Owned::Remote(remote), main_ms)), clean: None },
                 main_ms: Some(main_ms),
                 clean_ms: None,
                 mix: Via::Mix,
@@ -275,7 +276,7 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
             emit(tx, json!({"type": "stage", "name": "fetching", "detail": label}));
             let main_ms = ffmpeg::probe(&ffmpeg, &path).await?.unwrap_or(WINDOW_MS);
             Ok(Prepared {
-                source: Source { ffmpeg, proxy, main: Some(Origin::new(Owned::File(path), main_ms)), clean: None },
+                source: Source { ffmpeg, proxy: None, main: Some(Origin::new(Owned::File(path), main_ms)), clean: None },
                 main_ms: Some(main_ms),
                 clean_ms: None,
                 mix: Via::Mix,
@@ -295,7 +296,7 @@ async fn prepare(state: &AppState, job: Job, tx: &UnboundedSender<Event>) -> Res
                 None => (Owned::Monitor, ffmpeg::MONITOR_MS),
             };
             Ok(Prepared {
-                source: Source { ffmpeg, proxy, main: Some(Origin::new(input, main_ms)), clean: None },
+                source: Source { ffmpeg, proxy: None, main: Some(Origin::new(input, main_ms)), clean: None },
                 main_ms: Some(main_ms),
                 clean_ms: None,
                 mix: Via::System,

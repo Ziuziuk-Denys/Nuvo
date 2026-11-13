@@ -2,7 +2,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post, put};
 use axum::{Json, Router};
-use nuvo_contracts::{DaemonReport, Deps, Health, KeyStorage, NetCheck, NetworkSettings, SetPassphrase};
+use nuvo_contracts::{DaemonReport, Deps, Health, KeyStorage, NetCheck, NetworkApplied, NetworkSettings, SetPassphrase};
 use nuvo_fetch::proxy::parse_proxy;
 use nuvo_store::now_ms;
 
@@ -50,10 +50,9 @@ async fn health(State(state): State<AppState>) -> Json<Health> {
 }
 
 /// Main calls this before the renderer loads; the bridge refuses it from the renderer.
-async fn set_network(State(state): State<AppState>, JsonBody(body): JsonBody<NetworkSettings>) -> Result<StatusCode, ApiError> {
+async fn set_network(State(state): State<AppState>, JsonBody(body): JsonBody<NetworkSettings>) -> Result<Json<NetworkApplied>, ApiError> {
     let proxy = body.proxy_url.as_deref().map(parse_proxy).transpose().map_err(ApiError::Invalid)?;
-    state.set_proxy(proxy);
-    Ok(StatusCode::NO_CONTENT)
+    Ok(Json(NetworkApplied { bridge_url: state.set_proxy(proxy) }))
 }
 
 async fn read_deps(State(state): State<AppState>) -> Json<Deps> {

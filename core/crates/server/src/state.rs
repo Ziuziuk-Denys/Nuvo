@@ -9,7 +9,8 @@ use nuvo_covers::{Covers, Disk};
 use nuvo_contracts::{Deps, NetCheck, ToolDownload};
 use nuvo_crypto::{KeyStore, KeyStoreError, MasterKey, Protection, random_bytes};
 use nuvo_fetch::tools::ToolEnv;
-use nuvo_fetch::{TIKTOK_URL, TikTok};
+use nuvo_fetch::bridge::Bridge;
+use nuvo_fetch::{FetchError, TIKTOK_URL, TikTok};
 use nuvo_lastfm::Lastfm;
 use nuvo_lyrics::{Amll, Lrclib};
 use nuvo_net::Net;
@@ -88,6 +89,7 @@ pub struct Inner {
     soundcloud_loaded: AtomicBool,
     pub http: reqwest::Client,
     proxy: Arc<RwLock<Option<Url>>>,
+    bridge: std::sync::Mutex<Option<Bridge>>,
     /// Held while a scrobble batch is in flight, so two flushes never send the same plays.
     pub scrobble_lock: Mutex<()>,
     pub deps_lock: Mutex<()>,
@@ -174,6 +176,7 @@ impl AppState {
                 .build()
                 .expect("static reqwest config is valid"),
             proxy,
+            bridge: std::sync::Mutex::new(None),
             soundcloud: SoundCloud::new(net.clone(), Limits::SOUNDCLOUD),
             covers: Covers::new(net.clone(), nuvo_covers::Limits::COVERS),
             soundcloud_loaded: AtomicBool::new(false),
@@ -319,8 +322,25 @@ impl AppState {
         self.proxy().map(String::from)
     }
 
-    pub fn set_proxy(&self, proxy: Option<Url>) {
+    /// Starts a loopback bridge for a SOCKS proxy and answers its URL; Electron points Chromium at it when the proxy wants a login.
+    pub fn set_proxy(&self, proxy: Option<Url>) -> Option<String> {
+        let socks = proxy.as_ref().filter(|url| matches!(url.scheme(), "socks5" | "socks5h"));
+        let bridge = socks.and_then(|url| Bridge::start(url.clone()).inspect_err(|err| tracing::warn!(%err, "the proxy bridge did not start")).ok());
+        let url = bridge.as_ref().map(|bridge| bridge.url().to_string());
+        *self.bridge.lock().expect("bridge lock") = bridge;
         *self.proxy.write().expect("proxy lock") = proxy;
+        url
+    }
+
+    /// A plain HTTP proxy for ffmpeg: the proxy itself, or the bridge in front of a SOCKS one.
+    pub fn ffmpeg_proxy(&self) -> Result<Option<String>, FetchError> {
+        let bridge = self.bridge.lock().expect("bridge lock").as_ref().map(|bridge| bridge.url().to_string());
+        nuvo_fetch::proxy::ffmpeg_proxy(self.proxy().as_ref(), bridge.as_deref())
+    }
+
+    /// The proxy hook only while a proxy is set, for callers that check addresses themselves when direct.
+    pub fn active_proxy_hook(&self) -> Option<reqwest::Proxy> {
+        self.proxy().map(|_| self.proxy_hook())
     }
 
     pub fn proxy_hook(&self) -> reqwest::Proxy {
