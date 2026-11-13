@@ -153,7 +153,7 @@ async fn the_network_check_in_the_report_is_redacted() {
         ms: 1,
         detail: Some("failed via https://u:p@81.2.3.4:8080/x?k=1 for a@b.com".into()),
     };
-    let check = nuvo_contracts::NetCheck { checked_at: "2026-10-27T10:00:00.000Z".into(), rows: vec![row], summary: "peer 81.2.3.4".into(), code: None, service: None };
+    let check = nuvo_contracts::NetCheck { checked_at: "2026-10-27T10:00:00.000Z".into(), rows: vec![row], services: vec![], full: false, summary: "peer 81.2.3.4".into(), code: None, service: None };
     *core.state.last_network_check.write().unwrap() = Some(check);
     let (_, report) = common::call(&core.app, "GET", "/v1/system/report", None).await;
     let text = report["networkCheck"].to_string();

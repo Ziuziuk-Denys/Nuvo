@@ -127,11 +127,24 @@ pub struct NetCheckRow {
 pub struct NetCheck {
     pub checked_at: String,
     pub rows: Vec<NetCheckRow>,
+    pub services: Vec<ServiceCheck>,
     pub summary: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub service: Option<&'static str>,
+    /// Every service was checked, not only the ones playback needs.
+    #[serde(skip)]
+    pub full: bool,
+}
+
+// `state`: works, slow, blocked, proxy_error, down or offline; `ms` is the slowest host's answer
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceCheck {
+    pub service: &'static str,
+    pub state: &'static str,
+    pub ms: u64,
 }
 
 // Daemon section of a bug report, already redacted; library fields are absent while locked

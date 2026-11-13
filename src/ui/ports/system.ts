@@ -74,9 +74,16 @@ export interface NetCheckRow {
   detail?: string;
 }
 
+export interface ServiceCheck {
+  service: string;
+  state: "works" | "slow" | "blocked" | "proxy_error" | "down" | "offline";
+  ms: number;
+}
+
 export interface NetCheck {
   checkedAt: string;
   rows: NetCheckRow[];
+  services: ServiceCheck[];
   summary: string;
   code?: string;
   service?: string;
@@ -111,8 +118,9 @@ export async function downloadTool(name: ToolRowName, fetcher: typeof fetch = fe
   return response?.ok === true;
 }
 
-export async function runNetworkCheck(fetcher: typeof fetch = fetch): Promise<NetCheck> {
-  const response = await fetcher(`${CORE_URL}/v1/system/network-check`, { method: "POST" });
+/** `full` adds the services playback does not need; Settings asks for it, the automatic check does not. */
+export async function runNetworkCheck(fetcher: typeof fetch = fetch, full = false): Promise<NetCheck> {
+  const response = await fetcher(`${CORE_URL}/v1/system/network-check${full ? "?full=true" : ""}`, { method: "POST" });
   if (!response.ok) throw new Error(`network check answered ${response.status}`);
   return (await response.json()) as NetCheck;
 }

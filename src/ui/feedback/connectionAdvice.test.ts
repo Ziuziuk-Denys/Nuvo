@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { NetCheck } from "../ports/system";
 import { adviceFor, checkHeadline } from "./connectionAdvice";
 
-const check = (code?: string, service?: string): NetCheck => ({ checkedAt: "", rows: [], summary: "", code, service });
+const check = (code?: string, service?: string): NetCheck => ({ checkedAt: "", rows: [], services: [], summary: "", code, service });
 
 describe("adviceFor", () => {
   it("offline, a dead proxy, interception and the clock speak for themselves", () => {

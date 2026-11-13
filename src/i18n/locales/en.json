@@ -828,9 +828,7 @@
       "best_quality": "Best quality",
       "best_quality_desc": "Plays the highest quality a song offers",
       "check": "Check connection",
-      "check_fail": "failed",
       "check_failed": "The check couldn't run",
-      "check_ok": "ok",
       "check_clear": "Everything is reachable",
       "check_service": "{service} can't be reached right now. The rest works.",
       "checking": "Checking",
@@ -951,6 +949,27 @@
         "line": "Your browser opens a new issue on GitHub with Nuvo {version} on {system} filled in. Nothing is sent until you submit it there.",
         "diagnostics": "Add diagnostics",
         "open": "Open on GitHub"
+      },
+      "service": {
+        "lyrics": "Lyrics",
+        "recognition": "Recognition",
+        "tools": "Tool downloads",
+        "updates": "Updates"
+      },
+      "service_state": {
+        "works": "Works · {ms} ms",
+        "slow": "Slow · {ms} ms",
+        "blocked": "Blocked",
+        "proxy_error": "Proxy error",
+        "down": "Down",
+        "offline": "No network"
+      },
+      "service_advice": {
+        "slow": "Answers slowly, so things may take longer to load.",
+        "blocked": "Blocked on this network: turn on a VPN or set a proxy above.",
+        "blocked_proxied": "Blocked even through the proxy: try another proxy or VPN server.",
+        "proxy_error": "The proxy didn't let Nuvo through: check its address, username and password above.",
+        "down": "The problem is on their side. Try again later."
       }
     },
     "status": {

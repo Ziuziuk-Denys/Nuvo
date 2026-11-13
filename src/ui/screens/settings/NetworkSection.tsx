@@ -11,23 +11,17 @@ import {
   saveProxy,
   systemReport,
   type NetCheck,
-  type NetCheckRow,
   type ProxyMode,
   type ProxyView,
 } from "../../ports/system";
 import { OfflineModeRow } from "./OfflineModeRow";
 import { formatReport } from "./report";
+import { serviceLines, serviceName } from "./serviceLines";
 import { Segmented, SettingBlock, SettingGroup, SettingRow } from "./controls";
 import styles from "./sections.module.css";
 import { ToolsGroup } from "./ToolsGroup";
 
 const MODES: readonly ProxyMode[] = ["system", "none", "manual"];
-
-function rowText(row: NetCheckRow, t: TFunction): string {
-  const what = row.host ? `${row.check} ${row.host}` : row.check;
-  const outcome = row.ok ? t("ui.settings.check_ok") : (row.code ?? t("ui.settings.check_fail"));
-  return `${what} · ${outcome} · ${row.ms} ms`;
-}
 
 function proxyNote(proxy: ProxyView, t: TFunction): string {
   if (proxy.mode === "none") return t("ui.settings.proxy.none_desc");
@@ -84,7 +78,7 @@ export function NetworkSection(): JSX.Element {
   const runCheck = async () => {
     setChecking(true);
     try {
-      setCheck(await runNetworkCheck());
+      setCheck(await runNetworkCheck(fetch, true));
       setError(null);
     } catch {
       setCheck(null);
@@ -101,6 +95,7 @@ export function NetworkSection(): JSX.Element {
   };
 
   const headline = check ? checkHeadline(check) : null;
+  const proxied = check?.rows.some((row) => row.check === "proxy") ?? false;
 
   return (
     <>
@@ -177,10 +172,14 @@ export function NetworkSection(): JSX.Element {
           }
         />
         {check ? (
-          <SettingBlock title={t(headline!.key, headline!.vars)}>
-            <ul className={styles.note}>
-              {check.rows.map((row, index) => (
-                <li key={`${row.check}-${row.host ?? ""}-${index}`}>{rowText(row, t)}</li>
+          <SettingBlock title={t(headline!.key, headline!.vars && { service: serviceName(headline!.vars.service, t) })}>
+            <ul className={styles.services}>
+              {serviceLines(check.services, proxied, t).map((line, index) => (
+                <li key={check.services[index].service} className={styles.service} data-state={check.services[index].state}>
+                  <span>{line.name}</span>
+                  <span className={styles.serviceStatus}>{line.status}</span>
+                  {line.advice ? <p className={styles.serviceAdvice}>{line.advice}</p> : null}
+                </li>
               ))}
             </ul>
           </SettingBlock>

@@ -6,8 +6,9 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures::future::join_all;
-use nuvo_contracts::{Deps, NetCheck, NetCheckRow, ToolStatusKind, iso_from_ms, ms_from_iso};
+use nuvo_contracts::{Deps, NetCheck, NetCheckRow, ServiceCheck, ToolStatusKind, iso_from_ms, ms_from_iso};
 use nuvo_fetch::link::is_public;
+use nuvo_fetch::update::ffmpeg_build_for;
 use reqwest::Url;
 use reqwest::header::DATE;
 use tokio::net::TcpStream;
@@ -15,6 +16,8 @@ use tokio::time::timeout;
 
 pub const STEP_TIMEOUT: Duration = Duration::from_secs(5);
 pub const CLOCK_SKEW_LIMIT_MS: i64 = 5 * 60_000;
+/// A first answer slower than this, connection and TLS included, makes a service slow.
+pub const SLOW_MS: u64 = 2000;
 /// Most specific first: a failing service is named by the first of these its rows show.
 const PRIORITY: [&str; 6] = ["tls_intercepted", "dns_failed", "blocked", "rate_limited", "server_error", "timeout"];
 
@@ -25,6 +28,15 @@ pub struct Target {
     pub service: &'static str,
     pub host: String,
     pub url: String,
+    /// Checked only when asked from Settings; the automatic check covers what playback needs.
+    pub on_demand: bool,
+}
+
+impl Target {
+    pub fn new(service: &'static str, url: &str, on_demand: bool) -> Self {
+        let host = Url::parse(url).ok().and_then(|u| u.host_str().map(String::from)).unwrap_or_default();
+        Self { service, host, url: url.into(), on_demand }
+    }
 }
 
 #[derive(Clone)]
@@ -37,17 +49,30 @@ pub struct Setup {
 
 impl Setup {
     pub fn production() -> Self {
-        let hosts = [
-            ("YouTube", "music.youtube.com"),
-            ("YouTube", "www.youtube.com"),
-            ("YouTube", "redirector.googlevideo.com"),
-            ("YouTube", "i.ytimg.com"),
-            ("SoundCloud", "soundcloud.com"),
-            ("SoundCloud", "api-v2.soundcloud.com"),
-            ("Lyrics", "lrclib.net"),
-            ("Lyrics", "raw.githubusercontent.com"),
+        let playback = [
+            ("YouTube", "https://music.youtube.com/"),
+            ("YouTube", "https://www.youtube.com/"),
+            ("YouTube", "https://redirector.googlevideo.com/"),
+            ("YouTube", "https://i.ytimg.com/"),
+            ("SoundCloud", "https://soundcloud.com/"),
+            ("SoundCloud", "https://api-v2.soundcloud.com/"),
+            ("Lyrics", "https://lrclib.net/"),
+            ("Lyrics", "https://raw.githubusercontent.com/"),
         ];
-        let targets = hosts.map(|(service, host)| Target { service, host: host.into(), url: format!("https://{host}/") }).to_vec();
+        let ffmpeg = ffmpeg_build_for(std::env::consts::OS, std::env::consts::ARCH).map(|build| build.url).filter(|url| !url.starts_with("https://github.com/"));
+        let on_demand = [
+            Some(("Recognition", "https://amp.shazam.com/")),
+            Some(("Last.fm", "https://ws.audioscrobbler.com/")),
+            Some(("Tools", "https://github.com/yt-dlp/yt-dlp/releases/latest")),
+            Some(("Tools", "https://release-assets.githubusercontent.com/")),
+            ffmpeg.map(|url| ("Tools", url)),
+            Some(("Updates", "https://github.com/Ziuziuk-Denys/nuvo/releases.atom")),
+        ];
+        let targets = playback
+            .into_iter()
+            .map(|(service, url)| Target::new(service, url, false))
+            .chain(on_demand.into_iter().flatten().map(|(service, url)| Target::new(service, url, true)))
+            .collect();
         Self { targets, resolver: system_resolver(), private_ok: false }
     }
 }
@@ -78,7 +103,7 @@ pub fn classify_error(err: &reqwest::Error, proxied: bool) -> (&'static str, Str
     let lower = text.to_lowercase();
     let code = if lower.contains("certificate") || lower.contains("unknownissuer") {
         "tls_intercepted"
-    } else if proxied && lower.contains("proxy authorization required") {
+    } else if proxied && (lower.contains("proxy authorization required") || (lower.contains("socks") && lower.contains("auth"))) {
         // hyper reports a 407 answer to CONNECT as this exact tunnel error.
         return ("proxy_failed", "HTTP 407".to_string());
     } else if proxied && (lower.contains("tunnel") || lower.contains("proxy")) {
@@ -113,6 +138,7 @@ fn host_row(check: &'static str, target: &Target, started: Instant, failure: Opt
     }
 }
 
+// Through a proxy only the HTTPS row: a local lookup would leak the name and a direct connect proves nothing
 async fn check_host(target: &Target, setup: &Setup, client: &reqwest::Client, proxied: bool) -> (Vec<NetCheckRow>, Option<i64>) {
     let port = match Url::parse(&target.url) {
         Ok(u) => u.port_or_known_default().unwrap_or(443),
@@ -133,25 +159,27 @@ async fn check_host(target: &Target, setup: &Setup, client: &reqwest::Client, pr
     };
     let mut rows = Vec::new();
 
-    let started = Instant::now();
-    let resolved = match timeout(STEP_TIMEOUT, (setup.resolver)(target.host.clone(), port)).await {
-        Ok(Ok(addrs)) if !addrs.is_empty() => match addrs.iter().find(|a| !setup.private_ok && !is_public(a.ip())) {
-            Some(sinkhole) => Err(format!("resolves to {}", sinkhole.ip())),
-            None => Ok(addrs),
-        },
-        Ok(_) => Err("does not resolve".to_string()),
-        Err(_) => Err("no DNS answer in time".to_string()),
-    };
-    rows.push(host_row("dns", target, started, resolved.as_ref().err().map(|d| ("dns_failed", d.clone()))));
-
-    if let Ok(addrs) = &resolved {
+    if !proxied {
         let started = Instant::now();
-        let failure = match timeout(STEP_TIMEOUT, TcpStream::connect(addrs[0])).await {
-            Ok(Ok(_)) => None,
-            Ok(Err(err)) => Some(("blocked", err.to_string())),
-            Err(_) => Some(("timeout", "no answer in time".to_string())),
+        let resolved = match timeout(STEP_TIMEOUT, (setup.resolver)(target.host.clone(), port)).await {
+            Ok(Ok(addrs)) if !addrs.is_empty() => match addrs.iter().find(|a| !setup.private_ok && !is_public(a.ip())) {
+                Some(sinkhole) => Err(format!("resolves to {}", sinkhole.ip())),
+                None => Ok(addrs),
+            },
+            Ok(_) => Err("does not resolve".to_string()),
+            Err(_) => Err("no DNS answer in time".to_string()),
         };
-        rows.push(host_row("tcp", target, started, failure));
+        rows.push(host_row("dns", target, started, resolved.as_ref().err().map(|d| ("dns_failed", d.clone()))));
+
+        if let Ok(addrs) = &resolved {
+            let started = Instant::now();
+            let failure = match timeout(STEP_TIMEOUT, TcpStream::connect(addrs[0])).await {
+                Ok(Ok(_)) => None,
+                Ok(Err(err)) => Some(("blocked", err.to_string())),
+                Err(_) => Some(("timeout", "no answer in time".to_string())),
+            };
+            rows.push(host_row("tcp", target, started, failure));
+        }
     }
 
     let started = Instant::now();
@@ -187,7 +215,7 @@ async fn check_proxy(proxy: &Url, setup: &Setup) -> NetCheckRow {
     }
 }
 
-pub async fn run(setup: &Setup, proxy: Option<&Url>, hook: reqwest::Proxy, now: i64) -> NetCheck {
+pub async fn run(setup: &Setup, proxy: Option<&Url>, hook: reqwest::Proxy, now: i64, full: bool) -> NetCheck {
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .connect_timeout(STEP_TIMEOUT)
@@ -195,7 +223,7 @@ pub async fn run(setup: &Setup, proxy: Option<&Url>, hook: reqwest::Proxy, now: 
         .proxy(hook)
         .build()
         .expect("static reqwest config is valid");
-    let hosts = join_all(setup.targets.iter().map(|target| check_host(target, setup, &client, proxy.is_some())));
+    let hosts = join_all(setup.targets.iter().filter(|target| full || !target.on_demand).map(|target| check_host(target, setup, &client, proxy.is_some())));
     let proxy_row = async {
         match proxy {
             Some(url) => Some(check_proxy(url, setup).await),
@@ -223,7 +251,46 @@ pub async fn run(setup: &Setup, proxy: Option<&Url>, hook: reqwest::Proxy, now: 
         });
     }
     let (summary, code, service) = summarize(&rows);
-    NetCheck { checked_at: iso_from_ms(now), rows, summary, code, service }
+    let mut services = services(&rows);
+    if code == Some("offline") {
+        services.iter_mut().for_each(|s| s.state = "offline");
+    }
+    NetCheck { checked_at: iso_from_ms(now), services, rows, summary, code, service, full }
+}
+
+/// One verdict per service from its HTTPS answers, in check order; the most telling failure wins.
+pub fn services(rows: &[NetCheckRow]) -> Vec<ServiceCheck> {
+    let mut out: Vec<ServiceCheck> = Vec::new();
+    for row in rows.iter().filter(|r| r.check == "https") {
+        let Some(service) = row.service else { continue };
+        let state = match row.code {
+            None if row.ms > SLOW_MS => "slow",
+            None => "works",
+            Some("proxy_failed") => "proxy_error",
+            Some("rate_limited" | "server_error") => "down",
+            Some(_) => "blocked",
+        };
+        match out.iter_mut().find(|s| s.service == service) {
+            Some(known) => {
+                known.ms = known.ms.max(row.ms);
+                if rank(state) > rank(known.state) {
+                    known.state = state;
+                }
+            }
+            None => out.push(ServiceCheck { service, state, ms: row.ms }),
+        }
+    }
+    out
+}
+
+fn rank(state: &str) -> u8 {
+    match state {
+        "works" => 0,
+        "slow" => 1,
+        "down" => 2,
+        "blocked" => 3,
+        _ => 4,
+    }
 }
 
 pub fn tool_rows(deps: &Deps) -> Vec<NetCheckRow> {
@@ -237,9 +304,10 @@ pub fn tool_rows(deps: &Deps) -> Vec<NetCheckRow> {
         .collect()
 }
 
-fn sentence(code: &str, service: &str) -> String {
+fn sentence(code: &str, service: &str, proxied: bool) -> String {
     match code {
         "dns_failed" => format!("{service} does not resolve on this network."),
+        "blocked" if proxied => format!("{service} looks blocked even through the proxy."),
         "blocked" => format!("{service} looks blocked on this network. A proxy can help."),
         "tls_intercepted" => format!("Something on this network intercepts secure connections to {service}."),
         "rate_limited" => format!("{service} is limiting requests. Nuvo will retry."),
@@ -266,7 +334,8 @@ pub fn summarize(rows: &[NetCheckRow]) -> (String, Option<&'static str>, Option<
     }
     let https: Vec<&NetCheckRow> = rows.iter().filter(|r| r.check == "https").collect();
     let all_failed = |check: &str| rows.iter().filter(|r| r.check == check).all(|r| !r.ok);
-    if !https.is_empty() && all_failed("https") && all_failed("dns") {
+    let proxied = rows.iter().any(|r| r.check == "proxy");
+    if !proxied && !https.is_empty() && all_failed("https") && all_failed("dns") {
         return ("You are offline.".into(), Some("offline"), None);
     }
     let mut services: Vec<&'static str> = Vec::new();
@@ -286,7 +355,7 @@ pub fn summarize(rows: &[NetCheckRow]) -> (String, Option<&'static str>, Option<
         .collect();
     if let Some((service, code)) = broken.first() {
         let working: Vec<&str> = services.iter().filter(|s| !broken.iter().any(|(b, _)| b == *s)).copied().collect();
-        let mut text = sentence(code, service);
+        let mut text = sentence(code, service, proxied);
         if !working.is_empty() {
             text.push_str(&format!(" {} {}.", join_and(&working), if working.len() == 1 { "works" } else { "work" }));
         }

@@ -5,6 +5,41 @@
   font: 400 12.5px/1.45 var(--n-font);
 }
 
+.services {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+}
+
+.service {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 16px;
+  align-items: baseline;
+  font: 400 13px/1.45 var(--n-font);
+  color: var(--n-ink);
+}
+
+.serviceStatus {
+  color: var(--n-ink-3);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.service:not([data-state="works"]) .serviceStatus {
+  color: var(--n-ink);
+  font-weight: 500;
+}
+
+.serviceAdvice {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: var(--n-ink-3);
+  font: 400 12.5px/1.45 var(--n-font);
+}
+
 .button {
   display: inline-flex;
   height: 36px;
