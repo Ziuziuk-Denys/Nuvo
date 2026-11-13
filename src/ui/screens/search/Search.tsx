@@ -207,8 +207,8 @@ export function Search(): JSX.Element {
     [online, shownOnline, local, fileResults, filter, trimmed],
   );
   const groups = useMemo(
-    () => (soundCloudOnly ? groupResults(soundCloudResults, filter) : withSoundCloud(groupResults(results, filter), soundCloudResults, filter)),
-    [soundCloudOnly, soundCloudResults, results, filter],
+    () => groupResults(withSoundCloud(soundCloudOnly ? [] : results, soundCloudResults, filter, trimmed), filter),
+    [soundCloudOnly, soundCloudResults, results, filter, trimmed],
   );
   const remote = youtubeActive || soundCloudActive;
   const loading = (youtubeActive && source.loading) || (soundCloudActive && soundCloud.loading);
@@ -358,16 +358,7 @@ export function Search(): JSX.Element {
     );
   } else {
     phase = "results";
-    body = (
-      <SearchGroups
-        groups={groups}
-        filter={filter}
-        hasMore={hasMore}
-        onShowAll={setFilter}
-        onShowSoundCloud={() => chooseSource("soundcloud")}
-        onActivate={activate}
-      />
-    );
+    body = <SearchGroups groups={groups} filter={filter} hasMore={hasMore} onShowAll={setFilter} onActivate={activate} />;
   }
 
   return (

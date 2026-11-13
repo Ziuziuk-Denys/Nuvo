@@ -9,14 +9,21 @@ const SEARCH_TIMEOUT_MS = 45_000;
 export interface SoundCloudHit {
   track: Track;
   preview: boolean;
+  plays?: number;
+  verified?: boolean;
 }
 
 export async function searchSoundCloud(text: string, signal: AbortSignal): Promise<SoundCloudHit[]> {
   const params = new URLSearchParams({ q: text });
   const response = await fetch(`${CORE_BASE_URL}/v1/sc/search?${params}`, { signal: AbortSignal.any([signal, AbortSignal.timeout(SEARCH_TIMEOUT_MS)]) });
   if (!response.ok) throw new Error(`SoundCloud search answered ${response.status}`);
-  const answer = (await response.json()) as { items: Array<CatalogTrack & { preview?: boolean }> };
-  return answer.items.map((item) => ({ track: toPlayerTrack(item), preview: item.preview === true }));
+  const answer = (await response.json()) as { items: Array<CatalogTrack & { preview?: boolean; plays?: number; verified?: boolean }> };
+  return answer.items.map((item) => ({
+    track: toPlayerTrack(item),
+    preview: item.preview === true,
+    ...(item.plays !== undefined ? { plays: item.plays } : {}),
+    ...(item.verified ? { verified: true } : {}),
+  }));
 }
 
 export function useSoundCloudSearch(query: string, options?: SearchOptions): Search<SoundCloudHit> {

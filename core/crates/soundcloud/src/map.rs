@@ -65,6 +65,8 @@ pub fn track(record: &Value) -> Option<Track> {
         cover: cover(artwork.or_else(|| avatar(user))),
         explicit: (record.pointer("/publisher_metadata/explicit") == Some(&Value::Bool(true))).then_some(true),
         preview: (availability(record) == Err(Reason::Preview)).then_some(true),
+        plays: record.get("playback_count").and_then(Value::as_u64),
+        verified: (user.get("verified") == Some(&Value::Bool(true))).then_some(true),
     })
 }
 

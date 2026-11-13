@@ -125,3 +125,12 @@ fn recorded_go_plus_snips_are_marked_as_previews() {
     let marks: Vec<(String, Option<bool>)> = listing["collection"].as_array().unwrap().iter().map(|r| map::track(r).unwrap()).map(|t| (t.id, t.preview)).collect();
     assert_eq!(marks, [("sc:254111945".into(), Some(true)), ("sc:88335161".into(), None), ("sc:2360861477".into(), None), ("sc:254111762".into(), Some(true))]);
 }
+
+#[test]
+fn a_track_carries_its_play_count_and_a_verified_uploader() {
+    let record = json!({"id": 7, "title": "Song", "duration": 200000, "playback_count": 1234, "user": {"id": 9, "username": "Nova", "verified": true}});
+    let track = map::track(&record).unwrap();
+    assert_eq!((track.plays, track.verified), (Some(1234), Some(true)));
+    let plain = map::track(&json!({"id": 8, "title": "Song", "user": {"id": 9, "username": "Nova", "verified": false}})).unwrap();
+    assert_eq!((plain.plays, plain.verified), (None, None));
+}

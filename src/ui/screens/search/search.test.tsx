@@ -477,15 +477,17 @@ describe("Search with SoundCloud", () => {
     act(() => item.click());
   };
 
-  it("lists SoundCloud songs in their own group, marked, with previews named", async () => {
+  it("merges SoundCloud songs into the song list, marked, with previews named and last", async () => {
     mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Get Lucky")]);
     mocks.scSearch.mockResolvedValue(hits());
     renderSearch();
     typeInto(field(), "get lucky");
     await settle(320);
     expect(mocks.scSearch).toHaveBeenCalledWith("get lucky", expect.any(AbortSignal));
-    expect(host.querySelector('[aria-label="ui.search.source_soundcloud"]')?.textContent).toContain("Get Lucky [Original Version]");
+    expect(host.querySelector('[aria-label="ui.search.source_soundcloud"]')).toBeNull();
     expect(marks()).toBe(2);
+    const rows = [...host.querySelectorAll('[role="button"]')];
+    expect(rows.at(-1)?.querySelector('[title="ui.search.preview_hint"]')).not.toBeNull();
     expect(host.querySelectorAll('[title="ui.search.preview_hint"]')).toHaveLength(1);
     expect(sourcePill().getAttribute("aria-label")).toBe("ui.search.sources: ui.search.source_all");
   });

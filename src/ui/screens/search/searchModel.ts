@@ -1,6 +1,7 @@
 import { playlistHref } from "../../app/hrefs";
 import { filterTracks, normalizeForSearch, songResult, type SearchKind, type SearchResult } from "../../ports/search";
 import type { Track } from "../../ports/player";
+import { rankSongs } from "./rank";
 
 export type SearchFilter = "all" | "songs" | "albums" | "artists" | "playlists";
 
@@ -27,7 +28,6 @@ export interface SearchGroups {
   albums: SearchResult[];
   artists: SearchResult[];
   playlists: SearchResult[];
-  soundcloud?: SearchResult[];
 }
 
 export function groupResults(all: readonly SearchResult[], filter: SearchFilter): SearchGroups {
@@ -42,9 +42,14 @@ export function groupResults(all: readonly SearchResult[], filter: SearchFilter)
   return groups;
 }
 
-export function withSoundCloud(groups: SearchGroups, found: readonly SearchResult[], filter: SearchFilter): SearchGroups {
-  if (found.length === 0 || (filter !== "all" && filter !== "songs")) return groups;
-  return { ...groups, soundcloud: filter === "all" ? found.slice(0, ALL_CAPS.songs) : [...found] };
+export function withSoundCloud(results: readonly SearchResult[], found: readonly SearchResult[], filter: SearchFilter, query: string): SearchResult[] {
+  if (filter !== "all" && filter !== "songs") return [...results];
+  const firstSong = results.findIndex((result) => result.kind === "song");
+  const at = firstSong === -1 ? results.length : firstSong;
+  const songs = rankSongs(query, [...results.filter((result) => result.kind === "song"), ...found]);
+  const others = results.filter((result) => result.kind !== "song");
+  const before = others.filter((result) => results.indexOf(result) < at);
+  return [...before, ...songs, ...others.slice(before.length)];
 }
 
 export const LOCAL_SEARCH_LIMIT = 6;
@@ -81,7 +86,7 @@ export function withLocalFiles(results: readonly SearchResult[], files: readonly
 }
 
 export function isEmpty(groups: SearchGroups): boolean {
-  return !groups.top && groups.songs.length + groups.albums.length + groups.artists.length + groups.playlists.length + (groups.soundcloud?.length ?? 0) === 0;
+  return !groups.top && groups.songs.length + groups.albums.length + groups.artists.length + groups.playlists.length === 0;
 }
 
 export interface LocalPlaylist {

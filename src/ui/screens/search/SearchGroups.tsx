@@ -29,7 +29,6 @@ export interface SearchGroupsProps {
   filter: SearchFilter;
   hasMore: (key: GroupKey) => boolean;
   onShowAll: (key: GroupKey) => void;
-  onShowSoundCloud: () => void;
   onActivate: (result: SearchResult) => void;
 }
 
@@ -166,10 +165,9 @@ function EntityRows({ results, onActivate }: { results: SearchResult[]; onActiva
   );
 }
 
-export function SearchGroups({ groups, filter, hasMore, onShowAll, onShowSoundCloud, onActivate }: SearchGroupsProps): JSX.Element {
+export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }: SearchGroupsProps): JSX.Element {
   const { t } = useTranslation();
   const top = groups.top;
-  const soundcloud = groups.soundcloud ?? [];
 
   const section = (key: GroupKey) => {
     const results = groups[key];
@@ -207,17 +205,6 @@ export function SearchGroups({ groups, filter, hasMore, onShowAll, onShowSoundCl
         </section>
       ) : null}
       {section("songs")}
-      {soundcloud.length > 0 ? (
-        <section className={styles.group} aria-label={t("ui.search.source_soundcloud")}>
-          <h2 className={styles.heading}>{t("ui.search.source_soundcloud")}</h2>
-          <SongRows songs={soundcloud} onActivate={onActivate} />
-          {filter === "all" ? (
-            <button type="button" className={styles.more} onClick={onShowSoundCloud}>
-              {t("ui.search.show_all")}
-            </button>
-          ) : null}
-        </section>
-      ) : null}
       {GROUP_ORDER.filter((key) => key !== "songs").map(section)}
     </>
   );
