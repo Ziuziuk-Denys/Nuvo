@@ -169,7 +169,7 @@ describe("scheduleLoudness", () => {
 
 describe("cachedAudio", () => {
   it("reads streamed tracks from the cache and local tracks from their file", async () => {
-    const fetchMock = vi.fn(async (_url: string) => new Response(blob));
+    const fetchMock = vi.fn(async (_url: string) => new Response("audio"));
     vi.stubGlobal("fetch", fetchMock);
     await cachedAudio("dQw4w9WgXcQ");
     await cachedAudio(`local:${"a".repeat(32)}`);
