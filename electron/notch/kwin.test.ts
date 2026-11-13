@@ -12,7 +12,7 @@ describe("loadKwinScript", () => {
     const calls: Array<[string, string[]]> = [];
     const run = async (cmd: string, args: string[]) => {
       calls.push([cmd, args]);
-      return args.includes("org.kde.kwin.Scripting.loadScript") ? "(int32 7,)" : "()";
+      return args.includes("org.kde.kwin.Scripting.loadScript") ? "(7,)\n" : "()\n";
     };
     expect(await loadKwinScript("// script", run, dir)).toBe(true);
     const file = path.join(dir, "notch-kwin.js");
@@ -20,8 +20,20 @@ describe("loadKwinScript", () => {
     expect(calls).toEqual([
       ["gdbus", [...base, "--object-path", "/Scripting", "--method", "org.kde.kwin.Scripting.unloadScript", "nuvo-notch"]],
       ["gdbus", [...base, "--object-path", "/Scripting", "--method", "org.kde.kwin.Scripting.loadScript", file, "nuvo-notch"]],
-      ["gdbus", [...base, "--object-path", "/Scripting/Script7", "--method", "org.kde.kwin.Script.run"]],
+      ["gdbus", [...base, "--object-path", "/Scripting", "--method", "org.kde.kwin.Scripting.start"]],
     ]);
+  });
+
+  it("accepts script id 0, the first id KWin hands out", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "nuvo-kwin-"));
+    const run = async (_cmd: string, args: string[]) => (args.includes("org.kde.kwin.Scripting.loadScript") ? "(0,)\n" : "()\n");
+    expect(await loadKwinScript("x", run, dir)).toBe(true);
+  });
+
+  it("returns false when KWin refuses the script", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "nuvo-kwin-"));
+    const run = async (_cmd: string, args: string[]) => (args.includes("org.kde.kwin.Scripting.loadScript") ? "(-1,)\n" : "()\n");
+    expect(await loadKwinScript("x", run, dir)).toBe(false);
   });
 
   it("ignores unload errors and returns false when loading fails", async () => {

@@ -30,9 +30,9 @@ export async function loadKwinScript(
     await writeFile(file, script);
     await unloadKwinScript(run);
     const loaded = await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.loadScript", file, PLUGIN));
-    const id = /int32 (\d+)/.exec(loaded)?.[1];
-    if (!id) return false;
-    await run("gdbus", call(`/Scripting/Script${id}`, "org.kde.kwin.Script.run"));
+    if (!/^\(\d+,\)$/.test(loaded.trim())) return false;
+    // KWin reuses script ids after an unload, so /Scripting/Script<id> can belong to another script.
+    await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.start"));
     return true;
   } catch (error) {
     console.warn("[notch] KWin script failed:", error);
