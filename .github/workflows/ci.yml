@@ -54,6 +54,62 @@ jobs:
           cargo clippy --locked --manifest-path core/Cargo.toml -p nuvo-fetch -p nuvo-server -- -D warnings
           cargo test --locked --manifest-path core/Cargo.toml -p nuvo-fetch --test archive
 
+  # Word timing runs a speech model on the CPU; every release target builds the daemon and times the spoken fixtures natively
+  word-timing:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            targets: x86_64-unknown-linux-gnu
+          - runner: ubuntu-24.04-arm
+            targets: aarch64-unknown-linux-gnu
+          - runner: windows-2025
+            targets: x86_64-pc-windows-msvc
+          - runner: windows-11-arm
+            targets: aarch64-pc-windows-msvc
+          # the x64 build runs its tests under Rosetta
+          - runner: macos-15
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.targets }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: core
+          key: word-timing-${{ matrix.runner }}
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config ffmpeg
+      - name: Download the base model and check its hash
+        shell: bash
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/ggml-base-q8_0.bin" https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base-q8_0.bin
+          sum=$( (sha256sum "$RUNNER_TEMP/ggml-base-q8_0.bin" 2>/dev/null || shasum -a 256 "$RUNNER_TEMP/ggml-base-q8_0.bin") | cut -d' ' -f1)
+          test "$sum" = c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9
+      - name: Build the daemon and time the fixtures for each target
+        shell: bash
+        env:
+          TARGETS: ${{ matrix.targets }}
+        run: |
+          # Git's perl lacks modules that OpenSSL's Configure needs; Strawberry Perl has them.
+          if [ "$RUNNER_OS" = "Windows" ] && [ -d /c/Strawberry/perl/bin ]; then export PATH="/c/Strawberry/perl/bin:$PATH"; fi
+          export NUVO_ALIGN_MODEL="$RUNNER_TEMP/ggml-base-q8_0.bin"
+          for triple in ${TARGETS//,/ }; do
+            cargo build --release --locked --manifest-path core/Cargo.toml -p nuvo-server --target "$triple"
+            cargo test --release --locked --manifest-path core/Cargo.toml -p nuvo-align --target "$triple" -- --include-ignored --nocapture
+            cargo test --release --locked --manifest-path core/Cargo.toml -p nuvo-fetch --test pinned --target "$triple"
+          done
+          # cached audio through ffmpeg, the daemon job and the lyrics stream
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            cargo test --release --locked --manifest-path core/Cargo.toml -p nuvo-server --test word_timing -- --include-ignored
+          fi
+
   audit:
     runs-on: ubuntu-latest
     steps:

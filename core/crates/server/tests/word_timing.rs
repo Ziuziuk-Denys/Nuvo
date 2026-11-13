@@ -63,15 +63,17 @@ async fn stored_timing_is_offered_only_for_the_lyrics_it_was_made_from() {
     let core = common::core();
     common::call(&core.app, "PUT", "/v1/tracks/t1/lyrics/user", Some(json!({"format": "lrc", "content": LRC}))).await;
     store(&core, "t1", LRC);
+    assert!(lyrics(&core, "t1").await.iter().all(|e| e["provider"] != "whisper-base"), "nothing while word timing is off");
+    common::call(&core.app, "PUT", "/v1/lyrics/word-timing", Some(json!({"enabled": true}))).await;
     let events = lyrics(&core, "t1").await;
-    let aligned: Vec<&Value> = events.iter().filter(|e| e["provider"] == "aligned").collect();
+    let aligned: Vec<&Value> = events.iter().filter(|e| e["provider"] == "whisper-base").collect();
     assert_eq!(aligned.len(), 1, "{events:?}");
     let candidate = &aligned[0]["candidate"];
     assert_eq!((candidate["syncLevel"].as_str(), candidate["lyrics"]["format"].as_str(), candidate["topPriority"].as_bool()), (Some("word_level"), Some("ttml"), Some(true)));
     assert_eq!(candidate["lyrics"]["content"], TTML);
 
     common::call(&core.app, "PUT", "/v1/tracks/t1/lyrics/user", Some(json!({"format": "lrc", "content": "[00:01.00]Other words"}))).await;
-    assert!(lyrics(&core, "t1").await.iter().all(|e| e["provider"] != "aligned"), "edited lyrics drop the old timing");
+    assert!(lyrics(&core, "t1").await.iter().all(|e| e["provider"] != "whisper-base"), "edited lyrics drop the old timing");
 }
 
 #[tokio::test]
@@ -135,7 +137,7 @@ async fn cached_audio_gets_word_timing_that_the_lyrics_then_carry() {
     let job = wait_until_finished(&core).await;
     assert_eq!((job["state"].as_str(), job["progress"].as_f64()), (Some("done"), Some(1.0)), "{job}");
     let events = lyrics(&core, "t1").await;
-    let aligned = events.iter().find(|e| e["provider"] == "aligned").expect("the timing is offered");
+    let aligned = events.iter().find(|e| e["provider"] == "whisper-base").expect("the timing is offered");
     let ttml = aligned["candidate"]["lyrics"]["content"].as_str().unwrap();
     assert_eq!(ttml.matches("<span ").count(), 21, "{ttml}");
     assert_eq!(aligned["candidate"]["topPriority"], true, "timing of the owner's lyrics comes first");

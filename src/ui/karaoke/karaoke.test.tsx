@@ -70,6 +70,9 @@ vi.mock("../ports/lyrics", () => ({
           ? [
               { provider: "lrclib", label: null, syncLevel: "line_level", quality: 1, topPriority: false },
               ...(twoVersions ? [{ provider: "amll", label: null, syncLevel: "word_level", quality: 0.9, topPriority: false }] : []),
+              ...(activeVersion.startsWith("whisper-")
+                ? [{ provider: activeVersion, label: null, syncLevel: "word_level", quality: 0.85, topPriority: false }]
+                : []),
             ]
           : [],
       activeVersion,
@@ -364,9 +367,12 @@ describe("highlight modes", () => {
 
 describe("word timing in the lyrics view", () => {
   const song = { title: "Song", artists: "Artist", coverUrl: "", id: "t1" };
-  const control = (host: HTMLElement) => [...host.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "ui.karaoke.word_timing.switch");
-  const improve = (host: HTMLElement) =>
-    [...host.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "ui.karaoke.word_timing.improve");
+  const control = (host: HTMLElement) =>
+    [...host.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find((b) => b.textContent?.startsWith("ui.karaoke.word_timing."));
+  const improve = (host: HTMLElement) => {
+    act(() => host.querySelector<HTMLButtonElement>('[aria-label="ui.karaoke.version"]')?.click());
+    return [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent?.includes("ui.karaoke.word_timing.improve"));
+  };
 
   afterEach(() => {
     timing.view = null;
@@ -389,14 +395,15 @@ describe("word timing in the lyrics view", () => {
     view.unmount();
   });
 
-  it("shows the progress of this song's job and keeps the row in sight", () => {
+  it("shows the progress of this song's job on the switch and keeps the row in sight", () => {
     current = song;
     lyricsStatus = "ready";
     timing.view = { enabled: true, models: ["whisper-base"], job: { trackId: "t1", model: "whisper-base", state: "running", progress: 0.4 } };
     const view = mount(<Karaoke onClose={() => undefined} />);
-    expect(view.host.querySelector('[role="status"]')?.textContent).toBe("ui.karaoke.word_timing.running");
-    expect(view.host.querySelector("[data-busy]")).not.toBeNull();
+    expect(control(view.host)?.textContent).toBe("ui.karaoke.word_timing.running");
     expect(control(view.host)?.getAttribute("aria-pressed")).toBe("true");
+    expect(view.host.querySelector("[data-busy]")).not.toBeNull();
+    expect(view.host.textContent).not.toContain("ui.karaoke.highlight_line_only");
     view.unmount();
   });
 
@@ -410,14 +417,16 @@ describe("word timing in the lyrics view", () => {
     view.unmount();
   });
 
-  it("offers the larger model once the fast timing is shown", () => {
+  it("offers the larger model in the versions menu once the fast timing is shown", () => {
     current = song;
     lyricsStatus = "ready";
     wordTimed = true;
     activeVersion = "whisper-base";
     timing.view = { enabled: true, models: ["whisper-base"] };
     const view = mount(<Karaoke onClose={() => undefined} />);
-    act(() => improve(view.host)?.click());
+    const item = improve(view.host);
+    expect(item).toBeDefined();
+    act(() => item?.click());
     expect(timing.timeWords).toHaveBeenCalledWith("t1", true);
     activeVersion = "whisper-small";
     view.unmount();

@@ -298,15 +298,18 @@ fn soundcloud_queries(title: &str, uploader: &str, duration_ms: Option<i64>) -> 
     guesses.into_iter().map(|(artist, title)| nuvo_lyrics::Query { title, artist, duration_ms }).collect()
 }
 
-/// Word timing worked out on this computer for exactly these lyrics.
+/// Word timing worked out on this computer for exactly these lyrics, while it is on; the provider names the model.
 async fn aligned_for(data: &Unlocked, id: &str, lyrics: &str, top_priority: bool) -> Option<LyricsCandidate> {
+    if !crate::routes::word_timing::enabled(data).await.ok()? {
+        return None;
+    }
     let lookup = id.to_string();
     let timing = data.db.call(move |c| lyrics_words::get(c, &lookup)).await.ok()??;
     (timing.source_hash == crate::word_timing::source_hash(lyrics)).then(|| LyricsCandidate {
-        provider: "aligned".into(),
+        provider: timing.model,
         content_kind: "word_synced".into(),
         sync_level: "word_level".into(),
-        quality: LyricsQuality { total: 0.85, match_score: 1.0, content: 1.0, sync: 1.0, source: 0.8, reasons: vec![timing.model] },
+        quality: LyricsQuality { total: 0.85, match_score: 1.0, content: 1.0, sync: 1.0, source: 0.8, reasons: vec![] },
         lyrics: RawLyrics { format: "ttml".into(), content: timing.content },
         matched_track: None,
         top_priority,

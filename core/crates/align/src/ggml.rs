@@ -26,10 +26,66 @@ pub struct Hparams {
     pub n_mels: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kind {
+    F32,
+    F16,
+    Q5_1,
+    Q8_0,
+}
+
+impl Kind {
+    fn from_ggml(kind: u32) -> Option<Self> {
+        Some(match kind {
+            0 => Self::F32,
+            1 => Self::F16,
+            7 => Self::Q5_1,
+            8 => Self::Q8_0,
+            _ => return None,
+        })
+    }
+
+    fn bytes_for(self, elements: usize) -> Option<usize> {
+        match self {
+            Self::F32 => elements.checked_mul(4),
+            Self::F16 => elements.checked_mul(2),
+            Self::Q5_1 => elements.is_multiple_of(Q5_1_BLOCK).then(|| elements / Q5_1_BLOCK * Q5_1_BYTES),
+            Self::Q8_0 => elements.is_multiple_of(Q8_0_BLOCK).then(|| elements / Q8_0_BLOCK * Q8_0_BYTES),
+        }
+    }
+
+    fn decode(self, bytes: &[u8]) -> Vec<f32> {
+        match self {
+            Self::F32 => floats(bytes),
+            Self::F16 => halves(bytes),
+            Self::Q5_1 => q5_1(bytes),
+            Self::Q8_0 => q8_0(bytes),
+        }
+    }
+}
+
+/// Weights stay packed as in the file and are widened to f32 only while a layer uses them.
 pub struct Tensor {
     /// Outermost first, like the PyTorch shape.
     pub shape: Vec<usize>,
-    pub data: Vec<f32>,
+    kind: Kind,
+    bytes: Vec<u8>,
+}
+
+impl Tensor {
+    pub fn elements(&self) -> usize {
+        self.shape.iter().product()
+    }
+
+    pub fn to_f32(&self) -> Vec<f32> {
+        self.kind.decode(&self.bytes)
+    }
+
+    /// Rows `range` of the outermost dimension; a row of a quantised tensor always holds whole blocks.
+    pub fn rows(&self, range: std::ops::Range<usize>) -> Vec<f32> {
+        let row_bytes = self.bytes.len() / self.shape[0];
+        self.kind.decode(&self.bytes[range.start * row_bytes..range.end * row_bytes])
+    }
 }
 
 pub struct ModelFile {
@@ -113,14 +169,13 @@ pub fn parse(bytes: &[u8]) -> Result<ModelFile, AlignError> {
         shape.reverse();
         let name = String::from_utf8(reader.take(name_length)?.to_vec()).map_err(|_| AlignError::BadModel("a tensor name is not text"))?;
         let elements: usize = shape.iter().product();
-        let data = match kind {
-            0 => floats(reader.take(elements * 4)?),
-            1 => halves(reader.take(elements * 2)?),
-            7 if elements.is_multiple_of(Q5_1_BLOCK) => q5_1(reader.take(elements / Q5_1_BLOCK * Q5_1_BYTES)?),
-            8 if elements.is_multiple_of(Q8_0_BLOCK) => q8_0(reader.take(elements / Q8_0_BLOCK * Q8_0_BYTES)?),
-            _ => return Err(AlignError::BadModel("a tensor has an unsupported type")),
-        };
-        tensors.insert(name, Tensor { shape, data });
+        let unsupported = || AlignError::BadModel("a tensor has an unsupported type");
+        let kind = Kind::from_ggml(kind).ok_or_else(unsupported)?;
+        let size = kind.bytes_for(elements).ok_or_else(unsupported)?;
+        if shape.first().is_some_and(|rows| *rows == 0 || size % rows != 0) || shape.is_empty() {
+            return Err(AlignError::BadModel("a tensor has an empty or uneven shape"));
+        }
+        tensors.insert(name, Tensor { shape, kind, bytes: reader.take(size)?.to_vec() });
     }
     Ok(ModelFile { hparams, mel_filters, n_fft_bins, vocab, tensors })
 }
@@ -184,6 +239,18 @@ mod tests {
         assert_eq!(values[0], 1.0 + 16.0 - 16.0);
         assert_eq!(values[1], 1.0 - 16.0);
         assert_eq!(values[16], 2.0 - 16.0);
+    }
+
+    #[test]
+    fn packed_rows_widen_on_their_own() {
+        let mut bytes = Vec::new();
+        for scale in [1.0f32, 2.0] {
+            bytes.extend(half::f16::from_f32(scale).to_le_bytes());
+            bytes.extend([1u8; 32]);
+        }
+        let tensor = Tensor { shape: vec![2, 32], kind: Kind::Q8_0, bytes };
+        assert_eq!(tensor.rows(1..2), vec![2.0; 32]);
+        assert_eq!(tensor.to_f32().len(), 64);
     }
 
     #[test]

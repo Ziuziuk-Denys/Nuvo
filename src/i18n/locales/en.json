@@ -747,7 +747,6 @@
         "running": "Timing words {percent}%",
         "improving": "Improving {percent}%",
         "improve": "Improve timing",
-        "improve_hint": "Runs a larger model: slower and closer to the voice. Downloads 264 MB once.",
         "no_lines": "Word timing needs lyrics with timed lines",
         "no_audio": "The song is not saved on this computer yet",
         "no_ffmpeg": "Word timing waits for ffmpeg to download",

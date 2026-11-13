@@ -9,6 +9,7 @@ use crate::ggml::{Hparams, ModelFile, Tensor};
 use crate::tokenizer::{MULTILINGUAL_VOCAB, Tokenizer};
 
 const LAYER_NORM_EPS: f32 = 1e-5;
+const VOCAB_SLICE: usize = 8192;
 
 /// Row-major matrix view: `rows` rows of `cols` values, `stride` apart.
 #[derive(Clone, Copy)]
@@ -68,7 +69,7 @@ fn product(a: View, b: View, b_transposed: bool, out: &mut [f32], out_stride: us
 }
 
 struct Linear {
-    weight: Vec<f32>,
+    weight: Tensor,
     bias: Option<Vec<f32>>,
     inputs: usize,
     outputs: usize,
@@ -77,7 +78,8 @@ struct Linear {
 impl Linear {
     fn forward(&self, x: &[f32], rows: usize) -> Vec<f32> {
         let mut out = vec![0.0; rows * self.outputs];
-        product(View::new(x, rows, self.inputs), View::new(&self.weight, self.outputs, self.inputs), true, &mut out, self.outputs);
+        let weight = self.weight.to_f32();
+        product(View::new(x, rows, self.inputs), View::new(&weight, self.outputs, self.inputs), true, &mut out, self.outputs);
         if let Some(bias) = &self.bias {
             for row in out.chunks_exact_mut(self.outputs) {
                 row.iter_mut().zip(bias).for_each(|(v, b)| *v += b);
@@ -148,7 +150,7 @@ pub struct Whisper {
     encoder_positions: Vec<f32>,
     encoder: Vec<Block>,
     encoder_ln: Norm,
-    token_embedding: Vec<f32>,
+    token_embedding: Tensor,
     decoder_positions: Vec<f32>,
     decoder: Vec<Block>,
     decoder_ln: Norm,
@@ -169,17 +171,21 @@ fn alignment_heads(hparams: &Hparams) -> Option<Vec<(usize, usize)>> {
 struct Weights(HashMap<String, Tensor>);
 
 impl Weights {
-    fn take(&mut self, name: &str, shape: &[usize]) -> Result<Vec<f32>, AlignError> {
+    /// A packed tensor whose outermost size is `shape[0]` and whose size is the product of `shape`.
+    fn packed(&mut self, name: &str, shape: &[usize]) -> Result<Tensor, AlignError> {
         let tensor = self.0.remove(name).ok_or(AlignError::BadModel("a tensor is missing"))?;
-        let elements: usize = shape.iter().product();
-        if tensor.data.len() != elements || tensor.shape.iter().product::<usize>() != elements {
+        if tensor.elements() != shape.iter().product::<usize>() || tensor.shape[0] != shape[0] {
             return Err(AlignError::BadModel("a tensor has the wrong shape"));
         }
-        Ok(tensor.data)
+        Ok(tensor)
+    }
+
+    fn take(&mut self, name: &str, shape: &[usize]) -> Result<Vec<f32>, AlignError> {
+        Ok(self.packed(name, shape)?.to_f32())
     }
 
     fn linear(&mut self, name: &str, inputs: usize, outputs: usize, bias: bool) -> Result<Linear, AlignError> {
-        let weight = self.take(&format!("{name}.weight"), &[outputs, inputs])?;
+        let weight = self.packed(&format!("{name}.weight"), &[outputs, inputs])?;
         let bias = if bias { Some(self.take(&format!("{name}.bias"), &[outputs])?) } else { None };
         Ok(Linear { weight, bias, inputs, outputs })
     }
@@ -221,7 +227,7 @@ impl Whisper {
         let width = h.n_audio_state;
         let mut w = Weights(file.tensors);
         let conv = |w: &mut Weights, name: &str, inputs: usize| -> Result<Linear, AlignError> {
-            let weight = w.take(&format!("encoder.{name}.weight"), &[width, inputs, 3])?;
+            let weight = w.packed(&format!("encoder.{name}.weight"), &[width, inputs, 3])?;
             let bias = w.take(&format!("encoder.{name}.bias"), &[width])?;
             Ok(Linear { weight, bias: Some(bias), inputs: inputs * 3, outputs: width })
         };
@@ -230,7 +236,7 @@ impl Whisper {
         let encoder_positions = w.take("encoder.positional_embedding", &[h.n_audio_ctx, width])?;
         let encoder = (0..h.n_audio_layer).map(|i| w.block(&format!("encoder.blocks.{i}"), width, h.n_audio_head, false)).collect::<Result<_, _>>()?;
         let encoder_ln = w.norm("encoder.ln_post", width)?;
-        let token_embedding = w.take("decoder.token_embedding.weight", &[h.n_vocab, width])?;
+        let token_embedding = w.packed("decoder.token_embedding.weight", &[h.n_vocab, width])?;
         let decoder_positions = w.take("decoder.positional_embedding", &[h.n_text_ctx, width])?;
         let decoder = (0..h.n_text_layer).map(|i| w.block(&format!("decoder.blocks.{i}"), width, h.n_text_head, true)).collect::<Result<_, _>>()?;
         let decoder_ln = w.norm("decoder.ln", width)?;
@@ -297,7 +303,7 @@ impl Whisper {
         assert!(rows <= self.hparams.n_text_ctx && frames <= cross.frames, "decoder input fits its context");
         let mut x = Vec::with_capacity(rows * width);
         for (at, token) in tokens.iter().enumerate() {
-            let embedding = &self.token_embedding[*token as usize * width..][..width];
+            let embedding = self.token_embedding.rows(*token as usize..*token as usize + 1);
             x.extend(embedding.iter().zip(&self.decoder_positions[at * width..][..width]).map(|(e, p)| e + p));
         }
         let mut scores = vec![0.0; self.alignment_heads.len() * rows * frames];
@@ -314,14 +320,22 @@ impl Whisper {
         Decoded { hidden: self.decoder_ln.forward(&x), scores }
     }
 
-    /// Log-probabilities over the vocabulary after the token at `row`.
-    pub fn log_probs(&self, decoded: &Decoded, row: usize) -> Vec<f32> {
-        let width = self.width();
-        let mut logits = vec![0.0; self.hparams.n_vocab];
-        product(View::new(&decoded.hidden[row * width..][..width], 1, width), View::new(&self.token_embedding, self.hparams.n_vocab, width), true, &mut logits, self.hparams.n_vocab);
-        let top = logits.iter().copied().fold(f32::MIN, f32::max);
-        let log_sum = logits.iter().map(|v| (v - top).exp()).sum::<f32>().ln() + top;
-        logits.iter_mut().for_each(|v| *v -= log_sum);
+    /// Log-probabilities over the vocabulary after each token in `rows`, one vocabulary-wide row each.
+    pub fn log_probs(&self, decoded: &Decoded, rows: std::ops::Range<usize>) -> Vec<f32> {
+        let (width, vocab, count) = (self.width(), self.hparams.n_vocab, rows.len());
+        let hidden = View::new(&decoded.hidden[rows.start * width..rows.end * width], count, width);
+        let mut logits = vec![0.0; count * vocab];
+        // the embedding is widened a slice at a time, never whole
+        for from in (0..vocab).step_by(VOCAB_SLICE) {
+            let to = (from + VOCAB_SLICE).min(vocab);
+            let slice = self.token_embedding.rows(from..to);
+            product(hidden, View::new(&slice, to - from, width), true, &mut logits[from..], vocab);
+        }
+        for row in logits.chunks_exact_mut(vocab) {
+            let top = row.iter().copied().fold(f32::MIN, f32::max);
+            let log_sum = row.iter().map(|v| (v - top).exp()).sum::<f32>().ln() + top;
+            row.iter_mut().for_each(|v| *v -= log_sum);
+        }
         logits
     }
 

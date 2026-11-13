@@ -132,14 +132,17 @@ fn align_window(model: &Whisper, samples: &[f32], pieces: &[Piece], stop: &dyn F
     let frames = (samples.len() * 1000 / SAMPLE_RATE).div_ceil(STATE_MS as usize).clamp(1, model.hparams.n_audio_ctx);
     let language = {
         let decoded = model.decode(&[SOT], &cross, frames);
-        let log_probs = model.log_probs(&decoded, 0);
+        let log_probs = model.log_probs(&decoded, 0..1);
         (FIRST_LANGUAGE..TRANSLATE).max_by(|a, b| log_probs[*a as usize].total_cmp(&log_probs[*b as usize])).expect("languages")
     };
     let prompt = [SOT, language, TRANSCRIBE, NO_TIMESTAMPS];
     let text: Vec<u32> = pieces.iter().flat_map(|piece| piece.tokens.iter().copied()).collect();
     let tokens: Vec<u32> = prompt.iter().copied().chain(text.iter().copied()).chain([EOT]).collect();
     let decoded = model.decode(&tokens, &cross, frames);
-    let probabilities: Vec<f32> = (0..text.len()).map(|i| model.log_probs(&decoded, prompt.len() - 1 + i)[text[i] as usize].exp()).collect();
+    let first = prompt.len() - 1;
+    let vocab = model.hparams.n_vocab;
+    let log_probs = model.log_probs(&decoded, first..first + text.len());
+    let probabilities: Vec<f32> = text.iter().enumerate().map(|(i, token)| log_probs[i * vocab + *token as usize].exp()).collect();
     let matrix = attention_matrix(&decoded.scores, model.alignment_heads.len(), tokens.len(), frames, prompt.len() - 1..tokens.len() - 1);
     // the row of a token is the one that predicts it; the last row predicts the end
     let mut bands: Vec<Range<usize>> = pieces.iter().flat_map(|piece| std::iter::repeat_n(piece.band.start.min(frames)..piece.band.end.min(frames), piece.tokens.len())).collect();

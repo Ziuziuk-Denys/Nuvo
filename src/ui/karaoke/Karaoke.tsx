@@ -164,9 +164,15 @@ function VersionButton(): JSX.Element | null {
   const { t } = useTranslation();
   const versions = useLyrics((state) => state.versions);
   const active = useLyrics((state) => state.activeVersion);
+  const trackId = useLyrics((state) => state.trackId);
+  const timing = useWordTiming();
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   if (versions.length < 2) return null;
+  const improve =
+    timing?.enabled && trackId && active === "whisper-base" && !isRunning(timing.job, trackId)
+      ? (["separator", { label: t("ui.karaoke.word_timing.improve"), onSelect: () => void timeWords(trackId, true) }] as const)
+      : [];
   return (
     <>
       <button
@@ -186,11 +192,14 @@ function VersionButton(): JSX.Element | null {
         anchor={anchor}
         onClose={() => setOpen(false)}
         className={styles.versionMenu}
-        items={versions.map((version) => ({
-          label: versionLabel(version, t),
-          icon: version.provider === active ? "check" : undefined,
-          onSelect: () => lyricsCommands.chooseVersion(version.provider),
-        }))}
+        items={[
+          ...versions.map((version) => ({
+            label: versionLabel(version, t),
+            icon: version.provider === active ? ("check" as const) : undefined,
+            onSelect: () => lyricsCommands.chooseVersion(version.provider),
+          })),
+          ...improve,
+        ]}
       />
     </>
   );
@@ -205,6 +214,7 @@ const FAILURE_TEXT: Record<string, string> = {
   too_long: "ui.karaoke.word_timing.too_long",
 };
 
+/** One button: the switch, which shows the progress while this song is being timed. */
 function WordTimingControl({ trackId, lineOnly }: { trackId: string | null; lineOnly: boolean }): JSX.Element | null {
   const { t } = useTranslation();
   const view = useWordTiming();
@@ -213,43 +223,28 @@ function WordTimingControl({ trackId, lineOnly }: { trackId: string | null; line
   const lineOnlyText = lineOnly ? <span className={styles.lineOnly}>{t("ui.karaoke.highlight_line_only")}</span> : null;
   if (!view || !trackId || (!lineOnly && !isLocalTiming(active))) return lineOnlyText;
   const job = view.job?.trackId === trackId ? view.job : undefined;
-  const percent = Math.round((job?.progress ?? 0) * 100);
-  let status: string | null = null;
-  if (view.enabled && isRunning(job, trackId)) {
-    const key =
-      job.state === "waiting"
-        ? "ui.karaoke.word_timing.waiting"
-        : job.model === "whisper-small"
-          ? "ui.karaoke.word_timing.improving"
-          : "ui.karaoke.word_timing.running";
-    status = t(key, { percent });
-  } else if (view.enabled && lineOnly && job?.state === "failed") {
-    status = t(FAILURE_TEXT[job.code ?? ""] ?? "ui.karaoke.word_timing.failed");
+  const running = view.enabled && isRunning(job, trackId);
+  const failure = view.enabled && lineOnly && job?.state === "failed" ? t(FAILURE_TEXT[job.code ?? ""] ?? "ui.karaoke.word_timing.failed") : null;
+  let label = t("ui.karaoke.word_timing.switch");
+  if (running) {
+    const key = job.state === "waiting" ? "waiting" : job.model === "whisper-small" ? "improving" : "running";
+    label = t(`ui.karaoke.word_timing.${key}`, { percent: Math.round(job.progress * 100) });
   }
-  const canImprove = view.enabled && active === "whisper-base" && !isRunning(job, trackId);
   return (
     <>
-      {status ? null : lineOnlyText}
+      {running || failure ? null : lineOnlyText}
+      {failure ? <span className={styles.lineOnly}>{failure}</span> : null}
       <button
         type="button"
         aria-pressed={view.enabled}
+        aria-live="polite"
         data-on={view.enabled ? "" : undefined}
         title={t(view.enabled ? "ui.karaoke.word_timing.off_hint" : "ui.karaoke.word_timing.on_hint")}
         className={styles.words}
         onClick={() => void setWordTiming(!view.enabled).then(() => (view.enabled ? undefined : timeWords(trackId)))}
       >
-        {t("ui.karaoke.word_timing.switch")}
+        {label}
       </button>
-      {status ? (
-        <span className={styles.lineOnly} role="status">
-          {status}
-        </span>
-      ) : null}
-      {canImprove ? (
-        <button type="button" title={t("ui.karaoke.word_timing.improve_hint")} className={styles.words} onClick={() => void timeWords(trackId, true)}>
-          {t("ui.karaoke.word_timing.improve")}
-        </button>
-      ) : null}
     </>
   );
 }
