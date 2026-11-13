@@ -10,6 +10,7 @@ name = "nuvo-core"
 path = "src/main.rs"
 
 [dependencies]
+nuvo-align.workspace = true
 nuvo-cache.workspace = true
 nuvo-contracts.workspace = true
 nuvo-covers.workspace = true
@@ -31,6 +32,8 @@ futures.workspace = true
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# The lyrics a word timing belongs to are known by their hash; already a dependency of nuvo-fetch.
+sha2.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -51,7 +54,6 @@ rusqlite = { workspace = true, features = ["bundled-sqlcipher-vendored-openssl"]
 [dev-dependencies]
 http-body-util.workspace = true
 image.workspace = true
-sha2.workspace = true
 tempfile.workspace = true
 # A self-signed TLS server for the network check test; already in the lock through reqwest.
 tokio-rustls = { version = "0.26", default-features = false, features = ["aws_lc_rs"] }

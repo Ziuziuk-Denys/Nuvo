@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use nuvo_contracts::{Deps, ToolDownload, ToolStatusKind};
 use nuvo_fetch::tools::exe_name;
-use nuvo_fetch::update::{Archive, BINARY_NAME, Outcome, Progress, TOOL_HOSTS, UpdateError, asset_for, deno_build_for, ffmpeg_build_for, install_archive, update_yt_dlp};
+use nuvo_fetch::update::{Archive, BINARY_NAME, Outcome, Pinned, Progress, TOOL_HOST_SUFFIX, TOOL_HOSTS, UpdateError, asset_for, deno_build_for, ffmpeg_build_for, install_archive, install_pinned, update_yt_dlp};
 use nuvo_store::now_ms;
 use reqwest::redirect::Policy;
 
@@ -51,7 +51,7 @@ fn set_download(state: &AppState, download: Option<ToolDownload>) {
 
 /// Plain http is the local test server; real sources are https and must stay on their hosts.
 pub fn redirect_allowed(url: &reqwest::Url, https_only: bool) -> bool {
-    !https_only || (url.scheme() == "https" && url.host_str().is_some_and(|host| TOOL_HOSTS.contains(&host)))
+    !https_only || (url.scheme() == "https" && url.host_str().is_some_and(|host| TOOL_HOSTS.contains(&host) || host.ends_with(TOOL_HOST_SUFFIX)))
 }
 
 fn client(state: &AppState, https_only: bool) -> Result<reqwest::Client, UpdateError> {
@@ -77,6 +77,7 @@ fn client(state: &AppState, https_only: bool) -> Result<reqwest::Client, UpdateE
 enum Job<'a> {
     YtDlp { url: &'a str, asset: &'static str },
     Archive { build: &'a Archive, force: bool },
+    Pinned { file: &'a Pinned, path: &'a Path },
 }
 
 async fn run(state: &AppState, tool: &'static str, job: &Job<'_>, client: &reqwest::Client, progress: Progress<'_>) -> Result<Outcome, UpdateError> {
@@ -84,6 +85,7 @@ async fn run(state: &AppState, tool: &'static str, job: &Job<'_>, client: &reqwe
     match job {
         Job::YtDlp { url, asset } => update_yt_dlp(client, url, asset, dir, progress).await,
         Job::Archive { build, force } => install_archive(client, build, tool, dir, *force, progress).await,
+        Job::Pinned { file, path } => install_pinned(client, file, path, progress).await,
     }
 }
 
@@ -149,6 +151,11 @@ pub async fn ensure(state: &AppState, name: &'static str, build: Option<Archive>
         return;
     };
     let _ = fetch(state, name, build.url.starts_with("https://"), Job::Archive { build: &build, force }).await;
+}
+
+/// Downloads a pinned data file to `path` with the progress and retries of the tool downloads.
+pub async fn ensure_pinned(state: &AppState, file: &'static Pinned, path: &Path) -> Result<Outcome, UpdateError> {
+    fetch(state, file.name, file.url.starts_with("https://"), Job::Pinned { file, path }).await
 }
 
 /// Runs a round now instead of at the next hour; `tool` is a Settings row to download again.

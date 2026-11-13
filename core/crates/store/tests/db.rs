@@ -7,7 +7,7 @@ use serde_json::json;
 fn creates_an_encrypted_database_at_the_latest_schema() {
     let (dir, conn) = common::open();
     let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
-    assert_eq!(version, 21);
+    assert_eq!(version, 22);
     drop(conn);
     let raw = std::fs::read(dir.path().join("library.db")).unwrap();
     assert!(!raw.starts_with(b"SQLite format 3"), "file header must be encrypted");
@@ -122,7 +122,7 @@ fn migration_7_deduplicates_play_events_before_creating_unique_index() {
 
     let conn = open_connection(&db_path, &common::KEY, &dir.path().join("backups")).unwrap();
     let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
-    assert_eq!(version, 21, "migrations 7 to 21 applied");
+    assert_eq!(version, 22, "migrations 7 to 22 applied");
 
     let count: i64 = conn.query_row("SELECT count(*) FROM play_events", [], |r| r.get(0)).unwrap();
     assert_eq!(count, 1, "duplicates removed, keeping lowest rowid");

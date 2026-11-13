@@ -1978,6 +1978,7 @@ dependencies = [
  "image",
  "libc",
  "notify",
+ "nuvo-align",
  "nuvo-cache",
  "nuvo-contracts",
  "nuvo-covers",

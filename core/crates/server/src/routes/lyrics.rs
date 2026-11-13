@@ -14,7 +14,7 @@ use nuvo_contracts::{
     LyricsTrackMeta, MAX_TRACK_ID_LEN, RawLyrics, SetLyricsOffset, SetUserLyrics,
 };
 use nuvo_lyrics::Lookup;
-use nuvo_store::{lyrics_cache, lyrics_user, now_ms, tracks};
+use nuvo_store::{lyrics_cache, lyrics_user, lyrics_words, now_ms, tracks};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::sync::mpsc;
@@ -182,7 +182,11 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
 
     let user_id = id.clone();
     if let Ok(Some((format, content))) = data.db.call(move |c| lyrics_user::user_lyrics(c, &user_id)).await {
+        let aligned = if format == "lrc" { aligned_for(&data, &id, &content, true).await } else { None };
         send(user_event(format, content)).await;
+        if let Some(aligned) = aligned {
+            send(found_event(aligned, 0)).await;
+        }
     }
 
     if id.starts_with("local:") {
@@ -191,7 +195,14 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
             && let Some(text) = read_sidecar(&local).await
         {
             // never cached: the owner may edit the file
-            return found(&send, sidecar_candidate(text), 0, false).await;
+            let candidate = sidecar_candidate(text);
+            return match aligned_for(&data, &id, &candidate.lyrics.content, false).await {
+                Some(aligned) => {
+                    send(found_event(candidate, 0)).await;
+                    found(&send, aligned, 0, false).await
+                }
+                None => found(&send, candidate, 0, false).await,
+            };
         }
     }
 
@@ -218,7 +229,14 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
     let cached = lines.cached;
     let instrumental = lines.instrumental;
     let failed = lines.message.is_some();
-    match words.or(lines.candidate) {
+    let aligned = match (&words, &lines.candidate) {
+        (None, Some(line)) => aligned_for(&data, &id, &line.lyrics.content, false).await,
+        _ => None,
+    };
+    if let Some(aligned) = &aligned {
+        send(found_event(aligned.clone(), 0)).await;
+    }
+    match words.or(aligned).or(lines.candidate) {
         Some(best) => send(LyricsStreamEvent::Done { cached, best: Some(best_of(&best)), status: None }).await,
         None if instrumental => send(LyricsStreamEvent::Done { cached, best: None, status: Some("instrumental") }).await,
         None => send(LyricsStreamEvent::Done { cached: cached && !failed, best: None, status: Some("not_found") }).await,
@@ -278,6 +296,21 @@ fn soundcloud_queries(title: &str, uploader: &str, duration_ms: Option<i64>) -> 
         fresh
     });
     guesses.into_iter().map(|(artist, title)| nuvo_lyrics::Query { title, artist, duration_ms }).collect()
+}
+
+/// Word timing worked out on this computer for exactly these lyrics.
+async fn aligned_for(data: &Unlocked, id: &str, lyrics: &str, top_priority: bool) -> Option<LyricsCandidate> {
+    let lookup = id.to_string();
+    let timing = data.db.call(move |c| lyrics_words::get(c, &lookup)).await.ok()??;
+    (timing.source_hash == crate::word_timing::source_hash(lyrics)).then(|| LyricsCandidate {
+        provider: "aligned".into(),
+        content_kind: "word_synced".into(),
+        sync_level: "word_level".into(),
+        quality: LyricsQuality { total: 0.85, match_score: 1.0, content: 1.0, sync: 1.0, source: 0.8, reasons: vec![timing.model] },
+        lyrics: RawLyrics { format: "ttml".into(), content: timing.content },
+        matched_track: None,
+        top_priority,
+    })
 }
 
 struct LineOutcome {
@@ -380,7 +413,7 @@ where
 
 const MAX_LRC_BYTES: u64 = 512 * 1024;
 
-async fn read_sidecar(local: &nuvo_store::local::LocalFile) -> Option<String> {
+pub(crate) async fn read_sidecar(local: &nuvo_store::local::LocalFile) -> Option<String> {
     let lrc = std::path::PathBuf::from(local.row.lrc_path.as_ref()?);
     if lrc.parent() != std::path::Path::new(&local.row.path).parent() {
         return None;

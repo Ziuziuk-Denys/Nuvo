@@ -12,6 +12,7 @@ pub mod listening;
 pub mod local;
 pub mod lyrics_cache;
 pub mod lyrics_user;
+pub mod lyrics_words;
 pub mod playlists;
 pub mod recognitions;
 pub mod scrobbles;

@@ -367,4 +367,12 @@ ALTER TABLE play_events ADD COLUMN source TEXT;
 UPDATE play_events SET tz_offset_min = (((started_at / 3600000 - hour) % 24 + 37) % 24 - 13) * 60,
   source = (SELECT t.source FROM tracks t WHERE t.id = play_events.track_id);
 CREATE INDEX play_events_started ON play_events(started_at);
+"#, r#"
+CREATE TABLE IF NOT EXISTS lyrics_words (
+  track_id TEXT PRIMARY KEY,
+  source_hash TEXT NOT NULL,
+  model TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
 "#];

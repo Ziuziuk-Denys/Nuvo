@@ -2,14 +2,20 @@ use std::io::ErrorKind;
 use std::process::{Output, Stdio};
 use std::time::Duration;
 
-use tokio::io::AsyncReadExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::Command;
 
 use crate::FetchError;
 
 // The child is killed on timeout, on output over caps, or when the future is dropped
-pub async fn run(
+pub async fn run(command: Command, timeout: Duration, max_stdout: usize, max_stderr: usize) -> Result<Output, FetchError> {
+    run_with_input(command, None, timeout, max_stdout, max_stderr).await
+}
+
+/// Like `run`, with `input` written to the child's stdin while its output is read.
+pub async fn run_with_input(
     mut command: Command,
+    input: Option<Vec<u8>>,
     timeout: Duration,
     max_stdout: usize,
     max_stderr: usize,
@@ -19,7 +25,7 @@ pub async fn run(
     // No console window flashes up for a tool started from the GUI app.
     #[cfg(windows)]
     command.creation_flags(0x0800_0000);
-    command.kill_on_drop(true).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    command.kill_on_drop(true).stdin(if input.is_some() { Stdio::piped() } else { Stdio::null() }).stdout(Stdio::piped()).stderr(Stdio::piped());
     // A script still open for writing refuses to start for a moment (ETXTBSY)
     let mut spawned = command.spawn();
     for _ in 0..5 {
@@ -40,9 +46,16 @@ pub async fn run(
     let mut group = GroupKill(child.id());
     let stdout = child.stdout.take().unwrap();
     let stderr = child.stderr.take().unwrap();
+    let stdin = child.stdin.take();
 
     let finish = async {
-        let (out, err) = tokio::join!(read_limited(stdout, max_stdout), read_limited(stderr, max_stderr));
+        // A child that stops reading early (bad input) closes the pipe; its exit status tells what went wrong.
+        let feed = async move {
+            if let (Some(mut stdin), Some(input)) = (stdin, input) {
+                let _ = stdin.write_all(&input).await;
+            }
+        };
+        let (out, err, ()) = tokio::join!(read_limited(stdout, max_stdout), read_limited(stderr, max_stderr), feed);
         let status = child.wait().await.map_err(|e| FetchError::DecodeFailed(e.to_string()))?;
         Ok::<_, FetchError>((out?, err?, status))
     };

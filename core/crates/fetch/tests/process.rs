@@ -32,3 +32,11 @@ async fn a_timeout_kills_the_tool_and_the_helpers_it_started() {
     }
     panic!("the helper (pid {pid}) outlived its tool");
 }
+
+#[tokio::test]
+async fn input_reaches_the_tool_while_its_output_is_read() {
+    let input: Vec<u8> = (0..200_000u32).map(|i| (i % 251) as u8).collect();
+    let output = nuvo_fetch::process::run_with_input(Command::new("cat"), Some(input.clone()), Duration::from_secs(10), 1 << 20, 1024).await.unwrap();
+    assert!(output.status.success());
+    assert_eq!(output.stdout, input);
+}

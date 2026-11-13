@@ -937,6 +937,42 @@ pub struct SetLyricsOffset {
     pub offset_ms: i64,
 }
 
+/// `state`: `waiting` (for the model or the audio), `running`, `done` or `failed` (with `code`).
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WordTimingJob {
+    pub track_id: String,
+    pub model: &'static str,
+    pub state: &'static str,
+    pub progress: f32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<&'static str>,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WordTiming {
+    pub enabled: bool,
+    /// The models already on this computer.
+    pub models: Vec<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub job: Option<WordTimingJob>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SetWordTiming {
+    pub enabled: bool,
+}
+
+#[derive(Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StartWordTiming {
+    /// The larger model: slower, closer to the voice.
+    #[serde(default)]
+    pub best: bool,
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SetUserLyrics {
