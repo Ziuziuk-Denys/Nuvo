@@ -475,7 +475,7 @@
     {
       "name": "Passphrase protection when no system keyring exists",
       "category": "Privacy and system",
-      "where": "Settings > Network"
+      "where": "Settings > Storage"
     },
     {
       "name": "Proxy setting",
