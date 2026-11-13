@@ -24,6 +24,7 @@ nuvo-net = { path = "crates/net" }
 nuvo-soundcloud = { path = "crates/soundcloud" }
 nuvo-import = { path = "crates/import" }
 nuvo-local = { path = "crates/local" }
+nuvo-align = { path = "crates/align" }
 axum = "0.8"
 bip39 = "3"
 chacha20poly1305 = "0.11"
@@ -86,6 +87,16 @@ opt-level = 3
 opt-level = 3
 
 [profile.dev.package.zune-jpeg]
+opt-level = 3
+
+# Word timing runs a speech model; unoptimised it takes minutes per song.
+[profile.dev.package.nuvo-align]
+opt-level = 3
+
+[profile.dev.package.gemm-common]
+opt-level = 3
+
+[profile.dev.package.gemm-f32]
 opt-level = 3
 
 [profile.release]

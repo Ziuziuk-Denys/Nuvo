@@ -18,6 +18,7 @@ pub const YOUTUBE_PREFERENCES: &str = "youtube_preferences";
 pub const SOUNDCLOUD_CLIENT_ID: &str = "soundcloud_client_id";
 pub const SHORTCUTS: &str = "shortcuts";
 pub const LYRICS_TRANSLATOR: &str = "lyrics_translator";
+pub const LYRICS_WORD_TIMING: &str = "lyrics_word_timing";
 
 pub const STATS_PAUSED: &str = "stats.paused";
 

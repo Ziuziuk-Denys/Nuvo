@@ -63,7 +63,7 @@ fn a_version_1_library_is_backed_up_and_upgraded() {
     let backups = dir.path().join("backups");
     let conn = nuvo_store::open_connection(&path, &common::KEY, &backups).unwrap();
     let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
-    assert_eq!(version, 21);
+    assert_eq!(version, 22);
     assert_eq!(nuvo_store::settings::get(&conn, "k").unwrap(), Some(json!("kept")));
     recognitions::insert(&conn, "a", 1, "file", "x", &json!({})).unwrap();
     let names: Vec<String> = std::fs::read_dir(&backups).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();

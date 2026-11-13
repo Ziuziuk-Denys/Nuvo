@@ -97,6 +97,7 @@ export const ROW_PROGRAM: Record<ToolRowName, string> = { "yt-dlp": "yt-dlp", "j
 
 export function programLabel(program: string): string {
   if (program === "deno") return "Deno";
+  if (program.startsWith("whisper-")) return "Whisper";
   return program === "ffmpeg" ? "ffmpeg" : "yt-dlp";
 }
 

@@ -738,7 +738,23 @@
       "highlight_line_only": "Line only: no word timing for this song",
       "version": "Lyrics version",
       "add_lyrics": "Add lyrics",
-      "romanize_kana": "Romanized lyrics: kana only, kanji stays as written"
+      "romanize_kana": "Romanized lyrics: kana only, kanji stays as written",
+      "word_timing": {
+        "switch": "Word timing",
+        "on_hint": "Times every word on this computer. The first time downloads an 82 MB model.",
+        "off_hint": "Turn off word timing made on this computer",
+        "waiting": "Getting ready",
+        "running": "Timing words {percent}%",
+        "improving": "Improving {percent}%",
+        "improve": "Improve timing",
+        "no_lines": "Word timing needs lyrics with timed lines",
+        "no_audio": "The song is not saved on this computer yet",
+        "no_ffmpeg": "Word timing waits for ffmpeg to download",
+        "download_failed": "The word timing model did not download",
+        "mismatch": "These lyrics do not match the song",
+        "too_long": "This song is too long to time",
+        "failed": "The words could not be timed"
+      }
     },
     "local": {
       "add_folder": "Add a music folder",
@@ -804,7 +820,8 @@
       "version_plain": "Plain text",
       "version_synced": "Timed by line",
       "version_word": "Timed by word",
-      "version_own": "Your lyrics"
+      "version_own": "Your lyrics",
+      "version_timed": "Timed on this computer"
     },
     "settings": {
       "auto_gain_desc": "Lowers the level before boosts so they don't clip",
@@ -1624,6 +1641,10 @@
       "word": "Word",
       "fill": "Fill",
       "step": "Step"
+    },
+    "word_timing": {
+      "title": "Word timing",
+      "description": "Times every word of synced lyrics on this computer, for any song. The first time downloads an 82 MB model; results are kept."
     },
     "track_double_click": {
       "title": "Click on a song",

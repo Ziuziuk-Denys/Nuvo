@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { FRAME_MS, lyrics, pinTopOnNewTrack, releaseTopPin, romanizeKana, romanizerFor, wordProgress, type LyricsState, type Version } from "@/lyrics";
 import type { TFunction } from "./i18n";
+import { isLocalTiming } from "./wordTiming";
 
 export { FRAME_MS, romanizeKana, romanizerFor };
 export type { Line, LyricsState, LyricsStatus, RawLyrics, Version, Word, PinInput, ReleaseInput } from "@/lyrics";
@@ -14,6 +15,7 @@ export function useLyrics<T>(selector: (state: LyricsState) => T): T {
 
 export function versionLabel(version: Version, t: TFunction): string {
   if (version.label) return version.label;
+  if (isLocalTiming(version.provider)) return t("ui.lyrics.version_timed");
   if (version.topPriority) return t("ui.lyrics.version_own");
   if (version.syncLevel === "word_level" || version.syncLevel === "syllable_level") return t("ui.lyrics.version_word");
   if (version.syncLevel === "line_level") return t("ui.lyrics.version_synced");

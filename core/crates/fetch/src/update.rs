@@ -17,7 +17,9 @@ const SUMS_LIMIT: usize = 64 * 1024;
 const BINARY_LIMIT: u64 = 256 * 1024 * 1024;
 
 /// Every host a tool download may reach, redirects included.
-pub const TOOL_HOSTS: [&str; 5] = ["github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com", "johnvansickle.com", "ffmpeg.martin-riedl.de"];
+pub const TOOL_HOSTS: [&str; 6] = ["github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com", "johnvansickle.com", "ffmpeg.martin-riedl.de", "huggingface.co"];
+/// Hugging Face answers model downloads from regional CDN hosts under this domain.
+pub const TOOL_HOST_SUFFIX: &str = ".hf.co";
 
 #[derive(Debug, thiserror::Error)]
 pub enum UpdateError {
@@ -116,7 +118,7 @@ async fn read_sums(client: &Client, base: &str) -> Result<String, UpdateError> {
 }
 
 // A partial file left by a broken connection is continued with a Range request
-async fn download(client: &Client, url: &str, file: &Path, progress: Progress<'_>) -> Result<String, UpdateError> {
+async fn download(client: &Client, url: &str, file: &Path, limit: u64, progress: Progress<'_>) -> Result<String, UpdateError> {
     let have = tokio::fs::metadata(file).await.map_or(0, |m| m.len());
     let mut request = client.get(url);
     if have > 0 {
@@ -138,7 +140,7 @@ async fn download(client: &Client, url: &str, file: &Path, progress: Progress<'_
     progress(received, total);
     while let Some(chunk) = response.chunk().await.map_err(network)? {
         received += chunk.len() as u64;
-        if received > BINARY_LIMIT {
+        if received > limit {
             return Err(UpdateError::TooLarge);
         }
         hasher.update(&chunk);
@@ -185,7 +187,7 @@ async fn make_executable(_path: &Path) -> std::io::Result<()> {
 }
 
 async fn install(client: &Client, url: &str, partial: &Path, installed: &Path, expected: &str, progress: Progress<'_>) -> Result<(), UpdateError> {
-    if download(client, url, partial, progress).await? != expected {
+    if download(client, url, partial, BINARY_LIMIT, progress).await? != expected {
         return Err(UpdateError::Checksum);
     }
     make_executable(partial).await?;
@@ -289,7 +291,7 @@ pub async fn install_archive(client: &Client, build: &Archive, name: &str, dir: 
 }
 
 async fn unpack(client: &Client, build: &Archive, name: &str, archive: &Path, staging: &Path, installed: &Path, progress: Progress<'_>) -> Result<(), UpdateError> {
-    if download(client, build.url, archive, progress).await? != build.sha256 {
+    if download(client, build.url, archive, BINARY_LIMIT, progress).await? != build.sha256 {
         return Err(UpdateError::Checksum);
     }
     let _ = tokio::fs::remove_dir_all(staging).await;
@@ -314,6 +316,49 @@ async fn unpack(client: &Client, build: &Archive, name: &str, archive: &Path, st
     }
     tokio::fs::rename(&unpacked, installed).await?;
     Ok(())
+}
+
+/// A pinned data file, such as a speech model.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Pinned {
+    pub name: &'static str,
+    pub url: &'static str,
+    pub sha256: &'static str,
+    pub bytes: u64,
+}
+
+// Multilingual Whisper models (MIT) in the whisper.cpp format, 8-bit, at a fixed revision of their repository
+pub const WHISPER_BASE: Pinned = Pinned {
+    name: "whisper-base",
+    url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base-q8_0.bin",
+    sha256: "c577b9a86e7e048a0b7eada054f4dd79a56bbfa911fbdacf900ac5b567cbb7d9",
+    bytes: 81_768_585,
+};
+
+pub const WHISPER_SMALL: Pinned = Pinned {
+    name: "whisper-small",
+    url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small-q8_0.bin",
+    sha256: "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f",
+    bytes: 264_464_607,
+};
+
+/// Downloads `file` to `path` once; a file of the pinned size is taken as installed, since only a checked download is ever renamed there.
+pub async fn install_pinned(client: &Client, file: &Pinned, path: &Path, progress: Progress<'_>) -> Result<Outcome, UpdateError> {
+    if tokio::fs::metadata(path).await.is_ok_and(|m| m.len() == file.bytes) {
+        return Ok(Outcome::UpToDate);
+    }
+    let dir = path.parent().ok_or_else(|| UpdateError::Io(std::io::Error::other("no folder for the file")))?;
+    tokio::fs::create_dir_all(dir).await?;
+    let partial = dir.join(format!(".{}.partial", file.name));
+    let result = async {
+        if download(client, file.url, &partial, file.bytes, progress).await? != file.sha256 {
+            return Err(UpdateError::Checksum);
+        }
+        tokio::fs::rename(&partial, path).await?;
+        Ok(())
+    }
+    .await;
+    keep_on_network_error(&partial, result).await.map(|()| Outcome::Installed)
 }
 
 fn le16(bytes: &[u8], at: usize) -> Option<u64> {

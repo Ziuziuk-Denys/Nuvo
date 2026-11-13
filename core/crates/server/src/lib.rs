@@ -15,6 +15,7 @@ pub mod scrobbler;
 pub mod socket;
 pub mod state;
 pub mod tool_update;
+pub mod word_timing;
 
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
@@ -57,6 +58,7 @@ pub fn router(state: AppState) -> Router {
         .merge(routes::export::routes())
         .merge(routes::stats::routes())
         .merge(routes::downloads::routes())
+        .merge(routes::word_timing::routes())
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))
         .layer(middleware::from_fn_with_state(state.clone(), auth::require_token))
         .with_state(state)

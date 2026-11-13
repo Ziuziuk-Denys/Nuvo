@@ -51,6 +51,10 @@ fn redirects_stay_on_the_tool_sources() {
     assert!(redirect_allowed(&url("https://ffmpeg.martin-riedl.de/download/a"), true));
     assert!(!redirect_allowed(&url("https://evil.example/a"), true));
     assert!(!redirect_allowed(&url("https://github.com.evil.example/a"), true));
+    assert!(redirect_allowed(&url("https://huggingface.co/ggerganov/whisper.cpp/resolve/x/m.bin"), true));
+    assert!(redirect_allowed(&url("https://us.aws.cdn.hf.co/xet-bridge-us/a"), true));
+    assert!(!redirect_allowed(&url("https://evilhf.co/a"), true));
+    assert!(!redirect_allowed(&url("https://hf.co.evil.example/a"), true));
     assert!(!redirect_allowed(&url("http://github.com/a"), true));
     assert!(redirect_allowed(&url("http://127.0.0.1:9/a"), false));
 }

@@ -1,0 +1,23 @@
+[package]
+name = "nuvo-align"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+# Pure-Rust SIMD matrix products (MIT); the model is too slow without them and a BLAS would need a C toolchain per target.
+gemm = { version = "0.19", default-features = false, features = ["std", "rayon"] }
+# The model files store half floats; already compiled as a gemm dependency.
+half = "2"
+# A dedicated low-priority pool for the matrix products; already compiled as a gemm dependency.
+rayon = "1"
+rustfft.workspace = true
+thiserror.workspace = true
+
+# Lowers the priority of the pool threads; already in the lock through nuvo-fetch and nuvo-server.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }

@@ -20,6 +20,7 @@ import { useRomanization } from "./romanization";
 import { openLyricsTool } from "../screens/lyrics/lyricsTools";
 import type { LyricsTrack } from "../ports/lyricsTools";
 import { HIGHLIGHT_MODES, setHighlightMode, useHighlightMode, type HighlightMode } from "./highlightMode";
+import { isLocalTiming, isRunning, setWordTiming, timeWords, useAutoWordTiming, useWordTiming } from "../ports/wordTiming";
 import styles from "./Karaoke.module.css";
 
 const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
@@ -163,9 +164,15 @@ function VersionButton(): JSX.Element | null {
   const { t } = useTranslation();
   const versions = useLyrics((state) => state.versions);
   const active = useLyrics((state) => state.activeVersion);
+  const trackId = useLyrics((state) => state.trackId);
+  const timing = useWordTiming();
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   if (versions.length < 2) return null;
+  const improve =
+    timing?.enabled && trackId && active === "whisper-base" && !isRunning(timing.job, trackId)
+      ? (["separator", { label: t("ui.karaoke.word_timing.improve"), onSelect: () => void timeWords(trackId, true) }] as const)
+      : [];
   return (
     <>
       <button
@@ -185,12 +192,64 @@ function VersionButton(): JSX.Element | null {
         anchor={anchor}
         onClose={() => setOpen(false)}
         className={styles.versionMenu}
-        items={versions.map((version) => ({
-          label: versionLabel(version, t),
-          icon: version.provider === active ? "check" : undefined,
-          onSelect: () => lyricsCommands.chooseVersion(version.provider),
-        }))}
+        items={[
+          ...versions.map((version) => ({
+            label: versionLabel(version, t),
+            icon: version.provider === active ? ("check" as const) : undefined,
+            onSelect: () => lyricsCommands.chooseVersion(version.provider),
+          })),
+          ...improve,
+        ]}
       />
+    </>
+  );
+}
+
+const FAILURE_TEXT: Record<string, string> = {
+  no_synced_lines: "ui.karaoke.word_timing.no_lines",
+  no_audio: "ui.karaoke.word_timing.no_audio",
+  no_ffmpeg: "ui.karaoke.word_timing.no_ffmpeg",
+  download_failed: "ui.karaoke.word_timing.download_failed",
+  lyrics_mismatch: "ui.karaoke.word_timing.mismatch",
+  too_long: "ui.karaoke.word_timing.too_long",
+};
+
+/** One button: the switch, which shows the progress while this song is being timed. */
+function WordTimingControl({ trackId, lineOnly }: { trackId: string | null; lineOnly: boolean }): JSX.Element | null {
+  const { t } = useTranslation();
+  const view = useWordTiming();
+  const active = useLyrics((state) => state.activeVersion);
+  useAutoWordTiming(trackId, lineOnly);
+  const lineOnlyText = lineOnly ? <span className={styles.lineOnly}>{t("ui.karaoke.highlight_line_only")}</span> : null;
+  if (!view || !trackId || (!lineOnly && !isLocalTiming(active))) return lineOnlyText;
+  const job = view.job?.trackId === trackId ? view.job : undefined;
+  const running = view.enabled && isRunning(job, trackId);
+  const failure = view.enabled && lineOnly && job?.state === "failed" ? t(FAILURE_TEXT[job.code ?? ""] ?? "ui.karaoke.word_timing.failed") : null;
+  let label = t("ui.karaoke.word_timing.switch");
+  if (running) {
+    const key =
+      job.state === "waiting"
+        ? "ui.karaoke.word_timing.waiting"
+        : job.model === "whisper-small"
+          ? "ui.karaoke.word_timing.improving"
+          : "ui.karaoke.word_timing.running";
+    label = t(key, { percent: Math.round(job.progress * 100) });
+  }
+  return (
+    <>
+      {running || failure ? null : lineOnlyText}
+      {failure ? <span className={styles.lineOnly}>{failure}</span> : null}
+      <button
+        type="button"
+        aria-pressed={view.enabled}
+        aria-live="polite"
+        data-on={view.enabled ? "" : undefined}
+        title={t(view.enabled ? "ui.karaoke.word_timing.off_hint" : "ui.karaoke.word_timing.on_hint")}
+        className={styles.words}
+        onClick={() => void setWordTiming(!view.enabled).then(() => (view.enabled ? undefined : timeWords(trackId)))}
+      >
+        {label}
+      </button>
     </>
   );
 }
@@ -201,8 +260,10 @@ function OffsetPill({ mode }: { mode: HighlightMode }): JSX.Element {
   const { available, kanaOnly, on, toggle } = useRomanization();
   const synced = useLyrics((state) => state.synced);
   const wordTimed = useLyrics((state) => state.wordTimed);
+  const trackId = useLyrics((state) => state.trackId);
+  const busy = isRunning(useWordTiming()?.job, trackId);
   return (
-    <div className={styles.sourceRow}>
+    <div className={styles.sourceRow} data-busy={busy ? "" : undefined}>
       <div className={styles.pill} data-no-window-drag>
         <GlyphButton icon="remove" size={18} label={t("ui.karaoke.earlier")} className={styles.small} onClick={() => lyricsCommands.nudgeOffset(-100)} />
         <button type="button" aria-label={t("ui.karaoke.offset")} className={styles.offset} onClick={() => lyricsCommands.clearOffset()}>
@@ -239,9 +300,8 @@ function OffsetPill({ mode }: { mode: HighlightMode }): JSX.Element {
               </button>
             ))}
           </div>
-        ) : synced ? (
-          <span className={styles.lineOnly}>{t("ui.karaoke.highlight_line_only")}</span>
         ) : null}
+        {synced ? <WordTimingControl trackId={trackId} lineOnly={!wordTimed} /> : null}
       </div>
     </div>
   );

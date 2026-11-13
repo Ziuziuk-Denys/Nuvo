@@ -32,7 +32,7 @@ fn migration_19_takes_local_tracks_and_keeps_rows_and_links() {
 
     let conn = open_connection(&dir.path().join("library.db"), &common::KEY, &dir.path().join("backups")).unwrap();
     let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
-    assert_eq!(version, 21);
+    assert_eq!(version, 22);
     let liked: String = conn.query_row("SELECT track_id FROM liked_tracks", [], |r| r.get(0)).unwrap();
     assert_eq!(liked, "yt1");
     let broken: i64 = conn.query_row("SELECT count(*) FROM pragma_foreign_key_check", [], |r| r.get(0)).unwrap();

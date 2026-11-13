@@ -22,6 +22,7 @@ describe("lyrics port", () => {
     expect(versionLabel(version("plain"), t)).toBe("t:ui.lyrics.version_plain");
     expect(versionLabel(version("line_level", "Aligned"), t)).toBe("Aligned");
     expect(versionLabel({ ...version("line_level"), topPriority: true }, t)).toBe("t:ui.lyrics.version_own");
+    expect(versionLabel({ ...version("word_level"), provider: "whisper-small", topPriority: true }, t)).toBe("t:ui.lyrics.version_timed");
   });
 
   it("8 translates the error text only in the error state", () => {
