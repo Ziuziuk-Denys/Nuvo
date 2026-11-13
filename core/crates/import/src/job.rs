@@ -14,7 +14,7 @@ use crate::{MAX_ROWS, Parsed, SourceRow};
 /// A crashed worker loses its row for this long, then another worker gets it.
 pub const LEASE_MS: i64 = 60_000;
 pub const MAX_CANDIDATES: usize = 100;
-pub const ROW_SOURCES: [&str; 7] = ["youtube-music", "soundcloud", "apple-music", "deezer", "spotify", "nuvo-link", "legacy"];
+pub const ROW_SOURCES: [&str; 8] = ["youtube-music", "soundcloud", "apple-music", "deezer", "spotify", "yandex-music", "nuvo-link", "legacy"];
 const LEGACY_REASONS: [&str; 5] = ["low_confidence_match", "ambiguous_match", "duration_mismatch", "no_catalog_candidates", "catalog_lookup_failed"];
 const ROWS_PAGE_MAX: usize = 500;
 

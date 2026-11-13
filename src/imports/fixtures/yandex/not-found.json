@@ -1,0 +1,11 @@
+{
+  "invocationInfo": {
+    "req-id": "1794604151202625-9734620697409354179",
+    "hostname": "music-web-default-production-music-97.vla.yp-c.yandex.net",
+    "exec-duration-millis": 9
+  },
+  "error": {
+    "name": "not-found",
+    "message": "Requested action for /albums/999999999/with-tracks was not found"
+  }
+}

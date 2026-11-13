@@ -4,6 +4,7 @@ import { listDeezer } from "./deezer";
 import { detectLink, hostMatches } from "./detect";
 import type { FetchLike, Sleep } from "./http";
 import { ImportError, MAX_LABEL_CHARS, MAX_ROWS, type ImportSummary, type ImportTarget, type Listing, type RowSource } from "./types";
+import { listYandex } from "./yandex";
 import { listYoutube, type YoutubeLister } from "./youtube";
 
 export interface ListPorts {
@@ -71,7 +72,8 @@ export async function listLink(text: string, ports: ListPorts, signal: AbortSign
       listing = await listByDaemon(() => ports.daemon.spotifyListing(detected.url, signal));
       break;
     case "yandex-music":
-      throw new ImportError("yandex_lists");
+      listing = await listYandex(detected.url, http, progress);
+      break;
     case "vk":
       throw new ImportError("login_required");
     case "apple-music":

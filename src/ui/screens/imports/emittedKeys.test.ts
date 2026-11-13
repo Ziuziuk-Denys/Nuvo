@@ -11,7 +11,7 @@ const CODES: ImportErrorCode[] = [
   "unsupported_host",
   "bad_link",
   "spotify_file_only",
-  "yandex_lists",
+  "region_blocked",
   "login_required",
   "missing_name",
   "bad_file",

@@ -171,7 +171,7 @@
       "tab_likes": "SoundCloud likes",
       "tab_file": "File",
       "link_label": "Playlist or album link",
-      "link_placeholder": "Paste a link from Spotify, YouTube Music, SoundCloud, Apple Music or Deezer",
+      "link_placeholder": "Paste a link from Spotify, YouTube Music, SoundCloud, Apple Music, Deezer or Yandex Music",
       "likes_label": "SoundCloud username",
       "likes_placeholder": "@username",
       "file_hint": "Works with exports from Spotify, Soundiiz, TuneMyMusic and Google Takeout, and with M3U, XSPF, CSV and TXT playlists. For Yandex Music, Zvuk, Apple Music, Deezer or Tidal, export the playlist with Soundiiz or TuneMyMusic first.",
@@ -193,14 +193,16 @@
         "soundcloud": "SoundCloud",
         "apple-music": "Apple Music",
         "deezer": "Deezer",
-        "spotify": "Spotify"
+        "spotify": "Spotify",
+        "yandex-music": "Yandex Music"
       },
       "fallback": {
         "youtube-music": "YouTube playlist",
         "soundcloud": "SoundCloud playlist",
         "apple-music": "Apple Music playlist",
         "deezer": "Deezer playlist",
-        "spotify": "Spotify playlist"
+        "spotify": "Spotify playlist",
+        "yandex-music": "Yandex Music playlist"
       },
       "likes_name": "{name}: Likes",
       "target": "Import into",
@@ -226,7 +228,7 @@
         "unsupported_host": "Nuvo can't import from {host}.",
         "bad_link": "Paste a playlist or album link.",
         "spotify_file_only": "Nuvo reads public Spotify playlists and albums by link. For Liked songs and anything else, export it as a file and import the file.",
-        "yandex_lists": "Yandex Music playlists can't be imported yet.",
+        "region_blocked": "Yandex Music doesn't answer from your region or through your VPN. Open the link without a VPN, or export the playlist to a file with Soundiiz or TuneMyMusic and import the file.",
         "login_required": "This link needs a sign-in, so Nuvo can't read it. Make the playlist public and try again.",
         "missing_name": "Type a SoundCloud username.",
         "bad_file": "Nuvo can't read this file. Pick a playlist in M3U, XSPF, CSV, TXT or JSON.",
@@ -476,7 +478,6 @@
         "newer_link": "This link was made by a newer Nuvo. Update Nuvo to open it.",
         "bad_share": "This Nuvo link is damaged. Ask for it again.",
         "spotify_file_only": "Nuvo reads public Spotify playlists and albums by link. For Liked songs and anything else, export it as a file and import the file.",
-        "yandex_lists": "Yandex Music playlists can't be imported yet. Search the song name instead.",
         "core_down": "Nuvo's background service isn't answering. Restart Nuvo.",
         "locked": "Unlock your library first, then paste the link again.",
         "proxy_unsupported": "Listening works only through an HTTP proxy. Change the proxy in Settings, then try again.",

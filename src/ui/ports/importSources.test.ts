@@ -6,10 +6,10 @@ describe("import sources", () => {
   it("the first run offers no service whose playlist links the import refuses", async () => {
     const unused = () => Promise.reject(new Error("no request expected"));
     const ports = { fetch: unused, youtube: {}, daemon: {} } as unknown as ListPorts;
-    const refused = await listLink("https://music.yandex.ru/users/someone/playlists/3", ports, new AbortController().signal).catch(
+    const refused = await listLink("https://vk.com/music/playlist/-147845620_2", ports, new AbortController().signal).catch(
       (error: { code?: string }) => error.code,
     );
-    expect(refused).toBe("yandex_lists");
-    expect(IMPORT_SOURCES).not.toContain("yandex");
+    expect(refused).toBe("login_required");
+    expect(IMPORT_SOURCES).not.toContain("vk");
   });
 });

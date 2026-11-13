@@ -16,15 +16,15 @@ const SOURCES = [
 const DYNAMIC: Record<string, string[]> = {
   "ui.imports.chip": ["review", "matched", "all"],
   "ui.imports.label": ["exact", "likely", "check", "missing", "already"],
-  "ui.imports.source": ["youtube-music", "soundcloud", "apple-music", "deezer"],
-  "ui.imports.fallback": ["youtube-music", "soundcloud", "apple-music", "deezer"],
+  "ui.imports.source": ["youtube-music", "soundcloud", "apple-music", "deezer", "yandex-music"],
+  "ui.imports.fallback": ["youtube-music", "soundcloud", "apple-music", "deezer", "yandex-music"],
   "ui.imports.empty": ["review", "other"],
   "ui.imports.error": [
     "not_a_link",
     "unsupported_host",
     "bad_link",
     "spotify_file_only",
-    "yandex_lists",
+    "region_blocked",
     "login_required",
     "missing_name",
     "bad_file",

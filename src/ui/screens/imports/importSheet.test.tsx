@@ -92,15 +92,15 @@ describe("ImportSheet", () => {
     expect(button("ui.imports.open_report")).toBeTruthy();
   });
 
-  it("explains a Spotify link and offers the file import", async () => {
+  it.each([
+    ["spotify_file_only", "https://open.spotify.com/playlist/1"],
+    ["region_blocked", "https://music.yandex.ru/users/a/playlists/3"],
+  ] as const)("explains %s and offers the file import", async (code, initialLink) => {
     const actions = fakeActions({
-      list: vi.fn(async () => Promise.reject(new ImportError("spotify_file_only"))),
+      list: vi.fn(async () => Promise.reject(new ImportError(code))),
     });
-    await mount({
-      actions,
-      initialLink: "https://open.spotify.com/playlist/1",
-    });
-    expect(document.querySelector("[role=alert]")?.textContent).toBe("ui.imports.error.spotify_file_only");
+    await mount({ actions, initialLink });
+    expect(document.querySelector("[role=alert]")?.textContent).toBe(`ui.imports.error.${code}`);
     await click("ui.imports.import_file_instead");
     expect(document.body.textContent).toContain("ui.imports.file_hint");
     expect(actions.post).not.toHaveBeenCalled();

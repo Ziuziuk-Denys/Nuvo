@@ -1,0 +1,90 @@
+{
+  "invocationInfo": {
+    "req-id": "1794604151202625-9734620697409354179",
+    "hostname": "music-web-default-production-music-97.vla.yp-c.yandex.net",
+    "exec-duration-millis": 9
+  },
+  "result": [
+    {
+      "id": "27373847",
+      "realId": "27373847",
+      "title": "I Am The Walrus",
+      "trackSource": "OWN",
+      "available": false,
+      "availableForPremiumUsers": true,
+      "availableFullWithoutPermission": false,
+      "availableForOptions": [],
+      "durationMs": 275000,
+      "previewDurationMs": 30000,
+      "artists": [
+        {
+          "id": 35004,
+          "name": "The Beatles",
+          "various": false,
+          "composer": false,
+          "available": true,
+          "cover": {
+            "type": "from-artist-photos",
+            "uri": "avatars.yandex.net/get-music-content/35004/a.p.35004/%%",
+            "prefix": "a.p.35004/"
+          },
+          "genres": [],
+          "disclaimers": []
+        }
+      ],
+      "albums": [],
+      "coverUri": "avatars.yandex.net/get-music-content/1/x/%%",
+      "lyricsAvailable": true,
+      "type": "music",
+      "version": "Remastered 2009",
+      "error": "no-rights"
+    },
+    {
+      "id": "38634572",
+      "realId": "38634572",
+      "title": "Группа крови",
+      "trackSource": "OWN",
+      "available": true,
+      "availableForPremiumUsers": true,
+      "availableFullWithoutPermission": false,
+      "availableForOptions": [],
+      "durationMs": 286000,
+      "previewDurationMs": 30000,
+      "artists": [
+        {
+          "id": 41,
+          "name": "Кино",
+          "various": false,
+          "composer": false,
+          "available": true,
+          "cover": {
+            "type": "from-artist-photos",
+            "uri": "avatars.yandex.net/get-music-content/41/a.p.41/%%",
+            "prefix": "a.p.41/"
+          },
+          "genres": [],
+          "disclaimers": []
+        }
+      ],
+      "albums": [
+        {
+          "id": 4766,
+          "title": "Группа крови",
+          "metaType": "music",
+          "year": 1988,
+          "coverUri": "avatars.yandex.net/get-music-content/4766/c.a.4766-1/%%",
+          "genre": "rusrock",
+          "trackCount": 10,
+          "available": true,
+          "trackPosition": {
+            "volume": 1,
+            "index": 1
+          }
+        }
+      ],
+      "coverUri": "avatars.yandex.net/get-music-content/1/x/%%",
+      "lyricsAvailable": true,
+      "type": "music"
+    }
+  ]
+}
