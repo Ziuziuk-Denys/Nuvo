@@ -45,7 +45,7 @@ pub fn classify(stderr: &str) -> FetchError {
     } else if has(THROTTLED) {
         FetchError::Throttled
     } else if has(NETWORK) {
-        FetchError::Network(stderr.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim().to_string())
+        FetchError::Network(crate::proxy::without_login(stderr.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim()))
     } else if has(UNSUPPORTED) {
         FetchError::Unsupported
     } else {

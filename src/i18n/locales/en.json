@@ -480,7 +480,7 @@
         "spotify_file_only": "Nuvo reads public Spotify playlists and albums by link. For Liked songs and anything else, export it as a file and import the file.",
         "core_down": "Nuvo's background service isn't answering. Restart Nuvo.",
         "locked": "Unlock your library first, then paste the link again.",
-        "proxy_unsupported": "Listening works only through an HTTP proxy. Change the proxy in Settings, then try again.",
+        "proxy_unsupported": "Nuvo can't listen through an HTTPS proxy. Use an HTTP or SOCKS5 proxy in Settings, then try again.",
         "failed": "Nuvo couldn't open this link. Try again."
       },
       "preview": {
@@ -857,7 +857,7 @@
         "manual_desc": "Uses the address below"
       },
       "proxy_url": "Proxy address",
-      "proxy_url_desc": "For example http://host:port. Leave empty for a direct connection.",
+      "proxy_url_desc": "For example socks5h://host:port or http://host:port. Leave empty for a direct connection.",
       "report": "Connection report",
       "report_copied": "Copied",
       "report_copy": "Copy report",
@@ -1153,7 +1153,7 @@
         "throttled": "The site asked Nuvo to slow down. Try again in a minute.",
         "tool_missing": "Nuvo is still downloading yt-dlp and ffmpeg for links. Try again in a minute.",
         "decode_failed": "Nuvo couldn't read the audio of this link.",
-        "proxy_unsupported": "Listening works only through an HTTP proxy. Change the proxy in Settings, then try again."
+        "proxy_unsupported": "Nuvo can't listen through an HTTPS proxy. Use an HTTP or SOCKS5 proxy in Settings, then try again."
       },
       "play_from": "Play from {time}",
       "apple_music": "Open in Apple Music"

@@ -40,8 +40,22 @@ pub fn parse_link(text: &str) -> Result<Link, FetchError> {
     Ok(Link { url: url.into(), host, tiktok })
 }
 
-pub async fn ensure_public(url: &str) -> Result<(), FetchError> {
-    public_addresses(url).await.map(|_| ())
+pub async fn ensure_public(url: &str, proxied: bool) -> Result<(), FetchError> {
+    checked_addresses(url, proxied).await.map(|_| ())
+}
+
+/// Through a proxy the proxy resolves the name: a local lookup would leak it, and may be blocked or poisoned.
+/// Only address literals are checked then, and the answer is empty.
+pub async fn checked_addresses(url: &str, proxied: bool) -> Result<Vec<SocketAddr>, FetchError> {
+    if !proxied {
+        return public_addresses(url).await;
+    }
+    let parsed = Url::parse(url).map_err(|_| FetchError::InvalidLink)?;
+    let host = host_of(&parsed).ok_or(FetchError::InvalidLink)?;
+    if !matches!(parsed.scheme(), "http" | "https") || host.parse::<IpAddr>().is_ok_and(|ip| !is_public(ip)) {
+        return Err(FetchError::InvalidLink);
+    }
+    Ok(Vec::new())
 }
 
 // Returns the checked addresses so a client connects to exactly those
@@ -76,7 +90,8 @@ const FRESH_URL_WAIT: Duration = Duration::from_secs(1);
 
 // Follows redirects by hand, pinning each hop to checked addresses so DNS cannot rebind it
 pub async fn follow_public(remote: &Remote, proxy: Option<&reqwest::Proxy>) -> Result<Remote, FetchError> {
-    follow_checked(remote, proxy, |url| async move { public_addresses(&url).await }).await
+    let proxied = proxy.is_some();
+    follow_checked(remote, proxy, |url| async move { checked_addresses(&url, proxied).await }).await
 }
 
 #[doc(hidden)]
@@ -94,7 +109,9 @@ where
             .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(Duration::from_secs(10))
             .timeout(Duration::from_secs(20));
-        if let Some(host) = url.host_str() {
+        if let Some(host) = url.host_str()
+            && !addresses.is_empty()
+        {
             builder = builder.resolve_to_addrs(host, &addresses);
         }
         if let Some(proxy) = proxy {

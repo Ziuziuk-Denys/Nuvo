@@ -83,16 +83,21 @@ async fn drives_the_binary_and_classifies_its_errors() {
     let fake = dir.path().join("yt-dlp");
     let args_file = dir.path().join("args");
     let body = format!(
-        "#!/bin/sh\nprintf '%s\\n' \"$@\" > {}\ncase \"$*\" in\n  *blocked*) echo \"ERROR: [youtube] x: Sign in to confirm you're not a bot\" >&2; exit 1;;\n  *) echo '{{\"title\":\"T\",\"duration\":12,\"url\":\"https://cdn/a.m4a\"}}';;\nesac\n",
+        "#!/bin/sh\nprintf '%s\\n' \"$@\" > {}\nenv | grep -i _proxy= | sort > {}.env\ncase \"$*\" in\n  *blocked*) echo \"ERROR: [youtube] x: Sign in to confirm you're not a bot\" >&2; exit 1;;\n  *) echo '{{\"title\":\"T\",\"duration\":12,\"url\":\"https://cdn/a.m4a\"}}';;\nesac\n",
+        args_file.display(),
         args_file.display()
     );
     std::fs::write(&fake, body).unwrap();
     std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
 
-    let resolved = resolve(&fake, None, "https://youtu.be/ok", Some("socks5h://127.0.0.1:1080")).await.unwrap();
+    let resolved = resolve(&fake, None, "https://youtu.be/ok", Some("socks5h://me:pw@127.0.0.1:1080")).await.unwrap();
+    let env = std::fs::read_to_string(dir.path().join("args.env")).unwrap();
+    for name in ["all_proxy", "http_proxy", "https_proxy"] {
+        assert!(env.contains(&format!("{name}=socks5h://me:pw@127.0.0.1:1080")), "{name} carries the login: {env}");
+    }
     assert_eq!((resolved.title.as_deref(), resolved.duration_ms), (Some("T"), Some(12_000)));
     let passed: Vec<String> = std::fs::read_to_string(&args_file).unwrap().lines().map(String::from).collect();
-    assert_eq!(passed, args("https://youtu.be/ok", None));
+    assert_eq!(passed, args("https://youtu.be/ok", None), "never the proxy in argv");
     assert!(passed.windows(2).any(|pair| pair == ["--use-extractors", "default,-generic"]), "recognize runs without the generic extractor");
 
     resolve_full(&fake, Some(&dir.path().join("deno")), "https://youtu.be/full", None).await.unwrap();

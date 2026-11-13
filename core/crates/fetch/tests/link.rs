@@ -62,12 +62,18 @@ fn refuses_everything_else() {
 
 #[tokio::test]
 async fn names_that_resolve_to_private_addresses_are_refused() {
-    assert_eq!(ensure_public("http://localhost/x").await, Err(FetchError::InvalidLink));
-    assert_eq!(ensure_public("https://127.0.0.1:8443/x").await, Err(FetchError::InvalidLink));
-    assert_eq!(ensure_public("ftp://1.1.1.1/x").await, Err(FetchError::InvalidLink));
-    assert_eq!(ensure_public("not a url").await, Err(FetchError::InvalidLink));
-    assert_eq!(ensure_public("https://1.1.1.1/x").await, Ok(()), "a public literal needs no lookup");
-    assert_eq!(ensure_public("https://[2606:4700:4700::1111]/x").await, Ok(()));
+    assert_eq!(ensure_public("http://localhost/x", false).await, Err(FetchError::InvalidLink));
+    assert_eq!(ensure_public("https://127.0.0.1:8443/x", false).await, Err(FetchError::InvalidLink));
+    assert_eq!(ensure_public("ftp://1.1.1.1/x", false).await, Err(FetchError::InvalidLink));
+    assert_eq!(ensure_public("not a url", false).await, Err(FetchError::InvalidLink));
+    assert_eq!(ensure_public("https://1.1.1.1/x", false).await, Ok(()), "a public literal needs no lookup");
+    assert_eq!(ensure_public("https://[2606:4700:4700::1111]/x", false).await, Ok(()));
+
+    // Through a proxy the proxy resolves names; only literals are checked here.
+    assert_eq!(ensure_public("https://nowhere.invalid/x", true).await, Ok(()));
+    assert!(matches!(ensure_public("https://nowhere.invalid/x", false).await, Err(FetchError::Network(_))));
+    assert_eq!(ensure_public("https://127.0.0.1/x", true).await, Err(FetchError::InvalidLink));
+    assert_eq!(ensure_public("ftp://1.1.1.1/x", true).await, Err(FetchError::InvalidLink));
 }
 
 mod redirects {

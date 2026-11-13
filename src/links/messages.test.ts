@@ -76,7 +76,9 @@ describe("link strings", () => {
     const t = translatorFor("en");
     const say = ({ key, vars }: Message) => t(key, vars);
     expect(say(errorMessage("unsupported", "Link", "example.com"))).toBe("Nuvo can't read links from example.com yet. Search the song name instead.");
-    expect(say(errorMessage("proxy_unsupported", "TikTok"))).toBe("Listening works only through an HTTP proxy. Change the proxy in Settings, then try again.");
+    expect(say(errorMessage("proxy_unsupported", "TikTok"))).toBe(
+      "Nuvo can't listen through an HTTPS proxy. Use an HTTP or SOCKS5 proxy in Settings, then try again.",
+    );
     expect(say(errorMessage("made_up", "TikTok"))).toBe("This post is gone or private.");
     expect(
       say(

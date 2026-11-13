@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { chromiumRule, credentialsOf, detectSystemProxy, envProxy, gnomeProxy, kdeProxy, networkBody, pacToUrl, withCredentials } from "./proxy";
+import {
+  bridgeOf,
+  chromiumProxy,
+  chromiumRule,
+  credentialsOf,
+  detectSystemProxy,
+  envProxy,
+  gnomeProxy,
+  kdeProxy,
+  networkBody,
+  pacToUrl,
+  withCredentials,
+} from "./proxy";
 
 describe("pacToUrl", () => {
   it("reads what session.resolveProxy answers", () => {
@@ -119,5 +131,23 @@ describe("what goes where", () => {
     expect(withCredentials("http://a:1", undefined, undefined)).toBe("http://a:1");
     expect(credentialsOf("http://a:1")).toBeNull();
     expect(credentialsOf(null)).toBeNull();
+  });
+
+  it("a SOCKS proxy with a login reaches Chromium through the bridge, never direct", () => {
+    const base: Electron.ProxyConfig = { proxyRules: "socks5://a:1", proxyBypassRules: "<local>" };
+    const bridge = "http://nuvo:t0k3n@127.0.0.1:40123";
+    expect(chromiumProxy(base, "socks5h://me:pw@a:1", bridge)).toEqual({ proxyRules: "http://127.0.0.1:40123", proxyBypassRules: "<local>" });
+    expect(chromiumProxy({ mode: "system" }, "socks5://me:pw@a:1", null)).toEqual({ proxyRules: "socks5://a:1", proxyBypassRules: "<local>" });
+    expect(chromiumProxy(base, "socks5://a:1", bridge)).toBe(base);
+    expect(chromiumProxy(base, "http://me:pw@a:1", bridge)).toBe(base);
+    expect(chromiumProxy({ mode: "direct" }, null, null)).toEqual({ mode: "direct" });
+  });
+
+  it("only a loopback bridge URL from the daemon is taken", () => {
+    expect(bridgeOf('{"bridgeUrl":"http://nuvo:t0k3n@127.0.0.1:40123"}')).toBe("http://nuvo:t0k3n@127.0.0.1:40123");
+    expect(bridgeOf('{"bridgeUrl":null}')).toBeNull();
+    expect(bridgeOf('{"bridgeUrl":"http://nuvo:t@10.0.0.2:1"}')).toBeNull();
+    expect(bridgeOf('{"bridgeUrl":"http://127.0.0.1:1"}')).toBeNull();
+    expect(bridgeOf("not json")).toBeNull();
   });
 });

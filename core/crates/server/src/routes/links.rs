@@ -78,7 +78,7 @@ fn tiktok_url(id: &str) -> String {
 async fn run(state: &AppState, url: &str) -> Result<Value, FetchError> {
     let link = parse_link(url)?;
     if is_short_link(&link.host) {
-        let target = follow_public(&Remote { url: link.url.clone(), headers: vec![] }, Some(&state.proxy_hook())).await?;
+        let target = follow_public(&Remote { url: link.url.clone(), headers: vec![] }, state.active_proxy_hook().as_ref()).await?;
         return Ok(json!({ "kind": "redirect", "canonicalUrl": parse_link(&target.url)?.url }));
     }
     let now = Instant::now();
@@ -106,7 +106,7 @@ async fn read(state: &AppState, link: &Link) -> Result<Inspected, FetchError> {
             Err(other) => return Err(other),
         }
     } else {
-        ensure_public(&link.url).await?;
+        ensure_public(&link.url, state.proxy().is_some()).await?;
     }
     let (yt_dlp, runtime) = (state.env.find("yt-dlp"), state.env.js_runtime());
     if yt_dlp.is_none() || runtime.is_none() {

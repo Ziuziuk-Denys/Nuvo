@@ -39,7 +39,7 @@ import { FC_LIST_MAX_BYTES, fontResponse, FontStore, MAX_FONT_FILE_BYTES, parseF
 import { findCover } from "./coverLookup";
 import { DISCORD_APPLICATION_ID, DiscordPresence, socketCandidates } from "./discord";
 import { CHANNELS, IpcRegistry } from "./ipc";
-import { chromiumRule, credentialsOf, detectSystemProxy, networkBody, withCredentials, type ProxySources } from "./proxy";
+import { bridgeOf, chromiumProxy, chromiumRule, credentialsOf, detectSystemProxy, networkBody, withCredentials, type ProxySources } from "./proxy";
 import { chromiumUsage, CrashPolicy, IconInstaller, revealTarget, homeRoots, Shutdown, SleepBlocker } from "./lifecycle";
 import { APP_ID, applySwitches, guardContents, keepUserData, MainWindowController, onSecondInstance, takeInstanceLock } from "./mainWindow";
 import { allowCheck, allowRequest, contentSecurityPolicy } from "./policy";
@@ -151,7 +151,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     onStatus: (status) => {
       sendToMain(CHANNELS.coreStatus, status);
       // a restarted daemon starts direct; it has to hear the proxy again
-      if (status === "ready") inProxyOrder(putNetwork);
+      if (status === "ready") inProxyOrder(() => putNetwork().then(applyChromium));
     },
   });
 
@@ -696,6 +696,8 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   /** Both sessions, before any window loads: the YouTube worker must leave through the same door as the app. */
   const proxySessions = () => [session.defaultSession, session.fromPartition("persist:nuvo-yt")];
   let proxyInForce: string | null = null;
+  let bridgeUrl: string | null = null;
+  let chromiumBase: Electron.ProxyConfig = { mode: "system" };
   let chromiumRuleSet = false;
   let proxyQueue: Promise<void> = Promise.resolve();
 
@@ -721,12 +723,12 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       url = found.url;
       if (url && !found.chromiumSees) config = { proxyRules: chromiumRule(url), proxyBypassRules: "<local>" };
     }
-    chromiumRuleSet = "proxyRules" in config;
     const changed = url !== proxyInForce;
     proxyInForce = url;
-    await Promise.all(proxySessions().map((target) => target.setProxy(config)));
+    chromiumBase = config;
+    if (changed) await putNetwork();
+    await applyChromium();
     if (!changed) return;
-    await putNetwork();
     sendToMain(CHANNELS.networkChanged);
     // Not awaited: it can wait on a request that never ends, and the queue behind it must not.
     void Promise.allSettled(proxySessions().map((target) => target.closeAllConnections()));
@@ -740,7 +742,14 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
 
   const applyProxy = () => inProxyOrder(refreshProxy);
 
+  async function applyChromium(): Promise<void> {
+    const config = chromiumProxy(chromiumBase, proxyInForce, bridgeUrl);
+    chromiumRuleSet = "proxyRules" in config;
+    await Promise.all(proxySessions().map((target) => target.setProxy(config)));
+  }
+
   function putNetwork(): Promise<void> {
+    bridgeUrl = null;
     if (core.getStatus() !== "ready") return Promise.resolve();
     return new Promise((resolve) => {
       const request = http.request(
@@ -752,9 +761,14 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
           headers: { authorization: `Bearer ${core.token}`, "content-type": "application/json" },
         },
         (response) => {
-          response.resume();
-          if (response.statusCode !== 204) console.warn(`the daemon refused the proxy: ${response.statusCode}`);
-          resolve();
+          let body = "";
+          response.setEncoding("utf8");
+          response.on("data", (chunk: string) => (body += chunk));
+          response.on("end", () => {
+            if (response.statusCode === 200) bridgeUrl = bridgeOf(body);
+            else console.warn(`the daemon refused the proxy: ${response.statusCode}`);
+            resolve();
+          });
         },
       );
       request.on("timeout", () => request.destroy());
@@ -771,9 +785,10 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     const appPages = contents.session === session.defaultSession;
     guardContents(contents, appPages ? (url) => navigationDecision(url, devServerUrl, appFileUrl) === "allow" : (url) => url.startsWith("https://"));
   });
-  // Chromium asks here for a proxy that wants a login; the daemon has the same credentials in its URL.
+  // Chromium asks here for a proxy that wants a login: the bridge's own, or the one in the daemon URL.
   app.on("login", (event, _contents, _details, authInfo, answer) => {
-    const credentials = authInfo.isProxy ? credentialsOf(proxyInForce) : null;
+    const bridged = bridgeUrl !== null && authInfo.host === "127.0.0.1" && authInfo.port === Number(new URL(bridgeUrl).port);
+    const credentials = authInfo.isProxy ? credentialsOf(bridged ? bridgeUrl : proxyInForce) : null;
     if (!credentials) return;
     event.preventDefault();
     answer(credentials.username, credentials.password);

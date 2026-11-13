@@ -12,26 +12,6 @@ use nuvo_store::now_ms;
 use reqwest::Url;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
-use tokio_rustls::rustls;
-use tokio_rustls::rustls::pki_types::pem::PemObject;
-use tokio_rustls::rustls::pki_types::{CertificateDer, PrivateKeyDer};
-
-const CERT: &str = "-----BEGIN CERTIFICATE-----
-MIIBljCCATugAwIBAgIUB+CXN19njyXtZeRoYgBBUtHziV4wCgYIKoZIzj0EAwIw
-FDESMBAGA1UEAwwJbG9jYWxob3N0MCAXDTI2MTAyNzAyMDc0OVoYDzIxMjYxMDAz
-MDIwNzQ5WjAUMRIwEAYDVQQDDAlsb2NhbGhvc3QwWTATBgcqhkjOPQIBBggqhkjO
-PQMBBwNCAAQd3s4fChV+sW8gLINfz7gMmRknIvIYujKnHz0TDXPrHW2q+VbEH6bE
-66AYNmZV4Bi+W6ORs2guHiquRTb3J2B0o2kwZzAdBgNVHQ4EFgQUzBdZNJiue0UK
-a4yOlKy9ra2wjQcwHwYDVR0jBBgwFoAUzBdZNJiue0UKa4yOlKy9ra2wjQcwDwYD
-VR0TAQH/BAUwAwEB/zAUBgNVHREEDTALgglsb2NhbGhvc3QwCgYIKoZIzj0EAwID
-SQAwRgIhALhWD4dbjH2nErTt/OPqw+PZivOM5pruMmA12VGdoXmnAiEA81paaZkQ
-PpG093VfIPYC1xqvgat+++jGZDW95aYFFwY=
------END CERTIFICATE-----";
-const KEY: &str = "-----BEGIN PRIVATE KEY-----
-MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgWFN7y9IBaF7hp9QI
-VGtjYsOBstwMtzTtGOHHYAr6jkyhRANCAAQd3s4fChV+sW8gLINfz7gMmRknIvIY
-ujKnHz0TDXPrHW2q+VbEH6bE66AYNmZV4Bi+W6ORs2guHiquRTb3J2B0
------END PRIVATE KEY-----";
 
 async fn http_status(status: u16) -> String {
     let app = axum::Router::new().fallback(get(move || async move { StatusCode::from_u16(status).unwrap() }));
@@ -55,15 +35,7 @@ async fn resetting() -> String {
 }
 
 async fn self_signed() -> String {
-    let certs = vec![CertificateDer::from_pem_slice(CERT.as_bytes()).unwrap()];
-    let key = PrivateKeyDer::from_pem_slice(KEY.as_bytes()).unwrap();
-    let config = rustls::ServerConfig::builder_with_provider(Arc::new(rustls::crypto::aws_lc_rs::default_provider()))
-        .with_safe_default_protocol_versions()
-        .unwrap()
-        .with_no_client_auth()
-        .with_single_cert(certs, key)
-        .unwrap();
-    let acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(config));
+    let acceptor = common::proxy::tls_acceptor();
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("https://localhost:{}/", listener.local_addr().unwrap().port());
     tokio::spawn(async move {

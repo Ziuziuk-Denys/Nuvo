@@ -107,7 +107,7 @@ fn redirect_allowed(url: &Url, test_hosts: &[String]) -> bool {
     allowed_host(&host, test_hosts) && url.scheme() == "https" && url.port().is_none() && url.username().is_empty() && url.password().is_none()
 }
 
-pub async fn check_url(text: &str, test_hosts: &[String]) -> Result<Url, ApiError> {
+pub async fn check_url(text: &str, test_hosts: &[String], proxied: bool) -> Result<Url, ApiError> {
     let refuse = || ApiError::Invalid("only stream URLs of the playback hosts can be fetched".into());
     let url = Url::parse(text).map_err(|_| refuse())?;
     let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
@@ -120,7 +120,7 @@ pub async fn check_url(text: &str, test_hosts: &[String]) -> Result<Url, ApiErro
         if url.scheme() != "https" || url.port().is_some() {
             return Err(refuse());
         }
-        nuvo_fetch::ensure_public(url.as_str()).await.map_err(|_| refuse())?;
+        nuvo_fetch::ensure_public(url.as_str(), proxied).await.map_err(|_| refuse())?;
     }
     Ok(url)
 }
@@ -133,7 +133,7 @@ pub async fn start(state: &AppState, data: Unlocked, request: FetchRequest) -> R
     if !mime.starts_with("audio/") && !mime.starts_with("video/") {
         return Err(ApiError::Invalid("mime must be audio/* or video/*".into()));
     }
-    let url = check_url(&request.url, &state.test.fetch_hosts).await?;
+    let url = check_url(&request.url, &state.test.fetch_hosts, state.proxy().is_some()).await?;
     let id = request.track_id.clone();
     let cached = data.db.call(move |c| cache_index::get(c, &id)).await?.is_some();
     if cached && let Some(size) = data.cache.size(&request.track_id).await? {
@@ -187,12 +187,12 @@ async fn client_for(state: &AppState, url: &Url, test_hosts: &[String]) -> Resul
     let mut builder = reqwest::Client::builder().redirect(reqwest::redirect::Policy::none()).connect_timeout(Duration::from_secs(10)).proxy(state.proxy_hook());
     let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
     if !test_hosts.contains(&host) {
-        let addresses = match nuvo_fetch::public_addresses(url.as_str()).await {
+        let addresses = match nuvo_fetch::checked_addresses(url.as_str(), state.proxy().is_some()).await {
             Ok(addresses) => addresses,
             Err(nuvo_fetch::FetchError::Network(_)) => return Err("dns_failed"),
             Err(_) => return Err("blocked"),
         };
-        if state.proxy().is_none() {
+        if !addresses.is_empty() {
             builder = builder.resolve_to_addrs(&host, &addresses);
         }
     }
