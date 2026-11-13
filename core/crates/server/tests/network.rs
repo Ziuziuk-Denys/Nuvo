@@ -153,6 +153,12 @@ async fn ffmpeg_listens_through_a_socks_proxy() {
         eprintln!("ffmpeg is not installed; skipped");
         return;
     };
+    // Remote reads pass -max_redirects, which ffmpeg has since 7.0 (Nuvo downloads 7.0.2).
+    let help = std::process::Command::new(&ffmpeg).args(["-hide_banner", "-h", "protocol=http"]).output().unwrap();
+    if !String::from_utf8_lossy(&help.stdout).contains("max_redirects") {
+        eprintln!("this ffmpeg is older than 7.0; skipped");
+        return;
+    }
     let core = common::core();
     let (proxy, targets) = common::proxy::socks5(Some("me:pw")).await;
     bridge_for(&core, &proxy.replace("socks5h://", "socks5h://me:pw@")).await;
