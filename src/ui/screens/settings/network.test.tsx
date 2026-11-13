@@ -15,9 +15,16 @@ const system = vi.hoisted(() => ({
     summary: "SoundCloud is blocked on this network.",
     code: "blocked" as string | undefined,
     service: "SoundCloud" as string | undefined,
-    rows: [
-      { check: "dns", host: "music.youtube.com", ok: true, ms: 12 },
-      { check: "https", host: "api-v2.soundcloud.com", ok: false, code: "blocked", ms: 40 },
+    rows: [{ check: "https", host: "api-v2.soundcloud.com", ok: false, code: "blocked", ms: 40 }] as Array<{
+      check: string;
+      host: string;
+      ok: boolean;
+      code?: string;
+      ms: number;
+    }>,
+    services: [
+      { service: "YouTube", state: "works", ms: 120 },
+      { service: "SoundCloud", state: "blocked", ms: 40 },
     ],
   })),
   systemReport: vi.fn(async () => null),
@@ -48,17 +55,30 @@ function type(input: HTMLInputElement, value: string): void {
 }
 
 describe("NetworkSection", () => {
-  it("runs the connection check and lists every row with its cause", async () => {
+  it("checks every service and gives each one plain line, with advice only where something is wrong", async () => {
     await act(async () => root.render(<NetworkSection />));
     await act(async () => byText("ui.settings.check").click());
+    expect(system.runNetworkCheck).toHaveBeenCalledWith(fetch, true);
     expect(host.textContent).toContain("ui.settings.check_service");
     expect(host.textContent).not.toContain("SoundCloud is blocked on this network.");
-    expect(host.textContent).toContain("dns music.youtube.com · ui.settings.check_ok · 12 ms");
-    expect(host.textContent).toContain("https api-v2.soundcloud.com · blocked · 40 ms");
+    const lines = [...host.querySelectorAll("li[data-state]")].map((line) => [line.getAttribute("data-state"), line.textContent]);
+    expect(lines).toEqual([
+      ["works", "YouTubeui.settings.service_state.works"],
+      ["blocked", "SoundCloudui.settings.service_state.blockedui.settings.service_advice.blocked"],
+    ]);
+  });
+
+  it("behind a proxy, a blocked service points at the proxy, not at setting one", async () => {
+    const result = await system.runNetworkCheck();
+    system.runNetworkCheck.mockResolvedValueOnce({ ...result, rows: [{ check: "proxy", host: "socks5h proxy", ok: true, ms: 3 }, ...result.rows] });
+    await act(async () => root.render(<NetworkSection />));
+    await act(async () => byText("ui.settings.check").click());
+    expect(host.textContent).toContain("ui.settings.service_advice.blocked_proxied");
+    expect(host.textContent).not.toContain("ui.settings.service_advice.blocked<");
   });
 
   it("says what to do when YouTube is blocked", async () => {
-    system.runNetworkCheck.mockResolvedValueOnce({ checkedAt: "", summary: "", code: "blocked", service: "YouTube", rows: [] });
+    system.runNetworkCheck.mockResolvedValueOnce({ checkedAt: "", summary: "", code: "blocked", service: "YouTube", rows: [], services: [] });
     await act(async () => root.render(<NetworkSection />));
     await act(async () => byText("ui.settings.check").click());
     expect(host.textContent).toContain("ui.network_advice.blocked");

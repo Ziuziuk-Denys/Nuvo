@@ -5,6 +5,7 @@ import path from "node:path";
 import { _electron, type ElectronApplication, type Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isolate, type Isolation } from "./isolation";
+import { passFirstRun } from "./ui/harness";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ELECTRON = createRequire(import.meta.url)("electron") as unknown as string;
@@ -221,6 +222,41 @@ describe("system proxy", () => {
       await expect.poll(() => resolvedBy(app, "persist:nuvo-yt")).toBe(`PROXY 127.0.0.1:${proxy.port}`);
       await networkCheck(page);
       expect(proxy.tunnels.map((tunnel) => tunnel.host)).toContain("music.youtube.com:443");
+    } finally {
+      await app.close().catch(() => undefined);
+      await proxy.stop();
+      isolation.dispose();
+    }
+  });
+});
+
+describe("connection check in Settings", () => {
+  it("checks every service through the proxy and gives each one plain line with what to do", async () => {
+    const proxy = new FixtureProxy();
+    await proxy.start();
+    const isolation = isolate("nuvo-net-check-e2e");
+    const { app, page } = await launch(isolation);
+    try {
+      await passFirstRun(page);
+      await setProxy(page, { mode: "manual", url: `http://127.0.0.1:${proxy.port}` });
+      await page.evaluate(() => (location.hash = "#/settings?section=network"));
+      await page.getByRole("button", { name: "Check connection" }).click();
+      const lines = page.locator("li[data-state]");
+      await expect.poll(() => lines.count(), { timeout: 30_000 }).toBe(7);
+      expect(await lines.evaluateAll((items) => items.map((item) => item.getAttribute("data-state")))).toEqual(Array(7).fill("proxy_error"));
+      expect(await lines.first().textContent()).toBe("YouTubeProxy error");
+      expect(await lines.last().textContent()).toBe("UpdatesProxy errorThe proxy didn't let Nuvo through: check its address, username and password above.");
+      const hosts = proxy.tunnels.map((tunnel) => tunnel.host);
+      for (const host of [
+        "music.youtube.com:443",
+        "api-v2.soundcloud.com:443",
+        "lrclib.net:443",
+        "amp.shazam.com:443",
+        "ws.audioscrobbler.com:443",
+        "github.com:443",
+      ]) {
+        expect(hosts).toContain(host);
+      }
     } finally {
       await app.close().catch(() => undefined);
       await proxy.stop();

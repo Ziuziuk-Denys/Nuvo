@@ -50,8 +50,7 @@ async fn self_signed() -> String {
 }
 
 fn target(service: &'static str, url: &str) -> Target {
-    let host = Url::parse(url).unwrap().host_str().unwrap().to_string();
-    Target { service, host, url: url.into() }
+    Target::new(service, url, false)
 }
 
 fn local(targets: Vec<Target>) -> Setup {
@@ -59,10 +58,18 @@ fn local(targets: Vec<Target>) -> Setup {
 }
 
 async fn run(setup: &Setup, proxy: Option<&str>) -> NetCheck {
+    run_scoped(setup, proxy, true).await
+}
+
+async fn run_scoped(setup: &Setup, proxy: Option<&str>, full: bool) -> NetCheck {
     let core = common::core();
     let proxy = proxy.map(|p| Url::parse(p).unwrap());
     core.state.set_proxy(proxy.clone());
-    netcheck::run(setup, proxy.as_ref(), core.state.proxy_hook(), now_ms()).await
+    netcheck::run(setup, proxy.as_ref(), core.state.proxy_hook(), now_ms(), full).await
+}
+
+fn verdicts(check: &NetCheck) -> Vec<(&'static str, &'static str)> {
+    check.services.iter().map(|s| (s.service, s.state)).collect()
 }
 
 fn https_code(check: &NetCheck, host: &str) -> Option<&'static str> {
@@ -164,7 +171,9 @@ async fn sinkholes_and_offline_are_dns_causes() {
     assert!(check.rows.iter().all(|r| r.check != "tcp"), "no connect to a sinkhole");
 
     let setup = Setup { targets: vec![target("YouTube", "https://nothing.invalid/"), target("Lyrics", "https://nowhere.invalid/")], resolver, private_ok: false };
-    assert_eq!(run(&setup, None).await.summary, "You are offline.");
+    let offline = run(&setup, None).await;
+    assert_eq!(offline.summary, "You are offline.");
+    assert!(offline.services.iter().all(|s| s.state == "offline"), "offline is not blocked: {:?}", offline.services);
 }
 
 #[tokio::test]
@@ -194,7 +203,7 @@ async fn proxy_problems_come_first() {
 #[tokio::test]
 async fn https_target_with_407_proxy_says_login_rejected() {
     let (proxy, _) = common::proxy::answering(b"", Some(common::proxy::USER_PASS_B64)).await;
-    let setup = local(vec![Target { service: "YouTube", host: "music.youtube.com".into(), url: "https://music.youtube.com/".into() }]);
+    let setup = local(vec![Target { service: "YouTube", host: "music.youtube.com".into(), url: "https://music.youtube.com/".into(), on_demand: false }]);
     let refused = run(&setup, Some(&proxy)).await;
     assert_eq!(refused.summary, "The proxy rejected the login.");
     assert!(refused.rows.iter().all(|r| {
@@ -234,7 +243,7 @@ async fn proxy_that(reply: &'static [u8]) -> String {
 
 #[tokio::test]
 async fn only_a_real_407_reads_as_login_rejected() {
-    let setup = local(vec![Target { service: "YouTube", host: "music.youtube.com".into(), url: "https://music.youtube.com/".into() }]);
+    let setup = local(vec![Target { service: "YouTube", host: "music.youtube.com".into(), url: "https://music.youtube.com/".into(), on_demand: false }]);
     let https_row = |check: &NetCheck| check.rows.iter().find(|r| r.check == "https").unwrap().clone();
 
     let closing = proxy_that(b"").await;
@@ -266,4 +275,76 @@ async fn concurrent_calls_share_one_run() {
     let results = futures::future::join_all(calls).await;
     let stamps: Vec<_> = results.iter().map(|(_, body)| body["checkedAt"].clone()).collect();
     assert!(stamps.windows(2).all(|w| w[0] == w[1]), "{stamps:?}");
+}
+
+#[test]
+fn each_service_gets_one_plain_verdict() {
+    let timed = |service, host, code, ms| NetCheckRow { ms, ..row("https", service, host, code) };
+    let rows = [
+        row("dns", "YouTube", "y1", None),
+        timed("YouTube", "y1", None, 120),
+        timed("YouTube", "y2", None, 340),
+        timed("SoundCloud", "s1", None, netcheck::SLOW_MS + 1),
+        timed("Lyrics", "l1", None, 90),
+        timed("Lyrics", "l2", Some("timeout"), 5000),
+        timed("Recognition", "r", Some("server_error"), 80),
+        timed("Last.fm", "f", Some("rate_limited"), 80),
+        timed("Tools", "t1", Some("blocked"), 30),
+        timed("Tools", "t2", Some("proxy_failed"), 30),
+    ];
+    let services = netcheck::services(&rows);
+    assert_eq!(
+        services.iter().map(|s| (s.service, s.state, s.ms)).collect::<Vec<_>>(),
+        [
+            ("YouTube", "works", 340),
+            ("SoundCloud", "slow", netcheck::SLOW_MS + 1),
+            ("Lyrics", "blocked", 5000),
+            ("Recognition", "down", 80),
+            ("Last.fm", "down", 80),
+            ("Tools", "proxy_error", 30),
+        ]
+    );
+}
+
+#[test]
+fn production_checks_every_service_and_playback_ones_by_default() {
+    let setup = Setup::production();
+    let names = |on_demand: bool| {
+        let mut names: Vec<&str> = setup.targets.iter().filter(|t| t.on_demand == on_demand).map(|t| t.service).collect();
+        names.dedup();
+        names
+    };
+    assert_eq!(names(false), ["YouTube", "SoundCloud", "Lyrics"]);
+    assert_eq!(names(true), ["Recognition", "Last.fm", "Tools", "Updates"]);
+    assert!(setup.targets.iter().all(|t| t.url.starts_with("https://") && !t.host.is_empty()), "{:?}", setup.targets);
+}
+
+#[tokio::test]
+async fn the_automatic_check_leaves_on_demand_services_out() {
+    let ok = http_status(200).await;
+    let setup = local(vec![target("YouTube", &ok), Target { host: "updates".into(), ..Target::new("Updates", &ok, true) }]);
+    assert_eq!(verdicts(&run_scoped(&setup, None, false).await), [("YouTube", "works")]);
+    assert_eq!(verdicts(&run_scoped(&setup, None, true).await), [("YouTube", "works"), ("Updates", "works")]);
+}
+
+#[tokio::test]
+async fn through_a_proxy_only_the_service_itself_is_asked_by_name() {
+    let port = common::proxy::serving(b"ok".to_vec(), false).await;
+    let (proxy, targets) = common::proxy::socks5(Some("me:pw")).await;
+    let setup = local(vec![target("YouTube", &format!("http://music.proxy.test:{port}/"))]);
+    let check = run(&setup, Some(&proxy.replace("socks5h://", "socks5h://me:pw@"))).await;
+    assert_eq!(verdicts(&check), [("YouTube", "works")], "{:?}", check.rows);
+    assert!(check.rows.iter().all(|r| r.check != "dns" && r.check != "tcp"), "no local lookup or direct connect: {:?}", check.rows);
+    assert_eq!(*targets.lock().unwrap(), [format!("music.proxy.test:{port}")]);
+    assert_eq!(check.code, None);
+
+    let refused = run(&setup, Some(&proxy.replace("socks5h://", "socks5h://me:wrong@"))).await;
+    assert_eq!(verdicts(&refused), [("YouTube", "proxy_error")], "{:?}", refused.rows);
+}
+
+#[test]
+fn behind_a_working_proxy_nothing_reachable_is_not_offline() {
+    let proxy = NetCheckRow { check: "proxy", host: Some("socks5h proxy".into()), service: None, ok: true, code: None, ms: 3, detail: None };
+    let rows = [proxy, row("https", "YouTube", "y", Some("blocked")), row("https", "Lyrics", "l", Some("blocked"))];
+    assert_eq!(summarize(&rows), ("YouTube looks blocked even through the proxy.".into(), Some("blocked"), Some("YouTube")));
 }

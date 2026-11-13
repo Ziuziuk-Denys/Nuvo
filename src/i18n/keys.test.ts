@@ -76,6 +76,9 @@ const DYNAMIC: Record<string, string[]> = {
   "ui.network_advice.": ["offline", "proxy_failed", "blocked", "refused", "tls_intercepted", "clock"],
   "ui.recs.hidden.scope_": ["exact", "work", "artist", "artist_forever"],
   "ui.settings.tools.status_": ["ok", "outdated", "missing", "broken"],
+  "ui.settings.service.": ["lyrics", "recognition", "tools", "updates"],
+  "ui.settings.service_state.": ["works", "slow", "blocked", "proxy_error", "down", "offline"],
+  "ui.settings.service_advice.": ["slow", "blocked", "blocked_proxied", "proxy_error", "down"],
   "ui.recognize.error.": ["no_capture", "network", "busy", "tool_missing", "decode_failed", "unavailable", "unsupported", "core_down", "locked", "failed"],
   "ui.recognize.error_link.": [
     "invalid_link",

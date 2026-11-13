@@ -1,10 +1,11 @@
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post, put};
 use axum::{Json, Router};
 use nuvo_contracts::{DaemonReport, Deps, Health, KeyStorage, NetCheck, NetworkApplied, NetworkSettings, SetPassphrase};
 use nuvo_fetch::proxy::parse_proxy;
 use nuvo_store::now_ms;
+use serde::Deserialize;
 
 use crate::deps;
 use crate::error::ApiError;
@@ -74,16 +75,24 @@ async fn download_tool(State(state): State<AppState>, Path(name): Path<String>) 
     Ok(StatusCode::ACCEPTED)
 }
 
-async fn network_check(State(state): State<AppState>) -> Json<NetCheck> {
+#[derive(Deserialize)]
+struct CheckScope {
+    #[serde(default)]
+    full: bool,
+}
+
+/// `?full=true` from Settings checks every service; the automatic check only what playback needs.
+async fn network_check(State(state): State<AppState>, Query(scope): Query<CheckScope>) -> Json<NetCheck> {
     let arrived = std::time::Instant::now();
     let mut finished = state.net_lock.lock().await;
     if finished.is_some_and(|at| at > arrived)
         && let Some(shared) = state.last_network_check.read().expect("network check lock").clone()
+        && (shared.full || !scope.full)
     {
         return Json(shared);
     }
     let proxy = state.proxy();
-    let (deps, mut result) = tokio::join!(deps::current(&state), netcheck::run(&state.net_setup, proxy.as_ref(), state.proxy_hook(), now_ms()));
+    let (deps, mut result) = tokio::join!(deps::current(&state), netcheck::run(&state.net_setup, proxy.as_ref(), state.proxy_hook(), now_ms(), scope.full));
     result.rows.extend(netcheck::tool_rows(&deps));
     *state.last_network_check.write().expect("network check lock") = Some(result.clone());
     *finished = Some(std::time::Instant::now());
