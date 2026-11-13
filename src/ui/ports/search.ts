@@ -2,10 +2,12 @@ import type { Track } from "@/engine/types";
 import { CORE_BASE_URL } from "@/data/core/request";
 import { toUiTrack } from "@/data/catalog/tracks";
 import type { CatalogSearchItem } from "@/data/search/catalogSearch";
+import type { SoundCloudHit } from "@/data/search/soundcloudSearch";
 import { createSearchHistory } from "@/data/search/history";
 
 export { filterTracks, normalizeForSearch, type SearchableTrack, type TrackMatch } from "@/data/search/trackMatch";
 export { useSearchAll, useSearchTracks, useSearchAlbums, useSearchArtists, useSearchPlaylists } from "@/data/search/catalogSearch";
+export { useSoundCloudSearch } from "@/data/search/soundcloudSearch";
 export type { SearchHistoryItem } from "@/data/search/history";
 
 export const { useSearchHistoryStore, loadSearchHistory } = createSearchHistory({
@@ -25,10 +27,15 @@ export interface SearchResult {
   durationMs?: number;
   track?: Track;
   href?: string;
+  preview?: boolean;
 }
 
 export function songResult(track: Track): SearchResult {
   return { kind: "song", id: track.id, title: track.title, subtitle: track.artists, cover: track.coverUrl, durationMs: track.durationMs, track };
+}
+
+export function soundCloudResult(hit: SoundCloudHit): SearchResult {
+  return hit.preview ? { ...songResult(hit.track), preview: true } : songResult(hit.track);
 }
 
 export function toSearchResult(item: CatalogSearchItem): SearchResult {

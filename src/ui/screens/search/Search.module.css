@@ -112,11 +112,37 @@
   font: 400 12px/normal var(--n-font);
 }
 
-.tabs {
+.filters {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 12px 14px 6px;
   overflow-x: auto;
+}
+
+.tabs {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.preview {
+  flex: none;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink-2);
+  font: 500 10.5px/1.2 var(--n-font);
+  user-select: none;
+}
+
+.source {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  margin-left: 2px;
+  color: var(--n-ink-3);
 }
 
 .tab {
@@ -148,14 +174,16 @@
   color: var(--n-ink);
 }
 
-.tab[aria-selected="true"] {
+.tab[aria-selected="true"],
+.tab[data-chosen] {
   background: color-mix(in srgb, var(--n-ink) 6%, transparent);
   color: var(--n-ink);
   font-weight: 500;
 }
 
 :global(:root[data-theme="dark"]) .tab:hover,
-:global(:root[data-theme="dark"]) .tab[aria-selected="true"] {
+:global(:root[data-theme="dark"]) .tab[aria-selected="true"],
+:global(:root[data-theme="dark"]) .tab[data-chosen] {
   background: color-mix(in srgb, var(--n-ink) 8%, transparent);
 }
 

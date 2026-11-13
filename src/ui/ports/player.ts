@@ -14,6 +14,7 @@ export {
   type RepeatMode,
 } from "@/engine/compat";
 export type { Track } from "@/engine/types";
+export { isSoundCloudId } from "@/engine/types";
 
 export function currentStreamFormat(): { codec: string; bitrate: number } | null {
   return playerRuntime?.currentStreamFormat() ?? null;

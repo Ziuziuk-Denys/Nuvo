@@ -1,0 +1,28 @@
+{
+ "id": "254111945",
+ "title": "Get Lucky (feat. Pharrell Williams and Nile Rodgers)",
+ "uploader": "Daft Punk",
+ "duration": 30.0,
+ "webpage_url": "https://soundcloud.com/daftpunkofficialmusic/get-lucky",
+ "extractor": "soundcloud",
+ "formats": [
+  {
+   "format_id": "hls_mp3_1_0_preview",
+   "url": "https://cf-hls-media.sndcdn.com/playlist/0/30/zpfpwRUTkDcZ.128.mp3/playlist.m3u8?Policy=recorded&Signature=recorded&Key-Pair-Id=recorded",
+   "protocol": "m3u8_native",
+   "ext": "mp3",
+   "acodec": "mp3",
+   "abr": 128,
+   "format_note": null
+  },
+  {
+   "format_id": "http_mp3_1_0_preview",
+   "url": "https://cf-preview-media.sndcdn.com/preview/0/30/zpfpwRUTkDcZ.128.mp3?Policy=recorded&Signature=recorded&Key-Pair-Id=recorded",
+   "protocol": "http",
+   "ext": "mp3",
+   "acodec": "mp3",
+   "abr": 128,
+   "format_note": null
+  }
+ ]
+}

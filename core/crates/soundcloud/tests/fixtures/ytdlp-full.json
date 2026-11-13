@@ -1,0 +1,19 @@
+{
+ "id": "88335161",
+ "title": "Get Lucky [Original Version] - Daft Punk",
+ "uploader": "DJ KB",
+ "duration": 246.381,
+ "webpage_url": "https://soundcloud.com/eldjkb/get-lucky-original-version",
+ "extractor": "soundcloud",
+ "formats": [
+  {
+   "format_id": "hls_aac_96k",
+   "url": "https://playback.media-streaming.soundcloud.cloud/XBV0hffTtBI4/aac_96k/d5d47a09-5e2b-4293-b274-8f0037c676b9/playlist.m3u8?Policy=recorded&Signature=recorded&Key-Pair-Id=recorded",
+   "protocol": "m3u8_native",
+   "ext": "m4a",
+   "acodec": "mp4a.40.2",
+   "abr": 96,
+   "format_note": null
+  }
+ ]
+}

@@ -66,9 +66,13 @@ vi.mock("../../ports/i18n", () => ({
 }));
 vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: vi.fn() }));
-vi.mock("../../ports/network", () => ({ useStreamingReachable: () => true, useOfflineMode: () => false }));
+vi.mock("../../ports/network", () => ({ useStreamingReachable: () => true, useOnline: () => true, useOfflineMode: () => false }));
 vi.mock("../../ports/catalog", () => ({ useCachedTrackIds: () => null }));
-vi.mock("../../ports/player", () => ({ usePlayerStore: mocks.usePlayerStore, playerEngine: mocks.engine }));
+vi.mock("../../ports/player", () => ({
+  usePlayerStore: mocks.usePlayerStore,
+  playerEngine: mocks.engine,
+  isSoundCloudId: (id: string) => id.startsWith("sc:"),
+}));
 vi.mock("../../ports/playlistTools", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../ports/playlistTools")>()),
   moveWithUndo: mocks.move,

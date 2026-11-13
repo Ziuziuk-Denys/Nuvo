@@ -6,6 +6,10 @@ export type SearchFilter = "all" | "songs" | "albums" | "artists" | "playlists";
 
 export const SEARCH_FILTERS: SearchFilter[] = ["all", "songs", "albums", "artists", "playlists"];
 
+export type SearchSource = "all" | "youtube" | "soundcloud";
+
+export const SEARCH_SOURCES: SearchSource[] = ["all", "youtube", "soundcloud"];
+
 export type GroupKey = Exclude<SearchFilter, "all">;
 
 export const GROUP_KIND: Record<GroupKey, SearchKind> = {
@@ -23,6 +27,7 @@ export interface SearchGroups {
   albums: SearchResult[];
   artists: SearchResult[];
   playlists: SearchResult[];
+  soundcloud?: SearchResult[];
 }
 
 export function groupResults(all: readonly SearchResult[], filter: SearchFilter): SearchGroups {
@@ -35,6 +40,11 @@ export function groupResults(all: readonly SearchResult[], filter: SearchFilter)
     groups[key] = filter === "all" ? items.slice(0, ALL_CAPS[key]) : items;
   }
   return groups;
+}
+
+export function withSoundCloud(groups: SearchGroups, found: readonly SearchResult[], filter: SearchFilter): SearchGroups {
+  if (found.length === 0 || (filter !== "all" && filter !== "songs")) return groups;
+  return { ...groups, soundcloud: filter === "all" ? found.slice(0, ALL_CAPS.songs) : [...found] };
 }
 
 export const LOCAL_SEARCH_LIMIT = 6;
@@ -71,7 +81,7 @@ export function withLocalFiles(results: readonly SearchResult[], files: readonly
 }
 
 export function isEmpty(groups: SearchGroups): boolean {
-  return !groups.top && groups.songs.length + groups.albums.length + groups.artists.length + groups.playlists.length === 0;
+  return !groups.top && groups.songs.length + groups.albums.length + groups.artists.length + groups.playlists.length + (groups.soundcloud?.length ?? 0) === 0;
 }
 
 export interface LocalPlaylist {

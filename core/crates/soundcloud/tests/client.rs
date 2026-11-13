@@ -137,3 +137,28 @@ async fn empty_or_scalar_bodies_are_upstream_errors_and_stalls_time_out() {
     fx.on(&api("tracks/2"), Reply::json(track(2, "x", 1)).after(Duration::from_secs(3)));
     assert_eq!(sc.track("sc:2").await.unwrap_err(), ScError::Timeout);
 }
+
+#[tokio::test]
+async fn a_rate_limit_pauses_further_requests() {
+    let (fx, sc) = setup().await;
+    sc.set_client_id(Some(ID_A.into()));
+    fx.on(&api("tracks/2"), Reply::status(429));
+    fx.on(&api("tracks/3"), Reply::json(track(3, "Song", 1000)));
+    assert_eq!(sc.track("sc:2").await.unwrap_err(), ScError::RateLimited);
+    assert_eq!(sc.track("sc:3").await.unwrap_err(), ScError::RateLimited);
+    assert_eq!(fx.count(&api("tracks/3")), 0, "no request is sent while SoundCloud asks to slow down");
+}
+
+#[tokio::test]
+async fn a_slow_script_still_gives_the_id_after_the_caller_gave_up() {
+    let fx = Fixture::start().await;
+    common::homepage(&fx, &["49-b.js"]);
+    fx.on(&common::script_url("49-b.js"), Reply::bytes("application/javascript", format!("({{client_id:\"{ID_A}\"}})")).after(Duration::from_millis(800)));
+    fx.on(&api("tracks/1"), Reply::json(track(1, "Song", 1000)));
+    let sc = SoundCloud::new(fx.net(), common::FAST);
+    assert!(tokio::time::timeout(Duration::from_millis(100), sc.track("sc:1")).await.is_err());
+    tokio::time::sleep(Duration::from_millis(1200)).await;
+    assert_eq!(sc.client_id().as_deref(), Some(ID_A));
+    sc.track("sc:1").await.unwrap();
+    assert_eq!(fx.count(&common::script_url("49-b.js")), 1);
+}

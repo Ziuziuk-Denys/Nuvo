@@ -118,3 +118,10 @@ fn links_are_recognised_and_canonicalised() {
     assert_eq!(link::parse("soundcloud.com/a#t=1"), Some(Link::Canonical("https://soundcloud.com/a".into())));
     assert_eq!(link::parse("http://on.soundcloud.com/AbC"), Some(Link::Short("https://on.soundcloud.com/AbC".into())));
 }
+
+#[test]
+fn recorded_go_plus_snips_are_marked_as_previews() {
+    let listing: Value = serde_json::from_str(include_str!("fixtures/search-tracks.json")).unwrap();
+    let marks: Vec<(String, Option<bool>)> = listing["collection"].as_array().unwrap().iter().map(|r| map::track(r).unwrap()).map(|t| (t.id, t.preview)).collect();
+    assert_eq!(marks, [("sc:254111945".into(), Some(true)), ("sc:88335161".into(), None), ("sc:2360861477".into(), None), ("sc:254111762".into(), Some(true))]);
+}

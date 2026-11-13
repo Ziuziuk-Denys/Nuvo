@@ -1,13 +1,14 @@
-import { useState, type JSX } from "react";
+import { useState, type JSX, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cover } from "../../components/Cover";
 import { Explicit } from "../../components/Explicit";
+import { Icon } from "../../icons/Icon";
 import { Menu } from "../../components/Menu";
 import { Popover } from "../../components/Popover";
 import { useTranslation, type TFunction } from "../../ports/i18n";
 import { saveAsFiles } from "../../ports/exports";
 import { revealLocalTrack } from "../../ports/localFiles";
-import { playerEngine, usePlayerStore, type Track } from "../../ports/player";
+import { isSoundCloudId, playerEngine, usePlayerStore, type Track } from "../../ports/player";
 import type { SearchResult } from "../../ports/search";
 import { navigateWithTransition } from "../../shell/navigate";
 import { AddToPlaylistPopover } from "../../shell/popovers/AddToPlaylistPopover";
@@ -28,6 +29,7 @@ export interface SearchGroupsProps {
   filter: SearchFilter;
   hasMore: (key: GroupKey) => boolean;
   onShowAll: (key: GroupKey) => void;
+  onShowSoundCloud: () => void;
   onActivate: (result: SearchResult) => void;
 }
 
@@ -36,6 +38,28 @@ function subtitleOf(result: SearchResult, t: TFunction): string {
   if (result.kind === "album") return result.subtitle ? t("ui.library.kind_album", { artist: result.subtitle }) : t("ui.library.kind_album_plain");
   if (result.kind === "artist") return t("ui.library.kind_artist");
   return result.subtitle ? t("ui.library.kind_playlist", { owner: result.subtitle }) : t("ui.library.kind_playlist_plain");
+}
+
+function songBadge(result: SearchResult, t: TFunction): ReactNode {
+  const track = result.track;
+  if (!track) return undefined;
+  const fromSoundCloud = isSoundCloudId(track.id);
+  if (!track.explicit && !result.preview && !fromSoundCloud) return undefined;
+  return (
+    <>
+      {track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : null}
+      {result.preview ? (
+        <span className={styles.preview} title={t("ui.search.preview_hint")}>
+          {t("ui.search.preview")}
+        </span>
+      ) : null}
+      {fromSoundCloud ? (
+        <span role="img" className={styles.source} aria-label={t("ui.search.from_soundcloud")} title={t("ui.search.from_soundcloud")}>
+          <Icon name="soundcloud" size={16} />
+        </span>
+      ) : null}
+    </>
+  );
 }
 
 interface MenuState {
@@ -91,7 +115,7 @@ function SongRows({ songs, onActivate }: { songs: SearchResult[]; onActivate: (r
               data-selected={selected ? "" : undefined}
               leading={<Cover src={song.cover} size={48} radius={8} fetchPriority="low" />}
               title={song.title}
-              badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
+              badge={songBadge(song, t)}
               subtitle={song.subtitle}
               meta={formatDuration(track.durationMs)}
               extra={<DislikeButton track={track} />}
@@ -142,9 +166,27 @@ function EntityRows({ results, onActivate }: { results: SearchResult[]; onActiva
   );
 }
 
-export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }: SearchGroupsProps): JSX.Element {
+export function SearchGroups({ groups, filter, hasMore, onShowAll, onShowSoundCloud, onActivate }: SearchGroupsProps): JSX.Element {
   const { t } = useTranslation();
   const top = groups.top;
+  const soundcloud = groups.soundcloud ?? [];
+
+  const section = (key: GroupKey) => {
+    const results = groups[key];
+    if (results.length === 0) return null;
+    const title = t(`ui.search.tab_${key}`);
+    return (
+      <section key={key} className={styles.group} aria-label={title}>
+        <h2 className={styles.heading}>{title}</h2>
+        {key === "songs" ? <SongRows songs={results} onActivate={onActivate} /> : <EntityRows results={results} onActivate={onActivate} />}
+        {filter === "all" && hasMore(key) ? (
+          <button type="button" className={styles.more} onClick={() => onShowAll(key)}>
+            {t("ui.search.show_all")}
+          </button>
+        ) : null}
+      </section>
+    );
+  };
 
   return (
     <>
@@ -156,6 +198,7 @@ export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }:
               data-top=""
               leading={<EntityCover result={top} />}
               title={top.title}
+              badge={songBadge(top, t)}
               subtitle={subtitleOf(top, t)}
               extra={top.track ? <DislikeButton track={top.track} /> : undefined}
               onActivate={() => onActivate(top)}
@@ -163,22 +206,19 @@ export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }:
           </div>
         </section>
       ) : null}
-      {GROUP_ORDER.map((key) => {
-        const results = groups[key];
-        if (results.length === 0) return null;
-        const title = t(`ui.search.tab_${key}`);
-        return (
-          <section key={key} className={styles.group} aria-label={title}>
-            <h2 className={styles.heading}>{title}</h2>
-            {key === "songs" ? <SongRows songs={results} onActivate={onActivate} /> : <EntityRows results={results} onActivate={onActivate} />}
-            {filter === "all" && hasMore(key) ? (
-              <button type="button" className={styles.more} onClick={() => onShowAll(key)}>
-                {t("ui.search.show_all")}
-              </button>
-            ) : null}
-          </section>
-        );
-      })}
+      {section("songs")}
+      {soundcloud.length > 0 ? (
+        <section className={styles.group} aria-label={t("ui.search.source_soundcloud")}>
+          <h2 className={styles.heading}>{t("ui.search.source_soundcloud")}</h2>
+          <SongRows songs={soundcloud} onActivate={onActivate} />
+          {filter === "all" ? (
+            <button type="button" className={styles.more} onClick={onShowSoundCloud}>
+              {t("ui.search.show_all")}
+            </button>
+          ) : null}
+        </section>
+      ) : null}
+      {GROUP_ORDER.filter((key) => key !== "songs").map(section)}
     </>
   );
 }

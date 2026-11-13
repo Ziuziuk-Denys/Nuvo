@@ -2,6 +2,7 @@ import { playlistHref } from "../../app/hrefs";
 import { useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Enter } from "../../components/Enter";
+import { Menu, type MenuItem } from "../../components/Menu";
 import { Popover } from "../../components/Popover";
 import { useToastStore } from "../../feedback/toastStore";
 import { useCalmLight } from "../../field/calm";
@@ -12,11 +13,12 @@ import { useLikeTrack, useLikedTracks, usePlaylistsList } from "../../ports/libr
 import { createLinkPorts, routeLink, youtubeCatalog, type Share } from "../../ports/links";
 import { openExternal } from "../../ports/system";
 import { toPlayerTrack, useLocalTracks } from "../../ports/localFiles";
-import { useOfflineMode, useStreamingReachable } from "../../ports/network";
+import { useOfflineMode, useOnline, useStreamingReachable } from "../../ports/network";
 import { playerEngine, type Track } from "../../ports/player";
 import {
   loadSearchHistory,
   songResult,
+  soundCloudResult,
   toSearchResult,
   useSearchAlbums,
   useSearchAll,
@@ -24,6 +26,7 @@ import {
   useSearchHistoryStore,
   useSearchPlaylists,
   useSearchTracks,
+  useSoundCloudSearch,
   type SearchHistoryItem,
   type SearchResult,
 } from "../../ports/search";
@@ -33,7 +36,19 @@ import { useImportsUi } from "../imports/importsUi";
 import { MediaRowPlaceholder } from "../MediaRow";
 import { LinkBlock } from "./LinkBlock";
 import { SharePreview } from "./SharePreview";
-import { GROUP_KIND, groupResults, isEmpty, LOCAL_SEARCH_LIMIT, localResults, withLocalFiles, type GroupKey, type SearchFilter } from "./searchModel";
+import {
+  GROUP_KIND,
+  groupResults,
+  isEmpty,
+  LOCAL_SEARCH_LIMIT,
+  localResults,
+  SEARCH_SOURCES,
+  withLocalFiles,
+  withSoundCloud,
+  type GroupKey,
+  type SearchFilter,
+  type SearchSource,
+} from "./searchModel";
 import { SearchGroups } from "./SearchGroups";
 import { SearchHistory } from "./SearchHistory";
 import styles from "./Search.module.css";
@@ -51,6 +66,8 @@ const FILTER_PILLS: { id: SearchFilter; icon: IconName }[] = [
   { id: "albums", icon: "album" },
   { id: "playlists", icon: "playlist" },
 ];
+
+const SOURCE_ICONS: Record<SearchSource, IconName> = { all: "filter", youtube: "youtube", soundcloud: "soundcloud" };
 
 const lastQuery = { text: "", leftAt: 0 };
 const resultCache = new Map<string, SearchResult[]>();
@@ -92,10 +109,13 @@ export function Search(): JSX.Element {
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(() => initialQuery(params));
   const [filter, setFilter] = useState<SearchFilter>("all");
+  const [searchSource, setSearchSource] = useState<SearchSource>("all");
+  const [sourceMenu, setSourceMenu] = useState<HTMLElement | null>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const offlineMode = useOfflineMode();
   const online = useStreamingReachable() && !offlineMode;
+  const soundCloudOnline = useOnline() && !offlineMode;
   const addHistory = useSearchHistoryStore((state) => state.addItem);
   const like = useLikeTrack();
   const linkPorts = useMemo(() => createLinkPorts(youtubeCatalog), []);
@@ -140,13 +160,18 @@ export function Search(): JSX.Element {
     [],
   );
 
-  const options = (on: boolean) => ({ enabled: online && on, limit: LIMIT, debounceMs: DEBOUNCE_MS });
+  const soundCloudOnly = searchSource === "soundcloud";
+  const options = (on: boolean) => ({ enabled: online && !soundCloudOnly && on, limit: LIMIT, debounceMs: DEBOUNCE_MS });
   const all = useSearchAll(searchQuery, options(filter === "all"));
   const songs = useSearchTracks(searchQuery, options(filter === "songs"));
   const albums = useSearchAlbums(searchQuery, options(filter === "albums"));
   const artists = useSearchArtists(searchQuery, options(filter === "artists"));
   const playlists = useSearchPlaylists(searchQuery, options(filter === "playlists"));
   const source = { all, songs, albums, artists, playlists }[filter];
+  const soundCloudActive = soundCloudOnline && searchSource !== "youtube" && (filter === "all" || filter === "songs");
+  const soundCloud = useSoundCloudSearch(searchQuery, { enabled: soundCloudActive, limit: LIMIT, debounceMs: DEBOUNCE_MS });
+  const soundCloudResults = useMemo(() => soundCloud.items.map(soundCloudResult), [soundCloud.items]);
+  const youtubeActive = online && !soundCloudOnly;
 
   const fetched = useMemo((): SearchResult[] => {
     if (filter === "all") return all.items.map(toSearchResult);
@@ -181,10 +206,16 @@ export function Search(): JSX.Element {
     () => withLocalFiles(online ? shownOnline : local, fileResults, filter, trimmed),
     [online, shownOnline, local, fileResults, filter, trimmed],
   );
-  const groups = useMemo(() => groupResults(results, filter), [results, filter]);
-  const slow = useAfter(online && source.loading && trimmed.length >= 2, SLOW_MS) || (linkText !== null && linkSlow);
-  const noResults = isEmpty(groups) && (online ? settled && trimmed.length >= 2 : trimmed !== "");
-  const pending = online && source.loading && isEmpty(groups);
+  const groups = useMemo(
+    () => (soundCloudOnly ? groupResults(soundCloudResults, filter) : withSoundCloud(groupResults(results, filter), soundCloudResults, filter)),
+    [soundCloudOnly, soundCloudResults, results, filter],
+  );
+  const remote = youtubeActive || soundCloudActive;
+  const loading = (youtubeActive && source.loading) || (soundCloudActive && soundCloud.loading);
+  const allSettled = (!youtubeActive || settled) && (!soundCloudActive || (soundCloud.hasLoaded && !soundCloud.loading));
+  const slow = useAfter(remote && loading && trimmed.length >= 2, SLOW_MS) || (linkText !== null && linkSlow);
+  const noResults = isEmpty(groups) && (remote ? allSettled && trimmed.length >= 2 : trimmed !== "");
+  const pending = remote && loading && isEmpty(groups);
   const hasMore = (key: GroupKey) => online || results.filter((result) => result.kind === GROUP_KIND[key]).length > groups[key].length;
 
   const activate = (result: SearchResult) => {
@@ -214,6 +245,18 @@ export function Search(): JSX.Element {
     const href = (item.itemData as { href?: string } | undefined)?.href ?? legacyHref(item);
     navigateWithTransition(navigate, href);
   };
+
+  const chooseSource = (next: SearchSource) => {
+    setSearchSource(next);
+    if (next === "soundcloud" && filter !== "all" && filter !== "songs") setFilter("all");
+  };
+
+  const sourceLabel = `${t("ui.search.sources")}: ${t(`ui.search.source_${searchSource}`)}`;
+  const sourceItems: MenuItem[] = SEARCH_SOURCES.map((id) => ({
+    label: t(`ui.search.source_${id}`),
+    icon: id === searchSource ? "check" : undefined,
+    onSelect: () => chooseSource(id),
+  }));
 
   const changeQuery = (value: string) => {
     setQuery(value);
@@ -258,6 +301,7 @@ export function Search(): JSX.Element {
     event.preventDefault();
     addHistory({ id: `query:${trimmed.toLowerCase()}`, type: "query", title: trimmed });
     source.runNow();
+    soundCloud.runNow();
   };
 
   const onRowsKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -314,7 +358,16 @@ export function Search(): JSX.Element {
     );
   } else {
     phase = "results";
-    body = <SearchGroups groups={groups} filter={filter} hasMore={hasMore} onShowAll={setFilter} onActivate={activate} />;
+    body = (
+      <SearchGroups
+        groups={groups}
+        filter={filter}
+        hasMore={hasMore}
+        onShowAll={setFilter}
+        onShowSoundCloud={() => chooseSource("soundcloud")}
+        onActivate={activate}
+      />
+    );
   }
 
   return (
@@ -351,19 +404,34 @@ export function Search(): JSX.Element {
       </Enter>
       <Enter index={1} screen="search">
         <div className={styles.panel}>
-          {online ? null : <p className={styles.subline}>{t(offlineMode ? "ui.search.offline_mode" : "ui.search.offline")}</p>}
+          {online || soundCloudActive ? null : <p className={styles.subline}>{t(offlineMode ? "ui.search.offline_mode" : "ui.search.offline")}</p>}
           {trimmed === "" || linkText !== null ? null : (
-            <div className={styles.tabs} role="tablist" aria-label={t("ui.search.tabs")}>
-              {FILTER_PILLS.map((pill) => (
-                <button key={pill.id} type="button" role="tab" aria-selected={pill.id === filter} className={styles.tab} onClick={() => setFilter(pill.id)}>
-                  <Icon name={pill.icon} size={16} />
-                  <span>{t(`ui.search.tab_${pill.id}`)}</span>
-                </button>
-              ))}
+            <div className={styles.filters}>
+              <div className={styles.tabs} role="tablist" aria-label={t("ui.search.tabs")}>
+                {FILTER_PILLS.filter((pill) => !soundCloudOnly || pill.id === "all" || pill.id === "songs").map((pill) => (
+                  <button key={pill.id} type="button" role="tab" aria-selected={pill.id === filter} className={styles.tab} onClick={() => setFilter(pill.id)}>
+                    <Icon name={pill.icon} size={16} />
+                    <span>{t(`ui.search.tab_${pill.id}`)}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={styles.tab}
+                aria-haspopup="menu"
+                aria-expanded={sourceMenu !== null}
+                data-chosen={searchSource === "all" ? undefined : ""}
+                aria-label={sourceLabel}
+                title={sourceLabel}
+                onClick={(event) => setSourceMenu(event.currentTarget)}
+              >
+                <Icon name={SOURCE_ICONS[searchSource]} size={16} />
+                <Icon name="chevron-down" size={14} />
+              </button>
             </div>
           )}
           <div className={styles.results} ref={resultsRef} onKeyDown={onRowsKeyDown}>
-            <div key={`${filter}:${phase}`} className={styles.swap} data-swap={phase}>
+            <div key={`${searchSource}:${filter}:${phase}`} className={styles.swap} data-swap={phase}>
               {body}
             </div>
           </div>
@@ -386,6 +454,7 @@ export function Search(): JSX.Element {
           }}
         />
       ) : null}
+      <Menu open={sourceMenu !== null} anchor={sourceMenu} onClose={() => setSourceMenu(null)} items={sourceItems} />
       <Popover open={addOpen} anchor={add?.anchor ?? null} onClose={() => setAddOpen(false)} title={t("ui.add.title")} width={320}>
         {add ? <AddToPlaylistPopover track={add.track} onDone={() => setAddOpen(false)} /> : null}
       </Popover>

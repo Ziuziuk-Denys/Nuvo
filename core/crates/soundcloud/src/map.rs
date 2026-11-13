@@ -1,7 +1,8 @@
 use nuvo_contracts::catalog::{AlbumDetails, ArtistRef, ArtistSummary, Cover, PlaylistDetails, SetSummary, Track, TrackDetails};
 use serde_json::Value;
 
-use crate::ids;
+use crate::play::availability;
+use crate::{Reason, ids};
 
 fn text(value: &Value, key: &str) -> Option<String> {
     value.get(key)?.as_str().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string)
@@ -63,6 +64,7 @@ pub fn track(record: &Value) -> Option<Track> {
         duration_ms: record.get("duration").and_then(Value::as_i64).filter(|d| *d > 0).unwrap_or(0),
         cover: cover(artwork.or_else(|| avatar(user))),
         explicit: (record.pointer("/publisher_metadata/explicit") == Some(&Value::Bool(true))).then_some(true),
+        preview: (availability(record) == Err(Reason::Preview)).then_some(true),
     })
 }
 

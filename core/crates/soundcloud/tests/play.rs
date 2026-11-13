@@ -457,3 +457,28 @@ async fn live_soundcloud_discovery_lookup_and_stream() {
         Playable::Assembled { bytes, .. } => assert!(bytes > 10_000),
     }
 }
+
+#[tokio::test]
+async fn yt_dlp_formats_use_the_same_paths_and_never_previews() {
+    let (fx, sc) = setup().await;
+    let full: Value = serde_json::from_str(include_str!("fixtures/ytdlp-full.json")).unwrap();
+    let base = "https://playback.media-streaming.soundcloud.cloud/XBV0hffTtBI4/aac_96k/d5d47a09-5e2b-4293-b274-8f0037c676b9";
+    fx.on(&format!("{base}/playlist.m3u8"), Reply::bytes("application/vnd.apple.mpegurl", "#EXTM3U\n#EXT-X-MAP:URI=\"init.mp4\"\n#EXTINF:1,\ns0.m4s\n#EXT-X-ENDLIST\n"));
+    fx.on(&format!("{base}/init.mp4"), Reply::bytes("audio/mp4", b"II".to_vec()));
+    fx.on(&format!("{base}/s0.m4s"), Reply::bytes("audio/mp4", b"a".to_vec()));
+    let mut sink = Vec::new();
+    let Playable::Assembled { bytes, format } = sc.resolve_external("sc:88335161", &full, &mut sink).await.unwrap() else { panic!("assembled expected") };
+    assert_eq!((sink.as_slice(), bytes, format.codec, format.bitrate), (b"IIa".as_slice(), 3, "aac", 96_000));
+
+    let preview: Value = serde_json::from_str(include_str!("fixtures/ytdlp-preview.json")).unwrap();
+    let before = fx.total();
+    assert_eq!(sc.resolve_external("sc:254111945", &preview, &mut Vec::new()).await.unwrap_err(), ScError::Unplayable(Reason::NoFormat));
+    assert_eq!(fx.total(), before, "a 30-second preview is never fetched");
+
+    let progressive = json!({"formats": [
+        {"format_id": "http_mp3_1_0", "url": "https://media.example/a.128.mp3", "protocol": "https", "ext": "mp3"},
+        {"format_id": "http_mp3_1_0", "url": format!("{CDN}/a.128.mp3?Expires=1900000000"), "protocol": "https", "ext": "mp3"}
+    ]});
+    let Playable::Direct { url, format, .. } = sc.resolve_external("sc:5", &progressive, &mut Vec::new()).await.unwrap() else { panic!("direct expected") };
+    assert_eq!((url.as_str(), format.codec), ("https://cf-media.sndcdn.com/a.128.mp3?Expires=1900000000", "mp3"));
+}

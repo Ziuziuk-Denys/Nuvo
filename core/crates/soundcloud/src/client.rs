@@ -16,6 +16,8 @@ const RECORD_TTL: Duration = Duration::from_secs(600);
 const RECORD_CAP: usize = 500;
 const API_MAX_BYTES: usize = 5 * 1024 * 1024;
 const SCRIPT_MAX_BYTES: usize = 8 * 1024 * 1024;
+const RATE_LIMIT_PAUSE: Duration = Duration::from_secs(5);
+const RATE_LIMIT_PAUSE_MAX: Duration = Duration::from_secs(60);
 
 pub fn host_allowed(host: &str) -> bool {
     matches!(
@@ -42,7 +44,7 @@ pub struct Limits {
 impl Limits {
     pub const SOUNDCLOUD: Limits = Limits {
         api_timeout: Duration::from_secs(10),
-        discovery_timeout: Duration::from_secs(15),
+        discovery_timeout: Duration::from_secs(30),
         segment_timeout: Duration::from_secs(20),
         max_retry_wait: Duration::from_secs(10),
     };
@@ -89,6 +91,7 @@ pub(crate) struct Inner {
     client_id: Mutex<Option<String>>,
     discovery: tokio::sync::Mutex<()>,
     last_failure: Mutex<Option<Instant>>,
+    paused_until: Mutex<Option<Instant>>,
     api_slots: Semaphore,
     records: Mutex<Records>,
     persist: Mutex<Option<Persist>>,
@@ -109,6 +112,7 @@ impl SoundCloud {
                 client_id: Mutex::new(None),
                 discovery: tokio::sync::Mutex::new(()),
                 last_failure: Mutex::new(None),
+                paused_until: Mutex::new(None),
                 api_slots: Semaphore::new(4),
                 records: Mutex::new(Records { entries: HashMap::new(), clock: 0 }),
                 persist: Mutex::new(None),
@@ -144,8 +148,14 @@ impl SoundCloud {
         self.rediscover(None).await
     }
 
-    // rejected is forgotten only if it is still the current id
     async fn rediscover(&self, rejected: Option<&str>) -> Result<String, ScError> {
+        let sc = self.clone();
+        let rejected = rejected.map(str::to_string);
+        tokio::spawn(async move { sc.rediscover_now(rejected.as_deref()).await }).await.unwrap_or(Err(ScError::Unavailable))
+    }
+
+    // rejected is forgotten only if it is still the current id
+    async fn rediscover_now(&self, rejected: Option<&str>) -> Result<String, ScError> {
         let _flight = self.inner.discovery.lock().await;
         if let Some(last) = *self.inner.last_failure.lock().unwrap()
             && last.elapsed() < Duration::from_secs(5)
@@ -178,7 +188,7 @@ impl SoundCloud {
     }
 
     async fn discover(&self) -> Option<String> {
-        let timeout = self.inner.limits.api_timeout;
+        let timeout = self.inner.limits.discovery_timeout;
         let home = self.inner.net.get(&Url::parse(WEB_URL).unwrap(), &self.fetch(API_MAX_BYTES, timeout, "text/html")).await.ok().filter(Fetched::ok)?;
         let html = String::from_utf8_lossy(&home.body);
         let scripts = script_urls(&html);
@@ -200,6 +210,9 @@ impl SoundCloud {
         if url.scheme() != "https" || url.host_str() != Some("api-v2.soundcloud.com") {
             return Err(ScError::Invalid(path.to_string()));
         }
+        if self.inner.paused_until.lock().unwrap().is_some_and(|until| Instant::now() < until) {
+            return Err(ScError::RateLimited);
+        }
         let mut id = self.ensure_client_id().await?;
         let mut retried_id = false;
         let mut retried_wait = false;
@@ -220,7 +233,11 @@ impl SoundCloud {
                     let secs = retry_after.unwrap_or(0);
                     tokio::time::sleep(Duration::from_secs(secs).min(self.inner.limits.max_retry_wait)).await;
                 }
-                429 => return Err(ScError::RateLimited),
+                429 => {
+                    let pause = retry_after.map_or(RATE_LIMIT_PAUSE, Duration::from_secs).min(RATE_LIMIT_PAUSE_MAX);
+                    *self.inner.paused_until.lock().unwrap() = Some(Instant::now() + pause);
+                    return Err(ScError::RateLimited);
+                }
                 status if !(200..300).contains(&status) => return Err(ScError::Status(status)),
                 _ => {
                     *self.inner.client_id.lock().unwrap() = Some(id);
