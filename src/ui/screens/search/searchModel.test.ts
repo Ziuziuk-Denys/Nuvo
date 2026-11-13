@@ -105,15 +105,25 @@ describe("withLocalFiles", () => {
 });
 
 describe("withSoundCloud", () => {
-  const found = many("song", 9).map((result) => ({ ...result, id: `sc:${result.id}` }));
+  const named = (id: string, title: string, artists: string) => ({ kind: "song" as const, id, title, subtitle: artists, cover: "", durationMs: 200_000 });
+  const found = Array.from({ length: 9 }, (_, index) => named(`sc:${index}`, `Song number ${index}`, `Band ${index}`));
 
-  it("adds a SoundCloud group capped like songs under All and whole under Songs", () => {
-    expect(withSoundCloud(groupResults([], "all"), found, "all").soundcloud).toHaveLength(6);
-    expect(withSoundCloud(groupResults([], "songs"), found, "songs").soundcloud).toHaveLength(9);
-    expect(isEmpty(withSoundCloud(groupResults([], "all"), found, "all"))).toBe(false);
+  it("merges SoundCloud songs into the one song list", () => {
+    const merged = withSoundCloud(many("song", 3), found, "all", "song");
+    expect(merged.filter((result) => result.id.startsWith("sc:"))).toHaveLength(9);
+    expect(groupResults(merged, "all").songs.length).toBeGreaterThan(0);
+    expect(isEmpty(groupResults(withSoundCloud([], found, "all", "song"), "all"))).toBe(false);
   });
 
-  it("stays out of the album, artist and playlist views", () => {
-    expect(withSoundCloud(groupResults([], "albums"), found, "albums").soundcloud).toBeUndefined();
+  it("ranks the better match first whatever its source", () => {
+    const youtube = named("yt1", "Harbor Lights (Karaoke Version)", "Sing Along");
+    const cloud = named("sc:1", "Harbor Lights", "Nova");
+    expect(withSoundCloud([youtube], [cloud], "songs", "nova harbor lights").map((r) => r.id)).toEqual(["sc:1", "yt1"]);
+  });
+
+  it("keeps a leading artist first and stays out of the album, artist and playlist views", () => {
+    const artist = { ...named("ar", "Nova", ""), kind: "artist" as const };
+    expect(withSoundCloud([artist, named("yt1", "Song", "Nova")], found, "all", "nova")[0].id).toBe("ar");
+    expect(withSoundCloud([], found, "albums", "song")).toEqual([]);
   });
 });

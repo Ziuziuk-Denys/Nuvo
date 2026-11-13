@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use axum::routing::get;
+use axum::response::IntoResponse;
 use axum::{Json, Router};
 use nuvo_crypto::MemoryKeyStore;
 use serde_json::{Value, json};
@@ -313,4 +314,33 @@ async fn bad_user_lyrics_are_refused() {
         let (status, _) = common::call(&core.app, "PUT", USER, Some(body)).await;
         assert_eq!(status, 400);
     }
+}
+
+#[tokio::test]
+async fn a_soundcloud_upload_finds_lyrics_under_its_performer_and_clean_title() {
+    let asked = Arc::new(std::sync::Mutex::new(Vec::<(String, String)>::new()));
+    let seen = asked.clone();
+    let app = Router::new()
+        .route("/api/get", get(move |axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>| {
+            let (artist, title) = (q["artist_name"].clone(), q["track_name"].clone());
+            seen.lock().unwrap().push((artist.clone(), title.clone()));
+            async move {
+                if (artist.as_str(), title.as_str()) == ("Linkin Park", "Numb") {
+                    Json(json!({"trackName": "Numb", "artistName": "Linkin Park", "duration": 187.0, "instrumental": false, "plainLyrics": "line", "syncedLyrics": "[00:01.00] line"})).into_response()
+                } else {
+                    axum::http::StatusCode::NOT_FOUND.into_response()
+                }
+            }
+        }))
+        .route("/api/search", get(|| async { Json(json!([])) }));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let core = common::boot(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), &format!("http://{addr}"));
+
+    let path = "/v1/tracks/sc:1066092496/lyrics?title=Linkin%20Park%20-%20Numb%20(slowed%20%2B%20reverb)%20%5BFREE%5D&artist=arushi&durationMs=187000";
+    let (_, body, _) = common::send(&core.app, common::request("GET", path, None)).await;
+    let list = events(&body);
+    assert_eq!(list.last().unwrap()["best"]["provider"], "lrclib");
+    assert_eq!(asked.lock().unwrap()[0], ("Linkin Park".to_string(), "Numb".to_string()));
 }

@@ -28,6 +28,8 @@ export interface SearchResult {
   track?: Track;
   href?: string;
   preview?: boolean;
+  plays?: number;
+  verified?: boolean;
 }
 
 export function songResult(track: Track): SearchResult {
@@ -35,7 +37,12 @@ export function songResult(track: Track): SearchResult {
 }
 
 export function soundCloudResult(hit: SoundCloudHit): SearchResult {
-  return hit.preview ? { ...songResult(hit.track), preview: true } : songResult(hit.track);
+  return {
+    ...songResult(hit.track),
+    ...(hit.preview ? { preview: true } : {}),
+    ...(hit.plays !== undefined ? { plays: hit.plays } : {}),
+    ...(hit.verified ? { verified: true } : {}),
+  };
 }
 
 export function toSearchResult(item: CatalogSearchItem): SearchResult {

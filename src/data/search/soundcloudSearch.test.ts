@@ -15,7 +15,7 @@ describe("searchSoundCloud", () => {
         durationMs: 246_381,
         cover: { url: "https://i1.sndcdn.com/a.jpg", width: 500, height: 500 },
       },
-      { id: "sc:2", title: "Get Lucky", artists: [{ id: "sc_user_8", name: "Daft Punk" }], durationMs: 30_000, preview: true },
+      { id: "sc:2", title: "Get Lucky", artists: [{ id: "sc_user_8", name: "Daft Punk" }], durationMs: 30_000, preview: true, plays: 1200, verified: true },
     ];
     const fetch = vi.fn(async () => new Response(JSON.stringify({ items }), { headers: { "content-type": "application/json" } }));
     vi.stubGlobal("fetch", fetch);
@@ -26,5 +26,6 @@ describe("searchSoundCloud", () => {
       ["sc:2", "Daft Punk", "", true],
     ]);
     expect(hits[0].track.artistId).toBeUndefined();
+    expect([hits[0].plays, hits[0].verified, hits[1].plays, hits[1].verified]).toEqual([undefined, undefined, 1200, true]);
   });
 });

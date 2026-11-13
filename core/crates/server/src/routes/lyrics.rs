@@ -195,15 +195,20 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
         }
     }
 
-    let query = title.zip(artist).map(|(title, artist)| nuvo_lyrics::Query { title, artist, duration_ms });
+    let queries = match title.zip(artist) {
+        Some((title, artist)) if id.starts_with("sc:") => soundcloud_queries(&title, &artist, duration_ms),
+        Some((title, artist)) => vec![nuvo_lyrics::Query { title, artist, duration_ms }],
+        None => Vec::new(),
+    };
+    let query = queries.first();
     let lines = async {
-        let outcome = line_version(&state, &data, &id, query.as_ref()).await;
+        let outcome = line_version(&state, &data, &id, &queries).await;
         send(outcome.event()).await;
         outcome
     };
     let words = async {
         let started = Instant::now();
-        let candidate = word_version(&state, &data, &id, query.as_ref()).await;
+        let candidate = word_version(&state, &data, &id, query).await;
         if let Some(candidate) = &candidate {
             send(found_event(candidate.clone(), started.elapsed().as_millis() as i64)).await;
         }
@@ -218,6 +223,61 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
         None if instrumental => send(LyricsStreamEvent::Done { cached, best: None, status: Some("instrumental") }).await,
         None => send(LyricsStreamEvent::Done { cached: cached && !failed, best: None, status: Some("not_found") }).await,
     }
+}
+
+const UPLOAD_TAGS: [&str; 12] = ["slowed", "reverb", "sped up", "speed up", "nightcore", "free", "prod", "bass boost", "bassboost", "8d", "original version", "original mix"];
+
+fn without_upload_tags(raw: &str) -> String {
+    let mut out = String::new();
+    let mut rest = raw;
+    while let Some(open) = rest.find(['(', '[', '{']) {
+        let close = match rest.as_bytes()[open] {
+            b'(' => ')',
+            b'[' => ']',
+            _ => '}',
+        };
+        let Some(end) = rest[open..].find(close).map(|i| open + i) else { break };
+        let inside = rest[open + 1..end].to_lowercase();
+        out.push_str(&rest[..open]);
+        if !UPLOAD_TAGS.iter().any(|tag| inside.contains(tag)) {
+            out.push_str(&rest[open..=end]);
+        }
+        rest = &rest[end + 1..];
+    }
+    out.push_str(rest);
+    let kept: Vec<&str> = out.split_whitespace().filter(|word| !word.starts_with('#')).collect();
+    let mut words = kept;
+    while words.last().is_some_and(|word| UPLOAD_TAGS.contains(&word.to_lowercase().as_str())) {
+        words.pop();
+    }
+    words.join(" ")
+}
+
+fn without_featuring(artist: &str) -> String {
+    let lower = artist.to_lowercase();
+    let cut = [" feat.", " feat ", " ft.", " ft ", " featuring "].iter().filter_map(|mark| lower.find(mark)).min();
+    // lowercasing can shift byte offsets in rare scripts
+    match cut.filter(|i| artist.is_char_boundary(*i)) {
+        Some(i) => artist[..i].trim().to_string(),
+        None => artist.trim().to_string(),
+    }
+}
+
+/// SoundCloud uploads put the performer in the title and tag it; each guess is asked in turn.
+fn soundcloud_queries(title: &str, uploader: &str, duration_ms: Option<i64>) -> Vec<nuvo_lyrics::Query> {
+    let cleaned = nuvo_match::text::clean_title(&without_upload_tags(title));
+    let mut guesses = match nuvo_match::text::artist_and_title(&cleaned) {
+        (Some(artist), song) => vec![(without_featuring(&artist), song.clone()), (song, artist), (uploader.to_string(), cleaned.clone())],
+        (None, song) => vec![(uploader.to_string(), song)],
+    };
+    let mut seen = Vec::new();
+    guesses.retain(|(artist, song)| {
+        let key = (artist.to_lowercase(), song.to_lowercase());
+        let fresh = !artist.trim().is_empty() && !song.trim().is_empty() && !seen.contains(&key);
+        seen.push(key);
+        fresh
+    });
+    guesses.into_iter().map(|(artist, title)| nuvo_lyrics::Query { title, artist, duration_ms }).collect()
 }
 
 struct LineOutcome {
@@ -242,7 +302,7 @@ impl LineOutcome {
     }
 }
 
-async fn line_version(state: &AppState, data: &Unlocked, id: &str, query: Option<&nuvo_lyrics::Query>) -> LineOutcome {
+async fn line_version(state: &AppState, data: &Unlocked, id: &str, queries: &[nuvo_lyrics::Query]) -> LineOutcome {
     let cache_id = id.to_string();
     if let Ok(Some(cached)) = data.db.call(move |c| lyrics_cache::get(c, &cache_id)).await {
         match cached.candidate {
@@ -251,18 +311,24 @@ async fn line_version(state: &AppState, data: &Unlocked, id: &str, query: Option
             None => {}
         }
     }
-    let Some(query) = query else {
+    if queries.is_empty() {
         return LineOutcome::miss(false, false, 0);
-    };
+    }
     let started = Instant::now();
-    let result = state.lrclib.lookup(query).await;
+    let (mut candidate, mut instrumental) = (None, false);
+    for query in queries {
+        match state.lrclib.lookup(query).await {
+            Ok(Lookup::Found(found)) => candidate = Some(*found),
+            Ok(Lookup::Instrumental) => instrumental = true,
+            Ok(Lookup::NotFound) => continue,
+            Err(err) => {
+                let elapsed = started.elapsed().as_millis() as i64;
+                return LineOutcome { candidate: None, instrumental: false, cached: false, duration_ms: elapsed, message: Some(err.to_string()) };
+            }
+        }
+        break;
+    }
     let elapsed = started.elapsed().as_millis() as i64;
-    let (candidate, instrumental) = match result {
-        Ok(Lookup::Found(candidate)) => (Some(*candidate), false),
-        Ok(Lookup::Instrumental) => (None, true),
-        Ok(Lookup::NotFound) => (None, false),
-        Err(err) => return LineOutcome { candidate: None, instrumental: false, cached: false, duration_ms: elapsed, message: Some(err.to_string()) },
-    };
     let stored = candidate.clone();
     let cache_id = id.to_string();
     let _ = data.db.call(move |c| lyrics_cache::put(c, &cache_id, stored.as_ref(), instrumental, now_ms())).await;
@@ -346,5 +412,30 @@ pub fn sidecar_candidate(text: String) -> LyricsCandidate {
         lyrics: nuvo_contracts::RawLyrics { format: format.into(), content: text },
         matched_track: None,
         top_priority: false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::soundcloud_queries;
+
+    fn guesses(title: &str, uploader: &str) -> Vec<(String, String)> {
+        soundcloud_queries(title, uploader, None).into_iter().map(|q| (q.artist, q.title)).collect()
+    }
+
+    #[test]
+    fn soundcloud_titles_lose_upload_tags_and_name_the_performer() {
+        assert_eq!(guesses("Linkin Park - Numb (slowed + reverb) [FREE]", "arushi")[0], ("Linkin Park".into(), "Numb".into()));
+        assert_eq!(guesses("Numb (prod. by Someone) #nightcore", "LINKIN PARK"), [("LINKIN PARK".into(), "Numb".into())]);
+        assert_eq!(guesses("MiyaGi & Endshpil Feat. Rem Digga - I Got Love", "Emir B.")[0], ("MiyaGi & Endshpil".into(), "I Got Love".into()));
+        assert_eq!(guesses("Кино - Группа крови slowed", "uu")[0], ("Кино".into(), "Группа крови".into()));
+    }
+
+    #[test]
+    fn a_title_that_names_the_artist_last_is_tried_both_ways() {
+        let tried = guesses("Get Lucky [Original Version] - Daft Punk", "DJ KB");
+        assert_eq!(tried[0], ("Get Lucky".into(), "Daft Punk".into()));
+        assert_eq!(tried[1], ("Daft Punk".into(), "Get Lucky".into()));
+        assert_eq!(tried[2], ("DJ KB".into(), "Get Lucky - Daft Punk".into()));
     }
 }

@@ -29,6 +29,10 @@ pub struct Track {
     pub explicit: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preview: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plays: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verified: Option<bool>,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]

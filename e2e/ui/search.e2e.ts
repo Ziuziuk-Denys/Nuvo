@@ -81,11 +81,10 @@ describe.each(["en", "ru"] as const)("Search with SoundCloud (%s)", (locale) => 
     const field = page.locator("input").first();
     await field.waitFor({ timeout: 15_000 });
     await field.fill("get lucky");
-    const group = page.locator('section[aria-label="SoundCloud"]');
-    await group.waitFor({ timeout: 15_000 });
-    await expect.poll(() => group.locator('[role="button"]').count()).toBe(3);
-    expect(await group.getByRole("img", { name: text.mark }).count()).toBe(3);
-    expect(await group.getByText(text.preview, { exact: true }).count()).toBe(1);
+    await expect.poll(() => page.getByRole("img", { name: text.mark }).count(), { timeout: 15_000 }).toBe(3);
+    expect(await page.locator('section[aria-label="SoundCloud"]').count()).toBe(0);
+    const songs = page.locator(`section[aria-label="${text.songs}"] [role="button"]`);
+    expect(await songs.last().getByText(text.preview, { exact: true }).count()).toBe(1);
     expect(await page.getByText("Get Lucky (Radio Edit)").count()).toBe(1);
     await shot(page, `all-${locale}`);
 
