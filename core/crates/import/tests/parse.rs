@@ -146,7 +146,7 @@ fn size_row_and_type_caps() {
         csv.push_str(&format!("t{i}\n"));
     }
     assert_eq!(parse_file("x.csv", csv.as_bytes()), Err(ParseError::TooManyRows));
-    assert!(matches!(parse_file("x.txt", b"hi"), Err(ParseError::Unreadable(_))));
+    assert!(matches!(parse_file("x.pdf", b"hi"), Err(ParseError::Unreadable(_))));
 }
 
 #[test]
@@ -163,4 +163,126 @@ fn huge_duration_and_non_finite_values_rejected() {
     let parsed = parse_file("x.csv", csv.as_bytes()).unwrap();
     assert_eq!(parsed[0].rows.len(), 3, "rows kept but durations rejected");
     assert!(parsed[0].rows.iter().all(|r| r.duration_ms.is_none()), "all durations should be None");
+}
+
+fn fixture(name: &str) -> Vec<nuvo_import::Parsed> {
+    let bytes = std::fs::read(format!("{}/tests/fixtures/{name}", env!("CARGO_MANIFEST_DIR"))).unwrap();
+    parse_file(name, &bytes).unwrap()
+}
+
+type Brief = (String, Vec<String>, Option<String>, Option<i64>);
+
+fn brief(parsed: &nuvo_import::Parsed) -> Vec<Brief> {
+    parsed.rows.iter().map(|r| (r.title.clone(), r.artists.clone(), r.album.clone(), r.duration_ms)).collect()
+}
+
+fn strings(items: &[&str]) -> Vec<String> {
+    items.iter().map(|s| s.to_string()).collect()
+}
+
+#[test]
+fn soundiiz_csv_reads_durations_in_seconds() {
+    let parsed = fixture("soundiiz.csv");
+    assert_eq!(parsed.len(), 1);
+    assert_eq!(parsed[0].label, "soundiiz");
+    assert_eq!(
+        brief(&parsed[0])[..2],
+        [
+            ("Где нас нет".to_string(), strings(&["Oxxxymiron"]), Some("Горгород".to_string()), Some(215_000)),
+            ("Unholy (feat. Kim Petras)".to_string(), strings(&["Sam Smith, Kim Petras", "Sam Smith", "Kim Petras"]), Some("Unholy (feat. Kim Petras)".to_string()), Some(157_000)),
+        ]
+    );
+    assert_eq!(parsed[0].rows[0].isrc.as_deref(), Some("RUA101500123"));
+    assert_eq!(parsed[0].rows[2].album.as_deref(), Some("I Ain’t Worried (Music From The Motion Picture \"Top Gun: Maverick\")"));
+}
+
+#[test]
+fn tunemymusic_csv_keeps_artists_and_splits_playlists() {
+    let parsed = fixture("tunemymusic.csv");
+    assert_eq!(parsed.iter().map(|p| (p.label.as_str(), p.rows.len())).collect::<Vec<_>>(), [("Русский рок", 2), ("Anime", 1)]);
+    assert_eq!(brief(&parsed[0])[0], ("Группа крови".to_string(), strings(&["Кино"]), Some("Группа крови".to_string()), None));
+    assert_eq!(parsed[1].rows[0].artists, ["MYTH & ROID"]);
+    assert_eq!(parsed[0].rows[0].isrc.as_deref(), Some("RUA108700001"));
+}
+
+#[test]
+fn takeout_library_songs_are_playable_tracks() {
+    let parsed = fixture("music library songs.csv");
+    assert_eq!(parsed[0].label, "music library songs");
+    assert_eq!(parsed[0].rows.len(), 3);
+    let row = &parsed[0].rows[2];
+    assert_eq!((row.title.as_str(), row.artists.as_slice(), row.album.as_deref()), ("Feel Good Inc.", strings(&["Gorillaz", "De La Soul"]).as_slice(), Some("Demon Days")));
+    let track = row.track.as_ref().unwrap();
+    assert_eq!((track["id"].as_str(), track["title"].as_str()), (Some("AbCdEfGhIjK"), Some("Feel Good Inc.")));
+    assert_eq!(track["artists"], json!([{"id": "", "name": "Gorillaz"}, {"id": "", "name": "De La Soul"}]));
+    assert_eq!(track["album"], json!({"id": "", "title": "Demon Days"}));
+}
+
+#[test]
+fn takeout_playlist_keeps_video_ids() {
+    let parsed = fixture("Road trip-videos.csv");
+    assert_eq!(parsed[0].label, "Road trip");
+    let ids: Vec<&str> = parsed[0].rows.iter().map(|r| r.track.as_ref().unwrap()["id"].as_str().unwrap()).collect();
+    assert_eq!(ids, ["9bZkp7q19f0", "kJQP7kiw5Fk"]);
+}
+
+#[test]
+fn csv_without_title_or_video_ids_is_refused() {
+    assert!(matches!(parse_file("x.csv", b"Artist,Album\nA,B\n"), Err(ParseError::Unreadable(_))));
+    assert!(matches!(parse_file("x.csv", b"Video ID,Time\n"), Err(ParseError::Unreadable(_))));
+}
+
+#[test]
+fn soundiiz_xspf_with_seconds() {
+    let parsed = fixture("soundiiz.xspf");
+    assert_eq!(parsed[0].label, "Zvuk & Friends");
+    assert_eq!(
+        brief(&parsed[0]),
+        [
+            ("Pink Venom".to_string(), strings(&["BLACKPINK"]), Some("Pink Venom".to_string()), Some(187_000)),
+            ("Розовое вино".to_string(), strings(&["Элджей, Feduk", "Элджей", "Feduk"]), Some("Sayonara детка".to_string()), Some(205_000)),
+        ]
+    );
+    assert_eq!(parsed[0].rows[0].isrc.as_deref(), Some("KRA402200017"));
+}
+
+#[test]
+fn spec_xspf_with_milliseconds_entities_and_links() {
+    let parsed = fixture("spec.xspf");
+    assert_eq!(parsed[0].label, "Road <Trip>");
+    assert_eq!(
+        brief(&parsed[0]),
+        [
+            ("One More Time".to_string(), strings(&["Daft Punk"]), None, Some(320_357)),
+            ("Teardrop & Co".to_string(), strings(&["Massive Attack"]), Some("Mezzanine".to_string()), Some(330_000)),
+            ("Rock & Roll – Live".to_string(), strings(&["Led Zeppelin"]), None, None),
+        ]
+    );
+    assert_eq!(parsed[0].rows[0].track.as_ref().unwrap()["id"], "FGBhQbmPwH8");
+    assert_eq!(parsed[0].rows[1].path.as_deref(), Some("/home/u/My Music/teardrop.flac"));
+    assert!(matches!(parse_file("x.xspf", b"<playlist><trackList><track><title>a"), Err(ParseError::Unreadable(_))));
+}
+
+#[test]
+fn text_lists_artist_dash_title() {
+    let parsed = fixture("soundiiz.txt");
+    assert_eq!(
+        brief(&parsed[0]),
+        [
+            ("Nobody Gets Me".to_string(), strings(&["SZA"]), None, None),
+            ("Unholy (feat. Kim Petras)".to_string(), strings(&["Sam Smith, Kim Petras", "Sam Smith", "Kim Petras"]), None, None),
+            ("Группа крови".to_string(), strings(&["Кино"]), None, None),
+            ("dQw4w9WgXcQ".to_string(), vec![], None, None),
+            ("Just a title".to_string(), vec![], None, None),
+        ]
+    );
+    assert_eq!(parsed[0].rows[3].track.as_ref().unwrap()["id"], "dQw4w9WgXcQ");
+}
+
+#[test]
+fn soundiiz_json_list() {
+    let parsed = fixture("soundiiz.json");
+    assert_eq!(parsed[0].label, "soundiiz");
+    assert_eq!(brief(&parsed[0]), [("Harder, Better, Faster, Stronger".to_string(), strings(&["Daft Punk"]), Some("Discovery".to_string()), Some(224_000))]);
+    assert_eq!(parsed[0].rows[0].isrc.as_deref(), Some("GBDUW0000059"));
 }

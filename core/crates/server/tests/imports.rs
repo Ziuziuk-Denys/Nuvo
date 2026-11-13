@@ -245,3 +245,25 @@ async fn a_listing_posted_in_pages_keeps_every_page() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_eq!(common::call(&core.app, "POST", "/v1/imports/nope/rows", Some(json!({"rows": page(0, 1)}))).await.0, StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn converter_and_takeout_files_start_imports() {
+    let core = common::core();
+    let fixtures = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../import/tests/fixtures");
+    let hand_over = |name: &str| json!({"file": {"name": name, "data": nuvo_crypto::base64_encode(&std::fs::read(fixtures.join(name)).unwrap())}});
+
+    let (status, started) = common::call(&core.app, "POST", "/v1/imports", Some(hand_over("music library songs.csv"))).await;
+    assert_eq!(status, StatusCode::OK, "{started}");
+    let summary = &started["items"][0];
+    assert_eq!((summary["status"].as_str(), summary["total"].as_i64()), (Some("done"), Some(3)), "{summary}");
+
+    let (status, started) = common::call(&core.app, "POST", "/v1/imports", Some(hand_over("tunemymusic.csv"))).await;
+    assert_eq!(status, StatusCode::OK, "{started}");
+    let labels: Vec<(&str, i64)> = started["items"].as_array().unwrap().iter().map(|s| (s["label"].as_str().unwrap(), s["total"].as_i64().unwrap())).collect();
+    assert_eq!(labels, [("Русский рок", 2), ("Anime", 1)]);
+
+    for name in ["soundiiz.xspf", "soundiiz.txt", "soundiiz.json", "spec.xspf"] {
+        let (status, started) = common::call(&core.app, "POST", "/v1/imports", Some(hand_over(name))).await;
+        assert_eq!(status, StatusCode::OK, "{name}: {started}");
+    }
+}

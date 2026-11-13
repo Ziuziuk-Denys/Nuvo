@@ -131,7 +131,7 @@ Machine: AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, 
 - Karaoke highlight by line, word, fill or step
 - Romanized lyrics for Korean, Chinese and Japanese kana (kanji stays as written)
 - Translation through a local model on your machine
-- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and files: Spotify exports (CSV or JSON), M3U and Nuvo playlists
+- Playlist links from YouTube, SoundCloud, Apple Music, Deezer and Spotify, and files: Spotify, Soundiiz, TuneMyMusic and Google Takeout exports, M3U, XSPF, CSV, TXT and Nuvo playlists
 - A public Spotify playlist or album comes in full by link. If Spotify does not send the whole list, you get the first 100 songs and a notice
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset=".github/readme/band-d-narrow-dark.svg"><source media="(max-width: 640px)" srcset=".github/readme/band-d-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/band-d-dark.svg"><img src=".github/readme/band-d-light.svg" width="100%" alt="Local files: Watched folders. Moved files keep their likes. Links: Paste a song link into Search."></picture>
