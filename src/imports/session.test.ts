@@ -12,7 +12,7 @@ const track: CatalogTrack = {
 };
 const search = (rowId: number): ImportNext => ({
   rowId,
-  search: { query: "q", filter: "songs", source: "youtube", step: 0 },
+  searches: [{ query: "q", filter: "songs", source: "youtube", step: 0 }],
 });
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 

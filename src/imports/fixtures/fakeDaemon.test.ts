@@ -50,7 +50,7 @@ describe("FakeDaemon is as strict as the daemon", () => {
     daemon.script.set("i1", [
       {
         rowId: 1,
-        search: { query: "q", filter: "songs", source: "youtube", step: 0 },
+        searches: [{ query: "q", filter: "songs", source: "youtube", step: 0 }],
       },
     ]);
     await rejects(daemon.postCandidates("i1", 9, { step: 0, candidates: [] }), 404);

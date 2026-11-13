@@ -1,9 +1,11 @@
+import { useEffect, useMemo, useState } from "react";
 import type { Track } from "@/engine/types";
 import { CORE_BASE_URL } from "@/data/core/request";
 import { toUiTrack } from "@/data/catalog/tracks";
 import type { CatalogSearchItem } from "@/data/search/catalogSearch";
 import type { SoundCloudHit } from "@/data/search/soundcloudSearch";
 import { createSearchHistory } from "@/data/search/history";
+import { rankSongIds } from "@/data/search/rankSongs";
 
 export { filterTracks, normalizeForSearch, type SearchableTrack, type TrackMatch } from "@/data/search/trackMatch";
 export { useSearchAll, useSearchTracks, useSearchAlbums, useSearchArtists, useSearchPlaylists } from "@/data/search/catalogSearch";
@@ -69,4 +71,37 @@ export function toSearchResult(item: CatalogSearchItem): SearchResult {
     cover,
     href: `/collection?type=playlist&id=${encodeURIComponent(item.id)}`,
   };
+}
+
+// Until the daemon answers, the last order holds for songs it knew and new songs follow in the given order
+export function useRankedSongs(query: string, songs: readonly SearchResult[]): readonly SearchResult[] {
+  const key = `${query}\n${songs.map((song) => song.id).join("\n")}`;
+  const [ranked, setRanked] = useState<{ key: string; ids: string[] } | null>(null);
+  useEffect(() => {
+    if (songs.length < 2) return;
+    const controller = new AbortController();
+    const payload = songs.map((song) => ({
+      id: song.id,
+      title: song.title,
+      artists: song.subtitle,
+      durationMs: song.durationMs,
+      album: Boolean(song.track?.album),
+      preview: song.preview,
+      plays: song.plays,
+      verified: song.verified,
+    }));
+    rankSongIds(query, payload, controller.signal).then(
+      (ids) => setRanked({ key, ids }),
+      () => {},
+    );
+    return () => controller.abort();
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useMemo(() => {
+    if (!ranked || songs.length < 2) return songs;
+    const byId = new Map(songs.map((song) => [song.id, song]));
+    if (ranked.key === key) return ranked.ids.flatMap((id) => byId.get(id) ?? []);
+    const place = new Map(ranked.ids.map((id, at) => [id, at]));
+    const known = songs.filter((song) => place.has(song.id)).sort((a, b) => place.get(a.id)! - place.get(b.id)!);
+    return [...known, ...songs.filter((song) => !place.has(song.id))];
+  }, [ranked, songs, key]);
 }

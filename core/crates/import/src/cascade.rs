@@ -1,14 +1,23 @@
-use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+
 use nuvo_match::Filter;
+use nuvo_match::relevance::{Song, distinct, is_official};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::SourceRow;
 use crate::matcher::{Decision, evaluate, ranked, source};
 
+/// A match this sure on an official copy ends the row at once; the other source's answer is not awaited.
+pub const SURE: u8 = 85;
+
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Cascade {
     pub steps: Vec<Step>,
     pub pool: Vec<Value>,
+    /// The best place each pooled YouTube candidate took in YouTube's own answers.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub ranks: BTreeMap<String, usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -21,11 +30,13 @@ pub struct Step {
 }
 
 /// One search for the renderer. `filter` is `songs`, `any` or `videos`; `source` is `youtube` or `soundcloud`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+/// The searches of one round run together.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Search {
     pub query: String,
     pub filter: &'static str,
     pub source: &'static str,
+    pub round: usize,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,48 +50,69 @@ pub struct Outcome {
     pub candidates: Vec<Value>,
 }
 
+// YouTube and SoundCloud first, side by side; the YouTube fallbacks after, one at a time
 fn plan(row: &SourceRow) -> Vec<Search> {
-    let mut steps: Vec<Search> = nuvo_match::plan(&source(row))
-        .into_iter()
-        .map(|(query, filter)| Search {
-            query,
-            filter: match filter {
-                Filter::Songs => "songs",
-                Filter::Any => "any",
-                Filter::Videos => "videos",
-            },
-            source: "youtube",
-        })
-        .collect();
-    let query = steps[0].query.clone();
-    steps.push(Search { query, filter: "any", source: "soundcloud" });
+    let youtube = nuvo_match::plan(&source(row));
+    let first = youtube[0].0.clone();
+    let mut steps = Vec::with_capacity(youtube.len() + 1);
+    for (round, (query, filter)) in youtube.into_iter().enumerate() {
+        let filter = match filter {
+            Filter::Songs => "songs",
+            Filter::Any => "any",
+            Filter::Videos => "videos",
+        };
+        steps.push(Search { query, filter, source: "youtube", round });
+        if round == 0 {
+            steps.push(Search { query: first.clone(), filter: "any", source: "soundcloud", round });
+        }
+    }
     steps
 }
 
-fn approved(row: &SourceRow, pool: &[Value]) -> bool {
-    !pool.is_empty() && matches!(evaluate(row, pool), Decision::Approved { .. })
+// Matched by what was searched, so a cascade saved under an older plan still resumes
+fn answered(plan: &[Search], cascade: &Cascade) -> Vec<bool> {
+    plan.iter().map(|s| cascade.steps.iter().any(|done| done.query == s.query && done.filter == s.filter && done.source == s.source)).collect()
+}
+
+fn finished(row: &SourceRow, cascade: &Cascade, plan: &[Search], done: &[bool]) -> bool {
+    let Some(round) = plan.iter().zip(done).filter(|(_, d)| !**d).map(|(s, _)| s.round).min() else { return true };
+    let started = plan.iter().zip(done).any(|(s, d)| *d && s.round == round);
+    match evaluate(row, &cascade.pool, &cascade.ranks) {
+        Decision::Approved { index, score } => (score >= SURE && Song::from_track(&cascade.pool[index]).is_some_and(|s| is_official(&s))) || !started,
+        Decision::Pending { .. } => false,
+    }
 }
 
 pub fn is_finished(row: &SourceRow, cascade: &Cascade) -> bool {
-    approved(row, &cascade.pool) || cascade.steps.len() >= plan(row).len()
+    let plan = plan(row);
+    finished(row, cascade, &plan, &answered(&plan, cascade))
 }
 
-pub fn next_search(row: &SourceRow, cascade: &Cascade) -> Option<Search> {
-    if is_finished(row, cascade) { None } else { plan(row).into_iter().nth(cascade.steps.len()) }
+/// The open round's unanswered searches with their step numbers; empty once the row is decided.
+pub fn next_searches(row: &SourceRow, cascade: &Cascade) -> Vec<(usize, Search)> {
+    let plan = plan(row);
+    let done = answered(&plan, cascade);
+    if finished(row, cascade, &plan, &done) {
+        return Vec::new();
+    }
+    let open: Vec<(usize, Search)> = plan.into_iter().enumerate().filter(|(i, _)| !done[*i]).collect();
+    let round = open.iter().map(|(_, s)| s.round).min();
+    open.into_iter().filter(|(_, s)| Some(s.round) == round).collect()
 }
 
+/// Adds one search's answer. False when `step` is not an open search of this row.
 // A repeated id keeps its first place; entries without an id are dropped
-pub fn record(row: &SourceRow, cascade: &mut Cascade, candidates: Vec<Value>, failed: bool) {
-    let Some(search) = next_search(row, cascade) else { return };
+pub fn record(row: &SourceRow, cascade: &mut Cascade, step: usize, candidates: Vec<Value>, failed: bool) -> bool {
+    let Some((_, search)) = next_searches(row, cascade).into_iter().find(|(i, _)| *i == step) else { return false };
     let candidates: Vec<Value> = if failed { Vec::new() } else { candidates };
     cascade.steps.push(Step { query: search.query, filter: search.filter.into(), source: search.source.into(), failed, found: candidates.len() });
-    if candidates.is_empty() {
-        return;
-    }
     let mut merged = cascade.pool.clone();
-    for mut candidate in candidates {
-        let has_id = candidate["id"].as_str().is_some_and(|id| !id.is_empty());
-        if !has_id || merged.iter().any(|c| c["id"] == candidate["id"]) {
+    for (place, mut candidate) in candidates.into_iter().enumerate() {
+        let Some(id) = candidate["id"].as_str().filter(|id| !id.is_empty()).map(str::to_string) else { continue };
+        if search.source == "youtube" {
+            cascade.ranks.entry(id.clone()).and_modify(|r| *r = (*r).min(place)).or_insert(place);
+        }
+        if merged.iter().any(|c| c["id"] == id.as_str()) {
             continue;
         }
         // The cover rule needs to know where the candidate came from.
@@ -90,7 +122,10 @@ pub fn record(row: &SourceRow, cascade: &mut Cascade, candidates: Vec<Value>, fa
         merged.push(candidate);
     }
     // Misses stay too, so "Pick another" can offer them; the pool is the best five.
-    cascade.pool = ranked(row, &merged).into_iter().take(5).map(|(i, _)| merged[i].clone()).collect();
+    cascade.pool = ranked(row, &merged, &cascade.ranks).into_iter().take(5).map(|(i, _)| merged[i].clone()).collect();
+    let pooled: Vec<&str> = cascade.pool.iter().filter_map(|c| c["id"].as_str()).collect();
+    cascade.ranks.retain(|id, _| pooled.contains(&id.as_str()));
+    true
 }
 
 fn with_cover(mut track: Value) -> Value {
@@ -104,14 +139,17 @@ fn with_cover(mut track: Value) -> Value {
 
 /// Approved at 85 or more is Likely, 75 to 84 Check; everything else is Missing with its reason.
 pub fn outcome(row: &SourceRow, cascade: &Cascade) -> Outcome {
-    let candidates = ranked(row, &cascade.pool).into_iter().take(5).map(|(i, _)| cascade.pool[i].clone()).collect();
+    let best: Vec<Value> = ranked(row, &cascade.pool, &cascade.ranks).into_iter().map(|(i, _)| cascade.pool[i].clone()).collect();
+    // One song found on both sources is offered once
+    let songs: Vec<Song> = best.iter().filter_map(Song::from_track).collect();
+    let candidates = distinct(&songs).into_iter().map(|i| best[i].clone()).collect();
     if cascade.pool.is_empty() {
         let reason = if cascade.steps.iter().any(|s| s.failed) { "catalog_lookup_failed" } else { "no_catalog_candidates" };
         return Outcome { label: "missing", score: None, reason, track: None, candidates };
     }
-    match evaluate(row, &cascade.pool) {
+    match evaluate(row, &cascade.pool, &cascade.ranks) {
         Decision::Approved { index, score } => {
-            let label = if score >= 85 { "likely" } else { "check" };
+            let label = if score >= SURE { "likely" } else { "check" };
             Outcome { label, score: Some(score), reason: "matched", track: Some(with_cover(cascade.pool[index].clone())), candidates }
         }
         Decision::Pending { reason, score, index } => {

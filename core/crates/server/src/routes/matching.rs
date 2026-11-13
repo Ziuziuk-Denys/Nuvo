@@ -1,11 +1,12 @@
 use axum::extract::{DefaultBodyLimit, State};
 use axum::routing::post;
 use axum::{Json, Router};
+use nuvo_match::relevance::{Song, rank_songs};
 use nuvo_match::{Answer, Candidate, Source, Step, evaluate, memo, outcome};
 use nuvo_store::now_ms;
 use nuvo_soundcloud::map;
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::error::ApiError;
 use crate::extract::JsonBody;
@@ -13,6 +14,7 @@ use crate::state::AppState;
 
 const MAX_CANDIDATES: usize = 100;
 const MAX_EXCLUDED: usize = 100;
+const MAX_RANKED: usize = 200;
 const SEARCH_LIMIT: usize = 20;
 /// 100 candidate snapshots are far below this; the daemon-wide 16 MiB cap is for bulk imports.
 const BODY_LIMIT_BYTES: usize = 1024 * 1024;
@@ -22,6 +24,7 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/match/evaluate", post(decide))
         .route("/v1/match/next", post(next))
         .route("/v1/match/approved", post(approved))
+        .route("/v1/match/rank", post(rank))
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))
 }
 
@@ -142,4 +145,20 @@ async fn approved(State(state): State<AppState>, JsonBody(body): JsonBody<Approv
     .await
     .map_err(ApiError::Invalid)?;
     Ok(Json(answer))
+}
+
+#[derive(Deserialize)]
+struct RankBody {
+    query: String,
+    songs: Vec<Value>,
+}
+
+// The search screen's order of songs: the same relevance an import matches by
+async fn rank(JsonBody(body): JsonBody<RankBody>) -> Result<Json<Value>, ApiError> {
+    if body.songs.len() > MAX_RANKED {
+        return Err(ApiError::Invalid(format!("at most {MAX_RANKED} songs per request")));
+    }
+    let songs: Vec<Song> = body.songs.iter().filter_map(Song::from_track).collect();
+    let ids: Vec<&str> = rank_songs(&body.query, &songs).into_iter().map(|i| songs[i].id.as_str()).collect();
+    Ok(Json(json!({ "ids": ids })))
 }

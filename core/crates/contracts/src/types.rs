@@ -344,7 +344,8 @@ pub struct ImportSearch {
 #[derive(Serialize, Debug, PartialEq)]
 #[serde(untagged, rename_all_fields = "camelCase")]
 pub enum ImportNext {
-    Search { row_id: i64, search: ImportSearch },
+    /// The searches of one round; run them together and post each answer with its `step`.
+    Search { row_id: i64, searches: Vec<ImportSearch> },
     Wait { wait: u64 },
     Done { done: bool },
 }

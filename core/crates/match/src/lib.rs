@@ -2,6 +2,7 @@ pub mod cascade;
 pub mod decide;
 pub mod liked;
 pub mod memo;
+pub mod relevance;
 pub mod text;
 
 pub use cascade::{Answer, Filter, Step, next, outcome, plan, run};

@@ -1,6 +1,16 @@
 use nuvo_import::SourceRow;
-use nuvo_import::matcher::{Decision, evaluate, ranked};
+use std::collections::BTreeMap;
+
+use nuvo_import::matcher::{self, Decision};
 use serde_json::{Value, json};
+
+fn evaluate(row: &SourceRow, pool: &[Value]) -> Decision {
+    matcher::evaluate(row, pool, &BTreeMap::new())
+}
+
+fn ranked(row: &SourceRow, pool: &[Value]) -> Vec<(usize, u8)> {
+    matcher::ranked(row, pool, &BTreeMap::new())
+}
 
 fn s(title: &str, artist: &str, ms: Option<i64>) -> SourceRow {
     SourceRow { title: title.into(), artists: if artist.is_empty() { vec![] } else { vec![artist.into()] }, duration_ms: ms, ..Default::default() }

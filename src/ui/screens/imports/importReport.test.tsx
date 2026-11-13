@@ -111,6 +111,12 @@ describe("ImportReport", () => {
     expect(document.body.textContent).toContain('ui.imports.summary.review {"count":2}');
     expect(document.body.textContent).toContain('ui.imports.reason.length_differs {"seconds":21}');
     expect(document.body.textContent).toContain("Paper Moons · Mira Holt · 3:21");
+    expect(document.body.textContent).toContain('ui.imports.matched_to {"title":"Glass River","artist":"Mira Holt"} · ui.imports.source.youtube-music');
+  });
+
+  it("names SoundCloud as the source of a SoundCloud match", async () => {
+    await mount(fakePorts({ "review:": { items: [{ ...CHECK, track: track("sc:7", "Glass River") }] } }));
+    expect(document.body.textContent).toContain("· ui.imports.source.soundcloud");
   });
 
   it("applies Use this and refreshes the summary", async () => {
