@@ -9,6 +9,7 @@ import { Shell } from "../shell/Shell";
 import { useAppearanceSync } from "../shell/useAppearanceSync";
 import { Overlays } from "./Overlays";
 import { useDeeplinks } from "./links";
+import { useNowPlayingReport } from "./nowPlaying";
 import { AppRoutes } from "./routes";
 import { useEffectsMark } from "../effects";
 import "../tokens.css";
@@ -21,6 +22,7 @@ function Root(): JSX.Element {
   useSoundSync();
   useTempoSync();
   useAbLoop();
+  useNowPlayingReport();
   const trackId = usePlayerStore((state) => state.currentTrack?.id ?? null);
   const lyricsTrackId = useLyrics((state) => state.trackId);
   const timed = useLyrics((state) => state.lines);
