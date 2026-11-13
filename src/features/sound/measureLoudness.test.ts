@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { loudnessGain } from "./lib/loudness";
-import { measureLoudness, scheduleLoudness } from "./measureLoudness";
+import { cachedAudio, measureLoudness, scheduleLoudness } from "./measureLoudness";
 import { useSoundStore } from "./store/soundStore";
 
 const RATE = 44100;
@@ -164,5 +164,26 @@ describe("scheduleLoudness", () => {
     scheduleLoudness("bad", blob, 1000);
     expect(idle).toHaveBeenCalledTimes(1);
     expect(useSoundStore.getState().loudness.bad).toBeUndefined();
+  });
+});
+
+describe("cachedAudio", () => {
+  it("reads streamed tracks from the cache and local tracks from their file", async () => {
+    const fetchMock = vi.fn(async (_url: string) => new Response(blob));
+    vi.stubGlobal("fetch", fetchMock);
+    await cachedAudio("dQw4w9WgXcQ");
+    await cachedAudio(`local:${"a".repeat(32)}`);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "nuvo-core://local/v1/cache/audio/dQw4w9WgXcQ",
+      `nuvo-core://local/v1/local/tracks/local%3A${"a".repeat(32)}/audio`,
+    ]);
+  });
+
+  it("fails while the track is not cached yet", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 404 })),
+    );
+    await expect(cachedAudio("dQw4w9WgXcQ")).rejects.toThrow("404");
   });
 });

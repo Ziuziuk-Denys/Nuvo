@@ -5,6 +5,9 @@ import { soundActions, usePlayerSnapshot as usePlayerStore } from "./engineLink"
 import { useSoundStore } from "./store/soundStore";
 import { useSoundSync } from "./useSoundSync";
 import { BUILT_IN_PRESETS, autoPreamp } from "./lib/eq";
+import { scheduleLoudness } from "./measureLoudness";
+
+vi.mock("./measureLoudness", async (original) => ({ ...(await original<typeof import("./measureLoudness")>()), scheduleLoudness: vi.fn() }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -21,8 +24,8 @@ function mount() {
 
 const initialSound = useSoundStore.getState();
 
-function setTrack(id: string, artists: string) {
-  usePlayerStore.setState({ currentTrack: { id, artists } as never });
+function setTrack(id: string, artists: string, durationMs = 180_000) {
+  usePlayerStore.setState({ currentTrack: { id, artists, durationMs } as never });
 }
 
 describe("useSoundSync", () => {
@@ -36,7 +39,10 @@ describe("useSoundSync", () => {
     setNorm = vi.spyOn(soundActions, "setTrackGainDb").mockImplementation(() => {});
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.mocked(scheduleLoudness).mockClear();
+  });
 
   it("re-shapes the shared EQ when the equalizer is enabled mid-track", () => {
     mount();
@@ -79,6 +85,15 @@ describe("useSoundSync", () => {
     act(() => setTrack("t2", "x"));
     act(() => setTrack("t1", "x"));
     expect(setNorm).toHaveBeenLastCalledWith("t1", 4);
+  });
+
+  it("measures each new track while normalization is on", () => {
+    mount();
+    act(() => setTrack("t1", "x", 200_000));
+    expect(scheduleLoudness).toHaveBeenCalledWith("t1", expect.any(Function), 200_000);
+    act(() => useSoundStore.getState().setNormalization("off"));
+    act(() => setTrack("t2", "x"));
+    expect(vi.mocked(scheduleLoudness).mock.calls.map(([id]) => id)).not.toContain("t2");
   });
 
   it("applies the auto preamp only when autoGain is on", () => {
