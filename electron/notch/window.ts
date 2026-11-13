@@ -316,9 +316,10 @@ export class NotchWindow {
         win.setAlwaysOnTop(true, "screen-saver");
       }
     } else if (session === "kde-wayland") {
-      win.showInactive();
+      // The script pins the window as KWin maps it, so it never shows where KWin would put it.
       const ok = await this.deps.loadKwin(kwinScript(NOTCH_TITLE, geometry)).catch(() => false);
-      this.recordPlacement(ok, "KWin script failed");
+      if (ok && !win.isDestroyed()) win.showInactive();
+      this.recordPlacement(win, ok, "KWin script failed");
     } else {
       win.showInactive();
       const ok = await this.deps.bridge
@@ -332,11 +333,12 @@ export class NotchWindow {
           bounds: "monitor",
         })
         .catch(() => false);
-      this.recordPlacement(Boolean(ok), "compositor placement failed");
+      this.recordPlacement(win, Boolean(ok), "compositor placement failed");
     }
   }
 
-  private recordPlacement(ok: boolean, message: string): void {
+  private recordPlacement(win: BrowserWindow, ok: boolean, message: string): void {
+    if (!ok && !win.isDestroyed()) win.hide();
     const next = ok ? null : message;
     if (next && next !== this.placementFailure) console.warn(`[notch] ${message}`);
     this.placementFailure = next;

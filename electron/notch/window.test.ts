@@ -215,6 +215,30 @@ describe("NotchWindow", () => {
     expect(script).toContain('"x":712');
   });
 
+  it("loads the KWin script before showing, so the window never maps unplaced", async () => {
+    const order: string[] = [];
+    const loadKwin = vi.fn(async () => {
+      order.push(...names(lastWindow()));
+      return true;
+    });
+    const { notch } = createNotch({ session: "kde-wayland", loadKwin });
+    await notch.ready;
+    expect(order).not.toContain("showInactive");
+    expect(names(lastWindow())).toContain("showInactive");
+  });
+
+  it("keeps the island hidden when KWin or the compositor cannot place it", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const kde = createNotch({ session: "kde-wayland", loadKwin: vi.fn(async () => false) });
+    await kde.notch.ready;
+    expect(names(lastWindow())).not.toContain("showInactive");
+
+    const sway = createNotch({ session: "sway", bridge: { placeOverlay: vi.fn(async () => false) } });
+    await sway.notch.ready;
+    expect(names(lastWindow()).at(-1)).toBe("hide");
+    warn.mockRestore();
+  });
+
   it("records a placement error from a failing bridge or KWin and clears it on success", async () => {
     const bridge = { placeOverlay: vi.fn(async () => false) };
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
