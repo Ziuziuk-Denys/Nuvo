@@ -5,6 +5,7 @@ use serde_json::Value;
 use tokio::process::Command;
 
 use crate::process::run;
+use crate::tools::runtime_name;
 use crate::{FetchError, Remote, classify};
 
 pub const FORMAT: &str = "bestaudio[ext=m4a]/bestaudio/best";
@@ -24,8 +25,8 @@ pub struct Resolved {
 pub const EXTRACTORS: &str = "default,-generic";
 
 // No config, playlists or --exec; the URL goes after -- so it never parses as an option
-pub fn args(url: &str) -> Vec<String> {
-    [
+pub fn args(url: &str, runtime: Option<&Path>) -> Vec<String> {
+    let mut args: Vec<String> = [
         "--ignore-config",
         "--use-extractors",
         EXTRACTORS,
@@ -39,11 +40,17 @@ pub fn args(url: &str) -> Vec<String> {
         "-f",
         FORMAT,
         "-J",
-        "--",
-        url,
     ]
     .map(String::from)
-    .to_vec()
+    .to_vec();
+    // yt-dlp enables only deno by itself, and only from PATH
+    if let Some(runtime) = runtime {
+        args.push("--no-js-runtimes".into());
+        args.push("--js-runtimes".into());
+        args.push(format!("{}:{}", runtime_name(runtime), runtime.display()));
+    }
+    args.extend(["--".into(), url.into()]);
+    args
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -57,21 +64,21 @@ pub struct MediaTags {
     pub is_live: bool,
 }
 
-pub async fn resolve(yt_dlp: &Path, url: &str, proxy: Option<&str>) -> Result<Resolved, FetchError> {
-    resolve_full(yt_dlp, url, proxy).await.map(|(resolved, _)| resolved)
+pub async fn resolve(yt_dlp: &Path, runtime: Option<&Path>, url: &str, proxy: Option<&str>) -> Result<Resolved, FetchError> {
+    resolve_full(yt_dlp, runtime, url, proxy).await.map(|(resolved, _)| resolved)
 }
 
-pub async fn resolve_full(yt_dlp: &Path, url: &str, proxy: Option<&str>) -> Result<(Resolved, MediaTags), FetchError> {
-    let json = info(yt_dlp, url, proxy).await?;
+pub async fn resolve_full(yt_dlp: &Path, runtime: Option<&Path>, url: &str, proxy: Option<&str>) -> Result<(Resolved, MediaTags), FetchError> {
+    let json = info(yt_dlp, runtime, url, proxy).await?;
     Ok((parse_info(&json)?, parse_tags(&json)?))
 }
 
-pub async fn info(yt_dlp: &Path, url: &str, proxy: Option<&str>) -> Result<Vec<u8>, FetchError> {
+pub async fn info(yt_dlp: &Path, runtime: Option<&Path>, url: &str, proxy: Option<&str>) -> Result<Vec<u8>, FetchError> {
     if !(url.starts_with("https://") || url.starts_with("http://")) {
         return Err(FetchError::InvalidLink);
     }
     let mut command = Command::new(yt_dlp);
-    command.args(args(url));
+    command.args(args(url, runtime));
     if let Some(proxy_url) = proxy
         && let Ok(parsed) = reqwest::Url::parse(proxy_url)
     {

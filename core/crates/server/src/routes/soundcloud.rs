@@ -272,9 +272,14 @@ fn worth_yt_dlp(err: &ScError) -> bool {
 }
 
 async fn yt_dlp_info(state: &AppState, num: u64) -> Option<Value> {
-    let yt_dlp = state.env.find("yt-dlp")?;
+    let Some(yt_dlp) = state.env.find("yt-dlp") else {
+        crate::tool_update::request(state, None);
+        return None;
+    };
+    let (runtime, proxy) = (state.env.js_runtime(), state.proxy_url());
     let url = format!("https://api.soundcloud.com/tracks/{num}");
-    let json = tokio::time::timeout(YT_DLP_TIMEOUT, ytdlp::info(&yt_dlp, &url, state.proxy_url().as_deref())).await.ok()?.ok()?;
+    let info = ytdlp::info(&yt_dlp, runtime.as_deref(), &url, proxy.as_deref());
+    let json = tokio::time::timeout(YT_DLP_TIMEOUT, info).await.ok()?.ok()?;
     serde_json::from_slice(&json).ok()
 }
 

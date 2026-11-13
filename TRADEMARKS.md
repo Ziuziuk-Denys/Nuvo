@@ -21,4 +21,4 @@ A fork must use its own name and its own icon, and must remove the Nuvo name and
 
 Spotify, YouTube Music, SoundCloud and other service names in this repository describe what Nuvo plays or replaces. They belong to their owners. Nuvo has no affiliation with them, and they do not endorse it.
 
-Questions: denys.ziuziuk.w@gmail.com.
+Questions: hello@nuvo.quest.

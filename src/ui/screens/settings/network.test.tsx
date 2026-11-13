@@ -23,7 +23,6 @@ const system = vi.hoisted(() => ({
   systemReport: vi.fn(async () => null),
   appFacts: vi.fn(async () => null),
   readTools: vi.fn(async () => null),
-  toolNotes: vi.fn(() => []),
 }));
 vi.mock("../../ports/system", () => system);
 vi.mock("../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }), getTranslationsForAllLocales: (key: string) => [key] }));

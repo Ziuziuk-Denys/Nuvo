@@ -5,7 +5,7 @@
 
 ## Report privately
 
-Email denys.ziuziuk.w@gmail.com with "Nuvo security" in the subject. Do not open a public issue or pull request for a vulnerability.
+Email hello@nuvo.quest with "Nuvo security" in the subject. Do not open a public issue or pull request for a vulnerability.
 
 Include the version (Settings, About), your Linux distribution, the steps to reproduce, and what an attacker gains. I reply within a week. I will tell you when a fix ships and credit you if you want.
 

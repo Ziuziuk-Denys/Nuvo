@@ -159,3 +159,31 @@ async fn a_failing_media_response_is_unavailable() {
     let result = nuvo_fetch::link::follow_checked(&remote, None, |_| async move { Ok(vec![std::net::SocketAddr::from(([127, 0, 0, 1], port))]) }).await;
     assert_eq!(result, Err(FetchError::Unavailable));
 }
+
+#[tokio::test]
+async fn a_fresh_youtube_stream_url_is_retried_until_the_cdn_accepts_it() {
+    use axum::extract::State;
+    use axum::http::StatusCode;
+    use axum::routing::get;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let hits = Arc::new(AtomicUsize::new(0));
+    let app = axum::Router::new()
+        .route(
+            "/videoplayback",
+            get(|State(hits): State<Arc<AtomicUsize>>| async move {
+                if hits.fetch_add(1, Ordering::SeqCst) < 2 { StatusCode::FORBIDDEN } else { StatusCode::PARTIAL_CONTENT }
+            }),
+        )
+        .with_state(hits.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let fixture: serde_json::Value = serde_json::from_str(include_str!("fixtures/ytdlp-youtube.json")).unwrap();
+    let resolved = nuvo_fetch::ytdlp::parse_info(fixture.to_string().as_bytes()).unwrap();
+    let query = resolved.remote.url.split_once('?').unwrap().1;
+    let remote = nuvo_fetch::Remote { url: format!("http://127.0.0.1:{port}/videoplayback?{query}"), headers: resolved.remote.headers };
+    let done = nuvo_fetch::link::follow_checked(&remote, None, |_| async move { Ok(vec![std::net::SocketAddr::from(([127, 0, 0, 1], port))]) }).await;
+    assert_eq!(done.map(|r| r.url), Ok(remote.url.clone()));
+    assert_eq!(hits.load(Ordering::SeqCst), 3);
+}

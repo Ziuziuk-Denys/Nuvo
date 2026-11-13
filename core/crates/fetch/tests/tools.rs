@@ -33,7 +33,7 @@ fn finds_tools_on_path_then_in_local_bin() {
     assert_eq!(find("ffmpeg", Some(&path), None), None);
     assert_eq!(find("yt-dlp", Some(OsString::from("relative/dir").as_os_str()), None), None, "relative PATH entries are ignored");
 
-    let tools = Tools { yt_dlp: None, ffmpeg: None };
+    let tools = Tools { yt_dlp: None, ffmpeg: None, js_runtime: None };
     assert_eq!(tools.require_ffmpeg(), Err(FetchError::ToolMissing("ffmpeg")));
     assert_eq!(tools.require_yt_dlp(), Err(FetchError::ToolMissing("yt-dlp")));
 }
@@ -43,9 +43,11 @@ async fn reads_versions() {
     let dir = tempfile::tempdir().unwrap();
     let yt_dlp = script(dir.path(), "yt-dlp", "echo 2026.10.21");
     let ffmpeg = script(dir.path(), "ffmpeg", "echo 'ffmpeg version 8.1.3 Copyright (c) 2000-2026 the FFmpeg developers'");
+    let deno = script(dir.path(), "deno", "echo 'deno 2.9.8 (stable, release, x86_64-unknown-linux-gnu)'");
     let broken = script(dir.path(), "broken", "exit 1");
     assert_eq!(version(&yt_dlp).await.as_deref(), Some("2026.10.21"));
     assert_eq!(version(&ffmpeg).await.as_deref(), Some("8.1.3"));
+    assert_eq!(version(&deno).await.as_deref(), Some("2.9.8"));
     assert_eq!(version(&broken).await, None);
     assert_eq!(version(&dir.path().join("missing")).await, None);
 }
@@ -117,8 +119,18 @@ mod checks {
         assert_eq!(rows.iter().map(|r| (r.name, r.status)).collect::<Vec<_>>(), [("yt-dlp", "ok"), ("js-runtime", "ok"), ("ffmpeg", "ok"), ("ffmpeg-pulse", "ok")]);
         assert_eq!(row(&rows, "yt-dlp").version.as_deref(), Some("2026.10.21"));
         assert_eq!(row(&rows, "ffmpeg").version.as_deref(), Some("8.1.3"));
-        assert_eq!(row(&rows, "js-runtime").version.as_deref(), Some("node"));
+        assert_eq!(row(&rows, "js-runtime").version.as_deref(), Some("node v22.11.0"));
         assert_eq!(row(&rows, "ffmpeg").path, Some(dir.path().join("ffmpeg")));
+    }
+
+    #[tokio::test]
+    async fn nuvo_s_own_deno_counts_as_the_js_runtime() {
+        let (path, managed) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let deno = script(managed.path(), "deno", "echo 'deno 2.9.8 (stable, release, x86_64-unknown-linux-gnu)'");
+        let env = ToolEnv { path: Some(path.path().as_os_str().to_owned()), home: None, managed: Some(managed.path().to_path_buf()) };
+        assert_eq!(env.js_runtime(), Some(deno));
+        let rows = check_all(&env, Duration::from_secs(5)).await;
+        assert_eq!((row(&rows, "js-runtime").status, row(&rows, "js-runtime").version.as_deref()), ("ok", Some("deno 2.9.8")));
     }
 
     #[tokio::test]

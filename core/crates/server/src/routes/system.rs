@@ -1,4 +1,4 @@
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post, put};
 use axum::{Json, Router};
@@ -13,6 +13,7 @@ use crate::netcheck;
 use crate::report::{log_tail, redact};
 use crate::routes::cache::cache_status;
 use crate::state::AppState;
+use crate::tool_update;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
@@ -21,6 +22,7 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/system/network", put(set_network))
         .route("/v1/system/deps", get(read_deps))
         .route("/v1/system/deps/recheck", post(recheck_deps))
+        .route("/v1/system/tools/{name}/download", post(download_tool))
         .route("/v1/system/network-check", post(network_check))
         .route("/v1/system/report", get(report))
         .route("/v1/system/key-storage", get(key_storage))
@@ -62,6 +64,15 @@ async fn read_deps(State(state): State<AppState>) -> Json<Deps> {
 
 async fn recheck_deps(State(state): State<AppState>) -> Json<Deps> {
     Json(deps::recheck(&state).await)
+}
+
+async fn download_tool(State(state): State<AppState>, Path(name): Path<String>) -> Result<StatusCode, ApiError> {
+    let tool = tool_update::TOOLS.into_iter().find(|tool| *tool == name).ok_or_else(|| ApiError::NotFound("no such tool".into()))?;
+    if state.tools_url.is_none() {
+        return Err(ApiError::Conflict("tool downloads are off".into()));
+    }
+    tool_update::request(&state, Some(tool));
+    Ok(StatusCode::ACCEPTED)
 }
 
 async fn network_check(State(state): State<AppState>) -> Json<NetCheck> {

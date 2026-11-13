@@ -70,6 +70,9 @@ pub fn bare_url(url: &str) -> String {
 }
 
 const MAX_HOPS: usize = 5;
+// Fresh googlevideo URLs answer 403 for a second or two before the CDN knows them
+const FRESH_URL_RETRIES: usize = 4;
+const FRESH_URL_WAIT: Duration = Duration::from_secs(1);
 
 // Follows redirects by hand, pinning each hop to checked addresses so DNS cannot rebind it
 pub async fn follow_public(remote: &Remote, proxy: Option<&reqwest::Proxy>) -> Result<Remote, FetchError> {
@@ -107,7 +110,7 @@ where
                 request = request.header(name.as_str(), value.as_str());
             }
         }
-        let response = request.send().await.map_err(|e| FetchError::Network(e.without_url().to_string()))?;
+        let response = send_patiently(request).await?;
         if !response.status().is_redirection() {
             if !response.status().is_success() {
                 return Err(FetchError::Unavailable);
@@ -124,6 +127,19 @@ where
         url = url.join(location).map_err(|_| FetchError::InvalidLink)?;
     }
     Err(FetchError::InvalidLink)
+}
+
+async fn send_patiently(request: reqwest::RequestBuilder) -> Result<reqwest::Response, FetchError> {
+    let mut attempt = 0;
+    loop {
+        let sent = request.try_clone().expect("a bodyless request clones").send().await;
+        let response = sent.map_err(|e| FetchError::Network(e.without_url().to_string()))?;
+        if response.status() != reqwest::StatusCode::FORBIDDEN || attempt == FRESH_URL_RETRIES {
+            return Ok(response);
+        }
+        attempt += 1;
+        tokio::time::sleep(FRESH_URL_WAIT).await;
+    }
 }
 
 fn host_of(url: &Url) -> Option<String> {

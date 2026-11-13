@@ -8,7 +8,7 @@ use serde_json::json;
 #[test]
 fn argument_list_is_fixed_and_the_url_comes_last_after_a_separator() {
     assert_eq!(
-        args("https://youtu.be/abc"),
+        args("https://youtu.be/abc", None),
         [
             "--ignore-config",
             "--use-extractors",
@@ -27,10 +27,19 @@ fn argument_list_is_fixed_and_the_url_comes_last_after_a_separator() {
             "https://youtu.be/abc",
         ]
     );
-    let hostile = args("--exec=rm -rf ~");
+    let hostile = args("--exec=rm -rf ~", Some(std::path::Path::new("/opt/deno")));
     assert_eq!(hostile[hostile.len() - 2..], ["--", "--exec=rm -rf ~"]);
-    let proxied = args("https://youtu.be/abc");
+    let proxied = args("https://youtu.be/abc", None);
     assert!(!proxied.iter().any(|arg| arg.contains("user") || arg.contains("pw")), "no credentials in argv");
+}
+
+#[test]
+fn the_found_js_runtime_is_the_only_one_yt_dlp_may_use() {
+    let with = args("https://youtu.be/abc", Some(std::path::Path::new("/usr/bin/node")));
+    let at = with.iter().position(|arg| arg == "--no-js-runtimes").unwrap();
+    assert_eq!(with[at..at + 3], ["--no-js-runtimes", "--js-runtimes", "node:/usr/bin/node"]);
+    assert!(at < with.iter().position(|arg| arg == "--").unwrap());
+    assert!(!args("https://youtu.be/abc", None).iter().any(|arg| arg.contains("js-runtimes")));
 }
 
 #[test]
@@ -80,17 +89,18 @@ async fn drives_the_binary_and_classifies_its_errors() {
     std::fs::write(&fake, body).unwrap();
     std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
 
-    let resolved = resolve(&fake, "https://youtu.be/ok", Some("socks5h://127.0.0.1:1080")).await.unwrap();
+    let resolved = resolve(&fake, None, "https://youtu.be/ok", Some("socks5h://127.0.0.1:1080")).await.unwrap();
     assert_eq!((resolved.title.as_deref(), resolved.duration_ms), (Some("T"), Some(12_000)));
     let passed: Vec<String> = std::fs::read_to_string(&args_file).unwrap().lines().map(String::from).collect();
-    assert_eq!(passed, args("https://youtu.be/ok"));
+    assert_eq!(passed, args("https://youtu.be/ok", None));
     assert!(passed.windows(2).any(|pair| pair == ["--use-extractors", "default,-generic"]), "recognize runs without the generic extractor");
 
-    resolve_full(&fake, "https://youtu.be/full", None).await.unwrap();
+    resolve_full(&fake, Some(&dir.path().join("deno")), "https://youtu.be/full", None).await.unwrap();
     let passed: Vec<String> = std::fs::read_to_string(&args_file).unwrap().lines().map(String::from).collect();
     assert!(passed.windows(2).any(|pair| pair == ["--use-extractors", "default,-generic"]), "inspect runs without the generic extractor");
+    assert!(passed.contains(&format!("deno:{}", dir.path().join("deno").display())));
 
-    assert_eq!(resolve(&fake, "https://youtu.be/blocked", None).await, Err(FetchError::Blocked));
+    assert_eq!(resolve(&fake, None, "https://youtu.be/blocked", None).await, Err(FetchError::Blocked));
 }
 
 #[test]
@@ -113,4 +123,13 @@ fn reads_song_tags_when_the_site_gives_them() {
     let live = parse_tags(br#"{"title":"Radio","is_live":true,"duration":12.0,"creator":"DJ"}"#).unwrap();
     assert_eq!((live.is_live, live.duration_ms, live.artist.as_deref()), (true, None, Some("DJ")));
     assert_eq!(parse_tags(b"not json"), Err(FetchError::Unavailable));
+}
+
+#[test]
+fn a_recorded_youtube_answer_resolves_to_its_stream() {
+    let resolved = parse_info(include_bytes!("fixtures/ytdlp-youtube.json")).unwrap();
+    assert_eq!(resolved.title.as_deref(), Some("Queen \u{2013} Bohemian Rhapsody (Official Video Remastered)"));
+    assert_eq!(resolved.duration_ms, Some(359_000));
+    assert!(resolved.remote.url.starts_with("https://rr1---sn-uigxx03-45ce.googlevideo.com/videoplayback?"));
+    assert!(resolved.remote.headers.iter().any(|(name, _)| name == "User-Agent"));
 }
