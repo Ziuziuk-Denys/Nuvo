@@ -1,4 +1,6 @@
 import { coreRequest } from "@/data/core/request";
+import { toSnapshot } from "@/engine/snapshot";
+import type { Track } from "@/engine/types";
 import { CoreError } from "@/imports/core";
 
 export interface LastfmStatus {
@@ -26,6 +28,9 @@ export const startLastfmAuth = (): Promise<LastfmToken> => coreRequest("POST", "
 
 /** Answers 409 until the user approved Nuvo on the Last.fm page. */
 export const finishLastfmAuth = (token: string): Promise<LastfmStatus> => coreRequest("POST", "/v1/lastfm/auth/session", { token });
+
+export const reportNowPlaying = (track: Track): Promise<void> =>
+  coreRequest("POST", "/v1/me/playback/now-playing", { trackId: track.id, trackSnapshot: toSnapshot(track) });
 
 export const disconnectLastfm = (): Promise<LastfmStatus> => coreRequest("DELETE", "/v1/lastfm/session");
 
