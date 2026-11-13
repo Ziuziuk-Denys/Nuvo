@@ -1,3 +1,5 @@
+import { CORE_BASE_URL } from "@/data/core/request";
+import { isLocalId } from "@/engine/types";
 import { loudnessGain } from "./lib/loudness";
 import { useSoundStore } from "./store/soundStore";
 
@@ -67,4 +69,12 @@ export function scheduleLoudness(trackId: string, audio: Blob | (() => Promise<B
       .catch(() => undefined)
       .finally(() => pending.delete(trackId));
   });
+}
+
+export async function cachedAudio(trackId: string): Promise<Blob> {
+  const id = encodeURIComponent(trackId);
+  const path = isLocalId(trackId) ? `/v1/local/tracks/${id}/audio` : `/v1/cache/audio/${id}`;
+  const response = await fetch(`${CORE_BASE_URL}${path}`);
+  if (!response.ok) throw new Error(`cached audio ${response.status}`);
+  return response.blob();
 }

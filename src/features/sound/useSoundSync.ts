@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { soundActions, usePlayerSnapshot as usePlayerStore } from "./engineLink";
 import { autoPreamp, resolveProfile } from "./lib/eq";
+import { cachedAudio, scheduleLoudness } from "./measureLoudness";
 import { profileGains, useSoundStore } from "./store/soundStore";
 
 export function selectArtist(state: { currentTrack: { artists?: string; artistList?: Array<{ name: string }> } | null }): string | null {
@@ -10,6 +11,7 @@ export function selectArtist(state: { currentTrack: { artists?: string; artistLi
 
 export function useSoundSync(): void {
   const trackId = usePlayerStore((state) => state.currentTrack?.id ?? null);
+  const durationMs = usePlayerStore((state) => state.currentTrack?.durationMs ?? 0);
   const artist = usePlayerStore(selectArtist);
   const eqEnabled = useSoundStore((state) => state.eqEnabled);
   const gains = useSoundStore((state) => state.gains);
@@ -37,4 +39,9 @@ export function useSoundSync(): void {
     const db = normalization === "track" && trackId ? (loudness[trackId]?.db ?? 0) : 0;
     if (trackId) soundActions.setTrackGainDb(trackId, db);
   }, [trackId, normalization]);
+
+  // A track still streaming has no cached file yet; it is measured on a later play
+  useEffect(() => {
+    if (normalization === "track" && trackId) scheduleLoudness(trackId, () => cachedAudio(trackId), durationMs);
+  }, [trackId, normalization, durationMs]);
 }
