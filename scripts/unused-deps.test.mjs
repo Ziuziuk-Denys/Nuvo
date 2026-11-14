@@ -5,8 +5,9 @@ import { default as path } from "node:path";
 import { test } from "node:test";
 import { referencedPackages, unusedPackages } from "./unused-deps.mjs";
 
-test("finds imports, scoped packages, CSS imports and config references; keeps tools", () => {
+test("finds imports, scoped packages, CSS imports and config references; keeps tools", (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "deps-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const write = (name, body) => {
     fs.mkdirSync(path.join(root, path.dirname(name)), { recursive: true });
     fs.writeFileSync(path.join(root, name), body);
@@ -18,5 +19,4 @@ test("finds imports, scoped packages, CSS imports and config references; keeps t
   assert.ok(referenced.has("zustand") && referenced.has("@braccato/core") && referenced.has("@vitejs/plugin-react"));
   const pkg = { devDependencies: { zustand: "1", "@braccato/core": "1", "@vitejs/plugin-react": "1", "left-pad": "1", typescript: "5" } };
   assert.deepEqual(unusedPackages(pkg, referenced), ["left-pad"]);
-  fs.rmSync(root, { recursive: true });
 });

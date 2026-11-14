@@ -91,128 +91,139 @@ export async function launchNuvo(options: { profile: "fresh" | "seeded"; locale?
   };
   delete env.VITE_DEV_SERVER_URL;
 
-  const app = await electron.launch({
-    args: [ROOT, "--mute-audio", `--user-data-dir=${path.join(work, "user-data")}`, ...(options.args ?? [])],
-    cwd: ROOT,
-    env,
-  });
-  const deadline = Date.now() + 30_000;
-  let page: Page | undefined;
-  while (!page && Date.now() < deadline) {
-    page = app.windows().find((win) => !win.url().includes("#/notch"));
-    if (!page) await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  if (!page) throw new Error("main window did not appear");
-  const main = page;
-  await main.waitForLoadState("domcontentloaded");
-  // the seeded covers come from a loopback server the app's image policy rightly refuses; only this test page lets them in
-  const cdp = await main.context().newCDPSession(main);
-  await cdp.send("Page.setBypassCSP", { enabled: true });
-  await serveFixtureCovers(main);
+  let started: ElectronApplication | undefined;
+  try {
+    const app = await electron.launch({
+      args: [ROOT, "--mute-audio", `--user-data-dir=${path.join(work, "user-data")}`, ...(options.args ?? [])],
+      cwd: ROOT,
+      env,
+    });
+    started = app;
+    const deadline = Date.now() + 30_000;
+    let page: Page | undefined;
+    while (!page && Date.now() < deadline) {
+      page = app.windows().find((win) => !win.url().includes("#/notch"));
+      if (!page) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (!page) throw new Error("main window did not appear");
+    const main = page;
+    await main.waitForLoadState("domcontentloaded");
+    // the seeded covers come from a loopback server the app's image policy rightly refuses; only this test page lets them in
+    const cdp = await main.context().newCDPSession(main);
+    await cdp.send("Page.setBypassCSP", { enabled: true });
+    await serveFixtureCovers(main);
 
-  let currentLook: Look | null = null;
-  let closed = false;
+    let currentLook: Look | null = null;
+    let closed = false;
 
-  const session: NuvoSession = {
-    app,
-    page: main,
+    const session: NuvoSession = {
+      app,
+      page: main,
 
-    async go(hash) {
-      await main.evaluate((value) => {
-        location.hash = value;
-      }, hash);
-      await main.waitForTimeout(500);
-    },
+      async go(hash) {
+        await main.evaluate((value) => {
+          location.hash = value;
+        }, hash);
+        await main.waitForTimeout(500);
+      },
 
-    async setLook(look) {
-      // pending debounced store writes flush every second and would overwrite the blob below
-      await main.waitForTimeout(1_100);
-      await main.evaluate((value) => {
-        const key = "nuvo.look.v1";
-        const stored = JSON.parse(localStorage.getItem(key) ?? '{"state":{},"version":1}');
-        stored.state.preset = value.preset;
-        localStorage.setItem(key, JSON.stringify(stored));
-        localStorage.setItem("theme", value.mode);
-      }, look);
+      async setLook(look) {
+        // pending debounced store writes flush every second and would overwrite the blob below
+        await main.waitForTimeout(1_100);
+        await main.evaluate((value) => {
+          const key = "nuvo.look.v1";
+          const stored = JSON.parse(localStorage.getItem(key) ?? '{"state":{},"version":1}');
+          stored.state.preset = value.preset;
+          localStorage.setItem(key, JSON.stringify(stored));
+          localStorage.setItem("theme", value.mode);
+        }, look);
+        await main.reload();
+        await main.waitForFunction(
+          (value) => document.documentElement.dataset.preset === value.preset && document.documentElement.getAttribute("data-theme") === value.mode,
+          look,
+          { timeout: 30_000 },
+        );
+        await main.waitForFunction(() => (document.getElementById("root")?.childElementCount ?? 0) > 0, undefined, { timeout: 30_000 });
+        currentLook = look;
+      },
+
+      async setSize(size) {
+        await app.evaluate(({ BrowserWindow }, value) => {
+          const win = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().startsWith("file:") && !w.webContents.getURL().includes("#/notch"));
+          if (!win) throw new Error("no main window");
+          if (win.isMaximized()) win.unmaximize();
+          win.setSize(value.width, value.height);
+        }, size);
+        await main.waitForTimeout(300);
+      },
+
+      async shoot(step, screen, state, shootOptions = {}) {
+        const looks = shootOptions.looks ?? MATRIX;
+        const sizes = shootOptions.sizes ?? SIZES;
+        const dir = path.join(ARTIFACTS, step);
+        fs.mkdirSync(dir, { recursive: true });
+        const files: string[] = [];
+        for (const look of looks) {
+          const changed = !currentLook || currentLook.preset !== look.preset || currentLook.mode !== look.mode;
+          if (changed) {
+            await session.setLook(look);
+            await shootOptions.prepare?.();
+          } else if (files.length === 0) {
+            await shootOptions.prepare?.();
+          }
+          for (const size of sizes) {
+            await session.setSize(size);
+            await main.emulateMedia({ reducedMotion: shootOptions.motion ? "no-preference" : "reduce" });
+            await main.evaluate(() => document.fonts.ready.then(() => undefined));
+            await main.waitForTimeout(800);
+            const file = path.join(dir, `${screen}-${state}-${look.preset}-${look.mode}-${size.width}.png`);
+            await main.screenshot({ path: file });
+            files.push(file);
+          }
+        }
+        return files;
+      },
+
+      core(script) {
+        return main.evaluate(`(async () => { const base = "nuvo-core://local"; const json = { "Content-Type": "application/json" }; ${script} })()`);
+      },
+
+      async close() {
+        if (closed) return;
+        closed = true;
+        const pid = app.process().pid;
+        await app.close().catch(() => undefined);
+        if (pid) {
+          try {
+            process.kill(pid, "SIGKILL");
+          } catch {}
+        }
+        fs.rmSync(work, { recursive: true, force: true });
+        fs.rmSync(socketDir, { recursive: true, force: true });
+        openSessions -= 1;
+        if (openSessions === 0) clearKeyring();
+      },
+    };
+
+    if (options.locale) {
+      await main.evaluate((locale) => localStorage.setItem("nuvo_locale", locale), options.locale);
       await main.reload();
-      await main.waitForFunction(
-        (value) => document.documentElement.dataset.preset === value.preset && document.documentElement.getAttribute("data-theme") === value.mode,
-        look,
-        { timeout: 30_000 },
-      );
-      await main.waitForFunction(() => (document.getElementById("root")?.childElementCount ?? 0) > 0, undefined, { timeout: 30_000 });
-      currentLook = look;
-    },
-
-    async setSize(size) {
-      await app.evaluate(({ BrowserWindow }, value) => {
-        const win = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().startsWith("file:") && !w.webContents.getURL().includes("#/notch"));
-        if (!win) throw new Error("no main window");
-        if (win.isMaximized()) win.unmaximize();
-        win.setSize(value.width, value.height);
-      }, size);
-      await main.waitForTimeout(300);
-    },
-
-    async shoot(step, screen, state, shootOptions = {}) {
-      const looks = shootOptions.looks ?? MATRIX;
-      const sizes = shootOptions.sizes ?? SIZES;
-      const dir = path.join(ARTIFACTS, step);
-      fs.mkdirSync(dir, { recursive: true });
-      const files: string[] = [];
-      for (const look of looks) {
-        const changed = !currentLook || currentLook.preset !== look.preset || currentLook.mode !== look.mode;
-        if (changed) {
-          await session.setLook(look);
-          await shootOptions.prepare?.();
-        } else if (files.length === 0) {
-          await shootOptions.prepare?.();
-        }
-        for (const size of sizes) {
-          await session.setSize(size);
-          await main.emulateMedia({ reducedMotion: shootOptions.motion ? "no-preference" : "reduce" });
-          await main.evaluate(() => document.fonts.ready.then(() => undefined));
-          await main.waitForTimeout(800);
-          const file = path.join(dir, `${screen}-${state}-${look.preset}-${look.mode}-${size.width}.png`);
-          await main.screenshot({ path: file });
-          files.push(file);
-        }
-      }
-      return files;
-    },
-
-    core(script) {
-      return main.evaluate(`(async () => { const base = "nuvo-core://local"; const json = { "Content-Type": "application/json" }; ${script} })()`);
-    },
-
-    async close() {
-      if (closed) return;
-      closed = true;
-      const pid = app.process().pid;
-      await app.close().catch(() => undefined);
-      if (pid) {
-        try {
-          process.kill(pid, "SIGKILL");
-        } catch {}
-      }
-      fs.rmSync(work, { recursive: true, force: true });
-      fs.rmSync(socketDir, { recursive: true, force: true });
-      openSessions -= 1;
-      if (openSessions === 0) clearKeyring();
-    },
-  };
-
-  if (options.locale) {
-    await main.evaluate((locale) => localStorage.setItem("nuvo_locale", locale), options.locale);
-    await main.reload();
-    await main.waitForLoadState("domcontentloaded");
+      await main.waitForLoadState("domcontentloaded");
+    }
+    if (options.profile === "seeded") {
+      await passFirstRun(main);
+      session.seed = await seedLibrary(session);
+      await main.waitForTimeout(1_100);
+      await main.reload();
+      await main.waitForLoadState("domcontentloaded");
+    }
+    return session;
+  } catch (error) {
+    await started?.close().catch(() => undefined);
+    fs.rmSync(work, { recursive: true, force: true });
+    fs.rmSync(socketDir, { recursive: true, force: true });
+    openSessions -= 1;
+    if (openSessions === 0) clearKeyring();
+    throw error;
   }
-  if (options.profile === "seeded") {
-    await passFirstRun(main);
-    session.seed = await seedLibrary(session);
-    await main.waitForTimeout(1_100);
-    await main.reload();
-    await main.waitForLoadState("domcontentloaded");
-  }
-  return session;
 }

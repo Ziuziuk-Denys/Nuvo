@@ -2,7 +2,7 @@
 import { default as fs } from "node:fs";
 import { default as os } from "node:os";
 import { default as path } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { MAX_SAVE_TEXT_CHARS, saveFilter, validateSaveText, writeTextAtomic } from "./saveText";
 
 describe("validateSaveText", () => {
@@ -38,7 +38,13 @@ describe("validateSaveText", () => {
 });
 
 describe("writeTextAtomic", () => {
-  const dir = () => fs.mkdtempSync(path.join(process.env.NUVO_TEST_DIR ?? os.tmpdir(), "save-"));
+  const dirs: string[] = [];
+  afterEach(() => dirs.splice(0).forEach((d) => fs.rmSync(d, { recursive: true, force: true })));
+  const dir = () => {
+    const created = fs.mkdtempSync(path.join(process.env.NUVO_TEST_DIR ?? os.tmpdir(), "save-"));
+    dirs.push(created);
+    return created;
+  };
 
   it("writes the file and leaves no temporary file behind", async () => {
     const folder = dir();
@@ -46,7 +52,6 @@ describe("writeTextAtomic", () => {
     await writeTextAtomic(target, "a,b\n");
     expect(fs.readFileSync(target, "utf8")).toBe("a,b\n");
     expect(fs.readdirSync(folder)).toEqual(["r.csv"]);
-    fs.rmSync(folder, { recursive: true });
   });
 
   it("keeps the old file when the write fails", async () => {
@@ -58,6 +63,5 @@ describe("writeTextAtomic", () => {
     await expect(writeTextAtomic(blocked, "new")).rejects.toThrow();
     expect(fs.readFileSync(target, "utf8")).toBe("old");
     expect(fs.readdirSync(folder).sort()).toEqual(["blocked.csv", "r.csv"]);
-    fs.rmSync(folder, { recursive: true });
   });
 });
