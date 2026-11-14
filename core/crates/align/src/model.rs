@@ -77,9 +77,13 @@ struct Linear {
 
 impl Linear {
     fn forward(&self, x: &[f32], rows: usize) -> Vec<f32> {
-        let mut out = vec![0.0; rows * self.outputs];
-        let weight = self.weight.to_f32();
-        product(View::new(x, rows, self.inputs), View::new(&weight, self.outputs, self.inputs), true, &mut out, self.outputs);
+        let mut out = if rows == 1 {
+            self.weight.matvec(x)
+        } else {
+            let mut out = vec![0.0; rows * self.outputs];
+            product(View::new(x, rows, self.inputs), View::new(&self.weight.to_f32(), self.outputs, self.inputs), true, &mut out, self.outputs);
+            out
+        };
         if let Some(bias) = &self.bias {
             for row in out.chunks_exact_mut(self.outputs) {
                 row.iter_mut().zip(bias).for_each(|(v, b)| *v += b);
@@ -132,6 +136,13 @@ pub struct Cross {
     keys: Vec<Vec<f32>>,
     values: Vec<Vec<f32>>,
     frames: usize,
+}
+
+#[derive(Clone, Default)]
+pub struct Cache {
+    keys: Vec<Vec<f32>>,
+    values: Vec<Vec<f32>>,
+    rows: usize,
 }
 
 pub struct Decoded {
@@ -278,7 +289,7 @@ impl Whisper {
             if stop() {
                 return Err(AlignError::Cancelled);
             }
-            self.block(block, &mut x, positions, None, &mut |_, _| {});
+            self.block(block, &mut x, positions, None, None, &mut |_, _| {});
         }
         Ok(self.encoder_ln.forward(&x))
     }
@@ -315,9 +326,29 @@ impl Whisper {
                     }
                 }
             };
-            self.block(block, &mut x, rows, Some((&cross.keys[layer], &cross.values[layer], cross.frames)), &mut keep);
+            self.block(block, &mut x, rows, None, Some((&cross.keys[layer], &cross.values[layer], cross.frames)), &mut keep);
         }
         Decoded { hidden: self.decoder_ln.forward(&x), scores }
+    }
+
+    pub fn step(&self, tokens: &[u32], cross: &Cross, cache: &mut Cache) -> Vec<f32> {
+        let (rows, width) = (tokens.len(), self.width());
+        assert!(cache.rows + rows <= self.hparams.n_text_ctx, "decoder input fits its context");
+        if cache.keys.is_empty() {
+            cache.keys = vec![Vec::new(); self.decoder.len()];
+            cache.values = vec![Vec::new(); self.decoder.len()];
+        }
+        let mut x = Vec::with_capacity(rows * width);
+        for (at, token) in tokens.iter().enumerate() {
+            let embedding = self.token_embedding.rows(*token as usize..*token as usize + 1);
+            x.extend(embedding.iter().zip(&self.decoder_positions[(cache.rows + at) * width..][..width]).map(|(e, p)| e + p));
+        }
+        for (layer, block) in self.decoder.iter().enumerate() {
+            let past = Some((&mut cache.keys[layer], &mut cache.values[layer]));
+            self.block(block, &mut x, rows, past, Some((&cross.keys[layer], &cross.values[layer], cross.frames)), &mut |_, _| {});
+        }
+        cache.rows += rows;
+        self.token_embedding.matvec(&self.decoder_ln.forward(&x[(rows - 1) * width..]))
     }
 
     /// Log-probabilities over the vocabulary after each token in `rows`, one vocabulary-wide row each.
@@ -339,12 +370,20 @@ impl Whisper {
         logits
     }
 
-    fn block(&self, block: &Block, x: &mut [f32], rows: usize, cross: Option<(&[f32], &[f32], usize)>, keep: &mut dyn FnMut(usize, &[f32])) {
+    /// `past` holds the keys and values of earlier tokens and takes this call's.
+    fn block(&self, block: &Block, x: &mut [f32], rows: usize, past: Option<(&mut Vec<f32>, &mut Vec<f32>)>, cross: Option<(&[f32], &[f32], usize)>, keep: &mut dyn FnMut(usize, &[f32])) {
         let causal = cross.is_some();
         let normed = block.attn_ln.forward(x);
         let attention = &block.attn;
         let (q, k, v) = (attention.query.forward(&normed, rows), attention.key.forward(&normed, rows), attention.value.forward(&normed, rows));
-        let mixed = attend(&q, &k, &v, rows, rows, attention.heads, causal, &mut |_, _| {});
+        let mixed = match past {
+            Some((keys, values)) => {
+                keys.extend(k);
+                values.extend(v);
+                attend(&q, keys, values, rows, keys.len() / self.width(), attention.heads, true, &mut |_, _| {})
+            }
+            None => attend(&q, &k, &v, rows, rows, attention.heads, causal, &mut |_, _| {}),
+        };
         add(x, &attention.out.forward(&mixed, rows));
         if let (Some((ln, attention)), Some((keys, values, frames))) = (&block.cross, cross) {
             let q = attention.query.forward(&ln.forward(x), rows);
@@ -378,7 +417,7 @@ fn add(x: &mut [f32], delta: &[f32]) {
     x.iter_mut().zip(delta).for_each(|(v, d)| *v += d);
 }
 
-/// Multi-head attention of `rows` queries over `cols` keys; `keep` sees each head's scaled scores before the softmax.
+/// Causal queries are the last `rows` positions; `keep` sees each head's scaled scores before the softmax.
 #[allow(clippy::too_many_arguments)]
 fn attend(q: &[f32], k: &[f32], v: &[f32], rows: usize, cols: usize, heads: usize, causal: bool, keep: &mut dyn FnMut(usize, &[f32])) -> Vec<f32> {
     let width = q.len() / rows;
@@ -393,7 +432,7 @@ fn attend(q: &[f32], k: &[f32], v: &[f32], rows: usize, cols: usize, heads: usiz
         keep(head, &scores);
         for (row, values) in scores.chunks_exact_mut(cols).enumerate() {
             if causal {
-                values[row + 1..].fill(f32::NEG_INFINITY);
+                values[row + cols - rows + 1..].fill(f32::NEG_INFINITY);
             }
             softmax(values);
         }
@@ -453,6 +492,8 @@ mod tests {
         let out = attend(&q, &k, &v, 2, 2, 1, true, &mut |_, _| {});
         assert_eq!(out[0], 2.0, "the first token sees only itself");
         assert!(out[1] > 90.0);
+        let last = attend(&q[1..], &k, &v, 1, 2, 1, true, &mut |_, _| {});
+        assert_eq!(last[0], out[1], "a later query alone sees every earlier key");
     }
 
     #[test]

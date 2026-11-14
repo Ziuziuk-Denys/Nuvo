@@ -10,11 +10,12 @@ use axum::routing::{get, put};
 use axum::{Json, Router};
 use futures::Stream;
 use nuvo_contracts::{
-    ImportLyricsOffsets, ImportedLyricsOffsets, LyricsBest, LyricsCandidate, LyricsOffset, LyricsQuality, LyricsStreamEvent,
+    ImportLyricsOffsets, ImportedLyricsOffsets, LyricsBest, LyricsCandidate, LyricsOffset, MadeBy, LyricsQuality, LyricsStreamEvent,
     LyricsTrackMeta, MAX_TRACK_ID_LEN, RawLyrics, SetLyricsOffset, SetUserLyrics,
 };
 use nuvo_lyrics::Lookup;
-use nuvo_store::{lyrics_cache, lyrics_user, lyrics_words, now_ms, tracks};
+use nuvo_store::lyrics_words::{self, ALIGNED, SYNCED, TRANSCRIBED};
+use nuvo_store::{lyrics_cache, lyrics_user, now_ms, tracks};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::sync::mpsc;
@@ -97,6 +98,7 @@ fn user_event(format: String, content: String) -> LyricsStreamEvent {
             lyrics: RawLyrics { format, content },
             matched_track: None,
             top_priority: true,
+            made: None,
         })),
         message: None,
         duration_ms: 0,
@@ -182,11 +184,15 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
 
     let user_id = id.clone();
     if let Ok(Some((format, content))) = data.db.call(move |c| lyrics_user::user_lyrics(c, &user_id)).await {
-        let aligned = if format == "lrc" { aligned_for(&data, &id, &content, true).await } else { None };
+        let made = made_for(&data, &id, made_source(&format), &content, true).await;
         send(user_event(format, content)).await;
-        if let Some(aligned) = aligned {
-            send(found_event(aligned, 0)).await;
+        if let Some(made) = made {
+            send(found_event(made, 0)).await;
         }
+    }
+    let transcribed = made_for(&data, &id, TRANSCRIBED, "", false).await;
+    if let Some(transcribed) = &transcribed {
+        send(found_event(transcribed.clone(), 0)).await;
     }
 
     if id.starts_with("local:") {
@@ -196,7 +202,7 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
         {
             // never cached: the owner may edit the file
             let candidate = sidecar_candidate(text);
-            return match aligned_for(&data, &id, &candidate.lyrics.content, false).await {
+            return match made_for(&data, &id, made_source(&candidate.lyrics.format), &candidate.lyrics.content, false).await {
                 Some(aligned) => {
                     send(found_event(candidate, 0)).await;
                     found(&send, aligned, 0, false).await
@@ -230,13 +236,13 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
     let instrumental = lines.instrumental;
     let failed = lines.message.is_some();
     let aligned = match (&words, &lines.candidate) {
-        (None, Some(line)) => aligned_for(&data, &id, &line.lyrics.content, false).await,
+        (None, Some(line)) => made_for(&data, &id, made_source(&line.lyrics.format), &line.lyrics.content, false).await,
         _ => None,
     };
     if let Some(aligned) = &aligned {
         send(found_event(aligned.clone(), 0)).await;
     }
-    match words.or(aligned).or(lines.candidate) {
+    match words.or(aligned).or(lines.candidate).or(transcribed) {
         Some(best) => send(LyricsStreamEvent::Done { cached, best: Some(best_of(&best)), status: None }).await,
         None if instrumental => send(LyricsStreamEvent::Done { cached, best: None, status: Some("instrumental") }).await,
         None => send(LyricsStreamEvent::Done { cached: cached && !failed, best: None, status: Some("not_found") }).await,
@@ -298,21 +304,31 @@ fn soundcloud_queries(title: &str, uploader: &str, duration_ms: Option<i64>) -> 
     guesses.into_iter().map(|(artist, title)| nuvo_lyrics::Query { title, artist, duration_ms }).collect()
 }
 
-/// Word timing worked out on this computer for exactly these lyrics, while it is on; the provider names the model.
-async fn aligned_for(data: &Unlocked, id: &str, lyrics: &str, top_priority: bool) -> Option<LyricsCandidate> {
-    if !crate::routes::word_timing::enabled(data).await.ok()? {
+fn made_source(format: &str) -> &'static str {
+    if format == "plain" { ALIGNED } else { SYNCED }
+}
+
+/// Word timing of synced lines only while the switch is on; the provider names the model.
+async fn made_for(data: &Unlocked, id: &str, source: &'static str, lyrics: &str, top_priority: bool) -> Option<LyricsCandidate> {
+    if source == SYNCED && !crate::routes::word_timing::enabled(data).await.ok()? {
         return None;
     }
     let lookup = id.to_string();
-    let timing = data.db.call(move |c| lyrics_words::get(c, &lookup)).await.ok()??;
-    (timing.source_hash == crate::word_timing::source_hash(lyrics)).then(|| LyricsCandidate {
+    let timing = data.db.call(move |c| lyrics_words::get(c, &lookup, source)).await.ok()??;
+    let total = match source {
+        SYNCED => 0.85,
+        ALIGNED => 0.8,
+        _ => 0.4,
+    };
+    (source == TRANSCRIBED || timing.source_hash == crate::word_timing::source_hash(lyrics)).then(|| LyricsCandidate {
         provider: timing.model,
         content_kind: "word_synced".into(),
         sync_level: "word_level".into(),
-        quality: LyricsQuality { total: 0.85, match_score: 1.0, content: 1.0, sync: 1.0, source: 0.8, reasons: vec![] },
+        quality: LyricsQuality { total, match_score: 1.0, content: 1.0, sync: 1.0, source: 0.8, reasons: vec![] },
         lyrics: RawLyrics { format: "ttml".into(), content: timing.content },
         matched_track: None,
         top_priority,
+        made: Some(MadeBy { source: source.into(), confidence: timing.confidence }),
     })
 }
 
@@ -448,6 +464,7 @@ pub fn sidecar_candidate(text: String) -> LyricsCandidate {
         lyrics: nuvo_contracts::RawLyrics { format: format.into(), content: text },
         matched_track: None,
         top_priority: false,
+        made: None,
     }
 }
 

@@ -197,5 +197,6 @@ fn candidate(query: &Query, content: String) -> LyricsCandidate {
         lyrics: RawLyrics { format: "ttml".into(), content },
         matched_track: Some(MatchedTrack { title: query.title.clone(), artists: vec![query.artist.clone()], duration_ms: query.duration_ms }),
         top_priority: false,
+        made: None,
     }
 }

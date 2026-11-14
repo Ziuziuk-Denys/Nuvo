@@ -375,4 +375,19 @@ CREATE TABLE IF NOT EXISTS lyrics_words (
   content TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+"#, r#"
+CREATE TABLE lyrics_made (
+  track_id TEXT NOT NULL,
+  source TEXT NOT NULL CHECK (source IN ('synced', 'aligned', 'transcribed')),
+  source_hash TEXT NOT NULL,
+  model TEXT NOT NULL,
+  confidence REAL,
+  content TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (track_id, source)
+);
+INSERT INTO lyrics_made (track_id, source, source_hash, model, content, created_at)
+  SELECT track_id, 'synced', source_hash, model, content, created_at FROM lyrics_words;
+DROP TABLE lyrics_words;
+ALTER TABLE lyrics_made RENAME TO lyrics_words;
 "#];

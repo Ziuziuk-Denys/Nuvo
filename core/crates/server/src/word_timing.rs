@@ -1,4 +1,4 @@
-// One word-timing job at a time: a newer track replaces the running one, which stops at its next check
+// One job per slot at a time: a newer request replaces the running one, which stops at its next check
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -9,8 +9,8 @@ use std::time::{Duration, Instant};
 use nuvo_contracts::WordTimingJob;
 use nuvo_fetch::update::{Pinned, WHISPER_BASE, WHISPER_SMALL};
 use nuvo_local::save::{extension_for, input_format};
-use nuvo_store::lyrics_words::{self, Timing};
-use nuvo_store::{cache_index, local, lyrics_cache, lyrics_user, now_ms};
+use nuvo_store::lyrics_words::{self, SYNCED, TRANSCRIBED, Timing};
+use nuvo_store::{cache_index, local, lyrics_cache, lyrics_user, now_ms, tracks};
 use sha2::{Digest, Sha256};
 use tokio::process::Command;
 
@@ -22,7 +22,7 @@ use crate::tool_update;
 /// Songs longer than this are left alone: the work and the decoded audio grow with the length.
 const MAX_AUDIO_SECONDS: u32 = 20 * 60;
 const MAX_AUDIO_BYTES: u64 = 256 * 1024 * 1024;
-/// A job that runs longer is stopped; base takes seconds and small well under a minute on a common CPU.
+/// A job that runs longer is stopped; base takes seconds and small about a minute on a common CPU.
 const TIME_BUDGET: Duration = Duration::from_secs(10 * 60);
 const DECODE_TIMEOUT: Duration = Duration::from_secs(120);
 /// A streamed track reaches the audio cache a little after it starts playing.
@@ -90,10 +90,15 @@ impl Jobs {
     }
 }
 
-/// Starts timing the words of `track_id`, unless that very job is already running.
-pub fn start(state: &AppState, data: Unlocked, track_id: String, model: &'static Pinned) -> WordTimingJob {
-    let mut slot = state.word_timing.slot.lock().expect("word timing slot");
-    if let Some(job) = slot.job.as_ref().filter(|job| slot.stop.is_some() && job.track_id == track_id && job.model == model.name) {
+/// Synced word timing has its own slot, so timing the next song never stops lyrics the owner asked for.
+pub fn jobs<'a>(state: &'a AppState, source: &str) -> &'a Jobs {
+    if source == SYNCED { &state.word_timing } else { &state.made_lyrics }
+}
+
+/// Starts making `source` lyrics for `track_id`, unless that very job is already running.
+pub fn start(state: &AppState, data: Unlocked, track_id: String, source: &'static str, model: &'static Pinned) -> WordTimingJob {
+    let mut slot = jobs(state, source).slot.lock().expect("word timing slot");
+    if let Some(job) = slot.job.as_ref().filter(|job| slot.stop.is_some() && job.track_id == track_id && job.source == source && job.model == model.name) {
         return job.clone();
     }
     if let Some(stop) = slot.stop.take() {
@@ -101,27 +106,29 @@ pub fn start(state: &AppState, data: Unlocked, track_id: String, model: &'static
     }
     let stop = Arc::new(AtomicBool::new(false));
     slot.generation += 1;
-    let job = WordTimingJob { track_id: track_id.clone(), model: model.name, state: "waiting", progress: 0.0, code: None };
+    let job = WordTimingJob { track_id: track_id.clone(), source, model: model.name, state: "waiting", progress: 0.0, code: None };
     slot.job = Some(job.clone());
     slot.stop = Some(stop.clone());
     let generation = slot.generation;
     let state = state.clone();
     tokio::spawn(async move {
-        let result = run(&state, &data, &track_id, model, generation, stop).await;
+        let result = run(&state, &data, &track_id, source, model, generation, stop).await;
         if let Err(code) = result {
-            tracing::info!(code, "word timing stopped");
+            tracing::info!(code, source, "timed lyrics stopped");
         }
-        state.word_timing.finish(generation, result.err());
+        jobs(&state, source).finish(generation, result.err());
     });
     job
 }
 
-/// The line-synced lyrics the player shows for the track, and whether they are the user's own.
-pub async fn synced_source(data: &Unlocked, track_id: &str) -> Option<(String, bool)> {
-    let line_level = |content: &str| nuvo_lyrics::lrc_sync_level(content) == "line_level";
+pub async fn shown_lyrics(data: &Unlocked, track_id: &str, source: &str) -> Option<String> {
+    let fits = |format: &str, content: &str| match source {
+        SYNCED => format == "lrc" && nuvo_lyrics::lrc_sync_level(content) == "line_level",
+        _ => format == "plain",
+    };
     let id = track_id.to_string();
     if let Ok(Some((format, content))) = data.db.call(move |c| lyrics_user::user_lyrics(c, &id)).await {
-        return (format == "lrc" && line_level(&content)).then_some((content, true));
+        return fits(&format, &content).then_some(content);
     }
     if track_id.starts_with("local:") {
         let id = track_id.to_string();
@@ -129,20 +136,31 @@ pub async fn synced_source(data: &Unlocked, track_id: &str) -> Option<(String, b
             && let Some(text) = read_sidecar(&file).await
         {
             let candidate = crate::routes::lyrics::sidecar_candidate(text);
-            return (candidate.lyrics.format == "lrc" && line_level(&candidate.lyrics.content)).then_some((candidate.lyrics.content, false));
+            return fits(&candidate.lyrics.format, &candidate.lyrics.content).then_some(candidate.lyrics.content);
         }
     }
     let id = track_id.to_string();
     let candidate = data.db.call(move |c| lyrics_cache::get(c, &id)).await.ok()??.candidate?;
-    (candidate.lyrics.format == "lrc" && line_level(&candidate.lyrics.content)).then_some((candidate.lyrics.content, false))
+    fits(&candidate.lyrics.format, &candidate.lyrics.content).then_some(candidate.lyrics.content)
 }
 
-async fn run(state: &AppState, data: &Unlocked, track_id: &str, model: &'static Pinned, generation: u64, stop: Arc<AtomicBool>) -> Result<(), &'static str> {
-    let jobs = &state.word_timing;
-    let (lyrics, _) = synced_source(data, track_id).await.ok_or("no_synced_lines")?;
-    let hash = source_hash(&lyrics);
+/// Russian when the title or the artist is written in Cyrillic; otherwise Whisper decides from the audio.
+async fn language_hint(data: &Unlocked, track_id: &str) -> Option<&'static str> {
     let id = track_id.to_string();
-    let stored = data.db.call(move |c| lyrics_words::get(c, &id)).await.ok().flatten();
+    let snapshot = data.db.call(move |c| tracks::snapshot(c, &id)).await.ok()??;
+    let names = [snapshot["title"].as_str(), snapshot.pointer("/artists/0/name").and_then(|v| v.as_str())];
+    names.into_iter().flatten().flat_map(str::chars).any(|c| matches!(c, 'а'..='я' | 'А'..='Я' | 'ё' | 'Ё')).then_some("ru")
+}
+
+async fn run(state: &AppState, data: &Unlocked, track_id: &str, source: &'static str, model: &'static Pinned, generation: u64, stop: Arc<AtomicBool>) -> Result<(), &'static str> {
+    let lyrics = match source {
+        TRANSCRIBED => String::new(),
+        SYNCED => shown_lyrics(data, track_id, source).await.ok_or("no_synced_lines")?,
+        _ => shown_lyrics(data, track_id, source).await.ok_or("no_plain_lyrics")?,
+    };
+    let hash = if source == TRANSCRIBED { String::new() } else { source_hash(&lyrics) };
+    let id = track_id.to_string();
+    let stored = data.db.call(move |c| lyrics_words::get(c, &id, source)).await.ok().flatten();
     if stored.is_some_and(|timing| timing.source_hash == hash && (timing.model == model.name || timing.model == WHISPER_SMALL.name)) {
         return Ok(());
     }
@@ -156,16 +174,21 @@ async fn run(state: &AppState, data: &Unlocked, track_id: &str, model: &'static 
     if stop.load(Ordering::Relaxed) {
         return Err("cancelled");
     }
-    jobs.update(generation, |job| job.state = "running");
+    jobs(state, source).update(generation, |job| job.state = "running");
     let id = track_id.to_string();
     let offset_ms = data.db.call(move |c| lyrics_user::offset(c, &id)).await.unwrap_or(0);
+    let hint = language_hint(data, track_id).await;
     let deadline = Instant::now() + TIME_BUDGET;
     let (worker, halt_flag) = (state.clone(), stop.clone());
-    let aligned = tokio::task::spawn_blocking(move || {
+    let made = tokio::task::spawn_blocking(move || {
         let model = nuvo_align::load(&path)?;
-        let progress = |done: f32| worker.word_timing.update(generation, |job| job.progress = done);
+        let progress = |done: f32| jobs(&worker, source).update(generation, |job| job.progress = done);
         let halt = || halt_flag.load(Ordering::Relaxed) || Instant::now() > deadline;
-        nuvo_align::with_low_priority(|| nuvo_align::align_lrc(&model, &audio, &lyrics, offset_ms, &progress, &halt))?
+        nuvo_align::with_low_priority(|| match source {
+            SYNCED => nuvo_align::align_lrc(&model, &audio, &lyrics, offset_ms, &progress, &halt).map(|aligned| (aligned.ttml, aligned.confidence)),
+            TRANSCRIBED => nuvo_align::transcribe_song(&model, &audio, hint, &progress, &halt).map(|made| (nuvo_align::to_ttml(&made.lines, offset_ms), made.confidence)),
+            _ => nuvo_align::align_text(&model, &audio, &lyrics, hint, &progress, &halt).map(|made| (nuvo_align::to_ttml(&made.lines, offset_ms), made.confidence)),
+        })?
     })
     .await
     .map_err(|_| "failed")?
@@ -178,13 +201,16 @@ async fn run(state: &AppState, data: &Unlocked, track_id: &str, model: &'static 
         nuvo_align::AlignError::Cancelled if stop.load(Ordering::Relaxed) => "cancelled",
         nuvo_align::AlignError::Cancelled => "too_slow",
         nuvo_align::AlignError::Mismatch => "lyrics_mismatch",
+        nuvo_align::AlignError::NoVocals => "no_vocals",
         nuvo_align::AlignError::TooLong => "too_long",
-        nuvo_align::AlignError::NoLines => "no_synced_lines",
+        nuvo_align::AlignError::NoLines if source == SYNCED => "no_synced_lines",
+        nuvo_align::AlignError::NoLines => "no_plain_lyrics",
         nuvo_align::AlignError::BadModel(_) | nuvo_align::AlignError::Io(_) => "model_failed",
     })?;
-    let timing = Timing { source_hash: hash, model: model.name.to_string(), content: aligned.ttml };
+    let (content, confidence) = made;
+    let timing = Timing { source_hash: hash, model: model.name.to_string(), confidence: Some(f64::from(confidence)), content };
     let id = track_id.to_string();
-    data.db.call(move |c| lyrics_words::put(c, &id, &timing, now_ms())).await.map_err(|_| "failed")
+    data.db.call(move |c| lyrics_words::put(c, &id, source, &timing, now_ms())).await.map_err(|_| "failed")
 }
 
 enum Audio {

@@ -47,7 +47,7 @@ fn a_database_from_before_the_migration_gains_the_table_and_keeps_its_data() {
     drop(conn);
     let conn = open_connection(&dir.path().join("library.db"), &common::KEY, &dir.path().join("backups")).unwrap();
     let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
-    assert_eq!(version, 22);
+    assert_eq!(version, 23);
     let tracks: i64 = conn.query_row("SELECT count(*) FROM tracks", [], |r| r.get(0)).unwrap();
     assert_eq!(tracks, 1);
     assert_eq!(lyrics_user::set_offset(&conn, "t1", 250, 1).unwrap(), 250);
