@@ -1,0 +1,13 @@
+/* under the label, above the group's tray: the group isolates */
+.lens {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--n-lens);
+  box-shadow: var(--n-lens-shadow);
+  pointer-events: none;
+}
+
+.lens ~ * {
+  z-index: 1;
+}

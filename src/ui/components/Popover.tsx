@@ -156,7 +156,7 @@ function PopoverPanel({
             <div className={styles.header}>
               <h2 className={styles.title}>{title}</h2>
               {trailing}
-              {showClose ? <IconButton icon="close" label={t("common.close")} size="s" onClick={onClose} /> : null}
+              {showClose ? <IconButton icon="close" label={t("common.close")} size="s" tone="solo" onClick={onClose} /> : null}
             </div>
             <div ref={bodyRef} className={styles.body}>
               {children}

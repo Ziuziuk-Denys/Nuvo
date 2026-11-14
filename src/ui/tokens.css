@@ -32,7 +32,7 @@
   --n-r-pill: 999px;
 
   --n-shadow-raised: 0 12px 32px -12px rgba(16, 19, 32, 0.18);
-  --n-dim: rgba(0, 0, 0, 0.15);
+  --n-dim: rgba(16, 19, 32, 0.2);
 
   --n-island: #000;
   --n-island-ink: #fff;
@@ -48,17 +48,20 @@
   --n-glass-rim: transparent;
   --n-glass-shade: transparent;
   --n-glass-shadow: none;
-  --n-well: #ebebed;
-  --n-well-glass: rgba(0, 0, 0, 0.04);
-  --n-well-on: #dfdfe1;
-  --n-well-glass-on: rgba(0, 0, 0, 0.08);
+  --n-tray: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  --n-tray-hover: color-mix(in srgb, var(--n-ink) 9%, transparent);
+  --n-tray-item-hover: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  --n-tray-edge: inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 4%, transparent);
 
-  --n-pop: rgba(0, 0, 0, 0.05);
-  --n-pop-blur: blur(40px) saturate(1.5);
-  --n-pop-hover: rgba(0, 0, 0, 0.05);
-  --n-pop-solid: color-mix(in srgb, var(--bg-elevated) 97%, transparent);
-  --n-sheet: rgba(245, 245, 247, 0.92);
-  --n-sheet-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  --n-pop: color-mix(in srgb, var(--n-deep) 64%, transparent);
+  --n-pop-blur: blur(30px) saturate(1.8);
+  --n-pop-hover: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  --n-pop-solid: color-mix(in srgb, var(--n-deep) 45%, #fff);
+  --n-sheet: var(--n-pop-solid);
+  --n-sheet-shadow: 0 28px 70px -12px rgba(16, 19, 32, 0.28);
+  --n-panel-rim: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 6%, transparent);
+  --n-panel-shadow: var(--n-panel-rim), var(--n-sheet-shadow);
+  --n-panel-shadow-s: var(--n-panel-rim), 0 14px 36px -12px rgba(16, 19, 32, 0.3);
   --n-fill: rgba(0, 0, 0, 0.05);
   --n-fill-hover: rgba(0, 0, 0, 0.09);
   --n-switch: rgba(0, 0, 0, 0.12);
@@ -71,23 +74,24 @@
   --n-select: color-mix(in srgb, var(--n-accent) 13%, transparent);
   --n-focus: color-mix(in srgb, var(--n-accent) 20%, transparent);
   --n-focus-halo: color-mix(in srgb, var(--n-ring, var(--n-accent)) 38%, transparent);
+  /* focus is a soft fill or glow, never a ring */
+  --n-danger-ink: #d1342b;
+  --n-focus-fill: color-mix(in srgb, var(--n-ink) 14%, transparent);
+  --n-focus-glow: 0 0 0 4px color-mix(in srgb, var(--n-ink) 16%, transparent);
   --n-lens: var(--n-raised);
   --n-lens-shadow: 0 1px 2px rgba(16, 19, 32, 0.08), 0 6px 14px -8px rgba(16, 19, 32, 0.25);
 }
 
 :root[data-ui="nuvo"][data-theme="dark"] {
   --n-shadow-raised: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
-  --n-lens: color-mix(in srgb, var(--n-ink) 13%, transparent);
-  --n-lens-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.6);
+  --n-lens: color-mix(in srgb, var(--n-ink) 16%, transparent);
+  --n-lens-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 6px 14px -8px rgba(0, 0, 0, 0.6);
   --n-hover: rgba(255, 255, 255, 0.09);
-  --n-well: #141414;
-  --n-well-glass: rgba(255, 255, 255, 0.06);
-  --n-well-on: #292929;
-  --n-well-glass-on: rgba(255, 255, 255, 0.14);
-  --n-pop: rgba(255, 255, 255, 0.07);
-  --n-pop-hover: rgba(255, 255, 255, 0.08);
-  --n-pop-solid: color-mix(in srgb, color-mix(in srgb, var(--bg-panel), #fff 4%) 97%, transparent);
-  --n-sheet: rgba(22, 22, 24, 0.9);
+  --n-pop-solid: color-mix(in srgb, var(--n-deep) 88%, var(--n-ink));
+  --n-danger-ink: #ff7b72;
+  --n-dim: rgba(0, 0, 0, 0.42);
+  --n-sheet-shadow: 0 28px 70px -12px rgba(0, 0, 0, 0.5);
+  --n-panel-shadow-s: var(--n-panel-rim), 0 14px 36px -10px rgba(0, 0, 0, 0.45);
   --n-fill: rgba(255, 255, 255, 0.1);
   --n-fill-hover: rgba(255, 255, 255, 0.16);
   --n-switch: rgba(255, 255, 255, 0.07);

@@ -1,4 +1,3 @@
-// Filled glyphs: MingCute (Apache-2.0), Solar by 480 Design (CC BY 4.0); line: Lucide (ISC); SoundCloud mark: Simple Icons (CC0)
 const files = import.meta.glob<string>("./svg/*.svg", { query: "?raw", import: "default", eager: true });
 
 export const ICON_NAMES = [
@@ -90,6 +89,8 @@ export const ICON_NAMES = [
   "widget",
   "keyboard",
   "youtube",
+  "lastfm",
+  "discord",
   "soundcloud",
   "database",
   "info-circle",

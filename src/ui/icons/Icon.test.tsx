@@ -51,4 +51,21 @@ describe("Icon", () => {
     expect(svg().getAttribute("stroke")).toBe("currentColor");
     expect(svg().getAttribute("class")).toBe("x");
   });
+
+  it("gives every masked glyph its own mask id", () => {
+    act(() =>
+      root.render(
+        <>
+          <Icon name="library" />
+          <Icon name="library" />
+        </>,
+      ),
+    );
+    const masks = [...host.querySelectorAll("mask")].map((mask) => mask.id);
+    expect(new Set(masks).size).toBe(2);
+    for (const svgNode of host.querySelectorAll("svg")) {
+      const id = svgNode.querySelector("mask")!.id;
+      expect(svgNode.querySelector("[mask]")!.getAttribute("mask")).toBe(`url(#${id})`);
+    }
+  });
 });

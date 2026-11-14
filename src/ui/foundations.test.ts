@@ -2,7 +2,7 @@ import { default as fs } from "node:fs";
 import { default as path } from "node:path";
 import { expect, it, describe } from "vitest";
 import { CONTENT, ISLAND, contentGutter, coverRadius, islandWidth } from "./geometry";
-import { DURATION_MS, EASE, entranceDelayMs } from "./motion";
+import { DURATION_MS, EASE, PRESS_SCALE, PRESS_WIDE_SCALE, entranceDelayMs } from "./motion";
 
 const read = (relative: string) => fs.readFileSync(path.resolve(__dirname, relative), "utf8");
 
@@ -30,6 +30,8 @@ describe("foundations", () => {
     expect(cssVar(css, "n-ease-out")).toBe(bezier(EASE.out));
     expect(cssVar(css, "n-ease-inout")).toBe(bezier(EASE.inOut));
     expect(cssVar(css, "n-ease-in")).toBe(bezier(EASE.in));
+    expect(cssVar(css, "n-press")).toBe(String(PRESS_SCALE));
+    expect(cssVar(css, "n-press-wide")).toBe(String(PRESS_WIDE_SCALE));
   });
 
   it("has exactly the seven type roles, scaled by --n-scale with the reading minimums", () => {
@@ -66,7 +68,7 @@ describe("foundations", () => {
   it("derives shell measures", () => {
     expect(CONTENT.bottomPadding).toBe(76);
     expect(islandWidth(1440)).toBe(1440 - ISLAND.left - ISLAND.sideMargin);
-    expect(islandWidth(1200)).toBe(1124);
+    expect(islandWidth(1200)).toBe(1188);
     expect(contentGutter(1499)).toBe(12);
     expect(contentGutter(1500)).toBe(12);
     expect([64, 65, 199, 200].map(coverRadius)).toEqual([6, 6, 6, 6]);

@@ -9,6 +9,8 @@
   --n-t-entrance: 560ms;
   --n-t-light: 900ms;
   --n-stagger: 60ms;
+  --n-press: 0.94;
+  --n-press-wide: 0.96;
 }
 
 /* --n-i is the section index, capped at 5 by the caller */
@@ -24,25 +26,16 @@
   animation-delay: calc(var(--n-i, 0) * var(--n-stagger));
 }
 
-::view-transition-old(n-page) {
-  animation: n-page-out var(--n-t-quick) var(--n-ease-in) both;
+:root[data-theme-switch]::view-transition-old(root),
+:root[data-theme-switch]::view-transition-new(root) {
+  animation-duration: 460ms;
+  animation-timing-function: var(--n-ease-inout);
 }
 
-::view-transition-new(n-page) {
-  animation: n-page-in var(--n-t-page) var(--n-ease-out) both;
-}
-
-@keyframes n-page-out {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes n-page-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
+:root[data-theme-switch][data-reduce-effects]::view-transition-old(root),
+:root[data-theme-switch][data-reduce-effects]::view-transition-new(root) {
+  animation-duration: var(--n-t-quick);
+  animation-timing-function: linear;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -51,12 +44,10 @@
     animation-delay: 0s;
   }
 
-  ::view-transition-new(n-page) {
-    animation: n-fade var(--n-t-quick) linear both;
-  }
-
-  ::view-transition-old(n-page) {
-    animation: none;
+  :root[data-theme-switch]::view-transition-old(root),
+  :root[data-theme-switch]::view-transition-new(root) {
+    animation-duration: var(--n-t-quick);
+    animation-timing-function: linear;
   }
 }
 
