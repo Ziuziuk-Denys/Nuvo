@@ -10,6 +10,9 @@
   flex: 1;
   height: 20px;
   min-width: 0;
+  /* the knob's translated rail would otherwise widen a scrolling parent at high values */
+  overflow: clip;
+  overflow-clip-margin: 6px;
   cursor: pointer;
   touch-action: none;
 }
