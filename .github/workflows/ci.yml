@@ -43,7 +43,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm vitest run electron/app/discord.test.ts
+      - run: pnpm vitest run electron/app/discord.test.ts electron/notch/cutout.test.ts electron/notch/window.test.ts
 
   # The helper tools are fetched per platform; Linux runs the full suite above
   core-portable:

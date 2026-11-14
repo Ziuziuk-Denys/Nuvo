@@ -1,3 +1,5 @@
+import type { Cutout } from "../contracts";
+
 export type IslandMode = "idle" | "live" | "hover" | "expanded";
 
 export interface IslandSize {
@@ -16,6 +18,25 @@ export const ISLAND_SIZES: Record<IslandMode, IslandSize> = {
 export const WING = 14;
 // The expanded island plus the largest spring overshoot (geometry.test.ts checks it)
 export const NOTCH_WINDOW = { width: 496, height: 200 };
+
+// Room beside the camera for the cover on the left and the bars on the right
+const CUTOUT_SIDE = 44;
+
+export function islandSizes(cutout: Cutout | null): Record<IslandMode, IslandSize> {
+  if (!cutout) return ISLAND_SIZES;
+  const { idle, live, hover, expanded } = ISLAND_SIZES;
+  const beside = cutout.width + CUTOUT_SIDE * 2;
+  return {
+    idle: { ...idle, width: Math.max(idle.width, cutout.width), height: Math.max(idle.height, cutout.height) },
+    live: { ...live, width: Math.max(live.width, beside), height: Math.max(live.height, cutout.height) },
+    hover: { ...hover, width: Math.max(hover.width, beside + 16), height: Math.max(hover.height, cutout.height + 8) },
+    expanded: { ...expanded, height: expanded.height + cutout.height },
+  };
+}
+
+export function notchWindow(cutout: Cutout | null): { width: number; height: number } {
+  return cutout ? { width: NOTCH_WINDOW.width, height: NOTCH_WINDOW.height + cutout.height + 4 } : NOTCH_WINDOW;
+}
 export const HIT_SLOP = 6;
 const SHAPE_SLACK = 2;
 

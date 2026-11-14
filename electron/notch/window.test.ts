@@ -95,7 +95,7 @@ type FakeWin = InstanceType<typeof electron.module.BrowserWindow>;
 const lastWindow = () => electron.windows.at(-1)!;
 const names = (win: FakeWin) => win.calls.map((c) => c[0]);
 
-function createNotch(opts: { session: NotchSession; main?: FakeWin | null; bridge?: any; loadKwin?: any; apply?: boolean }) {
+function createNotch(opts: { session: NotchSession; main?: FakeWin | null; bridge?: any; loadKwin?: any; apply?: boolean; readCutout?: any }) {
   const main = opts.main === undefined ? new electron.module.BrowserWindow() : opts.main;
   const deps = {
     preloadPath: "/preload.js",
@@ -105,6 +105,7 @@ function createNotch(opts: { session: NotchSession; main?: FakeWin | null; bridg
     loadKwin: opts.loadKwin ?? vi.fn(async () => true),
     unloadKwin: vi.fn(async () => {}),
     getMainWindow: () => main as any,
+    readCutout: opts.readCutout,
   };
   const notch = new NotchWindow(deps);
   if (opts.apply !== false) notch.applySettings(DEFAULT_NOTCH_SETTINGS);
@@ -377,6 +378,21 @@ describe("NotchWindow", () => {
     }
   });
 
+  it("on macOS sits over the menu bar and grows by the camera cutout it is told about", async () => {
+    const readCutout = vi.fn(async () => ({ width: 200, height: 38 }));
+    const { notch } = createNotch({ session: "macos", readCutout });
+    await notch.ready;
+    const win = lastWindow();
+    expect(win.options).toMatchObject({ type: "panel", enableLargerThanScreen: true });
+    expect(readCutout).toHaveBeenCalledWith(electron.display.bounds);
+    expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 712, y: 0, width: 496, height: 242 });
+    expect(win.calls.find((c) => c[0] === "setAlwaysOnTop")!.slice(1)).toEqual([true, "screen-saver"]);
+    expect(names(win).lastIndexOf("setBounds")).toBeGreaterThan(names(win).indexOf("setAlwaysOnTop"));
+    expect(win.webContents.send).toHaveBeenCalledWith("notch:cutout", { width: 200, height: 38 });
+    expect(notch.hello().cutout).toEqual({ width: 200, height: 38 });
+    notch.destroy();
+  });
+
   it("on Windows takes the mouse while the cursor is on the island, whatever the renderer last said", async () => {
     vi.useFakeTimers();
     const { notch } = createNotch({ session: "windows" });
@@ -467,7 +483,7 @@ describe("NotchWindow", () => {
     expect(win.webContents.send).toHaveBeenCalledWith("notch:state", state);
     expect(win.webContents.send).toHaveBeenCalledWith("notch:lyrics", lyrics);
     expect(win.webContents.send).toHaveBeenCalledWith("notch:settings", { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
-    expect(notch.hello()).toEqual({ state, lyrics, settings: { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" } });
+    expect(notch.hello()).toEqual({ state, lyrics, settings: { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" }, cutout: null });
   });
 
   it("focusApp restores, shows and focuses the main window", () => {

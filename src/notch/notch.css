@@ -119,6 +119,11 @@ body,
   opacity: 0.4;
 }
 
+/* The idle island is the camera housing itself */
+.island[data-cutout] .idle-glyph {
+  visibility: hidden;
+}
+
 .compact-cover {
   flex: none;
   border-radius: 5px;
@@ -150,9 +155,9 @@ body,
   top: 0;
   left: 50%;
   width: 440px;
-  height: 184px;
+  height: calc(184px + var(--cutout-height, 0px));
   box-sizing: border-box;
-  padding: 12px 18px 6px;
+  padding: calc(12px + var(--cutout-height, 0px)) 18px 6px;
   display: flex;
   flex-direction: column;
   opacity: 0;

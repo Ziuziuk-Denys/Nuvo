@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HIT_SLOP, ISLAND_SIZES, NOTCH_WINDOW, WING, capturesPointer, grownRect, islandPath, islandRect } from "./geometry";
+import { HIT_SLOP, ISLAND_SIZES, NOTCH_WINDOW, WING, capturesPointer, grownRect, islandPath, islandRect, islandSizes, notchWindow } from "./geometry";
 import { MORPH_SPRING, simulateSpring } from "./spring";
 
 describe("island geometry", () => {
@@ -105,5 +105,37 @@ describe("pointer capture", () => {
     const expanded = islandRect(ISLAND_SIZES.expanded);
     expect(capturesPointer({ x: expanded.x + 20, y: 120 }, expanded, false)).toBe(true);
     expect(capturesPointer({ x: expanded.x + 20, y: 120 }, islandRect(ISLAND_SIZES.live), true)).toBe(false);
+  });
+
+  it("a camera notch is wrapped: every state is at least as wide and as tall as the cutout", () => {
+    expect(islandSizes(null)).toBe(ISLAND_SIZES);
+    expect(notchWindow(null)).toBe(NOTCH_WINDOW);
+    for (const cutout of [
+      { width: 185, height: 32 },
+      { width: 200, height: 38 },
+    ]) {
+      const sizes = islandSizes(cutout);
+      for (const size of Object.values(sizes)) {
+        expect(size.width).toBeGreaterThanOrEqual(cutout.width);
+        expect(size.height).toBeGreaterThanOrEqual(cutout.height);
+      }
+      expect(sizes.live.width - cutout.width).toBeGreaterThanOrEqual(88);
+      expect(sizes.expanded.height).toBe(ISLAND_SIZES.expanded.height + cutout.height);
+    }
+  });
+
+  it("the window grown for a cutout holds every grow with the real overshoot", () => {
+    const overshoot = Math.max(...simulateSpring(MORPH_SPRING).values) - 1;
+    const cutout = { width: 200, height: 38 };
+    const window = notchWindow(cutout);
+    const sizes = Object.values(islandSizes(cutout));
+    const roomy = { width: 4000, height: 4000 };
+    for (const from of sizes) {
+      for (const to of sizes) {
+        const rect = grownRect(from, to, overshoot, roomy);
+        expect(rect.width).toBeLessThanOrEqual(window.width);
+        expect(rect.height).toBeLessThanOrEqual(window.height);
+      }
+    }
   });
 });
