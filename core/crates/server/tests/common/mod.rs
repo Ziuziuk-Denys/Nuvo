@@ -24,7 +24,7 @@ pub struct TestCore {
     pub app: Router,
 }
 
-pub const FAST: Pace = Pace { spacing: Duration::ZERO, backoff: [Duration::from_millis(5); 3] };
+pub const FAST: Pace = Pace { spacing: Duration::ZERO, burst: 1, refill: Duration::ZERO, backoff: [Duration::from_millis(5); 3] };
 
 pub fn boot(dir: TempDir, keystore: impl KeyStore + 'static, lrclib_url: &str) -> TestCore {
     boot_urls(dir, keystore, lrclib_url, "http://127.0.0.1:9", "http://127.0.0.1:9/2.0/")

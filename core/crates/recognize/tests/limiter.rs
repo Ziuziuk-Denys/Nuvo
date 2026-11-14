@@ -2,12 +2,14 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
-use nuvo_recognize::Limiter;
+use nuvo_recognize::{Limiter, Pace};
 use tokio::time::Instant;
+
+const SPACED: Pace = Pace { spacing: Duration::from_secs(2), burst: 1, refill: Duration::ZERO, backoff: [Duration::ZERO; 3] };
 
 #[tokio::test(start_paused = true)]
 async fn one_request_in_flight_and_spacing_between_them() {
-    let limiter = Arc::new(Limiter::new(Duration::from_secs(2)));
+    let limiter = Arc::new(Limiter::new(SPACED));
     let in_flight = Arc::new(AtomicUsize::new(0));
     let begin = Instant::now();
     let mut tasks = Vec::new();
@@ -35,7 +37,7 @@ async fn one_request_in_flight_and_spacing_between_them() {
 
 #[tokio::test(start_paused = true)]
 async fn the_first_request_does_not_wait() {
-    let limiter = Limiter::new(Duration::from_secs(2));
+    let limiter = Limiter::new(SPACED);
     let begin = Instant::now();
     limiter.run(async {}).await;
     assert_eq!(begin.elapsed(), Duration::ZERO);
@@ -43,7 +45,7 @@ async fn the_first_request_does_not_wait() {
 
 #[tokio::test(start_paused = true)]
 async fn a_cancelled_request_still_counts_for_the_spacing() {
-    let limiter = Limiter::new(Duration::from_secs(2));
+    let limiter = Limiter::new(SPACED);
     let begin = Instant::now();
     let cancelled = tokio::time::timeout(Duration::from_millis(10), limiter.run(tokio::time::sleep(Duration::from_secs(60)))).await;
     assert!(cancelled.is_err());
@@ -53,10 +55,36 @@ async fn a_cancelled_request_still_counts_for_the_spacing() {
 
 #[tokio::test(start_paused = true)]
 async fn a_deferred_wait_delays_the_next_request_of_any_job() {
-    let limiter = Arc::new(Limiter::new(Duration::from_secs(2)));
+    let limiter = Arc::new(Limiter::new(SPACED));
     let begin = Instant::now();
     limiter.defer(Duration::from_secs(5)).await;
     let other = limiter.clone();
     let started = tokio::spawn(async move { other.run(async { begin.elapsed() }).await }).await.unwrap();
     assert_eq!(started, Duration::from_secs(5));
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_burst_goes_out_spaced_then_one_request_per_refill() {
+    let limiter = Limiter::new(Pace { burst: 3, refill: Duration::from_secs(30), ..SPACED });
+    let begin = Instant::now();
+    let mut starts = Vec::new();
+    for _ in 0..5 {
+        starts.push(limiter.run(async { begin.elapsed() }).await);
+    }
+    assert_eq!(starts, [0, 2, 4, 30, 60].map(Duration::from_secs));
+    assert_eq!(limiter.wait().await, Duration::from_secs(30));
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_rate_limit_empties_the_budget() {
+    let limiter = Limiter::new(Pace { burst: 3, refill: Duration::from_secs(30), ..SPACED });
+    let begin = Instant::now();
+    limiter.run(async {}).await;
+    limiter.defer(Duration::from_secs(20)).await;
+    assert_eq!(limiter.wait().await, Duration::from_secs(20));
+    let mut starts = Vec::new();
+    for _ in 0..2 {
+        starts.push(limiter.run(async { begin.elapsed() }).await);
+    }
+    assert_eq!(starts, [20, 50].map(Duration::from_secs));
 }

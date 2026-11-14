@@ -1174,7 +1174,7 @@
       "checking": "Part {attempt} of {of}",
       "voice_removed": "voice removed",
       "waiting_title": "One moment",
-      "waiting": "The service asked for a pause. Trying again in {seconds} s.",
+      "waiting": "The recognition service takes only a few requests a minute. Next try in {seconds} s.",
       "none_title": "No match",
       "none": "Nuvo couldn’t name this one. Try a clearer or louder part.",
       "another_part": "Try another part",
