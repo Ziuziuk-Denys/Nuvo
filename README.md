@@ -32,31 +32,41 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 <div align="center">
 
+**Search.** Ctrl K opens one field for songs, artists and links, with YouTube and SoundCloud in one ranked list.
+
+</div>
+
+<img src=".github/readme/motion/search.gif" width="100%" alt="The search palette opening over Home and finding Lorde as the name is typed">
+
+<br>
+
+<div align="center">
+
+**Karaoke.** Lyrics light up word by word, in full screen or beside the player.
+
+</div>
+
+<img src=".github/readme/motion/karaoke.gif" width="100%" alt="The karaoke view lighting up an invented demo song word by word">
+
+<br>
+
+<div align="center">
+
+**Wallpaper.** A photo, a GIF or a video behind every screen, with the blur and fade you choose.
+
+</div>
+
+<img src=".github/readme/motion/wallpaper.gif" width="100%" alt="Home scrolling over a video wallpaper">
+
+<br>
+
+<div align="center">
+
 **Queue.** It opens beside whatever you are doing, with the history above.
 
 </div>
 
-<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/shots/queue-dark.webp"><img src=".github/readme/shots/queue-light.webp" width="100%" alt="The queue panel open beside the library"></picture>
-
-<br>
-
-<div align="center">
-
-**Wallpaper.** A photo, a GIF or a video behind every screen.
-
-</div>
-
-<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/shots/wallpaper-dark.webp"><img src=".github/readme/shots/wallpaper-light.webp" width="100%" alt="Home over a video wallpaper"></picture>
-
-<br>
-
-<div align="center">
-
-**Recognize.** Name the song from the microphone, the sound your computer plays, a file or a link.
-
-</div>
-
-<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/shots/recognize-dark.webp"><img src=".github/readme/shots/recognize-light.webp" width="100%" alt="The Recognize page with its four ways to listen"></picture>
+<img src=".github/readme/motion/queue.gif" width="100%" alt="The queue panel sliding open beside Home while a song plays">
 
 ## Features
 
