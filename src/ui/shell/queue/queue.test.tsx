@@ -7,15 +7,17 @@ const track = (id: string) => ({ id, title: `Song ${id}`, artists: "Artist", cov
 const mocks = vi.hoisted(() => ({
   play: vi.fn(),
   remove: vi.fn(),
+  reorder: vi.fn(),
   state: { queue: [] as unknown[], currentIndex: 0, repeat: "off", playbackContext: null as string | null, autoplayFrom: null as number | null },
 }));
 vi.mock("../../ports/player", () => ({
-  playerEngine: { playQueueIndex: mocks.play, removeQueueIndex: mocks.remove, reorderQueue: vi.fn(), clearQueue: vi.fn() },
+  playerEngine: { playQueueIndex: mocks.play, removeQueueIndex: mocks.remove, reorderQueue: mocks.reorder, clearQueue: vi.fn() },
   usePlayerStore: (select: (state: typeof mocks.state) => unknown) => select(mocks.state),
 }));
 
+import { LAYER_ATTRIBUTE } from "../../components/layers";
 import { useShellStore } from "../shellStore";
-import { QueuePanel, radioSeed } from "./QueuePanel";
+import { dragShift, QUEUE_ID, QueuePanel, radioSeed } from "./QueuePanel";
 
 afterEach(() => {
   useShellStore.setState({ queueOpen: false });
@@ -31,7 +33,12 @@ describe("QueuePanel", () => {
     useShellStore.setState({ queueOpen: true });
     const root = createRoot(document.body.appendChild(document.createElement("div")));
     act(() => root.render(<QueuePanel />));
-    expect([...document.body.querySelectorAll("[data-dislike]")].map((node) => node.getAttribute("data-dislike"))).toEqual(["a", "b"]);
+    const disliked = () => [...document.body.querySelectorAll("[data-dislike]")].map((node) => node.getAttribute("data-dislike"));
+    expect(disliked(), "played songs wait folded under History").toEqual(["b"]);
+    const history = document.body.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
+    expect(history.textContent).toContain("1");
+    act(() => history.click());
+    expect(disliked()).toEqual(["a", "b"]);
     expect(document.body.querySelector('[data-active] [data-dislike="b"]')).not.toBeNull();
     act(() => root.unmount());
     mocks.state.currentIndex = 0;
@@ -45,6 +52,26 @@ describe("QueuePanel", () => {
     act(() => useShellStore.getState().setQueueOpen(true));
     expect(document.body.textContent).toContain("Song a");
     expect(document.body.textContent).toContain("Song b");
+    act(() => root.unmount());
+  });
+
+  it("closes on a press outside it, but not inside it, in a menu layer or on its own toggle", () => {
+    mocks.state.queue = [track("a"), track("b")];
+    useShellStore.setState({ queueOpen: true });
+    const page = document.body.appendChild(document.createElement("main"));
+    const menu = document.body.appendChild(document.createElement("div"));
+    menu.setAttribute(LAYER_ATTRIBUTE, "");
+    const toggle = document.body.appendChild(document.createElement("button"));
+    toggle.setAttribute("aria-controls", QUEUE_ID);
+    const root = createRoot(document.body.appendChild(document.createElement("div")));
+    act(() => root.render(<QueuePanel />));
+    const press = (target: Element) => act(() => void target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+    press(document.getElementById(QUEUE_ID)!);
+    press(menu);
+    press(toggle);
+    expect(useShellStore.getState().queueOpen).toBe(true);
+    press(page);
+    expect(useShellStore.getState().queueOpen).toBe(false);
     act(() => root.unmount());
   });
 
@@ -75,6 +102,30 @@ describe("QueuePanel", () => {
     expect(document.body.textContent).not.toContain("Then: radio");
     act(() => root.unmount());
     mocks.state.repeat = "off";
+  });
+
+  it("moves the grabbed song even when the song changes mid-drag", () => {
+    mocks.state.queue = [track("a"), track("b"), track("c"), track("d")];
+    mocks.state.currentIndex = 1;
+    useShellStore.setState({ queueOpen: true });
+    const root = createRoot(document.body.appendChild(document.createElement("div")));
+    act(() => root.render(<QueuePanel />));
+    const first = document.body.querySelector<HTMLElement>('[class*="item"]')!;
+    act(() => first.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, clientX: 10, clientY: 10 })));
+    act(() => window.dispatchEvent(new PointerEvent("pointermove", { clientX: 10, clientY: 62 })));
+    mocks.state.currentIndex = 2;
+    act(() => root.render(<QueuePanel />));
+    act(() => window.dispatchEvent(new PointerEvent("pointerup")));
+    expect(mocks.reorder).toHaveBeenCalledWith(1, 2);
+    act(() => root.unmount());
+    mocks.state.currentIndex = 0;
+  });
+
+  it("moves the lifted row with the pointer and steps the passed rows aside", () => {
+    expect(dragShift(1, null, null, 30, 52)).toBe(0);
+    expect(dragShift(1, 1, 3, 30, 52)).toBe(30);
+    expect([0, 2, 3, 4].map((index) => dragShift(index, 1, 3, 30, 52))).toEqual([0, -52, -52, 0]);
+    expect([0, 1, 2, 3].map((index) => dragShift(index, 3, 1, -90, 52))).toEqual([0, 52, 52, -90]);
   });
 
   it("names a station's seed, or the last song before the radio began", () => {

@@ -24,7 +24,7 @@ const AUDIBLE_REVERB = 0.1;
 const STARTING_REVERB = 0.4;
 
 function speedText(rate: number): string {
-  return "x" + rate.toFixed(2);
+  return rate.toFixed(2) + "×";
 }
 
 function semitoneText(semitones: number): string {
@@ -94,8 +94,10 @@ export function SpeedPanel(): JSX.Element {
           {t("sound.custom")}
         </span>
       </div>
-      <Ruler {...SPEED_RANGE} label={t("player.speed")} value={rate} format={speedText} onChange={(next) => playerEngine.setPlaybackRate(next)} />
-      <Ruler {...PITCH_RANGE} label={t("player.pitch")} value={pitch} format={semitoneText} onChange={(next) => playerEngine.setPitchSemitones(next)} />
+      <div className={styles.rulers}>
+        <Ruler {...SPEED_RANGE} label={t("player.speed")} value={rate} format={speedText} onChange={(next) => playerEngine.setPlaybackRate(next)} />
+        <Ruler {...PITCH_RANGE} label={t("player.pitch")} value={pitch} format={semitoneText} onChange={(next) => playerEngine.setPitchSemitones(next)} />
+      </div>
       <div className={styles.options}>
         {options.map(({ name, hint, on, set }) => (
           <OptionRow key={name} title={t(name)} label={t(name)} hint={hint} checked={on} onChange={set} />

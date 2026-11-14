@@ -1,7 +1,7 @@
 .bar {
   position: absolute;
   z-index: 60;
-  left: 70px;
+  left: 6px;
   right: 6px;
   bottom: 6px;
   display: grid;
@@ -83,10 +83,31 @@
   font: 300 13px/15px var(--n-font);
 }
 
-.rate {
+.rate,
+.transport,
+.well {
   display: flex;
   flex: none;
-  gap: 2px;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--n-tray);
+  box-shadow: var(--n-tray-edge);
+  cursor: default;
+  pointer-events: auto;
+}
+
+.rate :global(button),
+.transport :global(button),
+.well :global(button) {
+  border-radius: 50%;
+}
+
+.rate :global(button):hover:not(:disabled),
+.transport :global(button):hover:not(:disabled):not(.play),
+.well :global(button):hover:not(:disabled) {
+  background: var(--n-tray-item-hover);
 }
 
 .like {
@@ -96,6 +117,35 @@
 .like > svg {
   width: 20px;
   height: 20px;
+}
+
+.heart {
+  --heart: #e0405e;
+  border-radius: 50%;
+}
+
+:root[data-theme="dark"] .heart {
+  --heart: #ff7088;
+}
+
+.heart[data-liked],
+.heart[data-liked]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--heart) 14%, transparent);
+  color: var(--heart);
+}
+
+.heart[data-liked]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--heart) 20%, transparent);
+}
+
+.heart[data-pop] > svg {
+  animation: heart-pop var(--n-t-base) var(--n-ease-out);
+}
+
+@keyframes heart-pop {
+  40% {
+    transform: scale(1.18);
+  }
 }
 
 .centre {
@@ -109,11 +159,7 @@
 }
 
 .transport {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: default;
-  pointer-events: auto;
+  gap: 6px;
 }
 
 .play {
@@ -129,7 +175,7 @@
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   color: var(--btn-primary-text);
   cursor: pointer;
-  transition: transform 150ms var(--n-ease-out);
+  transition: transform var(--n-t-quick) var(--n-ease-out);
 }
 
 .play:hover {
@@ -137,7 +183,8 @@
 }
 
 .play:active {
-  transform: scale(0.96);
+  transform: scale(var(--n-press));
+  transition-duration: var(--n-t-instant);
 }
 
 .glyph {
@@ -159,28 +206,14 @@
 }
 
 .well {
-  display: flex;
-  align-items: center;
   gap: 2px;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--n-well);
-  cursor: default;
 }
 
-.bar[data-lit] .well {
-  background: var(--n-well-glass);
-}
-
-.on,
-.on:hover:not(:disabled) {
-  background: var(--n-well-on);
+.well .on,
+.well .on:hover:not(:disabled) {
+  background: var(--n-lens);
+  box-shadow: var(--n-lens-shadow);
   color: var(--n-ink);
-}
-
-.bar[data-lit] .on,
-.bar[data-lit] .on:hover:not(:disabled) {
-  background: var(--n-well-glass-on);
 }
 
 .divider {
@@ -195,6 +228,16 @@
   .play:hover,
   .play:active {
     transform: none;
+  }
+
+  .heart[data-pop] > svg {
+    animation-name: heart-fade;
+  }
+}
+
+@keyframes heart-fade {
+  from {
+    opacity: 0.4;
   }
 }
 

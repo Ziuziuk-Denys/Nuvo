@@ -1,0 +1,236 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.song {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0 4px;
+}
+
+.songText,
+.pickText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.songTitle,
+.pickTitle {
+  overflow: hidden;
+  color: var(--n-ink);
+  font: 500 13px/18px var(--n-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.songArtist,
+.pickMeta {
+  overflow: hidden;
+  color: var(--n-ink-3);
+  font: 400 12px/16px var(--n-font);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search {
+  display: flex;
+  height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink-3);
+  transition: background-color var(--n-t-instant) var(--n-ease-out);
+}
+
+.search:focus-within {
+  background: color-mix(in srgb, var(--n-ink) 9%, transparent);
+}
+
+.search input {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink);
+  font: 400 13px/18px var(--n-font);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--n-ink-3);
+}
+
+.clear {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink-3);
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: var(--n-ink);
+}
+
+.list {
+  display: flex;
+  max-height: 296px;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 -8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.list[data-busy] {
+  pointer-events: none;
+}
+
+.pick {
+  display: flex;
+  width: 100%;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: background-color var(--n-t-instant) var(--n-ease-out);
+}
+
+.pick:hover,
+.pick:focus-visible {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+.pick:active {
+  background: color-mix(in srgb, var(--n-ink) 9%, transparent);
+}
+
+.pick[data-done] .pickMeta {
+  color: var(--n-accent);
+}
+
+.plus {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--n-ink-3);
+  opacity: 0;
+  transition:
+    opacity var(--n-t-instant) var(--n-ease-out),
+    color var(--n-t-instant) var(--n-ease-out);
+}
+
+.pick:hover .plus,
+.pick:focus-visible .plus,
+.pick[data-done] .plus {
+  color: var(--n-ink);
+  opacity: 1;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  box-sizing: border-box;
+  margin: 0 7px;
+  border: 2px solid var(--n-ink-3);
+  border-top-color: var(--n-ink);
+  border-radius: 999px;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ghostRow {
+  height: 52px;
+  flex: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+}
+
+.empty {
+  margin: 0;
+  padding: 20px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+  color: var(--n-ink-2);
+  font: 400 13px/18px var(--n-font);
+  text-align: center;
+}
+
+.foot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 0 -8px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.action {
+  display: flex;
+  min-width: 0;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--n-ink-2);
+  font: 500 13px/1 var(--n-font);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color var(--n-t-instant) var(--n-ease-out),
+    color var(--n-t-instant) var(--n-ease-out);
+}
+
+.action > svg {
+  flex: none;
+}
+
+.action:hover,
+.action:focus-visible {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  color: var(--n-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pick,
+  .plus,
+  .action {
+    transition: none;
+  }
+
+  .spinner {
+    animation-duration: 2400ms;
+  }
+}

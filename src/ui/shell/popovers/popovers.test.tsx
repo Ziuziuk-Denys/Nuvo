@@ -64,7 +64,7 @@ const mocks = vi.hoisted(() => {
   };
   const sleep = { target: null as unknown, remainingMs: null as number | null, arm: vi.fn(), cancel: vi.fn() };
   const library = {
-    playlists: [] as { id: string; title: string; trackCount: number; coverUrl: string; updatedAt?: string }[],
+    playlists: [] as { id: string; title: string; trackCount: number; coverUrl: string; coverUrls: string[]; updatedAt?: string }[],
     isLoading: false,
     mutateAsync: vi.fn(),
     openCreatePlaylist: vi.fn(),
@@ -173,12 +173,12 @@ function type(input: HTMLInputElement, value: string) {
 }
 
 describe("SoundPopover", () => {
-  it("sizes the equalizer wide and the other tabs at one width that holds the four tabs", () => {
+  it("sizes the equalizer wider than the compact speed, sleep and moments tabs", () => {
     expect(SOUND_TABS).toEqual([
-      { id: "eq", width: 560 },
-      { id: "speed", width: 440 },
-      { id: "sleep", width: 440 },
-      { id: "moments", width: 440 },
+      { id: "eq", width: 440 },
+      { id: "speed", width: 320 },
+      { id: "sleep", width: 320 },
+      { id: "moments", width: 320 },
     ]);
   });
 
@@ -190,6 +190,10 @@ describe("SoundPopover", () => {
     expect(slider("player.speed")).not.toBeNull();
     click(button("ui.sound.tab_sleep")!);
     expect(onTab).toHaveBeenCalledWith("sleep");
+    key(host.querySelector('[role="tab"][aria-selected="true"]')!, "ArrowLeft");
+    expect(onTab).toHaveBeenLastCalledWith("eq");
+    key(host.querySelector('[role="tab"][aria-selected="true"]')!, "End");
+    expect(onTab).toHaveBeenLastCalledWith("moments");
   });
 });
 
@@ -204,9 +208,9 @@ describe("Moments", () => {
     mount(<SoundPopover tab="moments" onTab={() => undefined} />);
     click(button("ui.sound.moments.add 1:23")!);
     expect(mocks.sound.addMoment).toHaveBeenCalledWith("t1", 83_400, "ui.sound.moments.label 3");
-    const marks = [...host.querySelectorAll("[data-moment]")].map((node) => node.textContent);
-    expect(marks).toEqual(["1:01 · Moment 1", "3:20 · Moment 2"]);
-    click(button("1:01 · Moment 1")!);
+    const marks = [...host.querySelectorAll("[data-moment] > button")].map((node) => node.textContent);
+    expect(marks).toEqual(["1:01Moment 1", "3:20Moment 2"]);
+    click(button("1:01Moment 1")!);
     expect(mocks.engine.seek).toHaveBeenCalledWith(61_000);
     click(button("ui.sound.moments.remove Moment 2")!);
     expect(mocks.sound.removeMoment).toHaveBeenCalledWith("t1", "m2");
@@ -217,7 +221,7 @@ describe("Moments", () => {
 describe("Speed", () => {
   it("moves the speed by one step with ArrowRight and with the plus button", () => {
     mount(<SoundPopover tab="speed" onTab={() => undefined} />);
-    expect(slider("player.speed")!.getAttribute("aria-valuetext")).toBe("x1.00");
+    expect(slider("player.speed")!.getAttribute("aria-valuetext")).toBe("1.00×");
     key(slider("player.speed")!, "ArrowRight");
     expect(mocks.engine.setPlaybackRate).toHaveBeenCalledWith(1.05);
     click(host.querySelectorAll('[aria-label="player.increase"]')[0]);
@@ -227,7 +231,7 @@ describe("Speed", () => {
   it("resets the speed from its value pill", () => {
     mocks.player.playbackRate = 1.5;
     mount(<SoundPopover tab="speed" onTab={() => undefined} />);
-    click(button("x1.50")!);
+    click(button("1.50×")!);
     expect(mocks.engine.setPlaybackRate).toHaveBeenCalledWith(1);
   });
 
@@ -236,6 +240,16 @@ describe("Speed", () => {
     expect(button("sound.tempo.normal")!.getAttribute("aria-pressed")).toBe("true");
     click(button("sound.tempo.slowed")!);
     expect(mocks.applyTempo).toHaveBeenCalledWith(expect.objectContaining({ rate: 0.85 }));
+  });
+
+  it("draws every fifth notch from the neutral speed taller, and the current one lit", () => {
+    mount(<SoundPopover tab="speed" onTab={() => undefined} />);
+    const ticks = [...slider("player.speed")!.querySelectorAll("span")];
+    const lit = ticks.findIndex((tick) => tick.hasAttribute("data-on"));
+    expect(ticks[lit].hasAttribute("data-mark")).toBe(true);
+    expect([1, 2, 3, 4].map((step) => ticks[lit + step].hasAttribute("data-mark"))).toEqual([false, false, false, false]);
+    expect(ticks[lit + 5].hasAttribute("data-mark")).toBe(true);
+    expect(ticks[lit - 5].hasAttribute("data-mark")).toBe(true);
   });
 
   it("formats the pitch in signed semitones", () => {
@@ -276,17 +290,37 @@ describe("Speed", () => {
     click(button("player.keep_speed_across_tracks")!);
     expect(mocks.engine.setKeepSpeedAcrossTracks).toHaveBeenCalledWith(false);
   });
+
+  it("describes an option row's switch with its hint on keyboard focus", () => {
+    mount(<SoundPopover tab="speed" onTab={() => undefined} />);
+    const toggle = button("player.keep_speed_across_tracks")!;
+    act(() => toggle.focus());
+    const hint = document.getElementById(toggle.getAttribute("aria-describedby") ?? "");
+    expect(hint?.getAttribute("role")).toBe("tooltip");
+    expect(hint?.textContent).not.toBe("");
+  });
 });
 
 describe("Equalizer", () => {
-  it("draws the live spectrum and the clip light while open, and stops listening when closed", () => {
+  it("draws the live spectrum as a fast and a slow wave with the clip light while open, and stops listening when closed", () => {
     mount(<SoundPopover tab="eq" onTab={() => undefined} />);
     act(() => spectrum.listener!({ bands: new Float32Array([0, 1]), clip: true }));
-    const path = host.querySelector("svg path")!;
-    expect(path.getAttribute("d")).toBe("M0,208L250.0,208.0L750.0,12.0L1000,208Z");
+    const [back, front] = Array.from(host.querySelectorAll('path[fill^="url(#eq-wave"]'), (path) => path.getAttribute("d"));
+    expect(front).toMatch(/^M-12,140\.0L-12,.+C.+Z$/);
+    expect(back).toMatch(/^M-12,140\.0L-12,.+C.+Z$/);
+    expect(back).not.toBe(front);
     expect(host.querySelector('[aria-label="ui.eq.clip"]')!.hasAttribute("data-on")).toBe(true);
     mount(<SoundPopover tab="speed" onTab={() => undefined} />);
     expect(spectrum.off).toHaveBeenCalledOnce();
+  });
+
+  it("lets the waves sink while paused and then stops listening, so nothing runs at idle", () => {
+    mocks.player.status = "paused";
+    mount(<SoundPopover tab="eq" onTab={() => undefined} />);
+    act(() => spectrum.listener!({ bands: new Float32Array([1, 1]), clip: true }));
+    expect(host.querySelector('[aria-label="ui.eq.clip"]')!.hasAttribute("data-on")).toBe(false);
+    expect(spectrum.off).toHaveBeenCalledOnce();
+    mocks.player.status = "playing";
   });
 
   it("opens with no spectrum before the engine has started", () => {
@@ -416,7 +450,7 @@ describe("VolumePopover", () => {
 describe("AddToPlaylistPopover", () => {
   const track = { id: "t1", title: "Song", artists: "Band", coverUrl: "" } as Parameters<typeof AddToPlaylistPopover>[0]["track"];
   const playlists = (count: number) =>
-    Array.from({ length: count }, (_, index) => ({ id: `p${index}`, title: `List ${index}`, trackCount: index, coverUrl: "" }));
+    Array.from({ length: count }, (_, index) => ({ id: `p${index}`, title: `List ${index}`, trackCount: index, coverUrl: "", coverUrls: [] }));
   const row = (title: string) => [...host.querySelectorAll<HTMLElement>("button[data-row]")].find((element) => element.textContent?.includes(title));
 
   it("adds the track once, says so, then closes", async () => {
@@ -491,10 +525,17 @@ describe("AddToPlaylistPopover", () => {
     expect(row("List 8")).toBeDefined();
   });
 
+  it("names each playlist's song count and falls back to its first song cover", () => {
+    mocks.library.playlists = [{ id: "p", title: "Road", trackCount: 14, coverUrl: "", coverUrls: ["first.jpg"] }];
+    mount(<AddToPlaylistPopover track={track} onDone={() => undefined} />);
+    expect(row("Road")!.textContent).toContain("common.songs 14");
+    expect(row("Road")!.querySelector("img")?.getAttribute("src")).toContain("first.jpg");
+  });
+
   it("lists the most recently changed playlists first", () => {
     mocks.library.playlists = [
-      { id: "old", title: "Old", trackCount: 1, coverUrl: "", updatedAt: "2026-01-01T00:00:00Z" },
-      { id: "new", title: "New", trackCount: 1, coverUrl: "", updatedAt: "2026-10-01T00:00:00Z" },
+      { id: "old", title: "Old", trackCount: 1, coverUrl: "", coverUrls: [], updatedAt: "2026-01-01T00:00:00Z" },
+      { id: "new", title: "New", trackCount: 1, coverUrl: "", coverUrls: [], updatedAt: "2026-10-01T00:00:00Z" },
     ];
     mount(<AddToPlaylistPopover track={track} onDone={() => undefined} />);
     expect([...host.querySelectorAll("button[data-row]")].map((element) => element.textContent?.slice(0, 3))).toEqual(["New", "Old"]);

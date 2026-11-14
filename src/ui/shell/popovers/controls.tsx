@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { Tooltip } from "../../components/Tooltip";
 import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
 import styles from "./controls.module.css";
@@ -28,11 +29,13 @@ export function Switch({
   label,
   disabled,
   onChange,
+  "aria-describedby": describedBy,
 }: {
   checked: boolean;
   label: string;
   disabled?: boolean;
   onChange(checked: boolean): void;
+  "aria-describedby"?: string;
 }): JSX.Element {
   return (
     <button
@@ -40,6 +43,7 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      aria-describedby={describedBy}
       disabled={disabled}
       className={styles.switch}
       onClick={() => onChange(!checked)}
@@ -83,11 +87,12 @@ export function OptionRow({
 }): JSX.Element {
   return (
     <div className={styles.option}>
-      <div className={styles.optionText}>
+      <Tooltip text={hint}>
         <span className={styles.optionTitle}>{title}</span>
-        <span className={styles.optionHint}>{hint}</span>
-      </div>
-      <Switch checked={checked} label={label} onChange={onChange} />
+      </Tooltip>
+      <Tooltip text={hint}>
+        <Switch checked={checked} label={label} onChange={onChange} />
+      </Tooltip>
     </div>
   );
 }
@@ -95,6 +100,7 @@ export function OptionRow({
 const OVERHANG = 24;
 // Distance between bar centres; must match bar width plus gap in controls.module.css
 const PITCH_PX = 8;
+const MARK_EVERY = 5;
 
 const NUDGE: Partial<Record<string, 1 | -1>> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
 
@@ -119,6 +125,7 @@ export function Ruler({ label, value, min, max, step, neutral, format, onChange 
   const [grab, setGrab] = useState<Grab | null>(null);
   const shown = format(value);
   const barCount = lastNotch + 1 + 2 * OVERHANG;
+  const anchor = Math.round(notchAt(neutral ?? 0));
 
   const goTo = (notch: number) => {
     const bounded = Math.min(lastNotch, Math.max(0, Math.round(notch)));
@@ -145,7 +152,20 @@ export function Ruler({ label, value, min, max, step, neutral, format, onChange 
 
   return (
     <section className={styles.ruler}>
-      <span className={styles.rulerLabel}>{label}</span>
+      <div className={styles.rulerHead}>
+        <span className={styles.rulerLabel}>{label}</span>
+        <div className={styles.stepper}>
+          <button type="button" className={styles.step} aria-label={t("player.decrease")} disabled={value <= min} onClick={() => goTo(current - 1)}>
+            <Icon name="remove" size={14} />
+          </button>
+          <button type="button" className={styles.value} disabled={neutral === undefined} onClick={() => neutral !== undefined && onChange(neutral)}>
+            {shown}
+          </button>
+          <button type="button" className={styles.step} aria-label={t("player.increase")} disabled={value >= max} onClick={() => goTo(current + 1)}>
+            <Icon name="add" size={14} />
+          </button>
+        </div>
+      </div>
       <div
         className={styles.ticks}
         role="slider"
@@ -163,27 +183,20 @@ export function Ruler({ label, value, min, max, step, neutral, format, onChange 
         onWheel={(wheel) => goTo(wheel.deltaY < 0 ? current + 1 : current - 1)}
         onKeyDown={nudge}
       >
-        <svg className={styles.pointer} viewBox="0 0 16 12" aria-hidden="true">
-          <polygon points="2,1.5 14,1.5 8,10.5" />
-        </svg>
-        <div className={styles.tickWindow}>
-          <div className={styles.tickStrip} style={{ "--notch": current + OVERHANG } as CSSProperties}>
-            {[...Array(barCount).keys()].map((bar) => (
-              <span key={bar} className={styles.tick} data-on={bar === current + OVERHANG ? "" : undefined} />
-            ))}
-          </div>
+        <div className={styles.tickStrip} style={{ "--notch": current + OVERHANG } as CSSProperties}>
+          {[...Array(barCount).keys()].map((bar) => {
+            const notch = bar - OVERHANG;
+            return (
+              <span
+                key={bar}
+                className={styles.tick}
+                data-on={notch === current ? "" : undefined}
+                data-mark={(notch - anchor) % MARK_EVERY === 0 ? "" : undefined}
+                data-out={notch < 0 || notch > lastNotch ? "" : undefined}
+              />
+            );
+          })}
         </div>
-      </div>
-      <div className={styles.stepper}>
-        <button type="button" className={styles.step} aria-label={t("player.decrease")} disabled={value <= min} onClick={() => goTo(current - 1)}>
-          <Icon name="remove" size={16} />
-        </button>
-        <button type="button" className={styles.value} disabled={neutral === undefined} onClick={() => neutral !== undefined && onChange(neutral)}>
-          {shown}
-        </button>
-        <button type="button" className={styles.step} aria-label={t("player.increase")} disabled={value >= max} onClick={() => goTo(current + 1)}>
-          <Icon name="add" size={16} />
-        </button>
       </div>
     </section>
   );

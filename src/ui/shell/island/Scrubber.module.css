@@ -12,11 +12,11 @@
   outline-offset: -2px;
 }
 
-/* Scaled, not resized, so position updates only recomposite; a transition kept the blur redrawing */
+/* Moved, not resized, so position updates only recomposite; the fixed fade keeps the leading edge soft at any progress */
 .fill {
   position: absolute;
   inset: 0;
-  transform-origin: 0 50%;
+  background: linear-gradient(to right, var(--tint) calc(100% - 72px), transparent);
 }
 
 .loop {

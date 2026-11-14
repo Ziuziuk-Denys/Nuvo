@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
 import { Icon } from "../../icons/Icon";
+import { useReducedEffects } from "../../effects";
 import { useTranslation } from "../../ports/i18n";
 import { usePlayerStore } from "../../ports/player";
 import {
@@ -24,11 +25,12 @@ import {
 import { LabeledSwitch, PanelChip, Switch } from "./controls";
 import styles from "./EqPanel.module.css";
 import popover from "./popovers.module.css";
+import { BACK_WAVE, CALM_WAVE, FRONT_WAVE, follow, shapeBands, wavePath } from "./spectrumWave";
 
 const PRESET_KEYS = Object.keys(BUILT_IN_PRESETS) as BuiltInPreset[];
-const PLOT_HEIGHT = 220;
+const PLOT_HEIGHT = 128;
 // keeps a handle at +12 or -12 dB fully inside the plot
-const PLOT_PAD = 12;
+const PLOT_PAD = 10;
 const CURVE_POINTS = 256;
 const CURVE_FREQS = logFrequencies(CURVE_POINTS);
 const BAND_FREQS = new Float32Array(EQ_FREQUENCIES);
@@ -36,18 +38,14 @@ const MIN_HZ = 20;
 const LOG_SPAN = Math.log(20000 / MIN_HZ);
 // the path is drawn in a 1000-wide box stretched to the panel; strokes keep their width
 const VIEW_WIDTH = 1000;
-const GRID_DB = [12, 6, 0, -6, -12];
-const GRID_HZ = [100, 1000, 10000];
 const MAX_PRESET_NAME = 32;
 
 const xOf = (hz: number) => Math.log(hz / MIN_HZ) / LOG_SPAN;
 const yOf = (db: number) => PLOT_PAD + ((EQ_MAX_DB - Math.min(EQ_MAX_DB, Math.max(EQ_MIN_DB, db))) / (EQ_MAX_DB - EQ_MIN_DB)) * (PLOT_HEIGHT - PLOT_PAD * 2);
 const bandLabel = (hz: number) => (hz >= 1000 ? `${hz / 1000}k` : String(hz));
-const gridHz = (hz: number) => (hz >= 1000 ? `${hz / 1000} kHz` : `${hz} Hz`);
-const gridDb = (db: number) => (db > 0 ? `+${db}` : db < 0 ? `−${-db}` : "0");
 const percentX = (hz: number) => `${(xOf(hz) * 100).toFixed(3)}%`;
 // a tip over a handle this close to the top would leave the plot, so it hangs under the handle instead
-const TIP_FLIP_Y = 36;
+const TIP_FLIP_Y = 34;
 const formatDb = (db: number) => `${db > 0 ? "+" : ""}${db.toFixed(1)}`;
 
 function curvePaths(levels: Float32Array): { line: string; area: string } {
@@ -57,32 +55,44 @@ function curvePaths(levels: Float32Array): { line: string; area: string } {
   return { line, area: `${line}L${VIEW_WIDTH},${zero}L0,${zero}Z` };
 }
 
-export function spectrumPath(bands: Float32Array): string {
-  const floor = PLOT_HEIGHT - PLOT_PAD;
-  const span = PLOT_HEIGHT - PLOT_PAD * 2;
-  const points = Array.from(bands, (level, index) => {
-    const x = ((index + 0.5) / bands.length) * VIEW_WIDTH;
-    const y = floor - Math.min(1, Math.max(0, level)) * span;
-    return `L${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  return `M0,${floor}${points.join("")}L${VIEW_WIDTH},${floor}Z`;
-}
-
-function useSpectrum(): { pathRef: RefObject<SVGPathElement | null>; clipRef: RefObject<HTMLSpanElement | null> } {
-  const pathRef = useRef<SVGPathElement>(null);
+function useSpectrum(): {
+  frontRef: RefObject<SVGPathElement | null>;
+  backRef: RefObject<SVGPathElement | null>;
+  clipRef: RefObject<HTMLSpanElement | null>;
+} {
+  const frontRef = useRef<SVGPathElement>(null);
+  const backRef = useRef<SVGPathElement>(null);
   const clipRef = useRef<HTMLSpanElement>(null);
+  const levels = useRef({ target: new Float32Array(0), front: new Float32Array(0), back: new Float32Array(0) });
+  const playing = usePlayerStore((state) => state.status === "playing");
+  const reduced = useReducedEffects();
   useEffect(() => {
-    // frames arrive every animation frame, so they go straight to the DOM instead of through React state
+    const span = PLOT_HEIGHT - PLOT_PAD * 3;
+    // frames arrive every animation frame, so they go straight to the DOM; once paused the waves sink and the subscription ends
     try {
-      return subscribeSpectrum((frame) => {
-        pathRef.current?.setAttribute("d", spectrumPath(frame.bands));
-        clipRef.current?.toggleAttribute("data-on", frame.clip);
+      const stop = subscribeSpectrum((frame) => {
+        const wave = levels.current;
+        if (wave.target.length !== frame.bands.length) {
+          wave.target = new Float32Array(frame.bands.length);
+          wave.front = new Float32Array(frame.bands.length);
+          wave.back = new Float32Array(frame.bands.length);
+        }
+        shapeBands(frame.bands, wave.target);
+        const target = playing ? wave.target : null;
+        const front = reduced && playing ? CALM_WAVE : FRONT_WAVE;
+        const frontDone = follow(wave.front, target, front);
+        const backDone = follow(wave.back, target, playing ? (reduced ? CALM_WAVE : BACK_WAVE) : FRONT_WAVE);
+        frontRef.current?.setAttribute("d", wavePath(wave.front, VIEW_WIDTH, PLOT_HEIGHT, span));
+        backRef.current?.setAttribute("d", wavePath(wave.back, VIEW_WIDTH, PLOT_HEIGHT, span));
+        clipRef.current?.toggleAttribute("data-on", playing && frame.clip);
+        if (!playing && frontDone && backDone) stop();
       });
+      return stop;
     } catch {
       return undefined;
     }
-  }, []);
-  return { pathRef, clipRef };
+  }, [playing, reduced]);
+  return { frontRef, backRef, clipRef };
 }
 
 type Naming = { mode: "save" } | { mode: "rename"; name: string };
@@ -124,6 +134,7 @@ export function EqPanel(): JSX.Element {
   const [naming, setNaming] = useState<Naming | null>(null);
   const [draftName, setDraftName] = useState("");
   const spectrum = useSpectrum();
+  const waveFill = `eq-wave-${useId().replace(/[^\w-]/g, "")}`;
 
   useEffect(
     () => () => {
@@ -264,27 +275,21 @@ export function EqPanel(): JSX.Element {
     <div className={popover.panel}>
       <div className={styles.eq} data-off={live ? undefined : ""} data-dragging={dragBand !== null ? "" : undefined}>
         <div className={styles.plot} role="group" aria-label={t("ui.eq.curve")}>
+          <svg className={styles.waves} viewBox={`0 0 ${VIEW_WIDTH} ${PLOT_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id={waveFill} gradientUnits="userSpaceOnUse" x1="0" y1={PLOT_PAD} x2="0" y2={PLOT_HEIGHT}>
+                <stop offset="0" className={styles.waveTop} />
+                <stop offset="1" className={styles.waveBottom} />
+              </linearGradient>
+            </defs>
+            <path ref={spectrum.backRef} className={styles.waveBack} fill={`url(#${waveFill})`} />
+            <path ref={spectrum.frontRef} className={styles.waveFront} fill={`url(#${waveFill})`} />
+          </svg>
           <svg className={styles.curve} viewBox={`0 0 ${VIEW_WIDTH} ${PLOT_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true">
-            <path ref={spectrum.pathRef} className={styles.spectrum} />
-            {GRID_HZ.map((hz) => (
-              <line key={hz} className={styles.grid} x1={xOf(hz) * VIEW_WIDTH} x2={xOf(hz) * VIEW_WIDTH} y1={PLOT_PAD} y2={PLOT_HEIGHT - PLOT_PAD} />
-            ))}
             <path className={styles.area} style={{ d: `path("${curve.area}")` } as CSSProperties} />
             <path className={styles.line} style={{ d: `path("${curve.line}")` } as CSSProperties} />
           </svg>
-          {GRID_DB.map((db) => (
-            <span key={db} aria-hidden="true">
-              <span className={styles.hline} data-zero={db === 0 ? "" : undefined} style={{ top: Math.round(yOf(db)) }} />
-              <span className={styles.dbLabel} style={{ top: yOf(db) }}>
-                {gridDb(db)}
-              </span>
-            </span>
-          ))}
-          {GRID_HZ.map((hz) => (
-            <span key={hz} className={styles.hzLabel} style={{ left: percentX(hz) }} aria-hidden="true">
-              {gridHz(hz)}
-            </span>
-          ))}
+          <span className={styles.zero} style={{ top: Math.round(yOf(0)) }} aria-hidden="true" />
           {EQ_FREQUENCIES.map((hz, index) => (
             <div
               key={hz}
@@ -349,7 +354,7 @@ export function EqPanel(): JSX.Element {
               className={styles.ownIcon}
               onClick={() => setNaming({ mode: "rename", name })}
             >
-              <Icon name="edit" size={16} />
+              <Icon name="edit" size={14} />
             </button>
             <button
               type="button"
@@ -357,24 +362,10 @@ export function EqPanel(): JSX.Element {
               className={styles.ownIcon}
               onClick={() => useSoundStore.getState().deleteCustomPreset(name)}
             >
-              <Icon name="close" size={16} />
+              <Icon name="close" size={14} />
             </button>
           </span>
         ))}
-      </div>
-      <div className={popover.remember}>
-        <LabeledSwitch
-          label={t("sound.remember_track")}
-          checked={trackProfile !== undefined}
-          disabled={trackId === null}
-          onChange={(on) => remember("track", trackId, on)}
-        />
-        <LabeledSwitch
-          label={t("sound.remember_artist")}
-          checked={artistProfile !== undefined}
-          disabled={artist === null}
-          onChange={(on) => remember("artist", artist, on)}
-        />
         <div className={styles.save}>
           {naming ? (
             <>
@@ -405,10 +396,25 @@ export function EqPanel(): JSX.Element {
             </>
           ) : (
             <button type="button" className={styles.saveChip} onClick={() => setNaming({ mode: "save" })}>
+              <Icon name="add" size={14} />
               {t("sound.save_preset")}
             </button>
           )}
         </div>
+      </div>
+      <div className={popover.remember}>
+        <LabeledSwitch
+          label={t("sound.remember_track")}
+          checked={trackProfile !== undefined}
+          disabled={trackId === null}
+          onChange={(on) => remember("track", trackId, on)}
+        />
+        <LabeledSwitch
+          label={t("sound.remember_artist")}
+          checked={artistProfile !== undefined}
+          disabled={artist === null}
+          onChange={(on) => remember("artist", artist, on)}
+        />
       </div>
     </div>
   );
