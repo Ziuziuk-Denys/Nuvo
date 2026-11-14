@@ -1,4 +1,12 @@
-export { useWindowState, useDisableButtonFocus, canMinimizeWindow, minimizeWindow, toggleMaximizeWindow, closeWindow } from "@/data/platform/window";
+export {
+  nativeFrame,
+  useWindowState,
+  useDisableButtonFocus,
+  canMinimizeWindow,
+  minimizeWindow,
+  toggleMaximizeWindow,
+  closeWindow,
+} from "@/data/platform/window";
 export { useModalStore } from "../shell/sheets";
 
 export function toggleWindowFullscreen(): void {

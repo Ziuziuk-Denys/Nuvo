@@ -24,8 +24,13 @@ const mocks = vi.hoisted(() => ({
   imports: [] as { status: string; done: number; total: number }[],
 }));
 
+const frame = vi.hoisted(() => ({ mac: false }));
+
 vi.mock("../ports/navigation", () => ({
-  useWindowState: () => ({ isMaximized: false, isFullScreen: false, isEdgeToEdge: false }),
+  get nativeFrame() {
+    return frame.mac;
+  },
+  useWindowState: () => ({ isMaximized: false, isFullScreen: false, isEdgeToEdge: frame.mac, trafficLights: frame.mac }),
   useDisableButtonFocus: () => undefined,
   useModalStore: (select: (state: typeof modal) => unknown) => select(modal),
   minimizeWindow: vi.fn(),
@@ -203,6 +208,17 @@ describe("Shell", () => {
     expect(modal.openSettings).toHaveBeenCalledTimes(1);
     for (const label of ["ui.window.minimize", "ui.window.maximize", "ui.window.close"]) {
       expect(button(label)?.closest("header[data-window-drag]")).not.toBeNull();
+    }
+  });
+
+  it("on macOS leaves the window buttons to the system and makes room for the traffic lights", () => {
+    frame.mac = true;
+    try {
+      mount("/");
+      for (const label of ["ui.window.minimize", "ui.window.maximize", "ui.window.close"]) expect(button(label)).toBeNull();
+      expect(host.querySelector("header")?.hasAttribute("data-traffic-lights")).toBe(true);
+    } finally {
+      frame.mac = false;
     }
   });
 

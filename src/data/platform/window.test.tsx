@@ -46,8 +46,16 @@ describe("window state", () => {
       isMaximized: false,
       isFullScreen: true,
       isEdgeToEdge: true,
+      trafficLights: false,
     });
     expect(windowStateFrom({ maximized: false, fullscreen: false, visible: true }, true).isEdgeToEdge).toBe(true);
+  });
+
+  it("on macOS the system rounds the window and shows the traffic lights until full screen", async () => {
+    const { windowStateFrom } = await load();
+    const windowed = windowStateFrom({ maximized: false, fullscreen: false, visible: true }, false, true);
+    expect(windowed).toMatchObject({ isEdgeToEdge: true, trafficLights: true });
+    expect(windowStateFrom({ maximized: false, fullscreen: true, visible: true }, false, true).trafficLights).toBe(false);
   });
 
   it("the hook follows main's window state", async () => {

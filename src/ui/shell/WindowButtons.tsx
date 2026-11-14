@@ -1,10 +1,14 @@
 import type { JSX } from "react";
 import { IconButton } from "../components/IconButton";
 import { useTranslation } from "../ports/i18n";
-import { canMinimizeWindow, closeWindow, minimizeWindow, toggleMaximizeWindow, useWindowState } from "../ports/navigation";
+import { canMinimizeWindow, closeWindow, minimizeWindow, nativeFrame, toggleMaximizeWindow, useWindowState } from "../ports/navigation";
 import styles from "./WindowButtons.module.css";
 
-export function WindowButtons({ tray = false }: { tray?: boolean }): JSX.Element {
+export function WindowButtons({ tray = false }: { tray?: boolean }): JSX.Element | null {
+  return nativeFrame ? null : <OwnButtons tray={tray} />;
+}
+
+function OwnButtons({ tray }: { tray: boolean }): JSX.Element {
   const { t } = useTranslation();
   const { isFullScreen, isMaximized } = useWindowState();
   const expanded = isMaximized || isFullScreen;

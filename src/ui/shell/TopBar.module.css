@@ -12,6 +12,10 @@
   user-select: none;
 }
 
+.bar[data-traffic-lights] {
+  padding-inline-start: 84px;
+}
+
 .start,
 .end,
 .group {

@@ -91,3 +91,8 @@ export function chromiumSwitches(nativeWayland: boolean, linux: boolean): Array<
 export function relaunchArgs(argv: readonly string[]): string[] {
   return argv.slice(1).filter((arg) => !arg.startsWith("--inspect"));
 }
+
+export function frameOptions(platform: NodeJS.Platform): Electron.BrowserWindowConstructorOptions {
+  if (platform === "darwin") return { titleBarStyle: "hidden", trafficLightPosition: { x: 20, y: 24 } };
+  return { frame: false, transparent: true, hasShadow: false };
+}

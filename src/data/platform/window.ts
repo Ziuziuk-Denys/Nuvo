@@ -5,15 +5,24 @@ export interface WindowState {
   isMaximized: boolean;
   isFullScreen: boolean;
   isEdgeToEdge: boolean;
+  trafficLights: boolean;
 }
+
+// macOS draws the frame, corners and traffic lights itself
+export const nativeFrame = typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent);
 
 let winState: WinState = { maximized: false, fullscreen: false, visible: true };
 let appInfo: AppInfo | null = null;
 let connected = false;
 const listeners = new Set<() => void>();
 
-export function windowStateFrom(win: WinState, tiling: boolean): WindowState {
-  return { isMaximized: win.maximized, isFullScreen: win.fullscreen, isEdgeToEdge: win.maximized || win.fullscreen || tiling };
+export function windowStateFrom(win: WinState, tiling: boolean, mac = nativeFrame): WindowState {
+  return {
+    isMaximized: win.maximized,
+    isFullScreen: win.fullscreen,
+    isEdgeToEdge: mac || win.maximized || win.fullscreen || tiling,
+    trafficLights: mac && !win.fullscreen,
+  };
 }
 
 function emit(): void {
