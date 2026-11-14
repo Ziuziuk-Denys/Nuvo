@@ -1,7 +1,7 @@
 mod common;
 
 use nuvo_recognize::plan::{self, Candidate, ListenError, MAX_REQUESTS, Media, Outcome, Stage, WindowSource, candidates, listen};
-use nuvo_recognize::{Shazam, Via};
+use nuvo_recognize::{Pace, Shazam, Via};
 use serde_json::json;
 
 fn c(media: Media, start_ms: u64, len_ms: u64, via: Via) -> Candidate {
@@ -90,8 +90,12 @@ impl WindowSource for Fake {
 }
 
 async fn run(replies: Vec<(u16, serde_json::Value)>, source: &mut Fake, list: &[Candidate]) -> (Result<Outcome, ListenError<String>>, Vec<Stage>, usize) {
+    run_at(common::FAST, replies, source, list).await
+}
+
+async fn run_at(pace: Pace, replies: Vec<(u16, serde_json::Value)>, source: &mut Fake, list: &[Candidate]) -> (Result<Outcome, ListenError<String>>, Vec<Stage>, usize) {
     let mock = common::mock_shazam(replies).await;
-    let shazam = Shazam::new(&mock.url, common::FAST);
+    let shazam = Shazam::new(&mock.url, pace);
     let mut stages = Vec::new();
     let outcome = listen(&shazam, source, list, |stage| stages.push(stage)).await;
     (outcome, stages, mock.count())
@@ -147,11 +151,22 @@ async fn rate_limits_are_waited_out_then_end_the_job() {
     assert!(matches!(outcome, Ok(Outcome::Found { via: Via::Mix, .. })), "the same window is retried");
     assert_eq!(requests, 2);
     assert!(matches!(stages[1], Stage::Waiting { seconds: 1 }));
+    assert!(matches!(stages[2], Stage::Listening { attempt: 1, .. }), "the retry shows the same part again");
 
     let (outcome, stages, requests) = run(vec![limited(), limited(), limited(), limited()], &mut Fake::new(true), &list).await;
     assert!(matches!(outcome, Err(ListenError::Busy)));
     assert_eq!(requests, 4);
     assert_eq!(stages.iter().filter(|s| matches!(s, Stage::Waiting { .. })).count(), 3);
+}
+
+#[tokio::test]
+async fn a_wait_for_the_budget_is_shown_before_the_part_it_holds_back() {
+    let pace = Pace { refill: std::time::Duration::from_millis(200), ..common::FAST };
+    let list = candidates(Some(60_000), None, Via::Mix, 0);
+    let (outcome, stages, requests) = run_at(pace, vec![(200, common::no_match()), (200, common::found())], &mut Fake::new(true), &list).await;
+    assert!(matches!(outcome, Ok(Outcome::Found { via: Via::Side, .. })));
+    assert_eq!(requests, 2);
+    assert!(matches!(stages[..], [Stage::Listening { attempt: 1, .. }, Stage::Waiting { seconds: 1 }, Stage::Listening { attempt: 2, .. }]), "{stages:?}");
 }
 
 #[tokio::test]
