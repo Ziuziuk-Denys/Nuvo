@@ -143,9 +143,9 @@ Each point links its sources, read on 2026-11-14, and says so when another playe
 - **arm64 for Linux and Windows.** Liner 0.2.11, Riff 0.7.5 and Mpthree 1.1.0 list no arm64 build for either system. Pear Desktop does ship them. <sub>[Liner 0.2.11](https://github.com/tryliner/desktop/releases/tag/v0.2.11) · [Riff 0.7.5](https://github.com/rootscripts/riff/releases/tag/v0.7.5) · [Mpthree downloads](https://mpthree.fun/) · [Pear Desktop 3.12.0](https://github.com/pear-devs/pear-desktop/releases/tag/v3.12.0)</sub>
 - **Small tools.** Moments to mark a spot and jump back, an A-B loop, trims for a song's start and end, romanized lyrics, a dislike button on every song and a reason beside each recommendation.
 
-Nuvo 0.3.0 shows text in its window 367 ms after launch, then idles at 385.5 MB and 0.27 % of one core. Strawberry, a native Qt player, needs about a third of that memory, so it stays in the chart.
+Nuvo 0.3.0 shows text in its window 354 ms after launch, then idles at 364.6 MB and 0.23 % of one core. Strawberry, a native Qt player, needs about a third of that memory, so it stays in the chart.
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/speed-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/speed-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/speed-dark.svg"><img src=".github/readme/speed-light.svg" width="100%" alt="Memory at idle, whole app. Every process of each app, 30 seconds after its window appears, with an empty profile. Lower is better. Nuvo 385.5 MB, Liner 504.3 MB, Riff 422.1 MB, Spotify 567 MB, YouTube Music 544.5 MB, Apple Music 673.7 MB, Strawberry 128.7 MB."></picture>
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/speed-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/speed-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/speed-dark.svg"><img src=".github/readme/speed-light.svg" width="100%" alt="Memory at idle, whole app. Every process of each app, 30 seconds after its window appears, with an empty profile. Lower is better. Nuvo 364.6 MB, Liner 504.3 MB, Riff 422.1 MB, Spotify 567 MB, YouTube Music 544.5 MB, Apple Music 673.7 MB, Strawberry 128.7 MB."></picture>
 
 <details>
 <summary><b>Every number and how we measured it</b></summary>
@@ -154,7 +154,7 @@ Nuvo 0.3.0 shows text in its window 367 ms after launch, then idles at 385.5 MB 
 
 | App | Idle memory | Processes | Idle CPU | Cold start | Playing CPU | Installed size |
 |---|---|---|---|---|---|---|
-| Nuvo | 385.5 MB (384.1 to 387.5) | 6 | 0.27 % (0.23 to 0.33) | 367 ms (365 to 381) | 3.5 % (3.35 to 3.7) | 323.6 MB, unpacked (AppImage 135.3, .deb 106.5) |
+| Nuvo | 364.6 MB (361.5 to 374.8) | 6 | 0.23 % (0.2 to 0.27) | 354 ms (350 to 364) | 3 % (2.95 to 3.3) | 323.6 MB, unpacked (AppImage 135.3, .deb 106.5) |
 | Liner | 504.3 MB (502.2 to 505.1) | 8 | 1.2 % (1.17 to 1.23) | 1053 ms (966 to 1404) | not measured | 549.1 MB |
 | Riff | 422.1 MB (421.4 to 422.6) | 7 | 10.87 % (10.67 to 11.2) | 9215 ms, bimodal: 1628 to 9873 ms | not measured | 366.3 MB, extracted (AppImage 132.8) |
 | Spotify | 567 MB (558.4 to 568.6) | 9 | 1.5 % (0.43 to 2.07) | no usable-window figure: first window at 435 to 447 ms, probably a splash | not measured | 14.1 MB flatpak app, plus a shared runtime; first-run download not measured |
@@ -164,13 +164,13 @@ Nuvo 0.3.0 shows text in its window 367 ms after launch, then idles at 385.5 MB 
 
 - **Two dates.** Nuvo 0.3.0 was measured on 2026-11-14, the other apps a week earlier, on 2026-11-07. Same machine, same method, a newer kernel for Nuvo.
 - **Machine.** AMD Ryzen 9 PRO 7945, 30 GB, Fedora, GNOME on Wayland. Linux 7.2.11 for the other apps, 7.3.3 for Nuvo.
-- **Nuvo 0.3.0.** The Linux x64 build of tag v0.3.0, 5 runs, each on its own empty profile in a separate session with the sound muted. Other jobs were running on the machine, with a load average of 6.8 at the end.
+- **Nuvo 0.3.0.** The Linux x64 build of tag v0.3.0, 5 runs, each on its own empty profile in a separate session with the sound muted. The machine was otherwise quiet, with a load average of about 1.2.
 - **Other apps.** 5 runs per figure, 6 for Spotify, each with its own empty profile and no login. Liner: sign-in screen. Riff 44.2.0: logged out. Spotify: logged-out flatpak client. Strawberry 1.2.31: flatpak, empty library. YouTube Music and Apple Music: a web tab, logged out, in a fresh Chrome 156 profile. Each run started a fresh process; the page cache was not dropped.
 - **Idle.** Memory is PSS summed over the whole process tree, read 30 s after the window appeared (for Nuvo, 30 s after Home appeared). CPU is user plus system time of the tree over the next 30 s, in percent of one core.
 - **Cold start.** The definitions differ, so read it as a rough guide. Nuvo, Liner, Riff and the web tabs: the first frame with the window visible and text; the web-tab figure includes the network. Spotify and Strawberry have no such hook: the first mapped window of at least 200 by 200 pixels.
 - **Playing.** Nuvo played a cached 90 s tone, muted, with a 5,000-song playlist open; CPU over seconds 40 to 60. Strawberry played a 240 s tone with its stream volume at 0, measured 30 s after the start. Liner, Spotify, Riff and the web tabs are not measured: playback needs an account, and we did not attempt one.
 - **Installed size.** Nuvo: the unpacked Linux x64 build, with the AppImage and .deb sizes from the release.
-- **Where Nuvo loses.** Strawberry used 128.7 MB at idle against Nuvo's 385.5 MB, and 1.3 % of one core while playing against 3.5 %.
+- **Where Nuvo loses.** Strawberry used 128.7 MB at idle against Nuvo's 364.6 MB, and 1.3 % of one core while playing against 3 %.
 - **Published, not measured by us.** Riff's README claims about 180 MB during playback, with no method given ([source](https://github.com/rootscripts/riff#memory-usage), read 2026-11-07). We measured 422 MB at idle on its AppImage.
 - **Not measured.** The installed size of the web tabs, a start with a dropped page cache, other machines, Mpthree. Nothing here is estimated.
 
