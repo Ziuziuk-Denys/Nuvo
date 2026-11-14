@@ -2,8 +2,8 @@ import { act } from "react";
 import { type Root, createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import NotchApp from "./NotchApp";
-import { DEFAULT_NOTCH_SETTINGS, type NotchHello, type NotchLyrics, type NotchSettings, type NotchState } from "./contracts";
-import { ISLAND_SIZES, grownRect, islandPath, islandRect } from "./lib/geometry";
+import { DEFAULT_NOTCH_SETTINGS, type Cutout, type NotchHello, type NotchLyrics, type NotchSettings, type NotchState } from "./contracts";
+import { ISLAND_SIZES, grownRect, islandPath, islandRect, islandSizes } from "./lib/geometry";
 import { MORPH_SPRING, simulateSpring, springEasing } from "./lib/spring";
 
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
@@ -39,9 +39,12 @@ interface Harness {
   pushState: (state: NotchState) => void;
   pushLyrics: (lyrics: NotchLyrics) => void;
   pushSettings: (settings: NotchSettings) => void;
+  pushCutout: (cutout: Cutout | null) => void;
 }
 
-function installApi(hello: NotchHello): Harness {
+function installApi(partial: Omit<NotchHello, "cutout"> & { cutout?: Cutout | null }): Harness {
+  const hello: NotchHello = { cutout: null, ...partial };
+  const cutoutListeners: Array<(cutout: Cutout | null) => void> = [];
   const stateListeners: Array<(state: NotchState) => void> = [];
   const lyricsListeners: Array<(lyrics: NotchLyrics) => void> = [];
   const settingsListeners: Array<(settings: NotchSettings) => void> = [];
@@ -56,6 +59,7 @@ function installApi(hello: NotchHello): Harness {
     onNotchState: subscribe(stateListeners),
     onNotchLyrics: subscribe(lyricsListeners),
     onNotchSettings: subscribe(settingsListeners),
+    onNotchCutout: subscribe(cutoutListeners),
     notchAction: vi.fn(),
     notchSetShape: vi.fn(),
     notchSetCapture: vi.fn(),
@@ -66,6 +70,7 @@ function installApi(hello: NotchHello): Harness {
     pushState: (state) => act(() => stateListeners.forEach((cb) => cb(state))),
     pushLyrics: (lyrics) => act(() => lyricsListeners.forEach((cb) => cb(lyrics))),
     pushSettings: (settings) => act(() => settingsListeners.forEach((cb) => cb(settings))),
+    pushCutout: (cutout) => act(() => cutoutListeners.forEach((cb) => cb(cutout))),
   };
 }
 
@@ -137,6 +142,24 @@ describe("NotchApp", () => {
     expect(path()).toBe(islandPath(ISLAND_SIZES.live));
     enter();
     expect(path()).toBe(islandPath(ISLAND_SIZES.hover));
+  });
+
+  it("on a notched MacBook wraps the camera: wider and taller, nothing drawn under it", async () => {
+    const cutout = { width: 200, height: 38 };
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS, cutout });
+    await mount();
+    const sizes = islandSizes(cutout);
+    const path = () => host.querySelector("svg path")!.getAttribute("d");
+    expect(path()).toBe(islandPath(sizes.idle));
+    expect(host.querySelector(".island")!.hasAttribute("data-cutout")).toBe(true);
+    harness.pushState(makeState());
+    expect(path()).toBe(islandPath(sizes.live));
+    enter();
+    expect(path()).toBe(islandPath(sizes.hover));
+    expect(host.querySelector(".compact-title")).toBeNull();
+    harness.pushCutout(null);
+    expect(path()).toBe(islandPath(ISLAND_SIZES.hover));
+    expect(host.querySelector(".compact-title")).not.toBeNull();
   });
 
   it("hover, dwell expands, leaving collapses", async () => {

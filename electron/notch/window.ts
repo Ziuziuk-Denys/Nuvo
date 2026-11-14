@@ -1,6 +1,7 @@
 import { BrowserWindow, ipcMain, screen, type NativeImage } from "electron";
 import {
   DEFAULT_NOTCH_SETTINGS,
+  type Cutout,
   type NotchAction,
   type NotchHello,
   type NotchLyrics,
@@ -8,8 +9,8 @@ import {
   type NotchState,
   type ShapeRect,
 } from "../../src/notch/contracts";
-import { ISLAND_SIZES, NOTCH_WINDOW, capturesPointer, islandRect } from "../../src/notch/lib/geometry";
-import { kwinScript, notchOrigin } from "./placement";
+import { ISLAND_SIZES, capturesPointer, islandRect, notchWindow } from "../../src/notch/lib/geometry";
+import { kwinScript, notchOrigin, type DisplayBounds } from "./placement";
 import { canPlaceNotch, clicksPassThrough, notchEnabled, type NotchSession } from "./session";
 
 export const NOTCH_TITLE = "Nuvo Notch";
@@ -25,7 +26,6 @@ export interface OverlayPlacer {
     bounds?: "monitor" | "workArea";
   }): Promise<boolean>;
 }
-const { width: WIDTH, height: HEIGHT } = NOTCH_WINDOW;
 const MOVE_SETTLE_MS = 300;
 const ON_TOP_TRIES = 10;
 const ON_TOP_RETRY_MS = 100;
@@ -42,6 +42,7 @@ export interface NotchDeps {
   loadKwin: (script: string) => Promise<boolean>;
   unloadKwin: () => Promise<void>;
   getMainWindow: () => BrowserWindow | null;
+  readCutout?: (display: DisplayBounds) => Promise<Cutout | null>;
 }
 
 export class NotchWindow {
@@ -52,6 +53,7 @@ export class NotchWindow {
   private settings = DEFAULT_NOTCH_SETTINGS;
   private state: NotchState | null = null;
   private lyrics: NotchLyrics | null = null;
+  private cutout: Cutout | null = null;
   private shape: ShapeRect | null = null;
   private capturing = false;
   private wantsCapture = false;
@@ -130,8 +132,9 @@ export class NotchWindow {
     if (!values.every(Number.isFinite)) return;
     const left = Math.max(0, Math.round(rect.x));
     const top = Math.max(0, Math.round(rect.y));
-    const width = Math.min(WIDTH, Math.round(rect.x + rect.width)) - left;
-    const height = Math.min(HEIGHT, Math.round(rect.y + rect.height)) - top;
+    const size = notchWindow(this.cutout);
+    const width = Math.min(size.width, Math.round(rect.x + rect.width)) - left;
+    const height = Math.min(size.height, Math.round(rect.y + rect.height)) - top;
     if (width <= 0 || height <= 0) return;
     this.shape = { x: left, y: top, width, height };
     if (this.win && !this.win.isDestroyed() && !clicksPassThrough(this.deps.session)) this.win.setShape([this.shape]);
@@ -161,7 +164,7 @@ export class NotchWindow {
   }
 
   hello(): NotchHello {
-    return { state: this.state, lyrics: this.lyrics, settings: this.settings };
+    return { state: this.state, lyrics: this.lyrics, settings: this.settings, cutout: this.cutout };
   }
 
   focusApp(): void {
@@ -188,9 +191,10 @@ export class NotchWindow {
   }
 
   private create(): void {
+    const { width, height } = notchWindow(this.cutout);
     const win = new BrowserWindow({
-      width: WIDTH,
-      height: HEIGHT,
+      width,
+      height,
       frame: false,
       transparent: true,
       hasShadow: false,
@@ -198,7 +202,11 @@ export class NotchWindow {
       movable: false,
       skipTaskbar: true,
       focusable: false,
-      ...(this.deps.session === "windows" ? { type: "toolbar" } : this.deps.session === "macos" ? { type: "panel", hiddenInMissionControl: true } : {}),
+      ...(this.deps.session === "windows"
+        ? { type: "toolbar" }
+        : this.deps.session === "macos"
+          ? { type: "panel", hiddenInMissionControl: true, enableLargerThanScreen: true }
+          : {}),
       show: false,
       title: NOTCH_TITLE,
       icon: this.deps.icon,
@@ -302,13 +310,24 @@ export class NotchWindow {
     if (this.fullscreen || this.settings.mode === "off") return;
     const display = this.pickDisplay();
     this.placedDisplayId = display.id;
-    const geometry = { ...notchOrigin(display.bounds, WIDTH), width: WIDTH, height: HEIGHT };
+    if (this.deps.readCutout) {
+      const cutout = await this.deps.readCutout(display.bounds).catch(() => null);
+      if (win.isDestroyed()) return;
+      if (cutout?.width !== this.cutout?.width || cutout?.height !== this.cutout?.height) {
+        this.cutout = cutout;
+        this.send("notch:cutout", cutout);
+      }
+    }
+    const size = notchWindow(this.cutout);
+    const geometry = { ...notchOrigin(display.bounds, size.width), ...size };
     const session = this.deps.session;
     if (session === "x11" || clicksPassThrough(session)) {
       win.setBounds(geometry);
       win.showInactive();
       win.setAlwaysOnTop(true, "screen-saver");
       win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+      // showing can push the frame below the menu bar; above it the panel's level holds it
+      if (session === "macos") win.setBounds(geometry);
       // Mutter drops always-on-top asked for before the window is mapped, so it is asked again until it holds.
       for (let tries = 0; tries < ON_TOP_TRIES; tries++) {
         await new Promise((resolve) => setTimeout(resolve, ON_TOP_RETRY_MS));
@@ -325,8 +344,7 @@ export class NotchWindow {
       const ok = await this.deps.bridge
         ?.placeOverlay({
           title: NOTCH_TITLE,
-          width: WIDTH,
-          height: HEIGHT,
+          ...size,
           anchor: "top-center",
           pinned: true,
           margin: 0,

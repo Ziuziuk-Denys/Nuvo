@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
 import { CompactFace } from "./CompactFace";
 import { ExpandedFace, VIEWS, type ExpandedView } from "./ExpandedFace";
 import { Island, MORPH } from "./Island";
-import { DEFAULT_NOTCH_SETTINGS, type NotchAction, type NotchLyrics, type NotchSettings, type NotchState, type NotchTrack } from "./contracts";
-import { ISLAND_SIZES, capturesPointer, grownRect, islandRect, type IslandMode, type IslandSize, type Point, type Rect } from "./lib/geometry";
+import { DEFAULT_NOTCH_SETTINGS, type Cutout, type NotchAction, type NotchLyrics, type NotchSettings, type NotchState, type NotchTrack } from "./contracts";
+import { capturesPointer, grownRect, islandRect, islandSizes, notchWindow, type IslandMode, type IslandSize, type Point, type Rect } from "./lib/geometry";
 import { IslandMachine } from "./lib/machine";
 import { MORPH_SPRING, simulateSpring } from "./lib/spring";
 import { activeLineIndex, msUntilNextLine, positionAt, type LyricLine, type PositionSample } from "./lib/playback";
@@ -24,6 +24,8 @@ export default function NotchApp() {
   const [state, setState] = useState<NotchState | null>(null);
   const [lyrics, setLyrics] = useState<NotchLyrics | null>(null);
   const [settings, setSettings] = useState<NotchSettings>(DEFAULT_NOTCH_SETTINGS);
+  const [cutout, setCutout] = useState<Cutout | null>(null);
+  const sizes = useMemo(() => islandSizes(cutout), [cutout]);
   const [machine, setMachine] = useState<IslandMachine | null>(null);
   const [mode, setMode] = useState<IslandMode>("idle");
   const [view, setView] = useState<ExpandedView>("now");
@@ -49,6 +51,7 @@ export default function NotchApp() {
     let gotState = false;
     let gotLyrics = false;
     let gotSettings = false;
+    let gotCutout = false;
     const unsubscribe = [
       api.onNotchState((next) => {
         gotState = true;
@@ -62,6 +65,10 @@ export default function NotchApp() {
         gotSettings = true;
         setSettings(next);
       }),
+      api.onNotchCutout((next) => {
+        gotCutout = true;
+        setCutout(next);
+      }),
     ];
     api
       .notchHello()
@@ -71,6 +78,7 @@ export default function NotchApp() {
         if (!gotState && hello.state) setState(hello.state);
         if (!gotLyrics && hello.lyrics) setLyrics(hello.lyrics);
         if (!gotSettings) setSettings(hello.settings);
+        if (!gotCutout) setCutout(hello.cutout);
       })
       .catch((error) => console.warn("[notch] hello failed:", error));
     return () => {
@@ -95,7 +103,7 @@ export default function NotchApp() {
     if (previous === null && trackId !== null && islandRef.current?.matches(":hover")) machine.pointerEnter();
   }, [machine, trackId, pulseOnTrackChange]);
 
-  const shapeRect = useRef<Rect>(islandRect(ISLAND_SIZES.idle));
+  const shapeRect = useRef<Rect>(islandRect(sizes.idle));
   const pointer = useRef({ at: null as Point | null, buttons: 0, capturing: false });
   const updateCapture = () => {
     const { at, buttons, capturing } = pointer.current;
@@ -127,10 +135,10 @@ export default function NotchApp() {
     };
   }, []);
 
-  const shapeSize = useRef<IslandSize>(ISLAND_SIZES.idle);
+  const shapeSize = useRef<IslandSize>(sizes.idle);
   const shapePadded = useRef(false);
   useEffect(() => {
-    const next = ISLAND_SIZES[mode];
+    const next = sizes[mode];
     const previous = shapeSize.current;
     const setShape = (rect: Rect) => {
       shapeRect.current = rect;
@@ -149,7 +157,7 @@ export default function NotchApp() {
     if (next.width * next.height >= previous.width * previous.height) {
       shapeSize.current = next;
       shapePadded.current = true;
-      setShape(grownRect(previous, next, MORPH_OVERSHOOT));
+      setShape(grownRect(previous, next, MORPH_OVERSHOOT, notchWindow(cutout)));
       return armTighten();
     }
     const shrink = setTimeout(() => {
@@ -158,7 +166,7 @@ export default function NotchApp() {
       setShape(islandRect(next));
     }, MORPH.durationMs);
     return () => clearTimeout(shrink);
-  }, [mode]);
+  }, [mode, sizes, cutout]);
 
   const sample = useMemo<PositionSample | null>(
     () =>
@@ -235,6 +243,8 @@ export default function NotchApp() {
       <Island
         ref={islandRef}
         mode={mode}
+        size={sizes[mode]}
+        cutout={cutout}
         onMouseEnter={() => machine?.pointerEnter()}
         onMouseLeave={() => machine?.pointerLeave()}
         onClick={(event) => {
@@ -243,7 +253,15 @@ export default function NotchApp() {
         }}
         onWheel={onWheel}
       >
-        <CompactFace mode={mode} track={track} playing={playing} accent={accentColor} onAccent={onAccent} onFocusApp={() => send({ type: "focusApp" })} />
+        <CompactFace
+          mode={mode}
+          split={cutout !== null}
+          track={track}
+          playing={playing}
+          accent={accentColor}
+          onAccent={onAccent}
+          onFocusApp={() => send({ type: "focusApp" })}
+        />
         {state && sample && track && (
           <ExpandedFace
             state={state as NotchState & { track: NotchTrack }}

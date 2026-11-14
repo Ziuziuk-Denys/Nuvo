@@ -7,6 +7,7 @@ import type { IslandMode } from "./lib/geometry";
 
 interface CompactFaceProps {
   mode: IslandMode;
+  split: boolean;
   track: NotchTrack | null;
   playing: boolean;
   accent: string;
@@ -14,7 +15,7 @@ interface CompactFaceProps {
   onFocusApp: () => void;
 }
 
-export function CompactFace({ mode, track, playing, accent, onAccent, onFocusApp }: CompactFaceProps) {
+export function CompactFace({ mode, split, track, playing, accent, onAccent, onFocusApp }: CompactFaceProps) {
   if (!track) {
     return (
       <div className="compact compact-idle">
@@ -28,7 +29,7 @@ export function CompactFace({ mode, track, playing, accent, onAccent, onFocusApp
       <button type="button" className="compact-cover" aria-label="Open Nuvo" onClick={onFocusApp}>
         <Cover src={track.coverUrl} size={22} radius={5} onAccent={onAccent} />
       </button>
-      {mode === "hover" ? (
+      {mode === "hover" && !split ? (
         <button type="button" className="compact-title" onClick={onFocusApp}>
           <Marquee text={track.title} />
         </button>

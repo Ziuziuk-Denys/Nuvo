@@ -29,6 +29,7 @@ import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { CORE_SCHEME, CORE_SCHEME_PRIVILEGES, forwardToCore } from "../core-bridge";
 import { createCoreHost } from "../core-host";
+import { cutoutFor, parseScreens, SCREENS_SCRIPT } from "../notch/cutout";
 import { NotchWindow, registerNotchIpc } from "../notch/window";
 import { canPlaceNotch, detectNotchSession } from "../notch/session";
 import { loadKwinScript, unloadKwinScript } from "../notch/kwin";
@@ -346,6 +347,10 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       loadKwin: loadKwinScript,
       unloadKwin: unloadKwinScript,
       getMainWindow: () => (windows.window as unknown as BrowserWindow) ?? null,
+      readCutout:
+        process.platform === "darwin"
+          ? (display) => trackedExec("osascript", ["-l", "JavaScript", "-e", SCREENS_SCRIPT], 5000).then((out) => cutoutFor(parseScreens(out), display))
+          : undefined,
     });
     registerNotchIpc(notch, {
       onAction: (raw) => {

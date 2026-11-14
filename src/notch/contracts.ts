@@ -50,10 +50,17 @@ export type NotchAction =
   | { type: "playUpNext"; trackId: string }
   | { type: "focusApp" };
 
+// The camera housing of a MacBook display, in points
+export interface Cutout {
+  width: number;
+  height: number;
+}
+
 export interface NotchHello {
   state: NotchState | null;
   lyrics: NotchLyrics | null;
   settings: NotchSettings;
+  cutout: Cutout | null;
 }
 
 export interface ShapeRect {
