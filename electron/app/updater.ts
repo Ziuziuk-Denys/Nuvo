@@ -1,4 +1,4 @@
-export type UpdatePhase = "off" | "idle" | "downloading" | "ready" | "available";
+export type UpdatePhase = "off" | "idle" | "checking" | "latest" | "error" | "downloading" | "ready" | "available";
 export type UpdateMode = "install" | "notify" | "off";
 
 export interface UpdateView {
@@ -10,11 +10,14 @@ export interface UpdateView {
 
 export const FIRST_CHECK_MS = 15_000;
 export const CHECK_EVERY_MS = 4 * 60 * 60 * 1000;
+export const RETRY_FIRST_MS = 60_000;
+export const RETRY_MAX_MS = 30 * 60 * 1000;
+export const WAKE_GAP_MS = 30 * 60 * 1000;
 
-// Unsigned macOS builds cannot be replaced by Squirrel.Mac and a deb install would need root
-export function updateMode(input: { platform: NodeJS.Platform; packaged: boolean; appImage: boolean }): UpdateMode {
+// Unsigned macOS builds cannot be replaced by Squirrel.Mac, a deb install would need root, and the Windows zip has no installer to update
+export function updateMode(input: { platform: NodeJS.Platform; packaged: boolean; appImage: boolean; installed: boolean }): UpdateMode {
   if (!input.packaged) return "off";
-  if (input.platform === "win32" || (input.platform === "linux" && input.appImage)) return "install";
+  if ((input.platform === "win32" && input.installed) || (input.platform === "linux" && input.appImage)) return "install";
   return "notify";
 }
 
@@ -39,6 +42,7 @@ export function validVersion(value: unknown): value is string {
 export interface UpdateBackend {
   check(): Promise<{ version: string } | null>;
   download(onProgress: (percent: number) => void): Promise<void>;
+  installOnQuit(on: boolean): void;
   quitAndInstall(): void;
 }
 
@@ -54,14 +58,15 @@ export class Updater {
   private phase: UpdatePhase;
   private version: string | undefined;
   private percent: number | undefined;
-  private busy = false;
-  private timers: Array<ReturnType<typeof setTimeout>> = [];
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private failures = 0;
+  private lastCheck = 0;
   // bumped when updates are switched off, so a check in flight drops its result
   private epoch = 0;
   private lastSent = "";
 
   constructor(private readonly deps: UpdaterDeps) {
-    this.phase = deps.mode === "off" || !deps.enabled() ? "off" : "idle";
+    this.phase = deps.mode === "off" ? "off" : "idle";
     this.lastSent = JSON.stringify(this.view());
   }
 
@@ -73,21 +78,22 @@ export class Updater {
   }
 
   start(): void {
-    if (this.deps.mode === "off" || this.phase === "off") return;
-    this.schedule();
+    this.schedule(FIRST_CHECK_MS);
+  }
+
+  wake(): void {
+    if (Date.now() - this.lastCheck >= WAKE_GAP_MS) this.schedule(FIRST_CHECK_MS);
   }
 
   setEnabled(on: boolean): void {
     if (this.deps.mode === "off") return;
-    if (!on) {
+    if (on) return this.schedule(FIRST_CHECK_MS);
+    this.stopTimer();
+    if (this.phase === "checking" || this.phase === "downloading" || this.phase === "ready" || this.phase === "available") {
       this.epoch++;
-      this.stopTimers();
       this.version = this.percent = undefined;
-      this.busy = false;
-      this.set("off");
-    } else if (this.phase === "off") {
+      this.deps.backend.installOnQuit(false);
       this.set("idle");
-      this.schedule();
     }
   }
 
@@ -98,12 +104,20 @@ export class Updater {
   }
 
   async check(): Promise<void> {
-    if (this.busy || this.phase !== "idle") return;
-    this.busy = true;
+    if (!this.checkable()) return;
+    this.stopTimer();
+    this.lastCheck = Date.now();
     const epoch = this.epoch;
+    this.set("checking");
     try {
       const found = await this.deps.backend.check();
-      if (epoch !== this.epoch || !found || !validVersion(found.version)) return;
+      if (epoch !== this.epoch) return;
+      if (!found) {
+        this.failures = 0;
+        this.set("latest");
+        return this.schedule(CHECK_EVERY_MS);
+      }
+      if (!validVersion(found.version)) throw new Error("the feed names no plain version");
       this.version = found.version;
       if (this.deps.mode === "notify") return this.set("available");
       this.percent = 0;
@@ -113,32 +127,33 @@ export class Updater {
         this.percent = Math.max(0, Math.min(100, Math.floor(percent)));
         this.set("downloading");
       });
-      if (epoch === this.epoch) this.set("ready");
+      if (epoch !== this.epoch) return;
+      this.failures = 0;
+      this.deps.backend.installOnQuit(true);
+      this.set("ready");
     } catch (error) {
       if (epoch !== this.epoch) return;
       this.deps.log("[update] check failed", error);
       this.version = this.percent = undefined;
-      this.set("idle");
-    } finally {
-      if (epoch === this.epoch) this.busy = false;
+      this.set("error");
+      this.schedule(Math.min(RETRY_FIRST_MS * 2 ** this.failures++, RETRY_MAX_MS));
     }
   }
 
-  private schedule(): void {
-    this.stopTimers();
-    const first = setTimeout(() => void this.check(), FIRST_CHECK_MS);
-    const every = setInterval(() => void this.check(), CHECK_EVERY_MS);
-    first.unref?.();
-    every.unref?.();
-    this.timers = [first, every];
+  private checkable(): boolean {
+    return this.phase === "idle" || this.phase === "latest" || this.phase === "error";
   }
 
-  private stopTimers(): void {
-    for (const timer of this.timers) {
-      clearTimeout(timer);
-      clearInterval(timer);
-    }
-    this.timers = [];
+  private schedule(delayMs: number): void {
+    this.stopTimer();
+    if (!this.checkable() || !this.deps.enabled()) return;
+    this.timer = setTimeout(() => void this.check(), delayMs);
+    this.timer.unref?.();
+  }
+
+  private stopTimer(): void {
+    clearTimeout(this.timer);
+    this.timer = undefined;
   }
 
   private set(phase: UpdatePhase): void {
@@ -167,15 +182,21 @@ export interface AutoUpdaterLike {
 }
 
 /** Requests go through Electron's `net` on the default session, so the app's proxy settings apply to them too. */
-export function createBackend(updater: AutoUpdaterLike): UpdateBackend {
+export function createBackend(updater: AutoUpdaterLike, latestTag: () => Promise<string>): UpdateBackend {
   updater.autoDownload = false;
   updater.autoInstallOnAppQuit = false;
   updater.allowPrerelease = false;
   updater.allowDowngrade = false;
+  // the release feed weighs about 45 KB and the latest tag half a kilobyte, so the feed is read again only after a new release
+  let settledTag: string | undefined;
   return {
     async check() {
+      const tag = await latestTag().catch(() => undefined);
+      if (tag !== undefined && tag === settledTag) return null;
       const result = await updater.checkForUpdates();
-      return result?.isUpdateAvailable ? { version: result.updateInfo.version } : null;
+      if (result?.isUpdateAvailable) return { version: result.updateInfo.version };
+      settledTag = tag;
+      return null;
     },
     async download(onProgress) {
       const listener = (progress: { percent: number }) => onProgress(progress.percent);
@@ -185,6 +206,9 @@ export function createBackend(updater: AutoUpdaterLike): UpdateBackend {
       } finally {
         updater.off("download-progress", listener);
       }
+    },
+    installOnQuit(on) {
+      updater.autoInstallOnAppQuit = on;
     },
     quitAndInstall() {
       updater.quitAndInstall(false, true);

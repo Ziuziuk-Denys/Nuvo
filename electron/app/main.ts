@@ -47,7 +47,7 @@ import { APP_ID, applySwitches, guardContents, keepUserData, MainWindowControlle
 import { allowCheck, allowRequest, contentSecurityPolicy } from "./policy";
 import { notchActionToCommand, PlayerRelay, toNotchState } from "./relay";
 import { startPanelBus, type PanelBus } from "./panelBus";
-import { entryTarget, syncDesktopEntry } from "./desktopEntry";
+import { entryTarget, retargetDesktopEntry, syncDesktopEntry } from "./desktopEntry";
 import { enablePanelWidget, installPanelWidget, openExtensionsApp, panelFilesPresent, panelInstallAllowed, panelSource, panelTarget } from "./panelWidget";
 import { relaxCors, rewriteRequestHeaders } from "./requestRules";
 import { saveFilter, validateSaveText, writeTextAtomic } from "./saveText";
@@ -252,14 +252,34 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     if (next !== bounds) win.setBounds(next);
   };
 
+  // the page comes from the build config, never from the renderer
+  const updateFeed = () => parseFeed(fs.readFileSync(path.join(process.resourcesPath, "app-update.yml"), "utf8"));
+  const latestTag = async () => {
+    const feed = updateFeed();
+    if (!feed) throw new Error("no GitHub feed");
+    const response = await session.defaultSession.fetch(releasePageUrl(feed), { headers: { Accept: "application/json" } });
+    const tag = response.ok ? ((await response.json()) as { tag_name?: unknown }).tag_name : undefined;
+    if (typeof tag !== "string") throw new Error(`no latest tag (${response.status})`);
+    return tag;
+  };
   let loadedBackend: Promise<UpdateBackend> | undefined;
-  const backend = () => (loadedBackend ??= import("electron-updater").then((pkg) => createBackend(pkg.default.autoUpdater as unknown as AutoUpdaterLike)));
+  const backend = () =>
+    (loadedBackend ??= import("electron-updater").then((pkg) => {
+      pkg.default.autoUpdater.on("appimage-filename-updated", (file: string) => retargetDesktopEntry(file, os.homedir()));
+      return createBackend(pkg.default.autoUpdater as unknown as AutoUpdaterLike, latestTag);
+    }));
   const updater = new Updater({
-    mode: updateMode({ platform: process.platform, packaged: app.isPackaged, appImage: Boolean(process.env.APPIMAGE) }),
+    mode: updateMode({
+      platform: process.platform,
+      packaged: app.isPackaged,
+      appImage: Boolean(process.env.APPIMAGE),
+      installed: fs.existsSync(path.join(path.dirname(process.execPath), "Uninstall Nuvo.exe")),
+    }),
     enabled: () => settings.value.autoUpdate,
     backend: {
       check: async () => (await backend()).check(),
       download: async (onProgress) => (await backend()).download(onProgress),
+      installOnQuit: (on) => void backend().then((b) => b.installOnQuit(on)),
       quitAndInstall: () => void backend().then((b) => b.quitAndInstall()),
     },
     emit: (view) => sendToMain(CHANNELS.updateState, view),
@@ -541,12 +561,12 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       );
     });
     ipc.handle(CHANNELS.updateGetState, "main", () => updater.view());
+    ipc.handle(CHANNELS.updateCheck, "main", () => void updater.check());
     ipc.handle(CHANNELS.updateInstall, "main", () => updater.install());
     ipc.handle(CHANNELS.updateOpenRelease, "main", () => {
-      // the page comes from the build config, never from the renderer
       if (updater.view().mode !== "notify") return false;
       try {
-        const feed = parseFeed(fs.readFileSync(path.join(process.resourcesPath, "app-update.yml"), "utf8"));
+        const feed = updateFeed();
         if (feed) void shell.openExternal(releasePageUrl(feed));
         return feed !== null;
       } catch {
@@ -832,6 +852,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     await applyProxy();
     setInterval(() => void applyProxy(), PROXY_POLL_MS).unref();
     powerMonitor.on("resume", () => void applyProxy());
+    powerMonitor.on("resume", () => updater.wake());
     updater.start();
     installSession(session.defaultSession);
     const youtubePartition = session.fromPartition("persist:nuvo-yt");

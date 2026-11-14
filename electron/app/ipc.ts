@@ -103,6 +103,7 @@ export const CHANNELS = {
   discordStatus: "discord:status",
   updateGetState: "update:get-state",
   updateState: "update:state",
+  updateCheck: "update:check",
   updateInstall: "update:install",
   updateOpenRelease: "update:open-release",
   shortcutsSetGlobal: "shortcuts:set-global",

@@ -142,6 +142,10 @@ export function watchUpdate(onChange: (view: UpdateView) => void): () => void {
   return window.nuvoShell?.onUpdateState(onChange) ?? (() => undefined);
 }
 
+export async function checkForUpdate(): Promise<void> {
+  await window.nuvoShell?.checkForUpdate().catch(() => undefined);
+}
+
 export async function installUpdate(): Promise<boolean> {
   return (await window.nuvoShell?.installUpdate().catch(() => false)) === true;
 }

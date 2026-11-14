@@ -47,7 +47,7 @@ export interface MainSettingsView {
   proxyInForce?: string | null;
 }
 export interface UpdateView {
-  phase: "off" | "idle" | "downloading" | "ready" | "available";
+  phase: "off" | "idle" | "checking" | "latest" | "error" | "downloading" | "ready" | "available";
   mode: "install" | "notify" | "off";
   version?: string;
   percent?: number;
@@ -121,6 +121,7 @@ export interface NuvoShell {
   getDiscordStatus(): Promise<{ state: "off" | "connecting" | "connected" | "no_client" | "error"; message?: string }>;
   getUpdateState(): Promise<UpdateView>;
   onUpdateState(cb: (view: UpdateView) => void): Off;
+  checkForUpdate(): Promise<void>;
   installUpdate(): Promise<boolean>;
   openReleasePage(): Promise<boolean>;
   setGlobalShortcuts(bindings: Array<{ commandId: string; accelerator: string }>): Promise<Array<{ commandId: string; ok: boolean; reason?: string }>>;

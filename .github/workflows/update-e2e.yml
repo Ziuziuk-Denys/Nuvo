@@ -1,0 +1,157 @@
+name: update-e2e
+
+on:
+  pull_request:
+    paths:
+      - electron/app/updater.ts
+      - electron/app/main.ts
+      - electron/app/lifecycle.ts
+      - electron/app/desktopEntry.ts
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/update-e2e.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install-on-quit:
+    name: install on quit (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows
+            runner: windows-2025
+            triple: x86_64-pc-windows-msvc
+            builder: --win nsis --x64
+          - name: linux-x64
+            os: linux
+            runner: ubuntu-22.04
+            triple: x86_64-unknown-linux-gnu
+            builder: --linux AppImage --x64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.triple }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: core
+          key: update-e2e-${{ matrix.name }}
+
+      - name: Linux tools
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config libfuse2 xvfb
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Build the daemon
+        shell: bash
+        env:
+          TRIPLE: ${{ matrix.triple }}
+        run: |
+          # Git's perl lacks modules that OpenSSL's Configure needs; Strawberry Perl has them.
+          if [ "$RUNNER_OS" = "Windows" ] && [ -d /c/Strawberry/perl/bin ]; then export PATH="/c/Strawberry/perl/bin:$PATH"; fi
+          cargo build --release --locked --manifest-path core/Cargo.toml -p nuvo-server --target "$TRIPLE"
+          node scripts/stage-core.mjs "$TRIPLE"
+
+      - name: Panel widgets
+        if: matrix.os == 'linux'
+        run: pnpm panel:pack
+
+      - name: Package an old and a new version that read a local feed
+        shell: bash
+        env:
+          BUILDER: ${{ matrix.builder }}
+        run: |
+          for version in 0.90.0 0.90.1; do
+            node -e '
+              const fs = require("node:fs");
+              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+              pkg.version = process.argv[1];
+              pkg.build.publish = [{ provider: "generic", url: "http://127.0.0.1:8765/" }];
+              fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+            ' "$version"
+            # shellcheck disable=SC2086
+            pnpm exec electron-builder $BUILDER --publish never "-c.directories.output=out-$version"
+          done
+          ls out-0.90.1
+
+      - name: Update an installed Windows app on quit
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $feed = Start-Process python -ArgumentList '-m', 'http.server', '8765', '--bind', '127.0.0.1', '--directory', 'out-0.90.1' -PassThru
+          Start-Process -Wait 'out-0.90.0\Nuvo-0.90.0-win-x64.exe' -ArgumentList '/S'
+          $exe = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter nuvo.exe | Select-Object -First 1
+          Get-ChildItem $exe.DirectoryName | Select-Object -ExpandProperty Name
+          "installed $($exe.VersionInfo.ProductVersion) at $($exe.FullName)"
+          $app = Start-Process $exe.FullName -ArgumentList '--mute-audio' -PassThru -RedirectStandardOutput app.log -RedirectStandardError app.err
+          $deadline = (Get-Date).AddMinutes(4)
+          $info = $null
+          while (-not $info -and (Get-Date) -lt $deadline) {
+            Start-Sleep 3
+            $info = Get-ChildItem $env:LOCALAPPDATA -Directory -Filter '*-updater' | ForEach-Object { Get-Item "$($_.FullName)\pending\update-info.json" -ErrorAction SilentlyContinue } | Select-Object -First 1
+          }
+          if (-not $info) { Get-Content app.log, app.err; throw 'the update was not downloaded' }
+          Get-Content $info.FullName
+          Start-Sleep 5
+          taskkill /PID $app.Id
+          $app.WaitForExit(30000) | Out-Null
+          if (-not $app.HasExited) { Get-Content app.log, app.err; throw 'Nuvo did not quit' }
+          "Nuvo quit with $($app.ExitCode)"
+          $deadline = (Get-Date).AddMinutes(3)
+          do {
+            Start-Sleep 3
+            $version = (Get-Item $exe.FullName -ErrorAction SilentlyContinue).VersionInfo.ProductVersion
+          } while ($version -notlike '0.90.1*' -and (Get-Date) -lt $deadline)
+          Get-Content app.log, app.err
+          Stop-Process $feed -ErrorAction SilentlyContinue
+          if ($version -notlike '0.90.1*') { throw "still $version after quitting" }
+          "updated to $version"
+
+      - name: Update an AppImage on quit
+        if: matrix.os == 'linux'
+        shell: bash
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory out-0.90.1 > feed.log 2>&1 &
+          home=$(mktemp -d)
+          mkdir -p "$home/apps"
+          cp out-0.90.0/Nuvo-0.90.0-linux-x86_64.AppImage "$home/apps/"
+          HOME=$home xvfb-run -a "$home/apps/Nuvo-0.90.0-linux-x86_64.AppImage" --no-sandbox --mute-audio > app.log 2>&1 &
+          info=
+          for _ in $(seq 80); do
+            sleep 3
+            info=$(find "$home/.cache" -path '*-updater/pending/update-info.json' 2>/dev/null | head -n1)
+            [ -n "$info" ] && break
+          done
+          [ -n "$info" ] || { cat app.log; echo "the update was not downloaded" >&2; exit 1; }
+          cat "$info"
+          sleep 5
+          kill -TERM "$(pgrep -o -x nuvo)"
+          for _ in $(seq 30); do pgrep -x nuvo > /dev/null || break; sleep 1; done
+          sleep 3
+          cat app.log
+          ! pgrep -x nuvo || { echo "Nuvo is still running" >&2; exit 1; }
+          ls -l "$home/apps"
+          [ ! -e "$home/apps/Nuvo-0.90.0-linux-x86_64.AppImage" ] || { echo "the old AppImage is still there" >&2; exit 1; }
+          cmp "$home/apps/Nuvo-0.90.1-linux-x86_64.AppImage" out-0.90.1/Nuvo-0.90.1-linux-x86_64.AppImage
+          grep -F "Exec=\"$home/apps/Nuvo-0.90.1-linux-x86_64.AppImage\"" "$home/.local/share/applications/quest.nuvo.Nuvo.desktop"

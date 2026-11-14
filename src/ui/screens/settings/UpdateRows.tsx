@@ -1,7 +1,8 @@
 import { useEffect, useState, type CSSProperties, type JSX } from "react";
 import { Button } from "../../components/Button";
 import { useTranslation } from "../../ports/i18n";
-import { installUpdate, openReleasePage, readAutoUpdate, readUpdate, watchUpdate, writeAutoUpdate, type UpdateView } from "../../ports/system";
+import { useAppVersion } from "../../ports/settings";
+import { checkForUpdate, installUpdate, openReleasePage, readAutoUpdate, readUpdate, watchUpdate, writeAutoUpdate, type UpdateView } from "../../ports/system";
 import { SettingBlock, SettingRow, Switch } from "./controls";
 import styles from "./sections.module.css";
 
@@ -25,21 +26,16 @@ function useUpdateView(): UpdateView | null {
 export function UpdateStatus(): JSX.Element | null {
   const { t } = useTranslation();
   const view = useUpdateView();
-  if (!view?.version) return null;
-  const version = { version: view.version };
+  const current = useAppVersion();
+  if (!view || view.mode === "off") return null;
+  const version = { version: view.version ?? "" };
 
   if (view.phase === "downloading") {
     const percent = Math.round(view.percent ?? 0);
+    const title = t("ui.settings.update_downloading", { ...version, percent: String(percent) });
     return (
-      <SettingBlock title={t("ui.settings.update_downloading", version)} titleKey="ui.settings.update_downloading">
-        <span
-          className={styles.progress}
-          role="progressbar"
-          aria-valuenow={percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={t("ui.settings.update_downloading", version)}
-        >
+      <SettingBlock title={title} titleKey="ui.settings.update_downloading">
+        <span className={styles.progress} role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label={title}>
           <span style={{ "--done": `${percent}%` } as CSSProperties} />
         </span>
       </SettingBlock>
@@ -75,7 +71,29 @@ export function UpdateStatus(): JSX.Element | null {
       />
     );
   }
-  return null;
+
+  const checking = view.phase === "checking";
+  const [titleKey, actionKey] =
+    view.phase === "latest"
+      ? ["ui.settings.update_latest", "ui.settings.update_check_again"]
+      : view.phase === "error"
+        ? ["ui.settings.update_error", "ui.settings.update_retry"]
+        : checking
+          ? ["ui.settings.update_checking", "ui.settings.update_check_now"]
+          : ["ui.settings.update_check", "ui.settings.update_check_now"];
+  return (
+    <SettingRow
+      title={t(titleKey, { version: current })}
+      description={view.phase === "error" ? t("ui.settings.update_error_desc") : t("ui.settings.update_check_desc", { version: current })}
+      titleKey={titleKey}
+      explained={view.phase !== "latest"}
+      control={
+        <Button size="s" disabled={checking} aria-busy={checking} onClick={() => void checkForUpdate()}>
+          {t(actionKey)}
+        </Button>
+      }
+    />
+  );
 }
 
 export function AutoUpdateRow(): JSX.Element | null {
