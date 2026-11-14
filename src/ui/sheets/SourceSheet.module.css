@@ -1,0 +1,52 @@
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.body {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.body .row {
+  height: 54px;
+  gap: 12px;
+  margin: 0 -8px;
+  width: calc(100% + 16px);
+  border-radius: 14px;
+}
+
+.body .row svg {
+  color: var(--n-ink);
+}
+
+.label {
+  margin: 10px 0 2px;
+  color: var(--n-ink-3);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+}
+
+.versions {
+  max-height: max(160px, calc(100vh - 400px));
+  margin: 0 -8px;
+  padding: 0 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ghost {
+  display: block;
+  height: 46px;
+  margin: 4px 0;
+  border-radius: 14px;
+  background: var(--n-pop-hover);
+}
+
+.none {
+  margin: 4px 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+}

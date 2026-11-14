@@ -13,6 +13,8 @@ export interface Toast {
   description?: string;
   variant: ToastVariant;
   duration: number;
+  /** 0 to 1 for work with a known end, drawn as a line under the words */
+  progress?: number;
   action?: ToastAction;
   onDismiss?: () => void;
 }
@@ -22,6 +24,9 @@ export type ToastInput = Partial<Omit<Toast, "message">> & { message: string };
 export const DEFAULT_DURATION_MS = 4000;
 /** The legacy API marks a toast that stays with 999999 ms; anything that long is sticky. */
 export const STICKY = 999_999;
+const ACTION_MS = 8000;
+const LONGEST_MS = 10_000;
+const MS_PER_CHAR = 60;
 
 interface LegacyOptions {
   id?: string | number;
@@ -47,6 +52,13 @@ function isLoader(variant: ToastVariant): boolean {
   return variant === "loader" || variant === "loading";
 }
 
+// long words stay long enough to read, and a toast with a choice waits for it
+export function defaultDuration(input: ToastInput, variant: ToastVariant): number {
+  if (isLoader(variant)) return STICKY;
+  const reading = Math.min(LONGEST_MS, (input.message.length + (input.description?.length ?? 0)) * MS_PER_CHAR);
+  return Math.max(reading, input.action ? ACTION_MS : DEFAULT_DURATION_MS);
+}
+
 export function visibleToast(queue: Toast[]): Toast | null {
   return queue.find((toast) => toast.duration < STICKY) ?? queue[0] ?? null;
 }
@@ -60,7 +72,7 @@ export const useToastStore = create<ToastState>((set, get) => ({
       ...input,
       id: input.id ?? `toast-${++nextId}`,
       variant,
-      duration: input.duration ?? (isLoader(variant) ? STICKY : DEFAULT_DURATION_MS),
+      duration: input.duration ?? defaultDuration(input, variant),
     };
     set(({ queue }) => {
       const index = queue.findIndex((item) => item.id === toast.id);
@@ -71,7 +83,8 @@ export const useToastStore = create<ToastState>((set, get) => ({
           current.message === toast.message &&
           current.description === toast.description &&
           current.variant === toast.variant &&
-          current.duration === toast.duration;
+          current.duration === toast.duration &&
+          current.progress === toast.progress;
         return same ? { queue } : { queue: queue.map((item, at) => (at === index ? toast : item)) };
       }
       const waiting = queue.some((item) => item.message === toast.message && item.description === toast.description);

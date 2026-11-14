@@ -1,11 +1,15 @@
-import { useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent } from "react";
+import { useId, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent } from "react";
 import { create } from "zustand";
-import { Sheet } from "../components/Sheet";
+import { Button } from "../components/Button";
+import { Cover } from "../components/Cover";
 import { useToastStore } from "../feedback/toastStore";
+import { Icon } from "../icons/Icon";
 import { useTranslation } from "../ports/i18n";
 import { clearTrim, MIN_TRIM_MS, saveTrim, useTrims } from "../ports/library";
 import type { Track } from "../ports/player";
 import { formatDuration } from "../screens/entity/entityModel";
+import { GlassSheet } from "./GlassSheet";
+import glass from "./GlassSheet.module.css";
 import styles from "./TrimSheet.module.css";
 
 const STEP_MS = 1000;
@@ -71,6 +75,7 @@ function TrimRange({
       aria-valuenow={ms}
       aria-valuetext={clock(ms)}
       className={styles.knob}
+      data-handle={handle}
       style={{ "--at": percent(ms) } as CSSProperties}
       onKeyDown={keys(handle)}
     />
@@ -93,7 +98,7 @@ function TrimRange({
       onPointerCancel={() => (dragging.current = null)}
     >
       <span className={styles.track} />
-      <span className={styles.kept} />
+      <span className={styles.window} />
       {knob("start", value.start)}
       {knob("end", value.end)}
     </div>
@@ -105,6 +110,7 @@ function TrimEditor({ track, onClose }: { track: Track; onClose(): void }): JSX.
   const saved = useTrims((state) => state.byTrack[track.id]);
   const [range, setRange] = useState(() => ({ start: saved?.startMs ?? 0, end: saved?.endMs ?? track.durationMs }));
   const [pending, setPending] = useState(false);
+  const titleId = useId();
   const run = async (action: () => Promise<void>) => {
     setPending(true);
     try {
@@ -118,29 +124,43 @@ function TrimEditor({ track, onClose }: { track: Track; onClose(): void }): JSX.
   };
   const whole = range.start === 0 && range.end === track.durationMs;
   return (
-    <Sheet
-      open
-      onClose={onClose}
-      title={t("ui.trim.title")}
-      actions={[
-        ...(saved ? [{ label: t("ui.trim.reset"), onClick: () => void run(() => clearTrim(track.id)), disabled: pending }] : []),
-        { label: t("common.cancel"), onClick: onClose },
-        {
-          label: t("ui.trim.save"),
-          primary: true,
-          disabled: pending || (whole && !saved),
-          onClick: () => void run(() => (whole ? clearTrim(track.id) : saveTrim(track, range.start, range.end))),
-        },
-      ]}
-    >
-      <p className={styles.lead}>{t("ui.trim.lead", { title: track.title })}</p>
-      <TrimRange durationMs={track.durationMs} value={range} onChange={setRange} />
-      <div className={styles.times} aria-live="polite">
-        <span>{clock(range.start)}</span>
-        <span>{t("ui.trim.kept", { time: clock(range.end - range.start) })}</span>
-        <span>{clock(range.end)}</span>
+    <GlassSheet open onClose={onClose} labelledBy={titleId} width={440}>
+      <div className={styles.head}>
+        <Cover src={track.coverUrl ?? ""} size={48} radius={11} />
+        <div className={styles.headText}>
+          <h2 id={titleId} className={styles.eyebrow}>
+            {t("ui.trim.title")}
+          </h2>
+          <p className={styles.songTitle}>{track.title}</p>
+          <p className={styles.songMeta}>{track.artists}</p>
+        </div>
       </div>
-    </Sheet>
+      <div className={styles.editor}>
+        <TrimRange durationMs={track.durationMs} value={range} onChange={setRange} />
+        <div className={styles.times} aria-live="polite">
+          <span>{clock(range.start)}</span>
+          <span className={styles.kept}>{t("ui.trim.kept", { time: clock(range.end - range.start) })}</span>
+          <span>{clock(range.end)}</span>
+        </div>
+      </div>
+      <p className={glass.caption}>{t("ui.trim.lead")}</p>
+      <div className={glass.footer}>
+        {saved ? (
+          <button type="button" className={`${glass.quiet} ${glass.start}`} disabled={pending} onClick={() => void run(() => clearTrim(track.id))}>
+            <Icon name="undo" size={16} />
+            {t("ui.trim.reset")}
+          </button>
+        ) : null}
+        <Button onClick={onClose}>{t("common.cancel")}</Button>
+        <Button
+          variant="primary"
+          disabled={pending || (whole && !saved)}
+          onClick={() => void run(() => (whole ? clearTrim(track.id) : saveTrim(track, range.start, range.end)))}
+        >
+          {t("ui.trim.save")}
+        </Button>
+      </div>
+    </GlassSheet>
   );
 }
 

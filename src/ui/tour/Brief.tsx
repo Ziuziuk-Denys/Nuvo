@@ -34,7 +34,7 @@ export function Brief({ waiting, onReady, onDone, onWatch }: BriefProps): JSX.El
         {ROWS.map((row, index) => (
           <li key={row.id} className={`${styles.row} n-enter`} style={{ "--n-i": index + 1 } as CSSProperties}>
             <span className={styles.rowIcon} aria-hidden="true">
-              <Icon name={row.icon} size={18} />
+              <Icon name={row.icon} size={20} />
             </span>
             <span className={styles.rowText}>
               <b>{t(`ui.tour.brief.${row.id}`)}</b>

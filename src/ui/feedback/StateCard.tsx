@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { LAYER_ATTRIBUTE, trapTab, useLayer } from "../components/layers";
+import { Icon } from "../icons/Icon";
 import { WindowButtons } from "../shell/WindowButtons";
 import styles from "./StateCard.module.css";
 
 interface StateCardProps {
   title: string;
   line: string;
-  glyph: ReactNode;
   role?: "dialog" | "alertdialog";
   busy?: boolean;
   shake?: number;
@@ -20,7 +20,7 @@ function reducedMotion(): boolean {
   return typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function StateCard({ title, line, glyph, role = "dialog", busy = false, shake = 0, children }: StateCardProps): JSX.Element {
+export function StateCard({ title, line, role = "dialog", busy = false, shake = 0, children }: StateCardProps): JSX.Element {
   const titleId = useId();
   const lineId = useId();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -35,9 +35,8 @@ export function StateCard({ title, line, glyph, role = "dialog", busy = false, s
 
   return createPortal(
     <div className={styles.layer} {...{ [LAYER_ATTRIBUTE]: "" }}>
-      <div className={styles.backdrop} />
       <div className={styles.top} data-window-drag>
-        <WindowButtons />
+        <WindowButtons tray />
       </div>
       <div
         ref={cardRef}
@@ -50,7 +49,7 @@ export function StateCard({ title, line, glyph, role = "dialog", busy = false, s
         className={styles.card}
         onKeyDown={(event) => trapTab(event, event.currentTarget)}
       >
-        <span className={styles.glyph}>{glyph}</span>
+        <Icon name="nuvo-mark" size={26} className={styles.mark} />
         <h2 id={titleId} className={styles.title}>
           {title}
         </h2>

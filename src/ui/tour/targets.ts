@@ -9,12 +9,13 @@ const soundTab = (index: number) => soundPanel()?.querySelectorAll('[role="tab"]
 
 const TARGETS: Record<TargetId, () => Element | null> = {
   island: () => document.querySelector("[data-island]"),
-  "rail-search": () => document.querySelector('[data-nav="search"]'),
-  "search-field": () => tour("search-field"),
-  "rail-recognize": () => document.querySelector('[data-nav="recognize"]'),
+  "search-bar": () => document.querySelector("header [role=combobox]")?.parentElement ?? null,
+  palette: () => document.querySelector('[role="dialog"]:has(> [role="listbox"])'),
+  "nav-recognize": () => document.querySelector('[data-nav="recognize"]'),
   "recognize-sources": () => tour("recognize-sources"),
   scrubber: () => document.querySelector('[data-island] [role="slider"]'),
-  like: () => tour("like"),
+  rate: () => document.querySelector("[data-island] span:has([data-like]):has([data-dislike])"),
+  lyrics: () => document.querySelector("[data-island] button:has([data-island-title])"),
   queue: () => tour("queue"),
   "sound-button": () => tour("sound"),
   "sound-panel": soundPanel,

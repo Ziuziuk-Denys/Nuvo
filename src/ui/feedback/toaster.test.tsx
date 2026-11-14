@@ -123,12 +123,12 @@ describe("Toaster", () => {
     expect(messages()).toEqual(["ui.status.failed"]);
   });
 
-  it("says offline once per session, for 8 s, with Dismiss", () => {
+  it("says offline once per session, for 8 s, with no button to press", () => {
     mocks.reachable = false;
     act(() => root.render(<Toaster />));
     expect(card()?.textContent).toContain("ui.status.offline");
     expect(card()?.textContent).toContain("ui.status.offline_hint");
-    expect(card()?.querySelector("button")?.textContent).toBe("ui.status.dismiss");
+    expect(card()?.querySelector("button")).toBeNull();
     act(() => vi.advanceTimersByTime(8000));
     expect(messages()).toEqual([]);
     mocks.reachable = true;

@@ -1,11 +1,12 @@
 export type TargetId =
   | "island"
-  | "rail-search"
-  | "search-field"
-  | "rail-recognize"
+  | "search-bar"
+  | "palette"
+  | "nav-recognize"
   | "recognize-sources"
   | "scrubber"
-  | "like"
+  | "rate"
+  | "lyrics"
   | "queue"
   | "sound-button"
   | "sound-panel"
@@ -21,9 +22,9 @@ export type TargetId =
   | "presets"
   | "modes";
 
-export type Route = "/" | "/search" | "/recognize" | "/library";
+export type Route = "/" | "/recognize" | "/library";
 
-export type Act = { kind: "route"; path: Route } | { kind: "press"; target: TargetId } | { kind: "settings"; section: string };
+export type Act = { kind: "route"; path: Route } | { kind: "press"; target: TargetId } | { kind: "settings"; section: string } | { kind: "palette" };
 
 export type Side = "below" | "above" | "right" | "left";
 
@@ -51,15 +52,16 @@ export const CHAPTERS: Chapter[] = [
     id: "search",
     scene: [],
     steps: [
-      { target: "rail-search", text: "rail_search", side: "right" },
-      { target: "search-field", text: "search_field", act: [{ kind: "route", path: "/search" }] },
+      { target: "search-bar", text: "search_bar", side: "below" },
+      // right of the panel: below it would cover the results it describes
+      { target: "palette", text: "palette", act: [{ kind: "palette" }], side: "right" },
     ],
   },
   {
     id: "recognize",
     scene: [],
     steps: [
-      { target: "rail-recognize", text: "rail_recognize", side: "right" },
+      { target: "nav-recognize", text: "nav_recognize", side: "below" },
       { target: "recognize-sources", text: "recognize_sources", act: [{ kind: "route", path: "/recognize" }] },
     ],
   },
@@ -70,7 +72,8 @@ export const CHAPTERS: Chapter[] = [
     scene: [{ kind: "route", path: "/" }],
     steps: [
       { target: "scrubber", text: "scrubber", side: "above" },
-      { target: "like", text: "like", side: "above" },
+      { target: "lyrics", text: "lyrics", side: "above" },
+      { target: "rate", text: "rate", side: "above" },
       { target: "queue", text: "queue", side: "above" },
     ],
   },

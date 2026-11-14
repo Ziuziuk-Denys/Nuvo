@@ -178,6 +178,7 @@ describe("tour store", () => {
     tour().next();
     tour().next();
     tour().next();
+    tour().next();
     expect(tour().phase).toBe("off");
     expect(saved().missed).toEqual([]);
   });

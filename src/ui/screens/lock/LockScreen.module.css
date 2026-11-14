@@ -2,24 +2,18 @@
   position: relative;
   box-sizing: border-box;
   width: 100%;
-  border-radius: 12px;
-  background: var(--border-white-alpha-14);
-  transition:
-    background-color var(--n-t-quick) var(--n-ease-out),
-    box-shadow var(--n-t-quick) var(--n-ease-out);
+  border-radius: var(--n-r-l);
+  background: var(--n-fill);
+  transition: background-color var(--n-t-quick) var(--n-ease-out);
 }
 
-.well:hover {
-  background: var(--border-white-alpha-33);
-}
-
-/* focus is a deeper fill, never a ring: the accent is red in the default look and would read as an error */
+.well:hover,
 .well:focus-within {
-  background: var(--border-white-alpha-33);
+  background: var(--n-fill-hover);
 }
 
 .well[data-invalid] {
-  box-shadow: 0 0 0 1.5px color-mix(in srgb, #ea4335 70%, transparent);
+  background: color-mix(in srgb, var(--n-danger-ink) 12%, transparent);
 }
 
 .field {
@@ -27,13 +21,13 @@
   box-sizing: border-box;
   width: 100%;
   field-sizing: content;
-  min-height: 92px;
+  min-height: 104px;
   max-height: 200px;
-  padding: 12px 14px 30px;
+  padding: 14px 16px 34px;
   border: 0;
   background: transparent;
   color: var(--n-ink);
-  font: 400 14px/1.5 var(--n-font);
+  font: 400 15px/1.55 var(--n-font);
   text-align: left;
   resize: none;
   outline: none;
@@ -49,10 +43,10 @@
 
 .count {
   position: absolute;
-  right: 12px;
-  bottom: 8px;
+  right: 14px;
+  bottom: 10px;
   color: var(--n-ink-3);
-  font: 500 12px/16px var(--n-font);
+  font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
   pointer-events: none;
   transition: color var(--n-t-quick) var(--n-ease-out);
@@ -63,17 +57,20 @@
 }
 
 .error {
-  margin: 10px 0 0;
-  color: var(--n-ink);
-  font: 500 13px/18px var(--n-font);
-  text-wrap: balance;
+  align-self: flex-start;
+  margin: 10px 2px 0;
+  color: var(--n-danger-ink);
+  font: var(--n-type-label);
+  text-align: left;
+  text-wrap: pretty;
+  animation: lock-open var(--n-t-quick) var(--n-ease-out) both;
 }
 
 .unlock {
   width: 100%;
-  height: 38px;
+  height: 40px;
   margin-top: 16px;
-  border-radius: 11px;
+  border-radius: var(--n-r-m);
   font-weight: 500;
 }
 
@@ -88,14 +85,15 @@
 }
 
 .lost {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .lostText {
-  max-width: 34ch;
+  max-width: 36ch;
   margin-top: 4px;
   color: var(--n-ink-3);
-  font: 400 13px/1.45 var(--n-font);
+  font: 400 13px/1.5 var(--n-font);
+  text-wrap: pretty;
   animation: lock-open var(--n-t-base) var(--n-ease-out) both;
 }
 
@@ -117,6 +115,7 @@
     animation-duration: 2.4s;
   }
 
+  .error,
   .lostText {
     animation: none;
   }

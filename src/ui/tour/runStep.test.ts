@@ -8,7 +8,7 @@ function recordingStage(present: TargetId[], onAct?: (act: Act) => void) {
     clear: () => log.push("clear"),
     clearStep: () => log.push("clearStep"),
     act: async (act) => {
-      log.push(`act:${act.kind}:${"target" in act ? act.target : "path" in act ? act.path : act.section}`);
+      log.push(`act:${act.kind}:${"target" in act ? act.target : "path" in act ? act.path : "section" in act ? act.section : ""}`);
       onAct?.(act);
     },
     find: async (target) => {

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useToastStore, STICKY } from "../feedback/toastStore";
 import { useTranslation, type TFunction } from "../ports/i18n";
-import { programLabel, readTools, type ToolsView } from "../ports/system";
+import { downloadTool, programLabel, readTools, ROW_PROGRAM, TOOL_ROWS, type ToolsView } from "../ports/system";
 
 export const TOAST_ID = "tool-download";
 export const BUSY_MS = 1000;
@@ -32,15 +32,18 @@ export function useToolDownloadToast(): void {
       if (!live) return;
       const download = view?.download;
       if (download && !download.failed) {
-        toasts.show({ id: TOAST_ID, variant: "loader", duration: STICKY, message: downloadText(download, t) });
+        const progress = download.total ? download.received / download.total : undefined;
+        toasts.show({ id: TOAST_ID, variant: "loader", duration: STICKY, message: downloadText(download, t), progress });
       } else {
         toasts.remove(TOAST_ID);
         if (download?.failed && failedFor !== download.tool) {
           failedFor = download.tool;
+          const row = TOOL_ROWS.find((name) => ROW_PROGRAM[name] === download.tool);
           toasts.show({
             id: `${TOAST_ID}-failed`,
             variant: "error",
             message: t("ui.settings.tools.failed", { tool: programLabel(download.tool) }),
+            action: row ? { label: t("ui.settings.tools.download_again"), onClick: () => void downloadTool(row) } : undefined,
           });
         }
         if (!download) failedFor = null;
