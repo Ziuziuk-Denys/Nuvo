@@ -89,7 +89,7 @@ describe("player state relay", () => {
 
 describe("main settings", () => {
   it("saving the form again keeps the stored password, a new username drops it, port 80 is a port", () => {
-    const store = new MainSettingsStore(path.join(fs.mkdtempSync(path.join(tmpdir(), "nuvo-proxy-")), "s.json"), safe(true), () => undefined);
+    const store = new MainSettingsStore(path.join(tempDir(), "s.json"), safe(true), () => undefined);
     expect(store.set("proxy", { mode: "manual", url: "http://proxy.lan:80", username: "me", password: "secret" }).ok).toBe(true);
     expect(store.proxyPassword()).toBe("secret");
     store.set("proxy", { mode: "manual", url: "http://proxy.lan:8080", username: "me" });

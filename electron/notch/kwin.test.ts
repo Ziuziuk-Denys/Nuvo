@@ -1,14 +1,23 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { default as path } from "node:path";
-import { expect, it, describe } from "vitest";
+import { afterEach, expect, it, describe } from "vitest";
 import { loadKwinScript, unloadKwinScript } from "./kwin";
+
+const dirs: string[] = [];
+afterEach(() => dirs.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
+
+function tempDir(): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "nuvo-kwin-"));
+  dirs.push(dir);
+  return dir;
+}
 
 const base = ["call", "--session", "--dest", "org.kde.KWin"];
 
 describe("loadKwinScript", () => {
   it("writes the script, reloads it and runs it through gdbus", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "nuvo-kwin-"));
+    const dir = tempDir();
     const calls: Array<[string, string[]]> = [];
     const run = async (cmd: string, args: string[]) => {
       calls.push([cmd, args]);
@@ -25,19 +34,19 @@ describe("loadKwinScript", () => {
   });
 
   it("accepts script id 0, the first id KWin hands out", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "nuvo-kwin-"));
+    const dir = tempDir();
     const run = async (_cmd: string, args: string[]) => (args.includes("org.kde.kwin.Scripting.loadScript") ? "(0,)\n" : "()\n");
     expect(await loadKwinScript("x", run, dir)).toBe(true);
   });
 
   it("returns false when KWin refuses the script", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "nuvo-kwin-"));
+    const dir = tempDir();
     const run = async (_cmd: string, args: string[]) => (args.includes("org.kde.kwin.Scripting.loadScript") ? "(-1,)\n" : "()\n");
     expect(await loadKwinScript("x", run, dir)).toBe(false);
   });
 
   it("ignores unload errors and returns false when loading fails", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "nuvo-kwin-"));
+    const dir = tempDir();
     const run = async (_cmd: string, args: string[]) => {
       if (args.includes("org.kde.kwin.Scripting.unloadScript")) throw new Error("not loaded");
       return "garbage";

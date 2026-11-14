@@ -13,8 +13,9 @@ function pkg(root, name, version, deps = {}, license = "MIT") {
   return dir;
 }
 
-test("runtime packages follow imports and installed dependencies, without electron and types", () => {
+test("runtime packages follow imports and installed dependencies, without electron and types", (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "notices-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const nm = path.join(root, "node_modules");
   const zustand = pkg(nm, "zustand", "5.0.0", { "use-sync-external-store": "1" });
   const sync = pkg(nm, "use-sync-external-store", "1.2.0");
@@ -42,8 +43,9 @@ test("runtime packages follow imports and installed dependencies, without electr
   assert.match(render(entries), /zustand 5\.0\.0 - MIT\n\nMIT text of zustand/);
 });
 
-test("cargo entries follow normal dependencies of the server, not dev ones or the workspace", () => {
+test("cargo entries follow normal dependencies of the server, not dev ones or the workspace", (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "crate-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   fs.writeFileSync(path.join(dir, "LICENSE-MIT"), "MIT text of serde");
   const metadata = {
     workspace_members: ["server 0.1.0", "store 0.1.0"],

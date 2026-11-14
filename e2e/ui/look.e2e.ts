@@ -33,8 +33,11 @@ function fontFixture(): string {
 }
 
 const sessions: NuvoSession[] = [];
+const exportDirs: string[] = [];
+
 afterAll(async () => {
   for (const session of sessions) await session.close();
+  exportDirs.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true }));
 });
 
 async function stubDialogs(live: NuvoSession, open: string | null, save: string | null): Promise<void> {
@@ -165,7 +168,9 @@ describe("look", () => {
     await page.waitForTimeout(2_500);
     expect(await page.locator("#nuvo-custom-css").count()).toBe(1);
 
-    const exported = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-look-")), "shared.nuvotheme.json");
+    const exportDir = fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-look-"));
+    exportDirs.push(exportDir);
+    const exported = path.join(exportDir, "shared.nuvotheme.json");
     await stubDialogs(live, exported, exported);
     await openSection(live, "appearance");
     await page.getByRole("switch", { name: t("appearance.theme.export_css") }).click();
@@ -183,7 +188,6 @@ describe("look", () => {
     await page.keyboard.press("Escape");
     await editor.waitFor({ state: "detached" });
     await page.getByRole("button", { name: t("appearance.theme.discard") }).click();
-    fs.rmSync(path.dirname(exported), { recursive: true, force: true });
 
     await openSection(live, "customization");
     await page.getByRole("button", { name: t("appearance.safe.reset") }).click();

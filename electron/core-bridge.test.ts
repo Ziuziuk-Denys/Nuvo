@@ -14,14 +14,18 @@ interface Seen {
 }
 
 const servers: http.Server[] = [];
+const dirs: string[] = [];
 
 afterEach(async () => {
+  dirs.splice(0).forEach((dir) => fs.rmSync(dir, { recursive: true, force: true }));
   await Promise.all(servers.splice(0).map((s) => new Promise((r) => s.close(r))));
 });
 
 // Unix socket paths are limited to 108 bytes, so keep them in the short system temp dir.
 function socketPath(): string {
-  return path.join(fs.mkdtempSync(path.join(os.tmpdir(), "lc-")), "c.sock");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lc-"));
+  dirs.push(dir);
+  return path.join(dir, "c.sock");
 }
 
 async function fakeCore(handler: (req: http.IncomingMessage, res: http.ServerResponse, seen: Seen) => void) {
