@@ -1,6 +1,7 @@
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
 use std::process::ExitCode;
+use std::time::Duration;
 
 use nuvo_crypto::{FallbackKeyStore, FileKeyStore, KeyringStore};
 use nuvo_fetch::tools::ToolEnv;
@@ -36,14 +37,17 @@ async fn main() -> ExitCode {
         Some(url) => Some(url),
         None => Some(RELEASE_URL.into()),
     };
+    let shazam_url = env("NUVO_CORE_SHAZAM_URL");
+    // The budget is the real service's; a stand-in for tests gets plain spacing.
+    let pace = if shazam_url.is_some() { Pace { burst: 1, refill: Duration::ZERO, ..Pace::SHAZAM } } else { Pace::SHAZAM };
     let config = Config {
         paths,
         token,
         lrclib_url: env("NUVO_CORE_LRCLIB_URL").unwrap_or_else(|| LRCLIB_URL.into()),
         amll_url: env("NUVO_CORE_AMLL_URL").unwrap_or_else(|| AMLL_URL.into()),
-        shazam_url: env("NUVO_CORE_SHAZAM_URL").unwrap_or_else(|| SHAZAM_URL.into()),
+        shazam_url: shazam_url.unwrap_or_else(|| SHAZAM_URL.into()),
         lastfm_url: env("NUVO_CORE_LASTFM_URL").unwrap_or_else(|| LASTFM_URL.into()),
-        pace: Pace::SHAZAM,
+        pace,
         exit_on_stdin_eof: env("NUVO_CORE_EXIT_ON_STDIN_EOF").is_some(),
         net_rewrite: None,
         env: ToolEnv { managed: Some(managed), ..ToolEnv::from_process() },

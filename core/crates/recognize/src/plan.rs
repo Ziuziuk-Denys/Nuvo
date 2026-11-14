@@ -153,8 +153,14 @@ pub async fn listen<S: WindowSource>(
         };
         sent += 1;
         let of = (candidates.len() - skipped).min(MAX_REQUESTS);
-        report(Stage::Listening { attempt: sent, of, via: candidate.via, envelope: envelope(&mono) });
+        let listening = Stage::Listening { attempt: sent, of, via: candidate.via, envelope: envelope(&mono) };
         loop {
+            let wait = shazam.wait().await;
+            if wait > shazam.pace.spacing {
+                report(Stage::Waiting { seconds: wait.as_secs_f64().ceil() as u64 });
+                tokio::time::sleep(wait).await;
+            }
+            report(listening.clone());
             match shazam.send(&signature).await.map_err(ListenError::Shazam)? {
                 Reply::Found(song) => return Ok(Outcome::Found { song, via: candidate.via }),
                 Reply::NotFound => break,
@@ -163,7 +169,6 @@ pub async fn listen<S: WindowSource>(
                         return Err(ListenError::Busy);
                     };
                     limited += 1;
-                    report(Stage::Waiting { seconds: wait.as_secs_f64().ceil() as u64 });
                     shazam.defer(wait).await;
                 }
             }

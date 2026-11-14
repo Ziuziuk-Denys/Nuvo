@@ -11,7 +11,7 @@ use axum::routing::post;
 use nuvo_recognize::Pace;
 use serde_json::{Value, json};
 
-pub const FAST: Pace = Pace { spacing: Duration::ZERO, backoff: [Duration::from_millis(5); 3] };
+pub const FAST: Pace = Pace { spacing: Duration::ZERO, burst: 1, refill: Duration::ZERO, backoff: [Duration::from_millis(5); 3] };
 
 pub struct Recorded {
     pub uri: String,

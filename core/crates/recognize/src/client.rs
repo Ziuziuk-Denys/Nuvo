@@ -56,11 +56,15 @@ impl Shazam {
             builder = builder.proxy(proxy);
         }
         let client = builder.build().expect("static reqwest config is valid");
-        Self { client, base: base.into().trim_end_matches('/').to_string(), limiter: Limiter::new(pace.spacing), pace }
+        Self { client, base: base.into().trim_end_matches('/').to_string(), limiter: Limiter::new(pace), pace }
     }
 
     pub async fn send(&self, signature: &Signature) -> Result<Reply, ShazamError> {
         self.limiter.run(self.post(signature)).await
+    }
+
+    pub async fn wait(&self) -> Duration {
+        self.limiter.wait().await
     }
 
     pub async fn defer(&self, wait: Duration) {
