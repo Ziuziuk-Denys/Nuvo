@@ -1,0 +1,67 @@
+{
+  "hero": "home",
+  "heroAlt": "The Home window: three mixes made from your plays, songs for you and the player bar.",
+  "sources": {
+    "home": "90-app-home-playing-{theme}.png",
+    "search": "91-app-palette-results-{theme}.png",
+    "sound": "18-equalizer-waves-{theme}.png",
+    "lyrics": "17-lyrics-whisper-written-{theme}.png",
+    "import": "93-app-import-preview-{theme}.png",
+    "queue": "96-app-queue-open-{theme}.png",
+    "wallpaper": "98-app-wallpaper-video-{theme}.png",
+    "background": "98-app-wallpaper-settings-{theme}.png",
+    "lock": "97-app-lock-empty-{theme}.png",
+    "recognize": "20-recognize-{theme}.png"
+  },
+  "widgets": {
+    "search": {
+      "shot": "search",
+      "box": [0.235, 0.077, 0.532, 0.413],
+      "radius": 18,
+      "width": 500
+    },
+    "mixes": {
+      "shot": "home",
+      "box": [0.008, 0.077, 0.555, 0.4],
+      "radius": 14,
+      "width": 460
+    },
+    "sound": {
+      "shot": "sound",
+      "box": [0.636, 0.393, 0.357, 0.5],
+      "radius": 16,
+      "width": 440
+    },
+    "lyrics": {
+      "shot": "lyrics",
+      "box": [0, 0, 1, 1],
+      "radius": 12,
+      "width": 520
+    },
+    "import": {
+      "shot": "import",
+      "box": [0.316, 0.21, 0.367, 0.578],
+      "radius": 18,
+      "width": 400
+    },
+    "background": {
+      "shot": "background",
+      "box": [0.33, 0.09, 0.525, 0.6],
+      "radius": 16,
+      "width": 480
+    },
+    "lock": {
+      "shot": "lock",
+      "box": [0.333, 0.3, 0.35, 0.48],
+      "radius": 18,
+      "width": 400
+    }
+  },
+  "showcase": [{
+      "shot": "queue", "title": "Queue.", "caption": "It opens beside whatever you are doing, with the history above.", "alt": "The queue panel open beside the library", "video": ""
+    }, {
+      "shot": "wallpaper", "title": "Wallpaper.", "caption": "A photo, a GIF or a video behind every screen.", "alt": "Home over a video wallpaper", "video": ""
+    }, {
+      "shot": "recognize", "title": "Recognize.", "caption": "Name the song from the microphone, the sound your computer plays, a file or a link.", "alt": "The Recognize page with its four ways to listen", "video": ""
+    }]
+}

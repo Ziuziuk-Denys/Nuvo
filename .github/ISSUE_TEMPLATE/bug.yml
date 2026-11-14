@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.com/Ziuziuk-Denys/Nuvo/raw/main/.github/readme/page-head-dark.png"><img src="https://github.com/Ziuziuk-Denys/Nuvo/raw/main/.github/readme/page-head-light.png" width="100%" alt="Nuvo"></picture>
+        <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.com/Ziuziuk-Denys/Nuvo/raw/main/.github/readme/banner-dark.png"><img src="https://github.com/Ziuziuk-Denys/Nuvo/raw/main/.github/readme/banner-light.png" width="100%" alt="Nuvo"></picture>
 
         Search existing issues first. For a security problem, use the [private route](https://github.com/Ziuziuk-Denys/Nuvo/blob/main/SECURITY.md) instead.
   - type: textarea
@@ -29,36 +29,36 @@ body:
     id: version
     attributes:
       label: Nuvo version
-      description: Settings, About.
-      placeholder: 0.2.10
+      description: Settings, Application, About.
+      placeholder: 0.3.0
     validations:
       required: true
   - type: dropdown
     id: install
     attributes:
       label: How you installed it
-      options: [AppImage, deb, rpm, tar.gz, Built from source, Windows, macOS, Other]
+      options: [AppImage, deb, rpm, Windows installer, Windows portable, macOS dmg, Built from source, Other]
     validations:
       required: true
   - type: input
     id: system
     attributes:
       label: System
-      description: Distribution or OS, version, desktop environment, Wayland or X11.
-      placeholder: Fedora 44, GNOME, Wayland
+      description: The system and its version. On Linux, also the desktop and Wayland or X11.
+      placeholder: Fedora 44, GNOME, Wayland / Windows 11 / macOS 15
     validations:
       required: true
   - type: textarea
     id: network
     attributes:
       label: Support report and network state
-      description: Settings, Network, "Check connection", then "Copy report". Paste the result. It has no library, paths or passwords. Say whether you use a proxy or a VPN.
+      description: Settings, Application, Network, "Check connection", then "Copy report". Paste the result. It has no library, paths or passwords. Say whether you use a proxy or a VPN.
       render: text
   - type: textarea
     id: logs
     attributes:
-      label: Daemon log
-      description: The last lines of `~/.local/state/nuvo/core.log` around the problem. It records routes and timings, not track ids. Check it before pasting.
+      label: Service log
+      description: The last lines around the problem from `~/.local/state/nuvo/core.log` on Linux and macOS, or `%LOCALAPPDATA%\nuvo\core.log` on Windows. It records routes and timings, not track ids. Check it before pasting.
       render: text
   - type: textarea
     id: extra

@@ -5,8 +5,8 @@ contact_links:
     url: https://nuvo.quest/docs
     about: Install steps, features and troubleshooting.
   - name: Question or idea to talk through
-    url: https://github.com/Ziuziuk-Denys/nuvo/discussions
+    url: https://github.com/Ziuziuk-Denys/Nuvo/discussions
     about: Use Discussions for questions and open-ended ideas.
   - name: Security vulnerability
-    url: https://github.com/Ziuziuk-Denys/nuvo/blob/main/SECURITY.md
+    url: https://github.com/Ziuziuk-Denys/Nuvo/blob/main/SECURITY.md
     about: Report privately by email. Do not open a public issue.
