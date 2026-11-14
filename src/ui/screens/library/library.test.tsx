@@ -275,6 +275,16 @@ describe("Library states", () => {
     expect(titles()).toEqual([]);
   });
 
+  it("a library with music keeps Import in the toolbar, next to Create playlist", () => {
+    render();
+    expect(titles().length).toBeGreaterThan(0);
+    const importButton = button("ui.library.import");
+    expect(importButton.nextElementSibling?.getAttribute("aria-label")).toBe("ui.library.create_playlist");
+    click(importButton);
+    expect(useImportsUi.getState().sheet).toEqual({});
+    act(() => useImportsUi.getState().close());
+  });
+
   it("an empty tab names what it is missing in one line", () => {
     mocks.state.empty = true;
     render();
