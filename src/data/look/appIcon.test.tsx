@@ -47,7 +47,7 @@ async function mount() {
 
 describe("app icon", () => {
   it("sends the preset's icon, stock only for nuvo", async () => {
-    useLookStore.setState({ preset: "vinyl" });
+    useLookStore.setState({ preset: "amber" });
     await mount();
     expect(applyIcon).toHaveBeenCalledWith("data:image/png;base64,AAAA", { stock: false });
     applyIcon.mockClear();
@@ -58,27 +58,29 @@ describe("app icon", () => {
 
 describe("reveal", () => {
   it("applies at once without View Transitions", () => {
-    vi.stubGlobal("matchMedia", () => ({ matches: false }));
     const apply = vi.fn();
-    revealThemeChange(apply, { x: 1, y: 2 });
+    revealThemeChange(apply);
     expect(apply).toHaveBeenCalledTimes(1);
+    expect(document.documentElement.hasAttribute("data-theme-switch")).toBe(false);
   });
 
-  it("starts a view transition when it can, and applies at once under reduced motion", () => {
+  it("applies inside a view transition and marks the root until the cross-fade ends", async () => {
+    let finish = () => undefined as void;
+    const finished = new Promise<void>((resolve) => (finish = resolve));
     const start = vi.fn((update: () => void) => {
       update();
-      return { ready: Promise.resolve() };
+      return { finished };
     });
     (document as unknown as { startViewTransition: unknown }).startViewTransition = start;
-    vi.stubGlobal("matchMedia", () => ({ matches: false }));
     const apply = vi.fn();
-    revealThemeChange(apply, { x: 10, y: 10 });
-    expect(start).toHaveBeenCalledTimes(1);
-    expect(apply).toHaveBeenCalledTimes(1);
-    vi.stubGlobal("matchMedia", () => ({ matches: true }));
     revealThemeChange(apply);
     expect(start).toHaveBeenCalledTimes(1);
-    expect(apply).toHaveBeenCalledTimes(2);
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(document.documentElement.hasAttribute("data-theme-switch")).toBe(true);
+    finish();
+    await finished;
+    await Promise.resolve();
+    expect(document.documentElement.hasAttribute("data-theme-switch")).toBe(false);
     delete (document as unknown as { startViewTransition?: unknown }).startViewTransition;
   });
 });

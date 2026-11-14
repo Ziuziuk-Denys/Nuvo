@@ -1,7 +1,8 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useState, type CSSProperties, type JSX } from "react";
+import { Button } from "../../components/Button";
 import { useTranslation } from "../../ports/i18n";
 import { installUpdate, openReleasePage, readAutoUpdate, readUpdate, watchUpdate, writeAutoUpdate, type UpdateView } from "../../ports/system";
-import { SettingRow, Switch } from "./controls";
+import { SettingBlock, SettingRow, Switch } from "./controls";
 import styles from "./sections.module.css";
 
 const TITLE = "ui.settings.auto_update.title";
@@ -21,22 +22,57 @@ function useUpdateView(): UpdateView | null {
   return view;
 }
 
-export function UpdateNotice(): JSX.Element | null {
+export function UpdateStatus(): JSX.Element | null {
   const { t } = useTranslation();
   const view = useUpdateView();
   if (!view?.version) return null;
+  const version = { version: view.version };
+
+  if (view.phase === "downloading") {
+    const percent = Math.round(view.percent ?? 0);
+    return (
+      <SettingBlock title={t("ui.settings.update_downloading", version)} titleKey="ui.settings.update_downloading">
+        <span
+          className={styles.progress}
+          role="progressbar"
+          aria-valuenow={percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={t("ui.settings.update_downloading", version)}
+        >
+          <span style={{ "--done": `${percent}%` } as CSSProperties} />
+        </span>
+      </SettingBlock>
+    );
+  }
   if (view.phase === "ready" && view.mode === "install") {
     return (
-      <button type="button" className={styles.update} onClick={() => void installUpdate()}>
-        {t("ui.settings.update_restart")}
-      </button>
+      <SettingRow
+        title={t("ui.settings.update_ready", version)}
+        description={t("ui.settings.update_ready_desc")}
+        titleKey="ui.settings.update_ready"
+        explained
+        control={
+          <Button size="s" variant="primary" onClick={() => void installUpdate()}>
+            {t("ui.settings.update_restart")}
+          </Button>
+        }
+      />
     );
   }
   if (view.phase === "available" && view.mode === "notify") {
     return (
-      <button type="button" className={styles.update} onClick={() => void openReleasePage()}>
-        {t("ui.settings.update_available", { version: view.version })}
-      </button>
+      <SettingRow
+        title={t("ui.settings.update_available", version)}
+        description={t("ui.settings.update_available_desc")}
+        titleKey="ui.settings.update_available"
+        explained
+        control={
+          <Button size="s" variant="primary" onClick={() => void openReleasePage()}>
+            {t("ui.settings.update_open")}
+          </Button>
+        }
+      />
     );
   }
   return null;

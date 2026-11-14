@@ -6,28 +6,12 @@ import { readCoverPixels } from "@/data/covers/colors";
 import { activeTheme, useAppearanceStore } from "@/data/look/appearance/appearanceStore";
 import { fixContrast, themeTokens } from "@/data/look/appearance/deriveTheme";
 import { applyPresetTokens, applyTokens } from "./apply";
-import { getPreset, resolvePresetMode, type Preset, type PresetId, type PresetMode } from "./presets";
-import { selectIsGlassThemeActive, useLookStore, type ThemeChoice } from "./lookStore";
-
-export function effectivePreset(id: PresetId, glass: boolean): Preset {
-  const chosen = getPreset(id);
-  return glass && !chosen.modes.includes("dark") ? getPreset("nuvo") : chosen;
-}
-
-export function modeStep(preset: Preset, theme: ThemeChoice, before: ThemeChoice | null): { setTheme?: ThemeChoice; before: ThemeChoice | null } {
-  if (preset.modes.length === 1) {
-    const forced = preset.modes[0];
-    if (theme === forced) return { before };
-    return { setTheme: forced, before: before ?? theme };
-  }
-  if (before !== null) return { setTheme: before, before: null };
-  return { before: null };
-}
+import { getPreset, resolvePresetMode, type PresetMode } from "./presets";
+import { useLookStore } from "./lookStore";
 
 export function useLookSync(): void {
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const presetId = useLookStore((s) => s.preset);
-  const glass = useLookStore(selectIsGlassThemeActive);
   const coverGlow = useLookStore((s) => s.coverGlow);
   const accentFromCover = useLookStore((s) => s.accentFromCover);
   const coverUrl = usePlayerStore((s) => s.currentTrack?.coverUrl ?? "");
@@ -39,18 +23,16 @@ export function useLookSync(): void {
   }, [coverGlow]);
 
   useEffect(() => {
-    if (custom) return;
-    const choice: ThemeChoice = theme === "light" || theme === "dark" ? theme : "system";
     const { themeBeforePreset, setThemeBeforePreset } = useLookStore.getState();
-    const step = modeStep(effectivePreset(presetId, glass), choice, themeBeforePreset);
-    if (step.before !== themeBeforePreset) setThemeBeforePreset(step.before);
-    if (step.setTheme) setTheme(step.setTheme);
-  }, [presetId, glass, theme, setTheme, custom]);
+    if (custom || themeBeforePreset === null) return;
+    setTheme(themeBeforePreset);
+    setThemeBeforePreset(null);
+  }, [setTheme, custom]);
 
   useEffect(() => {
     const root = document.documentElement;
     let cancelled = false;
-    const preset = effectivePreset(presetId, glass);
+    const preset = getPreset(presetId);
     root.dataset.preset = custom ? `custom:${custom.id}` : preset.id;
     if (custom) applyTokens(root, `custom:${custom.id}`, themeTokens(custom, mode));
     else applyPresetTokens(root, preset, resolvePresetMode(preset, mode));
@@ -66,5 +48,5 @@ export function useLookSync(): void {
     return () => {
       cancelled = true;
     };
-  }, [presetId, glass, mode, custom, accentFromCover, coverUrl]);
+  }, [presetId, mode, custom, accentFromCover, coverUrl]);
 }

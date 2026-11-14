@@ -1,6 +1,9 @@
 import recorded from "./presetTokens.json";
+import { drawPresetIcon } from "./presetIcons";
+import stockDark from "../../../build/icons/themes/nuvo.svg?raw";
+import stockLight from "../../../build/icons/themes/nuvo-light.svg?raw";
 
-export type PresetId = "nuvo" | "editor" | "orbit" | "vinyl" | "cosmos" | "sunset" | "amethyst" | "y2k" | "cassette";
+export type PresetId = "nuvo" | "ink" | "frost" | "moss" | "matcha" | "amber" | "dusk" | "blossom" | "velvet";
 export type PresetMode = "light" | "dark";
 export type Tokens = Record<string, string>;
 
@@ -10,7 +13,7 @@ export interface Preset {
   tokens: Partial<Record<PresetMode, Tokens>>;
 }
 
-export const PRESET_IDS: PresetId[] = ["nuvo", "editor", "orbit", "vinyl", "cosmos", "sunset", "amethyst", "y2k", "cassette"];
+export const PRESET_IDS: PresetId[] = ["nuvo", "ink", "frost", "moss", "matcha", "amber", "dusk", "blossom", "velvet"];
 
 const table = recorded as Record<PresetId, { modes: PresetMode[]; tokens: Partial<Record<PresetMode, Tokens>> }>;
 
@@ -24,10 +27,7 @@ export function resolvePresetMode(preset: Preset, wanted: PresetMode): PresetMod
   return preset.modes.includes(wanted) ? wanted : preset.modes[0];
 }
 
-const ICON_DIR = "../../../build/icons/themes/";
-const icons = import.meta.glob("../../../build/icons/themes/*.svg", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-
 export function presetIconSvg(id: PresetId, mode: PresetMode): string {
-  const name = id === "nuvo" && mode === "light" ? "nuvo-light" : id;
-  return icons[`${ICON_DIR}${name}.svg`] ?? icons[`${ICON_DIR}nuvo.svg`] ?? "";
+  if (id === "nuvo") return mode === "light" ? stockLight : stockDark;
+  return drawPresetIcon(id, resolvePresetMode(getPreset(id), mode));
 }

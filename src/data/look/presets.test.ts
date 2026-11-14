@@ -9,7 +9,7 @@ describe("presets", () => {
     const names = (tokens: object) => Object.keys(tokens).sort().join();
     const reference = names(getPreset("nuvo").tokens.dark ?? getPreset("nuvo").tokens.light!);
     for (const preset of PRESETS) {
-      expect(preset.modes.length).toBeGreaterThan(0);
+      expect(preset.modes).toEqual(["light", "dark"]);
       for (const mode of preset.modes) expect(names(preset.tokens[mode]!)).toBe(reference);
     }
     expect(reference).toContain("n-accent");
@@ -17,15 +17,23 @@ describe("presets", () => {
 
   it("an unknown id falls back to nuvo; a missing mode resolves to the preset's own", () => {
     expect(getPreset("gone").id).toBe("nuvo");
-    const single = PRESETS.find((preset) => preset.modes.length === 1)!;
-    expect(single).toBeDefined();
-    expect(resolvePresetMode(single, single.modes[0] === "light" ? "dark" : "light")).toBe(single.modes[0]);
+    expect(resolvePresetMode({ ...getPreset("ink"), modes: ["dark"] }, "light")).toBe("dark");
     expect(resolvePresetMode(getPreset("nuvo"), "light")).toBe("light");
   });
 
-  it("icons come from the brand set", () => {
-    for (const preset of PRESETS) expect(presetIconSvg(preset.id, preset.modes[0])).toContain("<svg");
-    expect(presetIconSvg("nuvo", "light")).not.toBe(presetIconSvg("nuvo", "dark"));
+  it("every preset has its own icon per mode, a light tile in light mode and a dark one in dark", () => {
+    const icons = new Set<string>();
+    const luma = (hex: string) => [0, 2, 4].reduce((sum, at, i) => sum + parseInt(hex.slice(1 + at, 3 + at), 16) * [0.2126, 0.7152, 0.0722][i], 0);
+    for (const preset of PRESETS) {
+      for (const mode of preset.modes) {
+        const svg = presetIconSvg(preset.id, mode);
+        expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
+        const tileTop = /id="bg"[^>]*><stop offset="0" stop-color="(#[0-9a-fA-F]{6})"/.exec(svg)![1];
+        expect(luma(tileTop) > 128).toBe(mode === "light");
+        icons.add(svg);
+      }
+    }
+    expect(icons.size).toBe(PRESETS.length * 2);
   });
 
   it("applying sets the tokens and drops stale --n-* ones", () => {
@@ -48,6 +56,33 @@ describe("presets", () => {
     expect(root.style.getPropertyValue("--text-primary")).toBe("var(--n-ink)");
     expect(root.style.getPropertyValue("--bg-glass")).toContain("var(--n-field)");
     expect(root.style.getPropertyValue("--border-toolbox-divider")).toBe("var(--n-hair)");
+  });
+
+  it("the accent keeps 4.5:1 over the field and raised surfaces, so it can carry a field-coloured label", () => {
+    const failures: string[] = [];
+    for (const preset of PRESETS) {
+      for (const mode of preset.modes) {
+        const tokens = preset.tokens[mode]!;
+        for (const surface of ["n-field", "n-raised"]) {
+          const ratio = contrast(parseColor(tokens["n-accent"]), parseColor(tokens[surface]));
+          if (ratio < 4.5) failures.push(`${preset.id} ${mode}: accent on ${surface} is ${ratio.toFixed(2)}`);
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it("no two presets share a field colour: every pair stays apart in OKLab in both modes", () => {
+    const close: string[] = [];
+    for (const mode of ["light", "dark"] as const) {
+      for (const [i, a] of PRESETS.entries()) {
+        for (const b of PRESETS.slice(i + 1)) {
+          const gap = oklabDistance(parseColor(a.tokens[mode]!["n-field"]), parseColor(b.tokens[mode]!["n-field"]));
+          if (gap < 0.024) close.push(`${a.id} and ${b.id} ${mode}: ${gap.toFixed(3)}`);
+        }
+      }
+    }
+    expect(close).toEqual([]);
   });
 
   it("text roles keep 4.5:1 over every surface of every preset and mode", () => {
@@ -89,6 +124,26 @@ function luminance([r, g, b]: Rgba): number {
     return unit <= 0.03928 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+}
+
+function oklab([r, g, b]: Rgba): number[] {
+  const [lr, lg, lb] = [r, g, b].map((channel) => {
+    const unit = channel / 255;
+    return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+  });
+  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+function oklabDistance(a: Rgba, b: Rgba): number {
+  const [x, y] = [oklab(a), oklab(b)];
+  return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
 }
 
 function contrast(a: Rgba, b: Rgba): number {

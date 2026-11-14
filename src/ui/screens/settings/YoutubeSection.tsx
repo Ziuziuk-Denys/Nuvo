@@ -3,7 +3,6 @@ import { useCoverSrc } from "../../ports/covers";
 import { useTranslation } from "../../ports/i18n";
 import { openYoutubeSignIn, signOutYoutube, useYoutubeAccount, useYoutubePreferences } from "../../ports/youtube";
 import { SettingGroup, SettingRow, Switch } from "./controls";
-import { SectionIcon } from "./SectionIcon";
 import styles from "./sections.module.css";
 
 function AccountCard(): JSX.Element {
@@ -19,9 +18,7 @@ function AccountCard(): JSX.Element {
 
   return (
     <div className={styles.account}>
-      <span className={styles.avatar} data-loading={loading ? "" : undefined}>
-        {photo ? <img src={photo} alt="" /> : loading ? null : <SectionIcon id="Youtube" />}
-      </span>
+      {loading ? <span className={styles.avatar} data-loading="" /> : photo ? <img className={styles.avatar} src={photo} alt="" /> : null}
       <span className={styles.accountText}>
         {loading ? (
           <>
@@ -63,13 +60,15 @@ export function YoutubeSection(): JSX.Element {
   );
 
   return (
-    <div className={styles.youtube}>
-      <AccountCard />
+    <>
       <SettingGroup label={t("settings.youtube.section_playback")}>
+        <AccountCard />
+      </SettingGroup>
+      <SettingGroup label={t("settings.page.youtube_use")}>
         {toggle("account_playback", prefs.playThroughAccount, (on) => setPrefs({ playThroughAccount: on }))}
         {toggle("prompt_sign_in", prefs.offerSignIn, (on) => setPrefs({ offerSignIn: on }))}
         {toggle("sync_library", prefs.showAccountPlaylists, (on) => setPrefs({ showAccountPlaylists: on }), false)}
       </SettingGroup>
-    </div>
+    </>
   );
 }

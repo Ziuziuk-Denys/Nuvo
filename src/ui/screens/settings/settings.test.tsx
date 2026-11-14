@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => {
     "settings.tabs.playback": "Playback",
     "settings.tabs.shortcuts": "Shortcuts",
     "settings.tabs.appearance": "Appearance",
-    "settings.tabs.customization": "Customization",
+    "settings.page.background": "Background and motion",
     "settings.tabs.notch": "Notch",
     "settings.tabs.youtube": "YouTube",
     "settings.tabs.storage": "Cache & Storage",
@@ -34,8 +34,7 @@ const mocks = vi.hoisted(() => {
     "settings.preset.title": "Theme",
     "settings.preset.accent_from_cover": "Accent from the cover",
     "settings.preset.accent_from_cover_description": "The accent colour follows the artwork.",
-    "settings.preset.mode_locked_dark": "This theme is dark only",
-    "settings.preset.names.vinyl": "Vinyl",
+    "settings.preset.names.amber": "Amber",
     "settings.theme.system": "System",
     "settings.theme.light": "Light",
     "settings.theme.dark": "Dark",
@@ -162,8 +161,6 @@ vi.mock("../../ports/sound", () => ({
 }));
 vi.mock("../../ports/settings", () => ({
   useCustomizationStore: mocks.custom,
-  selectIsGlassThemeActive: () => false,
-  useHasCustomBackground: () => false,
   MIN_WALLPAPER_BLUR: 10,
   LOCALE_OPTIONS: [
     { value: "en", label: "English" },
@@ -172,13 +169,14 @@ vi.mock("../../ports/settings", () => ({
   ],
   PRIMARY_LOCALES: ["en", "ru"],
   useAppVersion: () => "0.2.10",
+  notesFor: () => ["- **Bold lead,** then [a page](https://nuvo.test)"],
+  takeWhatsNew: () => false,
 }));
 vi.mock("../../ports/theme", () => ({
   PRESETS: [
     { id: "nuvo", modes: ["light", "dark"] },
-    { id: "vinyl", modes: ["dark"] },
+    { id: "amber", modes: ["light", "dark"] },
   ],
-  getPreset: (id: string) => ({ id, modes: id === "vinyl" ? ["dark"] : ["light", "dark"] }),
   presetIconSvg: () => "<svg></svg>",
   revealThemeChange: (apply: () => void) => apply(),
   useLook: () => mocks.look,
@@ -335,9 +333,9 @@ describe("settings frame", () => {
     render();
     openSection("Appearance");
     expect(heading()).toBe("Appearance");
-    expect(document.querySelector("[aria-pressed][data-preset=vinyl]")).not.toBeNull();
+    expect(document.querySelector("[aria-pressed][data-preset=amber]")).not.toBeNull();
     key(document.activeElement!, { key: "ArrowDown" });
-    expect(heading()).toBe("Customization");
+    expect(heading()).toBe("Background and motion");
     key(document.activeElement!, { key: "ArrowUp" });
     key(document.activeElement!, { key: "ArrowUp" });
     expect(heading()).toBe("Shortcuts");
@@ -416,25 +414,17 @@ describe("each setting writes through its port", () => {
     expect(mocks.sound.getState().setGlobalTempo).toHaveBeenCalledWith(mocks.tempo.slowed);
   });
 
-  it("appearance: preset, locked mode, accent and language", () => {
+  it("appearance: preset, mode, accent and language", () => {
     mocks.modal.getState().settingsSection = "Appearance";
     render();
-    click(document.querySelector("[data-preset=vinyl]")!);
-    expect(mocks.custom.getState().setPreset).toHaveBeenCalledWith("vinyl");
+    click(document.querySelector("[data-preset=amber]")!);
+    expect(mocks.custom.getState().setPreset).toHaveBeenCalledWith("amber");
     click(switchNamed("Accent from the cover"));
     expect(mocks.custom.getState().setAccentFromCover).toHaveBeenCalledWith(true);
     click(byText("Dark"));
     expect(mocks.setThemeMode).toHaveBeenCalledWith("dark");
     click(document.querySelector("button[lang=ru]")!);
     expect(mocks.setLocale).toHaveBeenCalledWith("ru");
-
-    act(() => root.unmount());
-    root = createRoot(host);
-    mocks.custom.getState().preset = "vinyl";
-    render();
-    expect((byText("Light") as HTMLButtonElement).disabled).toBe(true);
-    expect((byText("Dark") as HTMLButtonElement).disabled).toBe(false);
-    expect(document.body.textContent).toContain("This theme is dark only");
   });
 
   it("notch", () => {

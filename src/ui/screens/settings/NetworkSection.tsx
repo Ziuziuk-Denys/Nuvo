@@ -99,7 +99,7 @@ export function NetworkSection(): JSX.Element {
 
   return (
     <>
-      <SettingGroup>
+      <SettingGroup label={t("settings.page.connection")}>
         <OfflineModeRow />
         {proxy ? (
           <SettingRow
@@ -159,6 +159,8 @@ export function NetworkSection(): JSX.Element {
             {error}
           </p>
         ) : null}
+      </SettingGroup>
+      <SettingGroup label={t("settings.page.trouble")}>
         <SettingRow
           title={t("ui.settings.connection")}
           description={t("ui.settings.connection_desc")}

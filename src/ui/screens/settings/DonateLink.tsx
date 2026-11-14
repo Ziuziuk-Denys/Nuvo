@@ -9,9 +9,9 @@ export function DonateLink({ url = DONATE_URL }: { url?: string }): JSX.Element 
   const { t } = useTranslation();
   if (!url) return null;
   return (
-    <button type="button" className={styles.support} onClick={() => openExternal(url)}>
+    <button type="button" className={styles.action} onClick={() => openExternal(url)}>
       {t("ui.settings.support")}
-      <Icon name="external" size={14} className={styles.supportArrow} />
+      <Icon name="external" size={16} className={styles.actionIcon} />
     </button>
   );
 }

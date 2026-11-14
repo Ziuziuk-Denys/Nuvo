@@ -12,11 +12,11 @@ const GLYPHS: Record<SectionId, IconName> = {
   Customization: "gallery",
   Notch: "widget",
   Youtube: "youtube",
-  Lastfm: "history",
-  Discord: "now-playing",
+  Lastfm: "lastfm",
+  Discord: "discord",
   Storage: "database",
   Network: "link",
-  About: "info-circle",
+  About: "nuvo-mark",
 };
 
 export function SectionIcon({ id }: { id: SectionId }): JSX.Element {

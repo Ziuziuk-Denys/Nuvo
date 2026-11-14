@@ -115,6 +115,8 @@ export const CHANNELS = {
   fontsListSystem: "fonts:list-system",
   fontsImport: "fonts:import-file",
   fontsDelete: "fonts:delete",
+  wallpaperImport: "wallpaper:import",
+  wallpaperClear: "wallpaper:clear",
   themeExport: "theme:export",
   themeImport: "theme:import",
   playlistCoverPick: "playlist:cover-pick",

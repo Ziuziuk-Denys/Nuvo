@@ -11,7 +11,7 @@ from PIL import Image, ImageFilter
 HERE = pathlib.Path(__file__).resolve().parent
 ARGS = [arg for arg in sys.argv[1:] if arg != "--platform"]
 BRAND = pathlib.Path(ARGS[0] if ARGS else "~/IT/Projects/Apps/Nuvo/design/brand").expanduser()
-THEMES = ["nuvo", "editor", "orbit", "vinyl", "cosmos", "sunset", "amethyst", "y2k", "cassette"]
+THEMES = ["nuvo"]
 SIZES = [16, 32, 48, 64, 128, 256, 512]
 TRAY_SIZES = [16, 22, 24, 32, 48]
 PATH = ""

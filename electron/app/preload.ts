@@ -68,6 +68,11 @@ const shell: NuvoShell = {
   listSystemFonts: (rescan = false) => invoke("fonts:list-system", { rescan }),
   importFontFile: () => invoke("fonts:import-file"),
   deleteFontFile: (id) => invoke("fonts:delete", { id }),
+  importWallpaper: async (file) => {
+    const path = webUtils.getPathForFile(file);
+    return path ? invoke("wallpaper:import", { path }) : { ok: false, error: "read" };
+  },
+  clearWallpaper: () => invoke("wallpaper:clear"),
   pickCoverImage: () => invoke("playlist:cover-pick"),
   exportTheme: (name, text) => invoke("theme:export", { name, text }),
   importThemeFile: () => invoke("theme:import"),

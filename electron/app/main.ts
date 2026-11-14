@@ -35,6 +35,7 @@ import { loadKwinScript, unloadKwinScript } from "../notch/kwin";
 import { createCompositorBridge, detectCompositor, type Exec } from "./compositor";
 import { findLinkArg, LinkInbox } from "./deeplink";
 import { countsAsFailedStart, isShiftAtStart, SAFE_FLAG, StartWatch } from "./appearanceSafeMode";
+import { WallpaperStore, wallpaperResponse } from "./wallpaper";
 import { FC_LIST_MAX_BYTES, fontResponse, FontStore, MAX_FONT_FILE_BYTES, parseFcList, readCapped, SystemFonts, type FontImport } from "./fonts";
 import { findCover } from "./coverLookup";
 import { DISCORD_APPLICATION_ID, DiscordPresence, socketCandidates } from "./discord";
@@ -103,6 +104,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
 
   const settings = new MainSettingsStore(path.join(app.getPath("userData"), "main-settings.json"), safeStorage, log);
   const fonts = new FontStore(path.join(app.getPath("userData"), "fonts"));
+  const wallpaper = new WallpaperStore(path.join(app.getPath("userData"), "wallpaper"));
   const startWatch = new StartWatch({ get: () => settings.value.appearance, set: (flags) => settings.setAppearance(flags) });
   if (process.argv.includes(SAFE_FLAG)) startWatch.forceSafe();
   const systemFonts = new SystemFonts(
@@ -583,6 +585,13 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         return picked.canceled || !file ? { ok: false, error: "cancelled" } : readCoverFile(file);
       }),
     );
+    ipc.handle(CHANNELS.wallpaperImport, "main", (payload) => {
+      const file = (payload as { path?: unknown } | null)?.path;
+      if (typeof file === "string" && path.isAbsolute(file)) return wallpaper.import(file);
+      refusals.refuse(CHANNELS.wallpaperImport, "shape");
+      return { ok: false, error: "read" };
+    });
+    ipc.handle(CHANNELS.wallpaperClear, "main", () => wallpaper.clear());
     ipc.handle(CHANNELS.fontsDelete, "main", (payload) => {
       const id = (payload as { id?: unknown } | null)?.id;
       return typeof id === "string" && fonts.remove(id);
@@ -812,6 +821,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     protocol.handle(CORE_SCHEME, (request) => {
       const url = new URL(request.url);
       if (url.hostname === "local" && url.pathname.startsWith("/fonts/")) return fontResponse(request, fonts, allowedOrigins);
+      if (url.hostname === "local" && url.pathname.startsWith("/wallpaper/")) return wallpaperResponse(request, wallpaper, allowedOrigins);
       return forwardToCore(request, { socketPath, token: core.token, waitReady: () => core.whenReady(), allowedOrigins });
     });
     screen.on("display-removed", keepOnScreen);

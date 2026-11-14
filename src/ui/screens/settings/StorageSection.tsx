@@ -16,6 +16,8 @@ import {
 } from "../../ports/storage";
 import { KeyProtectionRow } from "./KeyProtectionRow";
 import { SaveFormatRow } from "./SaveFormatRow";
+import { SettingBlock, SettingGroup } from "./controls";
+import sections from "./sections.module.css";
 import styles from "./storage.module.css";
 
 const GB = 1024 ** 3;
@@ -144,120 +146,119 @@ export function StorageSection(): JSX.Element {
   const total = analytics?.totalBytes || 1;
 
   return (
-    <div className={styles.storage}>
-      <div className={styles.card} data-split="">
-        <div className={styles.categories}>
-          {analytics?.categories.map((category) => {
-            const share = Math.round((category.bytes / total) * 100);
-            return (
-              <button
-                key={category.id}
-                type="button"
-                role="checkbox"
-                aria-checked={selected.has(category.id)}
-                className={styles.category}
-                data-hovered={hovered === category.id ? "" : undefined}
-                onClick={() => toggle(category.id)}
-                onMouseEnter={() => setHovered(category.id)}
-                onMouseLeave={() => setHovered(null)}
-              >
-                <span className={styles.categoryLeft}>
-                  <span className={styles.box}>{selected.has(category.id) ? <Icon name="check" size={16} /> : null}</span>
-                  <span className={styles.dot} style={{ background: category.color }} />
-                  <span className={styles.categoryName}>{t(category.labelKey)}</span>
-                  <span className={styles.share}>{category.bytes === 0 ? "0%" : share === 0 ? "<1%" : `${share}%`}</span>
-                </span>
-                <span className={styles.size}>{formatStorageBytes(category.bytes)}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className={styles.ringWrap}>
-          <div className={styles.ring}>
-            <svg viewBox="0 0 200 200" width={136} height={136} aria-hidden="true">
-              <circle cx="100" cy="100" r="70" className={styles.ringTrack} />
-              {selectedBytes > 0
-                ? slices.map((slice) => (
-                    <path
-                      key={slice.id}
-                      d={hovered === slice.id ? ringSegment(57.5, 83.5, slice.from, slice.to) : ringSegment(58, 82, slice.from, slice.to)}
-                      fill={slice.color}
-                      onMouseEnter={() => setHovered(slice.id)}
-                      onMouseLeave={() => setHovered(null)}
-                    />
-                  ))
-                : null}
-            </svg>
-            <span className={styles.ringValue}>
-              {value}
-              {unit ? <span className={styles.ringUnit}>{unit}</span> : null}
-            </span>
+    <>
+      <SettingGroup label={t("settings.page.space")}>
+        <div className={styles.usage}>
+          <div className={styles.categories}>
+            {analytics?.categories.map((category) => {
+              const share = Math.round((category.bytes / total) * 100);
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={selected.has(category.id)}
+                  className={styles.category}
+                  data-hovered={hovered === category.id ? "" : undefined}
+                  onClick={() => toggle(category.id)}
+                  onMouseEnter={() => setHovered(category.id)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  <span className={styles.categoryLeft}>
+                    <span className={styles.box}>{selected.has(category.id) ? <Icon name="check" size={16} /> : null}</span>
+                    <span className={styles.dot} style={{ background: category.color }} />
+                    <span className={styles.categoryName}>{t(category.labelKey)}</span>
+                    <span className={styles.share}>{category.bytes === 0 ? "0%" : share === 0 ? "<1%" : `${share}%`}</span>
+                  </span>
+                  <span className={styles.size}>{formatStorageBytes(category.bytes)}</span>
+                </button>
+              );
+            })}
           </div>
-          <span className={styles.ringCaption}>{t("settings.storage.usage_title")}</span>
-        </div>
-      </div>
-
-      <div className={styles.card}>
-        <div className={styles.limitHead}>
-          <h3 className={styles.limitTitle}>{t("settings.storage.cache_limit")}</h3>
-          <p className={styles.limitText}>{t("settings.storage.cache_limit_desc")}</p>
-        </div>
-        <div className={styles.limit}>
-          <div className={styles.ticks} style={{ "--at": `${(limitIndex / (LIMITS.length - 1)) * 100}%` } as CSSProperties}>
-            <span className={styles.rail} />
-            <span className={styles.fill} />
-            {LIMITS.map((bytes, index) => (
-              <span
-                key={bytes}
-                className={styles.tick}
-                data-passed={index <= limitIndex ? "" : undefined}
-                style={{ left: `${(index / (LIMITS.length - 1)) * 100}%` }}
-              />
-            ))}
-            <span className={styles.thumb} />
-            <input
-              type="range"
-              min={0}
-              max={LIMITS.length - 1}
-              step={1}
-              value={limitIndex}
-              aria-label={t("settings.storage.cache_limit")}
-              aria-valuetext={limitLabel(LIMITS[limitIndex])}
-              className={styles.range}
-              onChange={(event) => void changeLimit(LIMITS[Number(event.target.value)])}
-            />
-          </div>
-          <div className={styles.labels}>
-            {LIMITS.map((bytes, index) => (
-              <span
-                key={bytes}
-                className={styles.label}
-                data-active={index === limitIndex ? "" : undefined}
-                style={{ left: `${(index / (LIMITS.length - 1)) * 100}%` }}
-                onClick={() => void changeLimit(bytes)}
-              >
-                {limitLabel(bytes)}
+          <div className={styles.ringWrap}>
+            <div className={styles.ring}>
+              <svg viewBox="0 0 200 200" width={136} height={136} aria-hidden="true">
+                <circle cx="100" cy="100" r="70" className={styles.ringTrack} />
+                {selectedBytes > 0
+                  ? slices.map((slice) => (
+                      <path
+                        key={slice.id}
+                        d={hovered === slice.id ? ringSegment(57.5, 83.5, slice.from, slice.to) : ringSegment(58, 82, slice.from, slice.to)}
+                        fill={slice.color}
+                        onMouseEnter={() => setHovered(slice.id)}
+                        onMouseLeave={() => setHovered(null)}
+                      />
+                    ))
+                  : null}
+              </svg>
+              <span className={styles.ringValue}>
+                {value}
+                {unit ? <span className={styles.ringUnit}>{unit}</span> : null}
               </span>
-            ))}
+            </div>
+            <span className={styles.ringCaption}>{t("settings.storage.usage_title")}</span>
           </div>
         </div>
-      </div>
+        <div className={styles.actions}>
+          <button type="button" className={styles.secondary} onClick={() => void openCacheFolder()}>
+            <Icon name="folder" size={16} />
+            {t("settings.storage.open_folder")}
+          </button>
+          <button type="button" className={styles.primary} disabled={selectedBytes === 0 || !analytics} onClick={() => setConfirming(true)}>
+            {selectedBytes > 0 ? t("settings.storage.clear_button", { size: formatStorageBytes(selectedBytes) }) : t("settings.storage.clear_selected")}
+          </button>
+        </div>
+        {failed ? <p className={sections.note}>{t("settings.cache.local_cache.error")}</p> : null}
+        <SettingBlock title={t("settings.storage.cache_limit")} description={t("settings.storage.cache_limit_desc")}>
+          <div className={styles.limit}>
+            <div className={styles.ticks} style={{ "--at": `${(limitIndex / (LIMITS.length - 1)) * 100}%` } as CSSProperties}>
+              <span className={styles.rail} />
+              <span className={styles.fill} />
+              {LIMITS.map((bytes, index) => (
+                <span
+                  key={bytes}
+                  className={styles.tick}
+                  data-passed={index <= limitIndex ? "" : undefined}
+                  style={{ left: `${(index / (LIMITS.length - 1)) * 100}%` }}
+                />
+              ))}
+              <span className={styles.thumb} />
+              <input
+                type="range"
+                min={0}
+                max={LIMITS.length - 1}
+                step={1}
+                value={limitIndex}
+                aria-label={t("settings.storage.cache_limit")}
+                aria-valuetext={limitLabel(LIMITS[limitIndex])}
+                className={styles.range}
+                onChange={(event) => void changeLimit(LIMITS[Number(event.target.value)])}
+              />
+            </div>
+            <div className={styles.labels}>
+              {LIMITS.map((bytes, index) => (
+                <span
+                  key={bytes}
+                  className={styles.label}
+                  data-active={index === limitIndex ? "" : undefined}
+                  style={{ left: `${(index / (LIMITS.length - 1)) * 100}%` }}
+                  onClick={() => void changeLimit(bytes)}
+                >
+                  {limitLabel(bytes)}
+                </span>
+              ))}
+            </div>
+          </div>
+        </SettingBlock>
+      </SettingGroup>
 
-      {failed ? <p className={styles.error}>{t("settings.cache.local_cache.error")}</p> : null}
+      <SettingGroup label={t("settings.page.saving")}>
+        <SaveFormatRow />
+      </SettingGroup>
 
-      <div className={styles.actions}>
-        <button type="button" className={styles.primary} disabled={selectedBytes === 0 || !analytics} onClick={() => setConfirming(true)}>
-          {selectedBytes > 0 ? t("settings.storage.clear_button", { size: formatStorageBytes(selectedBytes) }) : t("settings.storage.clear_selected")}
-        </button>
-        <button type="button" className={styles.secondary} onClick={() => void openCacheFolder()}>
-          <Icon name="folder" size={16} />
-          {t("settings.storage.open_folder")}
-        </button>
-      </div>
-
-      <SaveFormatRow />
-
-      <KeyProtectionRow />
+      <SettingGroup>
+        <KeyProtectionRow />
+      </SettingGroup>
 
       <Sheet
         open={confirming}
@@ -270,6 +271,6 @@ export function StorageSection(): JSX.Element {
       >
         {t("ui.settings.clear_cache_confirm")}
       </Sheet>
-    </div>
+    </>
   );
 }

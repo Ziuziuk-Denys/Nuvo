@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { LAYER_ATTRIBUTE, pushLayer, trapTab, usePresence } from "../../components/layers";
+import { Lens } from "../../components/Lens";
 import { Icon } from "../../icons/Icon";
 import { HiddenList } from "../../recs/HiddenList";
 import { loadAllLocales, useTranslation } from "../../ports/i18n";
@@ -48,7 +49,6 @@ export function Settings(): JSX.Element | null {
   const navRef = useRef<HTMLElement>(null);
   const [chosen, setChosen] = useState<SectionId>("Playback");
   const [query, setQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
 
   const [adopted, setAdopted] = useState<string | null>(null);
   const wanted = open ? requested : null;
@@ -68,13 +68,17 @@ export function Settings(): JSX.Element | null {
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    navRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus({ preventScroll: true });
     const pop = pushLayer(() => closeRef.current());
     return () => {
       pop();
       previous?.focus({ preventScroll: true });
     };
   }, [open]);
+
+  // Runs after the layer effect, so the focus it restores on close is the one from before opening
+  useEffect(() => {
+    if (open) navRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus({ preventScroll: true });
+  }, [open, adopted]);
 
   useEffect(() => {
     if (open) void loadAllLocales();
@@ -100,7 +104,6 @@ export function Settings(): JSX.Element | null {
 
   if (phase === null) return null;
   const Content = CONTENT[active];
-  const centred = !query && !searchFocused;
 
   return createPortal(
     <div className={styles.layer} data-state={phase} {...{ [LAYER_ATTRIBUTE]: "" }}>
@@ -115,26 +118,22 @@ export function Settings(): JSX.Element | null {
         onKeyDown={(event) => trapTab(event, event.currentTarget)}
       >
         <aside className={styles.aside}>
-          <div className={styles.searchWrap}>
-            <span className={styles.searchHint} data-centred={centred ? "" : undefined} aria-hidden="true">
-              <Icon name="search" size={16} />
-              {query ? null : <span>{t("settings.search_placeholder")}</span>}
-            </span>
+          <label className={styles.searchWrap}>
+            <Icon name="search" size={16} />
             <input
               type="text"
               value={query}
+              placeholder={t("settings.search_placeholder")}
               aria-label={t("settings.search_placeholder")}
               className={styles.search}
               onChange={(event) => setQuery(event.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
             />
             {query ? (
               <button type="button" className={styles.clear} aria-label={t("ui.clear")} onClick={() => setQuery("")}>
                 <ClearGlyph />
               </button>
             ) : null}
-          </div>
+          </label>
 
           <nav
             ref={navRef}
@@ -148,9 +147,9 @@ export function Settings(): JSX.Element | null {
               <p className={styles.noMatch}>{t("ui.settings.no_match", { query: query.trim() })}</p>
             ) : (
               groups.map((group) => (
-                <div key={group.labelKey}>
+                <div key={group.labelKey} className={styles.group}>
                   <p className={styles.groupLabel}>{t(group.labelKey)}</p>
-                  <div className={styles.group}>
+                  <div className={styles.groupItems}>
                     {group.ids.map((id) => (
                       <button
                         key={id}
@@ -162,6 +161,7 @@ export function Settings(): JSX.Element | null {
                         className={styles.item}
                         onClick={() => setChosen(id)}
                       >
+                        {id === active ? <Lens group="settings-section" value={active} radius={10} className={styles.lens} /> : null}
                         <SectionIcon id={id} />
                         <span className={styles.itemLabel}>{t(SECTIONS[id].labelKey)}</span>
                       </button>
@@ -174,24 +174,22 @@ export function Settings(): JSX.Element | null {
         </aside>
 
         <div className={styles.main}>
-          <div className={styles.head}>
-            <div className={styles.headText}>
+          <div key={active} className={`${styles.body} n-scroll`} role="tabpanel" aria-labelledby="settings-title">
+            <header className={styles.head}>
               <h2 id="settings-title" className={styles.title}>
                 {t(SECTIONS[active].labelKey)}
               </h2>
               <p className={styles.description}>{t(SECTIONS[active].descKey)}</p>
-            </div>
-            <button type="button" className={styles.close} aria-label={t("common.close")} onClick={close}>
-              <Icon name="close" size={20} />
-            </button>
-          </div>
-          <div className={`${styles.body} n-scroll`} role="tabpanel">
+            </header>
             <SearchQuery.Provider value={rowQuery}>
-              <div key={active} className={styles.pane}>
+              <div className={styles.pane}>
                 <Content />
               </div>
             </SearchQuery.Provider>
           </div>
+          <button type="button" className={styles.close} aria-label={t("common.close")} onClick={close}>
+            <Icon name="close" size={18} />
+          </button>
         </div>
       </div>
     </div>,

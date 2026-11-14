@@ -1,44 +1,50 @@
 import { useContext, type JSX } from "react";
 import { useTranslation } from "../../ports/i18n";
-import { Icon } from "../../icons/Icon";
 import { useAppVersion } from "../../ports/settings";
-import { SearchQuery, SettingGroup } from "./controls";
+import { presetIconSvg, useLook } from "../../ports/theme";
+import { SearchQuery, SettingBlock, SettingGroup } from "./controls";
 import { matchesQuery } from "./sections";
 import styles from "./sections.module.css";
 import { DonateLink } from "./DonateLink";
-import { HelpLinks } from "./HelpSheets";
-import { AutoUpdateRow, UpdateNotice } from "./UpdateRows";
+import { HelpLinks, ReleaseNotes } from "./HelpSheets";
+import { AutoUpdateRow, UpdateStatus } from "./UpdateRows";
 
-export function AboutSection(): JSX.Element | null {
+export function AboutSection(): JSX.Element {
   const { t } = useTranslation();
   const version = useAppVersion();
   const query = useContext(SearchQuery);
-  if (!matchesQuery(query, ["settings.about.nuvo", "settings.about.tagline"], [version])) return null;
+  const { preset, mode } = useLook();
 
   return (
     <>
-      <div className={styles.about}>
-        <svg className={styles.aboutBand} viewBox="0 0 540 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <polyline points="-60,300 -70,80 110,330 90,-60 330,350 315,-70 530,330 545,-50 620,130" />
-        </svg>
-        <div className={styles.aboutTop}>
-          <div className={styles.aboutBrand}>
-            <Icon name="nuvo-mark" size={24} className={styles.aboutLogo} />
+      {matchesQuery(query, ["settings.about.nuvo", "settings.about.tagline"], [version]) ? (
+        <div className={styles.about}>
+          <img
+            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(presetIconSvg(preset, mode))}`}
+            alt=""
+            width={56}
+            height={56}
+            className={styles.aboutLogo}
+            draggable={false}
+          />
+          <div className={styles.aboutText}>
             <span className={styles.aboutName}>{t("settings.about.nuvo")}</span>
+            <span className={styles.version}>{version}</span>
           </div>
-          <span className={styles.version}>
-            <span className={styles.versionDot} />v{version}
-          </span>
         </div>
-        <div className={styles.aboutFoot}>
-          <span className={styles.client}>{`Client ${version}`}</span>
-          <UpdateNotice />
-          <HelpLinks />
-          <DonateLink />
-        </div>
-      </div>
-      <SettingGroup>
+      ) : null}
+      <SettingGroup label={t("settings.page.updates")}>
+        <UpdateStatus />
         <AutoUpdateRow />
+      </SettingGroup>
+      <SettingGroup label={t("ui.settings.whats_new.title", { version })}>
+        <SettingBlock title={t("ui.settings.whats_new.link")} titleKey="ui.settings.whats_new.link" headless>
+          <ReleaseNotes version={version} />
+        </SettingBlock>
+      </SettingGroup>
+      <SettingGroup label={t("settings.page.help")}>
+        <HelpLinks />
+        <DonateLink />
       </SettingGroup>
     </>
   );
