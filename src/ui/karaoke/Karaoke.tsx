@@ -17,10 +17,10 @@ import { Backdrop } from "./backdrop/Backdrop";
 import { layoutFor } from "./layout";
 import { LyricsPane } from "./LyricsPane";
 import { useRomanization } from "./romanization";
-import { openLyricsTool } from "../screens/lyrics/lyricsTools";
 import type { LyricsTrack } from "../ports/lyricsTools";
 import { HIGHLIGHT_MODES, setHighlightMode, useHighlightMode, type HighlightMode } from "./highlightMode";
-import { isLocalTiming, isRunning, setWordTiming, timeWords, useAutoWordTiming, useWordTiming } from "../ports/wordTiming";
+import { isRunning, timeWords, useWordTiming } from "../ports/wordTiming";
+import { AddLyrics, MadeMark, TimeWords } from "./MadeLyrics";
 import styles from "./Karaoke.module.css";
 
 const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
@@ -126,40 +126,6 @@ function Bar({ label, value, valueNow, valueMax, valueText, className, onChange,
   );
 }
 
-function NoLyricsGlyph(): JSX.Element {
-  return (
-    <svg
-      width="48"
-      height="48"
-      viewBox="0 0 48 48"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="37" r="6" />
-      <circle cx="36" cy="32.5" r="6" />
-      <path d="M18 37V10.5L42 6.5V32.5" />
-      <path d="M4 4.5L44.5 45" />
-    </svg>
-  );
-}
-
-function SpeakerGlyph(): JSX.Element {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-      <path
-        fill="currentColor"
-        stroke="none"
-        d="M3 9.6c0-.9.7-1.6 1.6-1.6h2.6l4.3-3.3c.9-.7 2.2-.1 2.2 1.1v12.4c0 1.2-1.3 1.8-2.2 1.1L7.2 16H4.6c-.9 0-1.6-.7-1.6-1.6z"
-      />
-      <path d="M17 9.2c.8.8 1.2 1.8 1.2 2.8s-.4 2-1.2 2.8M19.6 7c1.3 1.4 2 3.1 2 5s-.7 3.6-2 5" />
-    </svg>
-  );
-}
-
 function VersionButton(): JSX.Element | null {
   const { t } = useTranslation();
   const versions = useLyrics((state) => state.versions);
@@ -170,7 +136,11 @@ function VersionButton(): JSX.Element | null {
   const [open, setOpen] = useState(false);
   if (versions.length < 2) return null;
   const improve =
-    timing?.enabled && trackId && active === "whisper-base" && !isRunning(timing.job, trackId)
+    timing?.enabled &&
+    trackId &&
+    active === "whisper-base" &&
+    versions.find((version) => version.provider === active)?.made === "synced" &&
+    !isRunning(timing.job, trackId)
       ? (["separator", { label: t("ui.karaoke.word_timing.improve"), onSelect: () => void timeWords(trackId, true) }] as const)
       : [];
   return (
@@ -201,55 +171,6 @@ function VersionButton(): JSX.Element | null {
           ...improve,
         ]}
       />
-    </>
-  );
-}
-
-const FAILURE_TEXT: Record<string, string> = {
-  no_synced_lines: "ui.karaoke.word_timing.no_lines",
-  no_audio: "ui.karaoke.word_timing.no_audio",
-  no_ffmpeg: "ui.karaoke.word_timing.no_ffmpeg",
-  download_failed: "ui.karaoke.word_timing.download_failed",
-  lyrics_mismatch: "ui.karaoke.word_timing.mismatch",
-  too_long: "ui.karaoke.word_timing.too_long",
-};
-
-/** One button: the switch, which shows the progress while this song is being timed. */
-function WordTimingControl({ trackId, lineOnly }: { trackId: string | null; lineOnly: boolean }): JSX.Element | null {
-  const { t } = useTranslation();
-  const view = useWordTiming();
-  const active = useLyrics((state) => state.activeVersion);
-  useAutoWordTiming(trackId, lineOnly);
-  const lineOnlyText = lineOnly ? <span className={styles.lineOnly}>{t("ui.karaoke.highlight_line_only")}</span> : null;
-  if (!view || !trackId || (!lineOnly && !isLocalTiming(active))) return lineOnlyText;
-  const job = view.job?.trackId === trackId ? view.job : undefined;
-  const running = view.enabled && isRunning(job, trackId);
-  const failure = view.enabled && lineOnly && job?.state === "failed" ? t(FAILURE_TEXT[job.code ?? ""] ?? "ui.karaoke.word_timing.failed") : null;
-  let label = t("ui.karaoke.word_timing.switch");
-  if (running) {
-    const key =
-      job.state === "waiting"
-        ? "ui.karaoke.word_timing.waiting"
-        : job.model === "whisper-small"
-          ? "ui.karaoke.word_timing.improving"
-          : "ui.karaoke.word_timing.running";
-    label = t(key, { percent: Math.round(job.progress * 100) });
-  }
-  return (
-    <>
-      {running || failure ? null : lineOnlyText}
-      {failure ? <span className={styles.lineOnly}>{failure}</span> : null}
-      <button
-        type="button"
-        aria-pressed={view.enabled}
-        aria-live="polite"
-        data-on={view.enabled ? "" : undefined}
-        title={t(view.enabled ? "ui.karaoke.word_timing.off_hint" : "ui.karaoke.word_timing.on_hint")}
-        className={styles.words}
-        onClick={() => void setWordTiming(!view.enabled).then(() => (view.enabled ? undefined : timeWords(trackId)))}
-      >
-        {label}
-      </button>
     </>
   );
 }
@@ -301,7 +222,7 @@ function OffsetPill({ mode }: { mode: HighlightMode }): JSX.Element {
             ))}
           </div>
         ) : null}
-        {synced ? <WordTimingControl trackId={trackId} lineOnly={!wordTimed} /> : null}
+        <TimeWords trackId={trackId} have={wordTimed ? "words" : synced ? "lines" : "plain"} />
       </div>
     </div>
   );
@@ -318,17 +239,12 @@ function LyricsColumn({ track, mode }: { track: LyricsTrack | null; mode: Highli
       </div>
     );
   }
+  if (status === "none" && track) return <AddLyrics track={track} />;
   const text = status === "none" ? t("ui.karaoke.no_lyrics") : status === "instrumental" ? t("ui.karaoke.instrumental") : lyricsErrorText({ status }, t);
   if (!text) return null;
   return (
     <div className={styles.quiet}>
-      {status === "error" ? null : <NoLyricsGlyph />}
       <p>{text}</p>
-      {status === "none" && track ? (
-        <button type="button" className={styles.addLyrics} data-add-lyrics="" onClick={() => openLyricsTool(track, "edit")}>
-          {t("ui.karaoke.add_lyrics")}
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -427,11 +343,9 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       <Backdrop cover={track?.coverUrl ?? ""} open />
 
       <header className={styles.top} data-window-drag>
-        <div className={`${styles.pill} ${styles.closePill}`}>
-          <GlyphButton icon="chevron-down" size={18} label={t("ui.karaoke.close")} className={styles.close} onClick={onClose} />
-        </div>
+        <GlyphButton icon="chevron-down" label={t("ui.karaoke.close")} className={styles.close} onClick={onClose} />
         {lyricsReady ? <OffsetPill mode={mode} /> : null}
-        <div className={`${styles.pill} ${styles.windowPill}`} data-window-controls>
+        <div className={styles.windowButtons} data-window-controls>
           <GlyphButton
             icon="window-minimize"
             label={t("ui.window.minimize")}
@@ -454,7 +368,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
         <p className={styles.artist}>{track?.artists ?? ""}</p>
         {track ? (
           <GlyphButton
-            icon={liked ? "check" : "add"}
+            icon={liked ? "liked" : "like"}
             label={t(liked ? "ui.karaoke.unlike" : "ui.karaoke.like")}
             className={styles.like}
             onClick={() => (liked ? unlike.mutate(track.id) : like.mutate(track))}
@@ -463,7 +377,6 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
         {track ? (
           <GlyphButton
             icon="dislike"
-            size={18}
             label={t("ui.recs.dislike")}
             className={`${styles.like} ${styles.dislike}`}
             onClick={() => songMenuNotInterested?.(track, "exact")}
@@ -486,7 +399,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
             aria-label={t(playing ? "ui.karaoke.pause" : "ui.karaoke.play")}
             onClick={() => void playerEngine.togglePlayPause()}
           >
-            <MorphPlayIcon playing={playing} size={44} />
+            <MorphPlayIcon playing={playing} size={22} />
           </button>
           <GlyphButton icon="next" label={t("ui.karaoke.next")} className={styles.side} onClick={() => void playerEngine.skipNext()} />
           <GlyphButton
@@ -510,7 +423,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
               playerEngine.setVolume(toVolumeGain(0));
             }}
           >
-            {level > 0 ? <SpeakerGlyph /> : <Icon name="volume-mute" size={20} />}
+            <Icon name={level === 0 ? "volume-mute" : level < 0.5 ? "volume-low" : "volume-high"} size={20} />
           </button>
           <Bar
             label={t("ui.karaoke.volume")}
@@ -526,6 +439,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       </section>
 
       <LyricsColumn track={track} mode={mode} />
+      {lyricsReady && track ? <MadeMark track={track} /> : null}
     </div>
   );
 }

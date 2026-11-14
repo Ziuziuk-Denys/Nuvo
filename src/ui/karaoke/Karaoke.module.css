@@ -1,4 +1,10 @@
 .root {
+  --k-ink-2: rgba(255, 255, 255, 0.72);
+  --k-ink-3: rgba(255, 255, 255, 0.5);
+  --k-hover: rgba(255, 255, 255, 0.1);
+  --k-on: rgba(255, 255, 255, 0.16);
+  --k-track: rgba(255, 255, 255, 0.18);
+  --k-halo: rgba(255, 255, 255, 0.32);
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -13,8 +19,9 @@
   place-items: center;
   padding: 0;
   border: 0;
+  border-radius: var(--n-r-pill);
   background: transparent;
-  color: inherit;
+  color: var(--k-ink-2);
   font: inherit;
   cursor: pointer;
   transition:
@@ -23,95 +30,93 @@
     transform 150ms var(--n-ease-out);
 }
 
+.root :where(button):hover {
+  background: var(--k-hover);
+  color: #fff;
+}
+
 .root :where(button):active {
-  transform: scale(0.95);
+  transform: scale(0.94);
 }
 
-.root :where(button):focus-visible,
+.root :where(button):focus-visible {
+  outline: none;
+  background: var(--k-hover);
+  color: #fff;
+}
+
 .bar:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.6);
-  outline-offset: 2px;
+  outline: none;
 }
 
+/* Same height and button size as the app's top bar, so closing the view moves nothing */
 .top {
   position: absolute;
   top: 0;
   inset-inline: 0;
   z-index: 2;
-  height: 44px;
-}
-
-.pill {
-  position: absolute;
-  top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  box-sizing: border-box;
-  height: 32px;
-  padding: 0 3px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.closePill {
-  left: 6px;
-  padding: 0;
+  height: 62px;
 }
 
 .close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  position: absolute;
+  top: 13px;
+  left: 12px;
+  width: 36px;
+  height: 36px;
 }
 
-.windowPill {
-  right: 6px;
+.windowButtons {
+  position: absolute;
+  top: 13px;
+  right: 12px;
+  display: flex;
+  gap: 2px;
 }
 
-.window,
-.small {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.7);
+.window {
+  width: 36px;
+  height: 36px;
 }
 
 .window > svg {
-  width: 14px;
-  height: 14px;
-  stroke-width: 1.5;
+  width: 18px;
+  height: 18px;
 }
 
-.close:hover,
-.window:hover,
-.small:hover,
-.offset:hover,
-.words:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+.root .quit:hover {
+  background: rgba(229, 72, 77, 0.22);
+  color: #ff8a8e;
 }
 
-.window.quit:hover {
-  background: #e81123;
-}
-
+/* right: clear of the three window buttons */
 .sourceRow {
   position: absolute;
-  top: 0;
+  top: 13px;
   left: var(--k-lyrics);
-  right: 40px;
+  right: 136px;
   display: flex;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 200ms var(--n-ease-out);
 }
 
 .top:hover .sourceRow,
 .sourceRow:focus-within,
 .sourceRow[data-busy] {
   opacity: 1;
+}
+
+/* Solid enough to read over a lyric line without a blur under it */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 0 4px;
+  border-radius: var(--n-r-pill);
+  background: rgba(14, 15, 20, 0.72);
 }
 
 .versionMenu {
@@ -121,50 +126,54 @@
   --n-ink-2: rgba(255, 255, 255, 0.7);
 }
 
-.sourceRow .pill {
-  position: relative;
+.small {
+  width: 28px;
+  height: 28px;
 }
 
-.offset {
-  height: 26px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
-}
-
-.offset {
-  min-width: 53px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.words {
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 6px;
+.offset,
+.words,
+.romaji {
+  height: 28px;
   font-size: 12px;
   font-weight: 500;
   line-height: 18px;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.5);
 }
 
-.words[data-on] {
+.offset {
+  min-width: 52px;
+  font-variant-numeric: tabular-nums;
+}
+
+.words,
+.romaji {
+  min-width: 32px;
+  padding: 0 10px;
+  color: var(--k-ink-3);
+}
+
+.root .words[data-on],
+.root .romaji[data-on] {
+  background: var(--k-on);
   color: #fff;
 }
 
 .modes {
   display: flex;
   gap: 2px;
+  margin-inline-start: 4px;
+  padding-inline-start: 6px;
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .lineOnly {
-  padding: 0 8px;
+  padding: 0 10px;
   font-size: 12px;
   font-weight: 500;
   line-height: 18px;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--k-ink-3);
 }
 
 .left {
@@ -199,25 +208,19 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 19.25px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--k-ink-2);
 }
 
 .like {
   position: absolute;
-  top: 367.6px;
+  top: 369.6px;
   right: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(51, 51, 51, 0.5);
-}
-
-.like:hover {
-  background: rgba(80, 80, 80, 0.6);
+  width: 36px;
+  height: 36px;
 }
 
 .dislike {
-  right: 48px;
+  right: 40px;
 }
 
 .bar {
@@ -230,21 +233,35 @@
 .bar::before,
 .fill {
   position: absolute;
-  top: 9px;
+  top: 10px;
   left: 0;
-  height: 6px;
-  border-radius: 3px;
+  height: 4px;
+  border-radius: 2px;
   content: "";
+  transition: transform 150ms var(--n-ease-out);
 }
 
 .bar::before {
   right: 0;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--k-track);
 }
 
 .fill {
   width: calc(var(--fraction) * 100%);
   background: #fff;
+}
+
+.bar:hover::before,
+.bar:hover .fill,
+.bar:active::before,
+.bar:active .fill,
+.bar:focus-visible::before,
+.bar:focus-visible .fill {
+  transform: scaleY(1.5);
+}
+
+.bar:focus-visible::before {
+  background: rgba(255, 255, 255, 0.32);
 }
 
 .seek {
@@ -265,26 +282,25 @@
   font-weight: 500;
   line-height: 18px;
   font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--k-ink-3);
 }
 
+/* Centred on the measured 44 px row, so the bigger play button moves nothing else */
 .transport {
   position: absolute;
-  top: 499.2px;
+  top: 493.2px;
   left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 14px;
   width: 340px;
-  height: 44px;
+  height: 56px;
 }
 
 .side {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.8);
+  width: 40px;
+  height: 40px;
 }
 
 .side > svg {
@@ -292,30 +308,38 @@
   height: 22px;
 }
 
-.mode {
-  color: rgba(255, 255, 255, 0.6);
-}
-
 .mode > svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 
-.side:hover,
-.mode[data-on] {
+.root .mode[data-on] {
+  background: var(--k-on);
   color: #fff;
 }
 
-.play {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  /* opaque: the glyph's fill and stroke overlap, a translucent ink would show the seam */
-  color: rgb(243, 243, 243);
+/* opaque ink: the glyph's fill and stroke overlap, a translucent one would show the seam */
+.root .play {
+  width: 56px;
+  height: 56px;
+  background: #fff;
+  color: rgb(16, 19, 32);
 }
 
-.play:hover {
-  color: #fff;
+.root .play:hover {
+  background: #fff;
+  color: rgb(16, 19, 32);
+  transform: scale(1.04);
+}
+
+.root .play:active {
+  transform: scale(0.96);
+}
+
+.root .play:focus-visible {
+  background: #fff;
+  color: rgb(16, 19, 32);
+  box-shadow: 0 0 0 4px var(--k-halo);
 }
 
 .volume {
@@ -331,14 +355,8 @@
 }
 
 .mute {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.mute:hover {
-  color: #fff;
+  width: 32px;
+  height: 32px;
 }
 
 .level {
@@ -363,56 +381,172 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 13px;
-  color: rgba(255, 255, 255, 0.3);
+  gap: 16px;
 }
 
 .quiet p {
-  max-width: 250px;
+  max-width: 260px;
   margin: 0;
   font-size: 15px;
   font-weight: 400;
   line-height: 21px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--k-ink-3);
 }
 
-.addLyrics {
+.root .addLyrics {
   height: 32px;
-  margin-top: 4px;
-  padding: 0 14px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 0 16px;
+  background: var(--k-hover);
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.addLyrics:hover {
-  background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .root :where(button):active {
-    transform: none;
+.root .addLyrics:hover {
+  background: var(--k-on);
+}
+
+.maker,
+.sources,
+.working,
+.made {
+  animation: settle 220ms var(--n-ease-out) both;
+}
+
+.sources {
+  animation-delay: 40ms;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
 }
 
-.romaji {
-  height: 26px;
-  min-width: 30px;
-  border-radius: 6px;
-  font-size: 12px;
+.maker,
+.working {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.quiet .makerNote {
+  max-width: 290px;
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.makerNote span {
+  display: block;
+}
+
+.sources {
+  display: flex;
+  gap: 4px;
+}
+
+.root .textButton {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.55);
 }
 
-.romaji[data-on] {
-  color: #fff;
+.quiet .working p {
+  color: var(--k-ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
-.romaji:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+.meter {
+  position: relative;
+  width: 200px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: var(--n-r-pill);
+  background: var(--k-track);
+}
+
+.meter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  border-radius: inherit;
+  background: #fff;
+  animation: travel 1.2s linear infinite;
+}
+
+.meter[data-known]::after {
+  width: 100%;
+  transform: scaleX(var(--done));
+  transform-origin: left;
+  transition: transform 400ms var(--n-ease-out);
+  animation: none;
+}
+
+/* 100 / 30 of the segment's own width carries it off the right edge */
+@keyframes travel {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(333.34%);
+  }
+}
+
+.made {
+  position: absolute;
+  bottom: 20px;
+  left: var(--k-lyrics);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--k-ink-3);
+}
+
+.made > span {
+  padding-inline-end: 6px;
+}
+
+.root .made .textButton {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root :where(button):active,
+  .root .play:hover,
+  .root .play:active {
+    transform: none;
+  }
+
+  .bar::before,
+  .fill,
+  .meter[data-known]::after {
+    transition: none;
+  }
+
+  .maker,
+  .sources,
+  .working,
+  .made {
+    animation-name: fade;
+  }
+
+  .meter::after {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
 }

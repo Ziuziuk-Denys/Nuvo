@@ -57,6 +57,14 @@ describe("LyricsEditor", () => {
     expect(ports.saveLyrics).toHaveBeenCalledWith(TRACK, { format: "lrc", content: "[00:01.00] mine" });
   });
 
+  it("starts from a pasted or loaded draft without reading the found text", async () => {
+    tools.raw = { format: "plain", content: "found" };
+    await act(async () => root.render(<LyricsEditor open track={TRACK} draft={"[00:02.00] from a file"} onClose={() => undefined} />));
+    expect(document.body.querySelector("textarea")!.value).toBe("[00:02.00] from a file");
+    expect(ports.loadEditable).not.toHaveBeenCalled();
+    expect(document.body.textContent).toContain("ui.lyrics.detected_synced");
+  });
+
   it("syncs plain lines with Space and saves them as LRC", async () => {
     await act(async () => root.render(<LyricsEditor open track={TRACK} onClose={() => undefined} />));
     await act(async () => type(document.body.querySelector("textarea")!, "One\nTwo"));

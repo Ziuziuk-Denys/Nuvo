@@ -47,5 +47,6 @@ export function toVersion(entry: Entry): Version {
     syncLevel: candidate.syncLevel,
     quality: quality(candidate),
     topPriority: candidate.topPriority === true,
+    made: candidate.made?.source,
   };
 }
