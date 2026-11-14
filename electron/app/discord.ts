@@ -39,7 +39,8 @@ export class FrameDecoder {
 
 export function socketCandidates(env: NodeJS.ProcessEnv, platform: NodeJS.Platform = process.platform): string[] {
   if (platform === "win32") return Array.from({ length: 10 }, (_, n) => `\\\\?\\pipe\\discord-ipc-${n}`);
-  const bases = [env.XDG_RUNTIME_DIR, "/tmp"].filter((b): b is string => Boolean(b));
+  // macOS keeps the socket in the per-user TMPDIR under /var/folders
+  const bases = [...new Set([env.XDG_RUNTIME_DIR, env.TMPDIR, env.TMP, env.TEMP, "/tmp"].filter((b): b is string => Boolean(b)).map((b) => path.resolve(b)))];
   const places = ["", "app/com.discordapp.Discord", "snap.discord", ".flatpak/dev.vencord.Vesktop/xdg-run"];
   const out: string[] = [];
   for (const base of bases) for (const place of places) for (let n = 0; n < 10; n++) out.push(path.join(base, place, `discord-ipc-${n}`));

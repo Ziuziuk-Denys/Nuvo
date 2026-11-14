@@ -98,6 +98,34 @@ describe("discord presence", () => {
     expect(list.at(-1)).toBe("/tmp/.flatpak/dev.vencord.Vesktop/xdg-run/discord-ipc-9");
   });
 
+  it("macOS looks in the per-user TMPDIR first", () => {
+    const list = socketCandidates({ TMPDIR: "/var/folders/xy/abc123/T/" }, "darwin");
+    expect(list[0]).toBe("/var/folders/xy/abc123/T/discord-ipc-0");
+    expect(list).toContain("/tmp/discord-ipc-0");
+  });
+
+  it("a TMPDIR equal to /tmp adds no duplicates", () => {
+    expect(socketCandidates({ TMPDIR: "/tmp/" }, "linux")).toHaveLength(40);
+  });
+
+  it.skipIf(process.platform === "win32")("finds a client listening under TMPDIR", async () => {
+    const dir = tempDir();
+    const server = await fakeDiscord(dir);
+    const p = new DiscordPresence({
+      applicationId: "123",
+      candidates: () => socketCandidates({ TMPDIR: dir }),
+      connect: (socketPath) => net.createConnection(socketPath),
+      now: () => Date.now(),
+      pid: 4242,
+      log: vi.fn(),
+    });
+    p.setEnabled(true);
+    await settle(200);
+    expect(p.current.state).toBe("connected");
+    p.stop();
+    await server.close();
+  });
+
   it("uses named pipes on Windows", () => {
     const list = socketCandidates({}, "win32");
     expect(list).toHaveLength(10);
