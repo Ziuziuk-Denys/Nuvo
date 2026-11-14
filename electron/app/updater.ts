@@ -129,7 +129,6 @@ export class Updater {
       });
       if (epoch !== this.epoch) return;
       this.failures = 0;
-      this.deps.backend.installOnQuit(true);
       this.set("ready");
     } catch (error) {
       if (epoch !== this.epoch) return;
@@ -201,8 +200,13 @@ export function createBackend(updater: AutoUpdaterLike, latestTag: () => Promise
     async download(onProgress) {
       const listener = (progress: { percent: number }) => onProgress(progress.percent);
       updater.on("download-progress", listener);
+      // electron-updater adds its quit handler when a download finishes, and only if this is already on
+      updater.autoInstallOnAppQuit = true;
       try {
         await updater.downloadUpdate();
+      } catch (error) {
+        updater.autoInstallOnAppQuit = false;
+        throw error;
       } finally {
         updater.off("download-progress", listener);
       }

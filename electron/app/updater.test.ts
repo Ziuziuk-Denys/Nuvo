@@ -55,7 +55,7 @@ describe("Updater", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it("downloads in the background, installs on quit and on request", async () => {
+  it("downloads in the background and installs on request", async () => {
     const { updater, backend, views } = setup();
     await updater.check();
     expect(views.map((v) => [v.phase, v.percent])).toEqual([
@@ -66,7 +66,6 @@ describe("Updater", () => {
       ["ready", undefined],
     ]);
     expect(updater.view()).toEqual({ phase: "ready", mode: "install", version: "1.2.0" });
-    expect(backend.installOnQuit).toHaveBeenLastCalledWith(true);
     expect(backend.quitAndInstall).not.toHaveBeenCalled();
     expect(updater.install()).toBe(true);
     expect(backend.quitAndInstall).toHaveBeenCalledTimes(1);
@@ -77,7 +76,6 @@ describe("Updater", () => {
     await updater.check();
     expect(updater.install()).toBe(false);
     expect(backend.quitAndInstall).not.toHaveBeenCalled();
-    expect(backend.installOnQuit).not.toHaveBeenCalledWith(true);
   });
 
   it("says it is up to date and checks again hours later", async () => {
@@ -118,13 +116,12 @@ describe("Updater", () => {
   });
 
   it("reports a failed download and keeps nothing to install", async () => {
-    const { updater, backend } = setup({
+    const { updater } = setup({
       backend: { download: vi.fn(async () => Promise.reject(new Error("reset"))) },
     });
     await updater.check();
     expect(updater.view()).toEqual({ phase: "error", mode: "install" });
     expect(updater.install()).toBe(false);
-    expect(backend.installOnQuit).not.toHaveBeenCalledWith(true);
   });
 
   it("checks after waking only when the last check is old", async () => {
@@ -204,7 +201,7 @@ describe("Updater", () => {
     finish();
     await running;
     expect(updater.view()).toEqual({ phase: "idle", mode: "install" });
-    expect(backend.installOnQuit).not.toHaveBeenCalledWith(true);
+    expect(backend.installOnQuit).toHaveBeenLastCalledWith(false);
   });
 
   it("runs one check at a time", async () => {
@@ -284,12 +281,24 @@ describe("createBackend", () => {
     await backend.download((p) => seen.push(p));
     expect(seen).toEqual([50]);
     expect(updater.listeners).toHaveLength(0);
-    backend.installOnQuit(true);
-    expect(updater.autoInstallOnAppQuit).toBe(true);
     backend.installOnQuit(false);
     expect(updater.autoInstallOnAppQuit).toBe(false);
     backend.quitAndInstall();
     expect(updater.quitAndInstall).toHaveBeenCalledWith(false, true);
+  });
+
+  it("arms the install on quit before the download finishes, and disarms it when the download fails", async () => {
+    const updater = fake();
+    let armedDuringDownload = false;
+    updater.downloadUpdate = async () => {
+      armedDuringDownload = updater.autoInstallOnAppQuit;
+    };
+    const backend = createBackend(updater, noTag);
+    await backend.download(() => undefined);
+    expect(armedDuringDownload).toBe(true);
+    updater.downloadUpdate = async () => Promise.reject(new Error("reset"));
+    await expect(backend.download(() => undefined)).rejects.toThrow("reset");
+    expect(updater.autoInstallOnAppQuit).toBe(false);
   });
 
   it("reads the full feed again only when the latest tag moved", async () => {
