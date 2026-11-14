@@ -43,8 +43,8 @@ assert "—" not in readme and "–" not in readme
 assert not re.search(r"\b(Electron|React|Rust|TypeScript)\b", readme)
 why = readme.split("## Why Nuvo")[1].split("## Install")[0]
 outside = readme.replace(why, "")
-for name in ("Liner", "Riff", "Strawberry", "mpthree"):
-    assert name not in outside, name
+for name in ("Liner", "Riff", "Strawberry", "Mpthree", "Pear Desktop"):
+    assert name.lower() not in outside.lower(), name
 
 matrix = build.DATA["matrix"]
 rows = [row for group in matrix["groups"] for row in group["rows"]]

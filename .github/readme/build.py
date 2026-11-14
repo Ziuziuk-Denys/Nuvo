@@ -503,7 +503,7 @@ def speed_value(app, column):
     value = app.get(column["key"])
     note = app.get("notes", {}).get(column["key"])
     if value is None:
-        return note or BENCH["pending"]
+        return note or (BENCH["pending"] if app["name"] == "Nuvo" else "not measured")
     spread = app.get("spread", {}).get(column["key"])
     text = f"{format_number(value)} {column['unit']}".strip()
     text += f" ({format_number(spread[0])} to {format_number(spread[1])})" if spread else ""
@@ -523,6 +523,18 @@ def speed_alt():
     return f"{chart['title']} {chart['sub']} " + ", ".join(values) + "."
 
 
+def why_line(item):
+    line = f"- **{item['claim']}** {item['why']}"
+    if item.get("sources"):
+        line += " <sub>" + " · ".join(f"[{name}]({url})" for name, url in item["sources"]) + "</sub>"
+    return line
+
+
+def speed_summary():
+    nuvo = next(app for app in BENCH["apps"] if app["name"] == "Nuvo")
+    return BENCH["summary"].format(**{key: format_number(value) for key, value in nuvo.items() if isinstance(value, (int, float))})
+
+
 def fill(text, values, name):
     for key, value in values.items():
         text = text.replace("{{" + key + "}}", value)
@@ -536,7 +548,8 @@ def build_readme():
         "head": picture("head", "Nuvo. " + DATA["tagline"] + " " + MEDIA["heroAlt"]),
         "pills": pills(),
         "new": "\n".join(f"- {line}" for line in DATA["new"]),
-        "why": "\n".join(f"- **{item['claim']}** {item['why']}" for item in DATA["why"]),
+        "why": "\n".join(why_line(item) for item in DATA["why"]),
+        "speed-summary": speed_summary(),
         "showcase": showcase(),
         "features": features(),
         "speed": picture("speed", speed_alt()),

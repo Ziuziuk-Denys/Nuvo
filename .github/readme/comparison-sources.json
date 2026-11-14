@@ -1,5 +1,5 @@
 {
-  "checked": "2026-11-07",
+  "checked": "2026-11-14",
   "note": "One entry per Yes, Partly or No cell of the matrix in data.json. The source 'earlier pass...' marks a cell carried over without a recorded source. Cells with no entry are unknown.",
   "cells": [
     {
@@ -140,15 +140,6 @@
       ]
     },
     {
-      "app": "Liner",
-      "feature": "Crossfade and gapless transitions",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ],
-      "note": "no crossfade or gapless found when the repository was read"
-    },
-    {
       "app": "Riff",
       "feature": "Crossfade and gapless transitions",
       "answer": "partly",
@@ -171,14 +162,6 @@
       "answer": "yes",
       "sources": [
         "https://support.apple.com/guide/music-windows/fade-between-songs-muse5e9ec085/windows"
-      ]
-    },
-    {
-      "app": "Liner",
-      "feature": "Loudness normalization and auto gain",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
       ]
     },
     {
@@ -241,10 +224,12 @@
     {
       "app": "Riff",
       "feature": "10-band equalizer with 12 presets",
-      "answer": "yes",
+      "answer": "partly",
       "sources": [
-        "https://github.com/rootscripts/riff/blob/33fa5ff/README.md"
-      ]
+        "https://github.com/rootscripts/riff/blob/ac68b13/README.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "10 bands, 32 Hz to 16 kHz; the README names five preset profiles"
     },
     {
       "app": "Spotify",
@@ -289,14 +274,6 @@
       "note": "speed control only, no pitch found"
     },
     {
-      "app": "Liner",
-      "feature": "Sleep timer",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
-    },
-    {
       "app": "Riff",
       "feature": "Sleep timer",
       "answer": "yes",
@@ -323,22 +300,6 @@
     },
     {
       "app": "Liner",
-      "feature": "A-B loop (set start, set end, clear)",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
-    },
-    {
-      "app": "Riff",
-      "feature": "A-B loop (set start, set end, clear)",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
-    },
-    {
-      "app": "Liner",
       "feature": "Pause on device change",
       "answer": "yes",
       "sources": [
@@ -358,8 +319,10 @@
       "feature": "Saved audio with a cache size limit",
       "answer": "yes",
       "sources": [
-        "https://github.com/tryliner/desktop/blob/eea9a6a/src/languages/locales/en.json"
-      ]
+        "https://github.com/tryliner/desktop/blob/197179b/docs/STORAGE.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "3 GB default, minimum 250 MB, set in Settings"
     },
     {
       "app": "Riff",
@@ -511,27 +474,11 @@
       ]
     },
     {
-      "app": "Liner",
-      "feature": "Lyrics editor: paste and time your own lyrics",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
-    },
-    {
       "app": "Riff",
       "feature": "Lyrics editor: paste and time your own lyrics",
       "answer": "yes",
       "sources": [
         "https://github.com/rootscripts/riff/blob/33fa5ff/src/renderer/index.html"
-      ]
-    },
-    {
-      "app": "Liner",
-      "feature": "Lyrics translation on your machine",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
       ]
     },
     {
@@ -594,14 +541,6 @@
         "https://github.com/rootscripts/riff/blob/33fa5ff/src/renderer/index.html"
       ],
       "note": "a Jump back in shelf"
-    },
-    {
-      "app": "Liner",
-      "feature": "Not interested controls (exact song, any version, artist for a while or always)",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
     },
     {
       "app": "Riff",
@@ -726,16 +665,10 @@
       "feature": "Share links and copy list",
       "answer": "yes",
       "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
-    },
-    {
-      "app": "Riff",
-      "feature": "Share links and copy list",
-      "answer": "yes",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
+        "https://tryliner.fun/"
+      ],
+      "checked": "2026-11-14",
+      "note": "'Share tracks with anyone via smart links.'"
     },
     {
       "app": "Spotify",
@@ -896,9 +829,10 @@
       "feature": "Local music folders with watching and .lrc files",
       "answer": "partly",
       "sources": [
-        "https://github.com/tryliner/desktop/blob/eea9a6a/docs/FAQ.md"
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md"
       ],
-      "note": "imported files are copied into app data; no folder watching found"
+      "checked": "2026-11-14",
+      "note": "Added files are copied into app data; folder watching and .lrc not documented. Documented on main; whether v0.2.11 ships it is unknown (empty release notes)."
     },
     {
       "app": "Riff",
@@ -948,8 +882,11 @@
       "feature": "Import a playlist from a link",
       "answer": "yes",
       "sources": [
-        "https://github.com/tryliner/desktop/blob/eea9a6a/docs/FAQ.md"
-      ]
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md",
+        "https://github.com/tryliner/desktop/blob/197179b/docs/FAQ.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "Spotify, Apple Music, Deezer, SoundCloud and YouTube, run on the device"
     },
     {
       "app": "Riff",
@@ -1136,14 +1073,6 @@
       ]
     },
     {
-      "app": "Liner",
-      "feature": "Theme editor with colour roles",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
-    },
-    {
       "app": "Riff",
       "feature": "Theme editor with colour roles",
       "answer": "yes",
@@ -1159,14 +1088,6 @@
         "https://github.com/rootscripts/riff/blob/33fa5ff/src/renderer/index.html"
       ],
       "note": "theme import and export strings found in the page"
-    },
-    {
-      "app": "Liner",
-      "feature": "Custom CSS",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
     },
     {
       "app": "Riff",
@@ -1239,14 +1160,6 @@
       "note": "a MiniPlayer window"
     },
     {
-      "app": "Liner",
-      "feature": "Keep running in the tray",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
-    },
-    {
       "app": "Riff",
       "feature": "Keep running in the tray",
       "answer": "yes",
@@ -1284,34 +1197,20 @@
       "feature": "Encrypted library with recovery phrase unlock",
       "answer": "no",
       "sources": [
-        "https://github.com/tryliner/desktop/blob/eea9a6a/docs/PRIVACY.md"
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md"
       ],
-      "note": "the library lives on the Liner server"
-    },
-    {
-      "app": "Riff",
-      "feature": "Encrypted library with recovery phrase unlock",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
+      "checked": "2026-11-14",
+      "note": "Library, playlists and play events are kept by the Liner server under your account"
     },
     {
       "app": "Liner",
       "feature": "Passphrase protection when no system keyring exists",
       "answer": "no",
       "sources": [
-        "https://github.com/tryliner/desktop/blob/eea9a6a/docs/PRIVACY.md"
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md"
       ],
-      "note": "tokens are kept unencrypted when no OS keychain exists"
-    },
-    {
-      "app": "Liner",
-      "feature": "Proxy setting",
-      "answer": "no",
-      "sources": [
-        "earlier pass, 2026-10-26, source not recorded; re-check"
-      ]
+      "checked": "2026-11-14",
+      "note": "YouTube tokens are stored unencrypted when no OS keychain is available"
     },
     {
       "app": "Riff",
@@ -1327,8 +1226,9 @@
       "feature": "Connection check and report",
       "answer": "yes",
       "sources": [
-        "https://github.com/tryliner/desktop/tree/eea9a6a/src/features/connectivity/lib/diagnostics.ts"
-      ]
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md"
+      ],
+      "checked": "2026-11-14"
     },
     {
       "app": "Riff",
@@ -1361,6 +1261,281 @@
       "sources": [
         "https://github.com/rootscripts/riff/blob/33fa5ff/src/renderer/index.html"
       ]
+    },
+    {
+      "app": "Riff",
+      "feature": "Import a Yandex Music playlist from its link",
+      "answer": "yes",
+      "sources": [
+        "https://riff.hs.vc/"
+      ],
+      "checked": "2026-11-14"
+    },
+    {
+      "app": "Liner",
+      "feature": "Search YouTube and SoundCloud together",
+      "answer": "no",
+      "sources": [
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "'Free-text searches never go to SoundCloud'"
+    },
+    {
+      "app": "Riff",
+      "feature": "Search YouTube and SoundCloud together",
+      "answer": "partly",
+      "sources": [
+        "https://github.com/rootscripts/riff/blob/ac68b13/README.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "Plays both; one combined list not stated"
+    },
+    {
+      "app": "Liner",
+      "feature": "Wallpaper: photo, GIF or video",
+      "answer": "partly",
+      "sources": [
+        "https://github.com/tryliner/desktop/blob/197179b/README.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "Presets and a cover backdrop"
+    },
+    {
+      "app": "Riff",
+      "feature": "Wallpaper: photo, GIF or video",
+      "answer": "partly",
+      "sources": [
+        "https://riff.hs.vc/"
+      ],
+      "checked": "2026-11-14",
+      "note": "Wallpaper and animated backgrounds; video not stated"
+    },
+    {
+      "app": "Liner",
+      "feature": "arm64 builds for Linux and Windows",
+      "answer": "no",
+      "sources": [
+        "https://github.com/tryliner/desktop/releases/tag/v0.2.11"
+      ],
+      "checked": "2026-11-14",
+      "note": "No Linux or Windows asset labelled arm64"
+    },
+    {
+      "app": "Riff",
+      "feature": "arm64 builds for Linux and Windows",
+      "answer": "no",
+      "sources": [
+        "https://github.com/rootscripts/riff/releases/tag/v0.7.5"
+      ],
+      "checked": "2026-11-14",
+      "note": "No Linux or Windows arm64 asset"
+    },
+    {
+      "app": "Strawberry",
+      "feature": "arm64 builds for Linux and Windows",
+      "answer": "partly",
+      "sources": [
+        "https://www.strawberrymusicplayer.org/"
+      ],
+      "checked": "2026-11-14",
+      "note": "Windows 11 arm64 build (sponsors only); Linux arm64 depends on the distribution"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "arm64 builds for Linux and Windows",
+      "answer": "no",
+      "sources": [
+        "https://mpthree.fun/"
+      ],
+      "checked": "2026-11-14",
+      "note": "Windows x64 and Linux x86_64 only"
+    },
+    {
+      "app": "Liner",
+      "feature": "Discord status switch",
+      "answer": "yes",
+      "sources": [
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "Rich Presence on by default, turned off in Settings, Discord"
+    },
+    {
+      "app": "Liner",
+      "feature": "Import a Spotify playlist or album from its link",
+      "answer": "partly",
+      "sources": [
+        "https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "Spotify playlists documented; albums not stated"
+    },
+    {
+      "app": "Riff",
+      "feature": "Offline mode",
+      "answer": "yes",
+      "sources": [
+        "https://github.com/rootscripts/riff/blob/ac68b13/README.md#faq"
+      ],
+      "checked": "2026-11-14",
+      "note": "'Downloaded tracks, saved audio segments, and indexed local libraries function without an internet connection.'"
+    },
+    {
+      "app": "Riff",
+      "feature": "Trim a song's start and end",
+      "answer": "partly",
+      "sources": [
+        "https://github.com/rootscripts/riff/blob/ac68b13/README.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "A built-in audio editor trims and saves a new file; trimming playback of the original not stated"
+    },
+    {
+      "app": "Riff",
+      "feature": "Save format: original or MP3",
+      "answer": "partly",
+      "sources": [
+        "https://github.com/rootscripts/riff/blob/ac68b13/README.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "Downloads as MP3, FLAC, Opus or WAV; an original-stream option is not stated"
+    },
+    {
+      "app": "Riff",
+      "feature": "Import a Spotify playlist or album from its link",
+      "answer": "partly",
+      "sources": [
+        "https://github.com/rootscripts/riff/blob/ac68b13/README.md",
+        "https://riff.hs.vc/"
+      ],
+      "checked": "2026-11-14",
+      "note": "Public Spotify playlists, including 100+ tracks; albums not stated"
+    },
+    {
+      "app": "Riff",
+      "feature": "Discord status switch",
+      "answer": "partly",
+      "sources": [
+        "https://github.com/rootscripts/riff/blob/ac68b13/README.md"
+      ],
+      "checked": "2026-11-14",
+      "note": "Discord Rich Presence documented; an on/off switch not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "10-band equalizer with 12 presets",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/legal",
+        "https://mpthree.fun/"
+      ],
+      "checked": "2026-11-14",
+      "note": "Equalizer in Mpthree Plus (paid, 149 RUB per 30 days); bands and presets not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Speed, pitch and reverb presets (slowed, nightcore, daycore)",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/legal",
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "Speed and reverb in Plus ('Slowed + reverb on any track'); pitch not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Crossfade and gapless transitions",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/legal"
+      ],
+      "checked": "2026-11-14",
+      "note": "Crossfade in Plus; gapless not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Rebindable shortcuts, in the app and global",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/legal",
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "Own keyboard shortcuts in Plus; global shortcuts not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Recognize a song (microphone, this computer or a file) with history",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/legal",
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "Song recognition in search, Plus only: 'Find out what is playing on your computer in a few seconds'"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Statistics page: story, charts, top lists and drill-downs",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "'Themes and listening statistics' in Free; contents not described"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Theme presets (nine)",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "Themes in Free; number not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Synced lyrics pane",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "'Lyrics next to the cover' in Free; sync not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Local music folders with watching and .lrc files",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/legal",
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "Plays files on your computer, FLAC, MP3 and zip, 7z or rar archives; watching and .lrc not stated"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Autoplay similar songs",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "'My Flow: a queue for your mood'"
+    },
+    {
+      "app": "Mpthree",
+      "feature": "Library tabs: playlists, albums, artists, on this computer",
+      "answer": "partly",
+      "sources": [
+        "https://mpthree.fun/text.js"
+      ],
+      "checked": "2026-11-14",
+      "note": "'Your own library: albums, artists, covers'"
     }
   ]
 }
