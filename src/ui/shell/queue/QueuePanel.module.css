@@ -9,52 +9,137 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--queue-radius);
-  background: var(--n-pop-solid);
-  color: var(--n-ink);
-  box-shadow: var(--n-sheet-shadow);
+  background: var(--n-pop);
   -webkit-backdrop-filter: var(--n-pop-blur);
   backdrop-filter: var(--n-pop-blur);
+  color: var(--n-ink);
+  box-shadow: var(--n-panel-shadow);
+}
+
+.panel[data-state="out"] {
+  pointer-events: none;
 }
 
 .head {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 14px 12px 8px 18px;
+  gap: 2px;
+  padding: 12px 10px 4px 16px;
 }
 
 .title {
   flex: 1;
   margin: 0;
-  font-size: 15px;
-  font-weight: 600;
+  font: var(--n-type-heading);
+  letter-spacing: var(--n-track-title);
 }
 
 .scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 0 6px 8px;
+  padding: 2px 6px 10px;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+}
+
+.history {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  margin-bottom: 2px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+  cursor: pointer;
+  transition:
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
+    transform var(--n-t-instant) var(--n-ease-out);
+}
+
+.history:hover,
+.history:focus-visible {
+  outline: none;
+  background: var(--n-hover);
+  color: var(--n-ink);
+}
+
+.history:active {
+  transform: scale(0.985);
+}
+
+.count {
+  flex: 1;
+  color: var(--n-ink-3);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.chevron {
+  color: var(--n-ink-3);
+  transform: rotate(-90deg);
+  transition: transform 180ms var(--n-ease-out);
+}
+
+.history[aria-expanded="true"] .chevron {
+  transform: rotate(0deg);
 }
 
 .list {
   position: relative;
 }
 
-.item[data-dragging] {
-  opacity: 0.4;
+.item {
+  display: flex;
+  align-items: center;
+  height: var(--row);
+  border-radius: 10px;
+  transition: transform 180ms var(--n-ease-out);
 }
 
-.item[data-drop] {
-  box-shadow: inset 0 2px 0 var(--n-accent);
+.item[data-current] {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+.item[data-played] {
+  opacity: 0.5;
+  transition:
+    opacity var(--n-t-quick) var(--n-ease-out),
+    transform 180ms var(--n-ease-out);
+}
+
+.item[data-played]:hover,
+.item[data-played]:focus-within {
+  opacity: 1;
+}
+
+.item[data-moving] {
+  cursor: grabbing;
+}
+
+.item[data-dragging] {
+  position: relative;
+  z-index: 1;
+  background: var(--n-pop-solid);
+  box-shadow: var(--n-panel-shadow-s);
+  opacity: 1;
+  transition: none;
 }
 
 .then {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 10px 12px 4px;
+  margin: 10px 10px 2px;
   color: var(--n-ink-3);
-  font-size: 13px;
+  font: var(--n-type-caption);
 }
 
 .then span {
@@ -64,20 +149,66 @@
 }
 
 .empty {
-  margin: 24px 18px;
+  margin: 0;
+  padding: 48px 24px;
   color: var(--n-ink-3);
-  font-size: 13px;
+  font: var(--n-type-body);
+  text-align: center;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .panel {
-    animation: rise 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+    animation: slide-in 240ms var(--n-ease-out) both;
+  }
+
+  .panel[data-state="out"] {
+    animation: slide-out var(--n-t-quick) var(--n-ease-in) both;
+  }
+
+  .panel[data-fresh] .item {
+    animation: rise 240ms var(--n-ease-out) both;
+    animation-delay: calc(60ms + var(--i) * 30ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: fade-in var(--n-t-quick) linear both;
+  }
+
+  .panel[data-state="out"] {
+    animation: fade-in var(--n-t-quick) linear reverse both;
+  }
+
+  .item,
+  .chevron {
+    transition: none;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(0.98);
+  }
+}
+
+@keyframes slide-out {
+  to {
+    opacity: 0;
+    transform: translateX(10px) scale(0.98);
   }
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateX(12px);
+    transform: translateY(6px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }

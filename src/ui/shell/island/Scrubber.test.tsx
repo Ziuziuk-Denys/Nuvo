@@ -30,13 +30,13 @@ const fill = () => host.querySelector<HTMLElement>("[role=slider] span")!.style.
 describe("Scrubber", () => {
   it("holds the line still while the window is hidden and catches up when it is back", () => {
     act(() => root.render(<Scrubber positionMs={25_000} durationMs={100_000} tint="red" />));
-    expect(fill()).toBe("scaleX(0.25)");
+    expect(fill()).toBe("translateX(-75%)");
     act(() => applyWindowVisibility(false));
     act(() => root.render(<Scrubber positionMs={50_000} durationMs={100_000} tint="red" />));
-    expect(fill()).toBe("scaleX(0.25)");
+    expect(fill()).toBe("translateX(-75%)");
     expect(host.querySelector("[role=slider]")!.getAttribute("aria-valuenow")).toBe("50");
     act(() => applyWindowVisibility(true));
-    expect(fill()).toBe("scaleX(0.5)");
+    expect(fill()).toBe("translateX(-50%)");
   });
 });
 

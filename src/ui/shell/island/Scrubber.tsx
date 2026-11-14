@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type JSX, type KeyboardEvent, type PointerEvent } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent } from "react";
 import { useTranslation } from "../../ports/i18n";
 import { playerEngine } from "../../ports/player";
 import { isWindowVisible, onWindowVisibilityChange } from "../../ports/window";
@@ -91,7 +91,7 @@ export function Scrubber({ positionMs, durationMs, tint, loop }: ScrubberProps):
       onPointerCancel={() => setDragMs(null)}
       onKeyDown={onKeyDown}
     >
-      <span className={styles.fill} style={{ transform: `scaleX(${drawn})`, backgroundColor: tint }} />
+      <span className={styles.fill} style={{ transform: `translateX(${(drawn - 1) * 100}%)`, "--tint": tint } as CSSProperties} />
       {loopA !== null ? (
         <span
           className={styles.loop}

@@ -39,10 +39,10 @@ export function SleepPanel(): JSX.Element {
     { target: { kind: "end_of_track" }, label: t("sound.sleep.end_of_track") },
     { target: { kind: "end_of_queue" }, label: t("sound.sleep.end_of_queue") },
   ];
-  const chips = (choices: { target: SleepTarget; label: string }[], className = styles.chips) => (
-    <div className={className}>
+  const segments = (choices: { target: SleepTarget; label: string }[]) => (
+    <div className={styles.segments}>
       {choices.map((choice) => (
-        <PanelChip key={choice.label} pressed={isSame(target, choice.target)} onClick={() => armSleepTimer(choice.target)}>
+        <PanelChip key={choice.label} className={styles.segmentChip} pressed={isSame(target, choice.target)} onClick={() => armSleepTimer(choice.target)}>
           {choice.label}
         </PanelChip>
       ))}
@@ -51,8 +51,8 @@ export function SleepPanel(): JSX.Element {
 
   return (
     <div className={styles.panel}>
-      {chips(lengths, styles.lengths)}
-      {chips(ends)}
+      {segments(lengths)}
+      {segments(ends)}
       <form
         className={styles.customRow}
         onSubmit={(event) => {

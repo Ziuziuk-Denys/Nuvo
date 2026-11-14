@@ -6,7 +6,7 @@ import { ApiError, useAddPlaylistTracks, useModalStore, usePlaylistsList } from 
 import { snapshotOf } from "../../ports/imports";
 import type { Track } from "../../ports/player";
 import { useImportsUi } from "../../screens/imports/importsUi";
-import styles from "./popovers.module.css";
+import styles from "./AddToPlaylist.module.css";
 
 const ADDED_HOLD_MS = 1200;
 
@@ -79,7 +79,7 @@ export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; 
   };
 
   const metaFor = (playlistId: string, count: number) => {
-    if (outcome?.playlistId !== playlistId) return String(count);
+    if (outcome?.playlistId !== playlistId) return t("common.songs", { count });
     if (outcome.kind === "added") return t("ui.add.added");
     if (outcome.kind === "already") return t("ui.add.already");
     return t("ui.add.failed");
@@ -88,12 +88,12 @@ export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; 
   const loading = isLoading && all.length === 0;
 
   return (
-    <div className={styles.addBody} onKeyDown={walkRows}>
-      <div className={styles.trackCard}>
-        <Cover src={track.coverUrl ?? ""} size={40} radius={6} />
-        <span className={styles.trackText}>
-          <span className={styles.trackTitle}>{track.title}</span>
-          <span className={styles.trackArtist}>{tracks && tracks.length > 1 ? t("ui.bulk.selected", { count: tracks.length }) : track.artists}</span>
+    <div className={styles.body} onKeyDown={walkRows}>
+      <div className={styles.song}>
+        <Cover src={track.coverUrl ?? ""} size={36} radius={6} />
+        <span className={styles.songText}>
+          <span className={styles.songTitle}>{track.title}</span>
+          <span className={styles.songArtist}>{tracks && tracks.length > 1 ? t("ui.bulk.selected", { count: tracks.length }) : track.artists}</span>
         </span>
       </div>
       {all.length > 0 ? (
@@ -114,12 +114,7 @@ export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; 
           ))}
         </div>
       ) : all.length === 0 || playlists.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>
-            <Icon name="playlist" size={16} />
-          </span>
-          <p>{all.length === 0 ? t("ui.add.empty") : t("ui.add.no_match")}</p>
-        </div>
+        <p className={styles.empty}>{all.length === 0 ? t("ui.add.empty") : t("ui.add.no_match")}</p>
       ) : (
         <div className={styles.list} data-busy={pending !== null ? "" : undefined} aria-busy={pending !== null}>
           {playlists.map((playlist) => (
@@ -131,7 +126,7 @@ export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; 
               data-done={outcome?.playlistId === playlist.id && outcome.kind === "added" ? "" : undefined}
               onClick={() => void add(playlist.id)}
             >
-              <Cover src={playlist.coverUrl} size={44} radius={8} />
+              <Cover src={playlist.coverUrl || playlist.coverUrls[0] || ""} size={40} radius={8} />
               <span className={styles.pickText}>
                 <span className={styles.pickTitle}>{playlist.title}</span>
                 <span className={styles.pickMeta}>{metaFor(playlist.id, playlist.trackCount)}</span>
@@ -147,14 +142,16 @@ export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; 
           ))}
         </div>
       )}
-      <button type="button" className={styles.newButton} onClick={newPlaylist}>
-        <Icon name="add" size={16} />
-        {t("ui.add.new")}
-      </button>
-      <button type="button" className={styles.newButton} onClick={fromLink}>
-        <Icon name="link" size={16} />
-        {t("ui.add.from_link")}
-      </button>
+      <div className={styles.foot}>
+        <button type="button" className={styles.action} onClick={newPlaylist}>
+          <Icon name="add" size={16} />
+          {t("ui.add.new")}
+        </button>
+        <button type="button" className={styles.action} onClick={fromLink}>
+          <Icon name="link" size={16} />
+          {t("ui.add.from_link")}
+        </button>
+      </div>
     </div>
   );
 }

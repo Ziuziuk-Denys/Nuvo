@@ -1,10 +1,10 @@
 import type { JSX } from "react";
 import { IconButton } from "../../components/IconButton";
+import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
 import { playerEngine, usePlayerStore } from "../../ports/player";
 import { useSoundStore } from "../../ports/sound";
 import { formatDuration } from "../../screens/entity/entityModel";
-import { PanelChip } from "./controls";
 import styles from "./popovers.module.css";
 
 const NONE: never[] = [];
@@ -24,29 +24,30 @@ export function MomentsPanel(): JSX.Element {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.customRow}>
-        <button type="button" className={styles.plainChip} disabled={!trackId} onClick={add}>
-          {t("ui.sound.moments.add", { time: clock(positionMs) })}
-        </button>
-      </div>
+      <button type="button" className={styles.mark} disabled={!trackId} onClick={add}>
+        <Icon name="moment" size={16} />
+        {t("ui.sound.moments.add", { time: clock(positionMs) })}
+      </button>
       {sorted.length === 0 ? (
         <p className={styles.note}>{t("ui.sound.moments.empty")}</p>
       ) : (
-        <div className={styles.chips}>
+        <ul className={styles.moments}>
           {sorted.map((moment) => (
-            <span key={moment.id} className={styles.moment} data-moment="">
-              <PanelChip pressed={false} onClick={() => playerEngine.seek(moment.positionMs)}>
-                {`${clock(moment.positionMs)} · ${moment.label}`}
-              </PanelChip>
+            <li key={moment.id} className={styles.moment} data-moment="">
+              <button type="button" className={styles.momentJump} onClick={() => playerEngine.seek(moment.positionMs)}>
+                <span className={styles.momentTime}>{clock(moment.positionMs)}</span>
+                <span className={styles.momentLabel}>{moment.label}</span>
+              </button>
               <IconButton
                 icon="close"
                 size="s"
+                className={styles.momentForget}
                 label={t("ui.sound.moments.remove", { name: moment.label })}
                 onClick={() => trackId && useSoundStore.getState().removeMoment(trackId, moment.id)}
               />
-            </span>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

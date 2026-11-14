@@ -41,6 +41,7 @@ import { SOUND_TABS, SoundPopover, SoundTrailing, type SoundTab } from "../popov
 import { VolumePopover, wheelVolume } from "../popovers/VolumePopover";
 import { usePageLit } from "../pageLit";
 import { useShellStore } from "../shellStore";
+import { QUEUE_ID } from "../queue/QueuePanel";
 import styles from "./Island.module.css";
 import { Scrubber } from "./Scrubber";
 import { stateLine, type StateLine } from "./stateLine";
@@ -98,6 +99,7 @@ export function Island(): JSX.Element | null {
   const likeTrack = useLikeTrack();
   const unlikeTrack = useUnlikeTrack();
   const liking = useRef(false);
+  const [pop, setPop] = useState(false);
   const reachable = useStreamingReachable();
   const sleep = useSleepTimer();
   const loopA = useAbLoopStore((state) => state.a);
@@ -149,6 +151,7 @@ export function Island(): JSX.Element | null {
     };
     if (liked) unlikeTrack.mutate(track.id, { onSettled });
     else likeTrack.mutate(track, { onSettled });
+    setPop(!liked);
   };
 
   const openPlayer = () => {
@@ -201,7 +204,7 @@ export function Island(): JSX.Element | null {
   const onVolumeWheel = (event: WheelEvent<HTMLElement>) => wheelVolume(player.volume ?? 1, event.deltaY);
 
   const titles: Record<Panel, string> = { add: t("ui.add.title"), sound: t("ui.sound.title"), volume: t("ui.volume.title") };
-  const width = shared.current === "sound" ? (SOUND_TABS.find((entry) => entry.id === soundTab)?.width ?? POPOVER.wide) : POPOVER.narrow;
+  const width = shared.current === "sound" ? (SOUND_TABS.find((entry) => entry.id === soundTab)?.width ?? POPOVER.sound) : POPOVER.narrow;
 
   return (
     <div
@@ -247,10 +250,13 @@ export function Island(): JSX.Element | null {
           <IconButton
             icon={liked ? "liked" : "like"}
             label={liked ? t("ui.island.unlike") : t("ui.island.like")}
-            className={styles.like}
+            className={`${styles.like} ${styles.heart}`}
             data-like=""
+            data-liked={liked ? "" : undefined}
+            data-pop={pop ? "" : undefined}
             data-tour="like"
             onClick={toggleLike}
+            onAnimationEnd={() => setPop(false)}
           />
           <DislikeButton track={track} className={styles.like} />
         </span>
@@ -307,6 +313,7 @@ export function Island(): JSX.Element | null {
           <IconButton
             icon="queue"
             label={t("ui.island.queue")}
+            aria-controls={QUEUE_ID}
             active={queueOpen}
             className={queueOpen ? styles.on : undefined}
             data-tour="queue"
@@ -347,7 +354,6 @@ export function Island(): JSX.Element | null {
         onClose={() => setOpen(false)}
         title={titles[shared.current]}
         width={width}
-        solid={shared.current === "sound"}
         trailing={shared.current === "sound" ? <SoundTrailing tab={soundTab} /> : undefined}
       >
         {shared.current === "sound" ? (

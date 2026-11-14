@@ -308,15 +308,19 @@ describe("Island", () => {
     expect(mocks.engine.skipNext).toHaveBeenCalledTimes(1);
   });
 
-  it("likes and unlikes the track, and the label follows", () => {
+  it("likes and unlikes the track, and the label and coloured state follow", () => {
     mount();
+    expect(button("ui.island.like")!.hasAttribute("data-liked")).toBe(false);
     click(button("ui.island.like")!);
     expect(mocks.like.like).toHaveBeenCalledWith(expect.objectContaining({ id: "t1" }), expect.anything());
+    expect(button("ui.island.like")!.hasAttribute("data-pop")).toBe(true);
     mocks.like.liked = true;
     mount();
     expect(button("ui.island.like")).toBeNull();
+    expect(button("ui.island.unlike")!.hasAttribute("data-liked")).toBe(true);
     click(button("ui.island.unlike")!);
     expect(mocks.like.unlike).toHaveBeenCalledWith("t1", expect.anything());
+    expect(button("ui.island.unlike")!.hasAttribute("data-pop")).toBe(false);
   });
 
   it("moves one popover between its buttons and closes it from the open one", () => {
@@ -371,8 +375,8 @@ describe("Island", () => {
     });
     expect(mocks.engine.seek).toHaveBeenLastCalledWith(12_000);
     const fill = scrubber.firstElementChild as HTMLElement;
-    expect(parseFloat(fill.style.transform.replace("scaleX(", ""))).toBeCloseTo(42_000 / 330_000, 5);
-    expect(fill.style.backgroundColor).toBe("rgba(255, 255, 255, 0.12)");
+    expect(parseFloat(fill.style.transform.replace("translateX(", "")) / 100 + 1).toBeCloseTo(42_000 / 330_000, 5);
+    expect(fill.style.getPropertyValue("--tint")).toBe("rgba(255, 255, 255, 0.12)");
   });
 
   it("marks Queue pressed while the store has the queue open", () => {
