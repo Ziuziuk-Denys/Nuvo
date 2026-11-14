@@ -45,12 +45,12 @@ function publish(next: WordTimingView | null): void {
   poll = next && isRunning(next.job, next.job?.trackId ?? null) ? setTimeout(() => void refresh(), POLL_MS) : null;
 }
 
-async function request(method: string, path: string, body?: unknown): Promise<Response | null> {
+export async function request(method: string, path: string, body?: unknown): Promise<Response | null> {
   const init: RequestInit = body === undefined ? { method } : { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
   return fetch(`${CORE_BASE_URL}${path}`, init).catch(() => null);
 }
 
-async function reloadLyrics(): Promise<void> {
+export async function reloadLyrics(): Promise<void> {
   const track = usePlayerStore.getState().currentTrack;
   if (!track) return;
   try {
@@ -76,6 +76,11 @@ export async function timeWords(trackId: string, best = false): Promise<void> {
   asked.add(trackId);
   const response = await request("POST", `/v1/tracks/${encodeURIComponent(trackId)}/lyrics/word-timing`, { best });
   if (response?.ok) await refresh();
+}
+
+export async function cancelWordTiming(trackId: string): Promise<void> {
+  await request("DELETE", `/v1/tracks/${encodeURIComponent(trackId)}/lyrics/word-timing`);
+  await refresh();
 }
 
 export function useWordTiming(): WordTimingView | null {

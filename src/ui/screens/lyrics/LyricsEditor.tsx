@@ -24,10 +24,11 @@ import styles from "./Lyrics.module.css";
 interface LyricsEditorProps {
   open: boolean;
   track: LyricsTrack;
+  draft?: string | null;
   onClose(): void;
 }
 
-export function LyricsEditor({ open, track, onClose }: LyricsEditorProps): JSX.Element | null {
+export function LyricsEditor({ open, track, draft = null, onClose }: LyricsEditorProps): JSX.Element | null {
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -38,9 +39,14 @@ export function LyricsEditor({ open, track, onClose }: LyricsEditorProps): JSX.E
 
   useEffect(() => {
     if (!open) return;
+    setSync(null);
+    if (draft !== null) {
+      setText(draft);
+      setLoading(false);
+      return;
+    }
     const controller = new AbortController();
     setLoading(true);
-    setSync(null);
     void loadEditable(track, controller.signal).then(
       (raw) => {
         setText(raw?.content ?? "");
@@ -49,7 +55,7 @@ export function LyricsEditor({ open, track, onClose }: LyricsEditorProps): JSX.E
       () => setLoading(false),
     );
     return () => controller.abort();
-  }, [open, track]);
+  }, [open, track, draft]);
 
   useEffect(() => {
     if (sync) list.current?.focus();

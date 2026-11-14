@@ -43,12 +43,17 @@
 }
 
 .lines li {
-  padding: var(--n-s-1) 0;
+  padding: var(--n-s-1) var(--n-s-2);
+  border-radius: var(--n-r-s);
 }
 
 .lines li[aria-current="true"] {
+  background: var(--n-select);
   color: var(--n-ink);
-  font-weight: 600;
+}
+
+.lines:focus-visible li[aria-current="true"] {
+  background: var(--n-focus);
 }
 
 .stamp {

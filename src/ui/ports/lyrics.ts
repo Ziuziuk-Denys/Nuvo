@@ -15,6 +15,7 @@ export function useLyrics<T>(selector: (state: LyricsState) => T): T {
 
 export function versionLabel(version: Version, t: TFunction): string {
   if (version.label) return version.label;
+  if (version.made === "transcribed") return t("ui.lyrics.version_written");
   if (isLocalTiming(version.provider)) return t("ui.lyrics.version_timed");
   if (version.topPriority) return t("ui.lyrics.version_own");
   if (version.syncLevel === "word_level" || version.syncLevel === "syllable_level") return t("ui.lyrics.version_word");

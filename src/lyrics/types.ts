@@ -29,6 +29,7 @@ export interface Candidate {
   label?: string;
   quality: { total: number };
   lyrics: RawLyrics;
+  made?: { source: string };
 }
 
 export interface Version {
@@ -37,6 +38,7 @@ export interface Version {
   syncLevel: string;
   quality: number;
   topPriority: boolean;
+  made?: string;
 }
 
 export type StreamEvent =
