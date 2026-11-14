@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.1-beta.2
+
+A beta with a reworked updater. Install on quit is checked by an automated test with the Linux AppImage and the Windows installer. Not checked yet: the Restart now button from start to finish, Windows arm64 and macOS.
+
+- **Updates install when you quit Nuvo.** Before, a downloaded update installed only through the button in Settings, About. Restart now still installs at once.
+- **Nuvo checks for updates on its own:** at start, every 4 hours and after waking from sleep. After a failed check it tries again at growing intervals, up to every 30 minutes.
+- **Check for updates in Settings, About,** also with automatic updates off. The row shows whether Nuvo is up to date, downloading or ready.
+- **The Windows portable .zip links to the release page** instead of installing a second copy.
+- **The AppImage menu entry follows the new file** when an update renames it.
+
+**Getting this beta.** Nuvo's updater offers only stable releases, so 0.3.1-beta.1 and older versions do not offer this beta: download it from the release page. Older versions keep their old updater and install a downloaded update only through the button in Settings, About.
+
+Please report what works and what breaks in [the chat](https://t.me/getnuvo_chat) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
 ## 0.3.1-beta.1
 
 A beta with fixes since 0.3.0. The macOS changes are checked in CI only and wait for a tester on a real Mac.
