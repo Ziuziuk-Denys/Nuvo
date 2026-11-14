@@ -81,6 +81,24 @@ impl Tensor {
         self.kind.decode(&self.bytes)
     }
 
+    /// Reads 8-bit weights in place instead of widening them.
+    pub fn matvec(&self, x: &[f32]) -> Vec<f32> {
+        use rayon::prelude::*;
+        let rows = self.shape[0];
+        let row_bytes = self.bytes.len() / rows;
+        let mut out = vec![0.0; rows];
+        out.par_chunks_mut(64).enumerate().for_each(|(chunk, out)| {
+            for (i, value) in out.iter_mut().enumerate() {
+                let row = &self.bytes[(chunk * 64 + i) * row_bytes..][..row_bytes];
+                *value = match self.kind {
+                    Kind::Q8_0 => row.as_chunks::<Q8_0_BYTES>().0.iter().zip(x.as_chunks::<Q8_0_BLOCK>().0).map(|(block, x)| half_at(block) * block[2..].iter().zip(x).map(|(q, x)| f32::from(*q as i8) * x).sum::<f32>()).sum(),
+                    kind => kind.decode(row).iter().zip(x).map(|(w, x)| w * x).sum(),
+                };
+            }
+        });
+        out
+    }
+
     /// Rows `range` of the outermost dimension; a row of a quantised tensor always holds whole blocks.
     pub fn rows(&self, range: std::ops::Range<usize>) -> Vec<f32> {
         let row_bytes = self.bytes.len() / self.shape[0];
@@ -251,6 +269,22 @@ mod tests {
         let tensor = Tensor { shape: vec![2, 32], kind: Kind::Q8_0, bytes };
         assert_eq!(tensor.rows(1..2), vec![2.0; 32]);
         assert_eq!(tensor.to_f32().len(), 64);
+    }
+
+    #[test]
+    fn matvec_reads_packed_rows_like_widened_ones() {
+        let mut bytes = Vec::new();
+        for scale in [0.5f32, -2.0, 1.0] {
+            bytes.extend(half::f16::from_f32(scale).to_le_bytes());
+            bytes.extend((0..32).map(|i| (i as i8 - 7) as u8));
+        }
+        let tensor = Tensor { shape: vec![3, 32], kind: Kind::Q8_0, bytes };
+        let x: Vec<f32> = (0..32).map(|i| (i % 5) as f32 - 2.0).collect();
+        let widened = tensor.to_f32();
+        let expected: Vec<f32> = widened.chunks(32).map(|row| row.iter().zip(&x).map(|(w, x)| w * x).sum()).collect();
+        assert_eq!(tensor.matvec(&x), expected);
+        let floats = Tensor { shape: vec![1, 2], kind: Kind::F32, bytes: [2.0f32, 3.0].iter().flat_map(|v| v.to_le_bytes()).collect() };
+        assert_eq!(floats.matvec(&[1.0, 10.0]), [32.0]);
     }
 
     #[test]

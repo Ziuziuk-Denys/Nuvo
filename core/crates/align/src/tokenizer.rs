@@ -7,17 +7,30 @@ pub const SOT: u32 = 50258;
 pub const FIRST_LANGUAGE: u32 = 50259;
 pub const TRANSLATE: u32 = 50358;
 pub const TRANSCRIBE: u32 = 50359;
+pub const NO_SPEECH: u32 = 50362;
 pub const NO_TIMESTAMPS: u32 = 50363;
+/// `<|0.00|>`; each next token is 20 ms later.
+pub const FIRST_TIMESTAMP: u32 = 50364;
+/// In token order from `FIRST_LANGUAGE`.
+pub const LANGUAGES: [&str; 99] = [
+    "en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr", "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi", "he", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no", "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk", "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk", "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw", "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc", "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo", "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl", "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su",
+];
 /// Multilingual tiny, base and small; large-v3 adds a language and shifts every special token.
 pub const MULTILINGUAL_VOCAB: usize = 51865;
 
 pub struct Tokenizer {
     ranks: HashMap<Vec<u8>, u32>,
+    vocab: Vec<Vec<u8>>,
 }
 
 impl Tokenizer {
     pub fn new(vocab: &[Vec<u8>]) -> Self {
-        Self { ranks: vocab.iter().enumerate().map(|(rank, bytes)| (bytes.clone(), rank as u32)).collect() }
+        Self { ranks: vocab.iter().enumerate().map(|(rank, bytes)| (bytes.clone(), rank as u32)).collect(), vocab: vocab.to_vec() }
+    }
+
+    pub fn decode(&self, tokens: &[u32]) -> String {
+        let bytes: Vec<u8> = tokens.iter().filter(|t| **t < EOT).filter_map(|t| self.vocab.get(*t as usize)).flatten().copied().collect();
+        String::from_utf8_lossy(&bytes).into_owned()
     }
 
     pub fn encode(&self, text: &str) -> Vec<u32> {
@@ -101,5 +114,6 @@ mod tests {
         let tokenizer = Tokenizer::new(&vocab);
         assert_eq!(tokenizer.encode("abc"), [5]);
         assert_eq!(tokenizer.encode("cab"), [2, 3]);
+        assert_eq!(tokenizer.decode(&[2, 3, EOT, 5]), "cababc");
     }
 }

@@ -12,6 +12,8 @@ gemm = { version = "0.19", default-features = false, features = ["std", "rayon"]
 half = "2"
 # A dedicated low-priority pool for the matrix products; already compiled as a gemm dependency.
 rayon = "1"
+# Compression ratio of a transcript, the repetition-loop check Whisper uses; already in the lock.
+flate2.workspace = true
 rustfft.workspace = true
 thiserror.workspace = true
 

@@ -1786,6 +1786,7 @@ dependencies = [
 name = "nuvo-align"
 version = "0.1.0"
 dependencies = [
+ "flate2",
  "gemm",
  "half",
  "libc",
