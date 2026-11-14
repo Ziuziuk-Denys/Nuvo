@@ -4,14 +4,17 @@ import { afterAll, describe, expect, it } from "vitest";
 import { POPOVER } from "../../src/ui/geometry";
 import { launchNuvo, MATRIX, SIZES, type Look, type NuvoSession } from "./harness";
 
+// EDGE_PX in src/ui/components/layers.ts, which needs the app's import aliases
+const POPOVER_EDGE_PX = 12;
+
 const STEP = "specimen";
 const DIR = path.resolve(import.meta.dirname, "..", "artifacts", "ui", STEP);
 const SECTIONS = ["type", "colour", "bloom", "controls", "overlays", "motion"];
 const LIGHT: Look = { preset: "nuvo", mode: "light" };
 const DARK: Look = { preset: "nuvo", mode: "dark" };
-const VINYL: Look = { preset: "vinyl", mode: "dark" };
+const AMBER: Look = { preset: "amber", mode: "dark" };
 const WIDE = { width: 1440, height: 900 };
-const WIDE_LOOKS: Look[] = [LIGHT, DARK, VINYL, { preset: "editor", mode: "light" }];
+const WIDE_LOOKS: Look[] = [LIGHT, DARK, AMBER, { preset: "ink", mode: "light" }];
 
 let session: NuvoSession | null = null;
 
@@ -101,7 +104,7 @@ describe("specimen", () => {
       },
     ];
 
-    for (const look of [LIGHT, DARK, VINYL]) {
+    for (const look of [LIGHT, DARK, AMBER]) {
       await live.setLook(look);
       await live.setSize(SIZES[0]);
       for (const { state, open } of states) {
@@ -122,7 +125,7 @@ describe("specimen", () => {
     await dialog.getByRole("tab", { name: "Equalizer" }).click();
     await page.waitForTimeout(500);
     const measure = () =>
-      page.evaluate(() => {
+      page.evaluate((edge) => {
         const panel = document.querySelector('[role="dialog"]')!;
         const anchor = [...document.querySelectorAll("[data-section=overlays] button")].find((node) => node.textContent === "Sound")!;
         const a = anchor.getBoundingClientRect();
@@ -131,14 +134,15 @@ describe("specimen", () => {
         return {
           width: p.width,
           gap: a.top - p.bottom,
-          centre: p.left + p.width / 2 - (a.left + a.width / 2),
+          left: p.left,
+          expectedLeft: Math.min(Math.max(a.left + a.width / 2 - p.width / 2, edge), innerWidth - p.width - edge),
           same: (window as { __panel?: Element }).__panel === panel,
         };
-      });
+      }, POPOVER_EDGE_PX);
     const wide = await measure();
     expect(wide.width).toBeCloseTo(POPOVER.wide, 0);
     expect(wide.gap).toBeCloseTo(POPOVER.gap, 0);
-    expect(Math.abs(wide.centre)).toBeLessThan(1);
+    expect(wide.left).toBeCloseTo(wide.expectedLeft, 0);
     await dialog.getByRole("tab", { name: "Speed" }).click();
     await page.waitForTimeout(500);
     const narrow = await measure();

@@ -168,9 +168,9 @@ export async function passFirstRun(page) {
   await page.getByRole("navigation").first().waitFor({ timeout: 30_000 });
 }
 
-// Liked songs shows even with no mixes, so only a mix card or quick pick marks Home drawn
+// A profile without plays has no mixes, so the cold-start slot marks Home drawn too
 export function homeReady(page) {
-  return page.locator("[data-mix], [data-pick]").first().waitFor({ timeout: 30_000 });
+  return page.locator("[data-mix], [data-slot=cold-start]").first().waitFor({ timeout: 30_000 });
 }
 
 async function seedData(page) {

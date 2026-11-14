@@ -125,7 +125,7 @@ async function installFixtures(page: Page): Promise<void> {
       if (url.includes("generate_204")) return new Response(null, { status: 204 });
       if (url.includes("sw.js_data")) return new Response(sw);
       const body = typeof init?.body === "string" ? (JSON.parse(init.body) as { params?: string; browseId?: string }) : {};
-      if (url.includes("/youtubei/v1/search")) return json(body.params === fx.artistParams ? fx.artistSearch : { contents: {} });
+      if (url.includes("/youtubei/v1/search")) return json(body.params === fx.artistParams || !body.params ? fx.artistSearch : { contents: {} });
       if (url.includes("/youtubei/v1/browse") && body.browseId && fx.artistPages[body.browseId]) return json(fx.artistPages[body.browseId]);
       if (url.includes("/youtubei/v1/next")) return json(fx.radio);
       return new Response("", { status: 404 });
@@ -163,31 +163,32 @@ describe("recs UI", () => {
 
     const needed = await live.core(`return (await (await fetch(base + "/v1/recs/start")).json()).needed;`);
     expect(needed).toBe(true);
-    const title = page.getByRole("heading", { name: "Start with a few artists you like" });
+    const title = page.getByRole("heading", { name: "Start with a few songs or artists" });
     await title.waitFor({ timeout: 20_000 });
     console.log(await shoot(live, "home", "cold-empty", [LIGHT, DARK], [W1200], () => title.waitFor({ timeout: 20_000 })));
 
-    const pickTwo = async () => {
-      await page.getByRole("heading", { level: 2 }).first().waitFor({ timeout: 20_000 });
-      await page.locator('input[aria-label="Search artists"], input[aria-label="Поиск исполнителей"]').fill("nova");
-      await page.getByText("Nova Lights", { exact: true }).waitFor({ timeout: 15_000 });
-      await page.getByText("Nova Lights", { exact: true }).click();
-      await page.getByText("Nova Drift", { exact: true }).click();
+    const pick = async (...names: string[]) => {
+      for (const name of names) {
+        await page.locator('input[aria-label="Song or artist"], input[aria-label="Песня или артист"]').fill("nova");
+        const suggestion = page.locator('ul[aria-label="Suggestions"] button, ul[aria-label="Предложения"] button', { hasText: name }).first();
+        await suggestion.waitFor({ timeout: 15_000 });
+        await suggestion.click();
+      }
       await page.mouse.move(30, 400);
     };
+    const pickTwo = async () => {
+      await page.getByRole("heading", { level: 2 }).first().waitFor({ timeout: 20_000 });
+      await pick("Nova Lights", "Nova Drift");
+    };
     await pickTwo();
-    expect(await page.locator('[aria-current="true"]').count()).toBe(2);
+    expect(await page.locator("[data-seed]").count()).toBe(2);
     console.log(await shoot(live, "home", "cold-picked", [LIGHT, DARK], [W1200], pickTwo));
     await setLocale(live, "ru");
     console.log(
       await shoot(live, "home", "cold-picked-ru", [{ ...LIGHT }], [W1100], async () => {
         await page.reload();
-        await page.getByRole("heading", { name: "Начните с нескольких любимых исполнителей" }).waitFor({ timeout: 20_000 });
-        await page.locator('input[aria-label="Search artists"], input[aria-label="Поиск исполнителей"]').fill("nova");
-        await page.getByText("Nova Lights", { exact: true }).click();
-        await page.getByText("Nova Drift", { exact: true }).click();
-        await page.getByText("Novaya Volna", { exact: true }).click();
-        await page.mouse.move(30, 400);
+        await page.getByRole("heading", { name: "Начните с любимых песен или исполнителей" }).waitFor({ timeout: 20_000 });
+        await pick("Nova Lights", "Nova Drift", "Novaya Volna");
       }),
     );
     const foot = await page.evaluate(() => {
@@ -197,7 +198,7 @@ describe("recs UI", () => {
     expect(foot.clipped).toBe(false);
     expect(foot.right).toBeLessThan(foot.width);
     await page.getByRole("button", { name: "Слушать" }).click();
-    await page.getByRole("heading", { name: "Начните с нескольких любимых исполнителей" }).waitFor({ state: "detached", timeout: 30_000 });
+    await page.getByRole("heading", { name: "Начните с любимых песен или исполнителей" }).waitFor({ state: "detached", timeout: 30_000 });
     const after = await live.core(`return (await (await fetch(base + "/v1/recs/start")).json()).needed;`);
     expect(after, "the starters answered the ask").toBe(false);
     await page.locator("[data-mix]").first().waitFor({ timeout: 30_000 });

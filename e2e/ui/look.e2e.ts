@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { PRESETS } from "../../src/data/look/presets";
 import { launchNuvo, type Look, type NuvoSession, type Size } from "./harness";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
@@ -87,6 +88,34 @@ const rootToken = (live: NuvoSession, name: string) =>
   live.page.evaluate((token) => getComputedStyle(document.documentElement).getPropertyValue(token).trim(), name);
 
 describe("look", () => {
+  it("every preset paints its own tokens in both modes, and an old stored preset lands on its new one", { timeout: 300_000 }, async () => {
+    const live = await launchNuvo({ profile: "seeded" });
+    const page = live.page;
+    try {
+      for (const preset of PRESETS) {
+        for (const mode of ["light", "dark"] as const) {
+          await live.setLook({ preset: preset.id, mode });
+          expect(await rootToken(live, "--n-field")).toBe(preset.tokens[mode]!["n-field"]);
+          expect(await rootToken(live, "--n-accent")).toBe(preset.tokens[mode]!["n-accent"]);
+        }
+      }
+      await openSection(live, "appearance");
+      expect(await page.locator("[role=dialog] [data-preset] img").count()).toBe(PRESETS.length);
+      await page.locator("[role=dialog] [data-preset=frost]").click();
+      await page.waitForFunction(() => document.documentElement.dataset.preset === "frost");
+
+      await page.waitForTimeout(1_100);
+      await page.evaluate(() => {
+        localStorage.setItem("nuvo.look.v1", JSON.stringify({ state: { preset: "vinyl", themeBeforePreset: null }, version: 1 }));
+        localStorage.setItem("theme", "dark");
+      });
+      await page.reload();
+      await page.waitForFunction(() => document.documentElement.dataset.preset === "amber", null, { timeout: 30_000 });
+    } finally {
+      await live.close();
+    }
+  });
+
   it("edit colours live, warnings and the block, fonts, custom CSS, export and import with CSS, safe mode", { timeout: 900_000 }, async () => {
     const live = await launchNuvo({ profile: "seeded" });
     sessions.push(live);
@@ -151,9 +180,9 @@ describe("look", () => {
     await shoot("font-list");
     await page.keyboard.press("Escape");
 
-    await openSection(live, "customization");
+    await openSection(live, "appearance");
     await page.getByRole("button", { name: t("appearance.css.show"), exact: true }).click();
-    const area = page.getByLabel(t("appearance.css.editor"));
+    const area = page.getByLabel(t("appearance.css.editor"), { exact: true });
     await area.fill("a { color: inherit }\nbody { background: url(https://example.org/x.png) }");
     await page.getByRole("button", { name: t("appearance.css.apply"), exact: true }).click();
     await expect
@@ -189,7 +218,7 @@ describe("look", () => {
     await editor.waitFor({ state: "detached" });
     await page.getByRole("button", { name: t("appearance.theme.discard") }).click();
 
-    await openSection(live, "customization");
+    await openSection(live, "appearance");
     await page.getByRole("button", { name: t("appearance.safe.reset") }).click();
     await expect.poll(() => page.locator("#nuvo-custom-css").count()).toBe(0);
     const banner = page.locator("[role=status][data-nuvo-guard]");
@@ -234,7 +263,7 @@ describe("look", () => {
       await page.locator(`[role=dialog]`).getByText(t("appearance.fonts.files")).scrollIntoViewIfNeeded();
       await shoot("fonts");
 
-      await openSection(live, "customization");
+      await openSection(live, "appearance");
       await page.getByRole("button", { name: t("appearance.css.show"), exact: true }).click();
       await shoot("css");
 

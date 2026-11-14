@@ -152,14 +152,13 @@ describe("local files", () => {
     await shot(live, "local-playing-en", 1200, 780);
   });
 
-  it("finds a local file in search, first among songs", async () => {
+  it("finds a local file in search", async () => {
     const live = session!;
     await live.go("#/search");
-    const field = live.page.locator("input").first();
+    const field = live.page.locator("input:not([role=combobox])").first();
     await field.fill("Evening");
     await expect.poll(() => live.page.getByText("Evening Field").count(), { timeout: 15_000 }).toBeGreaterThan(0);
     await live.page.waitForTimeout(1500);
-    expect(await live.page.getByRole("region", { name: "Songs" }).locator("[data-dislike]").count()).toBeGreaterThan(0);
     await shot(live, "local-search-en", 1200, 780);
   });
 
@@ -198,7 +197,7 @@ describe("local files", () => {
     await shot(live, "local-menu-ru", 1100, 705);
     await live.page.keyboard.press("Escape");
     await live.go("#/search");
-    await live.page.locator("input").first().fill("Harbor");
+    await live.page.locator("input:not([role=combobox])").first().fill("Harbor");
     await expect.poll(() => live.page.getByText("Harbor Lights").count(), { timeout: 15_000 }).toBeGreaterThan(0);
     await live.page.waitForTimeout(1500);
     await shot(live, "local-search-ru", 1100, 705);

@@ -257,6 +257,8 @@ describe("shell e2e", () => {
       "listSystemFonts",
       "importFontFile",
       "deleteFontFile",
+      "importWallpaper",
+      "clearWallpaper",
       "exportTheme",
       "importThemeFile",
       "appearanceReady",

@@ -16,12 +16,12 @@ afterEach(async () => {
 });
 
 async function homeState(live: NuvoSession) {
-  await live.page.locator("[data-pick]").first().waitFor({ timeout: 30_000 });
+  await live.page.locator("[data-mix], [data-slot=cold-start]").first().waitFor({ timeout: 30_000 });
   await live.page.waitForTimeout(1_000);
   return live.page.evaluate(() => ({
     mixes: [...document.querySelectorAll<HTMLElement>("[data-mix]")].map((card) => card.dataset.mix),
-    picks: [...document.querySelectorAll("[data-pick]")].map((pick) => pick.textContent),
-    shelf: document.querySelectorAll("section[aria-label] a").length,
+    picks: document.querySelectorAll("[data-pick]").length,
+    shelf: document.querySelectorAll("[data-shelf] [data-song]").length,
     glow: document.querySelector("[data-mode] img") !== null,
     glass: document.querySelector("[data-island][data-lit]") !== null,
     coldStart: document.querySelector("[data-slot=cold-start]") !== null,
@@ -37,14 +37,14 @@ async function shootRussian(live: NuvoSession, state: string): Promise<void> {
 }
 
 describe("home", () => {
-  it("seeded: For you leads the mixes, the pins and the shelf follow, the page glows and the bar turns to glass", async () => {
+  it("seeded: For you leads the mixes, recommendations only follow, the page glows and the bar turns to glass", async () => {
     const live = await launchNuvo({ profile: "seeded" });
     session = live;
     await live.go("#/");
     const state = await homeState(live);
     console.log("home seeded:", JSON.stringify(state));
     expect(state.mixes[0]).toBe("daily-mix-for-you");
-    expect(state.picks).toEqual(["Liked songs40 songs", "Late night drive300 tracks", "Morning24 tracks", "Album 1"]);
+    expect(state.picks).toBe(0);
     expect(state.shelf).toBeGreaterThan(0);
     expect(state.glow).toBe(true);
     expect(state.glass).toBe(true);
@@ -103,7 +103,7 @@ describe("home", () => {
       })),
     );
     console.log("home shelves:", JSON.stringify(shelves.map(({ name, title, songs }) => ({ name, title, songs: songs.length }))));
-    expect(shelves.map((shelf) => shelf.name)).toEqual(["songs", "like", "shuffle", "like", "saved"]);
+    expect(shelves.map((shelf) => shelf.name)).toEqual(["songs", "like", "shuffle", "like"]);
     const [, like, shuffle] = shelves;
     expect(shuffle.title).toBe("A shuffle of your music");
     expect(shuffle.songs).toHaveLength(4);
@@ -174,13 +174,6 @@ describe("home", () => {
     const all = await everySong();
     expect(new Set(all).size).toBe(all.length);
 
-    const saved = () => live.page.evaluate(() => [...document.querySelectorAll("[data-shelf=saved] a")].map((card) => card.textContent));
-    const savedBefore = await saved();
-    await live.page.locator("[data-shelf=saved] [data-refresh]").click();
-    await live.page.waitForTimeout(600);
-    expect((await saved())[0]).not.toBe(savedBefore[0]);
-    expect([...(await saved())].sort()).toEqual([...savedBefore].sort());
-
     const headingInView = async () => {
       await live.page.locator("[data-shelf=shuffle] [data-song]").first().waitFor({ timeout: 30_000 });
       await live.page.locator("[data-shelf=songs]").evaluate((shelf) => shelf.scrollIntoView({ block: "start" }));
@@ -194,7 +187,7 @@ describe("home", () => {
     expect(await live.shoot("home-refresh", "home", "refresh-ru", { looks: [LIGHT, DARK], sizes: [W1100, WIDE], prepare: headingInView })).toHaveLength(4);
   }, 900_000);
 
-  it("fresh: Liked songs alone, the cold-start slot, no glow", async () => {
+  it("fresh: the cold-start slot alone, no glow", async () => {
     const live = await launchNuvo({ profile: "fresh" });
     session = live;
     await passFirstRun(live.page);
@@ -202,20 +195,22 @@ describe("home", () => {
     const state = await homeState(live);
     console.log("home fresh:", JSON.stringify(state));
     expect(state.mixes).toEqual([]);
-    expect(state.picks).toEqual(["Liked songs0 songs"]);
+    expect(state.picks).toBe(0);
     expect(state.coldStart).toBe(true);
     expect(state.glow).toBe(false);
     const edges = await live.page.evaluate(() => {
-      const box = (selector: string) => document.querySelector(`[aria-labelledby="start-artists-title"] ${selector}`)!.getBoundingClientRect();
+      const box = (selector: string) => document.querySelector(`[aria-labelledby="cold-taste-title"] ${selector}`)!.getBoundingClientRect();
       const field = box('[role="search"]');
-      const importButton = [...document.querySelectorAll("button")].find((button) => button.textContent === "Import playlist")!.getBoundingClientRect();
+      const sources = [...document.querySelectorAll("[data-source]")].map((source) => source.getBoundingClientRect());
       return {
         field: [field.left, field.right],
         count: box('[role="status"]').left,
         listen: box('[role="status"] + button').right,
-        importCentre: importButton.left + importButton.width / 2,
+        importCentre: (sources[0].left + sources.at(-1)!.right) / 2,
+        sources: sources.length,
       };
     });
+    expect(edges.sources, "every import source offered").toBe(5);
     expect(Math.abs(edges.importCentre - (edges.field[0] + edges.field[1]) / 2)).toBeLessThanOrEqual(1);
     expect(Math.abs(edges.count - edges.field[0])).toBeLessThanOrEqual(1);
     expect(Math.abs(edges.listen - edges.field[1])).toBeLessThanOrEqual(1);
