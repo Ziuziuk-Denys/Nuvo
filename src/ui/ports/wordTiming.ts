@@ -19,7 +19,7 @@ export interface WordTimingView {
   job?: WordTimingJob;
 }
 
-export const POLL_MS = 1000;
+export const POLL_MS = 500;
 
 /** Versions the daemon timed on this computer are named after their model. */
 export function isLocalTiming(provider: string | null): boolean {

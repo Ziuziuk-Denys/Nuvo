@@ -805,6 +805,7 @@
         "file": "Загрузить файл .lrc",
         "file_too_big": "Файл слишком большой для текста песни",
         "downloading": "Скачиваю модель · {mb} МБ",
+        "downloading_progress": "Скачиваю модель · {percent}% из {mb} МБ",
         "writing": "Записываю текст {percent}%",
         "write_failed": "Nuvo не смог записать текст этой песни",
         "cancel": "Отменить",

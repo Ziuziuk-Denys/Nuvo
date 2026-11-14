@@ -28,7 +28,7 @@ pub async fn enabled(data: &Unlocked) -> Result<bool, ApiError> {
 }
 
 async fn current(state: &AppState, data: &Unlocked) -> Result<WordTiming, ApiError> {
-    Ok(WordTiming { enabled: enabled(data).await?, models: word_timing::installed(state), job: state.word_timing.current() })
+    Ok(WordTiming { enabled: enabled(data).await?, models: word_timing::installed(state), job: word_timing::with_download(state, state.word_timing.current()) })
 }
 
 async fn view(State(state): State<AppState>) -> Result<Json<WordTiming>, ApiError> {
@@ -69,7 +69,7 @@ async fn cancel(State(state): State<AppState>, Path(id): Path<String>) -> Result
 }
 
 async fn made_view(State(state): State<AppState>) -> Json<MadeLyrics> {
-    Json(MadeLyrics { models: word_timing::installed(&state), job: state.made_lyrics.current() })
+    Json(MadeLyrics { models: word_timing::installed(&state), job: word_timing::with_download(&state, state.made_lyrics.current()) })
 }
 
 /// Asked for by the owner, so the word timing switch does not gate it.

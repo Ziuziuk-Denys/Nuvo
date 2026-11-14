@@ -7,7 +7,8 @@ use axum::http::{Request, StatusCode};
 use nuvo_crypto::MemoryKeyStore;
 use nuvo_fetch::tools::ToolEnv;
 use nuvo_fetch::update::WHISPER_BASE;
-use nuvo_server::word_timing::{model_path, source_hash};
+use nuvo_contracts::{ToolDownload, WordTimingJob};
+use nuvo_server::word_timing::{model_path, source_hash, with_download};
 use nuvo_store::lyrics_words::{self, ALIGNED, SYNCED, TRANSCRIBED, Timing};
 use serde_json::{Value, json};
 
@@ -231,4 +232,19 @@ async fn cached_audio_gets_transcribed_and_its_plain_lyrics_timed() {
     let ttml = timed["candidate"]["lyrics"]["content"].as_str().unwrap();
     assert_eq!(ttml.matches("<p ").count(), 3, "{ttml}");
     assert_eq!(ttml.matches("<span ").count(), 21, "{ttml}");
+}
+
+#[test]
+fn a_job_waiting_for_its_model_shows_the_download() {
+    let core = common::core();
+    let job = |state: &'static str| WordTimingJob { track_id: "t1".into(), source: TRANSCRIBED, model: "whisper-small", state, progress: 0.0, code: None };
+    let download = |tool: &'static str, failed: bool| Some(ToolDownload { tool, received: 66, total: Some(264), failed });
+    *core.state.tool_download.write().unwrap() = download("whisper-small", false);
+    assert_eq!(with_download(&core.state, Some(job("waiting"))).unwrap().progress, 0.25);
+    assert_eq!(with_download(&core.state, Some(job("running"))).unwrap().progress, 0.0, "a running job keeps its own progress");
+    *core.state.tool_download.write().unwrap() = download("ffmpeg", false);
+    assert_eq!(with_download(&core.state, Some(job("waiting"))).unwrap().progress, 0.0, "another tool's download is not the model's");
+    *core.state.tool_download.write().unwrap() = download("whisper-small", true);
+    assert_eq!(with_download(&core.state, Some(job("waiting"))).unwrap().progress, 0.0);
+    assert!(with_download(&core.state, None).is_none());
 }

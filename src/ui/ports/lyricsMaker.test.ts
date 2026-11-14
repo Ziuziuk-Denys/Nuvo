@@ -44,6 +44,12 @@ describe("lyrics Nuvo makes", () => {
       task: "write",
       phase: "download",
     });
+    expect(
+      makerOffer(timing(), { models: [], job: { ...job("waiting", 0.25, { model: "whisper-small" }), source: "transcribed" } }, "t1", "none"),
+    ).toMatchObject({
+      phase: "download",
+      percent: 25,
+    });
     expect(makerOffer(timing(), made(["whisper-base"], "aligned", "waiting"), "t1", "plain")).toMatchObject({ phase: "prepare" });
     expect(makerOffer(timing(), { models: [], job: { ...job("running", 0.426), source: "transcribed" } }, "t1", "none")).toMatchObject({
       phase: "running",

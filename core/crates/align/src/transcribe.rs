@@ -1,5 +1,6 @@
 // 30 s windows; the timestamps Whisper writes cut the segments and say where the next window starts
 
+use std::cell::Cell;
 use std::io::Write;
 
 use crate::AlignError;
@@ -86,6 +87,15 @@ pub fn transcribe(model: &Whisper, audio: &[f32], hint: Option<&str>, progress: 
     let blank = model.tokenizer.encode(" ");
     let mut random = Random(0x9e37_79b9_7f4a_7c15);
     let mut segments = Vec::new();
+    let reached = Cell::new(0.0_f32);
+    // the temperature fallback decodes a window again, so the bar never moves back
+    let report = |at: usize| {
+        let done = (at as f32 / audio.len() as f32).min(1.0);
+        if done > reached.get() {
+            reached.set(done);
+            progress(done);
+        }
+    };
     let mut seek = 0;
     while seek + SAMPLE_RATE / 2 < audio.len() {
         let samples = &audio[seek..(seek + WINDOW_SAMPLES).min(audio.len())];
@@ -101,7 +111,7 @@ pub fn transcribe(model: &Whisper, audio: &[f32], hint: Option<&str>, progress: 
             if stop() {
                 return Err(AlignError::Cancelled);
             }
-            let tried = sample(model, &cross, cache.clone(), after_prompt.clone(), temperature, window_ms, &blank, &mut random);
+            let tried = sample(model, &cross, cache.clone(), after_prompt.clone(), temperature, window_ms, &blank, &mut random, &|ms| report(seek + ms as usize * SAMPLE_RATE / 1000));
             let settled = tried.compression <= MAX_COMPRESSION && tried.avg_logprob >= MIN_AVG_LOGPROB;
             let silent = no_speech > MIN_NO_SPEECH && tried.avg_logprob < MIN_AVG_LOGPROB;
             attempt = Some(tried);
@@ -129,7 +139,7 @@ pub fn transcribe(model: &Whisper, audio: &[f32], hint: Option<&str>, progress: 
             consumed_ms
         };
         seek += consumed_ms as usize * SAMPLE_RATE / 1000;
-        progress((seek as f32 / audio.len() as f32).min(1.0));
+        report(seek);
     }
     Ok(Transcript { language: language_code(language), segments })
 }
@@ -153,7 +163,7 @@ impl Random {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn sample(model: &Whisper, cross: &Cross, mut cache: Cache, mut logits: Vec<f32>, temperature: f32, window_ms: u32, blank: &[u32], random: &mut Random) -> Attempt {
+fn sample(model: &Whisper, cross: &Cross, mut cache: Cache, mut logits: Vec<f32>, temperature: f32, window_ms: u32, blank: &[u32], random: &mut Random, heard_at: &dyn Fn(u32)) -> Attempt {
     let last_timestamp = FIRST_TIMESTAMP + window_ms / TIMESTAMP_MS;
     let mut tokens = Vec::new();
     let mut sum = 0.0;
@@ -164,6 +174,9 @@ fn sample(model: &Whisper, cross: &Cross, mut cache: Cache, mut logits: Vec<f32>
         sum += log_probs[token as usize];
         if token == EOT || tokens.len() == MAX_SAMPLED {
             break;
+        }
+        if token >= FIRST_TIMESTAMP {
+            heard_at((token - FIRST_TIMESTAMP) * TIMESTAMP_MS);
         }
         tokens.push(token);
         logits = model.step(&[token], cross, &mut cache);

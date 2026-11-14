@@ -765,6 +765,7 @@
         "file": "Load an .lrc file",
         "file_too_big": "This file is too large to be lyrics",
         "downloading": "Downloading the model · {mb} MB",
+        "downloading_progress": "Downloading the model · {percent}% of {mb} MB",
         "writing": "Writing the lyrics {percent}%",
         "write_failed": "Nuvo could not write lyrics for this song",
         "cancel": "Cancel",
