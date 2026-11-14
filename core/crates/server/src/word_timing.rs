@@ -90,6 +90,20 @@ impl Jobs {
     }
 }
 
+/// A job waiting for its model shows how much of the model has downloaded.
+pub fn with_download(state: &AppState, job: Option<WordTimingJob>) -> Option<WordTimingJob> {
+    let mut job = job?;
+    if job.state == "waiting"
+        && let Some(download) = state.tool_download.read().expect("tool download lock").as_ref()
+        && download.tool == job.model
+        && !download.failed
+        && let Some(total) = download.total.filter(|total| *total > 0)
+    {
+        job.progress = (download.received as f32 / total as f32).min(1.0);
+    }
+    Some(job)
+}
+
 /// Synced word timing has its own slot, so timing the next song never stops lyrics the owner asked for.
 pub fn jobs<'a>(state: &'a AppState, source: &str) -> &'a Jobs {
     if source == SYNCED { &state.word_timing } else { &state.made_lyrics }

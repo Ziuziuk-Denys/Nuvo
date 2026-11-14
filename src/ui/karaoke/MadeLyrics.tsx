@@ -29,7 +29,10 @@ function failureText(offer: Extract<MakerOffer, { kind: "failed" }>, t: TFunctio
 }
 
 function workingText(offer: Extract<MakerOffer, { kind: "working" }>, t: TFunction): string {
-  if (offer.phase === "download") return t("ui.karaoke.make.downloading", { mb: MODEL_MB[offer.model] });
+  if (offer.phase === "download") {
+    const mb = MODEL_MB[offer.model];
+    return offer.percent > 0 ? t("ui.karaoke.make.downloading_progress", { mb, percent: offer.percent }) : t("ui.karaoke.make.downloading", { mb });
+  }
   if (offer.phase === "prepare") return t("ui.karaoke.word_timing.waiting");
   if (offer.task === "write") return t("ui.karaoke.make.writing", { percent: offer.percent });
   return t(offer.model === "whisper-small" ? "ui.karaoke.word_timing.improving" : "ui.karaoke.word_timing.running", { percent: offer.percent });
@@ -63,7 +66,7 @@ function useLyricsSources(track: LyricsTrack) {
 
 function Working({ offer, trackId }: { offer: Extract<MakerOffer, { kind: "working" }>; trackId: string }): JSX.Element {
   const { t } = useTranslation();
-  const known = offer.phase === "running";
+  const known = offer.phase === "running" || (offer.phase === "download" && offer.percent > 0);
   return (
     <div className={styles.working} aria-live="polite">
       <p>{workingText(offer, t)}</p>
