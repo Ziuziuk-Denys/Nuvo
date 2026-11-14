@@ -944,6 +944,7 @@
       },
       "auto_update": {
         "description": "Nuvo looks for new versions every few hours, downloads them in the background and installs them when you quit",
+        "description_notify": "Nuvo looks for new versions every few hours and shows them here",
         "title": "Update automatically"
       },
       "update_available": "Version {version} is available",

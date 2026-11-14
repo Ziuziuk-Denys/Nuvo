@@ -7,7 +7,6 @@ import { SettingBlock, SettingRow, Switch } from "./controls";
 import styles from "./sections.module.css";
 
 const TITLE = "ui.settings.auto_update.title";
-const DESCRIPTION = "ui.settings.auto_update.description";
 
 function useUpdateView(): UpdateView | null {
   const [view, setView] = useState<UpdateView | null>(null);
@@ -99,13 +98,13 @@ export function UpdateStatus(): JSX.Element | null {
 export function AutoUpdateRow(): JSX.Element | null {
   const { t } = useTranslation();
   const [on, setOn] = useState<boolean | null>(null);
-  const [supported, setSupported] = useState(false);
+  const [mode, setMode] = useState<UpdateView["mode"]>("off");
 
   useEffect(() => {
     let live = true;
     void Promise.all([readUpdate(), readAutoUpdate()]).then(([view, value]) => {
       if (!live) return;
-      setSupported(view !== null && view.mode !== "off");
+      setMode(view?.mode ?? "off");
       setOn(value);
     });
     return () => {
@@ -113,7 +112,8 @@ export function AutoUpdateRow(): JSX.Element | null {
     };
   }, []);
 
-  if (!supported || on === null) return null;
+  if (mode === "off" || on === null) return null;
+  const description = mode === "install" ? "ui.settings.auto_update.description" : "ui.settings.auto_update.description_notify";
 
   const change = (next: boolean) => {
     setOn(next);
@@ -125,9 +125,9 @@ export function AutoUpdateRow(): JSX.Element | null {
   return (
     <SettingRow
       title={t(TITLE)}
-      description={t(DESCRIPTION)}
+      description={t(description)}
       titleKey={TITLE}
-      descKey={DESCRIPTION}
+      descKey={description}
       explained
       control={<Switch checked={on} label={t(TITLE)} onChange={change} />}
     />

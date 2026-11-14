@@ -126,6 +126,18 @@ describe("AutoUpdateRow", () => {
     expect(calls.setMainSetting).toHaveBeenCalledWith("autoUpdate", false);
   });
 
+  it("promises an install on quit only where Nuvo can install", async () => {
+    shell({ phase: "idle", mode: "install" });
+    await mount(<AutoUpdateRow />);
+    expect(host.textContent).toContain("ui.settings.auto_update.description");
+    expect(host.textContent).not.toContain("description_notify");
+    shell({ phase: "idle", mode: "notify" });
+    act(() => root.unmount());
+    root = createRoot(host);
+    await mount(<AutoUpdateRow />);
+    expect(host.textContent).toContain("ui.settings.auto_update.description_notify");
+  });
+
   it("is hidden where updates do not exist", async () => {
     shell({ phase: "off", mode: "off" });
     await mount(<AutoUpdateRow />);
