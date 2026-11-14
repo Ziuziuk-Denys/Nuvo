@@ -78,7 +78,7 @@ describe.each(["en", "ru"] as const)("Search with SoundCloud (%s)", (locale) => 
     await session.setSize({ width: 1200, height: 780 });
 
     await session.go("#/search");
-    const field = page.locator("input").first();
+    const field = page.locator("input:not([role=combobox])").first();
     await field.waitFor({ timeout: 15_000 });
     await field.fill("get lucky");
     await expect.poll(() => page.getByRole("img", { name: text.mark }).count(), { timeout: 15_000 }).toBe(3);

@@ -170,7 +170,7 @@ describe("play events", () => {
 
   it("records a search hit under the search context", async () => {
     await open("#/search");
-    await page.locator("input").first().fill("Field B");
+    await page.getByPlaceholder("Songs, albums, artists").fill("Field B");
     await page
       .getByRole("button", { name: /Field B/ })
       .first()
@@ -244,7 +244,7 @@ describe("play events", () => {
 
   it.skipIf(!process.env.NUVO_STATS_STREAM)("records a real stream from the network as a stream", { timeout: 120_000 }, async () => {
     await open("#/search");
-    await page.locator("input").first().fill("Bohemian Rhapsody Queen");
+    await page.getByPlaceholder("Songs, albums, artists").fill("Bohemian Rhapsody Queen");
     await page
       .getByRole("button", { name: /Bohemian Rhapsody/ })
       .first()

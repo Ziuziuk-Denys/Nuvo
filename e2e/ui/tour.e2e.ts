@@ -64,6 +64,7 @@ async function checkLayout(page: Page, where: string): Promise<void> {
   const overlap = (a: typeof boxes.hole, b: typeof boxes.hole) => !!a && !!b && a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom;
   expect(overlap(boxes.callout, boxes.dock), `${where}: callout over the dock`).toBe(false);
   expect(overlap(boxes.callout, boxes.hole), `${where}: callout over the outline`).toBe(false);
+  expect(overlap(boxes.dock, boxes.hole), `${where}: dock over the outline`).toBe(false);
   for (const box of [boxes.callout, boxes.dock]) {
     if (!box) continue;
     expect(box.x, `${where}: off the left edge`).toBeGreaterThanOrEqual(0);
@@ -135,17 +136,20 @@ describe("tour", () => {
     await shot(page, dir, "00-start");
 
     const field = page.getByRole("textbox", { name: "Song or artist" });
-    for (const name of ["Radiohead", "Massive Attack", "Portishead"]) {
+    let picked = 0;
+    for (const name of ["Teardrop", "Massive Attack", "Portishead"]) {
       await field.fill(name);
       const first = page.locator('[aria-label="Suggestions"] button').first();
       const found = await first.waitFor({ timeout: 8_000 }).then(
         () => true,
         () => false,
       );
-      if (name === "Radiohead") await shot(page, dir, "01-start-suggestions");
+      if (name === "Teardrop") await shot(page, dir, "01-start-suggestions");
       if (!found) break;
       await first.click();
+      picked += 1;
     }
+    expect(await page.locator("[data-seed]").count(), "every pick shows as a seed").toBe(picked);
     await field.fill("");
     await shot(page, dir, "02-start-picks");
     const use = page.getByRole("button", { name: "Use these" });
@@ -157,12 +161,15 @@ describe("tour", () => {
 
     await page.locator("[data-primary]").click();
     const counters: string[] = [];
-    const seen = await walk(page, dir, async (key) => {
+    const seen = await walk(page, dir, async (key, index) => {
       const counter = await page.locator("[data-dock] [class*=counter]").textContent();
       if (counter && counters.at(-1) !== counter) counters.push(counter);
+      // search is the top bar field and the Ctrl K palette, never a page of its own
+      if (index === 2) expect(await page.locator('[role="dialog"]:has(> [role="listbox"])').count()).toBe(1);
+      expect(await page.evaluate(() => location.hash)).not.toContain("search");
       if (!key.includes("Pick a theme")) return;
-      await page.locator('[data-preset="sunset"]').click();
-      await page.waitForFunction(() => document.documentElement.dataset.preset === "sunset");
+      await page.locator('[data-preset="dusk"]').click();
+      await page.waitForFunction(() => document.documentElement.dataset.preset === "dusk");
       await shot(page, dir, "40-theme-picked");
       await page.locator('[data-preset="nuvo"]').click();
     });
@@ -201,7 +208,7 @@ describe("tour", () => {
       expect(seen.length).toBeGreaterThanOrEqual(11);
       const locale = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "..", "..", "src", "i18n", "locales", `${run.locale}.json`), "utf8"));
       const steps = locale.ui.tour.steps as Record<string, string>;
-      for (const step of ["speed", "sleep", "rail_recognize", "recognize_sources"])
+      for (const step of ["search_bar", "palette", "lyrics", "rate", "speed", "sleep", "nav_recognize", "recognize_sources"])
         expect(
           seen.some((key) => key.includes(steps[step])),
           `${run.name}: the ${step} step`,

@@ -11,7 +11,7 @@ const LOOKS = {
     look: { preset: "nuvo", mode: "light" },
     size: { width: 1200, height: 780 },
     create: "Create playlist",
-    fromLink: "From a link",
+    fromLink: "Import from a link",
     cancel: "Cancel import",
     importing: /Importing… \d+ %/,
   },
@@ -19,12 +19,14 @@ const LOOKS = {
     look: { preset: "nuvo", mode: "light" },
     size: { width: 1100, height: 705 },
     create: "Создать плейлист",
-    fromLink: "Из ссылки",
+    fromLink: "Импорт по ссылке",
     cancel: "Отменить импорт",
     importing: /Импорт… \d+ %/,
   },
 } as const;
 
+// the palette keeps its own non-modal dialog mounted while it closes, so the import sheet is the modal one
+const SHEET = '[role="dialog"][aria-modal="true"]';
 const SPOTIFY_LINK = "https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U?si=e2e";
 const SPOTIFY = {
   label: "Rock Classics",
@@ -55,7 +57,7 @@ async function shot(live: NuvoSession, name: string, locale: "en" | "ru"): Promi
 
 async function closeDialog(live: NuvoSession): Promise<void> {
   await live.page.keyboard.press("Escape");
-  await live.page.locator('[role="dialog"]').waitFor({ state: "detached", timeout: 10_000 });
+  await live.page.locator(SHEET).waitFor({ state: "detached", timeout: 10_000 });
 }
 
 async function fakeSpotifyRoute(live: NuvoSession): Promise<void> {
@@ -90,7 +92,7 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await field.waitFor({ timeout: 15_000 });
     await field.fill(LINK);
     await field.press("Enter");
-    await live.page.locator('[role="dialog"]').waitFor({ timeout: 15_000 });
+    await live.page.locator(SHEET).waitFor({ timeout: 15_000 });
     await shot(live, "search-sheet", locale);
     await closeDialog(live);
 
@@ -102,10 +104,10 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await field.waitFor({ timeout: 15_000 });
     await field.fill(SPOTIFY_LINK);
     await field.press("Enter");
-    const sheet = live.page.locator('[role="dialog"]');
+    const sheet = live.page.locator(SHEET);
     await sheet.getByRole("heading", { name: "Rock Classics" }).waitFor({ timeout: 15_000 });
     expect(await sheet.innerText()).toContain(SPOTIFY_NOTICE[locale]);
-    expect(await sheet.innerText()).toContain("Classic 1 · Fleetwood Mac");
+    expect(await sheet.innerText()).toMatch(/Classic 1\s+Fleetwood Mac/);
     await shot(live, "spotify-preview", locale);
     await sheet.getByRole("button", { name: locale === "en" ? "Import" : "Импортировать", exact: true }).click();
     const imported = async () =>
@@ -118,7 +120,7 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await live.go("#/library");
     await live.page.getByText("Rock Classics", { exact: true }).first().waitFor({ timeout: 10_000 });
     await live.page.getByText(spec.importing).first().waitFor({ timeout: 10_000 });
-    await live.page.locator('aside [data-nav="library"] [role="progressbar"]').waitFor({ timeout: 10_000 });
+    await live.page.locator('header [data-nav="library"] [role="progressbar"]').waitFor({ timeout: 10_000 });
     await shot(live, "library-live", locale);
     const [[spotifyId]] = await imported();
     await live.core(`await fetch(base + "/v1/imports/${spotifyId}", { method: "DELETE" });`);
@@ -128,9 +130,9 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await live.page.getByRole("button", { name: spec.fromLink }).waitFor({ timeout: 10_000 });
     await shot(live, "new-playlist", locale);
     await live.page.getByRole("button", { name: spec.fromLink }).click();
-    await live.page.locator('[role="dialog"]').first().waitFor({ timeout: 10_000 });
+    await live.page.locator(SHEET).first().waitFor({ timeout: 10_000 });
     await live.page.waitForTimeout(500);
-    expect(await live.page.locator('[role="dialog"]').count()).toBe(1);
+    expect(await live.page.locator(SHEET).count()).toBe(1);
     await shot(live, "new-playlist-sheet", locale);
     await closeDialog(live);
 

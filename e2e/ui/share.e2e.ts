@@ -163,9 +163,7 @@ describe("sharing", () => {
 
       await playlistMenuShare(session.seed!.bigPlaylistId);
       await page.getByRole("button", { name: "Copy long link" }).waitFor({ timeout: 10_000 });
-      const sheet = (await page.getByRole("dialog").textContent()) ?? "";
-      expect(sheet.indexOf("long link (")).toBeGreaterThan(-1);
-      expect(sheet.indexOf("long link (")).toBeLessThan(sheet.indexOf("Copy long link"));
+      expect(await page.getByRole("button", { name: "Copy long link" }).textContent()).toContain("long link (");
       expect(await dialogFits()).toEqual({ inside: true, overflow: [] });
       files.push(await shot(`share-300-${look.mode}-1200`));
       await closeDialog();

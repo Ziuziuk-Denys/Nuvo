@@ -286,8 +286,8 @@ describe("the Statistics page", () => {
     await openStats(live, "year");
     await shot(live, "year-dark", W1200);
     await shot(live, "year-dark", W1200, true);
-    for (const preset of ["orbit", "vinyl", "editor", "sunset"] as const) {
-      await live.setLook({ preset, mode: preset === "editor" || preset === "sunset" ? "light" : "dark" });
+    for (const preset of ["frost", "amber", "ink", "dusk"] as const) {
+      await live.setLook({ preset, mode: preset === "ink" || preset === "dusk" ? "light" : "dark" });
       await openStats(live, "year");
       await shot(live, `year-${preset}`, W1200);
     }

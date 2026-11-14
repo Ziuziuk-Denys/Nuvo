@@ -239,8 +239,7 @@ async function run(l: Locale): Promise<void> {
     await page.waitForLoadState("domcontentloaded");
     await heading(page, l.text.errorTitle).waitFor({ timeout: 30_000 });
     await page.evaluate(() => sessionStorage.removeItem("nuvo_e2e_throw"));
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: l.text.details }).click();
     await page.getByText("Component stack").waitFor({ timeout: 5_000 });
   });
 

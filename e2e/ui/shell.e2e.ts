@@ -1,6 +1,6 @@
 import type { Page } from "playwright-core";
 import { afterAll, describe, expect, it } from "vitest";
-import { ISLAND, POPOVER, QUEUE_PANEL, RAIL, TOP_BAR, TOP_ROW, islandWidth } from "../../src/ui/geometry";
+import { FRAME, ISLAND, POPOVER, TOP_BAR, TOP_ROW, islandWidth } from "../../src/ui/geometry";
 import { artistRun, nextResponse, queueRow, run, SEP } from "../../src/youtube/test/shapes";
 import { launchNuvo, SIZES, type Look, type NuvoSession, type Size } from "./harness";
 import { PLAYER_SESSION_KEY } from "./seed";
@@ -13,40 +13,51 @@ afterAll(async () => {
   await session?.close();
 });
 
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  right: number;
+}
+
 interface ChromeBoxes {
   bar: { y: number; height: number; regions: string[] };
-  rail: { x: number; y: number; width: number; bottomGap: number };
-  items: { x: number; y: number; width: number; height: number }[];
-  settings: { y: number; bottomGap: number };
-  controls: { right: number; y: number; width: number; height: number };
+  items: Rect[];
+  pins: Rect[];
+  field: Rect;
+  settings: Rect;
+  controls: Rect;
+  contentTop: number;
+  contentLeft: number;
   view: number;
 }
 
 async function measureChrome(page: Page): Promise<ChromeBoxes> {
   return page.evaluate(() => {
-    const box = (element: Element) => element.getBoundingClientRect();
+    const box = (element: Element) => {
+      const { x, y, width, height, right } = element.getBoundingClientRect();
+      return { x, y, width, height, right };
+    };
     const header = document.querySelector("header[data-window-drag]")!;
-    const bar = box(header);
     const region = (element: Element) => getComputedStyle(element).getPropertyValue("-webkit-app-region");
-    const rail = box(document.querySelector("aside:has(> nav)")!);
-    const items = [...document.querySelectorAll("aside > nav a")].map((link) => {
-      const { x, y, width, height } = box(link);
-      return { x, y, width, height };
-    });
-    const settings = box(document.querySelector("aside > button")!);
-    const controls = box(document.querySelector("[data-window-controls]")!);
+    const content = document.querySelector(".n-scroll")!.getBoundingClientRect();
     return {
-      bar: { y: bar.y, height: bar.height, regions: [header, ...header.querySelectorAll("a, button")].map(region) },
-      rail: { x: rail.x, y: rail.y, width: rail.width, bottomGap: window.innerHeight - rail.bottom },
-      items,
-      settings: { y: settings.y, bottomGap: window.innerHeight - settings.bottom },
-      controls: { right: controls.right, y: controls.y, width: controls.width, height: controls.height },
+      bar: { ...box(header), regions: [header, ...header.querySelectorAll("a, button, input")].map(region) },
+      items: [...header.querySelectorAll("nav a[data-nav]")].map(box),
+      pins: [...header.querySelectorAll("nav a[data-pin]")].map(box),
+      field: box(header.querySelector("input[role=combobox]")!.parentElement!),
+      settings: box(header.querySelector('button[aria-pressed][data-nuvo-guard="grid"]')!),
+      controls: box(header.querySelector("[data-window-controls]")!),
+      contentTop: content.top,
+      contentLeft: content.left,
       view: window.innerWidth,
     };
   });
 }
 
 async function checkGeometry(live: NuvoSession, where: string): Promise<void> {
+  const middle = TOP_BAR.height / 2;
   for (const size of SIZES) {
     await live.setSize(size);
     await live.page.waitForTimeout(300);
@@ -57,22 +68,23 @@ async function checkGeometry(live: NuvoSession, where: string): Promise<void> {
     const [band, ...controls] = m.bar.regions;
     expect(band, `${at}: the top band drags the window`).toBe("drag");
     expect(controls, `${at}: controls in the band stay clickable`).toEqual(controls.map(() => "no-drag"));
-    expect(m.rail.y, `${at}: the rail starts where the band ends`).toBe(TOP_BAR.height);
-    expect(m.controls, `${at}: window pill at the right inset of the top row`).toEqual({
-      right: m.view - TOP_BAR.controlsInset,
-      y: TOP_ROW.y,
-      width: TOP_ROW.pillWidth,
-      height: TOP_ROW.height,
-    });
-    expect(m.rail, `${at}: rail box`).toEqual({ x: RAIL.inset, y: RAIL.top, width: RAIL.width, bottomGap: RAIL.bottom });
+    expect(m.items, `${at}: four sections`).toHaveLength(4);
     m.items.forEach((item, index) => {
-      expect(item.x, `${at}: item ${index} centred in the rail`).toBe(RAIL.inset + RAIL.padding);
-      expect(item.y, `${at}: item ${index} on its step`).toBe(RAIL.top + RAIL.padding + index * RAIL.item);
-      expect(item.width, `${at}: item ${index} size`).toBe(RAIL.item);
+      expect([item.width, item.height], `${at}: section ${index} size`).toEqual([TOP_ROW.item, TOP_ROW.item]);
+      expect(item.y + item.height / 2, `${at}: section ${index} on the bar's middle line`).toBe(middle);
+      if (index > 0) expect(item.x, `${at}: section ${index} follows the one before`).toBeGreaterThanOrEqual(m.items[index - 1].right);
     });
-    const lastItem = m.items[m.items.length - 1];
-    expect(m.settings.y, `${at}: settings below the destinations`).toBeGreaterThan(lastItem.y + lastItem.height);
-    expect(m.settings.bottomGap, `${at}: settings at the rail foot`).toBe(RAIL.bottom + RAIL.padding);
+    const lastLeft = m.pins.at(-1) ?? m.items.at(-1)!;
+    expect(m.field.height, `${at}: field height`).toBe(TOP_ROW.field);
+    expect(m.field.y + m.field.height / 2, `${at}: field on the middle line`).toBe(middle);
+    expect(m.field.width, `${at}: field width`).toBeLessThanOrEqual(TOP_ROW.fieldMax);
+    expect(m.field.x, `${at}: field clear of the sections and pins`).toBeGreaterThanOrEqual(lastLeft.right + 16);
+    expect(m.field.right, `${at}: field clear of settings`).toBeLessThanOrEqual(m.settings.x - 16);
+    expect(m.settings.y + m.settings.height / 2, `${at}: settings on the middle line`).toBe(middle);
+    expect(m.controls.y + m.controls.height / 2, `${at}: window buttons on the middle line`).toBe(middle);
+    expect(m.controls.right, `${at}: window buttons at the right inset`).toBe(m.view - TOP_BAR.controlsInset);
+    expect(m.contentTop, `${at}: the page starts under the bar`).toBe(TOP_BAR.height);
+    expect(m.contentLeft, `${at}: the page spans the window`).toBe(FRAME);
   }
 }
 
@@ -192,7 +204,7 @@ async function checkIsland(live: NuvoSession, where: string): Promise<void> {
     expect(m.island.height, `${at}: island height`).toBeCloseTo(ISLAND.height, 0);
     expect(m.view.height - m.island.bottom, `${at}: bottom gap`).toBeCloseTo(ISLAND.bottom, 0);
     expect(m.island.width, `${at}: island width`).toBeCloseTo(islandWidth(m.view.width), 0);
-    expect(m.island.x, `${at}: right of the rail`).toBeCloseTo(ISLAND.left, 0);
+    expect(m.island.x, `${at}: on the window's left inset`).toBeCloseTo(ISLAND.left, 0);
     expect(m.cover.width, `${at}: cover width`).toBeCloseTo(ISLAND.cover, 0);
     expect(m.cover.height, `${at}: cover height`).toBeCloseTo(ISLAND.cover, 0);
     expect(m.cover.x - m.island.x, `${at}: cover inset`).toBeCloseTo(ISLAND.coverInset, 0);
@@ -278,43 +290,35 @@ describe("shell", () => {
 
     await live.go("#/");
     await checkGeometry(live, "home");
-    expect(await page.locator("aside nav").count()).toBe(1);
+    expect(await page.locator("aside nav").count()).toBe(0);
     expect(await page.locator('header img[alt="Nuvo"]').count()).toBe(0);
 
-    await page.locator('aside nav a[aria-label="Library"]').click();
+    await page.locator('header nav a[data-nav="library"]').click();
     await page.waitForTimeout(800);
     expect(await page.evaluate(() => location.hash)).toBe("#/library");
-    expect(await page.locator('aside nav a[aria-current="page"]').getAttribute("aria-label")).toBe("Library");
+    expect(await page.locator('header nav a[aria-current="page"]').getAttribute("aria-label")).toBe("Library");
+    for (const hash of ["#/library", "#/recognize", "#/stats", "#/search"]) {
+      await live.go(hash);
+      const top = await page.evaluate(() => document.querySelector(".n-scroll h1, .n-scroll input")!.getBoundingClientRect().top);
+      expect(top, `${hash}: the page starts below the bar`).toBeGreaterThanOrEqual(TOP_BAR.height);
+    }
 
-    expect(await page.getByRole("button", { name: "Back" }).count()).toBe(0);
+    expect(await page.getByRole("button", { name: "Back", exact: true }).count()).toBe(0);
     await live.go(`#/library/playlist?id=${live.seed!.bigPlaylistId}`);
-    expect(await page.getByRole("button", { name: "Back" }).count()).toBe(1);
+    expect(await page.getByRole("button", { name: "Back", exact: true }).count()).toBe(1);
   }, 900_000);
 
-  it("opens the Search page from the rail and from the search shortcut", async () => {
+  it("opens the Search page by its route, and the search shortcut opens the palette", async () => {
     const live = session ?? (session = await launchNuvo({ profile: "seeded" }));
     const page = live.page;
     const fieldFocused = () => page.evaluate(() => (document.activeElement as HTMLInputElement | null)?.placeholder === "Songs, albums, artists");
     const fromRail = async () => {
       await live.go("#/");
-      await page.locator('aside nav a[aria-label="Search"]').click();
-      await page.waitForFunction(() => location.hash.startsWith("#/search"), undefined, { timeout: 5_000 });
+      await live.go("#/search");
       await page.getByPlaceholder("Songs, albums, artists").waitFor({ timeout: 5_000 });
     };
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await live.go("#/");
-    await page.evaluate(() => {
-      const counted = window as unknown as { pageTransitions: number };
-      counted.pageTransitions = 0;
-      const start = document.startViewTransition.bind(document);
-      document.startViewTransition = (update) => {
-        counted.pageTransitions += 1;
-        return start(update);
-      };
-    });
     await fromRail();
     expect(await page.evaluate(() => location.hash)).toBe("#/search");
-    expect(await page.evaluate(() => (window as unknown as { pageTransitions: number }).pageTransitions)).toBe(1);
     expect(await fieldFocused()).toBe(true);
 
     await page.route(/youtubei\/v1\/search/, () => undefined);
@@ -327,9 +331,12 @@ describe("shell", () => {
     await live.go("#/library");
     await page.waitForTimeout(500);
     await page.keyboard.press("/");
-    await page.waitForFunction(() => location.hash.startsWith("#/search"), undefined, { timeout: 5_000 });
-    await page.waitForTimeout(500);
-    expect(await fieldFocused()).toBe(true);
+    await page.locator('[role="dialog"][data-state="in"]').waitFor({ timeout: 5_000 });
+    expect(await page.evaluate(() => document.activeElement?.getAttribute("role"))).toBe("combobox");
+    expect(await page.evaluate(() => location.hash)).toBe("#/library");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    await live.go("#/search");
 
     await page.getByPlaceholder("Songs, albums, artists").fill("a");
     await live.shoot(STEP, "search", "page", {
@@ -383,7 +390,7 @@ describe("shell", () => {
           await live.setSize(size);
           const layout = await page.evaluate(() => {
             const block = document.querySelector("section[aria-busy]")!.getBoundingClientRect();
-            const field = document.querySelector("input")!.closest("div")!.getBoundingClientRect();
+            const field = document.querySelector("input:not([role=combobox])")!.closest("div")!.getBoundingClientRect();
             return {
               overflow: document.documentElement.scrollWidth - window.innerWidth,
               tabs: document.querySelectorAll('[role="tablist"]').length,
@@ -407,7 +414,7 @@ describe("shell", () => {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
     expect(await page.locator("section[aria-busy]").count()).toBe(0);
-    expect(await page.evaluate(() => document.querySelector("input")!.value)).toBe("");
+    expect(await page.evaluate(() => document.querySelector<HTMLInputElement>("input:not([role=combobox])")!.value)).toBe("");
     expect(await page.getByText("example.org").count()).toBe(0);
 
     await page.evaluate(() => localStorage.setItem("nuvo_locale", "en"));
@@ -450,6 +457,12 @@ describe("shell", () => {
       }, name);
       expect(gap, `${screen}: gap above the player`).toBeCloseTo(POPOVER.islandGap, 0);
       expect(await page.locator('[role="dialog"]').getAttribute("aria-label")).toBe(name);
+      const glass = await page.evaluate(() => {
+        const dialog = document.querySelector('[role="dialog"]')!;
+        const blurred = (element: Element) => getComputedStyle(element).backdropFilter !== "none";
+        return { panel: blurred(dialog), inside: [...dialog.querySelectorAll("*")].filter(blurred).length };
+      });
+      expect(glass, `${screen}: glass with one backdrop layer`).toEqual({ panel: true, inside: 0 });
       if (screen === "island-sound") {
         await shootSoundTab(live, "speed", NUVO_LOOKS, SIZES[0], open);
         await shootSoundTab(live, "sleep", NUVO_LOOKS, SIZES[0], open);
@@ -457,6 +470,7 @@ describe("shell", () => {
         await live.setSize(SIZES[1]);
         await open();
         await page.locator('[role="dialog"] [role="tab"]').first().click();
+        await page.waitForTimeout(400);
         expect(await clippedChips(page), "equalizer presets at 1100 px").toEqual([]);
         for (const tab of [1, 2, 3]) {
           await page.locator('[role="dialog"] [role="tab"]').nth(tab).click();
@@ -474,7 +488,7 @@ describe("shell", () => {
     await page.waitForTimeout(400);
     const played = await page.evaluate(() => {
       const fill = document.querySelector<HTMLElement>('[role="slider"][aria-label="Position"] > span')!;
-      return parseFloat(fill.style.transform.replace("scaleX(", "")) * 100;
+      return parseFloat(fill.style.transform.replace("translateX(", "")) + 100;
     });
     expect(played, "seek on the bar").toBeGreaterThan(60);
     await page.mouse.move(10, 300);
@@ -486,7 +500,7 @@ describe("shell", () => {
     await live.shoot(STEP, "island-queue", "open", { looks: [{ preset: "nuvo", mode: "dark" }], sizes: [SIZES[1]], prepare: openQueue });
     const m = await measureIsland(page);
     expect(m.island.width, "queue open: width").toBeCloseTo(islandWidth(m.view.width), 0);
-    expect(m.island.x, "queue open: right of the rail").toBeCloseTo(ISLAND.left, 0);
+    expect(m.island.x, "queue open: on the left inset").toBeCloseTo(ISLAND.left, 0);
     await page.locator('button[aria-label="Queue"]').click();
     await page.waitForTimeout(400);
   }, 900_000);
@@ -514,35 +528,42 @@ describe("shell", () => {
     await setCurrentTrack(live, 0, "Late night drive");
   }, 600_000);
 
-  it("opens the command palette on Ctrl+K: suggestions, a match, nothing, a settings entry and full screen", async () => {
+  it("opens the search palette under the field on Ctrl+K: suggestions, a match, nothing, a settings entry and full screen", async () => {
     const live = session ?? (session = await launchNuvo({ profile: "seeded" }));
     const page = live.page;
-    const palette = page.locator('[role="dialog"][data-state="in"]:has(input)');
+    // the catalogue never answers here, so every row the checks read comes from the library and the commands
+    await page.route(/youtubei\/v1\/search/, (route) => route.abort());
+    const palette = page.locator('[role="dialog"][data-state="in"]');
+    const field = page.locator("header input[role=combobox]");
+    const option = (text: string) => palette.locator('[role="option"]', { hasText: text }).first();
     const openWith = (query: string) => async () => {
       if ((await palette.count()) === 0) await page.keyboard.press("Control+KeyK");
       await palette.waitFor({ timeout: 5_000 });
-      await palette.locator("input").fill(query);
+      await field.fill(query);
       await page.waitForTimeout(400);
     };
     await live.go("#/library");
     const at1200 = { looks: NUVO_LOOKS, sizes: [SIZES[0]] };
     await live.shoot(STEP, "palette", "empty", { ...at1200, prepare: openWith("") });
-    await live.shoot(STEP, "palette", "empty", { looks: [{ preset: "vinyl", mode: "dark" }], prepare: openWith("") });
+    await live.shoot(STEP, "palette", "empty", { looks: [{ preset: "amber", mode: "dark" }], prepare: openWith("") });
     await live.shoot(STEP, "palette", "rep", { ...at1200, prepare: openWith("rep") });
     await live.shoot(STEP, "palette", "zzz", { ...at1200, prepare: openWith("zzz") });
     await live.setLook({ preset: "nuvo", mode: "light" });
 
     await openWith("")();
-    const box = await palette.boundingBox();
-    expect(box!.y, "palette: 96 px from the top").toBeCloseTo(96, 0);
-    expect(box!.width, "palette: 560 wide").toBeCloseTo(560, 0);
-    expect(box!.x + box!.width / 2, "palette: centred").toBeCloseTo((await page.evaluate(() => innerWidth)) / 2, 0);
-    expect(await palette.locator('[role="button"]').count(), "palette: five suggestions").toBe(5);
-    await palette.locator("input").fill("rep");
-    expect(await palette.locator('[role="button"]').first().textContent()).toBe("Change repeat");
+    const box = (await palette.boundingBox())!;
+    const under = (await field.locator("..").boundingBox())!;
+    expect(box.y, "palette: 8 px under the field").toBeCloseTo(under.y + under.height + 8, 0);
+    expect(box.width, "palette: 640 wide").toBeCloseTo(640, 0);
+    expect(box.x + box.width / 2, "palette: centred on the field").toBeCloseTo(under.x + under.width / 2, 0);
+    expect(await page.evaluate(() => document.activeElement?.getAttribute("role")), "palette: typing goes to the field").toBe("combobox");
+    expect(await palette.locator('[role="option"]').count(), "palette: five suggestions").toBe(5);
+    await field.fill("rep");
+    await option("Change repeat").waitFor({ timeout: 5_000 });
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
     expect(await palette.count(), "palette: Escape closes").toBe(0);
+    expect(await field.inputValue(), "palette: Escape clears the field").toBe("");
     expect(await page.evaluate(() => location.hash), "palette: Escape stays on the page").toBe("#/library");
 
     await openWith("cover glow")();
@@ -558,13 +579,12 @@ describe("shell", () => {
           .isFullScreen(),
       );
     // the window manager answers in its own time: wait for the window's state, not a fixed delay
-    const toggleRow = palette.locator('[role="button"]', { hasText: "Toggle full screen" });
     await openWith("full screen")();
-    await toggleRow.waitFor({ timeout: 5_000 });
+    await option("Toggle full screen").waitFor({ timeout: 10_000 });
     await page.keyboard.press("Enter");
     await expect.poll(fullScreen, { message: "palette: full screen on", timeout: 10_000 }).toBe(true);
     await openWith("full screen")();
-    await toggleRow.waitFor({ timeout: 5_000 });
+    await option("Toggle full screen").waitFor({ timeout: 10_000 });
     await page.keyboard.press("Enter");
     await expect.poll(fullScreen, { message: "palette: full screen off", timeout: 10_000 }).toBe(false);
 
@@ -576,12 +596,13 @@ describe("shell", () => {
     await live.shoot(STEP, "palette", "ru-empty", { ...ru, prepare: openWith("") });
     await live.shoot(STEP, "palette", "ru-shuffle", { ...ru, prepare: openWith("перем") });
     const clipped = await palette.evaluate(
-      (panel) => [...panel.querySelectorAll('[role="button"] > span:first-child > span')].filter((title) => title.scrollWidth > title.clientWidth).length,
+      (panel) => [...panel.querySelectorAll('[role="option"] > span:first-child')].filter((title) => title.scrollWidth > title.clientWidth).length,
     );
     expect(clipped, "palette: no Russian title clipped").toBe(0);
     await openWith("повт")();
-    expect(await palette.locator('[role="button"]').first().textContent(), "palette: a Russian query").toBe("Сменить режим повтора");
+    await option("Сменить режим повтора").waitFor({ timeout: 5_000 });
     await page.keyboard.press("Escape");
+    await page.unroute(/youtubei\/v1\/search/);
     await page.evaluate(() => localStorage.setItem("nuvo_locale", "en"));
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
@@ -595,7 +616,7 @@ describe("shell", () => {
     await live.go("#/");
     await live.shoot(STEP, "home", "ru", { looks: [{ preset: "nuvo", mode: "light" }], sizes: [SIZES[1]] });
     await checkGeometry(live, "ru home");
-    expect(await live.page.locator("aside nav a").first().getAttribute("aria-label")).toBe("Главная");
+    expect(await live.page.locator("header nav a[data-nav]").first().getAttribute("aria-label")).toBe("Главная");
 
     const sound = live.page.locator("[data-island] button[aria-haspopup]").first();
     const openSound = async () => {
@@ -605,6 +626,7 @@ describe("shell", () => {
     await shootSoundTab(live, "sleep", [{ preset: "nuvo", mode: "light" }], SIZES[1], openSound, "sleep-ru");
     expect(await sleepChipRows(live.page), "ru sleep: the five lengths keep one row").toBe(1);
     await live.page.locator('[role="dialog"] [role="tab"]').first().click();
+    await live.page.waitForTimeout(400);
     expect(await clippedChips(live.page), "ru equalizer presets at 1100 px").toEqual([]);
     for (const tab of [1, 2, 3]) {
       await live.page.locator('[role="dialog"] [role="tab"]').nth(tab).click();

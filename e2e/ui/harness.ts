@@ -18,10 +18,10 @@ export interface Size {
 export const MATRIX: Look[] = [
   { preset: "nuvo", mode: "light" },
   { preset: "nuvo", mode: "dark" },
-  { preset: "orbit", mode: "dark" },
-  { preset: "vinyl", mode: "dark" },
-  { preset: "editor", mode: "light" },
-  { preset: "sunset", mode: "light" },
+  { preset: "frost", mode: "dark" },
+  { preset: "amber", mode: "dark" },
+  { preset: "ink", mode: "light" },
+  { preset: "dusk", mode: "light" },
 ];
 export const SIZES: Size[] = [
   { width: 1200, height: 780 },
