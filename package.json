@@ -261,7 +261,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.2.1",
     "bgutils-js": "4.0.3",
-    "electron": "^44.10.2",
+    "electron": "^45.2.3",
     "electron-builder": "^26.18.0",
     "framer-motion": "^12.38.0",
     "googlevideo": "5.0.0",
