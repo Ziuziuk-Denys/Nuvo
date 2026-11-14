@@ -108,21 +108,41 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
     { label: t("ui.entity.start_radio"), disabled: playable.length === 0, onSelect: () => void playerEngine.startRadioStation(playable[0]) },
   ];
 
-  const search = <SearchField value={query} onChange={setQuery} placeholder={t("track_search.placeholder_album")} clearLabel={t("ui.clear")} />;
+  const search = (
+    <SearchField
+      value={query}
+      onChange={setQuery}
+      placeholder={t(kind === "album" ? "track_search.placeholder_album" : "track_search.placeholder_playlist")}
+      clearLabel={t("ui.clear")}
+    />
+  );
   const sortButton = (
     <button
       type="button"
-      className={`${look.pill} ${look.glass} ${look.square}`}
+      className={look.icon}
       aria-label={t(`ui.entity.sort_${sort}`)}
       aria-haspopup="menu"
       aria-expanded={sortAnchor !== null}
       disabled={count < 2}
       onClick={(event) => setSortAnchor(sortAnchor ? null : event.currentTarget)}
     >
-      <Icon name="sort-lines" size={16} />
+      <Icon name="sort-lines" size={18} />
     </button>
   );
   const oneArtist = kind === "album" && tracks.every((track) => track.artists === by);
+  const mosaic = mix ? mosaicCovers(mix.tracks) : [];
+  let art = <Icon name="album" size={24} className={pageStyles.glyph} />;
+  if (mosaic.length === 4) {
+    art = (
+      <span className={pageStyles.mosaic}>
+        {mosaic.map((url) => (
+          <Cover key={url} src={url} size={84} radius={0} />
+        ))}
+      </span>
+    );
+  } else if (cover) {
+    art = <Cover src={cover} size={168} alt="" />;
+  }
 
   return (
     <>
@@ -130,7 +150,7 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
         kind={kind}
         head={
           <EntityHead
-            cover={cover ? <Cover src={cover} size={168} alt="" /> : <Icon name="album" size={24} className={pageStyles.glyph} />}
+            cover={art}
             title={data.title}
             subtitle={by}
             chips={<Facts year={data.year ? String(data.year) : undefined} count={t("common.tracks", { count })} length={formatTotal(totalMs(tracks), t)} />}

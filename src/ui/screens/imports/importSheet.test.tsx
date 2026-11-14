@@ -3,6 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { ImportError, type ImportActions, type ImportSummary, type Listing } from "../../ports/imports";
+import { listingCovers, searchCovers } from "./ImportPreview";
 import { ImportSheet, type ImportSheetProps } from "./ImportSheet";
 
 vi.mock("../../ports/i18n", () => ({
@@ -84,12 +85,50 @@ describe("ImportSheet", () => {
     expect(document.body.textContent).toContain("Northbound");
     expect(document.body.textContent).toContain('ui.imports.songs {"count":7}');
     expect(document.body.textContent).toContain("ui.imports.honesty");
-    expect(document.querySelectorAll("li")).toHaveLength(5);
+    expect(document.querySelectorAll("li")).toHaveLength(4);
     await click("ui.imports.target_liked");
     await click("ui.imports.import");
     expect(actions.post).toHaveBeenCalledWith(LISTING, { kind: "liked" });
     expect(onStarted).toHaveBeenCalledWith([SUMMARY]);
     expect(button("ui.imports.open_report")).toBeTruthy();
+  });
+
+  it("opens the whole song list and folds it back", async () => {
+    await mount({ actions: fakeActions(), initialLink: "https://deezer.com/playlist/1" });
+    const toggle = () => document.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
+    expect(toggle().textContent).toBe('ui.imports.show_all {"count":7}');
+    await act(async () => toggle().click());
+    expect(document.querySelectorAll("li")).toHaveLength(7);
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    await act(async () => toggle().click());
+    expect(document.querySelectorAll("li")).toHaveLength(4);
+  });
+
+  it("stacks up to three distinct song covers", () => {
+    const row = (url?: string) => ({ title: "t", artists: [], ...(url ? { track: { id: url, title: "t", artists: [], durationMs: 1, cover: { url } } } : {}) });
+    expect(listingCovers([row("a"), row(), row("a"), row("b")])).toEqual(["a", "b"]);
+    expect(listingCovers(["a", "b", "c", "d", "e"].map(row))).toEqual(["a", "b", "c"]);
+    expect(listingCovers([row()])).toEqual([]);
+  });
+
+  it("borrows covers from the catalogue when the listing has none", async () => {
+    const rows = [
+      { title: "One", artists: ["A"] },
+      { title: "Two", artists: [] },
+      { title: "Three", artists: ["C"] },
+      { title: "Four", artists: ["D"] },
+    ];
+    const track = (url: string) => ({ id: url, title: "", artists: [], durationMs: 1, cover: { url } });
+    const search = vi.fn(async (query: string) => (query === "A One" ? [track("x")] : query === "Two" ? [track("x")] : Promise.reject(new Error("offline"))));
+    expect(await searchCovers(rows, search)).toEqual(["x"]);
+    expect(search.mock.calls.map(([query]) => query)).toEqual(["A One", "Two", "C Three"]);
+  });
+
+  it("previews a cover-less listing with covers found in the catalogue", async () => {
+    const searchSongs = vi.fn(async () => [{ id: "s", title: "", artists: [], durationMs: 1, cover: { url: "https://img/cover.jpg" } }]);
+    await mount({ actions: fakeActions(), initialLink: "https://deezer.com/playlist/1", searchSongs });
+    expect(searchSongs).toHaveBeenCalled();
+    expect(document.querySelector("[role=dialog] img")).not.toBeNull();
   });
 
   it.each([

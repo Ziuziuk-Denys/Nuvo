@@ -46,13 +46,11 @@ export function EntityHead({
 }: EntityHeadProps): JSX.Element {
   const { t } = useTranslation();
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-  const glass = `${look.pill} ${look.glass}`;
-
   const more =
     menu.length > 0 ? (
       <button
         type="button"
-        className={`${glass} ${look.square}`}
+        className={look.icon}
         aria-label={t("ui.entity.more")}
         aria-haspopup="menu"
         aria-expanded={menuAnchor !== null}
@@ -68,7 +66,7 @@ export function EntityHead({
       <div className={styles.cover}>{cover}</div>
       <div className={styles.column}>
         <div className={styles.titleLine}>
-          <h1 className={styles.title}>{title}</h1>
+          <h1 className={`${look.pageTitle} ${styles.title}`}>{title}</h1>
           {badge}
         </div>
         {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
@@ -82,18 +80,24 @@ export function EntityHead({
                   <Icon name="play" size={16} />
                   {t(shape === "circle" ? "ui.entity.play" : "common.play_all")}
                 </button>
-                <button type="button" className={`${glass} ${look.square}`} aria-label={t("ui.entity.shuffle")} onClick={onShuffle} disabled={idle}>
+                <button
+                  type="button"
+                  className={`${look.pill} ${look.glass} ${look.square}`}
+                  aria-label={t("ui.entity.shuffle")}
+                  onClick={onShuffle}
+                  disabled={idle}
+                >
                   <Icon name="shuffle" size={16} />
                 </button>
                 {onSave ? (
                   <button
                     type="button"
-                    className={`${glass} ${look.square}`}
+                    className={`${look.pill} ${look.glass} ${look.square}`}
                     aria-label={t(saved ? "ui.entity.saved" : "ui.entity.save")}
                     aria-pressed={saved}
                     onClick={onSave}
                   >
-                    <Icon name={saved ? "check" : "folder-add"} size={16} />
+                    <Icon name={saved ? "check" : "add"} size={16} />
                   </button>
                 ) : null}
                 {trailing ? null : more}
@@ -104,7 +108,7 @@ export function EntityHead({
             <div className={styles.tools}>
               {search}
               {onQueue ? (
-                <button type="button" className={`${glass} ${look.wide}`} onClick={onQueue} disabled={idle}>
+                <button type="button" className={`${look.pill} ${look.glass}`} onClick={onQueue} disabled={idle}>
                   <Icon name="add" size={16} />
                   {t("ui.entity.add_to_queue")}
                 </button>
@@ -123,19 +127,10 @@ export function EntityHead({
 export function Facts({ year, count, length, updated }: { year?: string; count: string; length?: string; updated?: string }): JSX.Element {
   return (
     <>
-      {year ? <span className={look.chip}>{year}</span> : null}
-      <span className={look.chip}>
-        <Icon name="track" size={16} />
-        <span>{count}</span>
-        {length ? <span className={look.dot} aria-hidden="true" /> : null}
-        {length ? <span>{length}</span> : null}
-      </span>
-      {updated ? (
-        <span className={look.chip}>
-          <Icon name="clock" size={16} />
-          <span>{updated}</span>
-        </span>
-      ) : null}
+      {year ? <span>{year}</span> : null}
+      <span>{count}</span>
+      {length ? <span>{length}</span> : null}
+      {updated ? <span>{updated}</span> : null}
     </>
   );
 }

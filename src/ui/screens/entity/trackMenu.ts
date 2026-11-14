@@ -1,4 +1,4 @@
-import type { MenuItem } from "../../components/Menu";
+import type { MenuAction, MenuItem } from "../../components/Menu";
 import type { TFunction } from "../../ports/i18n";
 import type { Track } from "../../ports/player";
 import type { NotInterestedScope } from "../../ports/recs";
@@ -27,29 +27,43 @@ export function trackMenuItems(track: Track, context: { playlistId?: string }, a
   const { t } = actions;
   const artistId = track.artistId;
   const albumId = track.album?.id;
-  const items: MenuItem[] = [
-    { label: t("ui.entity.play_next"), onSelect: () => actions.playNext(track) },
-    { label: t("ui.entity.add_to_queue"), onSelect: () => actions.addToQueue(track) },
-    { label: t("ui.entity.add_to_playlist"), onSelect: () => actions.addToPlaylist(track) },
-    { label: t("ui.links.share.title"), onSelect: () => useShareSheet.getState().show("", [shareItemOf(track)]) },
-    { label: t("ui.entity.start_radio"), onSelect: () => actions.startRadio(track) },
-    { label: t("ui.entity.go_artist"), disabled: !artistId, onSelect: () => artistId && actions.goToArtist(artistId) },
-    { label: t("ui.entity.go_album"), disabled: !albumId, onSelect: () => albumId && actions.goToAlbum(albumId) },
+  const sections: MenuItem[][] = [
+    [
+      { label: t("ui.entity.play_next"), icon: "next", onSelect: () => actions.playNext(track) },
+      { label: t("ui.entity.add_to_queue"), icon: "queue", onSelect: () => actions.addToQueue(track) },
+      { label: t("ui.entity.start_radio"), icon: "radio", onSelect: () => actions.startRadio(track) },
+    ],
+    [
+      { label: t("ui.entity.add_to_playlist"), icon: "playlist-add", onSelect: () => actions.addToPlaylist(track) },
+      { label: t("ui.links.share.title"), icon: "export", onSelect: () => useShareSheet.getState().show("", [shareItemOf(track)]) },
+    ],
   ];
-  items.push({ label: t("ui.stats.track_stats"), onSelect: () => void (location.hash = `#/stats/track?id=${encodeURIComponent(track.id)}`) });
-  if (actions.editLyrics) items.push({ label: t("ui.lyrics.edit"), onSelect: () => actions.editLyrics?.(track) });
-  if (actions.translateLyrics) items.push({ label: t("ui.lyrics.translate"), onSelect: () => actions.translateLyrics?.(track) });
+  const goTo: MenuItem[] = [];
+  if (artistId) goTo.push({ label: t("ui.entity.go_artist"), icon: "artist", onSelect: () => actions.goToArtist(artistId) });
+  if (albumId) goTo.push({ label: t("ui.entity.go_album"), icon: "album", onSelect: () => actions.goToAlbum(albumId) });
+  goTo.push({ label: t("ui.stats.track_stats"), icon: "stats", onSelect: () => void (location.hash = `#/stats/track?id=${encodeURIComponent(track.id)}`) });
+  sections.push(goTo);
+
+  const tools: MenuItem[] = [];
+  const lyrics: MenuAction[] = [];
+  if (actions.editLyrics) lyrics.push({ label: t("ui.lyrics.edit"), onSelect: () => actions.editLyrics?.(track) });
+  if (actions.translateLyrics) lyrics.push({ label: t("ui.lyrics.translate"), onSelect: () => actions.translateLyrics?.(track) });
+  if (lyrics.length > 1) tools.push({ label: t("ui.lyrics.edit_title"), icon: "lyrics", items: lyrics });
+  else if (lyrics[0]) tools.push({ ...lyrics[0], icon: "lyrics" });
   // the daemon trims only a song whose length it knows
-  items.push({ label: t("ui.trim.menu"), disabled: !(track.durationMs > 0), onSelect: () => useTrimSheet.getState().open(track) });
-  if (!track.id.startsWith("local:")) items.push({ label: t("ui.source.menu"), onSelect: () => useSourceSheet.getState().open(track) });
-  const extra: MenuItem[] = [];
-  if (actions.saveAsFile) extra.push({ label: t("ui.export.save_file"), onSelect: () => actions.saveAsFile?.(track) });
+  if (track.durationMs > 0) tools.push({ label: t("ui.trim.menu"), icon: "trim", onSelect: () => useTrimSheet.getState().open(track) });
+  if (!track.id.startsWith("local:")) tools.push({ label: t("ui.source.menu"), icon: "link", onSelect: () => useSourceSheet.getState().open(track) });
+  sections.push(tools);
+
+  const file: MenuItem[] = [];
+  if (actions.saveAsFile) file.push({ label: t("ui.export.save_file"), icon: "download", onSelect: () => actions.saveAsFile?.(track) });
   if (actions.showInFolder && /^local:[0-9a-f]{32}$/.test(track.id))
-    extra.push({ label: t("ui.local.show_in_folder"), onSelect: () => actions.showInFolder?.(track) });
-  if (extra.length) items.push("separator", ...extra);
-  if (actions.notInterested) items.push("separator", ...notInterestedItems(track, t, actions.notInterested));
+    file.push({ label: t("ui.local.show_in_folder"), icon: "folder", onSelect: () => actions.showInFolder?.(track) });
+  sections.push(file);
+
+  if (actions.notInterested) sections.push([{ label: t("ui.recs.dislike"), icon: "dislike", items: notInterestedItems(track, t, actions.notInterested) }]);
   if (context.playlistId && track.playlistItemId) {
-    items.push("separator", { label: t("ui.entity.remove_from_playlist"), danger: true, onSelect: () => actions.remove(track) });
+    sections.push([{ label: t("ui.entity.remove_from_playlist"), icon: "remove", danger: true, onSelect: () => actions.remove(track) }]);
   }
-  return items;
+  return sections.filter((section) => section.length > 0).flatMap((section, index) => (index === 0 ? section : ["separator" as const, ...section]));
 }

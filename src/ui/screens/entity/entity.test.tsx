@@ -113,8 +113,8 @@ vi.mock("../../ports/library", () => ({
   usePlaylistsList: () => ({
     data: {
       playlists: [
-        { id: "p1", title: "Morning", coverUrl: "", trackCount: 3, updatedAt: "2" },
-        { id: "p2", title: "Evening", coverUrl: "", trackCount: 5, updatedAt: "1" },
+        { id: "p1", title: "Morning", coverUrl: "", coverUrls: [], trackCount: 3, updatedAt: "2" },
+        { id: "p2", title: "Evening", coverUrl: "", coverUrls: [], trackCount: 5, updatedAt: "1" },
       ],
     },
     isLoading: false,
@@ -311,8 +311,8 @@ describe("Playlist", () => {
     render();
     act(() => void rows()[0].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
     act(() => button("ui.library.move_to").click());
-    expect(button("Morning3")).toBeUndefined();
-    act(() => button("Evening5").click());
+    expect(button("Morningcommon.songs(3)")).toBeUndefined();
+    act(() => button("Eveningcommon.songs(5)").click());
     expect(mocks.move).toHaveBeenCalledWith("p1", ["i1"], "p2", expect.objectContaining({ done: "ui.library.moved(Evening)" }));
   });
 
@@ -321,7 +321,7 @@ describe("Playlist", () => {
     act(() => button("ui.entity.more").click());
     act(() => button("ui.library.merge").click());
     act(() => document.querySelector<HTMLButtonElement>('[role="switch"]')!.click());
-    await act(async () => button("Evening5").click());
+    await act(async () => button("Eveningcommon.songs(5)").click());
     expect(mocks.merge).toHaveBeenCalledWith("p1", "p2", true, expect.anything());
   });
 
@@ -441,32 +441,36 @@ describe("trackMenuItems", () => {
     const items = trackMenuItems(mocks.tracks[0], {}, { ...actions, editLyrics });
     const entry = items.find((item) => item !== "separator" && item.label === "ui.lyrics.edit");
     expect(entry).toBeTruthy();
-    if (entry && entry !== "separator") entry.onSelect();
+    (entry as { onSelect(): void }).onSelect();
     expect(editLyrics).toHaveBeenCalledWith(mocks.tracks[0]);
     expect(labels(undefined)).not.toContain("ui.lyrics.edit");
   });
 
-  it("adds the three Not interested scopes through the port when it is wired, before Remove", () => {
+  it("folds the three Not interested scopes under Dislike when the port is wired, before Remove", () => {
     const notInterested = vi.fn();
     const items = trackMenuItems(mocks.tracks[0], { playlistId: "p1" }, { ...actions, notInterested });
     const names = items.map((item) => (item === "separator" ? "-" : item.label));
-    expect(names.slice(-6)).toEqual(["-", "ui.recs.menu.exact", "ui.recs.menu.work", "ui.recs.menu.artist", "-", "ui.entity.remove_from_playlist"]);
-    const work = items.find((item) => item !== "separator" && item.label === "ui.recs.menu.work");
-    (work as { onSelect(): void }).onSelect();
+    expect(names.slice(-4)).toEqual(["-", "ui.recs.dislike", "-", "ui.entity.remove_from_playlist"]);
+    const group = items.find((item) => item !== "separator" && item.label === "ui.recs.dislike") as { items: { label: string; onSelect(): void }[] };
+    expect(group.items.map((item) => item.label)).toEqual(["ui.recs.menu.exact", "ui.recs.menu.work", "ui.recs.menu.artist"]);
+    group.items[1].onSelect();
     expect(notInterested).toHaveBeenCalledWith(mocks.tracks[0], "work");
-    expect(labels(undefined)).not.toContain("ui.recs.menu.exact");
+    expect(labels(undefined)).not.toContain("ui.recs.dislike");
   });
 
-  it("lists the actions in the brief's order", () => {
+  it("groups the actions into play, add, go to and tools", () => {
     expect(labels(undefined)).toEqual([
       "ui.entity.play_next",
       "ui.entity.add_to_queue",
+      "ui.entity.start_radio",
+      "-",
       "ui.entity.add_to_playlist",
       "ui.links.share.title",
-      "ui.entity.start_radio",
+      "-",
       "ui.entity.go_artist",
       "ui.entity.go_album",
       "ui.stats.track_stats",
+      "-",
       "ui.trim.menu",
       "ui.source.menu",
     ]);

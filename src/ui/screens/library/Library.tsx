@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { Enter } from "../../components/Enter";
+import { Lens } from "../../components/Lens";
 import { Menu, type MenuItem } from "../../components/Menu";
 import { Icon } from "../../icons/Icon";
 import { useTranslation, type TFunction } from "../../ports/i18n";
@@ -25,7 +26,9 @@ import {
 import { usePageBackdrop } from "../../ports/backdrop";
 import { cancelSaves, exportDocument, saveAsFiles, useDownloadProgress } from "../../ports/exports";
 import { usePlayerStore } from "../../ports/player";
+import { Swap } from "../../flip";
 import { navigateWithTransition } from "../../shell/navigate";
+import { useShellScroller } from "../../shell/scroller";
 import { shareItemOf, useShareSheet } from "../../sheets/ShareSheet";
 import {
   buildEntries,
@@ -126,7 +129,7 @@ function cancelImport(playlistId: string): void {
   }
 }
 
-function menuItems(entry: LibraryEntry, pinned: { home: boolean; rail: boolean }, t: TFunction, open: () => void): MenuItem[] {
+function menuItems(entry: LibraryEntry, pinned: boolean, t: TFunction, open: () => void): MenuItem[] {
   if (entry.importing !== undefined) return [{ label: t("ui.library.cancel_import"), onSelect: () => cancelImport(entry.id) }];
   const items: MenuItem[] = [
     { label: t("ui.library.open"), onSelect: open },
@@ -150,7 +153,7 @@ function menuItems(entry: LibraryEntry, pinned: { home: boolean; rail: boolean }
     href: entry.href,
     trackCount: entry.count,
   };
-  items.push(...pinMenuItems(pin, pinned.home, pinned.rail, t));
+  items.push(...pinMenuItems(pin, pinned, t));
   if (entry.external) return items;
   const remove = () =>
     useModalStore.getState().openRemoveFromLibrary({
@@ -185,8 +188,11 @@ export function Library(): JSX.Element {
   const saving = useDownloadProgress();
   const deferredQuery = useDeferredValue(query);
   const filterRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const scroller = useShellScroller();
 
   const { entries, loading, failed } = useLibraryEntries(t);
+  const contentKey = `${tab}:${view}:${loading}`;
   usePageBackdrop(useLikesCover(), { blur: 56, dim: 0.22 });
   const sort = sortOf(sorts, tab);
   const byPlays = sort === "played" || sort === "plays";
@@ -200,7 +206,9 @@ export function Library(): JSX.Element {
     return found ? entryKey(found) : null;
   }, [entries, playbackContext]);
   const pinnedHere = (pins: HomePin[]) => (menu ? pins.some((pin) => pin.kind === menu.entry.kind && pin.id === menu.entry.id) : false);
-  const menuPinned = { home: useHomePinsStore((state) => pinnedHere(state.pins)), rail: useRailPinsStore((state) => pinnedHere(state.pins)) };
+  const pinnedOnHome = useHomePinsStore((state) => pinnedHere(state.pins));
+  const pinnedOnBar = useRailPinsStore((state) => pinnedHere(state.pins));
+  const menuPinned = pinnedOnHome || pinnedOnBar;
 
   const changeView = (next: LibraryViewMode) => {
     setView(next);
@@ -297,18 +305,12 @@ export function Library(): JSX.Element {
   return (
     <div className={styles.page} data-view={view}>
       <Enter index={0} screen="library">
-        <h1 className={styles.title}>{t("ui.library.title")}</h1>
+        <h1 className={look.pageTitle}>{t("ui.library.title")}</h1>
         <div className={styles.bar}>
           <div className={styles.tabs} role="tablist" aria-label={t("ui.library.tabs")} data-tour="library-tabs">
             {tabs.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={item.id === tab}
-                className={`${look.pill} ${item.id === tab ? look.solid : look.glass}`}
-                onClick={() => setTab(item.id)}
-              >
+              <button key={item.id} type="button" role="tab" aria-selected={item.id === tab} className={look.tab} onClick={() => setTab(item.id)}>
+                {item.id === tab ? <Lens group="library-tab" value={tab} radius={16} className={styles.tabLens} /> : null}
                 {item.label}
               </button>
             ))}
@@ -318,41 +320,43 @@ export function Library(): JSX.Element {
               <SearchField value={query} onChange={setQuery} placeholder={t(`library.search_${tab}`)} clearLabel={t("ui.clear")} />
             </div>
             {tab !== "local" ? (
-              <>
+              <div className={styles.views}>
                 <button
                   type="button"
-                  className={`${look.pill} ${look.glass} ${look.square} ${view === "grid" ? "" : look.quiet}`}
+                  className={look.icon}
                   aria-label={t("ui.library.view_grid")}
                   aria-pressed={view === "grid"}
                   onClick={() => changeView("grid")}
                 >
+                  {view === "grid" ? <Lens group="library-view" value={view} radius={16} /> : null}
                   <Icon name="grid" size={16} />
                 </button>
                 <button
                   type="button"
-                  className={`${look.pill} ${look.glass} ${look.square} ${view === "list" ? "" : look.quiet}`}
+                  className={look.icon}
                   aria-label={t("ui.library.view_list")}
                   aria-pressed={view === "list"}
                   onClick={() => changeView("list")}
                 >
+                  {view === "list" ? <Lens group="library-view" value={view} radius={16} /> : null}
                   <Icon name="list" size={16} />
                 </button>
-              </>
+              </div>
             ) : null}
             <button
               type="button"
-              className={`${look.pill} ${look.glass} ${look.square}`}
+              className={look.icon}
               aria-label={t("ui.library.sort.label", { order: t(`ui.library.sort.${sort}`) })}
               title={t("ui.library.sort.label", { order: t(`ui.library.sort.${sort}`) })}
               aria-haspopup="menu"
               aria-expanded={sortAnchor !== null}
               onClick={(event) => setSortAnchor(sortAnchor ? null : event.currentTarget)}
             >
-              <Icon name="sort-lines" size={16} />
+              <Icon name="sort-lines" size={18} />
             </button>
             <button
               type="button"
-              className={`${look.pill} ${look.glass} ${look.square}`}
+              className={look.icon}
               aria-label={t("ui.export.more")}
               aria-haspopup="menu"
               aria-expanded={moreOpen}
@@ -361,7 +365,7 @@ export function Library(): JSX.Element {
                 setMoreOpen(true);
               }}
             >
-              <Icon name="more" size={16} />
+              <Icon name="more" size={18} />
             </button>
             {tab === "all" || tab === "playlists" ? (
               <button
@@ -388,8 +392,12 @@ export function Library(): JSX.Element {
             </Button>
           </div>
         ) : null}
-        <div className={styles.content} key={`${tab}:${view}`}>
-          {content}
+        <div className={styles.stage}>
+          <Swap view={contentKey} target={contentRef} scroller={scroller}>
+            <div ref={contentRef} className={styles.content} key={contentKey}>
+              {content}
+            </div>
+          </Swap>
         </div>
       </Enter>
 

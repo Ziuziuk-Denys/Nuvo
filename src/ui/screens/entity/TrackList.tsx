@@ -3,6 +3,7 @@ import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import { Cover } from "../../components/Cover";
 import { Explicit } from "../../components/Explicit";
 import { useScrollMargin } from "../../components/useScrollMargin";
+import { Flip } from "../../flip";
 import { Icon } from "../../icons/Icon";
 import { DislikeButton } from "../../recs/DislikeButton";
 import { useTranslation, type TFunction } from "../../ports/i18n";
@@ -164,56 +165,59 @@ export function TrackList({
   };
 
   return (
-    <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize() }} data-dragging={drag.isDragging ? "" : undefined}>
-      {virtualizer.getVirtualItems().map((item) => {
-        const match = tracks[item.index];
-        const { track, index } = match;
-        const key = trackKey(match);
-        const current = track.id === currentId;
-        const lifted = drag.isDragging && drag.dragIndex === item.index;
-        const top = lifted ? drag.pointerPos.y - listTop - drag.grabOffset.y : item.start - scrollMargin + offsetOf(item.index);
-        const reason = unavailable?.(track) ?? undefined;
-        return (
-          <div
-            key={key}
-            className={styles.slot}
-            data-reorder-item
-            data-lifted={lifted ? "" : undefined}
-            style={{ transform: `translateY(${top}px)` } as CSSProperties}
-          >
-            <MediaRow
-              data-track-row=""
-              data-selected={selectedKey === key || selection?.keys.has(key) ? "" : undefined}
-              className={styles.row}
-              number={numbered}
-              leading={
-                numbered ? (
-                  <IndexCell number={index + 1} current={current} playing={playing} onToggle={onTogglePlay} t={t} />
-                ) : (
-                  <Cover src={track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />
-                )
-              }
-              title={track.title}
-              badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
-              subtitle={hideArtists ? undefined : track.artists}
-              meta={formatDuration(track.durationMs)}
-              extra={<DislikeButton track={track} />}
-              active={current}
-              unavailableReason={reason ?? undefined}
-              onActivate={() => onPlay(index)}
-              onClick={selection ? (event) => onRowClick(event, item.index) : undefined}
-              onKeyDown={(event) => onKeyDown(event, item.index)}
-              onPointerDown={onReorder ? (event) => drag.handleCardGrab(item.index, match, event) : undefined}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                onMenu(track, event.currentTarget, { x: event.clientX, y: event.clientY });
-              }}
-              menuLabel={t("ui.entity.more")}
-              onMenu={(anchor) => onMenu(track, anchor)}
-            />
-          </div>
-        );
-      })}
-    </div>
+    <Flip token={tracks} target={listRef} scroller={scroller}>
+      <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize() }} data-dragging={drag.isDragging ? "" : undefined}>
+        {virtualizer.getVirtualItems().map((item) => {
+          const match = tracks[item.index];
+          const { track, index } = match;
+          const key = trackKey(match);
+          const current = track.id === currentId;
+          const lifted = drag.isDragging && drag.dragIndex === item.index;
+          const top = lifted ? drag.pointerPos.y - listTop - drag.grabOffset.y : item.start - scrollMargin + offsetOf(item.index);
+          const reason = unavailable?.(track) ?? undefined;
+          return (
+            <div
+              key={key}
+              className={styles.slot}
+              data-flip={track.playlistItemId ?? track.id}
+              data-reorder-item
+              data-lifted={lifted ? "" : undefined}
+              style={{ transform: `translateY(${top}px)` } as CSSProperties}
+            >
+              <MediaRow
+                data-track-row=""
+                data-selected={selectedKey === key || selection?.keys.has(key) ? "" : undefined}
+                className={styles.row}
+                number={numbered}
+                leading={
+                  numbered ? (
+                    <IndexCell number={index + 1} current={current} playing={playing} onToggle={onTogglePlay} t={t} />
+                  ) : (
+                    <Cover src={track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />
+                  )
+                }
+                title={track.title}
+                badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
+                subtitle={hideArtists ? undefined : track.artists}
+                meta={formatDuration(track.durationMs)}
+                extra={<DislikeButton track={track} />}
+                active={current}
+                unavailableReason={reason ?? undefined}
+                onActivate={() => onPlay(index)}
+                onClick={selection ? (event) => onRowClick(event, item.index) : undefined}
+                onKeyDown={(event) => onKeyDown(event, item.index)}
+                onPointerDown={onReorder ? (event) => drag.handleCardGrab(item.index, match, event) : undefined}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  onMenu(track, event.currentTarget, { x: event.clientX, y: event.clientY });
+                }}
+                menuLabel={t("ui.entity.more")}
+                onMenu={(anchor) => onMenu(track, anchor)}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </Flip>
   );
 }

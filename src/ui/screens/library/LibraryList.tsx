@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Cover } from "../../components/Cover";
 import type { TFunction } from "../../ports/i18n";
 import { useScrollMargin } from "../../components/useScrollMargin";
+import { Flip } from "../../flip";
 import { useShellScroller } from "../../shell/scroller";
 import { LikedTile } from "../home/LikedTile";
 import { MediaRow } from "../MediaRow";
@@ -47,33 +48,35 @@ export function LibraryList({ entries, selected, playing, onActivate, onMenu, t 
   });
 
   return (
-    <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize() }}>
-      {virtualizer.getVirtualItems().map((item) => {
-        const entry = entries[item.index];
-        const key = entryKey(entry);
-        const importing = entry.importing !== undefined;
-        return (
-          <div key={key} className={styles.slot} style={{ transform: `translateY(${item.start - scrollMargin}px)` }}>
-            <MediaRow
-              className={styles.entry}
-              data-selected={selected === key ? "" : undefined}
-              data-importing={importing ? "" : undefined}
-              leading={<EntryArt entry={entry} size={48} />}
-              title={entry.title}
-              subtitle={entry.subtitle}
-              meta={entryMeta(entry, t)}
-              active={playing === key}
-              onActivate={() => onActivate(entry)}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                onMenu(entry, event.currentTarget, { x: event.clientX, y: event.clientY });
-              }}
-              menuLabel={t("ui.library.more")}
-              onMenu={(anchor) => onMenu(entry, anchor)}
-            />
-          </div>
-        );
-      })}
-    </div>
+    <Flip token={entries} target={listRef} scroller={scroller}>
+      <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize() }}>
+        {virtualizer.getVirtualItems().map((item) => {
+          const entry = entries[item.index];
+          const key = entryKey(entry);
+          const importing = entry.importing !== undefined;
+          return (
+            <div key={key} className={styles.slot} data-flip={key} style={{ transform: `translateY(${item.start - scrollMargin}px)` }}>
+              <MediaRow
+                className={styles.entry}
+                data-selected={selected === key ? "" : undefined}
+                data-importing={importing ? "" : undefined}
+                leading={<EntryArt entry={entry} size={48} />}
+                title={entry.title}
+                subtitle={entry.subtitle}
+                meta={entryMeta(entry, t)}
+                active={playing === key}
+                onActivate={() => onActivate(entry)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  onMenu(entry, event.currentTarget, { x: event.clientX, y: event.clientY });
+                }}
+                menuLabel={t("ui.library.more")}
+                onMenu={(anchor) => onMenu(entry, anchor)}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </Flip>
   );
 }

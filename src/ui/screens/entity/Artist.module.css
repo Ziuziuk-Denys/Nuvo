@@ -6,7 +6,7 @@
 
 /* rows pad 8 px; pulling them out by 8 puts the covers on the title's edge */
 .songs {
-  margin: -14px -8px 0;
+  margin: -6px -8px 0;
 }
 
 .shelfTitle {
@@ -15,7 +15,7 @@
 
 .shelf {
   display: flex;
-  gap: 16px;
+  gap: 24px;
   width: 100%;
   padding-bottom: 24px;
   overflow-x: auto;
@@ -38,22 +38,25 @@
 }
 
 .card:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--n-ink) 70%, transparent);
-  outline-offset: 2px;
-  border-radius: 8px;
+  outline: none;
+}
+
+.card:focus-visible .art {
+  box-shadow: 0 0 0 3px var(--n-focus-halo);
 }
 
 .art {
   display: block;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .art > span {
   transition: filter 300ms;
 }
 
-.card:hover .art > span {
+.card:hover .art > span,
+.card:focus-visible .art > span {
   filter: brightness(1.15);
 }
 
@@ -75,7 +78,7 @@
 }
 
 .cardSubtitle {
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: 400 13px/normal var(--n-font);
 }
 
@@ -93,5 +96,5 @@
 .verified {
   display: inline-flex;
   flex: none;
-  color: #1d9bf0;
+  color: var(--n-accent);
 }
