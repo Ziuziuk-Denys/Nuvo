@@ -291,9 +291,10 @@ describe("Menu", () => {
 
   beforeEach(() => Object.values(select).forEach((fn) => fn.mockClear()));
 
-  it("moves with the arrows and selects with Enter", () => {
+  it("lights the first item on the first arrow, then moves and selects with Enter", () => {
     mount(<MenuHarness items={items} />);
     expect(document.querySelector('[role="menu"]')).not.toBeNull();
+    key("ArrowDown");
     key("ArrowDown");
     key("Enter");
     expect(select.rename).toHaveBeenCalledTimes(1);
@@ -308,6 +309,24 @@ describe("Menu", () => {
     expect(document.activeElement?.textContent).toBe("Rename");
     key("r");
     expect(document.activeElement?.textContent).toBe("Remove from library");
+  });
+
+  it("unfolds a group in place with the right arrow and folds it with the left", () => {
+    const hide = vi.fn();
+    mount(<MenuHarness items={[...items, { label: "Dislike", items: [{ label: "Not this recording", onSelect: hide }] }]} />);
+    const folded = () => document.querySelector("[data-group]")?.hasAttribute("data-open") === false;
+    expect(folded()).toBe(true);
+    key("End");
+    key("ArrowRight");
+    act(() => vi.runAllTimers());
+    expect(document.activeElement?.textContent).toBe("Not this recording");
+    key("ArrowLeft");
+    expect(folded()).toBe(true);
+    expect(document.activeElement?.getAttribute("aria-expanded")).toBe("false");
+    key("Enter");
+    key("ArrowDown");
+    key("Enter");
+    expect(hide).toHaveBeenCalledTimes(1);
   });
 
   it("closes on Escape", () => {

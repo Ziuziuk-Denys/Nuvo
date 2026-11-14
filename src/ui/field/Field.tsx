@@ -1,7 +1,8 @@
-import { useState, type JSX } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type JSX } from "react";
 import { usePageBackdropStore } from "../ports/backdrop";
 import { useCoverSrc } from "../ports/covers";
-import { useCustomizationStore } from "../ports/settings";
+import { useCustomizationStore, wallpaperKind } from "../ports/settings";
+import { isWindowVisible, onWindowVisibilityChange } from "../ports/window";
 import { useLook } from "../ports/theme";
 import { useCalmStore } from "./calm";
 import { useReducedEffects } from "../effects";
@@ -46,11 +47,9 @@ export function Field(): JSX.Element {
   const options = usePageBackdropStore((s) => s.options);
   const cover = useCoverSrc(coverGlow && !calm && !reduced ? (pageCover ?? undefined) : undefined);
   const dark = look.mode === "dark";
-  const showWallpaper = Boolean(wallpaper) && dark;
-
   return (
     <div className={styles.field} aria-hidden="true" data-mode={look.mode}>
-      {showWallpaper ? <Wallpaper src={wallpaper!} /> : cover ? <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} /> : null}
+      {wallpaper ? <Wallpaper src={wallpaper} /> : cover ? <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} /> : null}
     </div>
   );
 }
@@ -76,12 +75,13 @@ function Backdrop({ src, dark, blur, dim }: { src: string; dark: boolean; blur: 
     window.setTimeout(() => setStack((now) => now.filter((kept) => kept.generation >= layer.generation)), FADE_MS + 60);
   };
 
-  const tint = foot ? `rgb(${foot.join(" ")} / ${dark ? 0.9 : 0.35})` : undefined;
+  // the cover's colour is mixed into the theme's own field, so every preset still shows under the glow
+  const tint = foot ? `color-mix(in oklab, rgb(${foot.join(" ")}) ${dark ? 40 : 30}%, var(--n-deep))` : undefined;
   const filter = `blur(${blur}px) saturate(130%)`;
 
   return (
     <div className={styles.backdrop} style={{ backgroundColor: tint }}>
-      <div className={styles.cover}>
+      <div className={styles.cover} style={{ "--blur": `${blur}px` } as CSSProperties}>
         {stack.map((layer) => (
           <img
             {...COVER_IMG}
@@ -102,20 +102,60 @@ function Backdrop({ src, dark, blur, dim }: { src: string; dark: boolean; blur: 
 function Wallpaper({ src }: { src: string }) {
   const blur = useCustomizationStore((s) => s.backgroundBlur);
   const dim = useCustomizationStore((s) => s.backgroundDim);
+  const fit = useCustomizationStore((s) => s.backgroundFit);
+  const visible = useSyncExternalStore(onWindowVisibilityChange, isWindowVisible);
+  const reduced = useReducedEffects();
+  // the picture overhangs by two blur radii so the blur never fades its own edges
+  const style: CSSProperties = {
+    inset: -blur * 2,
+    width: `calc(100% + ${blur * 4}px)`,
+    height: `calc(100% + ${blur * 4}px)`,
+    objectFit: fit,
+    filter: blur > 0 ? `blur(${blur}px)` : undefined,
+  };
   return (
     <>
-      <img
-        src={src}
-        alt=""
-        className={styles.wallpaper}
-        style={{
-          inset: -blur * 2,
-          width: `calc(100% + ${blur * 4}px)`,
-          height: `calc(100% + ${blur * 4}px)`,
-          filter: blur > 0 ? `blur(${blur}px)` : undefined,
-        }}
-      />
-      {dim > 0 && <div className={styles.dim} style={{ opacity: dim / 100 }} />}
+      <WallpaperMedia src={src} moving={visible && !reduced} className={styles.wallpaper} style={style} />
+      {dim > 0 && <div className={styles.wash} style={{ opacity: dim / 100 }} />}
     </>
   );
+}
+
+export function WallpaperMedia(props: { src: string; moving: boolean; className?: string; style?: CSSProperties; onError?(): void }): JSX.Element {
+  const { src, moving, ...rest } = props;
+  const kind = wallpaperKind(src);
+  if (kind === "video") return <Video src={src} playing={moving} {...rest} />;
+  if (kind === "gif" && !moving) return <Still src={src} {...rest} />;
+  return <img {...rest} src={src} alt="" draggable={false} decoding="async" />;
+}
+
+function Video({ src, playing, onError, ...rest }: { src: string; playing: boolean; className?: string; style?: CSSProperties; onError?(): void }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    if (playing) video.play().catch(() => undefined);
+    else video.pause();
+  }, [playing, src]);
+  return <video {...rest} ref={ref} src={src} muted loop playsInline preload="auto" disablePictureInPicture disableRemotePlayback onError={onError} />;
+}
+
+function Still({ src, ...rest }: { src: string; className?: string; style?: CSSProperties; onError?(): void }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    let live = true;
+    const picture = new Image();
+    picture.addEventListener("load", () => {
+      const canvas = ref.current;
+      if (!live || !canvas) return;
+      canvas.width = picture.naturalWidth;
+      canvas.height = picture.naturalHeight;
+      canvas.getContext("2d")?.drawImage(picture, 0, 0);
+    });
+    picture.src = src;
+    return () => {
+      live = false;
+    };
+  }, [src]);
+  return <canvas {...rest} ref={ref} />;
 }

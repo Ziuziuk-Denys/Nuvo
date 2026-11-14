@@ -16,11 +16,21 @@
   transition:
     transform var(--n-t-quick) var(--n-ease-out),
     background-color var(--n-t-instant) var(--n-ease-out),
-    color var(--n-t-instant) var(--n-ease-out);
+    color var(--n-t-instant) var(--n-ease-out),
+    box-shadow var(--n-t-instant) var(--n-ease-out);
 }
 
 .chip:hover:not(:disabled) {
   background: var(--n-fill-hover);
+}
+
+.chip:focus-visible {
+  outline: none;
+  background: var(--n-focus-fill);
+}
+
+.chip[aria-pressed="true"]:focus-visible {
+  box-shadow: var(--n-focus-glow);
 }
 
 .chip[aria-pressed="true"],
@@ -30,7 +40,8 @@
 }
 
 .chip:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(var(--n-press-wide));
+  transition-duration: var(--n-t-instant);
 }
 
 .chip:disabled {

@@ -8,7 +8,7 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   icon: IconName;
   label: string;
   size?: "m" | "s";
-  tone?: "field" | "island";
+  tone?: "field" | "island" | "solo";
   active?: boolean;
   tooltip?: boolean;
 }

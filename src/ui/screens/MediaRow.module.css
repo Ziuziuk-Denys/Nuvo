@@ -1,13 +1,13 @@
 .row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
   height: 64px;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--n-ink);
   outline: none;
   cursor: pointer;
@@ -21,15 +21,12 @@
 }
 
 .row:not(.placeholder):hover,
-.row:focus-visible,
-.row[data-selected] {
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+.row:focus-visible {
+  background: var(--n-hover);
 }
 
-:global(:root[data-theme="dark"]) .row:not(.placeholder):hover,
-:global(:root[data-theme="dark"]) .row:focus-visible,
-:global(:root[data-theme="dark"]) .row[data-selected] {
-  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+.row[data-selected] {
+  background: var(--n-select);
 }
 
 .row[data-unavailable] {
@@ -58,7 +55,7 @@
   width: 48px;
   height: 36px;
   color: var(--n-ink-3);
-  font: 400 16px/1.2 var(--n-font);
+  font: 400 14px/1.2 var(--n-font);
   font-variant-numeric: tabular-nums;
 }
 
@@ -84,7 +81,11 @@
 
 .title {
   color: var(--n-ink);
-  font: 400 16px/1.2 var(--n-font);
+  font: 400 15px/1.3 var(--n-font);
+}
+
+.row[data-active] .title {
+  color: var(--n-accent);
 }
 
 .titleLine {
@@ -101,44 +102,72 @@
 
 .subtitle {
   color: var(--n-ink-2);
-  font: 350 15px/1.2 var(--n-font);
+  font: 400 13px/1.3 var(--n-font);
 }
 
 .end {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   margin-left: 16px;
 }
 
+/* Actions wait for the row's hover or focus, so a long list reads as titles and times; opacity keeps them clickable */
+.end [data-row-action],
+.dots {
+  opacity: 0;
+}
+
+.row:hover :is(.end [data-row-action], .dots),
+.row:focus-within :is(.end [data-row-action], .dots),
+.row[data-selected] :is(.end [data-row-action], .dots),
+.row[data-active] :is(.end [data-row-action], .dots) {
+  opacity: 1;
+}
+
 .meta {
+  min-width: 36px;
   color: var(--n-ink-3);
-  font: 400 14px/normal var(--n-font);
+  font: 400 13px/normal var(--n-font);
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 -4px 0 0;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: 50%;
   background: transparent;
-  color: var(--n-ink);
+  color: var(--n-ink-2);
   cursor: pointer;
-  transition: transform 200ms ease-out;
+  transition:
+    opacity 150ms var(--n-ease-out),
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
+}
+
+.dots:hover,
+.dots:focus-visible {
+  background: var(--n-hover);
+  color: var(--n-ink);
+  outline: none;
 }
 
 .dots svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .dots:active {
-  transform: scale(0.96);
+  transform: scale(var(--n-press));
+  transition-duration: var(--n-t-instant);
 }
 
 .placeholder {

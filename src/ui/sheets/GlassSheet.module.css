@@ -1,0 +1,196 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: var(--n-s-5);
+}
+
+.layer[data-state="out"] {
+  pointer-events: none;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--n-dim);
+  animation: dim-in var(--n-t-base) var(--n-ease-out) both;
+}
+
+.backdrop[data-state="out"] {
+  animation: dim-out var(--n-t-quick) var(--n-ease-in) both;
+}
+
+@keyframes dim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dim-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.panel {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-height: calc(100vh - 48px);
+  padding: 18px;
+  border-radius: 24px;
+  background: var(--n-pop);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  box-shadow: var(--n-panel-shadow);
+  color: var(--n-ink);
+  outline: none;
+  transform-origin: 50% 40%;
+  animation: panel-in 220ms var(--n-ease-out) both;
+}
+
+.panel[data-state="out"] {
+  animation: panel-out var(--n-t-quick) var(--n-ease-in) both;
+}
+
+.panel > * {
+  animation: rise 240ms var(--n-ease-out) both;
+}
+
+.panel > :nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.panel > :nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.panel > :nth-child(n + 4) {
+  animation-delay: 90ms;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@keyframes panel-out {
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.title {
+  margin: 0;
+  color: var(--n-ink);
+  font: var(--n-type-heading);
+  letter-spacing: var(--n-track-title);
+  overflow-wrap: anywhere;
+}
+
+.caption {
+  margin: 0;
+  color: var(--n-ink-3);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
+  text-wrap: pretty;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.start {
+  margin-right: auto;
+}
+
+.footer button {
+  height: 34px;
+  border-radius: var(--n-r-pill);
+}
+
+.quiet {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 0 10px;
+  border: 0;
+  border-radius: var(--n-r-pill);
+  background: transparent;
+  color: var(--n-ink-2);
+  font: var(--n-type-label);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out),
+    transform 150ms var(--n-ease-out);
+}
+
+.quiet > svg {
+  flex: none;
+  color: var(--n-ink-3);
+  transition: color 150ms var(--n-ease-out);
+}
+
+.quiet:hover,
+.quiet:focus-visible {
+  background: var(--n-pop-hover);
+  color: var(--n-ink);
+}
+
+.quiet:hover > svg,
+.quiet:focus-visible > svg {
+  color: var(--n-ink-2);
+}
+
+.quiet:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panel[data-state="out"],
+  .backdrop,
+  .backdrop[data-state="out"] {
+    animation-name: dim-in;
+    animation-duration: var(--n-t-quick);
+    animation-timing-function: linear;
+  }
+
+  .panel[data-state="out"],
+  .backdrop[data-state="out"] {
+    animation-name: dim-out;
+  }
+
+  .panel > * {
+    animation: none;
+  }
+
+  .quiet,
+  .quiet > svg {
+    transition: none;
+  }
+}

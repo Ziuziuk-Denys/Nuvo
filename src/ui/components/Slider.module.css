@@ -57,8 +57,9 @@
 }
 
 .control:focus-visible .knob {
-  outline: 2px solid var(--n-focus-halo);
-  outline-offset: 2px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    var(--n-focus-glow);
 }
 
 .value {

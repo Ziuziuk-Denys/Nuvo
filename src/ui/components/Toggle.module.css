@@ -38,6 +38,11 @@
   background: var(--n-ink);
 }
 
+.track:focus-visible {
+  outline: none;
+  box-shadow: var(--n-focus-glow);
+}
+
 .track:active:not(:disabled) {
   transform: scale(0.97);
   transition-duration: var(--n-t-instant), var(--n-t-quick);

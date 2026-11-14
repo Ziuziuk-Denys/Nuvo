@@ -33,12 +33,15 @@
   }
 }
 
+/* the entrance clip-path stays applied, so the panel carries only its inner rim, no outer shadow */
 .panel {
+  --radius: 18px;
   overflow: hidden;
-  border-radius: var(--n-r-l);
+  border-radius: var(--radius);
   background: var(--n-pop);
   -webkit-backdrop-filter: var(--n-pop-blur);
   backdrop-filter: var(--n-pop-blur);
+  box-shadow: var(--n-panel-rim);
   color: var(--n-ink);
   outline: none;
   animation: shell-in var(--n-t-entrance) var(--n-ease-out) both;
@@ -46,6 +49,8 @@
 
 .panel[data-solid] {
   background: var(--n-pop-solid);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .panel[data-state="out"] {
@@ -55,26 +60,26 @@
 
 @keyframes shell-in {
   from {
-    clip-path: inset(var(--from) round var(--n-r-l));
+    clip-path: inset(var(--from) round var(--radius));
     opacity: 0;
   }
   15% {
     opacity: 1;
   }
   to {
-    clip-path: inset(0 round var(--n-r-l));
+    clip-path: inset(0 round var(--radius));
   }
 }
 
 @keyframes shell-out {
   from {
-    clip-path: inset(0 round var(--n-r-l));
+    clip-path: inset(0 round var(--radius));
   }
   60% {
     opacity: 1;
   }
   to {
-    clip-path: inset(var(--from) round var(--n-r-l));
+    clip-path: inset(var(--from) round var(--radius));
     opacity: 0;
   }
 }

@@ -79,9 +79,12 @@ a.tab[aria-current="page"] {
     width var(--n-t-page) var(--n-ease-out);
 }
 
-.tabs[role="tablist"]:has(.tab:focus-visible) .line {
-  outline: 2px solid var(--n-focus-halo);
-  outline-offset: 1px;
+.tabs[role="tablist"] .tab:focus-visible:not([aria-selected="true"]) {
+  background: var(--n-focus-fill);
+}
+
+.tabs[role="tablist"]:has(.tab[aria-selected="true"]:focus-visible) .line {
+  box-shadow: var(--n-focus-glow);
 }
 
 nav.tabs {
@@ -105,7 +108,7 @@ a.tab::after {
 }
 
 a.tab:focus-visible::after {
-  background: var(--n-focus);
+  background: var(--n-focus-fill);
 }
 
 nav.tabs .line {

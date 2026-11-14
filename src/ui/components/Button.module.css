@@ -13,14 +13,20 @@
   cursor: pointer;
   user-select: none;
   transition:
-    transform 150ms var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out),
     background-color 150ms var(--n-ease-out),
     color 150ms var(--n-ease-out),
-    opacity 150ms var(--n-ease-out);
+    opacity 150ms var(--n-ease-out),
+    box-shadow 150ms var(--n-ease-out);
+}
+
+.button:focus-visible {
+  outline: none;
 }
 
 .button:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(var(--n-press-wide));
+  transition-duration: var(--n-t-instant);
 }
 
 .button:disabled {
@@ -44,6 +50,10 @@
   opacity: 0.9;
 }
 
+.primary:focus-visible {
+  box-shadow: var(--n-focus-glow);
+}
+
 .secondary {
   background: var(--n-fill);
   color: var(--n-ink);
@@ -53,13 +63,19 @@
   background: var(--n-fill-hover);
 }
 
+.secondary:focus-visible,
+.text:focus-visible {
+  background: var(--n-focus-fill);
+  color: var(--n-ink);
+}
+
 .text {
   background: transparent;
   color: var(--n-ink-2);
 }
 
 .text:hover:not(:disabled) {
-  background: var(--border-white-alpha-14);
+  background: var(--n-hover);
   color: var(--n-ink);
 }
 

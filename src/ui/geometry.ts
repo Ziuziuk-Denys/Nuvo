@@ -14,7 +14,7 @@ export const FRAME = 6;
 
 export const ISLAND = {
   height: 64,
-  left: 70,
+  left: 6,
   sideMargin: 6,
   bottom: 6,
   radius: 12,
@@ -28,18 +28,7 @@ export const ISLAND = {
   stateGlyph: 16,
 } as const;
 
-export const RAIL = {
-  inset: FRAME,
-  top: 62,
-  width: 58,
-  radius: 12,
-  padding: 6,
-  item: 46,
-  glyph: 26,
-  bottom: FRAME,
-} as const;
-
-export const TOP_ROW = { y: 12, height: 38, pillWidth: 102, pillRadius: 10, windowButton: 30 } as const;
+export const TOP_ROW = { item: 36, glyph: 24, field: 38, fieldMax: 440, windowButton: 36 } as const;
 
 export const CONTENT = {
   maxWidth: 1120,
@@ -80,7 +69,7 @@ export function contentGutter(windowWidth: number): number {
 }
 
 export function contentLeft(windowWidth: number): number {
-  return RAIL.inset + RAIL.width + FRAME + contentGutter(windowWidth);
+  return FRAME + contentGutter(windowWidth);
 }
 
 export function coverRadius(_size: number): number {

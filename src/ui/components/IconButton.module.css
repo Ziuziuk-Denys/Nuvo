@@ -10,7 +10,7 @@
   background: transparent;
   cursor: pointer;
   transition:
-    transform 150ms var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out),
     background-color 150ms var(--n-ease-out),
     color 150ms var(--n-ease-out);
 }
@@ -21,12 +21,19 @@
   border-radius: 6px;
 }
 
+.button:focus-visible {
+  outline: none;
+  background: var(--n-focus-fill);
+  color: var(--n-ink);
+}
+
 .button > svg {
   display: block;
 }
 
 .button:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(var(--n-press));
+  transition-duration: var(--n-t-instant);
 }
 
 .button:disabled {
@@ -50,6 +57,19 @@
 .island[data-active],
 .island[data-active]:hover:not(:disabled) {
   background: var(--bg-toolbox-active);
+  color: var(--n-ink);
+}
+
+.solo {
+  border-radius: 50%;
+  background: var(--n-tray);
+  box-shadow: var(--n-tray-edge);
+  color: var(--n-ink-2);
+}
+
+.solo:hover:not(:disabled),
+.solo[data-active] {
+  background: var(--n-tray-hover);
   color: var(--n-ink);
 }
 

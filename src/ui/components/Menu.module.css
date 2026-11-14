@@ -1,48 +1,79 @@
 .menu {
   composes: pop from "./Popover.module.css";
-  animation-duration: 100ms;
+  animation-duration: 180ms;
   position: fixed;
   z-index: 900;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  gap: 1px;
-  min-width: 160px;
+  min-width: 200px;
   max-width: 280px;
-  padding: 4px;
-  border-radius: 11px;
+  padding: 5px;
+  border-radius: 14px;
   background: var(--n-pop);
   -webkit-backdrop-filter: var(--n-pop-blur);
   backdrop-filter: var(--n-pop-blur);
+  box-shadow: var(--n-panel-shadow-s);
+  color: var(--n-ink);
   outline: none;
 }
 
+.lit {
+  position: absolute;
+  top: 0;
+  right: 5px;
+  left: 5px;
+  border-radius: 9px;
+  background: var(--n-pop-hover);
+  pointer-events: none;
+  transition:
+    transform 140ms var(--n-ease-out),
+    height 140ms var(--n-ease-out),
+    background-color 140ms var(--n-ease-out);
+}
+
+.lit[data-danger] {
+  background: color-mix(in srgb, var(--n-danger-ink) 11%, transparent);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
 .item {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   height: 30px;
-  padding: 0 9px;
+  padding: 0 10px;
   overflow: hidden;
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   color: var(--n-ink);
-  font: 400 13px/1 var(--n-font);
+  font: var(--n-type-label);
+  font-weight: 400;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color var(--n-t-instant) var(--n-ease-out);
+  outline: none;
+  transition: transform var(--n-t-instant) var(--n-ease-out);
+}
+
+.item:active:not(:disabled) {
+  transform: scale(0.985);
 }
 
 .icon {
   flex: none;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   color: var(--n-ink-2);
-  transition: color 150ms var(--n-ease-out);
+  transition: color 140ms var(--n-ease-out);
 }
 
 .label {
@@ -52,30 +83,43 @@
   text-overflow: ellipsis;
 }
 
-.item:hover .icon {
+.chevron {
+  flex: none;
+  margin-right: -2px;
+  color: var(--n-ink-3);
+  transform: rotate(-90deg);
+  transition: transform 180ms var(--n-ease-out);
+}
+
+.item[aria-expanded="true"] .chevron {
+  transform: rotate(0deg);
+}
+
+.item:focus .icon {
   color: var(--n-ink);
 }
 
-.item[data-danger],
 .item[data-danger] .icon {
-  color: #f87171;
+  color: var(--n-danger-ink);
 }
 
-.item[data-danger]:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.1);
+.item[data-danger]:focus {
+  color: var(--n-danger-ink);
 }
 
-.item:hover:not(:disabled) {
-  background: var(--n-pop-hover);
+.item[data-nested] {
+  padding-left: 36px;
 }
 
-.item:focus-visible {
-  outline: none;
-  background: var(--n-pop-hover);
+.children {
+  display: flex;
+  flex-direction: column;
 }
 
-.menu:has(.item:focus-visible) .item:hover:not(:focus-visible) {
-  background: transparent;
+.children:not([data-open]) {
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
 }
 
 .item:disabled {
@@ -86,6 +130,34 @@
 .separator {
   flex: none;
   height: 1px;
-  margin: 3px 6px;
-  background: var(--border-toolbox-divider);
+  margin: 4px 10px;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .children[data-open] .item {
+    animation: unfold 180ms var(--n-ease-out) both;
+  }
+
+  .children[data-open] .item:nth-child(2) {
+    animation-delay: 30ms;
+  }
+
+  .children[data-open] .item:nth-child(n + 3) {
+    animation-delay: 60ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lit,
+  .chevron {
+    transition: none;
+  }
+}
+
+@keyframes unfold {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
