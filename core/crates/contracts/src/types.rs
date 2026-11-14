@@ -905,6 +905,19 @@ pub struct LyricsCandidate {
     /// User lyrics: shown before every provider.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub top_priority: bool,
+    /// Set when Nuvo made these lyrics itself; they may contain mistakes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub made: Option<MadeBy>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MadeBy {
+    /// `synced`, `aligned` or `transcribed`.
+    pub source: String,
+    /// 0 to 1: the mean word probability, or for `aligned` the share of lyric words heard; absent on older word timing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f64>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -963,6 +976,8 @@ pub struct SetLyricsOffset {
 #[serde(rename_all = "camelCase")]
 pub struct WordTimingJob {
     pub track_id: String,
+    /// `synced`, `aligned` or `transcribed`, as in `MadeBy`.
+    pub source: &'static str,
     pub model: &'static str,
     pub state: &'static str,
     pub progress: f32,
@@ -992,6 +1007,24 @@ pub struct StartWordTiming {
     /// The larger model: slower, closer to the voice.
     #[serde(default)]
     pub best: bool,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MadeLyrics {
+    pub models: Vec<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub job: Option<WordTimingJob>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StartMadeLyrics {
+    /// `transcribed` or `aligned`; aligned times the plain lyrics the track already has.
+    pub source: String,
+    /// The small model; by default on for transcription, where it hears far more words, and off for alignment.
+    #[serde(default)]
+    pub best: Option<bool>,
 }
 
 #[derive(Deserialize, Debug)]

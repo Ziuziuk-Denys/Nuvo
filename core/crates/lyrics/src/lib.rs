@@ -165,5 +165,6 @@ fn to_lookup(record: &Record, match_score: f64) -> Lookup {
             duration_ms: record.duration_ms(),
         }),
         top_priority: false,
+        made: None,
     }))
 }

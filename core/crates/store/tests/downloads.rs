@@ -76,7 +76,7 @@ fn migration_20_adds_the_job_tables_to_an_encrypted_pre_20_library() {
 
     let conn = open_connection(&dir.path().join("library.db"), &common::KEY, &dir.path().join("backups")).unwrap();
     let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
-    assert_eq!(version, 22);
+    assert_eq!(version, 23);
     assert!(tracks::snapshot(&conn, "keep").unwrap().is_some(), "existing rows survive");
     let summary = downloads::create(&conn, &job(&["keep"]), 2).unwrap();
     assert_eq!(summary.total, 1);

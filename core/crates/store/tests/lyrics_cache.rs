@@ -12,6 +12,7 @@ fn stores_found_and_not_found_results() {
         quality: LyricsQuality { total: 0.8, match_score: 1.0, content: 1.0, sync: 0.6, source: 0.7, reasons: vec![] },
         lyrics: RawLyrics { format: "lrc".into(), content: "[00:01.00] hi".into() }, matched_track: None,
         top_priority: false,
+        made: None,
     };
     lyrics_cache::put(&conn, "t", Some(&candidate), false, 10).unwrap();
     let cached = lyrics_cache::get(&conn, "t").unwrap().unwrap();

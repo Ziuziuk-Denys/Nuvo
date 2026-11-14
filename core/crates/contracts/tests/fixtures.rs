@@ -87,6 +87,7 @@ fn lyrics_event_fixtures() {
         lyrics: RawLyrics { format: "lrc".into(), content: "[00:01.00] hi".into() },
         matched_track: None,
         top_priority: false,
+        made: None,
     };
     let events = write("lyrics-events", &vec![
         LyricsStreamEvent::Metadata { track: LyricsTrackMeta { id: "x".into(), title: "T".into(), artists: vec![json!({"id": "a", "name": "A"})], duration_ms: 1000 }, offset_ms: 0 },
