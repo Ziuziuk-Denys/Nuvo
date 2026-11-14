@@ -15,6 +15,7 @@ export function ShelfHeading({ icon, title, busy = false, onRefresh }: { icon: I
         <IconButton
           icon="refresh"
           size="s"
+          tone="solo"
           label={t("ui.home.refresh")}
           className={styles.refresh}
           data-refresh

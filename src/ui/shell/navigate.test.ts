@@ -3,8 +3,6 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { useEffectsStore } from "../effects";
 import { activeNav, ENTITY_ROUTES, isEntityRoute, navigateWithTransition } from "./navigate";
 
-type Doc = { startViewTransition?: unknown };
-
 function mockReducedMotion(reduce: boolean) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: reduce && query.includes("reduce"),
@@ -14,9 +12,17 @@ function mockReducedMotion(reduce: boolean) {
   })) as unknown as typeof window.matchMedia;
 }
 
+function mountPage(): { animate: ReturnType<typeof vi.fn> } {
+  const page = document.createElement("div");
+  page.setAttribute("data-page", "");
+  const animate = vi.fn();
+  page.animate = animate as unknown as HTMLElement["animate"];
+  document.body.append(page);
+  return { animate };
+}
+
 afterEach(() => {
-  delete (document as unknown as Doc).startViewTransition;
-  document.documentElement.removeAttribute("data-page-transition");
+  document.body.replaceChildren();
   useEffectsStore.setState({ reduce: false });
 });
 
@@ -47,29 +53,19 @@ describe("isEntityRoute", () => {
 });
 
 describe("navigateWithTransition", () => {
-  it("wraps the navigation in a view transition when motion is allowed", async () => {
+  it("navigates, then lets the new page rise in on the live document so the glass above it stays real", () => {
     mockReducedMotion(false);
-    let finish!: () => void;
-    const finished = new Promise<void>((resolve) => (finish = resolve));
-    const start = vi.fn((update: () => void) => {
-      update();
-      return { finished };
-    });
-    (document as unknown as Doc).startViewTransition = start;
+    const { animate } = mountPage();
     const navigate = vi.fn();
 
     navigateWithTransition(navigate, "/library");
 
-    expect(start).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledWith("/library");
-    expect(document.documentElement.hasAttribute("data-page-transition")).toBe(true);
-    finish();
-    await finished;
-    await Promise.resolve();
-    expect(document.documentElement.hasAttribute("data-page-transition")).toBe(false);
+    expect(animate).toHaveBeenCalledTimes(1);
+    expect(navigate.mock.invocationCallOrder[0]).toBeLessThan(animate.mock.invocationCallOrder[0]);
   });
 
-  it("navigates at once without view transitions", () => {
+  it("navigates without a page to animate", () => {
     mockReducedMotion(false);
     const navigate = vi.fn();
     navigateWithTransition(navigate, "/");
@@ -78,22 +74,20 @@ describe("navigateWithTransition", () => {
 
   it("navigates at once under reduced motion", () => {
     mockReducedMotion(true);
-    const start = vi.fn();
-    (document as unknown as Doc).startViewTransition = start;
+    const { animate } = mountPage();
     const navigate = vi.fn();
     navigateWithTransition(navigate, "/library");
-    expect(start).not.toHaveBeenCalled();
+    expect(animate).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/library");
   });
 
   it("navigates at once while Reduce effects is on", () => {
     mockReducedMotion(false);
     useEffectsStore.setState({ reduce: true });
-    const start = vi.fn();
-    (document as unknown as Doc).startViewTransition = start;
+    const { animate } = mountPage();
     const navigate = vi.fn();
     navigateWithTransition(navigate, "/search");
-    expect(start).not.toHaveBeenCalled();
+    expect(animate).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/search");
   });
 });

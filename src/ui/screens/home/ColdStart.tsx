@@ -1,14 +1,17 @@
 import { useEffect, useState, type JSX } from "react";
-import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { useTranslation } from "../../ports/i18n";
+import { IMPORT_SOURCES, openImportSheet } from "../../ports/importSources";
 import { useModalStore } from "../../ports/navigation";
 import { useStreamingReachable } from "../../ports/network";
 import { recsChanged } from "../../ports/recs";
-import { coldStartNeeded } from "../../ports/starters";
-import { StartWithArtists } from "../../recs/StartWithArtists";
+import { coldStartNeeded, startFromPicks } from "../../ports/starters";
+import { TastePicker } from "../../recs/TastePicker";
+import { ServiceMark } from "../../tour/ServiceMark";
 import { useTour } from "../../tour/tourStore";
 import styles from "./ColdStart.module.css";
+
+const COLD_ROWS = 5;
 
 export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Element | null {
   const { t } = useTranslation();
@@ -37,11 +40,38 @@ export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Ele
   if (cold && online && tourOff) {
     return (
       <div className={styles.ask} data-cold-ask="">
-        <StartWithArtists onStarted={() => setStarted(true)} />
+        <section className={styles.taste} aria-labelledby="cold-taste-title">
+          <h2 id="cold-taste-title" className={styles.title}>
+            {t("ui.recs.start.title")}
+          </h2>
+          <p className={styles.message}>{t("ui.recs.start.message")}</p>
+          <TastePicker
+            className={styles.picker}
+            action={t("ui.recs.start.go")}
+            rows={COLD_ROWS}
+            start={async (picks) => {
+              const ok = await startFromPicks(picks);
+              if (ok) setStarted(true);
+              return ok;
+            }}
+          />
+        </section>
         {onImport ? (
-          <Button variant="text" className={styles.import} onClick={onImport}>
-            {t("ui.library.import")}
-          </Button>
+          <section className={styles.import} aria-labelledby="cold-import-title">
+            <h3 id="cold-import-title" className={styles.importTitle}>
+              {t("ui.recs.home.import_from")}
+            </h3>
+            <ul className={styles.sources}>
+              {IMPORT_SOURCES.map((source) => (
+                <li key={source}>
+                  <button type="button" className={styles.source} data-source={source} onClick={() => void openImportSheet(source)}>
+                    <ServiceMark source={source} size={18} />
+                    {t(`ui.tour.start.sources.${source}`)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         ) : null}
       </div>
     );

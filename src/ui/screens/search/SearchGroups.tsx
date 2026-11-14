@@ -1,4 +1,4 @@
-import { useState, type JSX, type ReactNode } from "react";
+import { useState, type JSX, type KeyboardEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cover } from "../../components/Cover";
 import { Explicit } from "../../components/Explicit";
@@ -18,7 +18,7 @@ import { useUnavailable } from "../entity/EntityTracks";
 import { DislikeButton } from "../../recs/DislikeButton";
 import { songMenuNotInterested } from "../../recs/notInterested";
 import { trackMenuItems, type TrackMenuActions } from "../entity/trackMenu";
-import { type GroupKey, type SearchFilter, type SearchGroups as Groups } from "./searchModel";
+import { subtitleOf, type GroupKey, type SearchFilter, type SearchGroups as Groups } from "./searchModel";
 import styles from "./Search.module.css";
 import { openLyricsTool } from "../lyrics/lyricsTools";
 
@@ -30,13 +30,6 @@ export interface SearchGroupsProps {
   hasMore: (key: GroupKey) => boolean;
   onShowAll: (key: GroupKey) => void;
   onActivate: (result: SearchResult) => void;
-}
-
-function subtitleOf(result: SearchResult, t: TFunction): string {
-  if (result.kind === "song") return t("ui.search.kind_song", { artist: result.subtitle });
-  if (result.kind === "album") return result.subtitle ? t("ui.library.kind_album", { artist: result.subtitle }) : t("ui.library.kind_album_plain");
-  if (result.kind === "artist") return t("ui.library.kind_artist");
-  return result.subtitle ? t("ui.library.kind_playlist", { owner: result.subtitle }) : t("ui.library.kind_playlist_plain");
 }
 
 function songBadge(result: SearchResult, t: TFunction): ReactNode {
@@ -149,9 +142,10 @@ function EntityCover({ result }: { result: SearchResult }) {
   return <Cover src={result.cover} size={48} radius={8} shape={result.kind === "artist" ? "circle" : "square"} fetchPriority="low" />;
 }
 
+// albums, artists and playlists spread into columns like Home's songs; songs keep one column for their times
 function EntityRows({ results, onActivate }: { results: SearchResult[]; onActivate: (result: SearchResult) => void }) {
   return (
-    <div className={styles.rows}>
+    <div className={styles.columns}>
       {results.map((result) => (
         <MediaRow
           key={`${result.kind}:${result.id}`}
@@ -165,9 +159,36 @@ function EntityRows({ results, onActivate }: { results: SearchResult[]; onActiva
   );
 }
 
+function TopCard({ top, onActivate }: { top: SearchResult; onActivate: (result: SearchResult) => void }) {
+  const { t } = useTranslation();
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault();
+    if (!event.repeat) onActivate(top);
+  };
+  return (
+    <div role="button" tabIndex={0} data-top="" className={styles.top} onClick={() => onActivate(top)} onKeyDown={onKeyDown}>
+      <Cover src={top.cover} size={112} radius={10} shape={top.kind === "artist" ? "circle" : "square"} fetchPriority="high" />
+      <span className={styles.topText}>
+        <span className={styles.topLine}>
+          <span className={styles.topTitle}>{top.title}</span>
+          {songBadge(top, t)}
+        </span>
+        <span className={styles.topSubtitle}>{subtitleOf(top, t)}</span>
+      </span>
+      {top.track ? (
+        <span className={styles.topEnd} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <DislikeButton track={top.track} />
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }: SearchGroupsProps): JSX.Element {
   const { t } = useTranslation();
   const top = groups.top;
+  const all = filter === "all";
 
   const section = (key: GroupKey) => {
     const results = groups[key];
@@ -175,13 +196,15 @@ export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }:
     const title = t(`ui.search.tab_${key}`);
     return (
       <section key={key} className={styles.group} aria-label={title}>
-        <h2 className={styles.heading}>{title}</h2>
+        <div className={styles.headingLine}>
+          <h2 className={styles.heading}>{title}</h2>
+          {all && hasMore(key) ? (
+            <button type="button" className={styles.more} onClick={() => onShowAll(key)}>
+              {t("ui.search.show_all")}
+            </button>
+          ) : null}
+        </div>
         {key === "songs" ? <SongRows songs={results} onActivate={onActivate} /> : <EntityRows results={results} onActivate={onActivate} />}
-        {filter === "all" && hasMore(key) ? (
-          <button type="button" className={styles.more} onClick={() => onShowAll(key)}>
-            {t("ui.search.show_all")}
-          </button>
-        ) : null}
       </section>
     );
   };
@@ -189,22 +212,18 @@ export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }:
   return (
     <>
       {top ? (
-        <section className={styles.group} aria-label={t("ui.search.top")}>
-          <h2 className={styles.heading}>{t("ui.search.top")}</h2>
-          <div className={styles.rows}>
-            <MediaRow
-              data-top=""
-              leading={<EntityCover result={top} />}
-              title={top.title}
-              badge={songBadge(top, t)}
-              subtitle={subtitleOf(top, t)}
-              extra={top.track ? <DislikeButton track={top.track} /> : undefined}
-              onActivate={() => onActivate(top)}
-            />
-          </div>
-        </section>
-      ) : null}
-      {section("songs")}
+        <div className={styles.lead}>
+          <section className={styles.group} aria-label={t("ui.search.top")}>
+            <div className={styles.headingLine}>
+              <h2 className={styles.heading}>{t("ui.search.top")}</h2>
+            </div>
+            <TopCard top={top} onActivate={onActivate} />
+          </section>
+          {section("songs")}
+        </div>
+      ) : (
+        section("songs")
+      )}
       {GROUP_ORDER.filter((key) => key !== "songs").map(section)}
     </>
   );

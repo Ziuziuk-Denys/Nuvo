@@ -12,7 +12,7 @@ const setMode = vi.hoisted(() => vi.fn());
 vi.mock("../../ports/theme", () => ({
   PRESETS: [
     { id: "nuvo", modes: ["light", "dark"] },
-    { id: "vinyl", modes: ["dark"] },
+    { id: "amber", modes: ["light", "dark"] },
   ],
   useLook: () => ({ preset: "nuvo", mode: "dark" }),
   useThemeMode: () => "dark",
@@ -61,8 +61,8 @@ describe("Specimen", () => {
   it("switches the preset and the mode through the ports", () => {
     act(() => root.render(<Specimen />));
     const button = (name: string) => [...host.querySelectorAll("button")].find((node) => node.textContent === name)!;
-    act(() => button("Vinyl").click());
-    expect(setPreset).toHaveBeenCalledWith("vinyl");
+    act(() => button("Amber").click());
+    expect(setPreset).toHaveBeenCalledWith("amber");
     act(() => button("Light").click());
     expect(setMode).toHaveBeenCalledWith("light");
   });

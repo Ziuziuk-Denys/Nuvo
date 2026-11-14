@@ -338,6 +338,18 @@ describe("Search", () => {
     press(rows[0], "ArrowUp");
     expect(document.activeElement).toBe(field());
   });
+  it("the top result card plays from the keyboard and leaves its dislike button to itself", async () => {
+    mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Bohemian Rhapsody"), mocks.ytTrack("s2", "Under Pressure")]);
+    renderSearch();
+    typeInto(field(), "queen");
+    await settle(320);
+    const card = host.querySelector<HTMLElement>("[data-top]")!;
+    act(() => card.lastElementChild!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(mocks.engine.playTrack).not.toHaveBeenCalled();
+    act(() => card.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+    expect(mocks.engine.playTrack).toHaveBeenCalledWith(expect.objectContaining({ title: "Bohemian Rhapsody" }), expect.anything(), "search");
+  });
+
   it("a pasted link shows the link block, searches nothing and saves no history", async () => {
     renderSearch();
     pasteInto(field(), "https://youtu.be/dQw4w9WgXcQ");

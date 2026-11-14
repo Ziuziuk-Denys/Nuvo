@@ -19,14 +19,15 @@
 /* Size containment lets legacy pages measure the page area in cqh */
 .content {
   position: absolute;
-  top: 6px;
+  top: 62px;
   bottom: 6px;
-  left: 70px;
+  left: 6px;
   right: 6px;
   overflow-x: hidden;
   overflow-y: auto;
   border-radius: 12px;
   container-type: size;
+  scrollbar-gutter: stable;
 }
 
 .content[data-player-below] {
@@ -42,8 +43,8 @@
   --page-inset-bottom: 70px;
   --floating-inset-bottom: 0px;
   box-sizing: content-box;
-  min-height: calc(100% - 132px);
-  padding: 56px var(--n-gutter) 76px;
+  min-height: calc(100% - 82px);
+  padding: 6px var(--n-gutter) 76px;
 }
 
 .content[data-player-below] .column {
@@ -51,18 +52,14 @@
   padding-bottom: 16px;
 }
 
-:root[data-page-transition] .column {
-  view-transition-name: n-page;
-}
-
-/* Legacy h-full pages scroll inside themselves: full height under the top band, own player padding */
+/* Legacy h-full pages scroll inside themselves: full height below the top bar, own player padding */
 .column:has(> :global(.h-full)) {
   padding-inline: 0;
   padding-bottom: 0;
 }
 
 .column > :global(.h-full) {
-  height: calc(100cqh - 56px);
+  height: calc(100cqh - 6px);
 }
 
 /* Over the whole window: the body's 4 px gutter would move the measured column edges */

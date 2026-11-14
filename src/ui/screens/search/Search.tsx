@@ -34,15 +34,18 @@ import {
 import { navigateWithTransition } from "../../shell/navigate";
 import { AddToPlaylistPopover } from "../../shell/popovers/AddToPlaylistPopover";
 import { useImportsUi } from "../imports/importsUi";
+import look from "../look.module.css";
 import { MediaRowPlaceholder } from "../MediaRow";
 import { LinkBlock } from "./LinkBlock";
 import { SharePreview } from "./SharePreview";
 import {
   GROUP_KIND,
   groupResults,
+  historyHref,
   isEmpty,
   LOCAL_SEARCH_LIMIT,
   localResults,
+  SEARCH_FILTERS,
   SEARCH_SOURCES,
   withLocalFiles,
   songsToRank,
@@ -60,14 +63,6 @@ const DEBOUNCE_MS = 320;
 const LIMIT = 20;
 const SLOW_MS = 300;
 const PLACEHOLDER_ROWS = 5;
-
-const FILTER_PILLS: { id: SearchFilter; icon: IconName }[] = [
-  { id: "all", icon: "grid" },
-  { id: "songs", icon: "track" },
-  { id: "artists", icon: "artist" },
-  { id: "albums", icon: "album" },
-  { id: "playlists", icon: "playlist" },
-];
 
 const SOURCE_ICONS: Record<SearchSource, IconName> = { all: "filter", youtube: "youtube", soundcloud: "soundcloud" };
 
@@ -245,8 +240,7 @@ export function Search(): JSX.Element {
       if (item.itemData) playTrack(item.itemData as Track, [item.itemData as Track]);
       return;
     }
-    const href = (item.itemData as { href?: string } | undefined)?.href ?? legacyHref(item);
-    navigateWithTransition(navigate, href);
+    navigateWithTransition(navigate, historyHref(item));
   };
 
   const chooseSource = (next: SearchSource) => {
@@ -373,8 +367,9 @@ export function Search(): JSX.Element {
           onKeyDown={onFieldKeyDown}
           onPaste={(event) => openLink(event.clipboardData.getData("text"))}
           data-tour="search-field"
+          data-link={linkText !== null ? "" : undefined}
         >
-          <Icon name="search" size={20} />
+          <Icon name="search" size={24} />
           <input
             className={styles.input}
             value={query}
@@ -385,8 +380,8 @@ export function Search(): JSX.Element {
             autoComplete="off"
           />
           {query ? (
-            <button type="button" className={styles.clear} aria-label={t("ui.clear")} onClick={() => changeQuery("")}>
-              <Icon name="clear-circle" size={16} />
+            <button type="button" className={look.icon} aria-label={t("ui.clear")} onClick={() => changeQuery("")}>
+              <Icon name="clear-circle" size={18} />
             </button>
           ) : null}
           {slow ? (
@@ -395,39 +390,36 @@ export function Search(): JSX.Element {
             </span>
           ) : null}
         </div>
+        {online || soundCloudActive ? null : <p className={styles.subline}>{t(offlineMode ? "ui.search.offline_mode" : "ui.search.offline")}</p>}
+        {trimmed === "" || linkText !== null ? null : (
+          <div className={styles.tabs}>
+            <div className={styles.tablist} role="tablist" aria-label={t("ui.search.tabs")}>
+              {SEARCH_FILTERS.filter((id) => !soundCloudOnly || id === "all" || id === "songs").map((id) => (
+                <button key={id} type="button" role="tab" aria-selected={id === filter} className={look.tab} onClick={() => setFilter(id)}>
+                  {t(`ui.search.tab_${id}`)}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className={`${look.tab} ${styles.sourceButton}`}
+              aria-haspopup="menu"
+              aria-expanded={sourceMenu !== null}
+              data-chosen={searchSource === "all" ? undefined : ""}
+              aria-label={sourceLabel}
+              title={sourceLabel}
+              onClick={(event) => setSourceMenu(event.currentTarget)}
+            >
+              <Icon name={SOURCE_ICONS[searchSource]} size={16} />
+              <Icon name="chevron-down" size={14} />
+            </button>
+          </div>
+        )}
       </Enter>
       <Enter index={1} screen="search">
-        <div className={styles.panel}>
-          {online || soundCloudActive ? null : <p className={styles.subline}>{t(offlineMode ? "ui.search.offline_mode" : "ui.search.offline")}</p>}
-          {trimmed === "" || linkText !== null ? null : (
-            <div className={styles.filters}>
-              <div className={styles.tabs} role="tablist" aria-label={t("ui.search.tabs")}>
-                {FILTER_PILLS.filter((pill) => !soundCloudOnly || pill.id === "all" || pill.id === "songs").map((pill) => (
-                  <button key={pill.id} type="button" role="tab" aria-selected={pill.id === filter} className={styles.tab} onClick={() => setFilter(pill.id)}>
-                    <Icon name={pill.icon} size={16} />
-                    <span>{t(`ui.search.tab_${pill.id}`)}</span>
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                className={styles.tab}
-                aria-haspopup="menu"
-                aria-expanded={sourceMenu !== null}
-                data-chosen={searchSource === "all" ? undefined : ""}
-                aria-label={sourceLabel}
-                title={sourceLabel}
-                onClick={(event) => setSourceMenu(event.currentTarget)}
-              >
-                <Icon name={SOURCE_ICONS[searchSource]} size={16} />
-                <Icon name="chevron-down" size={14} />
-              </button>
-            </div>
-          )}
-          <div className={styles.results} ref={resultsRef} onKeyDown={onRowsKeyDown}>
-            <div key={`${searchSource}:${filter}:${phase}`} className={styles.swap} data-swap={phase}>
-              {body}
-            </div>
+        <div className={styles.results} ref={resultsRef} onKeyDown={onRowsKeyDown}>
+          <div key={`${searchSource}:${filter}:${phase}`} className={styles.swap} data-swap={phase}>
+            {body}
           </div>
         </div>
       </Enter>
@@ -454,11 +446,4 @@ export function Search(): JSX.Element {
       </Popover>
     </div>
   );
-}
-
-function legacyHref(item: SearchHistoryItem): string {
-  const id = encodeURIComponent(item.id);
-  if (item.type === "artist") return `/artist?id=${id}`;
-  if (item.type === "album") return `/collection?type=album&id=${id}`;
-  return `/collection?type=playlist&id=${id}`;
 }

@@ -27,10 +27,11 @@ describe("seedFavorites", () => {
     const changed = vi.fn();
     recsChanged.addEventListener("change", changed);
 
-    await seedFavorites([
+    const seeds = await seedFavorites([
       { kind: "song", id: "s1", title: "Song s1" },
       { kind: "artist", id: "a1", title: "Nova" },
     ]);
+    expect(seeds.map((track) => track.id)).toEqual(["s1", "t2", "t3"]);
 
     const [url, init] = mocks.fetch.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://core/v1/recs/starters");

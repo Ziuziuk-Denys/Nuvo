@@ -1,32 +1,47 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { type Root, createRoot } from "react-dom/client";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
-import { Palette } from "./Palette";
+import { PaletteField } from "./Palette";
 import { useGateStore } from "../lock/gateState";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mocks = vi.hoisted(() => {
   const EN: Record<string, string> = {
-    "ui.palette.placeholder": "Type a command or setting",
-    "ui.palette.group_go": "Go to",
-    "ui.palette.group_playback": "Playback",
-    "ui.palette.group_window": "Window",
-    "ui.palette.group_settings": "Settings",
+    "ui.palette.field": "Search songs, artists or paste a link",
+    "ui.palette.suggested": "Suggested",
+    "ui.palette.actions": "Actions",
     "ui.palette.search": "Search",
     "ui.palette.settings": "Open Settings",
     "ui.palette.play_pause": "Play or pause",
     "ui.palette.next": "Next track",
     "ui.palette.lyrics": "Open lyrics",
     "ui.palette.setting": "Settings: {title}",
-    "ui.palette.none": "No matching commands",
+    "ui.search.none": "Nothing found for “{query}”.",
+    "ui.search.top": "Top result",
+    "ui.search.tab_songs": "Songs",
+    "ui.palette.collections": "Playlists and albums",
     "settings.cover_glow.title": "Cover glow",
   };
-  const track = { id: "t1", title: "Song" };
+  const current = { id: "t1", title: "Song" };
+  const song = (id: string, title: string) => ({
+    kind: "song",
+    id,
+    title,
+    subtitle: "Lorde",
+    cover: "",
+    track: { id, title, artists: "Lorde", durationMs: 200_000 },
+  });
   return {
     EN,
+    catalog: [
+      { kind: "artist", id: "lorde", title: "Lorde", subtitle: "", cover: "", href: "/artist?id=lorde" },
+      song("s1", "Liability"),
+      song("s2", "Supercut"),
+      { kind: "album", id: "m", title: "Melodrama", subtitle: "Lorde", cover: "", href: "/collection?type=album&id=m" },
+    ],
     player: { setFullscreen: vi.fn() },
     engine: {
       togglePlayPause: vi.fn(),
@@ -35,9 +50,13 @@ const mocks = vi.hoisted(() => {
       startRadioStation: vi.fn(),
       setShuffle: vi.fn(),
       setRepeat: vi.fn(),
-      getSnapshot: () => ({ currentTrack: track, shuffle: false, repeat: "off", playbackContext: null }),
+      primeUserGesture: vi.fn(),
+      playTrack: vi.fn(() => Promise.resolve()),
+      addToQueue: vi.fn(),
+      getSnapshot: () => ({ currentTrack: current, shuffle: false, repeat: "off", playbackContext: null }),
     },
-    modal: { openSettings: vi.fn(), openSettingsSection: vi.fn() },
+    settings: { openSettings: vi.fn(), openSettingsSection: vi.fn() },
+    history: { items: [] as { id: string; type: string; title: string }[], addItem: vi.fn() },
   };
 });
 
@@ -55,9 +74,29 @@ vi.mock("../../ports/player", () => ({
   nextRepeatMode: () => "all",
   isRadioContext: () => false,
 }));
-vi.mock("../../ports/navigation", () => ({
-  useModalStore: (select: (state: typeof mocks.modal) => unknown) => select(mocks.modal),
-  toggleWindowFullscreen: () => undefined,
+vi.mock("../../ports/navigation", async () => {
+  const { create } = await import("zustand");
+  const useModalStore = create<{ searchOpen: boolean; openSearch(): void; closeSearch(): void } & typeof mocks.settings>((set) => ({
+    searchOpen: false,
+    openSearch: () => set({ searchOpen: true }),
+    closeSearch: () => set({ searchOpen: false }),
+    ...mocks.settings,
+  }));
+  return { useModalStore, toggleWindowFullscreen: () => undefined };
+});
+vi.mock("../../ports/library", () => ({
+  useLikedTracks: () => ({ data: { tracks: [] } }),
+  usePlaylistsList: () => ({ data: { playlists: [] } }),
+}));
+vi.mock("../../ports/network", () => ({ useOfflineMode: () => false, useStreamingReachable: () => true }));
+vi.mock("../../ports/search", () => ({
+  useSearchAll: (query: string) => ({ items: query.trim() === "lorde" ? mocks.catalog : [], loading: false, hasLoaded: true, runNow: () => undefined }),
+  toSearchResult: (item: unknown) => item,
+  useSearchHistoryStore: (select: (state: typeof mocks.history) => unknown) => select(mocks.history),
+  loadSearchHistory: () => Promise.resolve(),
+  normalizeForSearch: (text: string) => text.toLowerCase(),
+  filterTracks: () => [],
+  songResult: () => null,
 }));
 vi.mock("../settings/settingItems", () => ({
   SETTING_ITEMS: [{ tabId: "Appearance", titleKey: "settings.cover_glow.title" }],
@@ -80,6 +119,11 @@ vi.mock("../../ports/shortcuts", () => {
 let root: Root;
 let host: HTMLDivElement;
 
+function Where() {
+  const location = useLocation();
+  return <output data-testid="where">{location.pathname + location.search}</output>;
+}
+
 beforeEach(() => {
   host = document.createElement("div");
   document.body.append(host);
@@ -88,7 +132,8 @@ beforeEach(() => {
   act(() =>
     root.render(
       <MemoryRouter>
-        <Palette />
+        <PaletteField />
+        <Where />
       </MemoryRouter>,
     ),
   );
@@ -100,8 +145,10 @@ afterEach(() => {
 });
 
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
-const input = () => dialog()!.querySelector("input")!;
-const rowTitles = () => [...dialog()!.querySelectorAll('[role="button"]')].map((row) => row.textContent);
+const input = () => host.querySelector<HTMLInputElement>("input")!;
+const options = () => [...dialog()!.querySelectorAll('[role="option"]')].map((row) => row.textContent);
+const groups = () => [...dialog()!.querySelectorAll('[role="group"]')].map((group) => group.getAttribute("aria-label"));
+const where = () => host.querySelector("[data-testid=where]")!.textContent;
 
 function ctrlK() {
   act(() => {
@@ -109,9 +156,9 @@ function ctrlK() {
   });
 }
 
-function press(key: string) {
+function press(key: string, shiftKey = false) {
   act(() => {
-    document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key, code: key, bubbles: true }));
+    input().dispatchEvent(new KeyboardEvent("keydown", { key, code: key, shiftKey, bubbles: true }));
   });
 }
 
@@ -127,24 +174,30 @@ async function settle() {
   await act(() => new Promise((resolve) => setTimeout(resolve, 300)));
 }
 
-describe("Palette", () => {
-  it("opens on Ctrl+K with the field focused and closes on Escape", async () => {
+describe("PaletteField", () => {
+  it("opens under the field on Ctrl+K with the field focused and closes on Escape", async () => {
     expect(dialog()).toBeNull();
+    expect(input().placeholder).toBe("Search songs, artists or paste a link");
     ctrlK();
     expect(dialog()).not.toBeNull();
     expect(document.activeElement).toBe(input());
-    expect(input().placeholder).toBe("Type a command or setting");
-    press("Escape");
+    expect(input().getAttribute("aria-expanded")).toBe("true");
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
     await settle();
     expect(dialog()).toBeNull();
   });
 
-  it("groups the five suggestions and shows their shortcuts as keycaps", () => {
+  it("opens when the field takes focus", () => {
+    act(() => input().focus());
+    expect(dialog()).not.toBeNull();
+  });
+
+  it("suggests five commands with their shortcuts as keycaps before anything is typed", () => {
     ctrlK();
-    const groups = [...dialog()!.querySelectorAll('[role="group"]')].map((group) => group.getAttribute("aria-label"));
-    expect(groups).toEqual(["Playback", "Go to"]);
-    expect(rowTitles()).toEqual(["Play or pauseSpace", "Open lyricsF", "Next trackControlRight", "Search/", "Open Settings"]);
-    expect([...dialog()!.querySelectorAll("kbd")].map((key) => key.textContent).slice(0, 2)).toEqual(["Space", "F"]);
+    expect(groups()).toEqual(["Suggested"]);
+    expect(options()).toEqual(["Play or pauseSpace", "Open lyricsF", "Search/", "Next trackControlRight", "Open Settings"]);
   });
 
   it("runs the second command on ArrowDown then Enter and closes", async () => {
@@ -157,19 +210,71 @@ describe("Palette", () => {
     expect(dialog()).toBeNull();
   });
 
-  it("opens a settings entry on its section", () => {
+  it("finds a settings entry among the actions and opens its section", () => {
     ctrlK();
     type("cover");
-    expect(rowTitles()).toEqual(["Settings: Cover glow"]);
+    expect(options()[0]).toBe("Settings: Cover glow");
     press("Enter");
-    expect(mocks.modal.openSettingsSection).toHaveBeenCalledWith("Appearance");
+    expect(mocks.settings.openSettingsSection).toHaveBeenCalledWith("Appearance");
+  });
+
+  it("shows the top result, songs and albums, plays a song on Enter and queues it on Shift Enter", () => {
+    ctrlK();
+    type("lorde");
+    expect(groups()).toEqual(["Top result", "Songs", "Playlists and albums"]);
+    expect(dialog()!.querySelector("[data-top]")!.textContent).toContain("Lorde");
+    press("ArrowDown");
+    press("Enter", true);
+    expect(mocks.engine.addToQueue).toHaveBeenCalledWith(expect.objectContaining({ id: "s1" }));
+    ctrlK();
+    type("lorde");
+    press("ArrowDown");
+    press("Enter");
+    expect(mocks.engine.playTrack).toHaveBeenCalledWith(expect.objectContaining({ id: "s1" }), [expect.objectContaining({ id: "s1" })], "search");
+    expect(mocks.history.addItem).toHaveBeenCalledWith(expect.objectContaining({ id: "s1", type: "track" }));
+  });
+
+  it("points the field at the selected row for assistive tech", () => {
+    ctrlK();
+    type("lorde");
+    press("ArrowDown");
+    const id = input().getAttribute("aria-activedescendant")!;
+    expect(document.getElementById(id)!.textContent).toContain("Liability");
+    expect(document.getElementById(input().getAttribute("aria-controls")!)!.getAttribute("role")).toBe("listbox");
+  });
+
+  it("jumps to the next section on Tab", () => {
+    ctrlK();
+    type("lorde");
+    press("Tab");
+    expect(dialog()!.querySelector("[data-selected]")!.textContent).toContain("Liability");
+    press("Tab");
+    expect(dialog()!.querySelector("[data-selected]")!.textContent).toContain("Melodrama");
+  });
+
+  it("ends with every result on the search page", () => {
+    ctrlK();
+    type("lorde");
+    expect(options().at(-1)).toContain("ui.palette.show_all");
+    press("ArrowUp");
+    press("Enter");
+    expect(where()).toBe("/search?q=lorde");
   });
 
   it("says so when nothing matches", () => {
     ctrlK();
     type("zzz");
-    expect(rowTitles()).toEqual([]);
-    expect(dialog()!.textContent).toContain("No matching commands");
+    expect(dialog()!.textContent).toContain("Nothing found for “zzz”.");
+  });
+
+  it("sends a pasted link to the search page", () => {
+    ctrlK();
+    act(() => {
+      const paste = new Event("paste", { bubbles: true }) as Event & { clipboardData: { getData(): string } };
+      paste.clipboardData = { getData: () => "https://youtu.be/abcdefghijk" };
+      input().dispatchEvent(paste);
+    });
+    expect(where()).toBe(`/search?link=1&q=${encodeURIComponent("https://youtu.be/abcdefghijk")}`);
   });
 
   it("toggles closed on a second Ctrl+K", async () => {

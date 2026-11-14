@@ -35,8 +35,8 @@ function HistoryRow({
   onForget(): void;
 }): JSX.Element {
   const forget = (
-    <button type="button" className={styles.remove} aria-label={removeLabel} onClick={onForget}>
-      <Icon name="close" size={16} />
+    <button type="button" className={styles.remove} aria-label={removeLabel} data-row-action="" onClick={onForget}>
+      <Icon name="close" size={14} />
     </button>
   );
   return (
@@ -63,15 +63,17 @@ export function SearchHistory({ onActivate }: SearchHistoryProps): JSX.Element {
   const removeLabel = t("ui.search.remove");
   return (
     <section className={styles.group} aria-label={recent}>
-      <h2 className={styles.heading}>{recent}</h2>
-      <div className={styles.rows}>
+      <div className={styles.headingLine}>
+        <h2 className={styles.heading}>{recent}</h2>
+        <button type="button" className={styles.more} onClick={forgetAll}>
+          {t("ui.search.clear_history")}
+        </button>
+      </div>
+      <div className={styles.columns}>
         {entries.map((entry) => (
           <HistoryRow key={entry.id} entry={entry} removeLabel={removeLabel} onOpen={() => onActivate(entry)} onForget={() => forget(entry.id)} />
         ))}
       </div>
-      <button type="button" className={styles.more} onClick={forgetAll}>
-        {t("ui.search.clear_history")}
-      </button>
     </section>
   );
 }

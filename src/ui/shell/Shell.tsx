@@ -17,7 +17,6 @@ import { useToolDownloadToast } from "./useToolDownloadToast";
 import { useAppIconSync, useLookSync } from "../ports/theme";
 import { ImportsHost } from "../screens/imports/ImportsHost";
 import { LyricsToolsHost } from "../screens/lyrics/LyricsToolsHost";
-import { Palette } from "../screens/palette/Palette";
 import { useGateStore } from "../screens/lock/gateState";
 import { useRecognizeDrop } from "../screens/recognize/recognizeDrop";
 import { useUndoToast } from "../recs/UndoNotice";
@@ -25,9 +24,8 @@ import { ShareSheetHost } from "../sheets/ShareSheet";
 import { SourceSheetHost } from "../sheets/SourceSheet";
 import { TrimSheetHost } from "../sheets/TrimSheet";
 import { Island } from "./island/Island";
-import { isEntityRoute, navigateWithTransition } from "./navigate";
+import { isEntityRoute } from "./navigate";
 import { usePageLit } from "./pageLit";
-import { Rail } from "./Rail";
 import { ShellScrollContext } from "./scroller";
 import { useShellStore } from "./shellStore";
 import styles from "./Shell.module.css";
@@ -69,6 +67,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     useShallow((store) => ({
       searchOpen: store.searchOpen,
       closeSearch: store.closeSearch,
+      openSearch: store.openSearch,
       showSettings: store.openSettingsSection,
     })),
   );
@@ -128,9 +127,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     return true;
   }, [karaokeShown, queueOpen, modal.searchOpen, onEntityPage, navigate]);
 
-  const openSearch = () => {
-    if (pathname !== "/search") navigateWithTransition(navigate, "/search");
-  };
+  const { openSearch } = modal;
 
   const openRecognize = () => {
     setFullscreen(false);
@@ -160,7 +157,6 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const chrome = karaokeShown ? null : (
     <motion.div key="chrome" variants={CHROME} exit="hidden" transition={{ ease: EASE.in, duration: seconds(DURATION_MS.quick) }}>
       <TopBar />
-      <Rail />
     </motion.div>
   );
 
@@ -175,7 +171,9 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
         data-player-below={trackLoaded && !pageLit ? "" : undefined}
       >
         <ShellScrollContext.Provider value={scroller}>
-          <div className={styles.column}>{onKaraokeRoute ? underlay : children}</div>
+          <div className={styles.column} data-page>
+            {onKaraokeRoute ? underlay : children}
+          </div>
         </ShellScrollContext.Provider>
       </div>
       {gated ? null : <Island />}
@@ -185,7 +183,6 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
       <TrimSheetHost />
       <SourceSheetHost />
       <LyricsToolsHost />
-      <Palette />
       <TourLayer />
       <KaraokeOverlay open={fullscreen} onClose={() => setFullscreen(false)} />
       {!fullscreen && onKaraokeRoute ? (

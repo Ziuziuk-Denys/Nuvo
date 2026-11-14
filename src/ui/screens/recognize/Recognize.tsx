@@ -232,6 +232,7 @@ function ResultCard({ song, onAgain }: { song: RecognizedSong; onAgain(): void }
           {track ? (
             <>
               <IconButton
+                tone="solo"
                 icon={liked ? "liked" : "like"}
                 label={liked ? t("ui.island.unlike") : t("ui.island.like")}
                 data-recognize-like=""
@@ -239,6 +240,7 @@ function ResultCard({ song, onAgain }: { song: RecognizedSong; onAgain(): void }
               />
               <IconButton
                 icon="playlist-add"
+                tone="solo"
                 label={t("common.add_to_playlist")}
                 aria-haspopup="dialog"
                 aria-expanded={addOpen}
