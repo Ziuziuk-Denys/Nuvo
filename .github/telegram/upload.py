@@ -30,9 +30,11 @@ def platform_of(name):
         arch = ARCH.get(match.group(3).lower(), match.group(3).lower())
         if os_name == "linux" and kind in ("appimage", "deb", "rpm"):
             return kind if arch == "x64" else f"{kind}_arm64" if arch == "arm64" else None
-        if os_name == "win" and arch == "x64" and kind == "exe":
-            return "windows"
-        return "macos" if os_name == "mac" and arch == "arm64" and kind == "dmg" else None
+        if os_name == "win" and kind == "exe":
+            return {"x64": "windows", "arm64": "windows_arm64"}.get(arch)
+        if os_name == "mac" and kind == "dmg":
+            return {"arm64": "macos", "x64": "macos_x64"}.get(arch)
+        return None
     if re.match(r"^Nuvo-\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?\.AppImage$", name, re.IGNORECASE):
         return "appimage"
     return "deb" if re.search(r"_amd64\.deb$", name, re.IGNORECASE) else None
