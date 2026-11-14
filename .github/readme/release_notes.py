@@ -8,25 +8,34 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 DATA = json.loads((HERE / "data.json").read_text())
-SYSTEMS = {".AppImage": "Linux", ".deb": "Linux", ".rpm": "Linux", ".tar.gz": "Linux", ".exe": "Windows", ".dmg": "macOS", ".zip": "macOS"}
-ORDER = ["Linux x64", "Linux arm64", "Windows x64", "Windows arm64", "macOS universal"]
+NAME = re.compile(r"^Nuvo-[^-]+(?:-[^-]+)?-(linux|win|mac)-(x86_64|amd64|x64|arm64|aarch64)\.(AppImage|deb|rpm|exe|zip|dmg)$")
+SYSTEMS = {"linux": "Linux", "win": "Windows", "mac": "macOS"}
+LABELS = {
+    ("linux", "AppImage"): "AppImage",
+    ("linux", "deb"): ".deb",
+    ("linux", "rpm"): ".rpm",
+    ("win", "exe"): "Installer",
+    ("win", "zip"): "Portable .zip",
+    ("mac", "dmg"): ".dmg",
+    ("mac", "zip"): ".zip",
+}
+ORDER = ["Linux x64", "Linux arm64", "Windows x64", "Windows arm64", "macOS Apple silicon", "macOS Intel"]
+RANK = list(LABELS)
 
 
 def describe(name):
-    extension = next((item for item in SYSTEMS if name.endswith(item)), None)
-    if extension is None:
+    match = NAME.match(name)
+    if not match or (match[1], match[3]) not in LABELS:
         return None
-    arch = "universal" if "universal" in name else "arm64" if re.search(r"arm64|aarch64", name) else "x64"
-    label = extension
-    if extension == ".exe":
-        label = "Installer" if "Setup" in name else "Portable"
-    elif extension == ".AppImage":
-        label = "AppImage"
-    return f"{SYSTEMS[extension]} {arch}", label
+    system, arch, extension = match.groups()
+    arm = arch in ("arm64", "aarch64")
+    row = f"macOS {'Apple silicon' if arm else 'Intel'}" if system == "mac" else f"{SYSTEMS[system]} {'arm64' if arm else 'x64'}"
+    return row, LABELS[(system, extension)]
 
 
 def rank(name):
-    return next((index for index, item in enumerate(SYSTEMS) if name.endswith(item)), len(SYSTEMS)), "Setup" not in name
+    match = NAME.match(name)
+    return RANK.index((match[1], match[3])) if match and (match[1], match[3]) in LABELS else len(RANK)
 
 
 def install_table(names, tag):
