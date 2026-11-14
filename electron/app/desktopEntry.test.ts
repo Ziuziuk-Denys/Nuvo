@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { homedir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ENTRY_SIZES, entryTarget, entryText, execArgument, syncDesktopEntry, systemEntryExists } from "./desktopEntry";
+import { ENTRY_SIZES, entryTarget, entryText, execArgument, retargetDesktopEntry, syncDesktopEntry, systemEntryExists } from "./desktopEntry";
 
 const temps: string[] = [];
 function temp(): string {
@@ -98,5 +98,18 @@ describe("syncDesktopEntry", () => {
     expect(await syncDesktopEntry(true, { ...deps, env: { ...deps.env, XDG_DATA_HOME: path.join(home, "elsewhere") } })).toBe("skipped");
     expect(existsSync(entry)).toBe(false);
     expect(existsSync(path.join(home, "elsewhere"))).toBe(false);
+  });
+});
+
+describe("retargetDesktopEntry", () => {
+  it("points Nuvo's own entry at the AppImage an update renamed, and leaves other entries alone", async () => {
+    const { deps, entry, home } = setup();
+    expect(retargetDesktopEntry("/opt/apps/Nuvo-0.3.1-linux-x86_64.AppImage", home)).toBe(false);
+    await syncDesktopEntry(true, deps);
+    expect(retargetDesktopEntry("/opt/apps/Nuvo-0.3.1-linux-x86_64.AppImage", home)).toBe(true);
+    expect(readFileSync(entry, "utf8")).toBe(entryText("/opt/apps/Nuvo-0.3.1-linux-x86_64.AppImage"));
+    writeFileSync(entry, "[Desktop Entry]\nExec=/mine\n");
+    expect(retargetDesktopEntry("/opt/apps/other.AppImage", home)).toBe(false);
+    expect(readFileSync(entry, "utf8")).toBe("[Desktop Entry]\nExec=/mine\n");
   });
 });

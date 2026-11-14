@@ -87,6 +87,14 @@ async function remove(deps: DesktopEntryDeps): Promise<boolean> {
   return true;
 }
 
+// an update renames a versioned AppImage while Nuvo quits, too late for the next sync to fix the menu
+export function retargetDesktopEntry(appImage: string, home: string): boolean {
+  const entry = paths(home).entry;
+  if (!ours(entry)) return false;
+  writeAtomic(entry, entryText(appImage));
+  return true;
+}
+
 export async function syncDesktopEntry(on: boolean, deps: DesktopEntryDeps): Promise<"written" | "current" | "removed" | "skipped"> {
   const appImage = entryTarget(deps.env, deps.home);
   if (!appImage) return "skipped";

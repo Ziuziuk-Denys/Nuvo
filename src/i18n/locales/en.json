@@ -943,11 +943,12 @@
         "failed": "The passphrase could not be saved. Try again."
       },
       "auto_update": {
-        "description": "Nuvo looks for new versions in the background and restarts only when you say so",
+        "description": "Nuvo looks for new versions every few hours, downloads them in the background and installs them when you quit",
+        "description_notify": "Nuvo looks for new versions every few hours and shows them here",
         "title": "Update automatically"
       },
       "update_available": "Version {version} is available",
-      "update_restart": "Restart to update",
+      "update_restart": "Restart now",
       "support": "Support Nuvo",
       "stats_pause": {
         "title": "Pause statistics",
@@ -970,11 +971,20 @@
         "diagnostics": "Add diagnostics",
         "open": "Open on GitHub"
       },
-      "update_downloading": "Downloading version {version}",
+      "update_downloading": "Downloading version {version}: {percent}%",
       "update_ready": "Version {version} is ready",
-      "update_ready_desc": "It installs when Nuvo restarts",
+      "update_ready_desc": "It installs when you quit Nuvo, or restart now",
       "update_available_desc": "Download it from the release page",
       "update_open": "Open the release page",
+      "update_check": "Check for updates",
+      "update_check_desc": "You have Nuvo {version}",
+      "update_check_now": "Check now",
+      "update_checking": "Checking for updates",
+      "update_latest": "Nuvo {version} is up to date",
+      "update_check_again": "Check again",
+      "update_error": "Could not check for updates",
+      "update_error_desc": "Check the connection. Nuvo also tries again on its own",
+      "update_retry": "Try again",
       "service": {
         "lyrics": "Lyrics",
         "recognition": "Recognition",

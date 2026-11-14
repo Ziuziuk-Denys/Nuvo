@@ -238,6 +238,7 @@ describe("shell e2e", () => {
       "onNetworkChanged",
       "getUpdateState",
       "onUpdateState",
+      "checkForUpdate",
       "installUpdate",
       "openReleasePage",
       "onAppCommand",

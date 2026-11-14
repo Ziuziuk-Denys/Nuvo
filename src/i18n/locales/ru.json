@@ -991,11 +991,12 @@
         "failed": "Не удалось сохранить фразу. Попробуйте ещё раз."
       },
       "auto_update": {
-        "description": "Nuvo ищет новые версии в фоне и перезапускается только когда вы скажете",
+        "description": "Nuvo проверяет новые версии каждые несколько часов, скачивает их в фоне и устанавливает при выходе",
+        "description_notify": "Nuvo проверяет новые версии каждые несколько часов и показывает их здесь",
         "title": "Обновляться автоматически"
       },
       "update_available": "Доступна версия {version}",
-      "update_restart": "Перезапустить для обновления",
+      "update_restart": "Перезапустить",
       "support": "Поддержать Nuvo",
       "stats_pause": {
         "title": "Пауза статистики",
@@ -1018,11 +1019,20 @@
         "diagnostics": "Добавить диагностику",
         "open": "Открыть на GitHub"
       },
-      "update_downloading": "Загружается версия {version}",
+      "update_downloading": "Загружается версия {version}: {percent}%",
       "update_ready": "Версия {version} готова",
-      "update_ready_desc": "Она установится при перезапуске Nuvo",
+      "update_ready_desc": "Она установится при выходе из Nuvo или сразу после перезапуска",
       "update_available_desc": "Скачайте её со страницы релиза",
       "update_open": "Открыть страницу релиза",
+      "update_check": "Проверить обновления",
+      "update_check_desc": "У вас Nuvo {version}",
+      "update_check_now": "Проверить",
+      "update_checking": "Проверяем обновления",
+      "update_latest": "Установлена последняя версия {version}",
+      "update_check_again": "Проверить снова",
+      "update_error": "Не удалось проверить обновления",
+      "update_error_desc": "Проверьте подключение. Nuvo попробует снова сам",
+      "update_retry": "Повторить",
       "service": {
         "lyrics": "Тексты песен",
         "recognition": "Распознавание",

@@ -55,6 +55,7 @@ const shell: NuvoShell = {
   getDiscordStatus: () => invoke("discord:status"),
   getUpdateState: () => invoke("update:get-state"),
   onUpdateState: on("update:state"),
+  checkForUpdate: () => invoke("update:check"),
   installUpdate: () => invoke("update:install"),
   openReleasePage: () => invoke("update:open-release"),
   setGlobalShortcuts: (bindings) => invoke("shortcuts:set-global", bindings),
