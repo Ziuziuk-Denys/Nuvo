@@ -29,7 +29,11 @@ The full list is in [the release notes]({{repo}}/releases/tag/v{{version}}).
 
 ## Why Nuvo
 
+Each point links its sources, read on {{matrix-checked}}, and says so when another player matches it.
+
 {{why}}
+
+{{speed-summary}}
 
 {{speed}}
 

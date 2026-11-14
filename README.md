@@ -128,14 +128,24 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 ## Why Nuvo
 
-- **Free, with nothing locked.** No plan to choose, no subscription, no ads.
-- **The source is right here.** AGPL-3.0-or-later. Read it, build it, change it.
-- **No account.** There is no Nuvo server, so there is nothing to sign up for and nothing to leak from one.
-- **Your library stays yours.** An encrypted database on your machine, its key in your system keyring, and 24 words to restore it.
-- **Two sources in one search.** YouTube and SoundCloud results come back as one ranked list.
-- **Lyrics where there were none.** Nuvo times every word on your computer, and writes the lyrics when a song has none.
+Each point links its sources, read on 2026-11-14, and says so when another player matches it.
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/speed-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/speed-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/speed-dark.svg"><img src=".github/readme/speed-light.svg" width="100%" alt="Memory at idle, whole app. Every process of each app, 30 seconds after its window appears, with an empty profile. Lower is better. Nuvo being measured, Liner 504.3 MB, Riff 422.1 MB, Spotify 567 MB, YouTube Music 544.5 MB, Apple Music 673.7 MB, Strawberry 128.7 MB."></picture>
+- **Free, all of it.** Every feature, no plan to pick. Nuvo Plus costs nothing, since it does not exist. Liner Plus costs $4 a month, and Mpthree Plus costs 149 ₽ per 30 days and holds Mpthree's equalizer, effects, crossfade, shortcuts and song recognition. Riff is free too. <sub>[Liner pricing](https://tryliner.fun/) · [Mpthree plans](https://mpthree.fun/tariffs) · [Riff FAQ](https://github.com/rootscripts/riff/blob/ac68b13/README.md#faq)</sub>
+- **The source is right here.** AGPL-3.0-or-later: read it, build it, fork it and share your fork. Liner's licence forbids public forks and any build that talks to a server other than Liner's. Mpthree publishes no source. Riff is open as well, under MIT. <sub>[Liner licence](https://github.com/tryliner/desktop/blob/197179b/LICENSE) · [Mpthree terms, 2.1](https://mpthree.fun/legal) · [Riff licence](https://github.com/rootscripts/riff/blob/ac68b13/LICENSE)</sub>
+- **No account, no Nuvo server.** Your library lives in one file on your machine, so you have no password to forget. Liner keeps your library, playlists and plays on its server under your account, and Mpthree needs an account for Plus. Riff skips the account too. <sub>[Liner privacy](https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md) · [Mpthree terms, 7.3](https://mpthree.fun/legal) · [Riff FAQ](https://github.com/rootscripts/riff/blob/ac68b13/README.md#faq)</sub>
+- **Encrypted, with a way back in.** Nuvo encrypts your library and its audio cache. If the system keyring goes missing, your 24-word recovery phrase opens it. We found no encrypted library or recovery phrase on the official pages of Liner, Riff or Mpthree. <sub>[Liner privacy](https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md) · [Liner storage](https://github.com/tryliner/desktop/blob/197179b/docs/STORAGE.md) · [Riff README](https://github.com/rootscripts/riff/blob/ac68b13/README.md) · [Mpthree terms](https://mpthree.fun/legal)</sub>
+- **The whole sound kit, free.** A ten-band equalizer with twelve presets, speed, pitch and reverb, crossfade, gapless playback and loudness normalization. Mpthree sells its equalizer, speed, reverb and crossfade as Plus. Riff gives you an equalizer, speed, pitch and reverb at no cost. <sub>[Mpthree terms, 2.3](https://mpthree.fun/legal) · [Riff README](https://github.com/rootscripts/riff/blob/ac68b13/README.md)</sub>
+- **Name that song.** Nuvo recognizes a song from a file, a link, your microphone or what your computer plays (the last two on Linux), and keeps a history. Mpthree puts recognition in Plus. Liner and Riff do not document it. <sub>[Mpthree terms, 2.3](https://mpthree.fun/legal) · [Liner site](https://tryliner.fun/) · [Riff site](https://riff.hs.vc/)</sub>
+- **Lyrics for songs that have none.** Nuvo listens to the track and times every word on your computer. Liner, Riff and Mpthree describe online lyrics, LRC files and manual offsets. <sub>[Nuvo 0.3.0](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.3.0) · [Liner site](https://tryliner.fun/) · [Riff README](https://github.com/rootscripts/riff/blob/ac68b13/README.md) · [Mpthree site](https://mpthree.fun/)</sub>
+- **Bring your library as a file.** Exports from Soundiiz, TuneMyMusic and Google Takeout, Spotify CSV, XSPF and plain text, plus links from Spotify, Apple Music, Deezer, SoundCloud and Yandex Music. Riff takes links, Yandex Music among them, and its own JSON file. Liner takes links. <sub>[Nuvo 0.3.0](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.3.0) · [Riff site](https://riff.hs.vc/) · [Liner privacy](https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md)</sub>
+- **Statistics that stay yours.** A story of your listening, charts, top lists and drill-downs, which you can export, delete or pause. Liner sends play events to its server for history and recommendations. <sub>[Liner privacy](https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md)</sub>
+- **A proxy built in.** SOCKS5 with a login and a connection check for each service, so you see which one your network blocks. Liner's FAQ points you to a VPN. <sub>[Liner FAQ](https://github.com/tryliner/desktop/blob/197179b/docs/FAQ.md)</sub>
+- **arm64 for Linux and Windows.** Liner 0.2.11, Riff 0.7.5 and Mpthree 1.1.0 list no arm64 build for either system. Pear Desktop does ship them. <sub>[Liner 0.2.11](https://github.com/tryliner/desktop/releases/tag/v0.2.11) · [Riff 0.7.5](https://github.com/rootscripts/riff/releases/tag/v0.7.5) · [Mpthree downloads](https://mpthree.fun/) · [Pear Desktop 3.12.0](https://github.com/pear-devs/pear-desktop/releases/tag/v3.12.0)</sub>
+- **Small tools.** Moments to mark a spot and jump back, an A-B loop, trims for a song's start and end, romanized lyrics, a dislike button on every song and a reason beside each recommendation.
+
+Nuvo 0.3.0 shows text in its window 367 ms after launch, then idles at 385.5 MB and 0.27 % of one core. Strawberry, a native Qt player, needs about a third of that memory, so it stays in the chart.
+
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/speed-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/speed-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/speed-dark.svg"><img src=".github/readme/speed-light.svg" width="100%" alt="Memory at idle, whole app. Every process of each app, 30 seconds after its window appears, with an empty profile. Lower is better. Nuvo 385.5 MB, Liner 504.3 MB, Riff 422.1 MB, Spotify 567 MB, YouTube Music 544.5 MB, Apple Music 673.7 MB, Strawberry 128.7 MB."></picture>
 
 <details>
 <summary><b>Every number and how we measured it</b></summary>
@@ -144,27 +154,29 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 | App | Idle memory | Processes | Idle CPU | Cold start | Playing CPU | Installed size |
 |---|---|---|---|---|---|---|
-| Nuvo | being measured | being measured | being measured | being measured | being measured | being measured |
-| Liner | 504.3 MB (502.2 to 505.1) | 8 | 1.2 % (1.17 to 1.23) | 1053 ms (966 to 1404) | being measured | 549.1 MB |
-| Riff | 422.1 MB (421.4 to 422.6) | 7 | 10.87 % (10.67 to 11.2) | 9215 ms, bimodal: 1628 to 9873 ms, median 9215 ms | being measured | 366.3 MB, 366.3 MB extracted (AppImage 132.8) |
-| Spotify | 567 MB (558.4 to 568.6) | 9 | 1.5 % (0.43 to 2.07) | no usable-window figure: first window at 435 to 447 ms, probably a splash | being measured | 14.1 MB flatpak app, plus a shared runtime; first-run download not measured |
-| YouTube Music | 544.5 MB (533.1 to 547.9) | 17 | 0.6 % (0.3 to 3.23) | 2999 ms (2108 to 4405), 2999 ms (2108 to 4405), includes network | being measured | being measured |
-| Apple Music | 673.7 MB (664 to 676.8) | 17 | 0.8 % (0.53 to 3.03) | 3157 ms (2173 to 3741), 3157 ms (2173 to 3741), includes network | being measured | being measured |
-| Strawberry | 128.7 MB (128.6 to 129.6) | 2 | 0.37 % (0.3 to 0.37) | 1132 ms (834 to 1342) | 1.3 % (1.27 to 1.37) | 22.6 MB, 22.6 MB flatpak app, plus the KDE runtime (about 1.1 GB, shared) |
+| Nuvo | 385.5 MB (384.1 to 387.5) | 6 | 0.27 % (0.23 to 0.33) | 367 ms (365 to 381) | 3.5 % (3.35 to 3.7) | 323.6 MB, unpacked (AppImage 135.3, .deb 106.5) |
+| Liner | 504.3 MB (502.2 to 505.1) | 8 | 1.2 % (1.17 to 1.23) | 1053 ms (966 to 1404) | not measured | 549.1 MB |
+| Riff | 422.1 MB (421.4 to 422.6) | 7 | 10.87 % (10.67 to 11.2) | 9215 ms, bimodal: 1628 to 9873 ms | not measured | 366.3 MB, extracted (AppImage 132.8) |
+| Spotify | 567 MB (558.4 to 568.6) | 9 | 1.5 % (0.43 to 2.07) | no usable-window figure: first window at 435 to 447 ms, probably a splash | not measured | 14.1 MB flatpak app, plus a shared runtime; first-run download not measured |
+| YouTube Music | 544.5 MB (533.1 to 547.9) | 17 | 0.6 % (0.3 to 3.23) | 2999 ms (2108 to 4405), includes network | not measured | not measured |
+| Apple Music | 673.7 MB (664 to 676.8) | 17 | 0.8 % (0.53 to 3.03) | 3157 ms (2173 to 3741), includes network | not measured | not measured |
+| Strawberry | 128.7 MB (128.6 to 129.6) | 2 | 0.37 % (0.3 to 0.37) | 1132 ms (834 to 1342) | 1.3 % (1.27 to 1.37) | 22.6 MB, flatpak app, plus the KDE runtime (about 1.1 GB, shared) |
 
-- **Machine.** AMD Ryzen 9 PRO 7945, 30 GB, Fedora, Linux 7.2.11, GNOME on Wayland.
-- **Other apps.** Measured on 2026-11-07, 5 runs per figure, 6 for Spotify, each with its own empty profile and no login. Liner: sign-in screen. Riff 44.2.0: logged out. Spotify: logged-out flatpak client. Strawberry 1.2.31: flatpak, empty library. YouTube Music and Apple Music: a web tab, logged out, in a fresh Chrome 156 profile. Each run started a fresh process; the page cache was not dropped.
-- **Nuvo 0.3.0.** Measured on the same machine in the same way. Its row says "being measured" until the numbers are in.
-- **Idle.** Memory is PSS summed over the whole process tree, read 30 s after the window appeared. CPU is user plus system time of the tree over the next 30 s, in percent of one core.
-- **Cold start.** The definitions differ, so read it as a rough guide. Nuvo, Liner, Riff and the web tabs: the first frame with the window visible and text, read over the DevTools protocol; the web-tab figure includes the network. Spotify and Strawberry have no such hook: the first mapped window of at least 200 by 200 pixels.
-- **Playing.** Strawberry played a 240 s tone with its stream volume at 0, measured 30 s after the start. Liner, Spotify, Riff and the web tabs are not measured: playback needs an account, and we did not attempt one.
-- **The lightest here.** Strawberry, a native Qt player, used 128.7 MB at idle and 1.3 % of one core while playing.
+- **Two dates.** Nuvo 0.3.0 was measured on 2026-11-14, the other apps a week earlier, on 2026-11-07. Same machine, same method, a newer kernel for Nuvo.
+- **Machine.** AMD Ryzen 9 PRO 7945, 30 GB, Fedora, GNOME on Wayland. Linux 7.2.11 for the other apps, 7.3.3 for Nuvo.
+- **Nuvo 0.3.0.** The Linux x64 build of tag v0.3.0, 5 runs, each on its own empty profile in a separate session with the sound muted. Other jobs were running on the machine, with a load average of 6.8 at the end.
+- **Other apps.** 5 runs per figure, 6 for Spotify, each with its own empty profile and no login. Liner: sign-in screen. Riff 44.2.0: logged out. Spotify: logged-out flatpak client. Strawberry 1.2.31: flatpak, empty library. YouTube Music and Apple Music: a web tab, logged out, in a fresh Chrome 156 profile. Each run started a fresh process; the page cache was not dropped.
+- **Idle.** Memory is PSS summed over the whole process tree, read 30 s after the window appeared (for Nuvo, 30 s after Home appeared). CPU is user plus system time of the tree over the next 30 s, in percent of one core.
+- **Cold start.** The definitions differ, so read it as a rough guide. Nuvo, Liner, Riff and the web tabs: the first frame with the window visible and text; the web-tab figure includes the network. Spotify and Strawberry have no such hook: the first mapped window of at least 200 by 200 pixels.
+- **Playing.** Nuvo played a cached 90 s tone, muted, with a 5,000-song playlist open; CPU over seconds 40 to 60. Strawberry played a 240 s tone with its stream volume at 0, measured 30 s after the start. Liner, Spotify, Riff and the web tabs are not measured: playback needs an account, and we did not attempt one.
+- **Installed size.** Nuvo: the unpacked Linux x64 build, with the AppImage and .deb sizes from the release.
+- **Where Nuvo loses.** Strawberry used 128.7 MB at idle against Nuvo's 385.5 MB, and 1.3 % of one core while playing against 3.5 %.
 - **Published, not measured by us.** Riff's README claims about 180 MB during playback, with no method given ([source](https://github.com/rootscripts/riff#memory-usage), read 2026-11-07). We measured 422 MB at idle on its AppImage.
-- **Not measured.** The installed size of the web tabs, a start with a dropped page cache, other machines. Nothing here is estimated.
+- **Not measured.** The installed size of the web tabs, a start with a dropped page cache, other machines, Mpthree. Nothing here is estimated.
 
 </details>
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/matrix-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/matrix-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/matrix-dark.svg"><img src=".github/readme/matrix-light.svg" width="100%" alt="Nuvo&#x27;s 102 features, app by app. Liner: 31 yes, 9 partly, 13 no, 49 unknown; Riff: 44 yes, 18 partly, 2 no, 38 unknown; Spotify: 12 yes, 7 partly, 0 no, 83 unknown; YouTube Music: 3 yes, 3 partly, 0 no, 96 unknown; Apple Music: 9 yes, 4 partly, 0 no, 89 unknown; Strawberry: 8 yes, 1 partly, 0 no, 93 unknown."></picture>
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/matrix-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/matrix-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/matrix-dark.svg"><img src=".github/readme/matrix-light.svg" width="100%" alt="Nuvo&#x27;s 109 features, app by app. Liner: 32 yes, 11 partly, 4 no, 62 unknown; Riff: 44 yes, 25 partly, 1 no, 39 unknown; Spotify: 12 yes, 7 partly, 0 no, 90 unknown; YouTube Music: 3 yes, 3 partly, 0 no, 103 unknown; Apple Music: 9 yes, 4 partly, 0 no, 96 unknown; Strawberry: 8 yes, 2 partly, 0 no, 99 unknown; Mpthree: 0 yes, 11 partly, 1 no, 97 unknown."></picture>
 
 <details>
 <summary><b>Every row, app by app</b></summary>
@@ -173,140 +185,147 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 #### Playback and sound (22)
 
-| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry |
-|---|---|---|---|---|---|---|---|
-| Now-playing bar with seek, volume and track info | Yes | Yes | Yes | Yes | *unknown* | *unknown* | Yes |
-| Queue panel (play next, add to queue) | Yes | Yes | Yes | Yes | *unknown* | Yes | *unknown* |
-| Shuffle and repeat (off, all, one) | Yes | Yes | Yes | Yes | *unknown* | Yes | *unknown* |
-| Radio from a song or artist | Yes | Yes | Yes | *unknown* | *unknown* | Partly | *unknown* |
-| Autoplay similar songs | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Crossfade and gapless transitions | Yes | No | Partly | Yes | *unknown* | Yes | *unknown* |
-| Loudness normalization and auto gain | Yes | No | Yes | Yes | *unknown* | Yes | Yes |
-| Output device choice | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Best quality switch | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| 10-band equalizer with 12 presets | Yes | Partly | Yes | Partly | *unknown* | *unknown* | Yes |
-| Speed, pitch and reverb presets (slowed, nightcore, daycore) | Yes | Yes | Yes | Partly | *unknown* | *unknown* | *unknown* |
-| Sleep timer | Yes | No | Yes | Partly | Yes | *unknown* | *unknown* |
-| A-B loop (set start, set end, clear) | Yes | No | No | *unknown* | *unknown* | *unknown* | *unknown* |
-| Pause on device change | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Click to play or queue, and what plays on launch | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Offline mode | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Saved audio with a cache size limit | Yes | Yes | Yes | Partly | Partly | Partly | Yes |
-| Keep this version / Not this one (fix a wrong match) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Media keys and MPRIS | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | Yes |
-| Moments: mark a place in a song and jump back to it | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Trim a song's start and end | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Choose which source a song plays from | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
+|---|---|---|---|---|---|---|---|---|
+| Now-playing bar with seek, volume and track info | Yes | Yes | Yes | Yes | *unknown* | *unknown* | Yes | *unknown* |
+| Queue panel (play next, add to queue) | Yes | Yes | Yes | Yes | *unknown* | Yes | *unknown* | *unknown* |
+| Shuffle and repeat (off, all, one) | Yes | Yes | Yes | Yes | *unknown* | Yes | *unknown* | *unknown* |
+| Radio from a song or artist | Yes | Yes | Yes | *unknown* | *unknown* | Partly | *unknown* | *unknown* |
+| Autoplay similar songs | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | Partly |
+| Crossfade and gapless transitions | Yes | *unknown* | Partly | Yes | *unknown* | Yes | *unknown* | Partly |
+| Loudness normalization and auto gain | Yes | *unknown* | Yes | Yes | *unknown* | Yes | Yes | *unknown* |
+| Output device choice | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Best quality switch | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| 10-band equalizer with 12 presets | Yes | Partly | Partly | Partly | *unknown* | *unknown* | Yes | Partly |
+| Speed, pitch and reverb presets (slowed, nightcore, daycore) | Yes | Yes | Yes | Partly | *unknown* | *unknown* | *unknown* | Partly |
+| Sleep timer | Yes | *unknown* | Yes | Partly | Yes | *unknown* | *unknown* | *unknown* |
+| A-B loop (set start, set end, clear) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Pause on device change | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Click to play or queue, and what plays on launch | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Offline mode | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Saved audio with a cache size limit | Yes | Yes | Yes | Partly | Partly | Partly | Yes | *unknown* |
+| Keep this version / Not this one (fix a wrong match) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Media keys and MPRIS | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | Yes | *unknown* |
+| Moments: mark a place in a song and jump back to it | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Trim a song's start and end | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Choose which source a song plays from | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
-#### Lyrics (8)
+#### Lyrics (9)
 
-| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry |
-|---|---|---|---|---|---|---|---|
-| Synced lyrics pane | Yes | Yes | Yes | Yes | Yes | Yes | *unknown* |
-| Karaoke view | Yes | Yes | Yes | *unknown* | *unknown* | Yes | *unknown* |
-| Lyrics timing offset | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Romanized lyrics | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Lyrics editor: paste and time your own lyrics | Yes | No | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Lyrics translation on your machine | Yes | No | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Lyrics version choice (plain, line, word) | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Karaoke highlight modes (line, word, fill, step) | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
+| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
+|---|---|---|---|---|---|---|---|---|
+| Synced lyrics pane | Yes | Yes | Yes | Yes | Yes | Yes | *unknown* | Partly |
+| Karaoke view | Yes | Yes | Yes | *unknown* | *unknown* | Yes | *unknown* | *unknown* |
+| Lyrics timing offset | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Romanized lyrics | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Lyrics editor: paste and time your own lyrics | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Lyrics translation on your machine | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Lyrics version choice (plain, line, word) | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Karaoke highlight modes (line, word, fill, step) | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Lyrics timed on your machine for songs that have none | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
 #### Discovery (13)
 
-| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry |
-|---|---|---|---|---|---|---|---|
-| Mixes on Home (for you, something new, artist mixes) | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Recently liked and most saved shelves | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Pin to Home | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Reasons shown for recommendations | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Not interested controls (exact song, any version, artist for a while or always) | Yes | No | Partly | Partly | Partly | *unknown* | *unknown* |
-| Hidden music list with Show again | Yes | *unknown* | Yes | Partly | *unknown* | *unknown* | *unknown* |
-| Start with a few artists you like | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Playlist suggestions | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Recognize a song (microphone, this computer or a file) with history | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Statistics page: story, charts, top lists and drill-downs | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Export, delete and pause your statistics | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Dislike button on every song | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Listening history with filters | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
+|---|---|---|---|---|---|---|---|---|
+| Mixes on Home (for you, something new, artist mixes) | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Recently liked and most saved shelves | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Pin to Home | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Reasons shown for recommendations | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Not interested controls (exact song, any version, artist for a while or always) | Yes | *unknown* | Partly | Partly | Partly | *unknown* | *unknown* | *unknown* |
+| Hidden music list with Show again | Yes | *unknown* | Yes | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
+| Start with a few artists you like | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Playlist suggestions | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Recognize a song (microphone, this computer or a file) with history | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | Partly |
+| Statistics page: story, charts, top lists and drill-downs | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | Partly |
+| Export, delete and pause your statistics | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Dislike button on every song | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Listening history with filters | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
-#### Search, links and sharing (6)
+#### Search, links and sharing (7)
 
-| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry |
-|---|---|---|---|---|---|---|---|
-| Search for songs, albums, artists and playlists | Yes | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* |
-| Search history | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Paste a link to play or import (YouTube Music, Apple Music, Deezer, SoundCloud) | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Song from a TikTok link or video, found by listening | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Share links and copy list | Yes | Yes | Yes | Yes | *unknown* | Yes | *unknown* |
-| Command palette | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
+|---|---|---|---|---|---|---|---|---|
+| Search for songs, albums, artists and playlists | Yes | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
+| Search history | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Paste a link to play or import (YouTube Music, Apple Music, Deezer, SoundCloud) | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Song from a TikTok link or video, found by listening | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Share links and copy list | Yes | Yes | *unknown* | Yes | *unknown* | Yes | *unknown* | *unknown* |
+| Command palette | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Search YouTube and SoundCloud together | Yes | No | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
-#### Library and files (26)
+#### Library and files (28)
 
-| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry |
-|---|---|---|---|---|---|---|---|
-| Library tabs: playlists, albums, artists, on this computer | Yes | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* |
-| Grid and list view with filter | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Liked songs | Yes | Yes | Yes | Yes | Yes | *unknown* | *unknown* |
-| Create and delete playlists | Yes | Yes | Yes | *unknown* | *unknown* | Yes | Yes |
-| Change playlist cover | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Duplicate finder and tidy with undo | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Sort tracks by title or length | Yes | Yes | Yes | Yes | *unknown* | Yes | *unknown* |
-| Select several songs for bulk actions | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Local music folders with watching and .lrc files | Yes | Partly | Yes | Partly | Partly | Partly | Yes |
-| Import a playlist from a link | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Import SoundCloud likes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Import a Spotify export file (CSV) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Import report with match review | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Export playlists as CSV, JSON or M3U8 | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Export the library as CSV or JSON | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Save songs as files | Yes | Partly | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Artist page | Yes | Yes | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Album page | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| YouTube account sign-in, playback and playlist sync | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Import a Spotify playlist or album from its link | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Keep a playlist offline | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Merge playlists and move songs between them, with undo | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Recently deleted playlists with Restore | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Save format: original or MP3 | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Pin a playlist, album or artist to the sidebar | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Explicit mark on songs their source calls explicit | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
+|---|---|---|---|---|---|---|---|---|
+| Library tabs: playlists, albums, artists, on this computer | Yes | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | Partly |
+| Grid and list view with filter | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Liked songs | Yes | Yes | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* |
+| Create and delete playlists | Yes | Yes | Yes | *unknown* | *unknown* | Yes | Yes | *unknown* |
+| Change playlist cover | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Duplicate finder and tidy with undo | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Sort tracks by title or length | Yes | Yes | Yes | Yes | *unknown* | Yes | *unknown* | *unknown* |
+| Select several songs for bulk actions | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Local music folders with watching and .lrc files | Yes | Partly | Yes | Partly | Partly | Partly | Yes | Partly |
+| Import a playlist from a link | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Import SoundCloud likes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Import a Spotify export file (CSV) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Import report with match review | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Export playlists as CSV, JSON or M3U8 | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Export the library as CSV or JSON | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Save songs as files | Yes | Partly | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Artist page | Yes | Yes | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Album page | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| YouTube account sign-in, playback and playlist sync | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Import a Spotify playlist or album from its link | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Keep a playlist offline | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Merge playlists and move songs between them, with undo | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Recently deleted playlists with Restore | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Save format: original or MP3 | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Pin a playlist, album or artist to the sidebar | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Explicit mark on songs their source calls explicit | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Import files from Soundiiz, TuneMyMusic, Google Takeout, XSPF or plain text | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Import a Yandex Music playlist from its link | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
-#### Look and feel (17)
+#### Look and feel (18)
 
-| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry |
-|---|---|---|---|---|---|---|---|
-| Theme presets (nine) | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Accent from the cover | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Cover glow | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Language choice (English, Russian) | Yes | Yes | Yes | Yes | *unknown* | *unknown* | Yes |
-| Fonts and interface size | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Theme editor with colour roles | Yes | No | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Theme import and export | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Custom CSS | Yes | No | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Wallpaper with blur and dimming | Yes | Partly | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Reset customization and safe mode | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| The Notch (mini player with lyrics and pulse) | Yes | Partly | Partly | *unknown* | *unknown* | Partly | *unknown* |
-| Keep running in the tray | Yes | No | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Rebindable shortcuts, in the app and global | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | Partly |
-| Guided first-run tour | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Reduce effects | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Window zoom from the keyboard | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Panel widget for GNOME, Plasma and Waybar | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
+|---|---|---|---|---|---|---|---|---|
+| Theme presets (nine) | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | Partly |
+| Accent from the cover | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Cover glow | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Language choice (English, Russian) | Yes | Yes | Yes | Yes | *unknown* | *unknown* | Yes | *unknown* |
+| Fonts and interface size | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Theme editor with colour roles | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Theme import and export | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Custom CSS | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Wallpaper with blur and dimming | Yes | Partly | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Reset customization and safe mode | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| The Notch (mini player with lyrics and pulse) | Yes | Partly | Partly | *unknown* | *unknown* | Partly | *unknown* | *unknown* |
+| Keep running in the tray | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Rebindable shortcuts, in the app and global | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | Partly | Partly |
+| Guided first-run tour | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Reduce effects | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Window zoom from the keyboard | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Panel widget for GNOME, Plasma and Waybar | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Wallpaper: photo, GIF or video | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
-#### Privacy and system (10)
+#### Privacy and system (12)
 
-| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry |
-|---|---|---|---|---|---|---|---|
-| Encrypted library with recovery phrase unlock | Yes | No | No | *unknown* | *unknown* | *unknown* | *unknown* |
-| Passphrase protection when no system keyring exists | Yes | No | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Proxy setting | Yes | No | Partly | *unknown* | *unknown* | *unknown* | *unknown* |
-| Connection check and report | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Helper tools download (yt-dlp, ffmpeg) | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Automatic updates | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* |
-| Last.fm scrobbling | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Discord status switch | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| What's new after an update | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
-| Report a problem with a filled GitHub issue | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
+|---|---|---|---|---|---|---|---|---|
+| Encrypted library with recovery phrase unlock | Yes | No | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Passphrase protection when no system keyring exists | Yes | No | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Proxy setting | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Connection check and report | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Helper tools download (yt-dlp, ffmpeg) | Yes | *unknown* | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Automatic updates | Yes | Yes | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Last.fm scrobbling | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Discord status switch | Yes | Yes | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| What's new after an update | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Report a problem with a filled GitHub issue | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| SOCKS5 proxy with login and a per-service check | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| arm64 builds for Linux and Windows | Yes | No | No | *unknown* | *unknown* | *unknown* | Partly | No |
 
 </details>
 
@@ -317,12 +336,13 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 - Unknown means we found no source we could cite. It does not mean the app lacks the feature, and it is never counted as a no.
 - Yes and Partly cells have a source in .github/readme/comparison-sources.json. No cells rest on a repository we read or a limit the product's own docs state.
-- Riff cells come from its README and settings page at commit 33fa5ff. Liner cells come from its README, docs and source at commit eea9a6a. Both may have changed since.
+- Liner cells come from its README, docs and website at commit 197179b, and Riff cells from its README at ac68b13 and riff.hs.vc, all read on 2026-11-14. Older cells keep their 2026-11-07 sources. On 2026-11-14 we turned 14 Liner and Riff cells whose earlier source was never recorded into unknown.
+- Mpthree cells come from mpthree.fun, its tariffs and its terms (in Russian, updated 2026-11-07), read on 2026-11-14. Mpthree Plus costs 149 ₽ per 30 days; features that need Plus are marked Partly.
 - Spotify, YouTube Music and Apple Music cells come from their help pages, except three cells sourced from SlashGear. Several rows carry over from an earlier pass whose source was not recorded; they are marked in the sources file.
 - Nuvo cells describe the app on Linux, its main platform. The Windows and macOS builds are the same app, except that MPRIS, the panel widgets and recognition from the microphone or system sound are Linux only. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.
 - The rows are the features of the Nuvo app, so they favour Nuvo by construction. A feature another app has and Nuvo lacks is not listed here.
 
-Checked 2026-11-07. Sources: [Riff](https://github.com/rootscripts/riff), [Liner](https://github.com/tryliner/desktop), [Strawberry](https://github.com/strawberrymusicplayer/strawberry), [Spotify help](https://support.spotify.com/), [YouTube Music help](https://support.google.com/youtubemusic), [Apple Music guide](https://support.apple.com/guide/music-windows/). Every cell has its source in [comparison-sources.json](.github/readme/comparison-sources.json). If a cell is wrong, open an issue.
+Checked 2026-11-14. Sources: [Riff](https://github.com/rootscripts/riff), [Liner](https://github.com/tryliner/desktop), [Strawberry](https://github.com/strawberrymusicplayer/strawberry), [Mpthree](https://mpthree.fun/), [Spotify help](https://support.spotify.com/), [YouTube Music help](https://support.google.com/youtubemusic), [Apple Music guide](https://support.apple.com/guide/music-windows/). Every cell has its source in [comparison-sources.json](.github/readme/comparison-sources.json). If a cell is wrong, open an issue.
 
 </details>
 
