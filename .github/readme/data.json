@@ -1,342 +1,216 @@
 {
   "repo": "https://github.com/Ziuziuk-Denys/Nuvo",
-  "version": "0.2.10",
-  "prerelease": "0.2.11-beta.5",
   "site": "https://nuvo.quest",
-  "unsigned": "Builds are not signed with a paid certificate yet. A certificate costs money every year and Nuvo is free, so your system may warn you the first time:\n\n- **Windows:** in SmartScreen, choose **More info**, then **Run anyway**.\n- **macOS:** open Nuvo once. When macOS blocks it, go to **System Settings**, **Privacy & Security**, and press **Open Anyway**.\n- **Linux:** make the AppImage executable and run it.",
-  "pendingLabel": "not measured",
+  "version": "0.3.0",
   "tagline": "The local-first music player.",
-  "build": {
-    "date": "2026-11-07",
-    "label": "packaged build, Nuvo 0.2.10, linux-unpacked",
-    "short": "packaged build",
-    "machine": "AMD Ryzen 9 PRO 7945 (24 threads), 30 GB, Fedora Linux, kernel 7.2.11, GNOME on Wayland, Electron 44.0.0",
-    "runs": 5
-  },
-  "metrics": {
-    "windowText": {
-      "label": "Window with text visible",
-      "p50": 421,
-      "high": 462,
-      "unit": "ms",
-      "how": "Spawn call to the first frame with text, empty profile"
+  "social": "Free and open source, for Linux, Windows and macOS. No account.",
+  "pills": {
+    "download": {
+      "label": "Download",
+      "icon": "download",
+      "url": "https://github.com/Ziuziuk-Denys/Nuvo/releases/latest",
+      "alt": "Download Nuvo"
     },
-    "home": {
-      "label": "Home shown",
-      "p50": 452,
-      "high": 484,
-      "unit": "ms",
-      "how": "Spawn call to Home, empty profile"
+    "support": {
+      "label": "Support the author",
+      "icon": "like",
+      "url": "https://nuvo.quest/donate",
+      "alt": "Support the author"
     },
-    "statsFirst": {
-      "label": "Statistics page, first open after a restart",
-      "p50": 79,
-      "high": 79,
-      "unit": "ms",
-      "how": "171,429 plays, one open"
-    },
-    "statsRange": {
-      "label": "Statistics page, switch to all plays",
-      "p50": 68,
-      "high": 73,
-      "unit": "ms",
-      "how": "171,429 plays, 5 opens"
-    },
-    "memIdle": {
-      "label": "Memory at idle",
-      "p50": 381.1,
-      "high": 386.2,
-      "unit": "MB",
-      "how": "PSS of the whole tree with the daemon, 30 s after Home, empty profile"
-    },
-    "memPlaying": {
-      "label": "Memory while playing",
-      "p50": 443.8,
-      "high": 453.3,
-      "unit": "MB",
-      "how": "PSS at 60 s, cached tone, playlist open"
-    },
-    "cpuIdle": {
-      "label": "CPU at idle",
-      "p50": 0.2,
-      "high": 0.23,
-      "unit": "%",
-      "how": "One core, whole tree, 30 s, empty profile"
-    },
-    "cpuPlaying": {
-      "label": "CPU while playing",
-      "p50": 2.7,
-      "high": 2.75,
-      "unit": "%",
-      "how": "One core, whole tree, seconds 40 to 60, volume 0"
+    "channel": {
+      "label": "Join the channel",
+      "brand": "telegram",
+      "url": "https://t.me/getnuvo",
+      "alt": "Join the Nuvo channel on Telegram"
     }
   },
-  "comparison": {
-    "date": "2026-11-07",
-    "claim": "Lighter at idle than every other app on a web engine that we measured. Strawberry, a native Qt player, uses about a third of Nuvo's memory.",
-    "method": "- **Machine and build.** AMD Ryzen 9 PRO 7945, 30 GB, Fedora, Linux 7.2.11, GNOME on Wayland. Measured on 2026-11-07. Nuvo is the 0.2.10 `linux-unpacked` package. Other programs were running on the machine all day.\n- **Runs and labels.** 5 runs per figure, 6 for Spotify. Every app had its own empty profile and no login. Nuvo: empty profile, Home reached. Liner: sign-in screen. Riff 44.2.0: logged out. Spotify: logged-out client (flatpak). Strawberry 1.2.31: flatpak, empty library. YouTube Music and Apple Music: web tab, logged out, fresh Chrome 156 profile. Each run started a fresh process; the page cache was not dropped.\n- **Idle.** Memory is PSS summed over the whole process tree (Nuvo includes its daemon), read 30 s after the window appeared. CPU is user plus system time of the tree over the next 30 s, in percent of one core.\n- **Cold start.** The definitions differ, so read it as a rough guide. Nuvo, Liner, Riff and the web tabs: first frame with the window visible and text, read over the DevTools protocol. The web-tab figure includes the network. Spotify and Strawberry have no such hook: first mapped window of at least 200 by 200 pixels. Spotify's 435 to 447 ms window is probably a splash, so we give no start figure for it.\n- **Playing.** Nuvo played a cached 90 s tone at volume 0 from a seeded playlist, CPU over seconds 40 to 60. Strawberry played a 240 s tone with its stream volume at 0, measured 30 s after the start. Different players and different moments, both whole-tree. Liner, Spotify, Riff and the web tabs are not measured: playback needs an account, and we did not attempt one.\n- **Load.** One-minute load average under 1.2 at every sample for the other apps. Nuvo's late set had a median of 0.19 and a maximum of 0.29.\n- **Nuvo's spread.** Idle memory moved between two sessions on the same build with no change: 336 MB in an earlier session, 381 MB in the later one, which is the figure above. The same shift of 40 to 45 MB showed in every Nuvo scenario, and we have not found the cause. Every other web-engine app still uses more memory than either figure.\n- **Where Nuvo loses.** Strawberry uses less memory at idle (129 against 381 MB) and less CPU while playing (1.3 against 2.7 %). It is a native Qt player; Nuvo is Electron with a Rust daemon. Strawberry's installed size depends on a shared runtime of about 1.1 GB. Riff's start is bimodal and we have not found why.\n- **Published, not measured by us.** Riff's README claims about 180 MB during playback, with no method given ([source](https://github.com/rootscripts/riff#memory-usage), read 2026-11-07). We measured 422 MB at idle on the AppImage. Other published figures, such as download sizes, are in `.github/readme/published.json`.\n- **Not measured.** Installed size of the web tabs, a start with a dropped page cache, other machines. Nothing here is estimated.",
-    "columns": [
-      {
-        "key": "idleMemoryMb",
-        "label": "Idle memory",
-        "unit": "MB"
-      },
-      {
-        "key": "processes",
-        "label": "Processes",
-        "unit": ""
-      },
-      {
-        "key": "idleCpu",
-        "label": "Idle CPU",
-        "unit": "%"
-      },
-      {
-        "key": "windowMs",
-        "label": "Cold start",
-        "unit": "ms"
-      },
-      {
-        "key": "playingCpu",
-        "label": "Playing CPU",
-        "unit": "%"
-      },
-      {
-        "key": "playingMemoryMb",
-        "label": "Playing memory",
-        "unit": "MB",
-        "chart": false
-      },
-      {
-        "key": "installMb",
-        "label": "Installed size",
-        "unit": "MB",
-        "chart": false
-      }
-    ],
-    "apps": [
-      {
-        "name": "Nuvo",
-        "idleMemoryMb": 381.1,
-        "processes": 6,
-        "idleCpu": 0.2,
-        "windowMs": 421,
-        "playingCpu": 2.7,
-        "playingMemoryMb": 443.8,
-        "installMb": 319.4,
-        "spread": {
-          "idleMemoryMb": [
-            379.6,
-            386.2
-          ],
-          "idleCpu": [
-            0.17,
-            0.23
-          ],
-          "windowMs": [
-            411,
-            462
-          ],
-          "playingCpu": [
-            2.6,
-            2.75
-          ],
-          "playingMemoryMb": [
-            443,
-            453.3
-          ]
-        },
-        "display": {
-          "installMb": {
-            "table": "319.4 MB unpacked (AppImage 133.5, .deb 105.8)",
-            "chart": "319 MB"
-          }
-        }
-      },
-      {
-        "name": "Liner",
-        "idleMemoryMb": 504.3,
-        "processes": 8,
-        "idleCpu": 1.2,
-        "windowMs": 1053,
-        "playingCpu": null,
-        "playingMemoryMb": null,
-        "installMb": 549.1,
-        "spread": {
-          "idleMemoryMb": [
-            502.2,
-            505.1
-          ],
-          "idleCpu": [
-            1.17,
-            1.23
-          ],
-          "windowMs": [
-            966,
-            1404
-          ]
-        }
-      },
-      {
-        "name": "Riff",
-        "idleMemoryMb": 422.1,
-        "processes": 7,
-        "idleCpu": 10.87,
-        "windowMs": 9215,
-        "playingCpu": null,
-        "playingMemoryMb": null,
-        "installMb": 366.3,
-        "spread": {
-          "idleMemoryMb": [
-            421.4,
-            422.6
-          ],
-          "idleCpu": [
-            10.67,
-            11.2
-          ]
-        },
-        "display": {
-          "windowMs": {
-            "table": "bimodal: 1628 to 9873 ms, median 9215 ms",
-            "chart": "bimodal"
-          },
-          "installMb": {
-            "table": "366.3 MB extracted (AppImage 132.8)",
-            "chart": "366 MB"
-          }
-        }
-      },
-      {
-        "name": "Spotify",
-        "idleMemoryMb": 567.0,
-        "processes": 9,
-        "idleCpu": 1.5,
-        "windowMs": null,
-        "playingCpu": null,
-        "playingMemoryMb": null,
-        "installMb": null,
-        "spread": {
-          "idleMemoryMb": [
-            558.4,
-            568.6
-          ],
-          "idleCpu": [
-            0.43,
-            2.07
-          ]
-        },
-        "display": {
-          "windowMs": {
-            "table": "no usable-window figure: first window at 435 to 447 ms, probably a splash",
-            "chart": "no figure"
-          },
-          "installMb": {
-            "table": "14.1 MB flatpak app, plus a shared runtime; first-run download not measured",
-            "chart": "14.1 + runtime"
-          }
-        }
-      },
-      {
-        "name": "YouTube Music",
-        "idleMemoryMb": 544.5,
-        "processes": 17,
-        "idleCpu": 0.6,
-        "windowMs": 2999,
-        "playingCpu": null,
-        "playingMemoryMb": null,
-        "installMb": null,
-        "spread": {
-          "idleMemoryMb": [
-            533.1,
-            547.9
-          ],
-          "idleCpu": [
-            0.3,
-            3.23
-          ],
-          "windowMs": [
-            2108,
-            4405
-          ]
-        },
-        "display": {
-          "windowMs": {
-            "table": "2999 ms (2108 to 4405), includes network",
-            "chart": "2999 ms"
-          }
-        }
-      },
-      {
-        "name": "Apple Music",
-        "idleMemoryMb": 673.7,
-        "processes": 17,
-        "idleCpu": 0.8,
-        "windowMs": 3157,
-        "playingCpu": null,
-        "playingMemoryMb": null,
-        "installMb": null,
-        "spread": {
-          "idleMemoryMb": [
-            664,
-            676.8
-          ],
-          "idleCpu": [
-            0.53,
-            3.03
-          ],
-          "windowMs": [
-            2173,
-            3741
-          ]
-        },
-        "display": {
-          "windowMs": {
-            "table": "3157 ms (2173 to 3741), includes network",
-            "chart": "3157 ms"
-          }
-        }
-      },
-      {
-        "name": "Strawberry",
-        "idleMemoryMb": 128.7,
-        "processes": 2,
-        "idleCpu": 0.37,
-        "windowMs": 1132,
-        "playingCpu": 1.3,
-        "playingMemoryMb": 136.8,
-        "installMb": 22.6,
-        "spread": {
-          "idleMemoryMb": [
-            128.6,
-            129.6
-          ],
-          "idleCpu": [
-            0.3,
-            0.37
-          ],
-          "windowMs": [
-            834,
-            1342
-          ],
-          "playingCpu": [
-            1.27,
-            1.37
-          ],
-          "playingMemoryMb": [
-            136.7,
-            136.9
-          ]
-        },
-        "display": {
-          "installMb": {
-            "table": "22.6 MB flatpak app, plus the KDE runtime (about 1.1 GB, shared)",
-            "chart": "22.6 + runtime"
-          }
-        }
-      }
-    ]
-  },
+  "new": [
+    "A new interface: a top bar with search in it, the search palette (Ctrl K) and every screen redrawn with our own icons",
+    "Nine themes, Matcha and Blossom among them, with an illustrated app icon for eight",
+    "Wallpapers in both themes: a photo, a GIF or a video",
+    "SoundCloud search, with YouTube and SoundCloud songs ranked in one list",
+    "Imports from Soundiiz, TuneMyMusic, Google Takeout, XSPF and TXT files, and public Yandex Music playlists, albums and tracks by link",
+    "Lyrics made on your computer: every word timed, plain lyrics timed, and lyrics written for songs that have none",
+    "SOCKS5 proxies with a login, and a check of each service through the proxy",
+    "yt-dlp, Deno and ffmpeg download by themselves on every platform",
+    "Last.fm shows the song as now playing, and the Discord status is on by default",
+    "Fixes for the Notch on KDE Plasma and per-track loudness normalization, and SQLCipher 4.20"
+  ],
+  "why": [
+    {
+      "claim": "Free, with nothing locked.",
+      "why": "No plan to choose, no subscription, no ads."
+    },
+    {
+      "claim": "The source is right here.",
+      "why": "AGPL-3.0-or-later. Read it, build it, change it."
+    },
+    {
+      "claim": "No account.",
+      "why": "There is no Nuvo server, so there is nothing to sign up for and nothing to leak from one."
+    },
+    {
+      "claim": "Your library stays yours.",
+      "why": "An encrypted database on your machine, its key in your system keyring, and 24 words to restore it."
+    },
+    {
+      "claim": "Two sources in one search.",
+      "why": "YouTube and SoundCloud results come back as one ranked list."
+    },
+    {
+      "claim": "Lyrics where there were none.",
+      "why": "Nuvo times every word on your computer, and writes the lyrics when a song has none."
+    }
+  ],
+  "features": [
+    {
+      "name": "Search and play",
+      "widget": "search",
+      "title": "Two sources, one list.",
+      "sub": "YouTube and SoundCloud are ranked together. Paste a link and it plays.",
+      "alt": "The search palette with a top result and songs from both sources.",
+      "bullets": [
+        "One field for songs, artists and links, opened with Ctrl K",
+        "YouTube and SoundCloud results in one ranked list",
+        "Paste links from Apple Music, Deezer, Yandex Music, Shazam or TikTok, and share songs and playlists as compact links",
+        "Recognize a song from a video link, a file, the microphone or the sound your computer plays. The last two work on Linux"
+      ]
+    },
+    {
+      "name": "Library and mixes",
+      "widget": "mixes",
+      "title": "Mixes made on your computer.",
+      "sub": "Ranked from what you play and like. No server sees your taste.",
+      "alt": "Three mixes on Home: For you, Something new and Recently liked.",
+      "bullets": [
+        "Likes, saved albums and artists, playlists with custom covers, a duplicate finder",
+        "Playlists you can merge, sort six ways, keep offline, restore after a delete and pin",
+        "Mixes and radio from your plays and likes, \"Not interested\" with undo, a dislike button on every song",
+        "Statistics with a listening history that you can pause, export or delete",
+        "Tags, covers and `.lrc` files read from your folders"
+      ]
+    },
+    {
+      "name": "Sound",
+      "widget": "sound",
+      "title": "Ten bands over a live spectrum.",
+      "sub": "Twelve presets, auto gain, and a curve remembered for a track or an artist.",
+      "alt": "The equalizer panel with ten bands over a spectrum and twelve presets.",
+      "bullets": [
+        "Gapless playback, crossfade of 1 to 12 seconds, queue, shuffle, repeat",
+        "Loudness normalization, speed and pitch with presets, reverb",
+        "Sleep timer, A-B loop, moments to jump back to, trims for a song's start and end",
+        "Media keys, and MPRIS on Linux"
+      ]
+    },
+    {
+      "name": "Lyrics",
+      "widget": "lyrics",
+      "title": "Lyrics for songs that have none.",
+      "sub": "Nuvo listens to the song and times every word, on this computer.",
+      "alt": "Lyric lines that Nuvo wrote for a song, marked as written by Nuvo.",
+      "bullets": [
+        "Synced lyrics and karaoke by line, word, fill or step",
+        "Every word timed on your computer, and lyrics written for songs that have none. The model downloads once, 82 MB",
+        "Paste LRC or plain text and tap to sync, with a timing offset per track",
+        "Romanized lyrics for Korean, Chinese and Japanese kana, and translation through a local model"
+      ]
+    },
+    {
+      "name": "Imports",
+      "widget": "import",
+      "title": "Bring your playlists.",
+      "sub": "Paste a link or drop an export file. A report lists every match and every miss.",
+      "alt": "An import preview of a 100-song playlist with its first matches.",
+      "bullets": [
+        "Playlist links from YouTube, SoundCloud, Apple Music, Deezer, Spotify and Yandex Music",
+        "Files: Spotify, Soundiiz, TuneMyMusic and Google Takeout exports, M3U, XSPF, CSV, TXT and Nuvo playlists",
+        "Save streamed tracks as files, original or MP3, and export playlists and the whole library"
+      ]
+    },
+    {
+      "name": "Your look",
+      "widget": "background",
+      "title": "Nine themes and your own wallpaper.",
+      "sub": "A photo, a GIF or a video behind every screen, with the blur and fade you choose.",
+      "alt": "Background and motion settings with a photo wallpaper, blur and fade.",
+      "bullets": [
+        "Nine themes, a colour editor with contrast checks, theme files, system or custom fonts",
+        "Custom CSS with a strict checker and a safe mode",
+        "The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11. Off until you turn it on",
+        "A panel widget for the GNOME top bar, the Plasma panel and Waybar",
+        "Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian"
+      ]
+    },
+    {
+      "name": "Private by design",
+      "widget": "lock",
+      "title": "No account. No Nuvo server.",
+      "sub": "Your library is an encrypted database on your machine, and its key stays in your system keyring.",
+      "alt": "The unlock screen that asks for the 24-word recovery phrase.",
+      "bullets": [
+        "Encrypted database and audio cache, a 24-word recovery phrase, an optional passphrase for the key",
+        "A local API on a private socket with a token per launch",
+        "HTTP and SOCKS5 proxies with a login, and a connection check for each service",
+        "Last.fm scrobbling with your own API key, off until you turn it on",
+        "A Discord status with the song cover. On by default; turn it off in Settings, Integrations, Discord",
+        "The update check contacts github.com. On by default; turn it off in Settings, Application, About"
+      ]
+    }
+  ],
+  "platforms": [
+    {
+      "name": "Linux",
+      "brand": "linux",
+      "status": "Main platform",
+      "formats": "AppImage, .deb, .rpm",
+      "text": "AppImage, `.deb` or `.rpm`, for x64 and arm64. Nuvo keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file that you can seal with a passphrase in Settings, Application, Storage. On a Chromebook, turn on Linux in the ChromeOS settings and install the `.deb`."
+    },
+    {
+      "name": "Windows",
+      "brand": "windows",
+      "status": "Supported",
+      "formats": "Installer, portable .zip",
+      "text": "The installer (`.exe`) or the portable `.zip`, for x64 and arm64."
+    },
+    {
+      "name": "macOS",
+      "brand": "apple",
+      "status": "Supported, testers wanted",
+      "formats": ".dmg",
+      "text": "The `.dmg` for Apple silicon or Intel. We are looking for testers: tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat)."
+    }
+  ],
+  "roadmap": [
+    {
+      "title": "Planned",
+      "items": [
+        "search by a lyric line",
+        "a music map and a year recap",
+        "genre and mood mixes",
+        "signed Windows and macOS builds"
+      ]
+    },
+    {
+      "title": "Weighing",
+      "items": [
+        "device sync with no Nuvo account",
+        "self-hosted music servers",
+        "plugins, a phone remote and a command line",
+        "room correction",
+        "per-device output routing"
+      ]
+    },
+    {
+      "title": "Never",
+      "items": [
+        "a Nuvo account or server",
+        "hosting or selling music",
+        "telemetry"
+      ]
+    }
+  ],
+  "unsigned": "Builds are not signed with a paid certificate yet. A certificate costs money every year and Nuvo is free, so your system may warn you the first time:\n\n- **Windows:** in SmartScreen, choose **More info**, then **Run anyway**.\n- **macOS:** open Nuvo once. When macOS blocks it, go to **System Settings**, **Privacy & Security**, and press **Open Anyway**.\n- **Linux:** make the AppImage executable and run it.",
   "matrix": {
     "checked": "2026-11-07",
     "apps": [
@@ -827,163 +701,7 @@
         ]
       }
     ],
-    "total": 102
-  },
-  "badges": [
-    {
-      "icon": "linux",
-      "text": "Linux"
-    },
-    {
-      "icon": "cog",
-      "text": "Rust core"
-    },
-    {
-      "icon": "window",
-      "text": "Electron 44"
-    },
-    {
-      "icon": "lock",
-      "text": "SQLCipher"
-    },
-    {
-      "icon": "user",
-      "text": "No account"
-    },
-    {
-      "icon": "eye",
-      "text": "No telemetry"
-    },
-    {
-      "icon": "scale",
-      "text": "AGPL-3.0-or-later"
-    }
-  ],
-  "themes": [
-    [
-      "#101320",
-      "#AFC8F7"
-    ],
-    [
-      "#F3EFE6",
-      "#C4122F"
-    ],
-    [
-      "#10162B",
-      "#FF4B5C"
-    ],
-    [
-      "#17130C",
-      "#E2B552"
-    ],
-    [
-      "#0E1230",
-      "#A99CFF"
-    ],
-    [
-      "#FFE9DC",
-      "#CF3317"
-    ],
-    [
-      "#1B1426",
-      "#C995FF"
-    ],
-    [
-      "#EAF2FB",
-      "#5B3DF5"
-    ],
-    [
-      "#1C1610",
-      "#F28C28"
-    ]
-  ],
-  "roadmap": {
-    "note": "What is next, not a promise or a schedule.",
-    "stages": [
-      {
-        "title": "Today",
-        "items": [
-          "Encrypted library and audio cache",
-          "Playback, EQ, karaoke, mixes",
-          "Imports, local files, statistics",
-          "Themes, the Notch, panel widgets",
-          "Last.fm, Discord, English and Russian",
-          "Linux, Windows and macOS"
-        ]
-      },
-      {
-        "title": "Planned",
-        "items": [
-          "Lyric timing for songs that have none",
-          "Search by a lyric line",
-          "Music map and year recap",
-          "Genre mixes and mood mixes",
-          "Signed Windows and macOS builds"
-        ]
-      },
-      {
-        "title": "Weighing",
-        "items": [
-          "Device sync with no Nuvo account",
-          "Self-hosted music servers",
-          "Plugins, phone remote and a CLI",
-          "Room correction",
-          "Per-device output routing"
-        ]
-      },
-      {
-        "title": "Never",
-        "items": [
-          "A Nuvo account or server",
-          "Hosting or selling music",
-          "Telemetry"
-        ]
-      }
-    ]
-  },
-  "coreJobs": "Library, playlists, history, ranking, imports, local files, lyrics, caches",
-  "memoryNote": "at idle, whole app with its daemon, empty profile. An earlier session on this build read 336 MB.",
-  "memoryBars": [
-    [
-      "Idle, empty profile",
-      381.1,
-      386.2
-    ],
-    [
-      "Idle, 5,000-track profile",
-      390.9,
-      404.2
-    ],
-    [
-      "Playing, playlist open",
-      443.8,
-      453.3
-    ],
-    [
-      "Karaoke, Fill mode",
-      463.9,
-      468.5
-    ]
-  ],
-  "karaoke": {
-    "note": "Word-timed fixture song at volume 0, seconds 40 to 60, whole tree. 5 runs per mode, 6 for Fill. Playing without karaoke is 2.7 %.",
-    "rows": [
-      {
-        "value": "4.9 %",
-        "label": "Line mode"
-      },
-      {
-        "value": "6 %",
-        "label": "Word mode"
-      },
-      {
-        "value": "7.17 %",
-        "label": "Fill mode"
-      },
-      {
-        "value": "5.2 %",
-        "label": "Step mode"
-      }
-    ]
+    "total": 102,
+    "summary": "Each bar counts the rows of the tables below. Unknown means we found no source we could cite, not that the app lacks the feature."
   }
 }

@@ -33,15 +33,15 @@ All optional. Without them the workflows still run and ship unsigned files.
 
 ## README and pages
 
-`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `DESIGN-NOTES.md`, `.github/SUPPORT.md` and the issue templates are rendered from `.github/readme/` by `python3 .github/readme/build.py`; edit the template, the pages or the JSON there, not the output. `python3 .github/readme/test_build.py` rebuilds them and checks the result.
+`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `DESIGN-NOTES.md`, `.github/SUPPORT.md` and the issue templates are rendered from `.github/readme/` by `python3 .github/readme/build.py`; edit the template, the pages or the JSON there, not the output. `python3 .github/readme/test_build.py` rebuilds them and checks the result. The builder needs Pillow and Chrome. New captures of the app: name them in `media.json` and run `python3 .github/readme/build.py --media <folder>`.
 
 ## Benchmarks
 
-`node scripts/bench/suite.mjs --exe <packaged nuvo>` writes its results to `bench-results/`, which git ignores. Copy the numbers you want into `.github/readme/data.json`.
+`node scripts/bench/suite.mjs --exe <packaged nuvo>` writes its results to `bench-results/`, which git ignores. Copy the numbers you want into `.github/readme/bench.json`.
 
 ## Donation link
 
-Three places: `site` in `.github/readme/data.json` (the README support card), the `custom:` key in `.github/FUNDING.yml`, and `DONATE_URL` in `src/ui/screens/settings/donate.ts` (the Settings link stays hidden until it is set).
+Three places: the `support` link in `.github/readme/data.json` (the README button), the `custom:` key in `.github/FUNDING.yml`, and `DONATE_URL` in `src/ui/screens/settings/donate.ts` (the Settings link stays hidden until it is set).
 
 ## Download counter
 
