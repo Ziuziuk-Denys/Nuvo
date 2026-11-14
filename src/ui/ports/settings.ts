@@ -1,4 +1,13 @@
-export { useLookStore as useCustomizationStore, selectIsGlassThemeActive, useHasCustomBackground, MIN_WALLPAPER_BLUR } from "@/data/look/lookStore";
+export {
+  useLookStore as useCustomizationStore,
+  MIN_WALLPAPER_BLUR,
+  MAX_WALLPAPER_BLUR,
+  MAX_WALLPAPER_DIM,
+  wallpaperKind,
+  WALLPAPER_BASE,
+  type WallpaperFit,
+  type WallpaperKind,
+} from "@/data/look/lookStore";
 export { useAppVersion } from "@/data/platform/version";
 export { notesFor, takeWhatsNew } from "@/data/platform/releaseNotes";
 import { shippedLocales } from "@/i18n";

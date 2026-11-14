@@ -15,7 +15,7 @@ function has(key: string): boolean {
 describe("settings index", () => {
   it("lists rows of every searchable section, each under a real tab with texts that exist", () => {
     expect(new Set(SETTING_ITEMS.map((item) => item.tabId))).toEqual(
-      new Set(["Playback", "Sound", "Appearance", "Customization", "Notch", "Youtube", "Lastfm", "Discord", "Network", "About"]),
+      new Set(["Playback", "Sound", "Appearance", "Customization", "Notch", "Youtube", "Lastfm", "Discord", "Network", "Storage", "About"]),
     );
     for (const item of SETTING_ITEMS) {
       expect(SECTIONS[item.tabId], item.titleKey).toBeDefined();

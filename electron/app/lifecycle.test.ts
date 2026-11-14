@@ -191,6 +191,15 @@ describe("start-up", () => {
     expect(x11.switches.find(([n]) => n === "enable-features")).toEqual(["enable-features", "NetworkServiceInProcess2"]);
   });
 
+  it("switches: video decodes in software on Linux only", () => {
+    const linux = fakeApp();
+    applySwitches(linux, false, true);
+    expect(linux.switches).toContainEqual(["disable-accelerated-video-decode", undefined]);
+    const other = fakeApp();
+    applySwitches(other, false, false);
+    expect(other.switches.map(([n]) => n)).not.toContain("disable-accelerated-video-decode");
+  });
+
   it("a second instance quits without a window", () => {
     const app = fakeApp(false);
     const lines: string[] = [];

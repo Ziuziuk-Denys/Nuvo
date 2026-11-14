@@ -1,5 +1,4 @@
 import { createContext, useContext, type JSX, type ReactNode } from "react";
-import { Chip } from "../../components/Chip";
 import { Toggle } from "../../components/Toggle";
 import { matchesQuery } from "./sections";
 import styles from "./controls.module.css";
@@ -40,25 +39,33 @@ export function SettingBlock({
   description,
   titleKey,
   descKey,
+  headless,
   children,
-}: Omit<RowProps, "control" | "explained" | "icon"> & { children: ReactNode }): JSX.Element | null {
+}: Omit<RowProps, "control" | "explained" | "icon"> & { headless?: boolean; children: ReactNode }): JSX.Element | null {
   if (useHidden(title, description, [titleKey, descKey])) return null;
   return (
     <div className={styles.block}>
-      <div className={styles.blockHead}>
-        <span className={styles.title}>{title}</span>
-        {description ? <span className={styles.blockDescription}>{description}</span> : null}
-      </div>
+      {headless ? (
+        description ? (
+          <span className={styles.blockDescription}>{description}</span>
+        ) : null
+      ) : (
+        <div className={styles.blockHead}>
+          <span className={styles.title}>{title}</span>
+          {description ? <span className={styles.blockDescription}>{description}</span> : null}
+        </div>
+      )}
       {children}
     </div>
   );
 }
 
+// CSS hides the group when search leaves its panel empty
 export function SettingGroup({ label, children }: { label?: string; children: ReactNode }): JSX.Element {
   return (
     <section className={styles.group}>
       {label ? <h3 className={styles.groupLabel}>{label}</h3> : null}
-      <div className={styles.stack}>{children}</div>
+      <div className={styles.panel}>{children}</div>
     </section>
   );
 }
@@ -98,16 +105,17 @@ export function Segmented<T extends string>({
   return (
     <div role="group" aria-label={label} className={styles.segmented}>
       {options.map((option) => (
-        <Chip
+        <button
           key={option.value}
-          active={option.value === value}
+          type="button"
+          aria-pressed={option.value === value}
           disabled={option.disabled}
           title={option.disabled ? option.reason : undefined}
           className={styles.segment}
           onClick={() => onChange(option.value)}
         >
           {option.label}
-        </Chip>
+        </button>
       ))}
     </div>
   );

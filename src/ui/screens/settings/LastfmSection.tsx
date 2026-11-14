@@ -14,7 +14,6 @@ import {
 } from "../../ports/lastfm";
 import { openExternal } from "../../ports/system";
 import { SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
-import { SectionIcon } from "./SectionIcon";
 import styles from "./sections.module.css";
 
 const KEY_PAGE = "https://www.last.fm/api/account/create";
@@ -84,51 +83,50 @@ export function LastfmSection(): JSX.Element {
   const queue = status && status.queued > 0 ? ` · ${t("settings.lastfm.queued", { count: status.queued })}` : "";
 
   return (
-    <div className={styles.lastfm}>
-      <div className={styles.account}>
-        <span className={styles.avatar} data-loading={status ? undefined : ""}>
-          {status ? <SectionIcon id="Lastfm" /> : null}
-        </span>
-        <span className={styles.accountText}>
-          {status ? (
-            <>
-              <span className={styles.accountName}>{connected ? (status.user ?? "") : t("settings.lastfm.signed_out_title")}</span>
-              <span className={styles.accountSub}>
-                {connected ? state + queue : t(token ? "settings.lastfm.approve_hint" : "settings.lastfm.signed_out_description")}
-              </span>
-            </>
+    <>
+      <SettingGroup label={t("settings.youtube.section_playback")}>
+        <div className={styles.account}>
+          <span className={styles.accountText}>
+            {status ? (
+              <>
+                <span className={styles.accountName}>{connected ? (status.user ?? "") : t("settings.lastfm.signed_out_title")}</span>
+                <span className={styles.accountSub}>
+                  {connected ? state + queue : t(token ? "settings.lastfm.approve_hint" : "settings.lastfm.signed_out_description")}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className={styles.skeleton} style={{ width: 110, height: 14 }} />
+                <span className={styles.skeleton} style={{ width: 160, height: 11 }} />
+              </>
+            )}
+          </span>
+          {connected ? (
+            <button type="button" className={styles.accountAction} data-quiet="" disabled={busy} onClick={() => void run(disconnectLastfm)}>
+              {t("settings.lastfm.disconnect")}
+            </button>
+          ) : token ? (
+            <button type="button" className={styles.accountAction} disabled={busy} onClick={() => void finish(token)}>
+              {t("settings.lastfm.done")}
+            </button>
           ) : (
-            <>
-              <span className={styles.skeleton} style={{ width: 110, height: 14 }} />
-              <span className={styles.skeleton} style={{ width: 160, height: 11 }} />
-            </>
+            <button type="button" className={styles.accountAction} disabled={busy || !status?.hasCredentials} onClick={() => void connect()}>
+              {t("settings.lastfm.connect")}
+            </button>
           )}
-        </span>
-        {connected ? (
-          <button type="button" className={styles.accountAction} data-quiet="" disabled={busy} onClick={() => void run(disconnectLastfm)}>
-            {t("settings.lastfm.disconnect")}
-          </button>
-        ) : token ? (
-          <button type="button" className={styles.accountAction} disabled={busy} onClick={() => void finish(token)}>
-            {t("settings.lastfm.done")}
-          </button>
-        ) : (
-          <button type="button" className={styles.accountAction} disabled={busy || !status?.hasCredentials} onClick={() => void connect()}>
-            {t("settings.lastfm.connect")}
-          </button>
-        )}
-      </div>
-      {errorKey ? (
-        <p className={styles.note} role="alert">
-          {t(errorKey)}
-        </p>
-      ) : null}
-      {status?.lastError ? (
-        <p className={styles.note} role="status">
-          {t("settings.lastfm.last_error", { message: status.lastError })}
-        </p>
-      ) : null}
-      <SettingGroup>
+        </div>
+        {errorKey ? (
+          <p className={styles.note} role="alert">
+            {t(errorKey)}
+          </p>
+        ) : null}
+        {status?.lastError ? (
+          <p className={styles.note} role="status">
+            {t("settings.lastfm.last_error", { message: status.lastError })}
+          </p>
+        ) : null}
+      </SettingGroup>
+      <SettingGroup label={t("settings.page.scrobbling")}>
         <SettingRow
           title={t("settings.lastfm.enabled.title")}
           description={t("settings.lastfm.enabled.description")}
@@ -179,6 +177,6 @@ export function LastfmSection(): JSX.Element {
           </SettingBlock>
         )}
       </SettingGroup>
-    </div>
+    </>
   );
 }

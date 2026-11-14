@@ -11,15 +11,11 @@
   text-wrap: pretty;
 }
 
-.notes {
-  margin: 0;
-  padding-left: 1.2em;
-  color: var(--n-ink);
-  font: var(--n-type-body);
-}
-
-.notes li + li {
-  margin-top: var(--n-s-2);
+.news {
+  max-height: min(420px, calc(100vh - 260px));
+  overflow-y: auto;
+  margin-right: -8px;
+  padding-right: 8px;
 }
 
 .diagnostics {

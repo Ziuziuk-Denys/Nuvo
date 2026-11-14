@@ -3,44 +3,48 @@
   flex-direction: column;
 }
 
+.group:not(:has(> .panel > *)) {
+  display: none;
+}
+
 .groupLabel {
   margin: 0;
-  padding: 4px 0 10px;
-  color: var(--n-ink-2);
-  font: 500 14px/1.5 var(--n-font);
+  padding: 0 4px 8px;
+  color: var(--n-ink-3);
+  font: var(--n-type-caption);
+  letter-spacing: var(--n-track-caption);
 }
 
-.stack {
+.panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  padding: 0 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
 }
 
-.row,
-.block {
-  border-radius: 12px;
-  padding: 10px 16px;
-  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+:global(:root[data-theme="dark"]) .panel {
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+.panel > * + * {
+  border-top: 1px solid color-mix(in srgb, var(--n-ink) 7%, transparent);
 }
 
 .row {
   display: flex;
-  min-height: 46px;
+  min-height: 56px;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+  padding: 11px 0;
 }
 
 .block {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-block: 13px;
-}
-
-:global(:root[data-theme="dark"]) .row,
-:global(:root[data-theme="dark"]) .block {
-  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  gap: 12px;
+  padding: 14px 0 16px;
 }
 
 .rowIcon {
@@ -54,7 +58,7 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .text {
@@ -78,15 +82,12 @@
   white-space: normal;
 }
 
-.description {
-  max-width: 420px;
-  color: var(--n-ink-3);
-  font: 400 12px/1.4 var(--n-font);
-}
-
+.description,
 .blockDescription {
+  max-width: 440px;
   color: var(--n-ink-3);
-  font: 400 12px/1.45 var(--n-font);
+  font: 400 12.5px/1.45 var(--n-font);
+  text-wrap: pretty;
 }
 
 .control {
@@ -101,46 +102,51 @@
   flex: none;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-}
-
-.segmented > .segment {
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 10px;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 11px;
   background: color-mix(in srgb, var(--n-ink) 6%, transparent);
 }
 
-.segmented > .segment:not([aria-pressed="true"]):hover:not(:disabled) {
-  background: color-mix(in srgb, var(--n-ink) 10%, transparent);
+.segment {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-ink-2);
+  cursor: pointer;
+  font: 500 12.5px/28px var(--n-font);
+  white-space: nowrap;
+  transition:
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out);
 }
 
-:global(:root[data-theme="dark"]) .segmented > .segment {
-  background: rgba(0, 0, 0, 0.3);
+.segment:hover:not(:disabled, [aria-pressed="true"]) {
+  color: var(--n-ink);
 }
 
-:global(:root[data-theme="dark"]) .segmented > .segment:not([aria-pressed="true"]):hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.4);
+.segment:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink);
 }
 
-.segmented > .segment[aria-pressed="true"],
-:global(:root[data-theme="dark"]) .segmented > .segment[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--n-ink) 70%, transparent);
-  color: var(--n-field);
-  font-weight: 500;
+.segment[aria-pressed="true"] {
+  background: var(--n-lens);
+  box-shadow: var(--n-lens-shadow);
+  color: var(--n-ink);
 }
 
-.segmented > .segment:disabled {
+.segment:disabled {
   color: var(--n-ink-3);
-  opacity: 1;
   cursor: not-allowed;
+  opacity: 0.55;
 }
 
-.segmented > .segment[aria-pressed="true"]:disabled {
-  background: color-mix(in srgb, var(--n-ink) 40%, transparent);
-  color: color-mix(in srgb, var(--n-field) 80%, transparent);
-}
-
-.group + .group {
-  margin-top: 20px;
+@media (prefers-reduced-motion: reduce) {
+  .segment {
+    transition: none;
+  }
 }

@@ -57,6 +57,7 @@ describe("NotchSection", () => {
     notch.getNotchSession.mockResolvedValue({ session: "windows", supported: true, panel: null });
     await act(async () => root.render(<NotchSection />));
     expect(sessionNote()).toBe('settings.notch.session {"session":"settings.notch.desktop_windows"}');
-    expect(host.textContent).toContain("settings.notch.description");
+    const always = [...host.querySelectorAll("button")].find((button) => button.textContent === "settings.notch.mode_on");
+    expect(always?.disabled).toBe(false);
   });
 });

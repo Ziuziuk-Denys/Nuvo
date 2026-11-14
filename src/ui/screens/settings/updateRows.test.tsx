@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AutoUpdateRow, UpdateNotice } from "./UpdateRows";
+import { AutoUpdateRow, UpdateStatus } from "./UpdateRows";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -41,16 +41,23 @@ afterEach(() => {
   delete (window as unknown as { nuvoShell?: unknown }).nuvoShell;
 });
 
-describe("UpdateNotice", () => {
-  it("is empty until something is downloaded", async () => {
+describe("UpdateStatus", () => {
+  it("shows the download without a button until it is done", async () => {
     shell({ phase: "downloading", mode: "install", version: "1.1.0", percent: 10 });
-    await mount(<UpdateNotice />);
+    await mount(<UpdateStatus />);
     expect(host.querySelector("button")).toBeNull();
+    expect(host.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow")).toBe("10");
+  });
+
+  it("is empty when there is nothing new", async () => {
+    shell({ phase: "idle", mode: "install" });
+    await mount(<UpdateStatus />);
+    expect(host.textContent).toBe("");
   });
 
   it("offers a restart only after the download, and installs on click", async () => {
     const calls = shell({ phase: "ready", mode: "install", version: "1.1.0" });
-    await mount(<UpdateNotice />);
+    await mount(<UpdateStatus />);
     const button = host.querySelector("button");
     expect(button?.textContent).toBe("ui.settings.update_restart");
     expect(calls.install).not.toHaveBeenCalled();
@@ -60,9 +67,10 @@ describe("UpdateNotice", () => {
 
   it("links to the release page where it cannot install", async () => {
     const calls = shell({ phase: "available", mode: "notify", version: "1.1.0" });
-    await mount(<UpdateNotice />);
+    await mount(<UpdateStatus />);
+    expect(host.textContent).toContain("ui.settings.update_available:1.1.0");
     const button = host.querySelector("button");
-    expect(button?.textContent).toBe("ui.settings.update_available:1.1.0");
+    expect(button?.textContent).toBe("ui.settings.update_open");
     await act(async () => button?.click());
     expect(calls.release).toHaveBeenCalledTimes(1);
   });

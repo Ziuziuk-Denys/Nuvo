@@ -1,21 +1,16 @@
-const REVEAL_MS = 420;
+import { flushSync } from "react-dom";
 
-export function revealThemeChange(apply: () => void, origin?: { x: number; y: number }): void {
-  const doc = document as Document & { startViewTransition?: (update: () => void) => { ready: Promise<void> } };
-  if (!doc.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+// motion.css times the root cross-fade while this is set
+const SWITCH_ATTRIBUTE = "data-theme-switch";
+
+export function revealThemeChange(apply: () => void): void {
+  if (typeof document.startViewTransition !== "function") {
     apply();
     return;
   }
-  const x = origin?.x ?? innerWidth / 2;
-  const y = origin?.y ?? innerHeight / 2;
-  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-  const transition = doc.startViewTransition(apply);
-  transition.ready
-    .then(() => {
-      document.documentElement.animate(
-        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-        { duration: REVEAL_MS, easing: "cubic-bezier(.2,.7,.2,1)", pseudoElement: "::view-transition-new(root)" },
-      );
-    })
-    .catch(() => undefined);
+  const root = document.documentElement;
+  root.setAttribute(SWITCH_ATTRIBUTE, "");
+  // the new snapshot is taken when the callback returns, so the new tokens must already be on the root
+  const transition = document.startViewTransition(() => flushSync(apply));
+  void transition.finished.finally(() => root.removeAttribute(SWITCH_ATTRIBUTE));
 }

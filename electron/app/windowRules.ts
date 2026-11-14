@@ -77,9 +77,11 @@ export function navigationDecision(url: string, devServerUrl: string | undefined
   return isWeb(url) ? "browser" : "deny";
 }
 
-export function chromiumSwitches(nativeWayland: boolean): Array<[string, string?]> {
+export function chromiumSwitches(nativeWayland: boolean, linux: boolean): Array<[string, string?]> {
   return [
     ["enable-gpu-rasterization"],
+    // VA-API video decode crashed the GPU process on an AMD Linux desktop
+    ...(linux ? [["disable-accelerated-video-decode"] as [string]] : []),
     ["disable-http2"],
     ["enable-features", ["NetworkServiceInProcess2", ...(nativeWayland ? ["GlobalShortcutsPortal"] : [])].join(",")],
     ["disable-features", "AudioServiceOutOfProcess"],

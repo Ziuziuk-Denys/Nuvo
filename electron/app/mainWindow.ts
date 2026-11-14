@@ -32,8 +32,8 @@ export function keepUserData(app: AppLike): void {
   app.setPath("userData", dir);
 }
 
-export function applySwitches(app: AppLike, nativeWayland: boolean): void {
-  for (const [name, value] of chromiumSwitches(nativeWayland)) app.commandLine.appendSwitch(name, value);
+export function applySwitches(app: AppLike, nativeWayland: boolean, linux = process.platform === "linux"): void {
+  for (const [name, value] of chromiumSwitches(nativeWayland, linux)) app.commandLine.appendSwitch(name, value);
 }
 
 export function takeInstanceLock(app: AppLike, print: (line: string) => void): boolean {

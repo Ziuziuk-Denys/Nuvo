@@ -43,7 +43,7 @@ describe("help sheets", () => {
     mocks.fresh = true;
     await act(async () => root.render(<HelpSheets />));
     expect(document.body.textContent).toContain("ui.settings.whats_new.title(0.3.0)");
-    expect([...document.querySelectorAll("li")].map((item) => item.textContent)).toEqual(["Sort the library."]);
+    expect([...document.querySelectorAll("li")].map((item) => item.textContent)).toEqual(["01Sort the library."]);
     expect(document.body.textContent).toContain("Faster start.");
   });
 

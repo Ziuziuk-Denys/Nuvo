@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useContext, useEffect, useState, type JSX } from "react";
 import { create } from "zustand";
 import { Sheet } from "../../components/Sheet";
 import { Toggle } from "../../components/Toggle";
@@ -7,7 +7,10 @@ import { useTranslation } from "../../ports/i18n";
 import { notesFor, takeWhatsNew, useAppVersion } from "../../ports/settings";
 import { appFacts, openExternal, systemReport } from "../../ports/system";
 import { useTour } from "../../tour/tourStore";
+import { SearchQuery } from "./controls";
+import { Markdown } from "./markdown";
 import { formatReport, issueUrl } from "./report";
+import { matchesQuery } from "./sections";
 import styles from "./HelpSheets.module.css";
 import sections from "./sections.module.css";
 
@@ -36,9 +39,6 @@ export function HelpSheets(): JSX.Element {
 
 function WhatsNewSheet({ open, version, onClose }: { open: boolean; version: string; onClose(): void }): JSX.Element {
   const { t } = useTranslation();
-  const notes = notesFor(version).filter((line) => line.trim());
-  const items = notes.filter((line) => line.startsWith("- ")).map((line) => line.slice(2));
-  const lines = notes.filter((line) => !line.startsWith("- "));
   return (
     <Sheet
       open={open}
@@ -46,23 +46,15 @@ function WhatsNewSheet({ open, version, onClose }: { open: boolean; version: str
       title={t("ui.settings.whats_new.title", { version })}
       actions={[{ label: t("common.close"), primary: true, onClick: onClose }]}
     >
-      <div className={styles.body}>
-        {lines.map((line, index) => (
-          <p key={index} className={styles.line}>
-            {line}
-          </p>
-        ))}
-        {items.length > 0 ? (
-          <ul className={styles.notes}>
-            {items.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        ) : null}
-        {notes.length === 0 ? <p className={styles.line}>{t("ui.settings.whats_new.none")}</p> : null}
-      </div>
+      <ReleaseNotes version={version} className={`${styles.news} n-scroll`} />
     </Sheet>
   );
+}
+
+export function ReleaseNotes({ version, className }: { version: string; className?: string }): JSX.Element {
+  const { t } = useTranslation();
+  const notes = notesFor(version).join("\n");
+  return notes.trim() ? <Markdown text={notes} className={className} tracks /> : <p className={styles.line}>{t("ui.settings.whats_new.none")}</p>;
 }
 
 // Nothing is sent from the app: the browser opens a prefilled GitHub issue for the user
@@ -110,18 +102,21 @@ function ReportSheet({ version, onClose }: { version: string; onClose(): void })
 export function HelpLinks(): JSX.Element {
   const { t } = useTranslation();
   const show = useHelpSheet((state) => state.show);
+  const query = useContext(SearchQuery);
+  const links = [
+    { key: "ui.settings.tour_again", icon: "forward", run: () => useTour.getState().replay() },
+    { key: "ui.settings.problem.title", icon: "external", run: () => show("report") },
+  ] as const;
   return (
     <>
-      <button type="button" className={sections.support} onClick={() => show("news")}>
-        {t("ui.settings.whats_new.link")}
-      </button>
-      <button type="button" className={sections.support} onClick={() => useTour.getState().replay()}>
-        {t("ui.settings.tour_again")}
-      </button>
-      <button type="button" className={sections.support} onClick={() => show("report")}>
-        {t("ui.settings.problem.title")}
-        <Icon name="external" size={14} className={sections.supportArrow} />
-      </button>
+      {links
+        .filter((link) => matchesQuery(query, [link.key]))
+        .map((link) => (
+          <button key={link.key} type="button" className={sections.action} onClick={link.run}>
+            {t(link.key)}
+            <Icon name={link.icon} size={16} className={sections.actionIcon} />
+          </button>
+        ))}
     </>
   );
 }

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { DEFAULT_APPEARANCE, useAppearanceStore, type Appearance, type AppearancePatch } from "../../ports/appearance";
 import { useCustomizationStore } from "../../ports/settings";
 import { CustomCssBlock, ResetAppearanceRow } from "./CustomCssBlock";
-import { resetCustomization } from "./CustomizationSection";
+import { CustomizationSection, resetCustomization } from "./CustomizationSection";
 import { FontsGroup } from "./FontsGroup";
 import { SafeModeBanner } from "./SafeModeBanner";
 import { ThemeEditorHost } from "./ThemeEditor";
@@ -59,6 +59,8 @@ const shell = {
   listSystemFonts: vi.fn(async () => ({ ok: true, families: ["Noto Sans", "Inter"] })),
   importFontFile: vi.fn(),
   deleteFontFile: vi.fn(async () => true),
+  importWallpaper: vi.fn(),
+  clearWallpaper: vi.fn(async () => undefined),
 };
 
 beforeEach(() => {
@@ -284,9 +286,9 @@ describe("custom CSS and safe mode", () => {
         customCss: { enabled: true, text: "a { color: red }" },
       },
     });
-    useCustomizationStore.setState({ preset: "vinyl", backgroundImage: "data:image/png;base64,AA==", backgroundDim: 40 });
+    useCustomizationStore.setState({ preset: "amber", backgroundImage: "data:image/png;base64,AA==", backgroundDim: 40 });
     await act(() => resetCustomization());
-    expect(useCustomizationStore.getState()).toMatchObject({ preset: "nuvo", backgroundImage: null, backgroundDim: 0 });
+    expect(useCustomizationStore.getState()).toMatchObject({ preset: "nuvo", backgroundImage: null, backgroundDim: 25 });
     const saved = useAppearanceStore.getState().saved;
     expect(saved.active.presetId).toBe("nuvo");
     expect(saved.customCss).toEqual({ enabled: false, text: "a { color: red }" });
@@ -329,5 +331,39 @@ describe("fonts", () => {
     await act(async () => loadButtons()[0].click());
     expect(document.body.textContent).toContain("appearance.fonts.errors.limit");
     expect(mocks.patches).toEqual([]);
+  });
+});
+
+describe("wallpaper", () => {
+  const pick = (file: File) =>
+    act(async () => {
+      const input = document.querySelector<HTMLInputElement>("input[type=file]")!;
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+  it("hands the picked file to main and shows the stored copy with its fit, blur and fade", async () => {
+    useCustomizationStore.setState({ backgroundImage: null });
+    shell.importWallpaper.mockResolvedValueOnce({ ok: true, name: "0b7c63c8-1d0a-4c3e-9f55-2a8e7d1b4c11.webm" });
+    render(<CustomizationSection />);
+    const clip = new File(["x"], "clip.webm", { type: "video/webm" });
+    await pick(clip);
+    expect(shell.importWallpaper).toHaveBeenCalledWith(clip);
+    expect(useCustomizationStore.getState().backgroundImage).toBe("nuvo-core://local/wallpaper/0b7c63c8-1d0a-4c3e-9f55-2a8e7d1b4c11.webm");
+    expect(document.querySelector("video")).not.toBeNull();
+    await click("settings.customization.fit_contain");
+    expect(useCustomizationStore.getState().backgroundFit).toBe("contain");
+    await click("settings.customization.remove_button");
+    expect(useCustomizationStore.getState().backgroundImage).toBeNull();
+    expect(shell.clearWallpaper).toHaveBeenCalled();
+  });
+
+  it("says why a file was refused and keeps the current wallpaper", async () => {
+    useCustomizationStore.setState({ backgroundImage: "data:image/png;base64,AA==" });
+    shell.importWallpaper.mockResolvedValueOnce({ ok: false, error: "too_large" });
+    render(<CustomizationSection />);
+    await pick(new File(["x"], "huge.mp4", { type: "video/mp4" }));
+    expect(document.body.textContent).toContain("settings.customization.file_too_large");
+    expect(useCustomizationStore.getState().backgroundImage).toBe("data:image/png;base64,AA==");
   });
 });
