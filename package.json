@@ -1,6 +1,6 @@
 {
   "name": "nuvo",
-  "version": "0.2.11-beta.5",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Nuvo, a local-first desktop music player",
