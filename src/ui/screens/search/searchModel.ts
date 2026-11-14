@@ -1,5 +1,6 @@
 import { playlistHref } from "../../app/hrefs";
-import { filterTracks, normalizeForSearch, songResult, type SearchKind, type SearchResult } from "../../ports/search";
+import { filterTracks, normalizeForSearch, songResult, type SearchHistoryItem, type SearchKind, type SearchResult } from "../../ports/search";
+import type { TFunction } from "../../ports/i18n";
 import type { Track } from "../../ports/player";
 
 export type SearchFilter = "all" | "songs" | "albums" | "artists" | "playlists";
@@ -117,4 +118,20 @@ export function localResults(query: string, liked: readonly Track[], playlists: 
       href: playlistHref(playlist.id),
     }));
   return [...songs, ...lists];
+}
+
+export function historyHref(item: SearchHistoryItem): string {
+  const saved = (item.itemData as { href?: string } | undefined)?.href;
+  if (saved) return saved;
+  const id = encodeURIComponent(item.id);
+  if (item.type === "artist") return `/artist?id=${id}`;
+  if (item.type === "album") return `/collection?type=album&id=${id}`;
+  return `/collection?type=playlist&id=${id}`;
+}
+
+export function subtitleOf(result: SearchResult, t: TFunction): string {
+  if (result.kind === "song") return t("ui.search.kind_song", { artist: result.subtitle });
+  if (result.kind === "album") return result.subtitle ? t("ui.library.kind_album", { artist: result.subtitle }) : t("ui.library.kind_album_plain");
+  if (result.kind === "artist") return t("ui.library.kind_artist");
+  return result.subtitle ? t("ui.library.kind_playlist", { owner: result.subtitle }) : t("ui.library.kind_playlist_plain");
 }

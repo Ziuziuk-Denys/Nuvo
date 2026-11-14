@@ -12,10 +12,8 @@ import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCover
 const mocks = vi.hoisted(() => ({
   homeMixes: vi.fn(),
   playMix: vi.fn(),
-  mostSaved: vi.fn(),
   backdrop: vi.fn(),
   go: vi.fn(),
-  pins: [] as Array<Record<string, unknown>>,
   library: { liked: 40, playlists: 1 },
   librarySongs: vi.fn(),
   songsLike: vi.fn(),
@@ -61,9 +59,6 @@ vi.mock("../../ports/library", () => ({
     isFetched: true,
     error: null,
   }),
-  useHomePinsStore: (select: (state: { pins: unknown[] }) => unknown) => select({ pins: mocks.pins }),
-  livePins: (pins: unknown[]) => pins,
-  mostSaved: mocks.mostSaved,
 }));
 
 const tracks = (prefix: string, count: number) =>
@@ -77,9 +72,7 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
   vi.clearAllMocks();
-  mocks.pins = [];
   mocks.library = { liked: 40, playlists: 1 };
-  mocks.mostSaved.mockResolvedValue([]);
   mocks.librarySongs.mockResolvedValue([]);
   mocks.songsLike.mockResolvedValue([]);
   mocks.localStyle.mockResolvedValue(null);
@@ -98,8 +91,6 @@ async function mount() {
     ),
   );
 }
-
-const byText = (text: string) => [...host.querySelectorAll<HTMLElement>("*")].find((el) => el.textContent === text);
 
 describe("Home mixes", () => {
   it("leads with For you as MIX 1, then New to you and the daily mixes numbered from 2", async () => {
@@ -146,41 +137,20 @@ describe("Home mixes", () => {
   });
 });
 
-describe("Home quick picks and shelf", () => {
-  it("lists Liked songs with its count, then the pins with their live track counts", async () => {
-    mocks.homeMixes.mockResolvedValue([]);
-    mocks.pins = [
-      { kind: "playlist", id: "p1", title: "Old name", href: "/library/playlist?id=p1", trackCount: 2 },
-      { kind: "album", id: "al1", title: "Album 1", href: "/collection?type=album&id=al1" },
-    ];
+describe("Home slots", () => {
+  it("holds recommendations only: no quick picks and no saved shelf", async () => {
+    mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 3) }]);
     await mount();
-    const picks = [...host.querySelectorAll<HTMLElement>("[data-pick]")];
-    expect(picks.map((pick) => pick.textContent)).toEqual(["ui.library.likedui.home.songs:40", "Late night driveui.home.tracks:300", "Album 1"]);
-    act(() => picks[0].click());
-    expect(mocks.go).toHaveBeenCalledWith("/library/playlist?id=likes");
-    act(() => picks[2].click());
-    expect(mocks.go).toHaveBeenCalledWith("/collection?type=album&id=al1");
+    expect(host.querySelector("[data-pick]")).toBeNull();
+    expect(host.querySelector("[data-shelf=saved]")).toBeNull();
+    expect(host.querySelector("[data-mix]")).not.toBeNull();
   });
 
-  it("shows the most saved albums and playlists under their own heading", async () => {
-    mocks.homeMixes.mockResolvedValue([]);
-    mocks.mostSaved.mockResolvedValue([
-      { type: "album", id: "al2", title: "Album 2", subtitle: "9 tracks", coverUrl: "x", saves: 1 },
-      { type: "playlist", id: "pl9", title: "Mixtape", subtitle: "", coverUrl: null, saves: 1 },
-    ]);
-    await mount();
-    const shelf = host.querySelector<HTMLElement>("section[aria-label='ui.home.most_saved']")!;
-    expect(shelf.querySelector("h2")?.textContent).toBe("ui.home.most_saved");
-    act(() => byText("Mixtape")!.click());
-    expect(mocks.go).toHaveBeenCalledWith("/collection?type=playlist&id=pl9");
-  });
-
-  it("mounts the cold-start slot when no mix has tracks, and keeps the quick picks", async () => {
+  it("mounts the cold-start slot when no mix has tracks", async () => {
     mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: [] }]);
     await mount();
     expect(host.querySelector("[data-mix]")).toBeNull();
     expect(host.querySelector("[data-slot=cold-start]")?.textContent).toBe("cold-start");
-    expect(host.querySelector("[data-pick]")).not.toBeNull();
   });
 
   it("keeps the hidden-list link's mount point at the foot", async () => {
@@ -370,17 +340,5 @@ describe("Home refresh", () => {
     expect(shelfSongs("like")).toEqual(by("Other", "b", 6).map((track) => track.id));
     await act(async () => refreshOf("like").click());
     expect(shelfSongs("like")).toEqual(by("Other", "b", 6).map((track) => track.id));
-  });
-
-  it("turns Most saved on to the covers after the ones in view", async () => {
-    mocks.homeMixes.mockResolvedValue([]);
-    mocks.mostSaved.mockResolvedValue(
-      Array.from({ length: 6 }, (_, i) => ({ type: "album", id: `al${i}`, title: `Album ${i}`, subtitle: "", coverUrl: "", saves: 1 })),
-    );
-    await mount();
-    const titles = () => [...host.querySelectorAll("[data-shelf=saved] a")].map((card) => card.textContent);
-    await act(async () => refreshOf("saved").click());
-    // jsdom has no layout, so one cover counts as in view
-    expect(titles()).toEqual(["Album 1", "Album 2", "Album 3", "Album 4", "Album 5", "Album 0"]);
   });
 });

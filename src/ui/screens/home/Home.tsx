@@ -4,14 +4,12 @@ import { Button } from "../../components/Button";
 import { Enter } from "../../components/Enter";
 import { usePageBackdrop } from "../../ports/backdrop";
 import { useTranslation } from "../../ports/i18n";
-import { mostSaved, useLikedTrackCount, usePlaylistsList, type MostSavedEntry } from "../../ports/library";
+import { useLikedTrackCount, usePlaylistsList } from "../../ports/library";
 import { playMix, recs, recsChanged, type HomeMix } from "../../ports/recs";
 import { navigateWithTransition } from "../../shell/navigate";
 import { useImportsUi } from "../imports/importsUi";
 import { arrangeMixes, likeArtists, mixText, mosaicCovers } from "./homeModel";
 import { MixCard } from "./MixCard";
-import { QuickPicks } from "./QuickPicks";
-import { SavedShelf } from "./SavedShelf";
 import { LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
 import { ColdStartSlot, HiddenLinkSlot } from "./slots";
 import styles from "./Home.module.css";
@@ -36,25 +34,10 @@ function useHomeMixes(): HomeMix[] | null {
   return mixes;
 }
 
-function useMostSaved(): MostSavedEntry[] {
-  const [items, setItems] = useState<MostSavedEntry[]>([]);
-  useEffect(() => {
-    let live = true;
-    void mostSaved().then((found) => {
-      if (live) setItems(found);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
-  return items;
-}
-
 export function Home(): JSX.Element | null {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mixes = useHomeMixes();
-  const saved = useMostSaved();
   const { data: likedCount } = useLikedTrackCount();
   const playlists = usePlaylistsList();
   const libraryEmpty = likedCount === 0 && !playlists.isLoading && playlists.data.playlists.length === 0;
@@ -84,7 +67,6 @@ export function Home(): JSX.Element | null {
       ),
     });
   }
-  sections.push({ key: "picks", node: <QuickPicks onOpen={open} /> });
   sections.push({ key: "songs", node: <SongsForYou mixes={mixes} /> });
   const [firstArtist, secondArtist] = likeArtists(mixes, LIKE_SHELVES);
   if (firstArtist) sections.push({ key: `like:${firstArtist.name}`, node: <LikeShelf artist={firstArtist} /> });
@@ -103,7 +85,6 @@ export function Home(): JSX.Element | null {
       ),
     });
   }
-  if (saved.length > 0) sections.push({ key: "saved", node: <SavedShelf title={t("ui.home.most_saved")} items={saved} onOpen={open} /> });
 
   return (
     <div className={styles.home}>

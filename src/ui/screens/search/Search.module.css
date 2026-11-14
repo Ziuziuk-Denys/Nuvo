@@ -1,28 +1,18 @@
 .page {
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.page > * {
-  width: min(660px, 100%);
-}
-
-.field,
-.panel {
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--n-ink) 9%, var(--n-field));
-}
-
+/* The query is the page's headline: the field wears Home's wide face instead of a box */
 .field {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   box-sizing: border-box;
-  height: 54px;
-  padding: 0 18px;
+  height: 48px;
   color: var(--n-ink-3);
+  cursor: text;
 }
 
 .field > svg {
@@ -32,51 +22,44 @@
 .input {
   flex: 1;
   min-width: 0;
+  height: 100%;
   margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
+  caret-color: var(--n-accent);
   color: var(--n-ink);
-  font: 400 16px/normal var(--n-font);
-  letter-spacing: -0.025em;
+  font-family: system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  font-variation-settings:
+    "wdth" 134,
+    "opsz" 144;
+  letter-spacing: -0.03em;
+  text-overflow: ellipsis;
   outline: none;
+}
+
+/* a pasted link is an address, not a headline */
+.field[data-link] .input {
+  font: 400 17px/normal var(--n-font);
+  letter-spacing: 0;
 }
 
 .input::placeholder {
   color: var(--n-ink-3);
-}
-
-.clear {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--n-ink-3);
-  cursor: pointer;
-  transition: color 150ms ease-out;
-}
-
-.clear:hover {
-  color: var(--n-ink);
-}
-
-.panel {
-  margin-top: 8px;
-  overflow: hidden;
+  opacity: 1;
 }
 
 .progress {
   position: absolute;
-  top: calc(100% + 3px);
-  right: 8px;
-  left: 8px;
+  right: 0;
+  bottom: -4px;
+  left: 0;
   height: 2px;
   overflow: hidden;
   border-radius: var(--n-r-pill);
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
   animation: appear var(--n-t-base) var(--n-ease-out) both;
 }
 
@@ -106,25 +89,37 @@
 }
 
 .subline {
-  margin: 0;
-  padding: 12px 22px 0;
-  color: var(--n-ink-3);
-  font: 400 12px/normal var(--n-font);
+  margin: 6px 0 0 36px;
+  color: var(--n-ink-2);
+  font: 400 13px/1.4 var(--n-font);
 }
 
-.filters {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 14px 6px;
-  overflow-x: auto;
-}
-
+/* The padding keeps the focus halo inside the scroll box */
 .tabs {
   display: flex;
-  flex: none;
-  gap: 6px;
+  gap: 4px;
+  margin: 11px -3px -3px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tablist {
+  display: flex;
+  gap: 4px;
+}
+
+.sourceButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 0 10px;
+}
+
+.sourceButton[data-chosen] {
+  background: var(--n-fill);
+  color: var(--n-ink);
 }
 
 .preview {
@@ -141,57 +136,17 @@
   display: inline-grid;
   flex: none;
   place-items: center;
-  margin-left: 2px;
   color: var(--n-ink-3);
 }
 
-.tab {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  padding: 7px 13px;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  color: var(--n-ink-2);
-  font: 400 13.5px/normal var(--n-font);
-  cursor: pointer;
-  user-select: none;
-  transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out;
-}
-
-.tab svg {
-  width: 15px;
-  height: 15px;
-}
-
-.tab:hover {
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
-  color: var(--n-ink);
-}
-
-.tab[aria-selected="true"],
-.tab[data-chosen] {
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
-  color: var(--n-ink);
-  font-weight: 500;
-}
-
-:global(:root[data-theme="dark"]) .tab:hover,
-:global(:root[data-theme="dark"]) .tab[aria-selected="true"],
-:global(:root[data-theme="dark"]) .tab[data-chosen] {
-  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
-}
-
 .results {
-  padding: 8px 14px 14px;
+  padding: 22px 0 24px;
 }
 
 .swap {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
   animation: swap var(--n-t-base) var(--n-ease-out) both;
 }
 
@@ -205,31 +160,140 @@
 .placeholders {
   display: flex;
   flex-direction: column;
+  max-width: 720px;
+  margin-inline: -8px;
+}
+
+/* Top result and songs share the first band, the way the palette pairs them */
+.lead {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 40px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.headingLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
 .heading {
   margin: 0;
-  padding: 6px 8px;
-  color: var(--n-ink-3);
-  font: 400 12px/normal var(--n-font);
-}
-
-.group + .group {
-  margin-top: 6px;
+  color: var(--n-ink);
+  font-family: system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 564;
+  font-variation-settings:
+    "wdth" 134,
+    "opsz" 144;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .more {
+  flex: none;
   margin: 0;
-  padding: 6px 8px;
+  padding: 0;
   border: 0;
   background: none;
-  color: var(--n-ink-3);
-  font: 400 12px/normal var(--n-font);
+  color: var(--n-ink-2);
+  font: 500 13px/normal var(--n-font);
   cursor: pointer;
+  transition: color 150ms var(--n-ease-out);
 }
 
-.more:hover {
+.more:hover,
+.more:focus-visible {
   color: var(--n-ink);
+  outline: none;
+}
+
+/* rows pad 8 px inside; pulling them out by 8 puts every cover on the heading's edge */
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin-inline: -8px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  column-gap: 20px;
+  margin-inline: -8px;
+}
+
+.top {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  box-sizing: border-box;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--n-fill);
+  color: var(--n-ink);
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 150ms var(--n-ease-out);
+}
+
+.top:hover,
+.top:focus-visible {
+  background: var(--n-fill-hover);
+}
+
+.topText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.topLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.topTitle,
+.topSubtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.topTitle {
+  font-family: system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  font-variation-settings:
+    "wdth" 134,
+    "opsz" 144;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.topSubtitle {
+  color: var(--n-ink-2);
+  font: 400 13px/1.4 var(--n-font);
+}
+
+.topEnd {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
 }
 
 .queryMark {
@@ -237,31 +301,38 @@
   place-items: center;
   width: 48px;
   height: 48px;
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
-  color: var(--n-ink-2);
+  color: var(--n-ink-3);
 }
 
 .remove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 50%;
   background: none;
   color: var(--n-ink-3);
   cursor: pointer;
+  transition:
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out);
 }
 
-.remove:hover {
+.remove:hover,
+.remove:focus-visible {
+  background: var(--n-hover);
   color: var(--n-ink);
+  outline: none;
 }
 
 .line {
   margin: 0;
-  padding: 40px 20px;
-  color: var(--n-ink-3);
-  font: 400 12px/1.4 var(--n-font);
+  padding: 72px 20px;
+  color: var(--n-ink-2);
+  font: 400 14px/1.5 var(--n-font);
   text-align: center;
   overflow-wrap: anywhere;
 }

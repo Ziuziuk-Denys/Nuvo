@@ -323,7 +323,7 @@ describe("the share sheet", () => {
     expect(buttonNamed("Copy as text")).toBeUndefined();
   });
 
-  it("a 200-song playlist warns about the long link above the actions and copies the first 50 for YouTube", async () => {
+  it("a 200-song playlist warns about the long link on its option and copies the first 50 for YouTube", async () => {
     const writeText = clipboard();
     // ids that do not repeat, so deflate cannot shrink the link under the budget
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -344,7 +344,7 @@ describe("the share sheet", () => {
     const text = document.body.textContent ?? "";
     expect(text).toContain("Road · 200 songs");
     expect(text).toMatch(/This playlist makes a long link \([\d,]+ characters\)/);
-    expect(text.indexOf("long link (")).toBeLessThan(text.indexOf("Copy long link"));
+    expect(copyLong.textContent).toContain("long link (");
     expect(text).toContain("Opens the first 50 songs on YouTube");
     await act(async () => copyLong.click());
     const [message] = writeText.mock.calls[0];

@@ -29,6 +29,8 @@
   height: 32px;
   max-width: 100%;
   padding: 0 var(--n-s-1) 0 var(--n-s-3);
+  border-radius: 16px;
+  font-size: 13px;
 }
 
 .folder[data-missing] {
@@ -65,31 +67,26 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: var(--n-r-s);
+  border-radius: 50%;
   background: transparent;
   color: var(--n-ink-2);
   cursor: pointer;
   transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out;
+    background-color 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out);
 }
 
 .remove:hover,
 .remove:focus-visible {
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  background: var(--n-hover);
   color: var(--n-ink);
   outline: none;
-}
-
-:global(:root[data-theme="dark"]) .remove:hover,
-:global(:root[data-theme="dark"]) .remove:focus-visible {
-  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
 }
 
 .actions {
   display: flex;
   align-items: center;
-  gap: var(--n-s-2);
+  gap: 6px;
 }
 
 .line {

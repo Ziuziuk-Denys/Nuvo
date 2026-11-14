@@ -1,9 +1,9 @@
 import { player } from "@/engine";
+import { playerEngine } from "@/engine/compat";
 import { POOL_KEY } from "@/engine/poolRefresher";
-import { startArtistRadio } from "./catalog";
-import { recs, recsChanged, seedFavorites } from "./recs";
+import { recs, recsChanged, seedFavorites, type FavoritePick } from "./recs";
 
-export const STARTER_ARTISTS = 3;
+export const STARTER_PICKS = 3;
 const STATION_WAIT_MS = 60_000;
 
 function refreshWhenStationFills(): void {
@@ -26,9 +26,10 @@ export function coldStartNeeded(): Promise<boolean> {
   return recs.coldStart();
 }
 
-export async function startFromArtists(artistIds: readonly string[]): Promise<boolean> {
+export async function startFromPicks(picks: readonly FavoritePick[]): Promise<boolean> {
+  let seeds;
   try {
-    await seedFavorites(artistIds.map((id) => ({ kind: "artist", id, title: id })));
+    seeds = await seedFavorites([...picks]);
   } catch {
     return false;
   }
@@ -37,6 +38,8 @@ export async function startFromArtists(artistIds: readonly string[]): Promise<bo
   } catch {
     // storage blocked: the pool refresh runs on its usual day
   }
-  void startArtistRadio(artistIds[0]).then(refreshWhenStationFills, () => undefined);
+  // the first seed is the first pick's song, or the top song of the first picked artist
+  playerEngine.startRadioStation(seeds[0]);
+  refreshWhenStationFills();
   return true;
 }

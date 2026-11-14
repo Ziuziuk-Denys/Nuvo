@@ -96,14 +96,8 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
             <Icon name="folder-add" size={16} />
             {t("ui.local.add_folder")}
           </button>
-          <button
-            type="button"
-            className={`${look.pill} ${look.glass} ${look.square}`}
-            aria-label={t("ui.local.rescan")}
-            title={t("ui.local.rescan")}
-            onClick={() => void rescanMusicFolders()}
-          >
-            <Icon name="refresh" size={16} />
+          <button type="button" className={look.icon} aria-label={t("ui.local.rescan")} title={t("ui.local.rescan")} onClick={() => void rescanMusicFolders()}>
+            <Icon name="refresh" size={18} />
           </button>
         </div>
       </div>

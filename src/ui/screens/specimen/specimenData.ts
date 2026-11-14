@@ -6,14 +6,14 @@ import type { PresetId } from "../../ports/theme";
 
 export const PRESET_NAMES: Record<PresetId, string> = {
   nuvo: "Nuvo",
-  editor: "Editor",
-  orbit: "Orbit",
-  vinyl: "Vinyl",
-  cosmos: "Cosmos",
-  sunset: "Sunset",
-  amethyst: "Amethyst",
-  y2k: "Y2K",
-  cassette: "Cassette",
+  ink: "Ink",
+  frost: "Frost",
+  moss: "Moss",
+  matcha: "Matcha",
+  amber: "Amber",
+  dusk: "Dusk",
+  blossom: "Blossom",
+  velvet: "Velvet",
 };
 
 export const LONG_RU = "Очень длинное название трека, которое не помещается в строку";

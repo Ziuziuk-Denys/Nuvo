@@ -20,6 +20,8 @@ export interface ImportsRuntime {
   saveReport: ((summary: ImportSummary) => Promise<void>) | null;
 }
 
+const SEARCH_TIMEOUT_MS = 10_000;
+
 const FILTERS = {
   songs: "track",
   any: undefined,
@@ -133,7 +135,7 @@ export function bootImports(t: TFunction): ImportsRuntime {
     daemon,
     session,
     actions,
-    searchSongs: (query) => searchYoutube(query, "songs", new AbortController().signal),
+    searchSongs: (query) => searchYoutube(query, "songs", AbortSignal.timeout(SEARCH_TIMEOUT_MS)),
     pendingStore,
     saveReport,
   };

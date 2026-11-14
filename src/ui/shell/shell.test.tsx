@@ -20,6 +20,7 @@ const player = vi.hoisted(() => ({ fullscreen: false, setFullscreen: vi.fn() }))
 const shortcuts = vi.hoisted(() => ({ onEscapeFallback: (() => false) as (() => boolean) | undefined }));
 const mocks = vi.hoisted(() => ({
   railPins: [] as { kind: string; id: string; title: string; href: string; imageUrl?: string }[],
+  homePins: [] as { kind: string; id: string; title: string; href: string; imageUrl?: string }[],
   imports: [] as { status: string; done: number; total: number }[],
 }));
 
@@ -56,9 +57,11 @@ vi.mock("../ports/library", () => ({
   livePins: (pins: unknown[]) => pins,
   usePlaylistsList: () => ({ data: { playlists: [] }, isFetched: false, isLoading: true, error: undefined }),
   useRailPinsStore: (select: (state: { pins: unknown[] }) => unknown) => select({ pins: mocks.railPins }),
+  useHomePinsStore: (select: (state: { pins: unknown[] }) => unknown) => select({ pins: mocks.homePins }),
 }));
+vi.mock("../screens/entity/entityActions", () => ({ unpinEverywhere: vi.fn() }));
 vi.mock("../screens/imports/ImportsHost", () => ({ ImportsHost: () => null }));
-vi.mock("../screens/palette/Palette", () => ({ Palette: () => null }));
+vi.mock("../screens/palette/Palette", () => ({ PaletteField: () => <input data-testid="palette-field" /> }));
 
 let root: Root;
 let host: HTMLDivElement;
@@ -98,7 +101,7 @@ function mount(path: string, children: ReactNode = <p>page</p>) {
 
 const navLinks = () => [...host.querySelectorAll<HTMLAnchorElement>('nav[aria-label="ui.nav.label"] a')];
 const button = (label: string) => host.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
-const railButton = () => host.querySelector<HTMLButtonElement>("aside button")!;
+const settingsButton = () => host.querySelector<HTMLButtonElement>('header button[aria-label="ui.nav.settings"]')!;
 
 function press(key: string) {
   act(() => {
@@ -134,20 +137,18 @@ describe("Shell", () => {
   it("renders the nav items as links and marks the active one", () => {
     mount("/library");
     const links = navLinks();
-    expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
-      "ui.nav.home",
-      "ui.nav.search",
-      "ui.nav.recognize",
-      "ui.nav.library",
-      "ui.nav.stats",
-    ]);
-    expect(links.map((link) => link.getAttribute("aria-current"))).toEqual([null, null, null, "page", null]);
+    expect(links.map((link) => link.getAttribute("aria-label"))).toEqual(["ui.nav.home", "ui.nav.library", "ui.nav.stats", "ui.nav.recognize"]);
+    expect(links.map((link) => link.getAttribute("aria-current"))).toEqual([null, "page", null, null]);
   });
 
-  it("lists the lists pinned to the sidebar under the nav, a cover or a glyph each", () => {
+  it("lists the pinned lists after the sections, bar pins first, then Home pins not already there", () => {
     mocks.railPins = [
       { kind: "album", id: "a1", title: "Blue", href: "/collection?type=album&id=a1", imageUrl: "blue.jpg" },
       { kind: "artist", id: "r1", title: "Ann", href: "/artist?id=r1" },
+    ];
+    mocks.homePins = [
+      { kind: "album", id: "a1", title: "Blue", href: "/collection?type=album&id=a1", imageUrl: "blue.jpg" },
+      { kind: "playlist", id: "p9", title: "Road", href: "/collection?type=playlist&id=p9" },
     ];
     mount("/");
     const pinned = host.querySelector('nav[aria-label="ui.nav.pinned"]')!;
@@ -155,10 +156,12 @@ describe("Shell", () => {
     expect(links.map((link) => [link.getAttribute("aria-label"), link.getAttribute("href")])).toEqual([
       ["Blue", "#/collection?type=album&id=a1"],
       ["Ann", "#/artist?id=r1"],
+      ["Road", "#/collection?type=playlist&id=p9"],
     ]);
     expect(links[0].querySelector("img")).not.toBeNull();
-    expect(navLinks()).toHaveLength(5);
+    expect(navLinks()).toHaveLength(4);
     mocks.railPins = [];
+    mocks.homePins = [];
   });
 
   it("draws a progress line under Library while imports run, and none once they are done", () => {
@@ -167,7 +170,7 @@ describe("Shell", () => {
       { status: "done", done: 5, total: 5 },
     ];
     mount("/");
-    const library = navLinks()[3];
+    const library = navLinks()[1];
     const bar = library.querySelector('[role="progressbar"]')!;
     expect(bar.getAttribute("aria-valuenow")).toBe("30");
     expect((bar.firstElementChild as HTMLElement).style.transform).toBe("scaleX(0.3)");
@@ -187,60 +190,67 @@ describe("Shell", () => {
     expect(back()).toBeDefined();
   });
 
-  it("Search on the rail opens the search page like the other items", () => {
-    mount("/", <Where />);
-    act(() => navLinks()[1].click());
-    expect(where()).toBe("/search");
-    expect(modal.openSearch).not.toHaveBeenCalled();
+  it("has no Search section: the field in the bar is the way in", () => {
+    mount("/");
+    expect(host.querySelector('header nav a[data-nav="search"]')).toBeNull();
+    expect(host.querySelector("header [data-testid=palette-field]")).not.toBeNull();
   });
 
-  it("puts settings at the foot of the rail and the window buttons in the top bar", () => {
+  it("puts the search field, settings and the window buttons in the top bar", () => {
     mount("/");
-    expect(railButton().getAttribute("aria-label")).toBe("ui.nav.settings");
-    act(() => railButton().click());
+    expect(host.querySelector("header [data-testid=palette-field]")).not.toBeNull();
+    act(() => settingsButton().click());
     expect(modal.openSettings).toHaveBeenCalledTimes(1);
     for (const label of ["ui.window.minimize", "ui.window.maximize", "ui.window.close"]) {
       expect(button(label)?.closest("header[data-window-drag]")).not.toBeNull();
     }
   });
 
-  it("lights Search while the search popup is open", () => {
+  it("keeps the current section lit while the search palette is open", () => {
     modal.searchOpen = true;
     mount("/library");
-    expect(navLinks().map((link) => link.getAttribute("aria-current"))).toEqual([null, "page", null, null, null]);
+    expect(navLinks().map((link) => link.getAttribute("aria-current"))).toEqual([null, "page", null, null]);
   });
 
-  it("moves the current mark with a click and keeps the rail to glyphs only", () => {
+  it("moves the current mark with a click and keeps the sections to glyphs only", () => {
     mount("/");
     act(() => navLinks()[2].click());
-    expect(navLinks().map((link) => link.getAttribute("aria-current"))).toEqual([null, null, "page", null, null]);
-    expect(host.querySelector("aside")!.textContent).toBe("");
+    expect(navLinks().map((link) => link.getAttribute("aria-current"))).toEqual([null, null, "page", null]);
+    expect(host.querySelector('nav[aria-label="ui.nav.label"]')!.textContent).toBe("");
   });
 
-  it("marks nothing on a route outside the rail", () => {
+  it("drops focus from a section after a pointer click, so no focus fill stays behind", () => {
+    mount("/");
+    const library = navLinks()[1];
+    act(() => library.focus());
+    act(() => void library.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, detail: 1 })));
+    expect(document.activeElement).not.toBe(library);
+  });
+
+  it("marks nothing on a route outside the sections", () => {
     mount("/specimen");
     expect(navLinks().every((link) => !link.hasAttribute("aria-current"))).toBe(true);
   });
 
   it("shows the Nuvo mark at the start of the top bar", () => {
     mount("/");
-    const header = host.querySelector("header[data-window-drag]")!;
-    expect(header.firstElementChild?.getAttribute("aria-label")).toBe("Nuvo");
-    expect(header.firstElementChild?.querySelector("svg")).not.toBeNull();
+    const mark = host.querySelector("header[data-window-drag] a")!;
+    expect(mark.getAttribute("aria-label")).toBe("Nuvo");
+    expect(mark.querySelector("svg")).not.toBeNull();
   });
 
-  it("walks the rail with the arrow keys, Home and End", () => {
+  it("walks the sections with the arrow keys, Home and End", () => {
     mount("/");
     const links = navLinks();
     act(() => links[0].focus());
-    press("ArrowDown");
+    press("ArrowRight");
     expect(document.activeElement).toBe(links[1]);
     press("End");
-    expect(document.activeElement).toBe(railButton());
-    press("ArrowDown");
+    expect(document.activeElement).toBe(links[3]);
+    press("ArrowRight");
     expect(document.activeElement).toBe(links[0]);
-    press("ArrowUp");
-    expect(document.activeElement).toBe(railButton());
+    press("ArrowLeft");
+    expect(document.activeElement).toBe(links[3]);
     press("Home");
     expect(document.activeElement).toBe(links[0]);
   });

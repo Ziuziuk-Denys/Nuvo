@@ -3,68 +3,192 @@
   top: 0;
   inset-inline: 0;
   z-index: 40;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(200px, 440px) minmax(max-content, 1fr);
   align-items: center;
   box-sizing: border-box;
   height: 62px;
-  padding: 6px 12px 6px 6px;
+  padding: 0 10px;
   user-select: none;
+}
+
+.start,
+.end,
+.group {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+.start {
+  gap: 2px;
+}
+
+.end {
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.middle {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 16px;
 }
 
 .mark {
   display: grid;
   flex: none;
   place-items: center;
-  width: 58px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
+  margin-inline-end: 10px;
   color: var(--n-ink);
   transition: transform var(--n-t-quick) var(--n-ease-out);
 }
 
 .mark > svg {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
 }
 
 .mark:active {
-  transform: scale(0.95);
+  transform: scale(var(--n-press));
+  transition-duration: var(--n-t-instant);
+}
+
+.group {
+  gap: 2px;
+}
+
+.tray {
+  isolation: isolate;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 2px;
+  border-radius: 20px;
+  background: var(--n-tray);
+  box-shadow: var(--n-tray-edge);
+}
+
+.pins {
+  margin-inline-start: 8px;
+}
+
+.item {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--n-ink-2);
+  cursor: pointer;
+  transition:
+    background-color 150ms var(--n-ease-out),
+    box-shadow 150ms var(--n-ease-out),
+    color 150ms var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
+}
+
+.item > svg {
+  display: block;
+}
+
+.item[aria-current="page"],
+.item[aria-current="page"]:hover {
+  background: transparent;
+  color: var(--n-ink);
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--n-tray-item-hover);
+  color: var(--n-ink);
+}
+
+.item[aria-pressed="true"] {
+  background: var(--n-lens);
+  box-shadow: var(--n-lens-shadow);
+  color: var(--n-ink);
+}
+
+.item:active {
+  transform: scale(var(--n-press));
+  transition-duration: var(--n-t-instant);
+}
+
+.item:focus-visible {
+  outline: none;
+}
+
+.pins .item > span {
+  opacity: 0.85;
+  transition: opacity 150ms var(--n-ease-out);
+}
+
+.pins .item:hover > span {
+  opacity: 1;
+}
+
+.progress {
+  position: absolute;
+  bottom: 3px;
+  left: 8px;
+  width: 20px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--n-ink) 12%, transparent);
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  background: var(--n-accent);
+  transform-origin: left;
+  transition: transform var(--n-t-base) var(--n-ease-out);
+}
+
+.rule {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--n-hair);
 }
 
 .back {
-  position: relative;
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: 6px;
   height: 38px;
-  margin-inline-start: 22px;
-  padding: 0 12px;
+  margin-inline-start: 8px;
+  padding: 0 14px 0 12px;
   border: 0;
-  border-radius: 10px;
-  background: var(--n-glass);
-  -webkit-backdrop-filter: var(--n-glass-blur);
-  backdrop-filter: var(--n-glass-blur);
+  border-radius: 19px;
+  background: var(--n-tray);
+  box-shadow: var(--n-tray-edge);
   color: var(--n-ink);
   font: 500 13px/1 var(--n-font);
   cursor: pointer;
-  transition: transform var(--n-t-quick) var(--n-ease-out);
+  transition:
+    background-color 150ms var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
 }
 
-.back::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  transition: background-color 150ms var(--n-ease-out);
-}
-
-.back:hover::after {
-  background: var(--n-hover);
+.back:hover {
+  background: var(--n-tray-hover);
 }
 
 .back:active {
-  transform: scale(0.96);
+  transform: scale(var(--n-press-wide));
+  transition-duration: var(--n-t-instant);
 }
 
 .back > svg {
@@ -75,16 +199,15 @@
   transform: translateX(-2px);
 }
 
-.back > span {
-  position: relative;
-  top: 1px;
-  left: -1.5px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .mark:active,
+  .item:active,
   .back:active,
   .back:hover > svg {
     transform: none;
+  }
+
+  .progress > span {
+    transition: none;
   }
 }

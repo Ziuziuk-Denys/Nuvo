@@ -49,9 +49,7 @@ export const useModalStore = create<Sheets>((set) => ({
   createPlaylistPendingTrack: null,
   removeFromLibrary: null,
   removeFromPlaylist: null,
-  openSearch: () => {
-    window.location.hash = "#/search";
-  },
+  openSearch: () => set({ searchOpen: true }),
   closeSearch: () => set({ searchOpen: false }),
   openSettings: () => set({ settingsOpen: true, settingsSection: null, searchOpen: false }),
   openSettingsSection: (settingsSection) => set({ settingsOpen: true, settingsSection, searchOpen: false }),

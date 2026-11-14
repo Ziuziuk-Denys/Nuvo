@@ -99,7 +99,7 @@ export function useExcludedPlaylists(): string[] | null {
   return ids;
 }
 
-export async function seedFavorites(picks: FavoritePick[]): Promise<void> {
+export async function seedFavorites(picks: FavoritePick[]): Promise<Track[]> {
   const catalog = getYoutube().catalog;
   const signal = AbortSignal.timeout(SEED_TIMEOUT_MS);
   const lists = await Promise.all(
@@ -122,6 +122,7 @@ export async function seedFavorites(picks: FavoritePick[]): Promise<void> {
   const saved = await recs.saveStarters(tracks);
   if (saved !== true) throw new Error(`starters not saved: ${saved}`);
   recsChanged.dispatchEvent(new Event("change"));
+  return tracks;
 }
 
 export async function suggest(playlistId: string, trackIds: readonly string[]): Promise<Suggested[]> {
