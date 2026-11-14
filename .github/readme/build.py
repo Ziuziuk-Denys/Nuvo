@@ -30,6 +30,10 @@ WIDE, NARROW = 1000, 480
 RADIUS = 28
 WINDOW_RADIUS = 10
 EASE = "cubic-bezier(.2,.7,.2,1)"
+GLOW = {
+    "light": (("#afc8f7", 0.38), ("#71d4ef", 0.2)),
+    "dark": (("#4a69b0", 0.42), ("#00718d", 0.3)),
+}
 MARK = (
     "M32 62 A30 30 0 0 1 62 32 L87.92 32 A14 14 0 0 1 100.04 39 L130.14 91.14 A16 16 0 0 0 160 83.14 L160 50 "
     "A18 18 0 0 1 178 32 L194 32 A30 30 0 0 1 224 62 L224 194 A30 30 0 0 1 194 224 L168.08 224 A14 14 0 0 1 155.96 217 "
@@ -142,7 +146,22 @@ class Art:
         return f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" rx="{radius:.1f}"{extra}/>'
 
     def card(self):
-        self.add(self.rect(0.5, 0.5, self.width - 1, self.height - 1, RADIUS, f' fill="{self.t["card"]}" stroke="{self.t["hair"]}"'))
+        self.add(self.rect(0.5, 0.5, self.width - 1, self.height - 1, RADIUS, f' fill="{self.t["card"]}"'))
+        self.glow()
+        self.add(self.rect(0.5, 0.5, self.width - 1, self.height - 1, RADIUS, f' fill="none" stroke="{self.t["hair"]}"'))
+
+    def glow(self, radius=RADIUS):
+        clip, blur = self.uid("c"), self.uid("b")
+        w, h = self.width, self.height
+        spread = min(w, h) * 0.16 + 24
+        self.defs.append(f'<clipPath id="{clip}">{self.rect(0, 0, w, h, radius)}</clipPath>')
+        self.defs.append(f'<filter id="{blur}" filterUnits="userSpaceOnUse" x="{-w}" y="{-h}" width="{3 * w}" height="{3 * h}"><feGaussianBlur stdDeviation="{spread:.0f}"/></filter>')
+        (first, a), (second, b) = GLOW[self.theme]
+        spots = (
+            f'<ellipse cx="{w * 0.16:.0f}" cy="{h * 0.02:.0f}" rx="{w * 0.3:.0f}" ry="{max(h * 0.32, 90):.0f}" fill="{first}" fill-opacity="{a}"/>'
+            f'<ellipse cx="{w * 0.92:.0f}" cy="{h * 0.98:.0f}" rx="{w * 0.24:.0f}" ry="{max(h * 0.26, 70):.0f}" fill="{second}" fill-opacity="{b}"/>'
+        )
+        self.add(f'<g clip-path="url(#{clip})"><g filter="url(#{blur})">{spots}</g></g>')
 
     def shadow(self):
         name = self.uid("s")
@@ -385,6 +404,7 @@ def poster(theme, width, height, title, word_size, tagline_size, tagline_width, 
     a = Art(theme, width, height, title)
     t = a.t
     a.add(f'<rect width="{width}" height="{height}" fill="{t["card"]}"/>')
+    a.glow(0)
     left = round(width * 0.056)
     a.add(a.wordmark(left, shot_y + word_size * 0.95, word_size))
     top = shot_y + word_size * 0.95 + tagline_size * 1.6
