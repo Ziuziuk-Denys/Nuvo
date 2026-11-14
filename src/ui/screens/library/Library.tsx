@@ -367,6 +367,18 @@ export function Library(): JSX.Element {
             >
               <Icon name="more" size={18} />
             </button>
+            {tab !== "local" ? (
+              <button
+                type="button"
+                className={`${look.pill} ${look.glass} ${styles.create}`}
+                aria-label={t("ui.library.import")}
+                title={t("ui.library.import")}
+                onClick={() => useImportsUi.getState().openImport()}
+              >
+                <Icon name="import" size={16} />
+                <span className={styles.createLabel}>{t("ui.library.import")}</span>
+              </button>
+            ) : null}
             {tab === "all" || tab === "playlists" ? (
               <button
                 type="button"
