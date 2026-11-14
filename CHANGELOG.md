@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0
+
+The redesign release. Every screen of Nuvo is new, and everything merged since 0.2.10 and the 0.2.11 betas is in it.
+
+- **A new interface.** A new top bar with search in it, Home, the search palette (Ctrl K), Library, album, artist and playlist pages, the queue, menus, dialogs, settings, toasts, the lock and crash screens and the welcome tour are all redrawn, with our own icon set. Settings are grouped into Player, Interface, Integrations and Application, each one scrolling page with a search on top.
+- **Themes.** Nine themes with their own colours, Matcha and Blossom among them, an illustrated app icon for eight of them, and a soft cross-fade when you switch.
+- **Wallpapers** work in the light theme too, and can be a photo, a GIF or a video. Video pauses when the window is hidden.
+- **SoundCloud search.** Search SoundCloud directly, with YouTube and SoundCloud songs ranked in one list.
+- **Imports.** Playlists from Soundiiz, TuneMyMusic, Google Takeout, XSPF and TXT files, and public Yandex Music playlists, albums and tracks by link. Imported songs are matched on YouTube and SoundCloud together.
+- **Lyrics made on your computer.** Nuvo can time every word of synced lyrics, time plain lyrics, and write lyrics for songs that have none, with Whisper running locally.
+- **Proxies.** Play, recognize and fetch through SOCKS5 proxies with a login, and check each service through the proxy with a plain hint on what to do.
+- **Tools download by themselves.** yt-dlp, Deno and ffmpeg are fetched on every platform when needed.
+- **Last.fm** shows the playing song as now playing.
+- **Discord** shows the playing song by default.
+- **Fixes.** The Notch sits at the top on KDE Plasma. Per-track loudness normalization works again. A YouTube stream that answers 403 gets a fresh link. SQLCipher is updated to 4.20 (RUSTSEC-2026-0502).
+
+Linux and Windows are supported. macOS is supported, and we are looking for testers: please report what works and what breaks in [the chat](https://t.me/getnuvo_chat) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
 ## 0.2.11-beta.5
 
 - **The song cover always shows in Discord,** and there is a Get Nuvo button on the card.
