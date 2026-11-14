@@ -64,7 +64,7 @@ import { systemMuted, unmuteSystem } from "./systemSound";
 import { probeWatcher, TrayController, trayIconStyle, trayWanted, type TrayItemId } from "./tray";
 import { RateGate, RefusalLog, validateBindings, validateIcon, validateNotchAction, validateNotice, validateSurfaceState } from "./validate";
 import { nextZoom, zoomKey } from "./zoom";
-import { activateWindow, DEFAULT_SIZE, MIN_SIZE, navigationDecision, onScreenBounds } from "./windowRules";
+import { activateWindow, DEFAULT_SIZE, frameOptions, MIN_SIZE, navigationDecision, onScreenBounds } from "./windowRules";
 
 export interface YoutubeService {
   dispose(): void;
@@ -164,9 +164,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         ...DEFAULT_SIZE,
         minWidth: MIN_SIZE.width,
         minHeight: MIN_SIZE.height,
-        frame: false,
-        transparent: true,
-        hasShadow: false,
+        ...frameOptions(process.platform),
         fullscreenable: true,
         show: false,
         icon: nativeImage.createFromPath(iconFile(512)),
