@@ -7,7 +7,7 @@ import { BUSY_MS, downloadText, TOAST_ID, useToolDownloadToast } from "./useTool
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const system = vi.hoisted(() => ({ readTools: vi.fn() }));
+const system = vi.hoisted(() => ({ readTools: vi.fn(), downloadTool: vi.fn() }));
 vi.mock("../ports/system", async (original) => ({ ...(await original<typeof import("../ports/system")>()), ...system }));
 vi.mock("../ports/i18n", () => ({
   useTranslation: () => ({ t: (key: string, vars?: Record<string, unknown>) => `${key} ${JSON.stringify(vars ?? {})}` }),
@@ -39,6 +39,7 @@ describe("tool download toast", () => {
     await flush();
     const toast = useToastStore.getState().queue.find((item) => item.id === TOAST_ID);
     expect(toast?.message).toBe('ui.settings.tools.progress {"tool":"ffmpeg","percent":25}');
+    expect(toast?.progress).toBe(0.25);
     await act(async () => void (await vi.advanceTimersByTimeAsync(BUSY_MS)));
     expect(useToastStore.getState().queue.find((item) => item.id === TOAST_ID)).toBeUndefined();
     act(() => root.unmount());
@@ -51,6 +52,19 @@ describe("tool download toast", () => {
     await flush();
     await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
     expect(useToastStore.getState().queue.filter((item) => item.variant === "error")).toHaveLength(1);
+    act(() => root.unmount());
+  });
+
+  it("offers to download the failed tool again", async () => {
+    system.readTools.mockResolvedValue({ tools: [], download: { tool: "deno", received: 0, failed: true } });
+    const root = createRoot(document.createElement("div"));
+    act(() => root.render(<Probe />));
+    await flush();
+    useToastStore
+      .getState()
+      .queue.find((item) => item.variant === "error")
+      ?.action?.onClick();
+    expect(system.downloadTool).toHaveBeenCalledWith("js-runtime");
     act(() => root.unmount());
   });
 

@@ -1,15 +1,24 @@
 import { useEffect, useState, type JSX } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Icon } from "../icons/Icon";
 import { useStatusLine } from "./statusLine";
 import { STICKY, useToastStore, visibleToast, type ToastVariant } from "./toastStore";
 import styles from "./Toaster.module.css";
 
-const SPRING = { type: "spring", stiffness: 480, damping: 38, mass: 0.8 } as const;
+const EASE_OUT = [0.2, 0.7, 0.2, 1] as const;
 
-function Glyph({ variant }: { variant: ToastVariant }): JSX.Element {
-  if (variant === "loader" || variant === "loading") return <span className={styles.spinner} data-variant="loader" />;
-  const name = variant === "success" || variant === "checkmark" ? "check" : variant === "error" ? "close" : "info";
+// work with a known end shows its line instead of a spinner, so nothing spins for minutes
+function Glyph({ variant, measured }: { variant: ToastVariant; measured: boolean }): JSX.Element {
+  if (variant === "loader" || variant === "loading") {
+    return measured ? (
+      <span className={styles.glyph}>
+        <Icon name="download" size={16} />
+      </span>
+    ) : (
+      <span className={styles.spinner} data-variant="loader" />
+    );
+  }
+  const name = variant === "success" || variant === "checkmark" ? "check" : variant === "error" ? "warning" : "info";
   return (
     <span className={styles.glyph} data-variant={variant === "checkmark" ? "success" : variant}>
       <Icon name={name} size={16} />
@@ -22,6 +31,7 @@ export function Toaster(): JSX.Element {
   const toast = visibleToast(queue);
   const [hoveredId, setHoveredId] = useState<string | number | null>(null);
   const paused = toast !== null && hoveredId === toast.id;
+  const still = useReducedMotion() === true;
 
   useEffect(() => useToastStore.getState().listen(), []);
   useStatusLine();
@@ -45,13 +55,14 @@ export function Toaster(): JSX.Element {
             role={toast.variant === "error" ? "alert" : "status"}
             className={styles.card}
             data-action={toast.action ? "" : undefined}
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1, transition: SPRING }}
-            exit={{ opacity: 0, y: -48, scale: 0.92, transition: { duration: 0.18, ease: "easeIn" } }}
+            data-progress={toast.progress !== undefined ? "" : undefined}
+            initial={still ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: EASE_OUT } }}
+            exit={still ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: 4, scale: 0.98, transition: { duration: 0.15, ease: "easeIn" } }}
             onMouseEnter={() => setHoveredId(toast.id)}
             onMouseLeave={() => setHoveredId(null)}
           >
-            <Glyph variant={toast.variant} />
+            <Glyph variant={toast.variant} measured={toast.progress !== undefined} />
             <span className={styles.text}>
               <span className={styles.message}>{toast.message}</span>
               {toast.description ? (
@@ -76,6 +87,9 @@ export function Toaster(): JSX.Element {
               >
                 {toast.action.label}
               </button>
+            ) : null}
+            {toast.progress !== undefined ? (
+              <span className={styles.progress} style={{ transform: `scaleX(${Math.min(1, Math.max(0, toast.progress))})` }} />
             ) : null}
           </motion.div>
         ) : null}

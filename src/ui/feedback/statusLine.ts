@@ -42,7 +42,6 @@ export function useStatusLine(): void {
         description: t("ui.status.offline_hint"),
         variant: "info",
         duration: OFFLINE_MS,
-        action: { label: t("ui.status.dismiss"), onClick: () => undefined },
       });
     }
   }, [kind, t]);

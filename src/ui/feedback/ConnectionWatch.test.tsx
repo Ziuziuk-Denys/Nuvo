@@ -2,6 +2,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useModalStore } from "../shell/sheets";
 import { useTour } from "../tour/tourStore";
 import { ConnectionWatch } from "./ConnectionWatch";
 import { useToastStore } from "./toastStore";
@@ -31,6 +32,8 @@ describe("ConnectionWatch", () => {
     act(() => useTour.setState({ phase: "off" }));
     await act(async () => vi.advanceTimersByTimeAsync(6_000));
     expect(show).toHaveBeenCalledWith(expect.objectContaining({ message: "ui.network_advice.blocked" }));
+    act(() => show.mock.calls[0][0].action?.onClick());
+    expect(useModalStore.getState()).toMatchObject({ settingsOpen: true, settingsSection: "network" });
     act(() => root.unmount());
   });
 });

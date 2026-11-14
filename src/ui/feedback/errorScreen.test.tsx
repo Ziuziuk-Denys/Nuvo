@@ -3,11 +3,12 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { report } from "./ErrorScreen";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock("../ports/feedback", () => ({ logError: vi.fn(), APP_VERSION: "1.2.3" }));
+vi.mock("../ports/feedback", () => ({ logError: vi.fn(), APP_VERSION: "1.2.3", recentLog: () => ["12:00 warn library index slow"] }));
 vi.mock("../shell/WindowButtons", () => ({ WindowButtons: () => <div data-window-controls /> }));
 vi.mock("../ports/escape", () => ({ isEscapeGuarded: () => false }));
 
@@ -102,7 +103,17 @@ describe("ErrorBoundary", () => {
     expect(copied).toContain("Error: cover decoder fell over");
     expect(copied).toContain("Broken");
     expect(copied).toContain("1.2.3");
+    expect(copied).toContain("Log:\n12:00 warn library index slow");
     expect(button("ui.error.copied")).toBeDefined();
+  });
+
+  it("keeps the file name and line of a stack frame but not the folders around it", () => {
+    const error = new Error("boom");
+    error.stack = "Error: boom\n    at kv (file:///home/ann/apps/nuvo/dist/assets/App-C3.js:13:6942)";
+    const text = report(error, null, ["warn pins could not read /home/ann/Music/a.flac"]);
+    expect(text).toContain("at kv (App-C3.js:13:6942)");
+    expect(text).toContain("could not read ~/Music/a.flac");
+    expect(text).not.toContain("ann");
   });
 
   it("reloads the window", () => {

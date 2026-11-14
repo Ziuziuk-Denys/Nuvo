@@ -2,7 +2,6 @@ import { useId, useRef, useState, type JSX } from "react";
 import { Button } from "../../components/Button";
 import { TextField } from "../../components/TextField";
 import { StateCard } from "../../feedback/StateCard";
-import { Icon } from "../../icons/Icon";
 import { coreApi } from "../../ports/core";
 import { useTranslation } from "../../ports/i18n";
 import styles from "./LockScreen.module.css";
@@ -36,7 +35,7 @@ function PassphraseLock({ onUnlocked }: { onUnlocked: () => void }): JSX.Element
   };
 
   return (
-    <StateCard title={t("ui.lock.title")} line={t("ui.lock.passphrase_line")} glyph={<Icon name="nuvo-mark" size={26} />} busy={busy} shake={shake}>
+    <StateCard title={t("ui.lock.title")} line={t("ui.lock.passphrase_line")} busy={busy} shake={shake}>
       <TextField
         value={value}
         onChange={(next) => {
@@ -47,6 +46,7 @@ function PassphraseLock({ onUnlocked }: { onUnlocked: () => void }): JSX.Element
         label={t("ui.lock.passphrase_field")}
         placeholder={t("ui.lock.passphrase_field")}
         type="password"
+        size="l"
         autoFocus
         maxLength={256}
       />
@@ -93,7 +93,7 @@ function PhraseLock({ onUnlocked }: { onUnlocked: () => void }): JSX.Element {
   };
 
   return (
-    <StateCard title={t("ui.lock.title")} line={t("ui.lock.line")} glyph={<Icon name="nuvo-mark" size={26} />} busy={busy} shake={shake}>
+    <StateCard title={t("ui.lock.title")} line={t("ui.lock.line")} busy={busy} shake={shake}>
       <div className={styles.well} data-invalid={error ? "" : undefined}>
         <textarea
           ref={fieldRef}

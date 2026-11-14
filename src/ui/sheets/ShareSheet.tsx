@@ -1,10 +1,13 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useId, useState, type JSX } from "react";
 import { create } from "zustand";
-import { Button } from "../components/Button";
-import { Sheet } from "../components/Sheet";
+import { IconButton } from "../components/IconButton";
+import { Icon } from "../icons/Icon";
+import type { IconName } from "../icons";
 import { useTranslation } from "../ports/i18n";
 import { buildShareLink, displayText, shareMessage, songLine, sourceUrl, textList, youtubeListUrl, type BuiltLink, type ShareItem } from "../ports/links";
 import type { Track } from "../ports/player";
+import { GlassSheet } from "./GlassSheet";
+import glass from "./GlassSheet.module.css";
 import styles from "./ShareSheet.module.css";
 
 export interface ShareSheetProps {
@@ -52,10 +55,13 @@ function saveFile(title: string, items: ShareItem[]): void {
   setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
+type Copied = "link" | "youtube" | "text";
+
 export function ShareSheet({ title, items, onClose }: ShareSheetProps): JSX.Element {
   const { t } = useTranslation();
   const [built, setBuilt] = useState<BuiltLink | null>(null);
-  const [status, setStatus] = useState("");
+  const [copied, setCopied] = useState<{ what: Copied; status: string } | null>(null);
+  const headingId = useId();
 
   useEffect(() => {
     let live = true;
@@ -70,59 +76,86 @@ export function ShareSheet({ title, items, onClose }: ShareSheetProps): JSX.Elem
 
   const single = items.length === 1 && !title;
   const youtube = single ? null : youtubeListUrl(items);
-  const copy = (text: string, done: string) => {
-    void navigator.clipboard.writeText(text).then(() => setStatus(done));
+  const copy = (what: Copied, text: string, status: string) => {
+    void navigator.clipboard.writeText(text).then(() => setCopied({ what, status }));
   };
   const heading = single
     ? songLine(items[0].artist, items[0].title)
     : t("ui.links.share.heading", { title: displayText(title), count: built?.trackCount ?? items.length });
   const copyLink = () => {
-    if (built?.link) copy(shareMessage(heading, t("ui.links.share.open_in_nuvo"), built.link, single ? sourceUrl(items[0]) : null), t("ui.links.share.copied"));
+    if (built?.link)
+      copy("link", shareMessage(heading, t("ui.links.share.open_in_nuvo"), built.link, single ? sourceUrl(items[0]) : null), t("ui.links.share.copied"));
   };
+  const option = (icon: IconName, label: string, onClick: () => void, what?: Copied, hint?: string) => {
+    const done = what !== undefined && copied?.what === what;
+    return (
+      <button
+        type="button"
+        className={styles.option}
+        data-done={done ? "" : undefined}
+        aria-label={done ? copied.status : label}
+        aria-describedby={hint ? `${headingId}-${icon}` : undefined}
+        onClick={onClick}
+      >
+        <span className={styles.glyph} key={done ? "done" : "idle"}>
+          <Icon name={done ? "check" : icon} size={18} />
+        </span>
+        <span className={styles.text}>
+          <span className={styles.label}>{done ? copied.status : label}</span>
+          {hint ? (
+            <span id={`${headingId}-${icon}`} className={styles.hint}>
+              {hint}
+            </span>
+          ) : null}
+        </span>
+      </button>
+    );
+  };
+  const artists = [...new Set(items.map((item) => item.artist).filter(Boolean))].slice(0, 3).join(", ");
+  const linkHint =
+    [
+      built?.overBudget ? t("ui.links.share.long_link", { count: (built.link ?? "").length }) : "",
+      built && built.skipped > 0 ? `${t("ui.links.share.skipped", { count: built.skipped })}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
 
   return (
-    <Sheet open onClose={onClose} title={t("ui.links.share.title")} actions={[{ label: t("common.close"), onClick: onClose }]}>
-      <div className={styles.body}>
-        <div>
-          <p className={styles.heading}>{displayText(heading)}</p>
-          {single ? null : (
-            <ul className={styles.preview}>
-              {items.slice(0, 3).map((item, index) => (
-                <li key={`${item.id}-${index}`}>{displayText(songLine(item.artist, item.title))}</li>
-              ))}
-            </ul>
-          )}
+    <GlassSheet open onClose={onClose} labelledBy={headingId} width={380}>
+      <div className={styles.head}>
+        <div className={styles.headText}>
+          <h2 id={headingId} className={glass.title}>
+            {displayText(heading)}
+          </h2>
+          {single || !artists ? null : <p className={styles.artists}>{displayText(artists)}</p>}
         </div>
-        {built && built.skipped > 0 ? <p className={styles.note}>{t("ui.links.share.skipped", { count: built.skipped })}</p> : null}
-        {built?.overBudget && built.copyAllowed ? <p className={styles.note}>{t("ui.links.share.long_link", { count: (built.link ?? "").length })}</p> : null}
-        {built && !built.copyAllowed ? <p className={styles.note}>{t("ui.links.share.too_long")}</p> : null}
-        <div className={styles.actions}>
-          {built?.copyAllowed ? (
-            <Button variant="primary" onClick={copyLink}>
-              {built.overBudget ? t("ui.links.share.copy_long") : t("ui.links.share.copy_link")}
-            </Button>
-          ) : null}
-          {youtube ? (
-            <Button variant="secondary" onClick={() => copy(youtube.url, t("ui.links.share.copied"))}>
-              {t("ui.links.share.copy_youtube")}
-            </Button>
-          ) : null}
-          {single ? null : (
-            <Button variant="secondary" onClick={() => copy(textList(items), t("ui.links.share.copied_text"))}>
-              {t("ui.links.share.copy_text")}
-            </Button>
-          )}
-          {single ? null : (
-            <Button variant={built && !built.copyAllowed ? "primary" : "secondary"} onClick={() => saveFile(title, items)}>
-              {t("ui.links.share.save_file")}
-            </Button>
-          )}
-          <span className={styles.status} role="status">
-            {status}
-          </span>
-        </div>
-        {youtube && youtube.total > 50 ? <p className={styles.note}>{t("ui.links.share.youtube_first_50")}</p> : null}
+        <IconButton icon="close" label={t("common.close")} size="s" tone="solo" tooltip={false} className={styles.close} onClick={onClose} />
       </div>
-    </Sheet>
+      <div className={styles.options}>
+        {built && !built.copyAllowed ? (
+          <p className={styles.note}>
+            {t("ui.links.share.too_long")}
+            {built.skipped > 0 ? ` ${t("ui.links.share.skipped", { count: built.skipped })}.` : null}
+          </p>
+        ) : null}
+        {built?.copyAllowed
+          ? option("link", built.overBudget ? t("ui.links.share.copy_long") : t("ui.links.share.copy_link"), copyLink, "link", linkHint)
+          : null}
+        {youtube
+          ? option(
+              "external",
+              t("ui.links.share.copy_youtube"),
+              () => copy("youtube", youtube.url, t("ui.links.share.copied")),
+              "youtube",
+              youtube.total > 50 ? t("ui.links.share.youtube_first_50") : undefined,
+            )
+          : null}
+        {single ? null : option("copy", t("ui.links.share.copy_text"), () => copy("text", textList(items), t("ui.links.share.copied_text")), "text")}
+        {single ? null : option("download", t("ui.links.share.save_file"), () => saveFile(title, items))}
+      </div>
+      <p className={styles.live} role="status">
+        {copied?.status}
+      </p>
+    </GlassSheet>
   );
 }

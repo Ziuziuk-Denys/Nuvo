@@ -21,6 +21,7 @@ function closePanels(): void {
   document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
   document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
   useModalStore.getState().closeSettings();
+  useModalStore.getState().closeSearch();
 }
 
 export function useTourStage(navigate: NavigateFunction): { stage: TourStage; shown: Step | null } {
@@ -41,6 +42,9 @@ export function useTourStage(navigate: NavigateFunction): { stage: TourStage; sh
         } else if (act.kind === "settings") {
           useModalStore.getState().openSettingsSection(act.section);
           await pause(PAGE_SETTLE_MS);
+        } else if (act.kind === "palette") {
+          useModalStore.getState().openSearch();
+          await pause(PANEL_SETTLE_MS);
         } else {
           const element = await waitFor(act.target);
           if (element?.getAttribute("aria-selected") === "true" || element?.getAttribute("aria-expanded") === "true") return;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { DEFAULT_DURATION_MS, STICKY, useToastStore, visibleToast } from "./toastStore";
+import { DEFAULT_DURATION_MS, defaultDuration, STICKY, useToastStore, visibleToast } from "./toastStore";
 
 const store = () => useToastStore.getState();
 
@@ -23,6 +23,14 @@ describe("toast store", () => {
     store().show({ message: "Long", duration: 7000 });
     expect(store().queue.map((toast) => toast.duration)).toEqual([DEFAULT_DURATION_MS, STICKY, 7000]);
     expect(DEFAULT_DURATION_MS).toBe(4000);
+  });
+
+  it("gives long words time to be read and a toast with an action time to be used", () => {
+    const undo = { label: "Undo", onClick: () => undefined };
+    expect(defaultDuration({ message: "x".repeat(120) }, "info")).toBe(7200);
+    expect(defaultDuration({ message: "x".repeat(400) }, "info")).toBe(10_000);
+    expect(defaultDuration({ message: "Hidden", action: undo }, "info")).toBe(8000);
+    expect(defaultDuration({ message: "Saving" }, "loader")).toBe(STICKY);
   });
 
   it("drops a message that is already waiting", () => {

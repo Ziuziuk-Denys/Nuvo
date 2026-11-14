@@ -17,7 +17,7 @@ vi.mock("../ports/network", () => ({ useStreamingReachable: () => true }));
 vi.mock("../ports/importSources", () => ({ IMPORT_SOURCES: ["spotify", "soundcloud"], openImportSheet: () => Promise.resolve() }));
 vi.mock("../ports/recs", () => ({ seedFavorites: () => Promise.resolve() }));
 vi.mock("../ports/navigation", () => ({
-  useModalStore: { getState: () => ({ closeSettings: () => undefined, openSettingsSection: () => undefined }) },
+  useModalStore: { getState: () => ({ closeSettings: () => undefined, closeSearch: () => undefined, openSettingsSection: () => undefined }) },
 }));
 
 let root: Root;
@@ -56,7 +56,7 @@ describe("TourLayer", () => {
     expect(layer()).toBeNull();
   });
 
-  it("opens on the start step: the welcome, the import services and the favourites field, Skip for now focused", async () => {
+  it("opens on the start step: the welcome, the import services and the favourites field, Take the tour focused", async () => {
     act(() => useTour.getState().start());
     expect(layer()?.getAttribute("aria-modal")).toBe("true");
     expect(document.querySelector("#tour-start-title")?.textContent).toBe("ui.tour.poster.title");

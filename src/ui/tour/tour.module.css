@@ -1,13 +1,12 @@
 .root {
   --tour-dim: rgba(0, 0, 0, 0.4);
-  --tour-ring: #fff;
+  --tour-ring: rgba(255, 255, 255, 0.72);
   position: fixed;
   z-index: 2000;
   inset: 0;
   pointer-events: none;
   color: var(--n-ink);
   font: var(--n-type-body);
-  /* Backwards only: a filled fade makes this the cards' backdrop root, so their blur stops at the dim */
   animation: tour-in var(--n-t-base) var(--n-ease-out) backwards;
 }
 
@@ -48,8 +47,8 @@
   left: 0;
   pointer-events: none;
   box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.22),
-    0 0 0 2px var(--tour-ring),
+    0 0 0 1.5px var(--tour-ring),
+    0 0 0 6px rgba(255, 255, 255, 0.1),
     0 0 0 200vmax var(--tour-dim);
   transition:
     transform var(--n-t-page) var(--n-ease-inout),
@@ -61,7 +60,7 @@
 
 .hole[data-empty] {
   box-shadow:
-    inset 0 0 0 0 transparent,
+    0 0 0 0 transparent,
     0 0 0 0 transparent,
     0 0 0 200vmax var(--tour-dim);
 }
@@ -83,9 +82,8 @@
   pointer-events: auto;
   box-sizing: border-box;
   border-radius: var(--n-r-l);
-  background: var(--n-sheet);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
+  /* solid: the dim already quiets the page, and a blur under every card would stack filters */
+  background: var(--n-raised);
   box-shadow: var(--n-shadow-raised);
   color: var(--n-ink);
 }
@@ -325,18 +323,14 @@
 
 .row {
   display: grid;
-  grid-template-columns: 32px 1fr;
-  column-gap: 12px;
-  align-items: start;
+  grid-template-columns: 22px 1fr;
+  column-gap: 14px;
+  align-items: center;
 }
 
 .rowIcon {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--n-r-s);
-  background: var(--n-fill);
   color: var(--n-ink);
 }
 
@@ -359,11 +353,6 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-.start,
-.brief {
-  background: color-mix(in srgb, var(--n-raised) 94%, transparent);
 }
 
 .start {
@@ -411,8 +400,7 @@
   list-style: none;
 }
 
-.source,
-.suggestion {
+.source {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -430,13 +418,11 @@
     transform 150ms var(--n-ease-out);
 }
 
-.source:hover,
-.suggestion:hover {
+.source:hover {
   background: var(--n-hover);
 }
 
-.source:active,
-.suggestion:active {
+.source:active {
   transform: scale(0.98);
 }
 
@@ -466,135 +452,8 @@
   font: var(--n-type-caption);
 }
 
-.tasteField {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  margin: 0;
-  padding: 0 12px;
-  border-radius: 9px;
-  background: var(--n-fill);
-  color: var(--n-ink-2);
-}
-
-.tasteField:focus-within {
-  background: var(--n-focus);
-}
-
-.tasteField input {
+.taste {
   flex: 1;
-  min-width: 0;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--n-ink);
-  font: var(--n-type-body);
-  outline: none;
-}
-
-.tasteField input::placeholder {
-  color: var(--n-ink-2);
-}
-
-.tasteBody {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 148px;
-  margin-top: 8px;
-}
-
-.suggestions {
-  margin: 0 -6px;
-  padding: 0;
-  list-style: none;
-}
-
-.suggestion {
-  padding: 6px;
-}
-
-.suggestion > svg {
-  flex: none;
-  color: var(--n-ink-2);
-}
-
-.picks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 4px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pick {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  max-width: 100%;
-  height: 28px;
-  padding: 0 4px 0 12px;
-  border-radius: var(--n-r-pill);
-  background: var(--n-select);
-  font: var(--n-type-label);
-  animation: tour-pick var(--n-t-base) var(--n-ease-out) both;
-}
-
-.pick > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pick button {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--n-ink-2);
-  cursor: pointer;
-}
-
-.pick button:hover {
-  background: var(--n-hover);
-  color: var(--n-ink);
-}
-
-@keyframes tour-pick {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-
-.pickFoot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: 12px;
-}
-
-.panelNote {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 4px 0 0;
-  color: var(--n-ink-2);
-  font: var(--n-type-caption);
-}
-
-.pickFoot .panelNote {
-  margin: 0;
 }
 
 @media (max-width: 640px) {
@@ -607,8 +466,7 @@
   .hole,
   .dockWrap,
   .segmentFill,
-  .source,
-  .suggestion {
+  .source {
     transition: none;
   }
 
@@ -616,8 +474,7 @@
     animation: tour-in var(--n-t-quick) linear backwards;
   }
 
-  .line,
-  .pick {
+  .line {
     animation: tour-in var(--n-t-quick) linear both;
   }
 }
