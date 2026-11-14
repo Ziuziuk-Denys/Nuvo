@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.1-beta.1
+
+A beta with fixes since 0.3.0. The macOS changes are checked in CI only and wait for a tester on a real Mac.
+
+- **Recognize paces itself** to the service's limit, so a few recognitions in a row get an answer instead of failing as busy.
+- **Import playlist stays in the Library toolbar,** next to Create playlist, after the first import.
+- **Add lyrics shows progress** as it goes: the model download in percent, then the transcription phrase by phrase.
+- **No white corner under the settings sheet** with a strong wallpaper blur or fade.
+- **macOS: the native window frame,** with the traffic lights in the top bar and native full screen.
+- **macOS: the Notch sits over the menu bar** and wraps the camera notch of a MacBook.
+- **macOS: Discord status finds the desktop app.**
+
+Please report what works and what breaks in [the chat](https://t.me/getnuvo_chat) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
 ## 0.3.0
 
 The redesign release. Every screen of Nuvo is new, and everything merged since 0.2.10 and the 0.2.11 betas is in it.
