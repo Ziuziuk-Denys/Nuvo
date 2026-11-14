@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type JSX, type RefObject } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useScrollMargin } from "../../components/useScrollMargin";
+import { Flip } from "../../flip";
 import { useShellScroller } from "../../shell/scroller";
 import { entryKey, type LibraryEntry } from "./libraryModel";
 import { EntryArt, entryMeta, type EntryViewProps } from "./LibraryList";
@@ -34,6 +35,7 @@ function Tile({ entry, selected, playing, onActivate, onMenu, t }: Omit<EntryVie
     <button
       type="button"
       className={styles.tile}
+      data-flip={key}
       data-selected={selected === key ? "" : undefined}
       data-playing={playing === key ? "" : undefined}
       data-kind={entry.kind}
@@ -98,19 +100,23 @@ export function LibraryGrid(props: EntryViewProps): JSX.Element {
 
   if (!virtual) {
     return (
-      <div ref={gridRef} className={styles.grid}>
-        {entries.map(render)}
-      </div>
+      <Flip token={entries} target={gridRef} scroller={scroller}>
+        <div ref={gridRef} className={styles.grid}>
+          {entries.map(render)}
+        </div>
+      </Flip>
     );
   }
 
   return (
-    <div ref={gridRef} className={styles.virtual} style={{ height: virtualizer.getTotalSize() }}>
-      {virtualizer.getVirtualItems().map((row) => (
-        <div key={row.index} className={`${styles.grid} ${styles.row}`} style={{ transform: `translateY(${row.start - scrollMargin}px)` }}>
-          {entries.slice(row.index * columns, (row.index + 1) * columns).map(render)}
-        </div>
-      ))}
-    </div>
+    <Flip token={entries} target={gridRef} scroller={scroller}>
+      <div ref={gridRef} className={styles.virtual} style={{ height: virtualizer.getTotalSize() }}>
+        {virtualizer.getVirtualItems().map((row) => (
+          <div key={row.index} className={`${styles.grid} ${styles.row}`} style={{ transform: `translateY(${row.start - scrollMargin}px)` }}>
+            {entries.slice(row.index * columns, (row.index + 1) * columns).map(render)}
+          </div>
+        ))}
+      </div>
+    </Flip>
   );
 }

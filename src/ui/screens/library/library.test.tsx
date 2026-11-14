@@ -214,12 +214,12 @@ describe("Library", () => {
     render();
     const more = () => [...host.querySelectorAll('button[aria-label="ui.library.more"]')];
     click(more()[3]);
-    expect(menuLabels()).toEqual(["ui.library.open", "ui.library.play", "ui.library.pin", "ui.library.pin_rail", "ui.library.delete_playlist"]);
+    expect(menuLabels()).toEqual(["ui.library.open", "ui.library.play", "ui.library.pin", "ui.library.delete_playlist"]);
     click(button("ui.library.delete_playlist"));
     expect(mocks.modal.openRemoveFromLibrary).toHaveBeenCalledWith(expect.objectContaining({ id: "p2", isOwned: true }));
 
     click(more()[2]);
-    expect(menuLabels()).toEqual(["ui.library.open", "ui.library.play", "ui.library.pin", "ui.library.pin_rail", "ui.library.remove"]);
+    expect(menuLabels()).toEqual(["ui.library.open", "ui.library.play", "ui.library.pin", "ui.library.remove"]);
     click(button("ui.library.pin"));
     expect(mocks.pins.pin).toHaveBeenCalledWith(expect.objectContaining({ id: "a1", kind: "album" }));
     click(more()[2]);

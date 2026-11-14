@@ -60,6 +60,7 @@ export function ImportsHost(): JSX.Element {
         onStarted={onStarted}
         note={note}
         onOpenReport={openReport}
+        searchSongs={runtime.searchSongs}
       />
       {report ? <ImportReport key={report.id} open onClose={close} summary={report} ports={reportPorts} /> : null}
     </>

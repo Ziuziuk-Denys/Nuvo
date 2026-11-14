@@ -1,6 +1,6 @@
 .bar {
   position: sticky;
-  bottom: var(--n-s-4);
+  bottom: calc(var(--page-inset-bottom, 0px) + var(--n-s-3));
   z-index: 5;
   display: flex;
   align-items: center;
@@ -10,10 +10,8 @@
   flex-wrap: wrap;
   margin: var(--n-s-4) auto 0;
   padding: var(--n-s-2) var(--n-s-3);
-  border-radius: var(--n-r-l);
+  border-radius: 22px;
   background: var(--n-pop-solid);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
   box-shadow: var(--n-shadow-raised);
   animation: rise 150ms var(--n-ease-out);
 }

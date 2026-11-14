@@ -9,6 +9,7 @@ const SOURCES = [
   "src/imports/report.ts",
   "src/imports/messages.ts",
   "src/ui/screens/imports/ImportSheet.tsx",
+  "src/ui/screens/imports/ImportPreview.tsx",
   "src/ui/screens/imports/ImportReport.tsx",
   "src/ui/screens/imports/ImportsHost.tsx",
 ];
@@ -39,6 +40,8 @@ const DYNAMIC: Record<string, string[]> = {
 const COUNTED = [
   "ui.imports.reading",
   "ui.imports.songs",
+  "ui.imports.show_all",
+  "ui.imports.more_songs",
   "ui.imports.started",
   "ui.imports.summary.review",
   "ui.imports.summary.done",

@@ -8,8 +8,11 @@ import { NewPlaylistSheet } from "./NewPlaylistSheet";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const mocks = vi.hoisted(() => ({ create: vi.fn(), add: vi.fn() }));
+const mocks = vi.hoisted(() => ({ create: vi.fn(), add: vi.fn(), playing: null as { id: string; title: string; artists: string; coverUrl: string } | null }));
 
+vi.mock("../../ports/player", () => ({
+  usePlayerStore: (select: (state: { currentTrack: unknown }) => unknown) => select({ currentTrack: mocks.playing }),
+}));
 vi.mock("../../ports/escape", () => ({ isEscapeGuarded: () => false }));
 vi.mock("../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock("../../ports/library", async () => {
@@ -53,6 +56,7 @@ afterEach(() => {
   act(() => root.unmount());
   document.body.innerHTML = "";
   vi.clearAllMocks();
+  mocks.playing = null;
   vi.useRealTimers();
 });
 
@@ -118,7 +122,7 @@ describe("NewPlaylistSheet", () => {
   it("sends the description from the Create button and adds the waiting track", async () => {
     open({ id: "t9" });
     type(inputs()[0], "Rain");
-    act(() => button("+ common.description_placeholder").click());
+    act(() => button("common.description_placeholder").click());
     const description = dialog()!.querySelector("textarea")!;
     expect(document.activeElement).toBe(description);
     act(() => {
@@ -194,5 +198,28 @@ describe("NewPlaylistSheet", () => {
     expect(useModalStore.getState().createPlaylistOpen).toBe(false);
     expect(useImportsUi.getState().sheet).toEqual({ pendingTrack: expect.objectContaining({ id: "t1", title: "Wild" }) });
     act(() => useImportsUi.getState().close());
+  });
+
+  it("starts the playlist with the playing song only when it is chosen", async () => {
+    mocks.playing = { id: "now", title: "Liability", artists: "Lorde", coverUrl: "" };
+    open();
+    const starter = dialog()!.querySelector<HTMLButtonElement>("button[aria-pressed]")!;
+    expect(starter.getAttribute("aria-pressed")).toBe("false");
+    type(inputs()[0], "Rain");
+    act(() => starter.click());
+    expect(starter.getAttribute("aria-pressed")).toBe("true");
+    act(() => button("ui.new_playlist.create").click());
+    await settle();
+    expect(mocks.add).toHaveBeenCalledWith({ playlistId: "pl1", track: expect.objectContaining({ id: "now" }) });
+  });
+
+  it("leaves the playing song out by default", async () => {
+    mocks.playing = { id: "now", title: "Liability", artists: "Lorde", coverUrl: "" };
+    open();
+    type(inputs()[0], "Rain");
+    press("Enter");
+    await settle();
+    expect(mocks.create).toHaveBeenCalled();
+    expect(mocks.add).not.toHaveBeenCalled();
   });
 });

@@ -6,19 +6,13 @@
   padding: 8px 0 0 4px;
 }
 
-/* Top bar, head and gaps take 264 px and the player 96, so the sheet reaches the player */
+/* The rows sit on the page like Home's songs; pulling them out by 8 puts each cover under the head's cover */
 .tracks {
   flex: 1;
   box-sizing: border-box;
   min-height: calc(100vh - 360px);
-  margin: 20px -8px 0 -12px;
-  padding: 8px 8px 24px;
-  border-radius: 14px 14px 0 0;
-  background: rgb(0 0 0 / 0.03);
-}
-
-:global(:root[data-theme="dark"]) .tracks {
-  background: rgb(255 255 255 / 0.04);
+  margin: 24px -8px 0 -12px;
+  padding: 0 8px 24px;
 }
 
 .page[data-entity="artist"] .tracks {
@@ -77,14 +71,26 @@
 .placeholderCover {
   width: 168px;
   height: 168px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+  border-radius: 12px;
+  background: var(--n-fill);
 }
 
 .placeholderCover[data-shape="circle"] {
   width: 144px;
   height: 144px;
   border-radius: 50%;
+}
+
+.mosaic {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+}
+
+.mosaic > * {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .glyph {

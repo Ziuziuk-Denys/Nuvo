@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { playerEngine } from "@/engine/compat";
 import { kickOfflineFill } from "@/engine/index";
 import type { Track } from "@/engine/types";
-import { coreRequest } from "@/data/core/request";
 import { entityTracks } from "@/data/catalog/pages";
 import { libraryClient, type PlaylistSort } from "@/data/library/client";
 import { library } from "@/data/library/library";
@@ -40,25 +39,6 @@ export { useListReorder } from "@/ui/components/useListReorder";
 export { useModalStore } from "@/ui/shell/sheets";
 export { livePins, useHomePinsStore, useRailPinsStore, type HomePin, type HomePinKind } from "@/data/library/pins";
 export { CoreError as ApiError } from "@/imports/core";
-
-export interface MostSavedEntry {
-  type: "album" | "playlist";
-  id: string;
-  title: string;
-  subtitle: string;
-  coverUrl?: string | null;
-  saves: number;
-}
-
-const MOST_SAVED_LIMIT = 20;
-
-export async function mostSaved(): Promise<MostSavedEntry[]> {
-  try {
-    return (await coreRequest<{ items: MostSavedEntry[] }>("GET", `/v1/explore/most-saved?type=all&limit=${MOST_SAVED_LIMIT}`)).items;
-  } catch {
-    return [];
-  }
-}
 
 export async function savePlaylistDescription(id: string, description: string): Promise<void> {
   await libraryClient.setDescription(id, description);

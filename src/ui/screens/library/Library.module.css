@@ -1,14 +1,6 @@
 .page {
   display: flex;
   flex-direction: column;
-  margin-top: -20px;
-}
-
-.title {
-  margin: 0;
-  color: var(--n-ink);
-  font: 700 26px/1.25 var(--n-font);
-  letter-spacing: -0.025em;
 }
 
 .bar {
@@ -17,13 +9,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 14px;
 }
 
 /* At 1100 px the tabs and tools share one row only with New playlist as a square button */
 @container (max-width: 1059px) {
   .create {
-    width: 52px;
+    width: 32px;
     padding: 0;
   }
 
@@ -41,13 +33,55 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
-/* The padding keeps the focus ring inside the scroll box */
+.tools {
+  gap: 6px;
+}
+
+.views {
+  display: flex;
+  isolation: isolate;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 18px;
+  background: var(--n-tray);
+  box-shadow: var(--n-tray-edge);
+}
+
+.views > button[aria-pressed] {
+  position: relative;
+  background: transparent;
+  box-shadow: none;
+}
+
+.views > button[aria-pressed="true"]:hover {
+  background: transparent;
+}
+
+.views > button[aria-pressed="false"]:hover {
+  background: var(--n-tray-item-hover);
+}
+
+.tabs > button {
+  position: relative;
+}
+
+.tabs > button[aria-selected="true"] {
+  background: transparent;
+}
+
+.tabLens {
+  background: var(--n-fill);
+  box-shadow: none;
+}
+
+/* The padding keeps the focus halo inside the scroll box */
 .tabs {
   flex: 0 1 auto;
   flex-wrap: nowrap;
+  isolation: isolate;
   min-width: 0;
   margin: -3px;
   padding: 3px;
@@ -63,16 +97,21 @@
 }
 
 .filter {
-  flex: 0 1 220px;
+  flex: 0 1 240px;
   min-width: 140px;
+  margin-inline-end: 4px;
 }
 
 .tools .filter > * {
   width: 100%;
 }
 
+.stage {
+  position: relative;
+}
+
 .content {
-  margin-top: 14px;
+  margin-top: 20px;
   padding-bottom: 20px;
 }
 

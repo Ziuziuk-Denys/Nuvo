@@ -1,11 +1,14 @@
-import { useEffect, useEffectEvent, useRef, useState, type JSX } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type JSX } from "react";
 import { Button } from "../../components/Button";
-import { Chip } from "../../components/Chip";
-import { Sheet, type SheetAction } from "../../components/Sheet";
+import type { SheetAction } from "../../components/Sheet";
 import { Tabs } from "../../components/Tabs";
 import { TextField } from "../../components/TextField";
+import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
 import { ImportError, errorMessage, noticeMessage, type ImportActions, type ImportSummary, type ImportTarget, type Listing } from "../../ports/imports";
+import { GlassSheet } from "../../sheets/GlassSheet";
+import glass from "../../sheets/GlassSheet.module.css";
+import { ImportPreview, type SongSearch } from "./ImportPreview";
 import styles from "./ImportSheet.module.css";
 
 export type ImportMode = "link" | "likes" | "file";
@@ -28,12 +31,23 @@ export interface ImportSheetProps {
   onStarted?(summaries: ImportSummary[]): void;
   note?: string | null;
   onOpenReport(importId: string): void;
+  searchSongs?: SongSearch;
 }
 
-const PREVIEW_ROWS = 5;
 const FILE_TYPES = ".csv,.json,.m3u,.m3u8,.xspf,.txt";
 
-export function ImportSheet({ open, onClose, actions, initialLink, initialMode, target, onStarted, note, onOpenReport }: ImportSheetProps): JSX.Element | null {
+export function ImportSheet({
+  open,
+  onClose,
+  actions,
+  initialLink,
+  initialMode,
+  target,
+  onStarted,
+  note,
+  onOpenReport,
+  searchSongs,
+}: ImportSheetProps): JSX.Element | null {
   const { t } = useTranslation();
   const [mode, setMode] = useState<ImportMode>(initialMode ?? "link");
   const [texts, setTexts] = useState<Record<"link" | "likes", string>>({
@@ -47,6 +61,7 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
   const [chosen, setChosen] = useState<"new" | "liked">("new");
   const reading = useRef<AbortController | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const headingId = useId();
 
   const stopReading = () => {
     reading.current?.abort(new DOMException("cancelled", "AbortError"));
@@ -120,90 +135,77 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
   const labelOf = (listing: Listing) =>
     listing.likesOf ? t("ui.imports.likes_name", { name: listing.likesOf }) : listing.label || t(`ui.imports.fallback.${listing.source}`);
 
-  let sheetActions: SheetAction[] = [];
+  let buttons: SheetAction[] = [];
+  let footerStart: JSX.Element | null = null;
   let body: JSX.Element;
+  const title = (
+    <h2 id={headingId} className={glass.title}>
+      {t("ui.imports.title")}
+    </h2>
+  );
 
   switch (phase.kind) {
     case "listing":
-      sheetActions = [{ label: t("ui.imports.cancel"), onClick: reset }];
+      buttons = [{ label: t("ui.imports.cancel"), onClick: reset }];
       body = (
-        <p className={styles.line} role="status">
-          {t("ui.imports.reading", { count: phase.count })}
-        </p>
+        <>
+          {title}
+          <p className={styles.line} role="status">
+            {t("ui.imports.reading", { count: phase.count })}
+          </p>
+        </>
       );
       break;
     case "preview": {
       const { listing } = phase;
-      sheetActions = [
+      buttons = [
         { label: t("ui.imports.cancel"), onClick: reset },
-        {
-          label: t("ui.imports.import"),
-          onClick: () => post(listing),
-          primary: true,
-        },
+        { label: t("ui.imports.import"), onClick: () => post(listing), primary: true },
       ];
+      footerStart = target ? null : (
+        <div className={`${styles.segments} ${glass.start}`} role="group" aria-label={t("ui.imports.target")} data-chosen={chosen}>
+          <span className={styles.thumb} aria-hidden="true" />
+          {(["new", "liked"] as const).map((kind) => (
+            <button key={kind} type="button" aria-pressed={chosen === kind} className={styles.segment} onClick={() => setChosen(kind)}>
+              {t(kind === "new" ? "ui.imports.target_new" : "ui.imports.target_liked")}
+            </button>
+          ))}
+        </div>
+      );
       body = (
         <>
-          <div>
-            <h3 className={styles.heading}>{labelOf(listing)}</h3>
-            <p className={styles.caption}>
-              {t("ui.imports.songs", { count: listing.rows.length })} ·{" "}
-              {t("ui.imports.from_source", {
-                source: t(`ui.imports.source.${listing.source}`),
-              })}
-            </p>
-          </div>
-          {listing.notice ? <p className={styles.line}>{message(noticeMessage(listing.notice, listing.source))}</p> : null}
-          <ul className={styles.rows}>
-            {listing.rows.slice(0, PREVIEW_ROWS).map((row, index) => (
-              <li key={index}>{row.artists.length ? `${row.title} · ${row.artists.join(", ")}` : row.title}</li>
-            ))}
-          </ul>
-          {target ? null : (
-            <div className={styles.targets} role="group" aria-label={t("ui.imports.target")}>
-              <Chip active={chosen === "new"} onClick={() => setChosen("new")}>
-                {t("ui.imports.target_new")}
-              </Chip>
-              <Chip active={chosen === "liked"} onClick={() => setChosen("liked")}>
-                {t("ui.imports.target_liked")}
-              </Chip>
-            </div>
-          )}
-          <p className={styles.caption}>{t("ui.imports.honesty")}</p>
+          <ImportPreview
+            listing={listing}
+            label={labelOf(listing)}
+            headingId={headingId}
+            search={searchSongs}
+            notice={listing.notice ? message(noticeMessage(listing.notice, listing.source)) : undefined}
+          />
+          <p className={glass.caption}>{t("ui.imports.honesty")}</p>
         </>
       );
       break;
     }
     case "posting":
-      sheetActions = [
-        {
-          label: t("ui.imports.import"),
-          onClick: () => {},
-          primary: true,
-          disabled: true,
-        },
-      ];
+      buttons = [{ label: t("ui.imports.import"), onClick: () => {}, primary: true, disabled: true }];
       body = (
-        <p className={styles.line} role="status">
-          {t("ui.imports.posting")}
-        </p>
+        <>
+          {title}
+          <p className={styles.line} role="status">
+            {t("ui.imports.posting")}
+          </p>
+        </>
       );
       break;
     case "started": {
       const first = phase.summaries[0];
-      sheetActions = [
-        ...(first
-          ? [
-              {
-                label: t("ui.imports.open_report"),
-                onClick: () => onOpenReport(first.id),
-              },
-            ]
-          : []),
+      buttons = [
+        ...(first ? [{ label: t("ui.imports.open_report"), onClick: () => onOpenReport(first.id) }] : []),
         { label: t("ui.imports.done"), onClick: close, primary: true },
       ];
       body = (
         <>
+          {title}
           <p className={styles.line} role="status">
             {t("ui.imports.started", { count: phase.summaries.length })}
           </p>
@@ -212,53 +214,53 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
               {note}
             </p>
           ) : null}
-          <p className={styles.caption}>{t("ui.imports.honesty")}</p>
         </>
       );
       break;
     }
     case "error": {
       const fileRoute = phase.error instanceof ImportError && (phase.error.code === "spotify_file_only" || phase.error.code === "region_blocked");
-      sheetActions = [
+      buttons = [
         { label: t("ui.imports.close"), onClick: close },
         { label: t("ui.imports.try_again"), onClick: reset, primary: true },
       ];
+      footerStart = fileRoute ? (
+        <button
+          type="button"
+          className={`${glass.quiet} ${glass.start}`}
+          onClick={() => {
+            setMode("file");
+            reset();
+          }}
+        >
+          <Icon name="import" size={16} />
+          {t("ui.imports.import_file_instead")}
+        </button>
+      ) : null;
       body = (
         <>
+          {title}
           <p className={styles.line} role="alert">
             {message(errorMessage(phase.error))}
           </p>
-          {fileRoute ? (
-            <Button
-              variant="secondary"
-              size="s"
-              onClick={() => {
-                setMode("file");
-                reset();
-              }}
-            >
-              {t("ui.imports.import_file_instead")}
-            </Button>
-          ) : null}
         </>
       );
       break;
     }
     default:
-      sheetActions =
+      buttons =
         mode === "file"
-          ? [{ label: t("ui.imports.close"), onClick: close }]
+          ? [
+              { label: t("ui.imports.close"), onClick: close },
+              { label: t("ui.imports.choose_file"), onClick: () => fileInput.current?.click(), primary: true },
+            ]
           : [
               { label: t("ui.imports.close"), onClick: close },
-              {
-                label: t("ui.imports.read"),
-                onClick: () => read(text, mode),
-                primary: true,
-                disabled: !text.trim(),
-              },
+              { label: t("ui.imports.read"), onClick: () => read(text, mode), primary: true, disabled: !text.trim() },
             ];
       body = (
         <>
+          {title}
           <Tabs<ImportMode>
             items={[
               { id: "link", label: t("ui.imports.tab_link") },
@@ -281,9 +283,6 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
                 tabIndex={-1}
                 onChange={(event) => pickFile(event.target.files?.[0])}
               />
-              <Button variant="secondary" onClick={() => fileInput.current?.click()}>
-                {t("ui.imports.choose_file")}
-              </Button>
             </>
           ) : (
             <TextField
@@ -303,8 +302,18 @@ export function ImportSheet({ open, onClose, actions, initialLink, initialMode, 
   }
 
   return (
-    <Sheet open={open} onClose={close} title={t("ui.imports.title")} actions={sheetActions}>
-      <div className={styles.body}>{body}</div>
-    </Sheet>
+    <GlassSheet open={open} onClose={close} labelledBy={headingId} width={phase.kind === "preview" ? 440 : 420}>
+      {body}
+      <div className={glass.footer}>
+        {footerStart}
+        {[...buttons]
+          .sort((a, b) => Number(!!a.primary) - Number(!!b.primary))
+          .map((action) => (
+            <Button key={action.label} variant={action.primary ? "primary" : "secondary"} disabled={action.disabled} onClick={action.onClick}>
+              {action.label}
+            </Button>
+          ))}
+      </div>
+    </GlassSheet>
   );
 }

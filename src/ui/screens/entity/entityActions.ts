@@ -8,6 +8,7 @@ import {
   useRemoveExternalItem,
   useSaveExternalItem,
   type HomePin,
+  type HomePinKind,
   type LibraryItemViewModel,
 } from "../../ports/library";
 
@@ -36,20 +37,23 @@ export function useSaved(
   return { saved, toggle, item };
 }
 
-export function pinMenuItems(pin: HomePin, onHome: boolean, onRail: boolean, t: TFunction): MenuItem[] {
+// Pins made on Home before the top bar still show there, so unpinning clears both lists
+export function unpinEverywhere(kind: HomePinKind, id: string): void {
+  if (useHomePinsStore.getState().isPinned(kind, id)) useHomePinsStore.getState().unpin(kind, id);
+  useRailPinsStore.getState().unpin(kind, id);
+}
+
+export function pinMenuItems(pin: HomePin, pinned: boolean, t: TFunction): MenuItem[] {
   return [
-    onHome
-      ? { label: t("ui.library.unpin"), onSelect: () => useHomePinsStore.getState().unpin(pin.kind, pin.id) }
-      : { label: t("ui.library.pin"), onSelect: () => useHomePinsStore.getState().pin(pin) },
-    onRail
-      ? { label: t("ui.library.unpin_rail"), onSelect: () => useRailPinsStore.getState().unpin(pin.kind, pin.id) }
-      : { label: t("ui.library.pin_rail"), onSelect: () => useRailPinsStore.getState().pin(pin) },
+    pinned
+      ? { label: t("ui.library.unpin"), onSelect: () => unpinEverywhere(pin.kind, pin.id) }
+      : { label: t("ui.library.pin"), onSelect: () => useRailPinsStore.getState().pin(pin) },
   ];
 }
 
 export function usePinItems(pin: HomePin, t: TFunction): MenuItem[] {
   const same = (item: HomePin) => item.kind === pin.kind && item.id === pin.id;
   const onHome = useHomePinsStore((state) => state.pins.some(same));
-  const onRail = useRailPinsStore((state) => state.pins.some(same));
-  return pinMenuItems(pin, onHome, onRail, t);
+  const onBar = useRailPinsStore((state) => state.pins.some(same));
+  return pinMenuItems(pin, onHome || onBar, t);
 }

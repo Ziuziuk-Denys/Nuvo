@@ -371,14 +371,14 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
   const sortButton = (
     <button
       type="button"
-      className={`${look.pill} ${look.glass} ${look.square}`}
+      className={look.icon}
       aria-label={t(sortMode ? sortLabel(sortMode) : `ui.entity.sort_${sort}`)}
       aria-haspopup="menu"
       aria-expanded={sortAnchor !== null}
       disabled={count < 2}
       onClick={(event) => setSortAnchor(sortAnchor ? null : event.currentTarget)}
     >
-      <Icon name="sort-lines" size={16} />
+      <Icon name="sort-lines" size={18} />
     </button>
   );
 
@@ -426,8 +426,8 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
                   updated={updated && t("ui.entity.updated", { when: updated })}
                 />
                 {kept && offline ? (
-                  <span className={look.chip} data-offline-progress="">
-                    <Icon name="downloaded" size={16} />
+                  <span data-offline-progress="">
+                    <Icon name="downloaded" size={14} />
                     <span>
                       {offline.cached < offline.total
                         ? t("ui.library.offline_progress", { cached: offline.cached, total: offline.total })
