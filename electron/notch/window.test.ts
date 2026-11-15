@@ -36,6 +36,9 @@ const electron = vi.hoisted(() => {
     setVisibleOnAllWorkspaces(...a: unknown[]) {
       this.rec("setVisibleOnAllWorkspaces", ...a);
     }
+    moveTop() {
+      this.rec("moveTop");
+    }
     setShape(r: unknown) {
       this.rec("setShape", r);
     }
@@ -432,6 +435,48 @@ describe("NotchWindow", () => {
     await vi.advanceTimersByTimeAsync(1_000);
     await notch.ready;
     expect(win.calls.filter((c) => c[0] === "setAlwaysOnTop")).toHaveLength(4);
+  });
+
+  it("on Windows raises itself again every second while shown, over topmost windows that activated later", async () => {
+    vi.useFakeTimers();
+    const { notch, main } = createNotch({ session: "windows" });
+    await vi.advanceTimersByTimeAsync(1_000);
+    await notch.ready;
+    const win = lastWindow();
+    const raises = () => names(win).filter((name) => name === "moveTop").length;
+
+    const shown = raises();
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(raises()).toBe(shown + 3);
+
+    let visible = false;
+    win.isVisible = () => visible;
+    main.emit("enter-full-screen");
+    await vi.advanceTimersByTimeAsync(5_000);
+    const hidden = raises();
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(raises()).toBe(hidden);
+
+    visible = true;
+    main.emit("leave-full-screen");
+    await vi.advanceTimersByTimeAsync(1_000);
+    await notch.ready;
+    const back = raises();
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(raises()).toBe(back + 2);
+
+    notch.destroy();
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(raises()).toBe(back + 2);
+  });
+
+  it("raises itself on a timer only on Windows", async () => {
+    vi.useFakeTimers();
+    for (const session of ["x11", "macos"] as const) {
+      createNotch({ session });
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(names(lastWindow())).not.toContain("moveTop");
+    }
   });
 
   it("keeps the input shape on Linux and ignores capture requests there", async () => {

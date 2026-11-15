@@ -32,6 +32,7 @@ const ON_TOP_RETRY_MS = 100;
 const MAX_CRASH_RELOADS = 3;
 const CRASH_WINDOW_MS = 60_000;
 const CAPTURE_POLL_MS = 100;
+const RAISE_MS = 1_000;
 
 export interface NotchDeps {
   preloadPath: string;
@@ -58,6 +59,7 @@ export class NotchWindow {
   private capturing = false;
   private wantsCapture = false;
   private capturePoll: ReturnType<typeof setInterval> | null = null;
+  private raiseTimer: ReturnType<typeof setInterval> | null = null;
   private loaded = false;
   private placementFailure: string | null = null;
   private listening = false;
@@ -179,6 +181,7 @@ export class NotchWindow {
     if (this.moveTimer) clearTimeout(this.moveTimer);
     if (this.capturePoll) clearInterval(this.capturePoll);
     this.capturePoll = null;
+    this.stopRaising();
     this.detachMain();
     screen.removeListener("display-metrics-changed", this.replace);
     screen.removeListener("display-added", this.replace);
@@ -334,6 +337,7 @@ export class NotchWindow {
         if (win.isDestroyed() || !win.isVisible() || win.isAlwaysOnTop()) break;
         win.setAlwaysOnTop(true, "screen-saver");
       }
+      if (session === "windows") this.keepRaising(win);
     } else if (session === "kde-wayland") {
       // The script pins the window as KWin maps it, so it never shows where KWin would put it.
       const ok = await this.deps.loadKwin(kwinScript(NOTCH_TITLE, geometry)).catch(() => false);
@@ -353,6 +357,20 @@ export class NotchWindow {
         .catch(() => false);
       this.recordPlacement(win, Boolean(ok), "compositor placement failed");
     }
+  }
+
+  // A topmost window that activates later, like a borderless game, stacks above the Notch until it is raised again.
+  private keepRaising(win: BrowserWindow): void {
+    this.stopRaising();
+    this.raiseTimer = setInterval(() => {
+      if (win.isDestroyed() || !win.isVisible()) this.stopRaising();
+      else win.moveTop();
+    }, RAISE_MS);
+  }
+
+  private stopRaising(): void {
+    if (this.raiseTimer) clearInterval(this.raiseTimer);
+    this.raiseTimer = null;
   }
 
   private recordPlacement(win: BrowserWindow, ok: boolean, message: string): void {
