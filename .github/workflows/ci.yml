@@ -45,6 +45,29 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm vitest run electron/app/discord.test.ts electron/notch/cutout.test.ts electron/notch/window.test.ts
 
+  windows-desktop:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm vitest run electron/notch/window.test.ts
+      - name: The Notch stays above a borderless fullscreen window from another process
+        shell: bash
+        env:
+          NUVO_COVER_SCRIPT: ${{ github.workspace }}\e2e\windows\cover.ps1
+        run: |
+          pnpm exec vite build --config e2e/windows/vite.config.ts --outDir "$RUNNER_TEMP/probe"
+          pnpm exec electron "$RUNNER_TEMP/probe/notch-zorder.mjs"
+
   # The helper tools are fetched per platform; Linux runs the full suite above
   core-portable:
     strategy:
