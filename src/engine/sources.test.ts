@@ -223,6 +223,28 @@ describe("cache writes", () => {
     expect(h.daemon.callsTo("POST", "/v1/cache/fetch")).toEqual([]);
   });
 
+  it("a SoundCloud start plays the daemon's live stream and leaves the cache to the daemon", async () => {
+    const h = createHarness({ precache: true });
+    const live = {
+      kind: "live",
+      url: "nuvo-core://local/v1/sc/tracks/sc:7/live",
+      expiresAt: null,
+      codec: "aac",
+      mimeType: 'audio/mp4; codecs="mp4a.40.2"',
+      bitrate: 160_000,
+      contentLength: null,
+    };
+    h.daemon.on("GET /v1/sc/tracks/7/stream", () => Response.json(live));
+    h.daemon.on("GET /v1/sc/tracks/7/live", () => new Response(new TextEncoder().encode("\0\0\0\x18ftypiso6")));
+    await start(h, track("sc:7"));
+    expect(h.daemon.callsTo("GET", "/v1/sc/tracks/7/stream").map((c) => c.path)).toEqual(["/v1/sc/tracks/7/stream?live=true"]);
+    expect(h.deck.loads[0].source).toMatchObject({ kind: "progressive", mime: live.mimeType });
+    expect(h.deck.loads[0].source.url).toMatch(/^blob:live\//);
+    await flush();
+    expect(h.daemon.callsTo("PUT", "/v1/cache/audio")).toEqual([]);
+    expect(h.daemon.callsTo("POST", "/v1/cache/fetch")).toEqual([]);
+  });
+
   it("clearing the cache drops a write in progress", async () => {
     const h = createHarness({ precache: true });
     let finish!: (blob: Blob) => void;

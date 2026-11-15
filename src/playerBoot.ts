@@ -5,6 +5,7 @@ import type { Track } from "./engine/types";
 import { coverUrl } from "./data/covers/coverUrl";
 import { startLibrary } from "./data/library/library";
 import { trimSpan } from "./data/library/trims";
+import { progressiveSource } from "./youtube/playback/progressive";
 
 const CORE = "nuvo-core://local";
 // Media surfaces draw covers small; the data URL stays far under Chromium's URL limit
@@ -85,6 +86,7 @@ export async function bootPlayer(ports: () => Promise<PlayerBootPorts>): Promise
   startLibrary();
   const booted = startEngine({
     ...given,
+    feedLive: progressiveSource,
     library,
     covers: {
       warm: (url) => {

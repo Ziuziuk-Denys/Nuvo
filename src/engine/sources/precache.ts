@@ -86,7 +86,7 @@ export class PrecacheScheduler implements PrecacheLike {
 
   started(track: Track, resolved: Resolved): void {
     if (this.disposed) return;
-    if (resolved.stream.source === "local" || resolved.stream.fromCache || track.durationMs > BACKGROUND_CACHE_MAX_MS) return;
+    if (resolved.stream.source === "local" || resolved.stream.fromCache || resolved.daemonCaches || track.durationMs > BACKGROUND_CACHE_MAX_MS) return;
     void this.store(track, resolved, new AbortController().signal).catch((error) => this.deps.log("background cache failed", error));
   }
 

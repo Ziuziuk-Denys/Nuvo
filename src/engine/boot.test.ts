@@ -8,6 +8,9 @@ import { FakeYoutube, MemoryStorage } from "./test/harness";
 
 const deps = (): BootDeps => ({
   youtube: new FakeYoutube(),
+  feedLive: () => {
+    throw new Error("no live stream in boot tests");
+  },
   catalog: { searchFiltered: async () => [], radio: async () => [] },
   library: {
     isLiked: () => false,

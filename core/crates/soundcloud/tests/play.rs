@@ -188,6 +188,30 @@ async fn at_most_six_segment_requests_are_open() {
 }
 
 #[tokio::test]
+async fn a_live_answer_names_the_playlist_and_fetches_no_segment() {
+    let (fx, sc) = ready_hls(3, |_| Duration::ZERO).await;
+    let Playable::Live { playlist, format, .. } = sc.resolve_live("sc:1", &mut Vec::new()).await.unwrap() else { panic!("live expected") };
+    assert_eq!((playlist.as_str(), format.codec), (format!("{HLS}/b/list.m3u8").as_str(), "mp3"));
+    assert_eq!(fx.log().iter().filter(|p| p.ends_with(".ts") || p.ends_with(".m3u8")).count(), 0);
+    let (url, kept) = sc.live_playlist("sc:1").unwrap();
+    assert_eq!((url.as_str(), kept), (playlist.as_str(), format));
+    assert!(sc.live_playlist("sc:2").is_none());
+    let mut sink = Vec::new();
+    assert!(matches!(sc.resolve("sc:1", &mut sink).await.unwrap(), Playable::Assembled { bytes: 3, .. }), "the plain answer still assembles");
+}
+
+#[tokio::test]
+async fn the_first_segments_load_alone_before_the_window_opens() {
+    let (fx, sc) = ready_hls(8, |i| Duration::from_millis(if i == 0 { 300 } else { 80 })).await;
+    let job = tokio::spawn(async move { sc.resolve("sc:1", &mut Vec::new()).await });
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    let started: Vec<String> = fx.log().into_iter().filter(|p| p.ends_with(".ts")).collect();
+    assert_eq!(started.len(), 1, "only the first segment while it loads, got {started:?}");
+    job.await.unwrap().unwrap();
+    assert_eq!(fx.max_in_flight(), 6);
+}
+
+#[tokio::test]
 async fn a_segment_is_retried_once() {
     let (fx, sc) = ready_hls(3, |_| Duration::ZERO).await;
     fx.on_seq(&format!("{HLS}/b/s1.ts"), vec![Reply::status(503), Reply::bytes("audio/mpeg", vec![1])]);
@@ -308,14 +332,14 @@ async fn cancelling_aborts_segment_downloads_and_tries_nothing_else() {
         fx.on(&format!("{HLS}/b/s{i}.ts"), Reply::bytes("audio/mpeg", vec![1]).after(Duration::from_secs(30)));
     }
     let job = tokio::spawn(async move { sc.resolve("sc:1", &mut Vec::new()).await });
-    while fx.max_in_flight() < 6 {
+    while fx.max_in_flight() < 1 {
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
     job.abort();
     assert!(job.await.unwrap_err().is_cancelled());
     tokio::time::sleep(Duration::from_millis(200)).await;
     let segments = fx.log().iter().filter(|p| p.ends_with(".ts")).count();
-    assert_eq!(segments, 6, "nothing new starts after cancellation");
+    assert_eq!(segments, 1, "nothing new starts after cancellation");
     assert_eq!(fx.count(&api("media/1/hls-opus")), 0);
 }
 
@@ -455,6 +479,7 @@ async fn live_soundcloud_discovery_lookup_and_stream() {
     match sc.resolve(&track.id, &mut sink).await.unwrap() {
         Playable::Direct { url, .. } => assert!(url.starts_with("https://")),
         Playable::Assembled { bytes, .. } => assert!(bytes > 10_000),
+        Playable::Live { .. } => panic!("resolve never answers live"),
     }
 }
 

@@ -347,6 +347,12 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     online: () => options.online ?? true,
     offerSignIn: () => options.offerSignIn ?? false,
     objectUrls: { create: (blob) => `blob:nuvo/${blob.size}-${++ids}`, revoke: () => undefined },
+    feedLive: (stream, mime, _durationMs, stop) => ({
+      url: `blob:live/${++ids}`,
+      whole: new Response(stream).blob().then((blob) => new Blob([blob], { type: mime })),
+      overflowed: () => false,
+      release: stop,
+    }),
   });
   const harness = { signIns: 0 } as Harness;
   const precache = options.precache

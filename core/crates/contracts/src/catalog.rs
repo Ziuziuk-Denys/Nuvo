@@ -145,7 +145,7 @@ pub enum SearchResult {
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamDescriptor {
-    /// `direct` (play `url` from the CDN) or `local` (play the daemon's audio route).
+    /// `direct` (play `url` from the CDN), `local` (play the daemon's audio route) or `live` (feed the daemon's growing stream to a Media Source).
     pub kind: &'static str,
     pub url: String,
     pub expires_at: Option<String>,

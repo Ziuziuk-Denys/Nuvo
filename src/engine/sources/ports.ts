@@ -31,7 +31,7 @@ export interface YtErrorLike {
 }
 
 export interface ScDescriptor {
-  kind: "direct" | "local";
+  kind: "direct" | "local" | "live";
   url: string;
   expiresAt: number | null;
   codec: string;
@@ -78,7 +78,8 @@ export interface DaemonPort {
   startFetch(job: { trackId: string; url: string; mime: string; codec: string; bitrateKbps: number; contentLength?: number }): Promise<number>;
   fetchStatus(trackId: string, signal?: AbortSignal): Promise<FetchStatusResult>;
   cancelFetch(trackId: string): Promise<void>;
-  scStream(id: string, signal: AbortSignal): Promise<ScDescriptor>;
+  scStream(id: string, signal: AbortSignal, live?: boolean): Promise<ScDescriptor>;
+  scLive(id: string, signal: AbortSignal): Promise<ReadableStream<Uint8Array>>;
   getAlternative(trackId: string): Promise<Alternative | null>;
   putAlternative(trackId: string, alternative: Alternative): Promise<void>;
   rejectAlternative(trackId: string, altId: string): Promise<void>;
@@ -86,6 +87,15 @@ export interface DaemonPort {
   localUrl(trackId: string): string;
   probeLocal(trackId: string, signal?: AbortSignal): Promise<{ ok: true; probe: LocalProbe } | { ok: false; status: number }>;
 }
+
+export interface LiveFeed {
+  url: string;
+  whole: Promise<Blob>;
+  overflowed(): boolean;
+  release(): void;
+}
+
+export type FeedLive = (stream: ReadableStream<Uint8Array>, mime: string, durationMs: number | undefined, stop: () => void) => LiveFeed;
 
 export interface MatchPort {
   approvedOn(

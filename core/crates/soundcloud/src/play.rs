@@ -32,6 +32,16 @@ pub struct Transcoding {
 pub enum Playable {
     Direct { url: String, expires_ms: i64, format: Format },
     Assembled { bytes: u64, format: Format },
+    /// An HLS playlist the caller streams segment by segment; nothing is fetched yet.
+    Live { playlist: String, expires_ms: i64, format: Format },
+}
+
+pub fn live_mime(format: Format) -> Option<&'static str> {
+    match format.codec {
+        "aac" => Some("audio/mp4; codecs=\"mp4a.40.2\""),
+        "mp3" => Some("audio/mpeg"),
+        _ => None,
+    }
 }
 
 pub fn now_ms() -> i64 {
@@ -185,8 +195,22 @@ impl SoundCloud {
     }
 
     pub async fn resolve(&self, id: &str, sink: &mut impl AudioSink) -> Result<Playable, ScError> {
+        self.resolve_as(id, sink, false).await
+    }
+
+    pub async fn resolve_live(&self, id: &str, sink: &mut impl AudioSink) -> Result<Playable, ScError> {
+        self.resolve_as(id, sink, true).await
+    }
+
+    pub fn live_playlist(&self, id: &str) -> Option<(Url, Format)> {
+        let num = ids::track_num(id)?;
+        let Some(Playable::Live { playlist, format, .. }) = self.cached_direct(num, true) else { return None };
+        Some((Url::parse(&playlist).ok()?, format))
+    }
+
+    async fn resolve_as(&self, id: &str, sink: &mut impl AudioSink, live: bool) -> Result<Playable, ScError> {
         let num = ids::track_num(id).ok_or(ScError::Unplayable(Reason::Gone))?;
-        if let Some(cached) = self.cached_direct(num) {
+        if let Some(cached) = self.cached_direct(num, live) {
             return Ok(cached);
         }
         let record = match self.track_record(num).await {
@@ -204,7 +228,7 @@ impl SoundCloud {
         for transcoding in candidates(&record) {
             let attempt = async {
                 let media = self.media_url(&transcoding, authorization).await?;
-                self.play_media(&media, &transcoding, sink).await
+                self.play_media(&media, &transcoding, sink, live).await
             };
             match attempt.await {
                 Ok(playable) => {
@@ -225,7 +249,7 @@ impl SoundCloud {
         let num = ids::track_num(id).ok_or(ScError::Unplayable(Reason::Gone))?;
         let mut last = ScError::Unplayable(Reason::NoFormat);
         for transcoding in candidates(&external_record(info)) {
-            match self.play_media(&transcoding.url, &transcoding, sink).await {
+            match self.play_media(&transcoding.url, &transcoding, sink, false).await {
                 Ok(playable) => {
                     self.remember_direct(num, &playable);
                     return Ok(playable);
@@ -239,7 +263,7 @@ impl SoundCloud {
         Err(last)
     }
 
-    async fn play_media(&self, media: &str, transcoding: &Transcoding, sink: &mut impl AudioSink) -> Result<Playable, ScError> {
+    async fn play_media(&self, media: &str, transcoding: &Transcoding, sink: &mut impl AudioSink, live: bool) -> Result<Playable, ScError> {
         let format = format_of(&transcoding.preset, &transcoding.mime);
         let url = Url::parse(media).map_err(|e| ScError::Upstream(e.to_string()))?;
         if transcoding.protocol == "progressive" {
@@ -248,22 +272,26 @@ impl SoundCloud {
             }
             return Ok(Playable::Direct { expires_ms: expiry_ms(media, now_ms()), url: media.to_string(), format });
         }
+        if live && live_mime(format).is_some() {
+            return Ok(Playable::Live { expires_ms: expiry_ms(media, now_ms()), playlist: media.to_string(), format });
+        }
         Ok(Playable::Assembled { bytes: self.assemble(&url, sink).await?, format })
     }
 
-    fn cached_direct(&self, num: u64) -> Option<Playable> {
+    fn cached_direct(&self, num: u64, live: bool) -> Option<Playable> {
         let cache = self.inner.direct.lock().unwrap();
         let playable = cache.get(&num)?;
         match playable {
             Playable::Direct { expires_ms, .. } if *expires_ms - DIRECT_REUSE_MARGIN_MS > now_ms() => Some(playable.clone()),
+            Playable::Live { expires_ms, .. } if live && *expires_ms - DIRECT_REUSE_MARGIN_MS > now_ms() => Some(playable.clone()),
             _ => None,
         }
     }
 
     fn remember_direct(&self, num: u64, playable: &Playable) {
-        if matches!(playable, Playable::Direct { .. }) {
+        if matches!(playable, Playable::Direct { .. } | Playable::Live { .. }) {
             let mut cache = self.inner.direct.lock().unwrap();
-            cache.retain(|_, p| matches!(p, Playable::Direct { expires_ms, .. } if *expires_ms > now_ms()));
+            cache.retain(|_, p| matches!(p, Playable::Direct { expires_ms, .. } | Playable::Live { expires_ms, .. } if *expires_ms > now_ms()));
             if cache.len() >= DIRECT_CACHE_LIMIT {
                 cache.clear();
             }

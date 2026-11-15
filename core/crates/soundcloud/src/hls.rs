@@ -2,6 +2,7 @@ use std::future::Future;
 use std::time::Duration;
 
 use futures::StreamExt;
+use futures::stream::BoxStream;
 use nuvo_net::Url;
 
 use crate::client::SoundCloud;
@@ -12,6 +13,7 @@ const SEGMENT_MAX_BYTES: usize = 20 * 1024 * 1024;
 const MAX_PLAYLIST_FETCHES: usize = 3;
 const MAX_SEGMENTS: usize = 5000;
 const SEGMENT_WINDOW: usize = 6;
+const HEAD_PARTS: usize = 2;
 const ATTEMPTS: usize = 2;
 /// Larger assembled files fail this transcoding.
 pub const MAX_ASSEMBLED_BYTES: u64 = 300 * 1024 * 1024;
@@ -154,22 +156,9 @@ impl SoundCloud {
     }
 
     pub async fn assemble(&self, playlist_url: &Url, sink: &mut impl AudioSink) -> Result<u64, ScError> {
-        let mut url = playlist_url.clone();
-        let mut fetches = 0;
-        let (init, segments) = loop {
-            fetches += 1;
-            if fetches > MAX_PLAYLIST_FETCHES {
-                return Err(ScError::Upstream("HLS master playlists nest too deep".into()));
-            }
-            let body = self.fetch_twice(&url, PLAYLIST_MAX_BYTES, self.inner.limits.api_timeout).await?;
-            match parse(&String::from_utf8_lossy(&body), &url)? {
-                Playlist::Master(variant) => url = variant,
-                Playlist::Media { init, segments } => break (init, segments),
-            }
-        };
-        let timeout = self.inner.limits.segment_timeout;
+        let parts = self.hls_parts(playlist_url).await?;
+        let mut parts = self.fetch_parts(parts);
         let mut total = 0u64;
-        let mut parts = futures::stream::iter(init.into_iter().chain(segments)).map(|u| async move { self.fetch_twice(&u, SEGMENT_MAX_BYTES, timeout).await }).buffered(SEGMENT_WINDOW);
         while let Some(part) = parts.next().await {
             let part = part?;
             total += part.len() as u64;
@@ -179,5 +168,30 @@ impl SoundCloud {
             sink.write(&part).await.map_err(|e| ScError::Upstream(format!("cannot store audio: {e}")))?;
         }
         Ok(total)
+    }
+
+    pub async fn hls_parts(&self, playlist_url: &Url) -> Result<Vec<Url>, ScError> {
+        let mut url = playlist_url.clone();
+        let mut fetches = 0;
+        loop {
+            fetches += 1;
+            if fetches > MAX_PLAYLIST_FETCHES {
+                return Err(ScError::Upstream("HLS master playlists nest too deep".into()));
+            }
+            let body = self.fetch_twice(&url, PLAYLIST_MAX_BYTES, self.inner.limits.api_timeout).await?;
+            match parse(&String::from_utf8_lossy(&body), &url)? {
+                Playlist::Master(variant) => url = variant,
+                Playlist::Media { init, segments } => return Ok(init.into_iter().chain(segments).collect()),
+            }
+        }
+    }
+
+    pub fn fetch_parts(&self, parts: Vec<Url>) -> BoxStream<'_, Result<Vec<u8>, ScError>> {
+        let timeout = self.inner.limits.segment_timeout;
+        let fetch = move |u: Url| async move { self.fetch_twice(&u, SEGMENT_MAX_BYTES, timeout).await };
+        let mut parts = parts.into_iter();
+        // Alone, so the first audio a player waits for does not share the link with later segments
+        let head: Vec<Url> = parts.by_ref().take(HEAD_PARTS).collect();
+        futures::stream::iter(head).then(fetch).chain(futures::stream::iter(parts).map(fetch).buffered(SEGMENT_WINDOW)).boxed()
     }
 }

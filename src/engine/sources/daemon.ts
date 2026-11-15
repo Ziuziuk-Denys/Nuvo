@@ -18,7 +18,23 @@ export function clampBitrateHeader(kbps: number): number | null {
   return value >= BITRATE_MIN && value <= BITRATE_MAX ? value : null;
 }
 
+function scFailure(status: number): SourceFailure {
+  if (status === 429) return new SourceFailure("rate_limited");
+  if (status === 503) return new SourceFailure("timeout");
+  if (status >= 500) return new SourceFailure("server_error");
+  return new SourceFailure("unavailable");
+}
+
 export function createDaemonClient(base: string, doFetch: typeof fetch = (input, init) => fetch(input, init)): DaemonPort {
+  const scFetch = async (path: string, signal: AbortSignal): Promise<Response> => {
+    try {
+      return await doFetch(`${base}${path}`, { signal });
+    } catch (error) {
+      const name = (error as { name?: string })?.name;
+      if (name === "AbortError") throw error;
+      throw new SourceFailure(name === "TimeoutError" ? "timeout" : "unavailable");
+    }
+  };
   const json = async <T>(path: string, init?: RequestInit): Promise<T | null> => {
     try {
       const response = await doFetch(`${base}${path}`, init);
@@ -124,15 +140,8 @@ export function createDaemonClient(base: string, doFetch: typeof fetch = (input,
     },
     cancelFetch: (trackId) => send(`/v1/cache/fetch/${enc(trackId)}`, "DELETE"),
 
-    async scStream(id, signal): Promise<ScDescriptor> {
-      let response: Response;
-      try {
-        response = await doFetch(`${base}/v1/sc/tracks/${enc(id)}/stream`, { signal });
-      } catch (error) {
-        const name = (error as { name?: string })?.name;
-        if (name === "AbortError") throw error;
-        throw new SourceFailure(name === "TimeoutError" ? "timeout" : "unavailable");
-      }
+    async scStream(id, signal, live = false): Promise<ScDescriptor> {
+      const response = await scFetch(`/v1/sc/tracks/${enc(id)}/stream${live ? "?live=true" : ""}`, signal);
       if (response.ok) {
         try {
           // The wire carries `expiresAt` as an ISO time; the engine compares Unix ms.
@@ -143,10 +152,13 @@ export function createDaemonClient(base: string, doFetch: typeof fetch = (input,
           throw new SourceFailure("server_error");
         }
       }
-      if (response.status === 429) throw new SourceFailure("rate_limited");
-      if (response.status === 503) throw new SourceFailure("timeout");
-      if (response.status >= 500) throw new SourceFailure("server_error");
-      throw new SourceFailure("unavailable");
+      throw scFailure(response.status);
+    },
+
+    async scLive(id, signal): Promise<ReadableStream<Uint8Array>> {
+      const response = await scFetch(`/v1/sc/tracks/${enc(id)}/live`, signal);
+      if (response.ok && response.body) return response.body;
+      throw scFailure(response.status);
     },
 
     getAlternative: (trackId) => json<Alternative>(`/v1/tracks/${enc(trackId)}/alternative`),
