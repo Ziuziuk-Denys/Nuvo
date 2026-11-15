@@ -59,14 +59,17 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm vitest run electron/notch/window.test.ts
+      - run: pnpm vitest run electron/notch/window.test.ts electron/app/thumbar.test.ts
+      - shell: bash
+        run: pnpm exec vite build --config e2e/windows/vite.config.ts --outDir "$RUNNER_TEMP/probe"
       - name: The Notch stays above a borderless fullscreen window from another process
         shell: bash
         env:
           NUVO_COVER_SCRIPT: ${{ github.workspace }}\e2e\windows\cover.ps1
-        run: |
-          pnpm exec vite build --config e2e/windows/vite.config.ts --outDir "$RUNNER_TEMP/probe"
-          pnpm exec electron "$RUNNER_TEMP/probe/notch-zorder.mjs"
+        run: pnpm exec electron "$RUNNER_TEMP/probe/notch-zorder.mjs"
+      - name: The taskbar takes the thumbnail buttons and every icon loads at its size
+        shell: bash
+        run: pnpm exec electron "$RUNNER_TEMP/probe/thumbar.mjs"
 
   # The helper tools are fetched per platform; Linux runs the full suite above
   core-portable:

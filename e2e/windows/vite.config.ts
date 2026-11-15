@@ -2,8 +2,11 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
-    ssr: "e2e/windows/notch-zorder.ts",
+    ssr: true,
     emptyOutDir: true,
-    rolldownOptions: { output: { entryFileNames: "notch-zorder.mjs" } },
+    rolldownOptions: {
+      input: { "notch-zorder": "e2e/windows/notch-zorder.ts", thumbar: "e2e/windows/thumbar.ts" },
+      output: { entryFileNames: "[name].mjs" },
+    },
   },
 });
