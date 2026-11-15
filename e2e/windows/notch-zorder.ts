@@ -9,7 +9,7 @@ function notchAboveCover(topMost: boolean): boolean {
   const args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", COVER_SCRIPT, ...(topMost ? ["-TopMost"] : [])];
   const output = execFileSync("powershell.exe", args, { encoding: "utf8" }).trim();
   console.log(`cover topmost=${topMost}: ${output}`);
-  return output === "notch above";
+  return output.startsWith("notch above");
 }
 
 void app.whenReady().then(async () => {
