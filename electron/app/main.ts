@@ -62,6 +62,7 @@ import { GlobalShortcuts, PLAYER_COMMAND_IDS } from "./shortcuts";
 import { exclusive } from "./exclusive";
 import { readThemeFile, themeFileName, validateThemeExport, writeThemeFile, type ThemeFileRead } from "./themeFiles";
 import { systemMuted, unmuteSystem } from "./systemSound";
+import { Thumbar, thumbarIconFile, thumbarIconSize, validateThumbarLabels, type ThumbarButton } from "./thumbar";
 import { probeWatcher, TrayController, trayIconStyle, trayWanted, type TrayItemId } from "./tray";
 import { RateGate, RefusalLog, validateBindings, validateIcon, validateNotchAction, validateNotice, validateSurfaceState } from "./validate";
 import { nextZoom, zoomKey } from "./zoom";
@@ -136,6 +137,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   let youtube: YoutubeService | null = null;
   let tray: TrayController | null = null;
   let trayIcon: Tray | null = null;
+  const thumbar = process.platform === "win32" ? new Thumbar(applyThumbar) : null;
   let presetIcon: Buffer | null = null;
   const trayImage = () => {
     const style = trayIconStyle(process.env.XDG_CURRENT_DESKTOP ?? "", nativeTheme.shouldUseDarkColors);
@@ -486,6 +488,11 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       if (state) states.offer(state);
       else refusals.refuse(CHANNELS.playerState, "shape");
     });
+    ipc.on(CHANNELS.thumbarLabels, "main", (payload) => {
+      const labels = validateThumbarLabels(payload);
+      if (labels) thumbar?.setLabels(labels);
+      else refusals.refuse(CHANNELS.thumbarLabels, "shape");
+    });
     ipc.handle(CHANNELS.trayGetStatus, "main", () => ({ available: tray?.isAvailable ?? false, keepInTray: settings.value.keepInTray }));
     // the proxy in force with its login left out, so Settings can say what the automatic mode found
     ipc.handle(CHANNELS.settingsGet, "main", async () => ({
@@ -677,6 +684,20 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     if (id === "toggle") return sendToMain(CHANNELS.playerCommand, { type: "toggle" });
     if (id === "next" || id === "previous") return sendToMain(CHANNELS.playerCommand, { type: id });
     if (id === "like") sendToMain(CHANNELS.playerCommand, { type: latest.liked ? "unlike" : "like" });
+  }
+
+  function applyThumbar(buttons: ThumbarButton[]): boolean {
+    const win = windows.window as unknown as BrowserWindow | null;
+    if (!win || win.isDestroyed()) return false;
+    // the taskbar draws these buttons at its own scale, on the primary display
+    const size = thumbarIconSize(screen.getPrimaryDisplay().scaleFactor);
+    return win.setThumbarButtons(
+      buttons.map((button) => ({
+        icon: nativeImage.createFromPath(thumbarIconFile(app.getAppPath(), button.icon, size)),
+        tooltip: button.tooltip,
+        click: () => onTrayClick(button.command),
+      })),
+    );
   }
 
   function startTray(): void {
@@ -876,6 +897,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       notch?.setState(toNotchState(state));
       panelBus?.service.update(state);
       tray?.update(state);
+      thumbar?.update(state);
       discord.update(state);
       blocker.update(state.status);
     });
