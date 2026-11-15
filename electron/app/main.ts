@@ -223,7 +223,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     keepInTray: () => settings.value.keepInTray,
     trayAvailable: () => tray?.isAvailable ?? false,
     trayHintShown: () => settings.value.trayHintShown,
-    markTrayHintShown: () => settings.set("trayHintShown", true),
+    markTrayHintShown: () => void settings.set("trayHintShown", true),
     notify: (text) => new Notification({ title: "Nuvo", body: text }).show(),
     startQuit: () => void shutdown.run(),
     tiling: compositor === "hyprland" || compositor === "sway",
@@ -488,15 +488,15 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     });
     ipc.handle(CHANNELS.trayGetStatus, "main", () => ({ available: tray?.isAvailable ?? false, keepInTray: settings.value.keepInTray }));
     // the proxy in force with its login left out, so Settings can say what the automatic mode found
-    ipc.handle(CHANNELS.settingsGet, "main", () => ({
-      ...settings.view(),
+    ipc.handle(CHANNELS.settingsGet, "main", async () => ({
+      ...(await settings.view()),
       proxyInForce: proxyInForce?.replace(/\/\/[^/@]*@/, "//") ?? null,
       menuEntryAvailable: menuEntryAvailable(),
     }));
-    ipc.handle(CHANNELS.settingsSet, "main", (payload) => {
+    ipc.handle(CHANNELS.settingsSet, "main", async (payload) => {
       const { key, value } = (payload ?? {}) as { key?: unknown; value?: unknown };
       if (typeof key !== "string") return { ok: false, error: "key must be a string" };
-      const result = settings.set(key, value);
+      const result = await settings.set(key, value);
       if (result.ok && key === "discord") discord.setEnabled(settings.value.discord.enabled);
       if (result.ok && key === "proxy") void applyProxy();
       if (result.ok && key === "autoUpdate") updater.setEnabled(settings.value.autoUpdate);
@@ -746,7 +746,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     let url: string | null = null;
     let config: Electron.ProxyConfig = { mode: "system" };
     if (proxy.mode === "manual" && proxy.url) {
-      url = withCredentials(proxy.url, proxy.username, settings.proxyPassword());
+      url = withCredentials(proxy.url, proxy.username, await settings.proxyPassword());
       config = { proxyRules: chromiumRule(proxy.url), proxyBypassRules: "<local>" };
     } else if (proxy.mode === "none") {
       config = { mode: "direct" };
