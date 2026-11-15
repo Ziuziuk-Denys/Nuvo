@@ -8,7 +8,7 @@ import { artworkData, bindMediaSession, MediaSessionMirror } from "./mediaSessio
 import { PoolRefresher } from "./poolRefresher";
 import { seededRandom } from "./shuffle";
 import { createDaemonClient } from "./sources/daemon";
-import type { YoutubePort } from "./sources/ports";
+import type { FeedLive, YoutubePort } from "./sources/ports";
 import { DownloadFetcher } from "./downloadFetcher";
 import { PrecacheScheduler } from "./sources/precache";
 import { offlineMode } from "./offlineMode";
@@ -29,6 +29,7 @@ export interface EqBand {
 
 export interface BootDeps {
   youtube: YoutubePort;
+  feedLive: FeedLive;
   catalog: CatalogPort;
   library: LibraryPort & { isLiked(trackId: string): boolean; onLikedChange(listener: () => void): () => void };
   lyrics: { follow(track: Track | null): void; prefetch(track: Track): void };
@@ -100,6 +101,7 @@ export function bootEngine(deps: BootDeps): Booted {
     online: () => navigator.onLine && !offlineMode.isOn(),
     offerSignIn: deps.offerSignIn,
     objectUrls: { create: (blob) => URL.createObjectURL(blob), revoke: (url) => URL.revokeObjectURL(url) },
+    feedLive: deps.feedLive,
   });
   const decks = new DeckController({
     elements,

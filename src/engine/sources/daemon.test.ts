@@ -28,6 +28,23 @@ describe("daemon client mappings", () => {
     expect((await descriptor("soon")).expiresAt).toBeNull();
   });
 
+  it("scStream asks for a live answer only when told, scLive hands over the body and maps a refusal", async () => {
+    const signal = new AbortController().signal;
+    const paths: string[] = [];
+    const recording = createDaemonClient("http://d", (async (input: string) => {
+      paths.push(input);
+      return input.endsWith("/live")
+        ? new Response("abc")
+        : Response.json({ kind: "live", url: "u", expiresAt: null, codec: "aac", mimeType: "audio/mp4", bitrate: 1, contentLength: null });
+    }) as unknown as typeof fetch);
+    await recording.scStream("1", signal, true);
+    await recording.scStream("1", signal);
+    expect(await new Response(await recording.scLive("1", signal)).text()).toBe("abc");
+    expect(paths).toEqual(["http://d/v1/sc/tracks/1/stream?live=true", "http://d/v1/sc/tracks/1/stream", "http://d/v1/sc/tracks/1/live"]);
+    await expect(client(() => new Response("", { status: 404 })).scLive("1", signal)).rejects.toMatchObject({ cause: "unavailable" });
+    await expect(down().scLive("1", signal)).rejects.toMatchObject({ cause: "unavailable" });
+  });
+
   it("startFetch returns the HTTP status, 0 when unreachable", async () => {
     const job = { trackId: "t", url: "u", mime: "audio/webm", codec: "opus", bitrateKbps: 128 };
     expect(await down().startFetch(job)).toBe(0);

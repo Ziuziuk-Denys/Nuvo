@@ -43,12 +43,19 @@ function setup(over: Partial<Fakes> = {}) {
     putAlternative,
     rejectAlternative: vi.fn(async () => undefined),
     scStream: vi.fn(async (id: string) => fakes.sc(id)),
+    scLive: vi.fn(async () => new ReadableStream<Uint8Array>()),
     deleteCache: vi.fn(async () => undefined),
   } as unknown as DaemonPort;
   const ytResolve = vi.fn(async (target: Track, _o: unknown, signal: AbortSignal) => fakes.yt(target, signal));
   const youtube = { resolve: ytResolve, fetchWhole: vi.fn(), warmUp: vi.fn() } as unknown as YoutubePort;
   const approvedOn = vi.fn(async (target: "youtube" | "soundcloud", _t: Track, _s: AbortSignal, exclude?: ReadonlySet<string>) => fakes.match(target, exclude));
   const match: MatchPort = { approvedOn };
+  const feedLive = vi.fn((_stream: ReadableStream<Uint8Array>, _mime: string, _durationMs: number | undefined, stop: () => void) => ({
+    url: "blob:live",
+    whole: new Promise<Blob>(() => undefined),
+    overflowed: () => false,
+    release: stop,
+  }));
   const resolver = new SourceResolver({
     daemon,
     youtube,
@@ -57,8 +64,9 @@ function setup(over: Partial<Fakes> = {}) {
     online: () => true,
     offerSignIn: () => false,
     objectUrls: { create: () => "blob:x", revoke: () => undefined },
+    feedLive,
   });
-  return { resolver, daemon, probeCache, putAlternative, ytResolve, approvedOn, fakes };
+  return { resolver, daemon, probeCache, putAlternative, ytResolve, approvedOn, fakes, feedLive };
 }
 
 const opts = (over: Partial<ResolveOptions> = {}): ResolveOptions => ({
@@ -453,5 +461,41 @@ describe("best quality format", () => {
     const n = setup();
     await n.resolver.resolve(track(yid("b")), opts());
     expect(n.ytResolve.mock.calls[0][1]).toMatchObject({ quality: "normal" });
+  });
+});
+
+describe("SoundCloud live start", () => {
+  const liveAnswer = {
+    kind: "live",
+    url: "nuvo-core://local/v1/sc/tracks/sc:1/live",
+    expiresAt: null,
+    codec: "aac",
+    mimeType: 'audio/mp4; codecs="mp4a.40.2"',
+    bitrate: 160_000,
+    contentLength: null,
+  };
+
+  it("an early start feeds the live stream and a release stops it", async () => {
+    const s = setup({ sc: async () => liveAnswer });
+    const resolved = await s.resolver.resolve(track("sc:1", 150_000), opts({ early: true }));
+    expect(s.daemon.scStream).toHaveBeenCalledWith("1", expect.any(AbortSignal), true);
+    expect(s.daemon.scLive).toHaveBeenCalledWith("1", expect.any(AbortSignal));
+    expect(s.feedLive).toHaveBeenCalledWith(expect.any(ReadableStream), liveAnswer.mimeType, 150_000, expect.any(Function));
+    expect(resolved).toMatchObject({
+      source: { kind: "progressive", url: "blob:live" },
+      stream: { source: "soundcloud", codec: "aac", bitrateKbps: 160 },
+      daemonCaches: true,
+    });
+    const liveSignal = vi.mocked(s.daemon.scLive).mock.calls[0][1];
+    expect(liveSignal.aborted).toBe(false);
+    resolved.source.release();
+    expect(liveSignal.aborted).toBe(true);
+  });
+
+  it("precache and prefetch resolves ask for the whole file", async () => {
+    const s = setup();
+    await s.resolver.resolve(track("sc:1"), opts());
+    expect(s.daemon.scStream).toHaveBeenCalledWith("1", expect.any(AbortSignal), false);
+    expect(s.daemon.scLive).not.toHaveBeenCalled();
   });
 });

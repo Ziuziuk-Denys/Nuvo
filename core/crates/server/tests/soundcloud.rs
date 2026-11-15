@@ -3,6 +3,8 @@ mod common;
 use std::time::Duration;
 
 use axum::http::StatusCode;
+use http_body_util::BodyExt;
+use tower::ServiceExt;
 use nuvo_crypto::MemoryKeyStore;
 use nuvo_fetch::tools::ToolEnv;
 use nuvo_net::fixture::{Fixture, Reply};
@@ -209,6 +211,99 @@ async fn two_stream_requests_for_one_hls_track_both_get_whole_audio() {
     let (_, bytes, _) = common::send(&core.app, common::request("GET", "/v1/sc/tracks/sc:1/audio", None)).await;
     assert_eq!(bytes, b"IIabbc");
     assert_eq!(audio_files(&core).len(), 1);
+}
+
+async fn cached_entry(core: &common::TestCore) -> Option<nuvo_store::cache_index::CacheEntry> {
+    let data = core.state.data().unwrap();
+    data.db.call(|c| nuvo_store::cache_index::get(c, "sc:1")).await.unwrap()
+}
+
+#[tokio::test]
+async fn a_live_hls_stream_plays_as_it_arrives_and_is_cached_at_the_end() {
+    let fx = fixture().await;
+    serve_hls(&fx);
+    let core = core(&fx);
+    let (status, body) = common::call(&core.app, "GET", "/v1/sc/tracks/sc:1/stream?live=true", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        body,
+        json!({"kind": "live", "url": "nuvo-core://local/v1/sc/tracks/sc:1/live", "expiresAt": null, "codec": "aac", "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"", "bitrate": 160000, "contentLength": null})
+    );
+    assert_eq!(fx.count(&format!("{HLS}/a/s0.m4s")), 0, "the descriptor waits for no segment");
+    let (status, bytes, headers) = common::send(&core.app, common::request("GET", "/v1/sc/tracks/sc:1/live", None)).await;
+    assert_eq!((status, bytes.as_slice(), headers["content-type"].to_str().unwrap()), (StatusCode::OK, b"IIabbc".as_slice(), "audio/mp4"));
+    assert_eq!(cached_entry(&core).await.map(|entry| entry.size_bytes), Some(6));
+    let requests = fx.total();
+    let (_, again) = common::call(&core.app, "GET", "/v1/sc/tracks/sc:1/stream?live=true", None).await;
+    assert_eq!((again["kind"].as_str(), again["contentLength"].as_u64()), (Some("local"), Some(6)));
+    assert_eq!(fx.total(), requests, "a cached track is not streamed again");
+}
+
+#[tokio::test]
+async fn a_live_stream_that_breaks_off_keeps_no_cache() {
+    let fx = fixture().await;
+    serve_hls(&fx);
+    fx.on(&format!("{HLS}/a/s1.m4s"), Reply::status(500));
+    let core = core(&fx);
+    common::call(&core.app, "GET", "/v1/sc/tracks/sc:1/stream?live=true", None).await;
+    let response = core.app.clone().oneshot(common::request("GET", "/v1/sc/tracks/sc:1/live", None)).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(response.into_body().collect().await.is_err(), "the body must fail, not end as if the track were whole");
+    assert!(audio_files(&core).is_empty(), "left {:?}", audio_files(&core));
+    assert!(cached_entry(&core).await.is_none());
+}
+
+#[tokio::test]
+async fn a_listener_that_leaves_stops_the_live_stream_at_once() {
+    let fx = fixture().await;
+    serve_hls(&fx);
+    fx.on(&format!("{HLS}/a/s2.m4s"), Reply::bytes("audio/mp4", "c").after(Duration::from_secs(30)));
+    let core = core(&fx);
+    common::call(&core.app, "GET", "/v1/sc/tracks/sc:1/stream?live=true", None).await;
+    let response = core.app.clone().oneshot(common::request("GET", "/v1/sc/tracks/sc:1/live", None)).await.unwrap();
+    let mut body = response.into_body();
+    let mut heard = Vec::new();
+    while heard != b"IIabb" {
+        heard.extend_from_slice(&body.frame().await.unwrap().unwrap().into_data().unwrap());
+    }
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    assert!(!audio_files(&core).is_empty(), "the stream is being cached");
+    drop(body);
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    while !audio_files(&core).is_empty() && tokio::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    assert!(audio_files(&core).is_empty(), "left {:?}", audio_files(&core));
+    assert!(cached_entry(&core).await.is_none());
+}
+
+#[tokio::test]
+async fn live_needs_a_stream_answer_first() {
+    let fx = fixture().await;
+    serve_hls(&fx);
+    let core = core(&fx);
+    let (status, body) = common::call(&core.app, "GET", "/v1/sc/tracks/sc:1/live", None).await;
+    assert_eq!((status, body["code"].as_str()), (StatusCode::NOT_FOUND, Some("NOT_FOUND")));
+    assert_eq!(fx.count(&format!("{HLS}/a/list.m3u8")), 0);
+}
+
+#[tokio::test]
+async fn opus_hls_and_a_locked_library_keep_the_assembled_answer() {
+    let fx = fixture().await;
+    fx.on(&api("tracks/1"), Reply::json(track(1, json!([{"url": api("media/1/hls"), "preset": "opus_0_0", "format": {"protocol": "hls", "mime_type": "audio/ogg; codecs=\"opus\""}}]))));
+    fx.on(&api("media/1/hls"), Reply::json(json!({"url": format!("{HLS}/a/list.m3u8")})));
+    fx.on(&format!("{HLS}/a/list.m3u8"), Reply::text("#EXTM3U\ns0.ogg\n"));
+    fx.on(&format!("{HLS}/a/s0.ogg"), Reply::bytes("audio/ogg", "oo"));
+    let opus = core(&fx);
+    let (_, body) = common::call(&opus.app, "GET", "/v1/sc/tracks/sc:1/stream?live=true", None).await;
+    assert_eq!((body["kind"].as_str(), body["contentLength"].as_u64()), (Some("local"), Some(2)));
+
+    let fx = fixture().await;
+    serve_hls(&fx);
+    let first = core(&fx);
+    let locked = common::boot_net(first.dir, MemoryKeyStore::with_key([9u8; 32]), &fx.base);
+    let (status, body) = common::call(&locked.app, "GET", "/v1/sc/tracks/sc:1/stream?live=true", None).await;
+    assert_eq!((status, body["code"].as_str()), (StatusCode::LOCKED, Some("LOCKED")));
 }
 
 #[tokio::test]

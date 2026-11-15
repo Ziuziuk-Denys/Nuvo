@@ -11,7 +11,7 @@ pub use catalog::{LikesPage, SetView, TypeFilter};
 pub use client::{API_URL, Limits, SoundCloud, WEB_URL, find_client_id, host_allowed, script_urls};
 pub use hls::AudioSink;
 pub use import::{ImportListing, import_row, strip_artist};
-pub use play::{Format, Playable};
+pub use play::{Format, Playable, live_mime};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reason {

@@ -17,6 +17,7 @@ import {
   type Alternative,
   type CacheProbe,
   type DaemonPort,
+  type FeedLive,
   type MatchPort,
   type PlayableSource,
   type YoutubePort,
@@ -51,6 +52,7 @@ export interface Resolved {
   client?: string;
   wholeFile?: (signal: AbortSignal) => Promise<Blob>;
   verify?: () => Promise<Resolved>;
+  daemonCaches?: boolean;
 }
 
 export interface ResolverDeps {
@@ -61,6 +63,7 @@ export interface ResolverDeps {
   online(): boolean;
   offerSignIn(): boolean;
   objectUrls: { create(blob: Blob): string; revoke(url: string): void };
+  feedLive: FeedLive;
 }
 
 export interface ResolveOptions {
@@ -320,7 +323,7 @@ export class SourceResolver {
 
   private async primary(track: Track, options: ResolveOptions): Promise<Resolved> {
     const kind = idKind(track.id);
-    if (kind === "soundcloud") return this.soundcloud(track, track.id, options.signal);
+    if (kind === "soundcloud") return this.soundcloud(track, track.id, options.signal, options.early === true);
     const early = options.early === true && !options.bestQuality;
     const quality = options.bestQuality ? "hifi" : "normal";
     if (kind === "youtube") return this.youtube(track, track, options.signal, early, quality);
@@ -400,10 +403,32 @@ export class SourceResolver {
     };
   }
 
-  private async soundcloud(track: Track, id: string, signal: AbortSignal): Promise<Resolved> {
-    const descriptor = await this.deps.daemon.scStream(id.replace(/^sc:/, ""), signal);
+  // A live start plays the daemon's stream while it arrives; precache and idle prefetch keep the whole-file answer
+  private async soundcloud(track: Track, id: string, signal: AbortSignal, live = false, durationMs = track.durationMs): Promise<Resolved> {
+    const scId = id.replace(/^sc:/, "");
+    const descriptor = await this.deps.daemon.scStream(scId, signal, live);
     const kbps = kbpsOf(descriptor.bitrate);
     const stream: StreamInfo = { source: "soundcloud", codec: descriptor.codec, bitrateKbps: kbps, fromCache: false };
+    if (descriptor.kind === "live") {
+      const stop = new AbortController();
+      const body = await this.deps.daemon.scLive(scId, AbortSignal.any([signal, stop.signal]));
+      const feed = this.deps.feedLive(body, descriptor.mimeType, durationMs, () => stop.abort());
+      return {
+        source: {
+          trackId: track.id,
+          kind: "progressive",
+          url: feed.url,
+          mime: descriptor.mimeType,
+          whole: feed.whole,
+          overflowed: feed.overflowed,
+          release: feed.release,
+        },
+        stream,
+        fallback: null,
+        startAtMs: 0,
+        daemonCaches: true,
+      };
+    }
     return {
       source: {
         trackId: track.id,
@@ -457,7 +482,7 @@ export class SourceResolver {
     const altTrack: Track = { ...track, id: alternative.altId, durationMs: alternative.durationMs ?? track.durationMs };
     const resolved =
       alternative.source === "soundcloud"
-        ? await this.soundcloud(track, alternative.altId, options.signal)
+        ? await this.soundcloud(track, alternative.altId, options.signal, options.early === true, altTrack.durationMs)
         : await this.youtube(track, altTrack, options.signal, false, options.bestQuality ? "hifi" : "normal");
     const start =
       alternative.durationMs === undefined

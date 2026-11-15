@@ -1,22 +1,26 @@
 use std::io;
 use std::time::Duration;
 
+use axum::body::{Body, Bytes};
 use axum::extract::{Path, Query, State};
-use axum::http::HeaderMap;
+use axum::http::{HeaderMap, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
+use futures::StreamExt;
 use nuvo_cache::CacheWriter;
 use nuvo_contracts::Items;
 use nuvo_contracts::catalog::{ArtistDetails, Page, SearchResult, SetSummary, StreamDescriptor, Track, TrackDetails};
 use nuvo_contracts::iso_from_ms;
 use nuvo_fetch::ytdlp;
 use nuvo_soundcloud::play::format_of;
-use nuvo_soundcloud::{AudioSink, Format, Playable, Reason, ScError, TypeFilter, ids};
+use nuvo_soundcloud::hls::MAX_ASSEMBLED_BYTES;
+use nuvo_soundcloud::{AudioSink, Format, Playable, Reason, ScError, TypeFilter, ids, live_mime};
 use nuvo_store::cache_index::{self, CacheEntry};
 use nuvo_store::now_ms;
 use serde::Deserialize;
 use serde_json::{Value, json};
+use tokio::sync::mpsc;
 
 use crate::error::ApiError;
 use crate::routes::cache::{evict, serve};
@@ -32,6 +36,7 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/sc/tracks/{id}/related", get(related))
         .route("/v1/sc/tracks/{id}/stream", get(stream))
         .route("/v1/sc/tracks/{id}/audio", get(audio))
+        .route("/v1/sc/tracks/{id}/live", get(live))
         .route("/v1/sc/sets/{id}", get(set))
         .route("/v1/sc/users/{id}", get(user))
         .route("/v1/sc/users/{id}/tracks", get(user_tracks))
@@ -219,7 +224,12 @@ async fn cached(data: &Unlocked, key: &str) -> Option<(CacheEntry, u64)> {
     Some((entry, size))
 }
 
-async fn stream(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<StreamDescriptor>, ApiError> {
+#[derive(Deserialize)]
+struct StreamQuery {
+    live: Option<bool>,
+}
+
+async fn stream(State(state): State<AppState>, Path(id): Path<String>, Query(q): Query<StreamQuery>) -> Result<Json<StreamDescriptor>, ApiError> {
     let num = ids::track_num(&id).ok_or_else(|| ApiError::Invalid(format!("{id} is not a SoundCloud id")))?;
     let key = ids::track_id(num);
     // Locked is fine here (the catalog still resolves); starting is not, so the engine retries.
@@ -235,7 +245,9 @@ async fn stream(State(state): State<AppState>, Path(id): Path<String>) -> Result
     }
     let mut sink = CacheSink { data, key: key.clone(), writer: None, refused: false };
     let sc = state.soundcloud().await;
-    let resolved = match sc.resolve(&key, &mut sink).await {
+    // A locked library cannot keep what a live stream brings, so it takes the refusal of the assembled path
+    let first = if q.live == Some(true) && sink.data.is_some() { sc.resolve_live(&key, &mut sink).await } else { sc.resolve(&key, &mut sink).await };
+    let resolved = match first {
         Err(err) if !sink.refused && worth_yt_dlp(&err) => match yt_dlp_info(&state, num).await {
             Some(info) => sc.resolve_external(&key, &info, &mut sink).await.map_err(|fallback| {
                 tracing::info!(%fallback, "SoundCloud: yt-dlp could not play the track either");
@@ -252,6 +264,15 @@ async fn stream(State(state): State<AppState>, Path(id): Path<String>) -> Result
             expires_at: Some(iso_from_ms(expires_ms)),
             codec: format.codec,
             mime_type: format.mime,
+            bitrate: format.bitrate,
+            content_length: None,
+        })),
+        Ok(Playable::Live { format, .. }) => Ok(Json(StreamDescriptor {
+            kind: "live",
+            url: format!("nuvo-core://local/v1/sc/tracks/{key}/live"),
+            expires_at: None,
+            codec: format.codec,
+            mime_type: live_mime(format).unwrap_or(format.mime),
             bitrate: format.bitrate,
             content_length: None,
         })),
@@ -281,6 +302,61 @@ async fn yt_dlp_info(state: &AppState, num: u64) -> Option<Value> {
     let info = ytdlp::info(&yt_dlp, runtime.as_deref(), &url, proxy.as_deref());
     let json = tokio::time::timeout(YT_DLP_TIMEOUT, info).await.ok()?.ok()?;
     serde_json::from_slice(&json).ok()
+}
+
+// The cache is written beside the stream and kept only when the last segment arrived; a listener that leaves stops both
+async fn live(State(state): State<AppState>, Path(id): Path<String>) -> Result<Response, ApiError> {
+    let num = ids::track_num(&id).ok_or_else(|| ApiError::Invalid(format!("{id} is not a SoundCloud id")))?;
+    let key = ids::track_id(num);
+    if state.is_starting() {
+        return Err(ApiError::Starting);
+    }
+    let data = state.data()?;
+    let sc = state.soundcloud().await.clone();
+    let (playlist, format) = sc.live_playlist(&key).ok_or_else(|| ApiError::NotFound("no live stream for this track, ask for /stream first".into()))?;
+    let parts = sc.hls_parts(&playlist).await?;
+    let (tx, mut rx) = mpsc::channel::<io::Result<Bytes>>(2);
+    tokio::spawn(async move {
+        let mut sink = CacheSink { data: Some(data), key, writer: None, refused: false };
+        let mut segments = sc.fetch_parts(parts);
+        let mut total = 0u64;
+        loop {
+            let part = tokio::select! {
+                part = segments.next() => part,
+                () = tx.closed() => {
+                    sink.discard().await;
+                    return;
+                }
+            };
+            let Some(part) = part else { break };
+            let stored = match part {
+                Ok(part) => {
+                    total += part.len() as u64;
+                    if total > MAX_ASSEMBLED_BYTES { Err(io::Error::other("HLS stream is over the size limit")) } else { sink.write(&part).await.map(|()| part) }
+                }
+                Err(err) => Err(io::Error::other(err.to_string())),
+            };
+            match stored {
+                Ok(part) => {
+                    if tx.send(Ok(Bytes::from(part))).await.is_err() {
+                        sink.discard().await;
+                        return;
+                    }
+                }
+                Err(err) => {
+                    tracing::info!(%err, "SoundCloud live stream broke off");
+                    sink.discard().await;
+                    let _ = tx.send(Err(err)).await;
+                    return;
+                }
+            }
+        }
+        if let Err(err) = sink.finish(format).await {
+            tracing::warn!("SoundCloud live stream was not cached: {err:?}");
+        }
+    });
+    let body = Body::from_stream(futures::stream::poll_fn(move |cx| rx.poll_recv(cx)));
+    Ok(([(header::CONTENT_TYPE, format.mime), (header::CACHE_CONTROL, "no-store")], body).into_response())
 }
 
 async fn audio(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Result<Response, ApiError> {
