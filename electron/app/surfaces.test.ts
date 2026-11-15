@@ -88,88 +88,121 @@ describe("player state relay", () => {
 });
 
 describe("main settings", () => {
-  it("saving the form again keeps the stored password, a new username drops it, port 80 is a port", () => {
+  it("saving the form again keeps the stored password, a new username drops it, port 80 is a port", async () => {
     const store = new MainSettingsStore(path.join(tempDir(), "s.json"), safe(true), () => undefined);
-    expect(store.set("proxy", { mode: "manual", url: "http://proxy.lan:80", username: "me", password: "secret" }).ok).toBe(true);
-    expect(store.proxyPassword()).toBe("secret");
-    store.set("proxy", { mode: "manual", url: "http://proxy.lan:8080", username: "me" });
-    expect(store.proxyPassword()).toBe("secret");
-    store.set("proxy", { mode: "manual", url: "http://proxy.lan:8080", username: "other" });
-    expect(store.proxyPassword()).toBeUndefined();
+    expect((await store.set("proxy", { mode: "manual", url: "http://proxy.lan:80", username: "me", password: "secret" })).ok).toBe(true);
+    expect(await store.proxyPassword()).toBe("secret");
+    await store.set("proxy", { mode: "manual", url: "http://proxy.lan:8080", username: "me" });
+    expect(await store.proxyPassword()).toBe("secret");
+    await store.set("proxy", { mode: "manual", url: "http://proxy.lan:8080", username: "other" });
+    expect(await store.proxyPassword()).toBeUndefined();
   });
 
   const safe = (available: boolean) => ({
-    isEncryptionAvailable: () => available,
-    encryptString: (t: string) => Buffer.from(`enc:${t}`),
-    decryptString: (b: Buffer) => b.toString().slice(4),
+    isAsyncEncryptionAvailable: async () => available,
+    encryptStringAsync: async (t: string) => Buffer.from(`enc:${t}`),
+    decryptStringAsync: async (b: Buffer) => ({ shouldReEncrypt: false, result: b.toString().slice(4) }),
   });
 
-  it("missing gives defaults; unreadable gives defaults and a .bad copy", () => {
+  it("missing gives defaults; unreadable gives defaults and a .bad copy", async () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
-    expect(new MainSettingsStore(file, safe(true), () => undefined).view().keepInTray).toBe(false);
+    expect((await new MainSettingsStore(file, safe(true), () => undefined).view()).keepInTray).toBe(false);
     fs.writeFileSync(file, "{not json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    expect(store.view().discord.enabled).toBe(true);
+    expect((await store.view()).discord.enabled).toBe(true);
     expect(fs.existsSync(`${file}.bad`)).toBe(true);
   });
 
-  it("closing the window quits unless the user keeps Nuvo in the tray; the old default is not carried over", () => {
+  it("closing the window quits unless the user keeps Nuvo in the tray; the old default is not carried over", async () => {
     const file = path.join(tempDir(), "main-settings.json");
     fs.writeFileSync(file, JSON.stringify({ closeToTray: true, trayHintShown: true, autoUpdate: false }));
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    expect(store.view()).toMatchObject({ keepInTray: false, trayHintShown: true, autoUpdate: false });
-    expect(store.set("keepInTray", true).ok).toBe(true);
-    expect(new MainSettingsStore(file, safe(true), () => undefined).view().keepInTray).toBe(true);
+    expect(await store.view()).toMatchObject({ keepInTray: false, trayHintShown: true, autoUpdate: false });
+    expect((await store.set("keepInTray", true)).ok).toBe(true);
+    expect((await new MainSettingsStore(file, safe(true), () => undefined).view()).keepInTray).toBe(true);
   });
 
-  it("a wrong type or an unknown key writes nothing", () => {
+  it("a wrong type or an unknown key writes nothing", async () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    expect(store.set("keepInTray", "yes")).toMatchObject({ ok: false });
-    expect(store.set("colour", true)).toMatchObject({ ok: false });
+    expect(await store.set("keepInTray", "yes")).toMatchObject({ ok: false });
+    expect(await store.set("colour", true)).toMatchObject({ ok: false });
     expect(fs.existsSync(file)).toBe(false);
   });
 
-  it("an interrupted write leaves the old file intact", () => {
+  it("an interrupted write leaves the old file intact", async () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    store.set("keepInTray", false);
+    await store.set("keepInTray", false);
     const before = fs.readFileSync(file, "utf8");
     const rename = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
       throw new Error("power cut");
     });
-    expect(() => store.set("trayHintShown", true)).toThrow("power cut");
+    await expect(store.set("trayHintShown", true)).rejects.toThrow("power cut");
     rename.mockRestore();
     expect(fs.readFileSync(file, "utf8")).toBe(before);
   });
 
-  it("appearance flags: the renderer switches safe mode, a damaged value reads as the default", () => {
+  it("appearance flags: the renderer switches safe mode, a damaged value reads as the default", async () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    expect(store.view().appearance).toEqual({ safe: false, failedStarts: 0 });
+    expect((await store.view()).appearance).toEqual({ safe: false, failedStarts: 0 });
     store.setAppearance({ safe: true, failedStarts: 2 });
-    expect(new MainSettingsStore(file, safe(true), () => undefined).view().appearance).toEqual({ safe: true, failedStarts: 2 });
-    expect(store.set("appearance", { safe: "no" })).toMatchObject({ ok: false });
-    expect(store.set("appearance", { safe: false })).toEqual({ ok: true });
-    expect(store.view().appearance).toEqual({ safe: false, failedStarts: 0 });
+    expect((await new MainSettingsStore(file, safe(true), () => undefined).view()).appearance).toEqual({ safe: true, failedStarts: 2 });
+    expect(await store.set("appearance", { safe: "no" })).toMatchObject({ ok: false });
+    expect(await store.set("appearance", { safe: false })).toEqual({ ok: true });
+    expect((await store.view()).appearance).toEqual({ safe: false, failedStarts: 0 });
     fs.writeFileSync(file, JSON.stringify({ appearance: { safe: "yes", failedStarts: -1 } }));
-    expect(new MainSettingsStore(file, safe(true), () => undefined).view().appearance).toEqual({ safe: false, failedStarts: 0 });
+    expect((await new MainSettingsStore(file, safe(true), () => undefined).view()).appearance).toEqual({ safe: false, failedStarts: 0 });
   });
 
-  it("proxy passwords are encrypted, never returned, refused without encryption", () => {
+  it("a password under a rotated key is stored again under the new one", async () => {
+    const file = path.join(tempDir(), "main-settings.json");
+    fs.writeFileSync(
+      file,
+      JSON.stringify({ proxy: { mode: "manual", url: "http://p:8080", username: "me", passwordEnc: Buffer.from("old:secret").toString("base64") } }),
+    );
+    const rotated = {
+      isAsyncEncryptionAvailable: async () => true,
+      encryptStringAsync: async (t: string) => Buffer.from(`new:${t}`),
+      decryptStringAsync: async (b: Buffer) => ({ shouldReEncrypt: b.toString().startsWith("old:"), result: b.toString().slice(4) }),
+    };
+    const store = new MainSettingsStore(file, rotated, () => undefined);
+    expect(await store.proxyPassword()).toBe("secret");
+    expect(JSON.parse(fs.readFileSync(file, "utf8")).proxy.passwordEnc).toBe(Buffer.from("new:secret").toString("base64"));
+    expect(await store.proxyPassword()).toBe("secret");
+  });
+
+  it("a setting saved while a password is still being encrypted is kept", async () => {
+    const file = path.join(tempDir(), "main-settings.json");
+    let finish!: () => void;
+    const slow = {
+      ...safe(true),
+      encryptStringAsync: (t: string) => new Promise<Buffer>((resolve) => (finish = () => resolve(Buffer.from(`enc:${t}`)))),
+    };
+    const store = new MainSettingsStore(file, slow, () => undefined);
+    const proxy = store.set("proxy", { mode: "manual", url: "http://p:8080", username: "me", password: "secret" });
+    await Promise.resolve();
+    expect(await store.set("keepInTray", true)).toEqual({ ok: true });
+    finish();
+    expect(await proxy).toEqual({ ok: true });
+    expect(store.value).toMatchObject({ keepInTray: true, proxy: { username: "me", passwordEnc: Buffer.from("enc:secret").toString("base64") } });
+  });
+
+  it("proxy passwords are encrypted, never returned, refused without encryption", async () => {
     const dir = tempDir();
     const file = path.join(dir, "main-settings.json");
     const store = new MainSettingsStore(file, safe(true), () => undefined);
-    expect(store.set("proxy", { mode: "manual", url: "socks5://127.0.0.1:1080", password: "secret" })).toEqual({ ok: true });
+    expect(await store.set("proxy", { mode: "manual", url: "socks5://127.0.0.1:1080", password: "secret" })).toEqual({ ok: true });
     expect(JSON.parse(fs.readFileSync(file, "utf8")).proxy.passwordEnc).toBe(Buffer.from("enc:secret").toString("base64"));
-    expect(store.view().proxy).toMatchObject({ hasPassword: true });
-    expect(JSON.stringify(store.view())).not.toContain("secret");
+    expect((await store.view()).proxy).toMatchObject({ hasPassword: true });
+    expect(JSON.stringify(await store.view())).not.toContain("secret");
     const plain = new MainSettingsStore(path.join(dir, "other.json"), safe(false), () => undefined);
-    expect(plain.set("proxy", { mode: "manual", url: "http://p:8080", password: "x" })).toEqual({ ok: false, error: "passwordStorable: false" });
+    expect(await plain.set("proxy", { mode: "manual", url: "http://p:8080", password: "x" })).toEqual({ ok: false, error: "passwordStorable: false" });
   });
 });
 
@@ -350,31 +383,39 @@ describe("review fixes", () => {
     expect(validateSurfaceState(state({ sourcePageUrl: `https://soundcloud.com/${"a".repeat(600)}` }))).toBeNull();
   });
 
-  it("refuses proxy URLs with userinfo", () => {
+  it("refuses proxy URLs with userinfo", async () => {
     const dir = tempDir();
     const store = new MainSettingsStore(
       path.join(dir, "s.json"),
-      { isEncryptionAvailable: () => true, encryptString: (t) => Buffer.from(t), decryptString: (b) => b.toString() },
+      {
+        isAsyncEncryptionAvailable: async () => true,
+        encryptStringAsync: async (t) => Buffer.from(t),
+        decryptStringAsync: async (b) => ({ shouldReEncrypt: false, result: b.toString() }),
+      },
       () => undefined,
     );
-    expect(store.set("proxy", { mode: "manual", url: "http://user:pw@p:8080" })).toMatchObject({ ok: false });
-    expect(store.set("proxy", { mode: "manual", url: "http://p:8080", username: "u".repeat(300) })).toMatchObject({ ok: false });
+    expect(await store.set("proxy", { mode: "manual", url: "http://user:pw@p:8080" })).toMatchObject({ ok: false });
+    expect(await store.set("proxy", { mode: "manual", url: "http://p:8080", username: "u".repeat(300) })).toMatchObject({ ok: false });
   });
 
-  it("writes the settings file 0600 and removes the temp file on failure", () => {
+  it("writes the settings file 0600 and removes the temp file on failure", async () => {
     const dir = tempDir();
     const file = path.join(dir, "s.json");
     const store = new MainSettingsStore(
       file,
-      { isEncryptionAvailable: () => true, encryptString: (t) => Buffer.from(t), decryptString: (b) => b.toString() },
+      {
+        isAsyncEncryptionAvailable: async () => true,
+        encryptStringAsync: async (t) => Buffer.from(t),
+        decryptStringAsync: async (b) => ({ shouldReEncrypt: false, result: b.toString() }),
+      },
       () => undefined,
     );
-    store.set("keepInTray", false);
+    await store.set("keepInTray", false);
     expect(fs.statSync(file).mode & 0o777).toBe(0o600);
     const rename = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
       throw new Error("boom");
     });
-    expect(() => store.set("trayHintShown", true)).toThrow("boom");
+    await expect(store.set("trayHintShown", true)).rejects.toThrow("boom");
     rename.mockRestore();
     expect(fs.readdirSync(dir).filter((f) => f.endsWith(".tmp"))).toEqual([]);
   });

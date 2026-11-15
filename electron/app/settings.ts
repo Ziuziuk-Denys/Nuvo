@@ -28,9 +28,9 @@ export interface MainSettingsView extends Omit<MainSettings, "proxy"> {
 }
 
 export interface SafeStorageLike {
-  isEncryptionAvailable(): boolean;
-  encryptString(text: string): Buffer;
-  decryptString(data: Buffer): string;
+  isAsyncEncryptionAvailable(): Promise<boolean>;
+  encryptStringAsync(text: string): Promise<Buffer>;
+  decryptStringAsync(data: Buffer): Promise<{ shouldReEncrypt: boolean; result: string }>;
 }
 
 export const DEFAULT_MAIN_SETTINGS: MainSettings = {
@@ -124,22 +124,42 @@ export class MainSettingsStore {
     return this.settings;
   }
 
-  view(): MainSettingsView {
+  async view(): Promise<MainSettingsView> {
+    const passwordStorable = await this.safeStorage.isAsyncEncryptionAvailable();
     const { passwordEnc, ...proxy } = this.settings.proxy;
-    return { ...this.settings, proxy: { ...proxy, hasPassword: Boolean(passwordEnc), passwordStorable: this.safeStorage.isEncryptionAvailable() } };
+    return { ...this.settings, proxy: { ...proxy, hasPassword: Boolean(passwordEnc), passwordStorable } };
   }
 
-  proxyPassword(): string | undefined {
+  async proxyPassword(): Promise<string | undefined> {
     const stored = this.settings.proxy.passwordEnc;
     if (!stored) return undefined;
+    let decrypted: { shouldReEncrypt: boolean; result: string };
     try {
-      return this.safeStorage.decryptString(Buffer.from(stored, "base64"));
+      decrypted = await this.safeStorage.decryptStringAsync(Buffer.from(stored, "base64"));
     } catch {
       return undefined;
     }
+    // a rotated key: store the password under the new one, unless the setting changed meanwhile
+    if (decrypted.shouldReEncrypt) {
+      const renewed = (await this.safeStorage.encryptStringAsync(decrypted.result)).toString("base64");
+      if (this.settings.proxy.passwordEnc === stored) {
+        const next = structuredClone(this.settings);
+        next.proxy.passwordEnc = renewed;
+        this.write(next);
+        this.settings = next;
+      }
+    }
+    return decrypted.result;
   }
 
-  set(key: string, value: unknown): { ok: boolean; error?: string } {
+  async set(key: string, value: unknown): Promise<{ ok: boolean; error?: string }> {
+    const password = key === "proxy" ? (value as { password?: unknown } | null)?.password : undefined;
+    let passwordEnc: string | undefined;
+    if (typeof password === "string" && password.length > 0) {
+      if (!(await this.safeStorage.isAsyncEncryptionAvailable())) return { ok: false, error: "passwordStorable: false" };
+      passwordEnc = (await this.safeStorage.encryptStringAsync(password)).toString("base64");
+    }
+    // from here on nothing waits, so two calls cannot interleave their edits
     const next = structuredClone(this.settings);
     if ((BOOLEAN_KEYS as readonly string[]).includes(key)) {
       if (typeof value !== "boolean") return { ok: false, error: `${key} must be a boolean` };
@@ -158,9 +178,8 @@ export class MainSettingsStore {
         if (proxy.username !== undefined && (typeof proxy.username !== "string" || proxy.username.length > MAX_USERNAME))
           return { ok: false, error: "proxy.username is invalid" };
         if (typeof proxy.username === "string" && proxy.username) next.proxy.username = proxy.username;
-        if (typeof proxy.password === "string" && proxy.password.length > 0) {
-          if (!this.safeStorage.isEncryptionAvailable()) return { ok: false, error: "passwordStorable: false" };
-          next.proxy.passwordEnc = this.safeStorage.encryptString(proxy.password).toString("base64");
+        if (passwordEnc) {
+          next.proxy.passwordEnc = passwordEnc;
         } else if (next.proxy.username && next.proxy.username === this.settings.proxy.username && this.settings.proxy.passwordEnc) {
           // The form never gets the password back: saving it unchanged keeps the stored one.
           next.proxy.passwordEnc = this.settings.proxy.passwordEnc;
