@@ -144,6 +144,32 @@ describe("lyric lines", () => {
     }
   });
 
+  it("a parent render with a new seek callback keeps the built view and seeks with the newest callback", () => {
+    let builds = 0;
+    if (!customElements.get("braccato-lyrics")) {
+      customElements.define(
+        "braccato-lyrics",
+        class extends HTMLElement {
+          set host(_host: unknown) {
+            builds += 1;
+          }
+        },
+      );
+    }
+    state = { status: "ready", lines: [{ fromMs: 0, toMs: 1000, text: "one", companion: false, instrumental: false }], plainText: null, synced: true };
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    const first = vi.fn();
+    const second = vi.fn();
+    act(() => root.render(<LyricsPane onSeek={first} />));
+    act(() => root.render(<LyricsPane onSeek={second} />));
+    expect(builds).toBe(1);
+    host.querySelector("braccato-lyrics")!.dispatchEvent(new CustomEvent("braccato:line-click", { detail: { timeS: 1.5 } }));
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith(1500);
+    act(() => root.unmount());
+  });
+
   it("plain lyrics show as static text", () => {
     state = { status: "ready", lines: [], plainText: "first\nsecond", synced: false };
     const host = document.createElement("div");

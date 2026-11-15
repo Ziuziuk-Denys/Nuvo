@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type JSX, type Ref } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, type JSX, type Ref } from "react";
 import "@braccato/core/element";
 import "@braccato/core/styles/variables.css";
 import "@braccato/core/styles/lyrics.css";
@@ -66,6 +66,8 @@ export function LyricsPane({
   const lyrics = useMemo(() => toBraccatoLines(lines, words, romanize), [lines, words, romanize]);
   const message = lyricsErrorText({ status }, t);
   const showSynced = status === "ready" && synced && lyrics.length > 0;
+  // play and pause re-render the parent: a new callback must not rebuild the view
+  const seek = useEffectEvent(onSeek);
 
   useEffect(() => {
     const element = ref.current;
@@ -73,7 +75,7 @@ export function LyricsPane({
     element.host = { getScrollElement: () => scroller.current };
     if (layout) element.theme = lyricsTheme(layout);
     element.lyrics = lyrics;
-    const onLine = (event: Event) => onSeek(Math.round((event as CustomEvent<LineClickDetail>).detail.timeS * 1000));
+    const onLine = (event: Event) => seek(Math.round((event as CustomEvent<LineClickDetail>).detail.timeS * 1000));
     element.addEventListener("braccato:line-click", onLine);
     const mark = new NowMark(element.renderer?.lines ?? [], mode, reducedEffectsNow);
     let tickedAtMs = Number.NEGATIVE_INFINITY;
@@ -91,7 +93,7 @@ export function LyricsPane({
       element.removeEventListener("braccato:line-click", onLine);
       element.lyrics = [];
     };
-  }, [showSynced, lyrics, layout, onSeek, mode]);
+  }, [showSynced, lyrics, layout, mode]);
 
   if (message) return <div className={styles.message}>{message}</div>;
   if (!showSynced) {
