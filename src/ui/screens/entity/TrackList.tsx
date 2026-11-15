@@ -17,7 +17,6 @@ import styles from "./TrackList.module.css";
 
 const ROW_PX = 64;
 const SHORT_ROW_PX = 44;
-const VIRTUAL_FROM = 100;
 
 export interface TrackListProps {
   tracks: TrackMatch<Track>[];
@@ -94,7 +93,7 @@ export function TrackList({
     count: tracks.length,
     getScrollElement: () => scroller.current,
     estimateSize: () => rowPx,
-    overscan: tracks.length <= VIRTUAL_FROM ? tracks.length : 10,
+    overscan: 10,
     scrollMargin,
     getItemKey: (index) => trackKey(tracks[index]),
     // the lifted row stays mounted when auto-scroll carries it out of the window
