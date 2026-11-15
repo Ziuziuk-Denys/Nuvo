@@ -79,6 +79,7 @@ const shell: NuvoShell = {
   importThemeFile: () => invoke("theme:import"),
   appearanceReady: () => ipcRenderer.send("appearance:ready"),
   appearanceApplying: () => ipcRenderer.send("appearance:applying"),
+  setThumbarLabels: (labels) => ipcRenderer.send("thumbar:labels", labels),
 };
 
 contextBridge.exposeInMainWorld("nuvoShell", shell);

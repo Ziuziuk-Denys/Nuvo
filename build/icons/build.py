@@ -1,4 +1,4 @@
-"""Usage: python3 build/icons/build.py [brand-dir] [--platform]"""
+"""Usage: python3 build/icons/build.py [brand-dir] [--platform] [--thumbar]"""
 import pathlib
 import re
 import shutil
@@ -9,11 +9,14 @@ import tempfile
 from PIL import Image, ImageFilter
 
 HERE = pathlib.Path(__file__).resolve().parent
-ARGS = [arg for arg in sys.argv[1:] if arg != "--platform"]
+ARGS = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
 BRAND = pathlib.Path(ARGS[0] if ARGS else "~/IT/Projects/Apps/Nuvo/design/brand").expanduser()
 THEMES = ["nuvo"]
 SIZES = [16, 32, 48, 64, 128, 256, 512]
 TRAY_SIZES = [16, 22, 24, 32, 48]
+# The taskbar draws thumbnail buttons at 16 px times its scale; Electron hands Windows one bitmap, so each scale gets its own file
+THUMBAR_SIZES = [16, 20, 24, 28, 32]
+THUMBAR_GLYPHS = ["previous", "play", "pause", "next", "like", "liked"]
 PATH = ""
 
 # Same tile as the brand set: 512 box, 22 % corner radius, glyph at 1.12 scale in the centre
@@ -107,6 +110,14 @@ def dmgBackground():
         image.save(HERE.parent / name, optimize=True)
 
 
+def thumbarIcons():
+    glyphs = HERE.parents[1] / "src" / "ui" / "icons" / "svg"
+    out = HERE / "thumbar"
+    out.mkdir(exist_ok=True)
+    for name in THUMBAR_GLYPHS:
+        render((glyphs / f"{name}.svg").read_text().replace("currentColor", "#ffffff"), THUMBAR_SIZES, f"{name}-{{size}}.png", out)
+
+
 def main():
     global PATH
     PATH = re.search(r' d="([^"]+)"', (BRAND / "concepts" / "round-2" / "c-puffy-n.svg").read_text()).group(1)
@@ -136,7 +147,9 @@ def main():
 
 
 if __name__ == "__main__":
-    if "--platform" in sys.argv:
+    if "--thumbar" in sys.argv:
+        thumbarIcons()
+    elif "--platform" in sys.argv:
         platformIcons()
         dmgBackground()
     else:

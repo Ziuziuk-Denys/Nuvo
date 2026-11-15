@@ -69,7 +69,8 @@
       "dist/**/*",
       "dist-electron/**/*",
       "build/icons/*.png",
-      "build/icons/tray/*.png"
+      "build/icons/tray/*.png",
+      "build/icons/thumbar/*.png"
     ],
     "extraResources": [
       {

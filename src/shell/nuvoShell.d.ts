@@ -149,6 +149,8 @@ export interface NuvoShell {
   saveDocument(request: SaveDocumentRequest): Promise<{ path: string } | { error: string } | null>;
   appearanceReady(): void;
   appearanceApplying(): void;
+  /** Tooltips for the Windows taskbar buttons, in the app language. */
+  setThumbarLabels(labels: { previous: string; play: string; pause: string; next: string; like: string; unlike: string }): void;
 }
 
 declare global {

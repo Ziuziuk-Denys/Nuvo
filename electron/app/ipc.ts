@@ -123,4 +123,5 @@ export const CHANNELS = {
   playlistCoverPick: "playlist:cover-pick",
   appearanceReady: "appearance:ready",
   appearanceApplying: "appearance:applying",
+  thumbarLabels: "thumbar:labels",
 } as const;

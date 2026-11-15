@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { configureI18n, prepareLocale, translate } from "@/i18n";
+import { configureI18n, onLocaleChange, prepareLocale, translate } from "@/i18n";
 import { installErrorHandlers } from "./data/platform/errors";
 import { bootPlayer, type PlayerBootPorts } from "./playerBoot";
 
@@ -32,6 +32,17 @@ async function mainWindow(): Promise<React.ReactElement> {
     return { ...youtube.ports, notify, lyrics };
   });
   linkLyricsToPlayer();
+  const sendThumbarLabels = () =>
+    window.nuvoShell?.setThumbarLabels({
+      previous: translate("ui.island.previous"),
+      play: translate("ui.island.play"),
+      pause: translate("ui.island.pause"),
+      next: translate("ui.island.next"),
+      like: translate("ui.island.like"),
+      unlike: translate("ui.island.unlike"),
+    });
+  sendThumbarLabels();
+  onLocaleChange(sendThumbarLabels);
   if (import.meta.env.DEV) await import("./data/platform/debug");
   return (
     <ErrorBoundary>
