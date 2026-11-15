@@ -17,6 +17,7 @@ signer/
 __pycache__/
 bench-results/
 scratch/
+.direnv/
 
 /build/*
 !/build/icons/
