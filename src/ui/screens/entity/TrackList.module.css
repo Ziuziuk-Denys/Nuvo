@@ -7,6 +7,9 @@
   top: 0;
   left: 0;
   width: 100%;
+}
+
+.list[data-dragging] .slot:not([data-lifted]) {
   transition: transform var(--n-t-base) var(--n-ease-out);
 }
 
@@ -15,7 +18,6 @@
   border-radius: var(--n-r-m);
   background: var(--n-field);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--n-ink) 14%, transparent);
-  transition: none;
   cursor: grabbing;
 }
 
@@ -53,7 +55,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slot {
+  .list[data-dragging] .slot:not([data-lifted]) {
     transition: none;
   }
 }
