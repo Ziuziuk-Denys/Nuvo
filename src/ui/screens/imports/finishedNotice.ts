@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { TFunction } from "../../ports/i18n";
-import { addedCount, type ImportSummary } from "../../ports/imports";
+import { doneCounts, type ImportSummary } from "../../ports/imports";
 
 export function newlyFinished(seen: Map<string, ImportSummary["status"]> | null, summaries: readonly ImportSummary[]): ImportSummary[] {
   if (!seen) return [];
@@ -8,7 +8,7 @@ export function newlyFinished(seen: Map<string, ImportSummary["status"]> | null,
 }
 
 export function finishedText(summary: ImportSummary, t: TFunction): { title: string; body: string } {
-  const counts = t("ui.imports.summary.done", { added: addedCount(summary), total: summary.total });
+  const counts = t("ui.imports.summary.done", doneCounts(summary));
   const review = summary.needsReview > 0 ? ` · ${t("ui.imports.summary.review", { count: summary.needsReview })}` : "";
   return { title: t("ui.imports.finished"), body: `${summary.label ? `${summary.label}: ` : ""}${counts}${review}` };
 }

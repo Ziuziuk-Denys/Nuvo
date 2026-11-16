@@ -28,7 +28,7 @@ describe("finished import notice", () => {
   });
 
   it("says what was added and what needs a look", () => {
-    expect(finishedText(summary("a", "done"), t).body).toMatch(/^Road trip: ui\.imports\.summary\.done\(\d+,20\)$/);
+    expect(finishedText(summary("a", "done"), t).body).toBe("Road trip: ui.imports.summary.done(17,17,0,3,20)");
     expect(finishedText(summary("a", "done", 2), t)).toEqual({
       title: "ui.imports.finished",
       body: expect.stringContaining("· ui.imports.summary.review(2)"),

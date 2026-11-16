@@ -315,10 +315,7 @@
         "review_few": "{count} трека стоит проверить",
         "review_many": "{count} треков стоит проверить",
         "review_other": "{count} трека стоит проверить",
-        "done_one": "Добавлено {added} из {total}",
-        "done_few": "Добавлено {added} из {total}",
-        "done_many": "Добавлено {added} из {total}",
-        "done_other": "Добавлено {added} из {total}"
+        "done": "Добавлено {added} из {total} · Найдено {matched} · Дубликаты {duplicates} · Не найдено {missing}"
       },
       "pending_added": "Добавлено в плейлист: {title}",
       "pending_failed": "Не удалось добавить в плейлист",

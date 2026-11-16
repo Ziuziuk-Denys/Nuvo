@@ -291,8 +291,7 @@
         "running": "Importing {done} of {total}",
         "review_one": "{count} song needs a look",
         "review_other": "{count} songs need a look",
-        "done_one": "{added} of {total} song added",
-        "done_other": "{added} of {total} songs added"
+        "done": "Added {added} of {total} · Found {matched} · Duplicates {duplicates} · Not found {missing}"
       },
       "pending_added": "Added to playlist: {title}",
       "pending_failed": "Couldn't add to playlist",

@@ -44,7 +44,6 @@ const COUNTED = [
   "ui.imports.more_songs",
   "ui.imports.started",
   "ui.imports.summary.review",
-  "ui.imports.summary.done",
   "ui.imports.notice.partial",
   "ui.imports.notice.partial_spotify",
   "ui.imports.rows_capped",
