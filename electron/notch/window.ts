@@ -33,6 +33,7 @@ const MAX_CRASH_RELOADS = 3;
 const CRASH_WINDOW_MS = 60_000;
 const CAPTURE_POLL_MS = 100;
 const RAISE_MS = 1_000;
+const FOCUS_SETTLE_MS = 50;
 
 export interface NotchDeps {
   preloadPath: string;
@@ -66,12 +67,21 @@ export class NotchWindow {
   private fullscreen = false;
   private placedDisplayId: number | null = null;
   private moveTimer: ReturnType<typeof setTimeout> | null = null;
+  private focusSyncTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly replace = () => void this.place();
   private readonly replaceIfDisplayChanged = () => {
     if (this.pickDisplay().id !== this.placedDisplayId) this.replace();
   };
   private readonly onEnterFullscreen = () => this.setFullscreen(true);
   private readonly onLeaveFullscreen = () => this.setFullscreen(false);
+  private readonly onMainFocus = () => this.syncMacFullscreenVisibility();
+  private readonly onMainBlur = () => {
+    if (this.focusSyncTimer) clearTimeout(this.focusSyncTimer);
+    this.focusSyncTimer = setTimeout(() => {
+      this.focusSyncTimer = null;
+      this.syncMacFullscreenVisibility();
+    }, FOCUS_SETTLE_MS);
+  };
   private readonly onMainMove = () => {
     if (this.moveTimer) clearTimeout(this.moveTimer);
     this.moveTimer = setTimeout(this.replaceIfDisplayChanged, MOVE_SETTLE_MS);
@@ -179,6 +189,8 @@ export class NotchWindow {
 
   destroy(): void {
     if (this.moveTimer) clearTimeout(this.moveTimer);
+    if (this.focusSyncTimer) clearTimeout(this.focusSyncTimer);
+    this.focusSyncTimer = null;
     if (this.capturePoll) clearInterval(this.capturePoll);
     this.capturePoll = null;
     this.stopRaising();
@@ -279,6 +291,10 @@ export class NotchWindow {
     main.on("move", this.onMainMove);
     main.on("enter-full-screen", this.onEnterFullscreen);
     main.on("leave-full-screen", this.onLeaveFullscreen);
+    if (this.deps.session === "macos") {
+      main.on("focus", this.onMainFocus);
+      main.on("blur", this.onMainBlur);
+    }
     this.fullscreen = main.isFullScreen();
   }
 
@@ -286,12 +302,35 @@ export class NotchWindow {
     this.main?.removeListener("move", this.onMainMove);
     this.main?.removeListener("enter-full-screen", this.onEnterFullscreen);
     this.main?.removeListener("leave-full-screen", this.onLeaveFullscreen);
+    this.main?.removeListener("focus", this.onMainFocus);
+    this.main?.removeListener("blur", this.onMainBlur);
     this.main = null;
+  }
+
+  private mainFocusedInFullscreen(): boolean {
+    const main = this.main;
+    return Boolean(
+      this.deps.session === "macos" && this.fullscreen && main && !main.isDestroyed() && main.isVisible() && !main.isMinimized() && main.isFocused(),
+    );
+  }
+
+  private syncMacFullscreenVisibility(): void {
+    if (this.deps.session !== "macos" || !this.fullscreen || !this.win || this.win.isDestroyed()) return;
+    if (this.mainFocusedInFullscreen()) {
+      this.win.hide();
+    } else if (this.loaded && notchEnabled(this.settings.mode, this.deps.session)) {
+      this.ready = this.place();
+    }
   }
 
   private setFullscreen(value: boolean): void {
     this.fullscreen = value;
     if (!this.win || this.win.isDestroyed()) return;
+    if (this.deps.session === "macos") {
+      if (value) this.syncMacFullscreenVisibility();
+      else if (this.loaded && notchEnabled(this.settings.mode, this.deps.session)) this.ready = this.place();
+      return;
+    }
     if (value) this.win.hide();
     else if (this.loaded && notchEnabled(this.settings.mode, this.deps.session)) {
       // The remap drops always-on-top on X11, so go through the full placement path.
@@ -310,7 +349,11 @@ export class NotchWindow {
   private async place(): Promise<void> {
     const win = this.win;
     if (!win || win.isDestroyed() || !canPlaceNotch(this.deps.session)) return;
-    if (this.fullscreen || this.settings.mode === "off") return;
+    if ((this.fullscreen && this.deps.session !== "macos") || this.settings.mode === "off") return;
+    if (this.mainFocusedInFullscreen()) {
+      win.hide();
+      return;
+    }
     const display = this.pickDisplay();
     this.placedDisplayId = display.id;
     if (this.deps.readCutout) {
