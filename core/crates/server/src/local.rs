@@ -6,7 +6,7 @@ use std::time::Duration;
 use notify::{Config as WatchConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use nuvo_contracts::{LocalRoot, LocalScanStatus};
 use nuvo_local::tags::{has_picture, local_id, meta_from_name, read_meta, snapshot};
-use nuvo_local::walk::{Found, WalkLimits, walk};
+use nuvo_local::walk::{Found, WalkLimits, text_of, walk};
 use nuvo_store::local::{self as store, FileRow, KnownFile};
 use nuvo_store::now_ms;
 use serde_json::Value;
@@ -186,7 +186,7 @@ pub struct Plan {
 // A vanished file and a new one with the same size and mtime are one move (mv keeps the time)
 pub fn plan(known: &[KnownFile], found: &[Found]) -> Plan {
     let by_path: HashMap<&str, &KnownFile> = known.iter().map(|k| (k.path.as_str(), k)).collect();
-    let present: HashSet<String> = found.iter().map(|f| f.path.to_string_lossy().into_owned()).collect();
+    let present: HashSet<String> = found.iter().map(|f| text_of(&f.path)).collect();
     let mut moved: HashMap<(i64, i64), Vec<String>> = HashMap::new();
     let mut out = Plan::default();
     for gone in known.iter().filter(|k| !present.contains(&k.path)) {
@@ -194,8 +194,8 @@ pub fn plan(known: &[KnownFile], found: &[Found]) -> Plan {
         out.removed.push(gone.path.clone());
     }
     for f in found {
-        let path = f.path.to_string_lossy();
-        match by_path.get(path.as_ref()) {
+        let path = text_of(&f.path);
+        match by_path.get(path.as_str()) {
             Some(k) if k.size_bytes == f.size as i64 && k.mtime_ms == f.mtime_ms && k.has_lrc == f.lrc.is_some() && k.folder_art == Some(f.folder_art) => out.unchanged += 1,
             Some(k) => out.read.push(Pending { found: f.clone(), track_id: Some(k.track_id.clone()) }),
             None => {
@@ -243,7 +243,7 @@ fn spinning(_path: &Path) -> bool {
 }
 
 pub fn file_and_snapshot(found: &Found, track_id: Option<String>) -> (FileRow, Value, bool) {
-    let path = found.path.to_string_lossy().into_owned();
+    let path = text_of(&found.path);
     let is_new = track_id.is_none();
     let id = track_id.unwrap_or_else(|| local_id(&path));
     let meta = read_meta(&found.path).unwrap_or_else(|_| meta_from_name(&found.path));
@@ -260,7 +260,7 @@ pub fn file_and_snapshot(found: &Found, track_id: Option<String>) -> (FileRow, V
         bit_depth: meta.bit_depth.map(i64::from),
         lossless: meta.lossless,
         unsupported: meta.unsupported.map(String::from),
-        lrc_path: found.lrc.as_ref().map(|p| p.to_string_lossy().into_owned()),
+        lrc_path: found.lrc.as_deref().map(text_of),
         folder_art: found.folder_art,
     };
     (row, snapshot(&id, &meta, has_cover), is_new)

@@ -108,3 +108,17 @@ async fn covers_come_from_the_folder_with_an_etag_and_through_v1_covers() {
     let (_, path) = common::call(&core.app, "GET", &format!("/v1/fs/local/tracks/{id}/path"), None).await;
     assert!(path["path"].as_str().unwrap().ends_with("Band - One.wav"));
 }
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread")]
+async fn a_name_in_a_legacy_encoding_is_listed_and_plays() {
+    use std::os::unix::ffi::OsStrExt;
+    let core = common::local_core();
+    let music = tempfile::tempdir().unwrap();
+    common::write_wav(&music.path().join(std::ffi::OsStr::from_bytes(b"Caf\xe9 - Ch\xe9rie.wav")), 1);
+    let page = scanned(&core, music.path(), 1).await;
+    assert_eq!(page["items"][0]["track"]["title"], "Ch\u{fffd}rie");
+    let id = page["items"][0]["track"]["id"].as_str().unwrap();
+    let (status, body, _) = common::send(&core.app, get(&format!("/v1/local/tracks/{id}/audio"), None)).await;
+    assert_eq!((status, body.len()), (StatusCode::OK, common::wav_bytes(1).len()));
+}
