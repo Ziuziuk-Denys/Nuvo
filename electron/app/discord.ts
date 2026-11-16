@@ -131,7 +131,7 @@ export function buildActivity(state: SurfaceState, now: number, foundCover?: str
 }
 
 function activityKey(state: SurfaceState, activity: Activity | null): string {
-  return activity ? `${state.trackId}|${state.status}|${activity.assets.large_image}` : "none";
+  return activity ? `${state.trackId}|${state.title}|${state.artists}|${state.status}|${activity.assets.large_image}` : "none";
 }
 
 export type DiscordStatus = { state: "off" | "connecting" | "connected" | "no_client" | "error"; message?: string };

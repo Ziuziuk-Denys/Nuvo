@@ -275,6 +275,32 @@ describe("discord presence", () => {
     await server.close();
   });
 
+  it("updates activity when a track's title or artist changes", async () => {
+    const dir = tempDir();
+    const server = await fakeDiscord(dir);
+    const p = presence(dir);
+    p.setEnabled(true);
+    await settle();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    p.update(state({ title: "First title" }));
+    vi.advanceTimersByTime(4100);
+    p.update(state({ title: "Second title", artists: "Another artist" }));
+    vi.advanceTimersByTime(4100);
+    vi.useRealTimers();
+    await settle();
+
+    const sent = server.frames
+      .filter((f) => f.payload.cmd === "SET_ACTIVITY")
+      .map((f) => (f.payload.args as { activity: { details: string; state: string } }).activity);
+    expect(sent).toHaveLength(2);
+    expect(sent.map(({ details, state: artist }) => [details, artist])).toEqual([
+      ["First title", "Artist"],
+      ["Second title", "Another artist"],
+    ]);
+    p.stop();
+    await server.close();
+  });
+
   it("a pause clears the activity", async () => {
     const dir = tempDir();
     const server = await fakeDiscord(dir);

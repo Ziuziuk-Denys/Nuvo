@@ -55,6 +55,8 @@ const electron = vi.hoisted(() => {
     restore = vi.fn();
     show = vi.fn();
     focus = vi.fn();
+    focused = false;
+    isFocused = () => this.focused;
     isMinimized = () => true;
     isVisible = () => true;
     isAlwaysOnTop = () => this.calls.some((c) => c[0] === "setAlwaysOnTop");
@@ -515,6 +517,40 @@ describe("NotchWindow", () => {
     expect(after.indexOf("showInactive")).toBeGreaterThanOrEqual(0);
     expect(after.indexOf("setAlwaysOnTop")).toBeGreaterThan(after.indexOf("showInactive"));
     expect(after).toContain("setVisibleOnAllWorkspaces");
+  });
+
+  it("on macOS shows over fullscreen Spaces unless the focused main window is fullscreen", async () => {
+    const { notch, main } = createNotch({ session: "macos" });
+    await notch.ready;
+    const win = lastWindow();
+    main.isMinimized = () => false;
+    main.focused = true;
+    main.emit("focus");
+    expect(names(win).at(-1)).not.toBe("hide");
+
+    main.fullscreen = true;
+    main.emit("enter-full-screen");
+    expect(names(win).at(-1)).toBe("hide");
+
+    vi.useFakeTimers();
+    main.focused = false;
+    main.emit("blur");
+    await vi.advanceTimersByTimeAsync(300);
+    await notch.ready;
+    vi.useRealTimers();
+
+    const shown = names(win).slice(names(win).lastIndexOf("hide"));
+    expect(shown).toContain("showInactive");
+    expect(win.calls.find((call) => call[0] === "setAlwaysOnTop")!.slice(1)).toEqual([true, "screen-saver"]);
+    expect(win.calls.find((call) => call[0] === "setVisibleOnAllWorkspaces")!.slice(1)).toEqual([
+      true,
+      { visibleOnFullScreen: true, skipTransformProcessType: true },
+    ]);
+
+    main.focused = true;
+    main.emit("focus");
+    expect(names(win).at(-1)).toBe("hide");
+    notch.destroy();
   });
 
   it("remembers state and lyrics, forwards them and answers hello", async () => {
