@@ -5,7 +5,7 @@ use nuvo_import::cascade::{Cascade, is_finished, next_searches, outcome, record}
 use serde::Deserialize;
 use serde_json::Value;
 
-// Real YouTube Music and SoundCloud answers recorded on 2026-11-13 for 81 import rows in English and Russian.
+// Real YouTube Music and SoundCloud answers recorded on 2026-11-13 and 2026-11-16 for 84 import rows in English and Russian.
 // `accept` lists every answer that is the same recording, labelled by hand.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -108,7 +108,7 @@ fn import_matching_on_recorded_searches() {
         t.soundcloud_ms / t.soundcloud_rows as u64
     );
     // Before YouTube and SoundCloud were asked together: 75 right, 1 wrong, 131 YouTube searches, 65 s
-    assert!(t.right >= 76, "matched {} of {}", t.right, t.findable);
+    assert!(t.right >= 79, "matched {} of {}", t.right, t.findable);
     assert_eq!(t.wrong, 0);
     assert!(t.youtube <= 131);
 }
