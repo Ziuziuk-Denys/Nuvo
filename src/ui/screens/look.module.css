@@ -145,7 +145,7 @@
 .pageTitle {
   margin: 0;
   color: var(--n-ink);
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, var(--n-font-fallback), sans-serif;
   font-size: 32px;
   font-weight: 600;
   font-variation-settings:
@@ -264,7 +264,7 @@
 .sectionTitle {
   margin: 0;
   color: var(--n-ink);
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, var(--n-font-fallback), sans-serif;
   font-size: 24px;
   font-weight: 564;
   font-variation-settings:

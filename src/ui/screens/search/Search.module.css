@@ -29,7 +29,7 @@
   background: transparent;
   caret-color: var(--n-accent);
   color: var(--n-ink);
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, var(--n-font-fallback), sans-serif;
   font-size: 32px;
   font-weight: 600;
   font-variation-settings:
@@ -188,7 +188,7 @@
 .heading {
   margin: 0;
   color: var(--n-ink);
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, var(--n-font-fallback), sans-serif;
   font-size: 20px;
   font-weight: 564;
   font-variation-settings:
@@ -275,7 +275,7 @@
 }
 
 .topTitle {
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, var(--n-font-fallback), sans-serif;
   font-size: 26px;
   font-weight: 600;
   font-variation-settings:

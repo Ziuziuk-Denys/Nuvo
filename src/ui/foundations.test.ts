@@ -59,6 +59,25 @@ describe("foundations", () => {
     expect(css).toMatch(/:root\[data-theme-editing\] \* \{\s*transition: none !important;/);
   });
 
+  it("names the CJK and symbol fallbacks in every stack, so text never depends on the platform fallback alone", () => {
+    const tokens = read("tokens.css");
+    const fallback = cssVar(tokens, "n-font-fallback");
+    expect(fallback.split(", ").slice(0, 2)).toEqual(['"Noto Sans CJK JP"', '"Source Han Sans JP"']);
+    expect(cssVar(tokens, "n-font-stack")).toMatch(/, var\(--n-font-fallback\), sans-serif$/);
+    expect(read("karaoke/lyricsTheme.ts")).toMatch(/--blyrics-font-family: var\(--n-font-lyrics, [^;]*var\(--n-font-fallback\), sans-serif\);/);
+    const notch = read("../notch/notch.css")
+      .match(/font-family:([^;]+);/)?.[1]
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(notch).toMatch(new RegExp(`, ${fallback.replace(/[()"]/g, "\\$&")}, sans-serif$`));
+    const modules = fs.readdirSync(path.resolve(__dirname), { recursive: true, encoding: "utf8" }).filter((file) => file.endsWith(".css"));
+    for (const file of modules) {
+      for (const [, value] of read(file).matchAll(/font-family:([^;]+);/g)) {
+        if (/sans-serif/.test(value) && !value.includes("var(--n-font-stack")) expect(value, file).toMatch(/var\(--n-font-fallback\), sans-serif/);
+      }
+    }
+  });
+
   it("has four monotonic radii", () => {
     const css = read("tokens.css");
     const radii = ["n-r-s", "n-r-m", "n-r-l"].map((name) => parseInt(cssVar(css, name), 10));
