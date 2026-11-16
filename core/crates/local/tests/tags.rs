@@ -7,7 +7,8 @@ use lofty::mp4::Mp4Codec;
 use lofty::picture::{MimeType, Picture, PictureType};
 use lofty::prelude::*;
 use lofty::tag::{Tag, TagType};
-use nuvo_local::tags::{format_of, local_id, meta_from_name, read_cover, read_meta, snapshot};
+use common::read_cover;
+use nuvo_local::tags::{format_of, has_picture, local_id, meta_from_name, read_meta, snapshot};
 
 #[test]
 fn untagged_wav_is_named_from_the_file() {
@@ -38,6 +39,88 @@ fn tags_win_over_the_file_name() {
 }
 
 #[test]
+fn a_picture_is_found_without_loading_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("a.wav");
+    common::write_wav(&path, 1);
+    assert!(!has_picture(&path));
+    let mut tag = Tag::new(TagType::Id3v2);
+    tag.set_title("Plain".into());
+    tag.save_to_path(&path, WriteOptions::default()).unwrap();
+    assert!(!has_picture(&path));
+    tag.push_picture(Picture::unchecked(vec![1, 2, 3]).pic_type(PictureType::CoverFront).mime_type(MimeType::Png).build());
+    tag.save_to_path(&path, WriteOptions::default()).unwrap();
+    assert!(has_picture(&path));
+    tag.remove_picture(0);
+    tag.push_picture(Picture::unchecked(vec![5; 6 * 1024 * 1024]).pic_type(PictureType::Other).mime_type(MimeType::Png).build());
+    tag.save_to_path(&path, WriteOptions::default()).unwrap();
+    assert!(has_picture(&path), "a picture too big to load still counts");
+    std::fs::write(&path, b"not audio").unwrap();
+    assert!(!has_picture(&path));
+}
+
+fn flac_bytes(picture: Option<usize>) -> Vec<u8> {
+    let mut bytes = b"fLaC".to_vec();
+    bytes.extend([if picture.is_some() { 0 } else { 0x80 }, 0, 0, 34]);
+    bytes.extend([0x10, 0, 0x10, 0, 0, 0, 0, 0, 0, 0]);
+    bytes.extend(((44_100u64 << 44) | (1 << 41) | (15 << 36)).to_be_bytes());
+    bytes.extend([0; 16]);
+    if let Some(len) = picture {
+        let mut block = Vec::new();
+        block.extend(3u32.to_be_bytes());
+        block.extend(9u32.to_be_bytes());
+        block.extend(b"image/png");
+        block.extend([0; 4 + 16]);
+        block.extend((len as u32).to_be_bytes());
+        block.extend(vec![7; len]);
+        bytes.push(0x86);
+        bytes.extend(&(block.len() as u32).to_be_bytes()[1..]);
+        bytes.extend(block);
+    }
+    bytes
+}
+
+#[test]
+fn flac_pictures_are_found_small_or_big() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("a.flac");
+    std::fs::write(&path, flac_bytes(None)).unwrap();
+    assert!(!has_picture(&path));
+    std::fs::write(&path, flac_bytes(Some(64))).unwrap();
+    assert!(has_picture(&path));
+    std::fs::write(&path, flac_bytes(Some(5 * 1024 * 1024))).unwrap();
+    assert!(has_picture(&path));
+}
+
+fn mp3_bytes(junk_after_tag: usize) -> Vec<u8> {
+    let mut frame = b"TIT2".to_vec();
+    frame.extend(4u32.to_be_bytes());
+    frame.extend([0, 0, 0]);
+    frame.extend(b"Mix");
+    let mut bytes = b"ID3\x03\x00\x00".to_vec();
+    bytes.extend([0, 0, 0, frame.len() as u8]);
+    bytes.extend(frame);
+    bytes.extend(vec![0; junk_after_tag]);
+    for _ in 0..40 {
+        bytes.extend([0xFF, 0xFB, 0x90, 0x64]);
+        bytes.extend([0; 413]);
+    }
+    bytes
+}
+
+#[test]
+fn junk_between_the_tag_and_the_audio_still_reads() {
+    let dir = tempfile::tempdir().unwrap();
+    for junk in [0, 1044] {
+        let path = dir.path().join(format!("00 Mix {junk}.mp3"));
+        std::fs::write(&path, mp3_bytes(junk)).unwrap();
+        let meta = read_meta(&path).unwrap_or_else(|err| panic!("{junk} bytes of junk: {err}"));
+        assert_eq!((meta.title.as_str(), meta.codec, meta.unsupported), ("Mix", "mp3", None));
+        assert!(meta.duration_ms > 900, "{}", meta.duration_ms);
+    }
+}
+
+#[test]
 fn formats_say_what_plays() {
     assert_eq!(format_of(FileType::Mpeg, None, None), ("mp3", "audio/mpeg", false, None));
     assert_eq!(format_of(FileType::Flac, None, None), ("flac", "audio/flac", true, None));
@@ -55,7 +138,36 @@ fn garbage_is_unreadable_but_named() {
     std::fs::write(&path, b"not audio at all").unwrap();
     assert!(read_meta(&path).is_err());
     let meta = meta_from_name(&path);
-    assert_eq!((meta.title.as_str(), meta.unsupported), ("Broken", Some("unreadable")));
+    assert_eq!((meta.title.as_str(), meta.codec, meta.mime, meta.unsupported), ("Broken", "unknown", "audio/mpeg", None), "the player may still decode it");
+}
+
+#[test]
+fn a_leading_track_number_is_not_the_artist() {
+    let named = |name: &str| {
+        let meta = meta_from_name(std::path::Path::new(name));
+        (meta.artists, meta.title)
+    };
+    let artist = |a: &str| vec![a.to_string()];
+    assert_eq!(named("02 - Luna.flac"), (vec![], "Luna".into()));
+    assert_eq!(named("02 Vandal - Long Road.flac"), (artist("Vandal"), "Long Road".into()));
+    assert_eq!(named("02.Frozen - Into the light.ogg"), (artist("Frozen"), "Into the light".into()));
+    assert_eq!(named("02. Nebelgrab - Wanderer.flac"), (artist("Nebelgrab"), "Wanderer".into()));
+    assert_eq!(named("1. Song.mp3"), (vec![], "Song".into()));
+    assert_eq!(named("50 Cent - In Da Club.mp3"), (artist("50 Cent"), "In Da Club".into()));
+    assert_eq!(named("10 Years - Wasteland.mp3"), (artist("10 Years"), "Wasteland".into()));
+    assert_eq!(named("1979.mp3"), (vec![], "1979".into()));
+}
+
+#[test]
+fn the_album_artist_stands_in_for_a_missing_track_artist() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("02 - Luna.wav");
+    common::write_wav(&path, 1);
+    let mut tag = Tag::new(TagType::Id3v2);
+    tag.set_title("Luna".into());
+    tag.insert_text(ItemKey::AlbumArtist, "Band".into());
+    tag.save_to_path(&path, WriteOptions::default()).unwrap();
+    assert_eq!(read_meta(&path).unwrap().artists, ["Band"]);
 }
 
 #[test]
@@ -194,13 +306,13 @@ fn finishes_quickly<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static
 
 #[test]
 #[cfg(unix)]
-fn a_fifo_is_not_read_for_tags_or_covers() {
+fn a_fifo_is_not_read_for_tags_or_pictures() {
     let dir = tempfile::tempdir().unwrap();
     let fifo = dir.path().join("Band - Pipe.mp3");
     make_fifo(&fifo);
     let (meta_path, cover_path) = (fifo.clone(), fifo.clone());
     assert!(finishes_quickly(move || read_meta(&meta_path).is_err()).expect("read_meta hung on a FIFO"));
-    assert!(finishes_quickly(move || read_cover(&cover_path).is_err()).expect("read_cover hung on a FIFO"));
+    assert!(!finishes_quickly(move || has_picture(&cover_path)).expect("has_picture hung on a FIFO"));
 }
 
 #[test]

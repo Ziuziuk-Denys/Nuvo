@@ -30,6 +30,23 @@ fn finds_audio_by_extension_and_pairs_lrc_sidecars() {
 }
 
 #[test]
+fn counts_the_files_it_leaves_out_by_extension() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    touch(&root.join("A/one.mp3"), b"x");
+    touch(&root.join("A/cover.jpg"), b"x");
+    touch(&root.join("A/back.JPG"), b"x");
+    touch(&root.join("A/album.cue"), b"x");
+    touch(&root.join("B/two.wma"), b"x");
+    touch(&root.join("B/README"), b"x");
+    touch(&root.join("B/.DS_Store"), b"x");
+    let found = walk(root, WalkLimits::DEFAULT);
+    assert_eq!(found.files.len(), 1);
+    let skipped: Vec<(&str, u64)> = found.skipped.iter().map(|(ext, n)| (ext.as_str(), *n)).collect();
+    assert_eq!(skipped, [("", 1), ("cue", 1), ("jpg", 2), ("wma", 1)]);
+}
+
+#[test]
 fn marks_the_files_of_a_folder_with_a_cover_image() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();

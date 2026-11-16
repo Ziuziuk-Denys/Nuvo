@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use notify::{Config as WatchConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use nuvo_contracts::{LocalRoot, LocalScanStatus};
-use nuvo_local::tags::{local_id, meta_from_name, read_cover, read_meta, snapshot};
+use nuvo_local::tags::{has_picture, local_id, meta_from_name, read_meta, snapshot};
 use nuvo_local::walk::{Found, WalkLimits, walk};
 use nuvo_store::local::{self as store, FileRow, KnownFile};
 use nuvo_store::now_ms;
@@ -133,22 +133,26 @@ async fn scan_root(state: &AppState, data: &Unlocked, root: &LocalRoot) -> Resul
 
 async fn scan_files(state: &AppState, data: &Unlocked, root_id: i64, path: PathBuf) -> Result<(), ApiError> {
     let blocking = |e: tokio::task::JoinError| ApiError::Internal(e.to_string());
+    let readers = readers(&path);
     let walked = tokio::task::spawn_blocking(move || walk(&path, WalkLimits::DEFAULT)).await.map_err(blocking)?;
     let known = data.db.call(move |c| store::known_files(c, root_id)).await?;
     let plan = plan(&known, &walked.files);
     state.local.update(|s| {
+        s.started_at = Some(now_ms());
+        s.found = walked.files.len() as u64;
+        s.unchanged = plan.unchanged as u64;
         s.total = plan.read.len() as u64;
         s.skipped_links = walked.skipped_links as u64;
+        s.unreadable_dirs = walked.unreadable_dirs as u64;
         s.truncated = walked.truncated;
         s.removed = plan.removed.len() as u64;
+        s.skipped = walked.skipped;
     });
     for chunk in plan.read.chunks(BATCH) {
         let chunk = chunk.to_vec();
-        let read = tokio::task::spawn_blocking(move || chunk.iter().map(|p| file_and_snapshot(&p.found, p.track_id.clone())).collect::<Vec<_>>())
-            .await
-            .map_err(blocking)?;
+        let read = tokio::task::spawn_blocking(move || read_all(&chunk, readers)).await.map_err(blocking)?;
         let added = read.iter().filter(|(_, _, new)| *new).count() as u64;
-        let unreadable = read.iter().filter(|(row, _, _)| row.unsupported.as_deref() == Some("unreadable")).count() as u64;
+        let unreadable = read.iter().filter(|(row, _, _)| row.codec == "unknown").count() as u64;
         let count = read.len() as u64;
         let rows: Vec<(FileRow, Value)> = read.into_iter().map(|(row, snapshot, _)| (row, snapshot)).collect();
         data.db.call(move |c| store::apply(c, root_id, &rows, &[], now_ms())).await?;
@@ -203,12 +207,47 @@ pub fn plan(known: &[KnownFile], found: &[Found]) -> Plan {
     out
 }
 
+fn read_all(pending: &[Pending], readers: usize) -> Vec<(FileRow, Value, bool)> {
+    let per_reader = pending.len().div_ceil(readers).max(1);
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = pending
+            .chunks(per_reader)
+            .map(|part| scope.spawn(move || part.iter().map(|p| file_and_snapshot(&p.found, p.track_id.clone())).collect::<Vec<_>>()))
+            .collect();
+        handles.into_iter().flat_map(|handle| handle.join().expect("tag reader")).collect()
+    })
+}
+
+// A spinning disk serves one read at a time; a second reader only parses while the head moves
+fn readers(path: &Path) -> usize {
+    let cores = std::thread::available_parallelism().map_or(1, |n| n.get());
+    if spinning(path) { cores.min(2) } else { cores.min(8) }
+}
+
+#[cfg(target_os = "linux")]
+fn spinning(path: &Path) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    let Ok(meta) = std::fs::metadata(path) else { return false };
+    let dev = meta.dev();
+    let (major, minor) = (libc::major(dev), libc::minor(dev));
+    let block = PathBuf::from(format!("/sys/dev/block/{major}:{minor}"));
+    [block.join("queue/rotational"), block.join("../queue/rotational")]
+        .iter()
+        .find_map(|flag| std::fs::read_to_string(flag).ok())
+        .is_some_and(|flag| flag.trim() == "1")
+}
+
+#[cfg(not(target_os = "linux"))]
+fn spinning(_path: &Path) -> bool {
+    false
+}
+
 pub fn file_and_snapshot(found: &Found, track_id: Option<String>) -> (FileRow, Value, bool) {
     let path = found.path.to_string_lossy().into_owned();
     let is_new = track_id.is_none();
     let id = track_id.unwrap_or_else(|| local_id(&path));
     let meta = read_meta(&found.path).unwrap_or_else(|_| meta_from_name(&found.path));
-    let has_cover = read_cover(&found.path).is_ok_and(|cover| cover.is_some());
+    let has_cover = found.folder_art || has_picture(&found.path);
     let row = FileRow {
         path,
         track_id: id.clone(),

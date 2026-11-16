@@ -51,7 +51,7 @@ fn cover_and_cyrillic_tags_round_trip() {
     common::write_wav(&path, 1);
     let cover = [0xFFu8, 0xD8, 0xFF, 0xE0, 1, 2, 3];
     write_tags(&path, &SaveTags { title: "Бессонница", artists: "Земфира", album: None, cover: Some((&cover, "image/jpeg")) }).unwrap();
-    assert_eq!(nuvo_local::tags::read_cover(&path).unwrap(), Some(cover.to_vec()));
+    assert_eq!(common::read_cover(&path).unwrap(), Some(cover.to_vec()));
     assert_eq!(read_meta(&path).unwrap().title, "Бессонница");
 }
 

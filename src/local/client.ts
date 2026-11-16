@@ -12,13 +12,18 @@ export interface LocalRootView {
 export interface LocalScanView {
   scanning: boolean;
   rootId: number | null;
+  startedAt: number | null;
+  found: number;
+  unchanged: number;
   total: number;
   read: number;
   added: number;
   updated: number;
   removed: number;
   unreadable: number;
+  skipped: Record<string, number>;
   skippedLinks: number;
+  unreadableDirs: number;
   truncated: boolean;
   watching: number;
   polling: boolean;
@@ -100,8 +105,21 @@ export function createLocalClient(base: string, doFetch: typeof fetch = (input, 
 
 export type LocalClient = ReturnType<typeof createLocalClient>;
 
-export function scanLine(status: LocalScanView | null, roots: readonly LocalRootView[]): { key: string; vars?: Record<string, string | number> } | null {
-  if (status?.scanning) return { key: "ui.local.scan_reading", vars: { read: status.read, total: status.total } };
+const ETA_AFTER_MS = 5_000;
+
+export function scanLine(
+  status: LocalScanView | null,
+  roots: readonly LocalRootView[],
+  now = Date.now(),
+): { key: string; vars?: Record<string, string | number> } | null {
+  if (status?.scanning && status.startedAt === null) return { key: "ui.local.scan_finding" };
+  if (status?.scanning) {
+    const vars = { read: status.read, total: status.total };
+    const elapsed = now - (status.startedAt ?? now);
+    if (elapsed < ETA_AFTER_MS || status.read === 0) return { key: "ui.local.scan_reading", vars };
+    const left = (elapsed / status.read) * (status.total - status.read);
+    return { key: "ui.local.scan_reading_eta", vars: { ...vars, minutes: Math.max(1, Math.ceil(left / 60_000)) } };
+  }
   const missing = roots.filter((root) => root.status === "missing");
   if (missing.length === 1) return { key: "ui.local.scan_missing", vars: { path: missing[0].path } };
   if (missing.length > 1) return { key: "ui.local.scan_missing_many", vars: { count: missing.length } };
@@ -109,6 +127,21 @@ export function scanLine(status: LocalScanView | null, roots: readonly LocalRoot
   if (status.truncated) return { key: "ui.local.scan_truncated" };
   if (status.polling) return { key: "ui.local.scan_polling" };
   return { key: "ui.local.scan_watching", vars: { count: status.watching } };
+}
+
+export interface SkippedSummary {
+  count: number;
+  kinds: { ext: string; count: number }[];
+  links: number;
+  dirs: number;
+}
+
+export function skippedSummary(status: Pick<LocalScanView, "skipped" | "skippedLinks" | "unreadableDirs">, shown = 3): SkippedSummary | null {
+  const all = Object.entries(status.skipped).map(([ext, count]) => ({ ext, count }));
+  const count = all.reduce((sum, kind) => sum + kind.count, 0);
+  if (count === 0 && status.skippedLinks === 0 && status.unreadableDirs === 0) return null;
+  const kinds = all.sort((a, b) => b.count - a.count || a.ext.localeCompare(b.ext)).slice(0, shown);
+  return { count, kinds, links: status.skippedLinks, dirs: status.unreadableDirs };
 }
 
 export function downloadProgress(jobs: readonly DownloadView[]): { done: number; total: number } | null {

@@ -31,6 +31,18 @@ vi.mock("../../ports/localFiles", () => ({
   removeMusicFolder: mocks.removeMusicFolder,
   rescanMusicFolders: vi.fn(),
   toPlayerTrack: (view: { track: object }) => ({ ...view.track, playCount: 0 }),
+  skippedSummary: (s: { skipped: Record<string, number> }) =>
+    Object.keys(s.skipped ?? {}).length
+      ? {
+          count: 3,
+          kinds: [
+            { ext: "jpg", count: 2 },
+            { ext: "", count: 1 },
+          ],
+          links: 4,
+          dirs: 0,
+        }
+      : null,
 }));
 vi.mock("../entity/EntityTracks", () => ({
   EntityTracks: (props: { tracks: Array<{ id: string; title: string }>; unavailable: (t: { id: string }) => string | null; onPlay: (t: unknown) => void }) => (
@@ -136,6 +148,24 @@ describe("LocalFiles", () => {
     mocks.loading = true;
     render();
     expect(host.querySelector('[aria-busy="true"]')).not.toBeNull();
+  });
+
+  it("the folder count follows the scan and the end names what was skipped", () => {
+    mocks.roots = [{ id: 1, path: "/m", status: "ok", files: 2, lastScanAt: 1 }];
+    mocks.items = [];
+    mocks.status = { scanning: true, read: 200, total: 900, skipped: { jpg: 2, "": 1 } };
+    render();
+    const before = mocks.reloadRoots.mock.calls.length;
+    mocks.status = { ...mocks.status, read: 400 };
+    render();
+    expect(mocks.reloadRoots.mock.calls.length).toBe(before + 1);
+    expect(host.textContent).not.toContain("ui.local.scan_skipped");
+    mocks.status = { ...mocks.status, scanning: false };
+    render();
+    expect(host.textContent).toContain(
+      'ui.local.scan_skipped {"count":3,"kinds":"ui.local.skipped_kind {\\"ext\\":\\"jpg\\",\\"files\\":2}, ui.local.skipped_no_ext {\\"files\\":1}, ui.local.skipped_links {\\"count\\":4}"}',
+    );
+    mocks.status = { scanning: true, read: 3, total: 9, watching: 1, polling: false, truncated: false };
   });
 
   it("a missing folder carries an icon and a word", () => {

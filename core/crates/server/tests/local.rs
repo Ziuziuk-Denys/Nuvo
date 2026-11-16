@@ -23,16 +23,33 @@ async fn adding_a_folder_scans_and_lists_it() {
     common::write_wav(&music.path().join("Band - One.wav"), 1);
     common::write_wav(&music.path().join("sub/Band - Two.wav"), 1);
     fs::write(music.path().join("broken.mp3"), b"nope").unwrap();
+    fs::write(music.path().join("notes.txt"), b"hi").unwrap();
+    fs::write(music.path().join("sub/song.wma"), b"x").unwrap();
     let (status, root) = common::add_folder(&core, music.path()).await;
     assert_eq!(status, StatusCode::ACCEPTED);
     assert_eq!(root["path"], fs::canonicalize(music.path()).unwrap().to_str().unwrap());
     let page = common::wait_tracks(&core, |p| p["total"] == 3).await;
     // ordered by artist: "Band" before the unreadable file's "Unknown Artist"
     assert_eq!(titles(&page), ["One", "Two", "broken"]);
-    assert_eq!(page["items"][2]["unsupported"], "unreadable");
+    assert_eq!((page["items"][2]["unsupported"].as_str(), page["items"][2]["codec"].as_str()), (None, Some("unknown")), "unread tags still leave the file to the player");
     assert_eq!(page["items"][0]["lossless"], true);
     let (_, status) = common::call(&core.app, "GET", "/v1/local/status", None).await;
     assert_eq!((status["added"].as_u64(), status["unreadable"].as_u64()), (Some(3), Some(1)));
+    assert_eq!((status["found"].as_u64(), status["unchanged"].as_u64()), (Some(3), Some(0)));
+    assert_eq!(status["skipped"], serde_json::json!({"txt": 1, "wma": 1}));
+    assert_eq!(status["unreadableDirs"], 0);
+    assert!(status["startedAt"].as_i64().is_some_and(|at| at <= status["lastScanAt"].as_i64().unwrap()));
+    let first = status["lastScanAt"].clone();
+    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+    common::call(&core.app, "POST", "/v1/local/rescan", None).await;
+    let status = loop {
+        let (_, status) = common::call(&core.app, "GET", "/v1/local/status", None).await;
+        if status["scanning"] == false && status["lastScanAt"] != first {
+            break status;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    };
+    assert_eq!((status["found"].as_u64(), status["unchanged"].as_u64(), status["total"].as_u64()), (Some(3), Some(3), Some(0)), "a rescan reads nothing again");
     let (_, roots) = common::call(&core.app, "GET", "/v1/local/roots", None).await;
     assert_eq!(roots["items"][0]["files"], 3);
     let (_, found) = common::call(&core.app, "GET", "/v1/local/tracks?q=two", None).await;
