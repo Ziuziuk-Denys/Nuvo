@@ -63,11 +63,6 @@ export function pickChoices(row: ReportRow) {
   return row.candidates.filter((c) => c.id !== row.track?.id);
 }
 
-export function addedCount(summary: ImportSummary): number {
-  const { exact, likely, check } = summary.counts;
-  return exact + likely + check;
-}
-
 export function summaryMessage(summary: ImportSummary): Message {
   if (summary.status === "running")
     return {
@@ -79,10 +74,13 @@ export function summaryMessage(summary: ImportSummary): Message {
       key: "ui.imports.summary.review",
       vars: { count: summary.needsReview },
     };
-  return {
-    key: "ui.imports.summary.done",
-    vars: { added: addedCount(summary), total: summary.total, count: summary.total },
-  };
+  return { key: "ui.imports.summary.done", vars: doneCounts(summary) };
+}
+
+export function doneCounts(summary: ImportSummary): Record<string, number> {
+  const { exact, likely, check, already, missing } = summary.counts;
+  const added = exact + likely + check;
+  return { added, matched: added + already, duplicates: already, missing, total: summary.total };
 }
 
 export function progressByPlaylist(summaries: readonly ImportSummary[]): Map<string, { done: number; total: number }> {

@@ -2,12 +2,11 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Track } from "@/engine/types";
 import type { LibraryClient } from "./client";
 
-export const LIKED_PAGE = 100;
+export const LIKED_PAGE = 500;
 
 export interface LikedState {
   ids: ReadonlySet<string>;
   tracks: readonly Track[];
-  next: string | null;
   status: "idle" | "loading" | "ready" | "error";
   refreshing: boolean;
 }
@@ -28,7 +27,7 @@ interface Intent {
 }
 
 export function createLiked({ client, onError, onChange }: LikedDeps) {
-  const store: StoreApi<LikedState> = createStore<LikedState>(() => ({ ids: new Set(), tracks: [], next: null, status: "idle", refreshing: false }));
+  const store: StoreApi<LikedState> = createStore<LikedState>(() => ({ ids: new Set(), tracks: [], status: "idle", refreshing: false }));
   const latestAction = new Map<string, number>();
   const chains = new Map<string, Promise<void>>();
   const intents = new Map<string, Intent>();
@@ -128,11 +127,22 @@ export function createLiked({ client, onError, onChange }: LikedDeps) {
     }
   }
 
-  async function readFirst(): Promise<void> {
+  async function readAll(): Promise<Track[]> {
+    const all: Track[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await client.likedPage(LIKED_PAGE, cursor);
+      all.push(...page.tracks);
+      cursor = page.next ?? undefined;
+    } while (cursor);
+    return all;
+  }
+
+  async function read(): Promise<void> {
     const since = clock;
-    const [page, ids] = await Promise.all([client.likedPage(LIKED_PAGE), client.likedIds()]);
-    const merged = withIntents(page.tracks, new Set(ids), since);
-    store.setState({ tracks: merged.tracks, next: page.next, ids: merged.ids, status: "ready" });
+    const [tracks, ids] = await Promise.all([readAll(), client.likedIds()]);
+    const merged = withIntents(tracks, new Set(ids), since);
+    store.setState({ tracks: merged.tracks, ids: merged.ids, status: "ready" });
   }
 
   return {
@@ -140,47 +150,24 @@ export function createLiked({ client, onError, onChange }: LikedDeps) {
     async load(): Promise<void> {
       store.setState({ status: "loading" });
       try {
-        await readFirst();
+        await read();
       } catch (error) {
         store.setState({ status: "error" });
         onError(error);
       }
     },
-    async loadMore(): Promise<void> {
-      const { next, status } = store.getState();
-      if (!next || status !== "ready") return;
-      const since = clock;
-      const page = await client.likedPage(LIKED_PAGE, next);
-      const seen = new Set(store.getState().tracks.map((t) => t.id));
-      const dropped = new Set(
-        openIntents(since)
-          .filter(([, intent]) => !intent.liked)
-          .map(([id]) => id),
-      );
-      const added = page.tracks.filter((t) => !seen.has(t.id) && !dropped.has(t.id));
-      store.setState({ tracks: [...store.getState().tracks, ...added], next: page.next });
-    },
     async refresh(): Promise<void> {
       if (store.getState().status !== "ready") return this.load();
       store.setState({ refreshing: true });
       try {
-        await readFirst();
+        await read();
       } catch (error) {
         onError(error);
       } finally {
         store.setState({ refreshing: false });
       }
     },
-    async allTracks(): Promise<Track[]> {
-      const all: Track[] = [];
-      let cursor: string | undefined;
-      do {
-        const page = await client.likedPage(500, cursor);
-        all.push(...page.tracks);
-        cursor = page.next ?? undefined;
-      } while (cursor);
-      return all;
-    },
+    allTracks: readAll,
     like: (track: Track) => write(track.id, true, track, () => client.like(track)),
     unlike: (id: string) => write(id, false, undefined, () => client.unlike(id)),
     isLiked: (id: string) => store.getState().ids.has(id),

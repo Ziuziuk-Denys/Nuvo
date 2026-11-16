@@ -31,12 +31,11 @@ function setup(total = 1000) {
 }
 
 describe("liked tracks", () => {
-  it("24: opening asks for the first page of 100 only", async () => {
-    const { liked, client } = setup();
+  it("24: opening reads every page, not just the first", async () => {
+    const { liked, client } = setup(1234);
     await liked.load();
-    expect(client.likedPage).toHaveBeenCalledTimes(1);
-    expect(client.likedPage).toHaveBeenCalledWith(LIKED_PAGE);
-    expect(liked.store.getState().tracks).toHaveLength(100);
+    expect(client.likedPage).toHaveBeenCalledTimes(Math.ceil(1234 / LIKED_PAGE));
+    expect(liked.store.getState().tracks.map((t) => t.id)).toEqual(Array.from({ length: 1234 }, (_, i) => `t${i}`));
   });
 
   it("25: isLiked is a set lookup over ids", async () => {
@@ -188,20 +187,21 @@ describe("liked tracks", () => {
     await a;
   });
 
-  it("loadMore does not bring back a track unliked while the page was loading", async () => {
-    const { liked, client } = setup(250);
-    await liked.load();
+  it("a track unliked while later pages load does not come back", async () => {
+    const { liked, client } = setup(1250);
     let release!: () => void;
-    client.likedPage.mockImplementationOnce(async (limit: number, cursor?: string) => {
-      await new Promise<void>((resolve) => (release = resolve));
-      const start = Number(cursor);
-      return { tracks: Array.from({ length: limit }, (_, i) => track(`t${start + i}`)), next: String(start + limit) };
+    const original = client.likedPage.getMockImplementation()!;
+    client.likedPage.mockImplementation(async (limit: number, cursor?: string) => {
+      if (cursor) await new Promise<void>((resolve) => (release = resolve));
+      return original(limit, cursor);
     });
-    const more = liked.loadMore();
-    await liked.unlike("t150");
+    const loading = liked.load();
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    client.likedPage.mockImplementation(original);
+    await liked.unlike("t1150");
     release();
-    await more;
-    expect(liked.store.getState().tracks.some((t) => t.id === "t150")).toBe(false);
-    expect(liked.isLiked("t150")).toBe(false);
+    await loading;
+    expect(liked.store.getState().tracks.some((t) => t.id === "t1150")).toBe(false);
+    expect(liked.isLiked("t1150")).toBe(false);
   });
 });

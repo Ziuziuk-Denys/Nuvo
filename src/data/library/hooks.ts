@@ -112,7 +112,7 @@ export function usePlaylist(id: string | null) {
 export function useLikedTracks() {
   useReadAgainIfFailed();
   const { tracks, status } = useStore(library().liked.store);
-  return { data: { tracks: tracks as Track[] }, isLoading: status === "loading" || status === "idle", loadMore: () => void library().liked.loadMore() };
+  return { data: { tracks: tracks as Track[] }, isLoading: status === "loading" || status === "idle" };
 }
 
 export function useLikedTrackCount() {

@@ -159,7 +159,7 @@ describe("summaryMessage", () => {
       ),
     ).toEqual({
       key: "ui.imports.summary.done",
-      vars: { added: 8, total: 10, count: 10 },
+      vars: { added: 8, matched: 9, duplicates: 1, missing: 1, total: 10 },
     });
   });
 
