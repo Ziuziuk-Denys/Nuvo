@@ -10,7 +10,7 @@ import { useTranslation } from "../ports/i18n";
 import { importsPercent } from "../ports/imports";
 import { useImportSummaries } from "../ports/importsRuntime";
 import { livePins, useHomePinsStore, usePlaylistsList, useRailPinsStore, type HomePin } from "../ports/library";
-import { nativeFrame, useModalStore, useWindowState } from "../ports/navigation";
+import { useModalStore } from "../ports/navigation";
 import { unpinEverywhere } from "../screens/entity/entityActions";
 import { PaletteField } from "../screens/palette/Palette";
 import { activeNav, isEntityRoute, navigateWithTransition, type NavItem } from "./navigate";
@@ -46,7 +46,6 @@ export function TopBar(): JSX.Element {
   const importingText = importing === null ? "" : t("ui.library.importing", { percent: importing });
   const entity = isEntityRoute(pathname);
   const active = activeNav(pathname);
-  const { trafficLights } = useWindowState();
 
   const sections: Section[] = [
     { id: "home", icon: "home", label: t("ui.nav.home"), href: "/" },
@@ -78,7 +77,7 @@ export function TopBar(): JSX.Element {
   };
 
   return (
-    <header className={styles.bar} data-window-drag data-traffic-lights={trafficLights ? "" : undefined}>
+    <header className={styles.bar} data-window-drag>
       <div className={styles.start}>
         <a href="#/" className={styles.mark} aria-label="Nuvo" data-no-window-drag onClick={(event) => go(event, "/")}>
           <Icon name="nuvo-mark" size={24} />
@@ -160,12 +159,8 @@ export function TopBar(): JSX.Element {
               <Icon name="settings" size={24} />
             </button>
           </Tooltip>
-          {nativeFrame ? null : (
-            <>
-              <span className={styles.rule} aria-hidden="true" />
-              <WindowButtons />
-            </>
-          )}
+          <span className={styles.rule} aria-hidden="true" />
+          <WindowButtons />
         </div>
       </div>
     </header>

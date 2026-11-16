@@ -682,6 +682,8 @@
     },
     "window": {
       "close": "Close",
+      "enterFullscreen": "Enter Full Screen",
+      "exitFullscreen": "Exit Full Screen",
       "maximize": "Maximize",
       "minimize": "Minimize",
       "restore": "Restore"

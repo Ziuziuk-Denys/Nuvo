@@ -46,16 +46,13 @@ describe("window state", () => {
       isMaximized: false,
       isFullScreen: true,
       isEdgeToEdge: true,
-      trafficLights: false,
     });
     expect(windowStateFrom({ maximized: false, fullscreen: false, visible: true }, true).isEdgeToEdge).toBe(true);
   });
 
-  it("on macOS the system rounds the window and shows the traffic lights until full screen", async () => {
+  it("on macOS the system rounds the window", async () => {
     const { windowStateFrom } = await load();
-    const windowed = windowStateFrom({ maximized: false, fullscreen: false, visible: true }, false, true);
-    expect(windowed).toMatchObject({ isEdgeToEdge: true, trafficLights: true });
-    expect(windowStateFrom({ maximized: false, fullscreen: true, visible: true }, false, true).trafficLights).toBe(false);
+    expect(windowStateFrom({ maximized: false, fullscreen: false, visible: true }, false, true).isEdgeToEdge).toBe(true);
   });
 
   it("the hook follows main's window state", async () => {
@@ -72,6 +69,29 @@ describe("window state", () => {
     });
     expect(seen.at(-1)).toBe(true);
     view.unmount();
+  });
+});
+
+describe("window focus", () => {
+  it("dims when the window loses focus, not when an iframe inside it takes focus", async () => {
+    const { useWindowFocused } = await load();
+    const hasFocus = vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    const seen: boolean[] = [];
+    function Probe() {
+      seen.push(useWindowFocused());
+      return null;
+    }
+    const view = render(<Probe />);
+    act(() => window.dispatchEvent(new Event("blur")));
+    expect(seen.at(-1)).toBe(true);
+    hasFocus.mockReturnValue(false);
+    act(() => window.dispatchEvent(new Event("blur")));
+    expect(seen.at(-1)).toBe(false);
+    hasFocus.mockReturnValue(true);
+    act(() => window.dispatchEvent(new Event("focus")));
+    expect(seen.at(-1)).toBe(true);
+    view.unmount();
+    hasFocus.mockRestore();
   });
 });
 

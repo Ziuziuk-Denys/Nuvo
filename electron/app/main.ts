@@ -181,6 +181,8 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
           backgroundThrottling: false,
         },
       });
+      // The renderer draws its own buttons at the right of the top bar
+      if (process.platform === "darwin") win.setWindowButtonVisibility(false);
       win.once("ready-to-show", () => {
         win.show();
         win.focus();

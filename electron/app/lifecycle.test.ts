@@ -307,8 +307,8 @@ describe("onScreenBounds", () => {
 });
 
 describe("window controls", () => {
-  it("macOS keeps the native traffic lights inset in the top bar; Linux and Windows draw their own frame", () => {
-    expect(frameOptions("darwin")).toEqual({ titleBarStyle: "hidden", trafficLightPosition: { x: 20, y: 24 } });
+  it("macOS keeps the system frame and corners; Linux and Windows draw their own frame", () => {
+    expect(frameOptions("darwin")).toEqual({ titleBarStyle: "hidden" });
     for (const platform of ["linux", "win32"] as const) expect(frameOptions(platform)).toEqual({ frame: false, transparent: true, hasShadow: false });
   });
 

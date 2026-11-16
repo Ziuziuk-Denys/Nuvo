@@ -93,6 +93,6 @@ export function relaunchArgs(argv: readonly string[]): string[] {
 }
 
 export function frameOptions(platform: NodeJS.Platform): Electron.BrowserWindowConstructorOptions {
-  if (platform === "darwin") return { titleBarStyle: "hidden", trafficLightPosition: { x: 20, y: 24 } };
+  if (platform === "darwin") return { titleBarStyle: "hidden" };
   return { frame: false, transparent: true, hasShadow: false };
 }
