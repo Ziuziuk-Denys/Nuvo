@@ -1,6 +1,10 @@
 name: nix
 on:
   pull_request:
+    # The build reads these files; pnpm-lock.yaml and pnpm-workspace.yaml set pnpmDeps.hash, core/Cargo.lock feeds cargoLock
+    paths: ["flake.nix", "flake.lock", "nix/**", "pnpm-lock.yaml", "pnpm-workspace.yaml", "core/Cargo.lock"]
+  schedule:
+    - cron: "23 5 * * 1"
   workflow_dispatch:
 permissions:
   contents: read
