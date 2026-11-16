@@ -5,7 +5,7 @@
 
 | You have | Go to |
 |---|---|
-| A question or an idea | [Discussions](https://github.com/Ziuziuk-Denys/Nuvo/discussions) |
+| A question or an idea | [Discussions](https://github.com/Ziuziuk-Denys/Nuvo/discussions) or [Discord](https://discord.gg/rHz3dg9S9T) |
 | A problem installing or using Nuvo | [The docs](https://nuvo.quest/docs) |
 | A bug | [Bug report](https://github.com/Ziuziuk-Denys/Nuvo/issues/new?template=bug.yml) |
 | A feature request | [Feature request](https://github.com/Ziuziuk-Denys/Nuvo/issues/new?template=feature.yml) |

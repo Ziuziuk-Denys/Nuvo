@@ -392,7 +392,7 @@ This is a direction, not a schedule. Details are in [the roadmap](https://nuvo.q
 ## Links
 
 - News and releases: [the Telegram channel](https://t.me/getnuvo)
-- Questions and bug reports: [the chat](https://t.me/getnuvo_chat) or [Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues)
+- Questions and bug reports: [the Telegram chat](https://t.me/getnuvo_chat), [the Discord server](https://discord.gg/rHz3dg9S9T) or [Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues)
 - Install files in Telegram: [@NuvoAppBot](https://t.me/NuvoAppBot)
 - Contact: hello@nuvo.quest
 
