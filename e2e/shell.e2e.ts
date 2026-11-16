@@ -264,6 +264,7 @@ describe("shell e2e", () => {
       "importThemeFile",
       "appearanceReady",
       "appearanceApplying",
+      "setThumbarLabels",
       "addMusicFolder",
       "revealLocalTrack",
       "saveAsFiles",
