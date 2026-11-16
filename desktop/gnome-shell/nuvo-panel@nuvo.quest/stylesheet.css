@@ -63,7 +63,6 @@
 
 .nuvo-artist {
   font-weight: 500;
-  color: rgba(127, 127, 127, 1);
 }
 
 .nuvo-lyrics {
@@ -90,20 +89,22 @@
 .nuvo-time {
   font-size: 0.8em;
   font-feature-settings: "tnum";
-  color: rgba(127, 127, 127, 1);
 }
 
 .nuvo-controls {
-  spacing: 14px;
+  spacing: 12px;
 }
 
 .nuvo-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
   border-radius: 999px;
-  padding: 8px;
   transition-duration: 150ms;
 }
 
-.nuvo-button:hover {
+.nuvo-button:hover,
+.nuvo-button:focus {
   background-color: rgba(127, 127, 127, 0.18);
 }
 
@@ -111,15 +112,31 @@
   background-color: rgba(127, 127, 127, 0.3);
 }
 
+.nuvo-button:focus {
+  box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2);
+}
+
 .nuvo-button-icon {
+  icon-size: 24px;
+}
+
+.nuvo-side .nuvo-button-icon {
   icon-size: 20px;
 }
 
 .nuvo-play {
-  padding: 12px;
-  border: 1px solid rgba(127, 127, 127, 0.5);
+  width: 56px;
+  height: 56px;
+}
+
+.nuvo-play:hover {
+  box-shadow: inset 0 0 0 27px rgba(255, 255, 255, 0.16);
+}
+
+.nuvo-play:active {
+  box-shadow: inset 0 0 0 27px rgba(0, 0, 0, 0.16);
 }
 
 .nuvo-play .nuvo-button-icon {
-  icon-size: 26px;
+  icon-size: 28px;
 }
