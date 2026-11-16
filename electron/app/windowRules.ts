@@ -84,7 +84,8 @@ export function chromiumSwitches(nativeWayland: boolean, linux: boolean): Array<
     ...(linux ? [["disable-accelerated-video-decode"] as [string]] : []),
     ["disable-http2"],
     ["enable-features", ["NetworkServiceInProcess2", ...(nativeWayland ? ["GlobalShortcutsPortal"] : [])].join(",")],
-    ["disable-features", "AudioServiceOutOfProcess"],
+    // Chromium adopts the HDR description Hyprland offers a fullscreen window and the monitor flips to HDR
+    ["disable-features", ["AudioServiceOutOfProcess", ...(nativeWayland ? ["WaylandWpColorManagerV1"] : [])].join(",")],
   ];
 }
 
