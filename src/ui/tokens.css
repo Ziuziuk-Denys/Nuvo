@@ -1,7 +1,10 @@
 /* The colour roles (--n-field ... --n-accent) are written inline on :root by applyPresetTokens */
 
 :root[data-ui="nuvo"] {
-  --n-font-stack: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Cantarell, Ubuntu, sans-serif;
+  /* named before the generic: on some Linux setups the platform fallback draws tofu for kaomoji symbols */
+  --n-font-fallback: "Noto Sans CJK JP", "Source Han Sans JP", "Droid Sans Fallback", "VL Gothic", "Noto Sans Symbols", "Noto Sans Symbols 2", "Noto Sans Math";
+  --n-font-stack:
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Cantarell, Ubuntu, var(--n-font-fallback), sans-serif;
   /* --n-font-ui and --n-scale are written inline on :root by applyFontSettings */
   --n-font: var(--n-font-ui, var(--n-font-stack));
 

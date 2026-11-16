@@ -30,6 +30,13 @@ body,
     Roboto,
     Ubuntu,
     Cantarell,
+    "Noto Sans CJK JP",
+    "Source Han Sans JP",
+    "Droid Sans Fallback",
+    "VL Gothic",
+    "Noto Sans Symbols",
+    "Noto Sans Symbols 2",
+    "Noto Sans Math",
     sans-serif;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
