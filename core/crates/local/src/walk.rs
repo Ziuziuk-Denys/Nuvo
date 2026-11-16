@@ -43,6 +43,7 @@ pub struct Walk {
 }
 
 /// Stored paths are text: UTF-8 ones as they are, other unix names as hex behind a prefix no absolute path has.
+#[cfg(unix)]
 const RAW_PATH: &str = "raw:";
 
 #[cfg(unix)]
