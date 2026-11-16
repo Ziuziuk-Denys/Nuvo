@@ -4,6 +4,7 @@ use std::sync::{OnceLock, Weak};
 use std::time::Duration;
 
 use nuvo_local::save::{SaveTags, extension_for, file_name, input_format, write_tags};
+use nuvo_local::walk::path_of;
 use nuvo_store::downloads::{self, Ready};
 use nuvo_store::{local, new_id};
 use serde_json::Value;
@@ -183,7 +184,7 @@ async fn copy_audio(data: &Unlocked, item: &Ready, dir: &Path, out: &mut tokio::
         ensure_room(dir, opened.size)?;
         tokio::io::copy(&mut opened.file, out).await.map_err(write_error)?;
         // the extension names the saved file: letters and digits only
-        let ext = Path::new(&file.row.path).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+        let ext = path_of(&file.row.path).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
         return Ok(if (1..=5).contains(&ext.len()) && ext.bytes().all(|b| b.is_ascii_alphanumeric()) { ext } else { "bin".into() });
     }
     let mime = item.mime.clone().ok_or("the audio is not cached")?;

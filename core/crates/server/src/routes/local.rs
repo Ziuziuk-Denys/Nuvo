@@ -11,6 +11,7 @@ use axum::http::{HeaderMap, HeaderValue, header};
 use axum::response::{IntoResponse, Response};
 use axum::{Json, Router};
 use nuvo_contracts::{AddLocalRoot, Items, LocalRelated, LocalRoot, LocalScanStatus, LocalStyle, LocalTracksPage};
+use nuvo_local::walk::path_of;
 use nuvo_store::{local, now_ms};
 use nuvo_covers::picture::Processed;
 use serde::Deserialize;
@@ -153,10 +154,11 @@ pub(crate) struct Opened {
 // Opens only a regular file at its scanned place: no link, no swapped parent, the same inode
 pub(crate) async fn open_inside(path: &str, root: &str) -> Result<Opened, ApiError> {
     let gone = || ApiError::NotFound("the file is gone".into());
-    let (checked, checked_root) = (PathBuf::from(path), PathBuf::from(root));
+    let (checked, checked_root) = (path_of(path), path_of(root));
+    let opened = checked.clone();
     let file = tokio::task::spawn_blocking(move || nuvo_local::open::open_inside(&checked, &checked_root)).await.map_err(|_| gone())?.map_err(|_| gone())?;
     let size = file.metadata().map_err(|_| gone())?.len();
-    Ok(Opened { file: tokio::fs::File::from_std(file), size, path: PathBuf::from(path) })
+    Ok(Opened { file: tokio::fs::File::from_std(file), size, path: opened })
 }
 
 fn file_body(file: tokio::fs::File, len: u64) -> Body {

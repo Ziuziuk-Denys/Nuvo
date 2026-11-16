@@ -9,6 +9,7 @@ use axum::response::sse::{Event, Sse};
 use axum::routing::{get, put};
 use axum::{Json, Router};
 use futures::Stream;
+use nuvo_local::walk::path_of;
 use nuvo_contracts::{
     ImportLyricsOffsets, ImportedLyricsOffsets, LyricsBest, LyricsCandidate, LyricsOffset, MadeBy, LyricsQuality, LyricsStreamEvent,
     LyricsTrackMeta, MAX_TRACK_ID_LEN, RawLyrics, SetLyricsOffset, SetUserLyrics,
@@ -433,11 +434,11 @@ where
 const MAX_LRC_BYTES: u64 = 512 * 1024;
 
 pub(crate) async fn read_sidecar(local: &nuvo_store::local::LocalFile) -> Option<String> {
-    let lrc = std::path::PathBuf::from(local.row.lrc_path.as_ref()?);
-    if lrc.parent() != std::path::Path::new(&local.row.path).parent() {
+    let lrc = path_of(local.row.lrc_path.as_ref()?);
+    if lrc.parent() != path_of(&local.row.path).parent() {
         return None;
     }
-    let root = std::path::PathBuf::from(&local.root_path);
+    let root = path_of(&local.root_path);
     let bytes = tokio::task::spawn_blocking(move || {
         use std::io::Read;
         let file = nuvo_local::open::open_inside(&lrc, &root).ok()?;

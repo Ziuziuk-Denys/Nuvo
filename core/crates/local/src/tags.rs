@@ -122,7 +122,8 @@ fn mime_from_extension(path: &Path) -> Option<&'static str> {
 
 // Tags that fail to parse say nothing about the audio, which the player may still decode
 pub fn meta_from_name(path: &Path) -> LocalMeta {
-    let stem = without_track_number(path.file_stem().and_then(|s| s.to_str()).unwrap_or("Unknown"));
+    let stem = path.file_stem().map_or("Unknown".into(), |stem| stem.to_string_lossy());
+    let stem = without_track_number(&stem);
     let mime = mime_from_extension(path);
     let (artists, title) = match stem.split_once(" - ") {
         Some((artist, title)) if !artist.trim().is_empty() && !title.trim().is_empty() => (clean(artist).into_iter().collect(), clean(title)),

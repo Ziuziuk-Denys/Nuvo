@@ -3,7 +3,10 @@ use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::Path;
 
-use nuvo_local::walk::{WalkLimits, folder_art, walk};
+use std::ffi::OsStr;
+use std::os::unix::ffi::OsStrExt;
+
+use nuvo_local::walk::{WalkLimits, folder_art, path_of, text_of, walk};
 
 fn touch(path: &Path, bytes: &[u8]) {
     fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -121,4 +124,27 @@ fn a_symlinked_root_is_not_entered() {
     symlink(real.path(), &link).unwrap();
     let found = walk(&link, WalkLimits::DEFAULT);
     assert!(found.files.is_empty());
+}
+
+#[test]
+fn names_in_a_legacy_encoding_are_found_with_their_sidecar() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    let song = root.join(OsStr::from_bytes(b"Caf\xe9 - Ch\xe9rie.mp3"));
+    touch(&song, b"x");
+    touch(&root.join(OsStr::from_bytes(b"Caf\xe9 - Ch\xe9rie.lrc")), b"[00:01.00]hi");
+    let found = walk(root, WalkLimits::DEFAULT);
+    assert_eq!(found.files.len(), 1);
+    assert_eq!(found.files[0].path, song);
+    assert_eq!(found.files[0].lrc.as_deref(), Some(root.join(OsStr::from_bytes(b"Caf\xe9 - Ch\xe9rie.lrc")).as_path()));
+}
+
+#[test]
+fn stored_paths_round_trip_and_utf8_ones_stay_readable() {
+    let plain = Path::new("/music/Земфира/Café.mp3");
+    assert_eq!(text_of(plain), "/music/Земфира/Café.mp3");
+    assert_eq!(path_of(&text_of(plain)), plain);
+    let legacy = Path::new(OsStr::from_bytes(b"/music/Caf\xe9.mp3"));
+    assert!(!text_of(legacy).starts_with('/'), "never mistaken for a real path");
+    assert_eq!(path_of(&text_of(legacy)), legacy);
 }

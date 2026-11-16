@@ -1,6 +1,7 @@
 // Links are never followed (they can leave the folder or loop); dot names are skipped
 
 use std::collections::{BTreeMap, HashMap};
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
@@ -41,6 +42,39 @@ pub struct Walk {
     pub truncated: bool,
 }
 
+/// Stored paths are text: UTF-8 ones as they are, other unix names as hex behind a prefix no absolute path has.
+#[cfg(unix)]
+const RAW_PATH: &str = "raw:";
+
+#[cfg(unix)]
+pub fn text_of(path: &Path) -> String {
+    use std::os::unix::ffi::OsStrExt;
+    match path.to_str() {
+        Some(text) => text.to_string(),
+        None => format!("{RAW_PATH}{}", path.as_os_str().as_bytes().iter().map(|b| format!("{b:02x}")).collect::<String>()),
+    }
+}
+
+// The walker keeps only UTF-8 names off unix, so nothing is lost here
+#[cfg(not(unix))]
+pub fn text_of(path: &Path) -> String {
+    path.to_string_lossy().into_owned()
+}
+
+pub fn path_of(text: &str) -> PathBuf {
+    #[cfg(unix)]
+    if let Some(bytes) = text.strip_prefix(RAW_PATH).and_then(unhex) {
+        use std::os::unix::ffi::OsStringExt;
+        return PathBuf::from(OsString::from_vec(bytes));
+    }
+    PathBuf::from(text)
+}
+
+#[cfg(unix)]
+fn unhex(hex: &str) -> Option<Vec<u8>> {
+    (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(hex.get(i..i + 2)?, 16).ok()).collect()
+}
+
 pub fn is_audio(path: &Path) -> bool {
     path.extension()
         .and_then(|ext| ext.to_str())
@@ -64,12 +98,11 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
             out.unreadable_dirs += 1;
             continue;
         };
-        let mut names: HashMap<String, String> = HashMap::new();
+        let mut names: HashMap<String, OsString> = HashMap::new();
         let mut audio = Vec::new();
         for entry in entries.flatten() {
             let file_name = entry.file_name();
-            // shortcut: names that are not UTF-8 are skipped (SQLite stores text); count them if users report gaps
-            let Some(name) = file_name.to_str() else { continue };
+            let name = file_name.to_string_lossy();
             if name.starts_with('.') {
                 continue;
             }
@@ -84,8 +117,8 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
                     stack.push((path, depth + 1));
                 }
             } else if kind.is_file() {
-                names.insert(name.to_lowercase(), name.to_string());
-                if is_audio(&path) {
+                names.insert(name.to_lowercase(), file_name.clone());
+                if is_audio(&path) && (cfg!(unix) || file_name.to_str().is_some()) {
                     audio.push(path);
                 } else {
                     out.skip(&path);
@@ -101,8 +134,7 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
             let Ok(meta) = fs::symlink_metadata(&path) else { continue };
             let lrc = path
                 .file_stem()
-                .and_then(|stem| stem.to_str())
-                .and_then(|stem| names.get(&format!("{}.lrc", stem.to_lowercase())))
+                .and_then(|stem| names.get(&format!("{}.lrc", stem.to_string_lossy().to_lowercase())))
                 .map(|real| dir.join(real));
             out.files.push(Found { size: meta.len(), mtime_ms: mtime_ms(&meta), lrc, folder_art, path });
         }
