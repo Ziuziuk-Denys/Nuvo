@@ -22,6 +22,12 @@
       "brand": "telegram",
       "url": "https://t.me/getnuvo",
       "alt": "Join the Nuvo channel on Telegram"
+    },
+    "discord": {
+      "label": "Join the Discord",
+      "brand": "discord",
+      "url": "https://discord.gg/rHz3dg9S9T",
+      "alt": "Join the Nuvo server on Discord"
     }
   },
   "new": [

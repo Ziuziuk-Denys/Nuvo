@@ -22,6 +22,8 @@ FONT = json.loads((HERE / "glyphs.json").read_text())["weights"]
 TOKENS = json.loads((ROOT / "src/data/look/presetTokens.json").read_text())["nuvo"]["tokens"]
 ICONS = ROOT / "src/ui/icons/svg"
 BRANDS = HERE / "brands"
+# Each pill brand mark keeps its own colour
+BRAND_COLORS = {"telegram": "#26A5E4", "discord": "#5865F2"}
 SHOTS = HERE / "shots"
 PAGES = HERE / "pages"
 ASSETS = ".github/readme"
@@ -236,7 +238,7 @@ def pill(theme, name):
     fill, ink = (t["ink"], t["field"]) if primary else (t["tint"], t["ink"])
     stroke = "" if primary else f' stroke="{t["hair"]}"'
     a.add(a.rect(0.5, 0.5, width - 1, height - 1, (height - 1) / 2, f' fill="{fill}"{stroke}'))
-    glyph = a.brand(spec["brand"], 16, 11, 18, "#26A5E4") if "brand" in spec else a.icon(spec["icon"], 16, 11, 18, ink)
+    glyph = a.brand(spec["brand"], 16, 11, 18, BRAND_COLORS[spec["brand"]]) if "brand" in spec else a.icon(spec["icon"], 16, 11, 18, ink)
     a.add(glyph, a.text(16 + 18 + gap, 25.5, label, size, ink, 600))
     return a
 
