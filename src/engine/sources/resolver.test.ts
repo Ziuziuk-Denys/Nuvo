@@ -166,6 +166,27 @@ describe("sources and stored reasons", () => {
     await expect(miss.resolver.resolve(track("local-1"), opts())).rejects.toMatchObject({ cause: "unavailable" });
   });
 
+  it("a YouTube id that streams a longer cut than its length plays the matched release, a close one plays as it is", async () => {
+    const video = track(yid("v"), 99_000);
+    const s = setup({
+      yt: async (target) => ({ ...playable(128_000), durationMs: target.id === yid("v") ? 123_300 : 98_000 }),
+      match: async () => ({ track: track(yid("r"), 99_000), score: 92 }),
+    });
+    const resolved = await s.resolver.resolve(video, opts());
+    expect(s.ytResolve.mock.calls.map((call) => call[0].id)).toEqual([yid("v"), yid("r")]);
+    expect(resolved.source.trackId).toBe(yid("v"));
+    const close = setup({
+      yt: async () => ({ ...playable(128_000), durationMs: 101_000 }),
+      match: async () => ({ track: track(yid("r"), 99_000), score: 92 }),
+    });
+    await close.resolver.resolve(video, opts());
+    expect(close.approvedOn).not.toHaveBeenCalled();
+    expect(close.ytResolve.mock.calls.map((call) => call[0].id)).toEqual([yid("v")]);
+    const unmatched = setup({ yt: async () => ({ ...playable(128_000), durationMs: 123_300 }) });
+    await unmatched.resolver.resolve(video, opts());
+    expect(unmatched.ytResolve.mock.calls.map((call) => call[0].id)).toEqual([yid("v")]);
+  });
+
   it("a direct SoundCloud descriptor is attached with its expiry", async () => {
     const at = Date.now() + 600_000;
     const s = setup({

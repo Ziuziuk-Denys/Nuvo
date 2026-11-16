@@ -9,6 +9,7 @@ export interface PlayableSource {
   codec: string;
   bitrate: number;
   sizeBytes?: number;
+  durationMs?: number;
   servedBy?: string;
   verify?: () => Promise<PlayableSource>;
 }

@@ -30,6 +30,7 @@ export interface YtSource {
   sampleRate?: number;
   channels?: number;
   loudnessDb?: number;
+  durationMs?: number;
   servedBy: string;
   itag?: number;
   // Start verify once the stream answered: googlevideo serves the two requests one after the other
@@ -76,6 +77,7 @@ export function toSource(hit: StreamHit): YtSource {
     sampleRate: reported.sampleRate,
     channels: reported.channels,
     loudnessDb: hit.loudnessDb ?? reported.loudnessDb,
+    durationMs: reported.durationMs,
     servedBy: hit.client,
     itag: reported.itag,
   };

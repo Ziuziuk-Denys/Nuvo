@@ -68,12 +68,14 @@ export interface ReportedFormat {
   channels?: number;
   sizeBytes?: number;
   loudnessDb?: number;
+  durationMs?: number;
   itag: number;
 }
 
 export function report(format: AudioFormat): ReportedFormat {
   const size = Number(format.contentLength);
   const rate = Number(format.audioSampleRate);
+  const duration = Number(format.approxDurationMs);
   return {
     mimeType: format.mimeType.split(";")[0].trim() || "audio/webm",
     codec: isOpus(format) ? "opus" : "aac",
@@ -82,6 +84,7 @@ export function report(format: AudioFormat): ReportedFormat {
     channels: format.audioChannels,
     sizeBytes: Number.isFinite(size) && size > 0 ? size : undefined,
     loudnessDb: format.loudnessDb,
+    durationMs: Number.isFinite(duration) && duration > 0 ? duration : undefined,
     itag: format.itag,
   };
 }

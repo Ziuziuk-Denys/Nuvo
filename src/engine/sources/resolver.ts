@@ -77,6 +77,8 @@ export interface ResolveOptions {
 }
 
 const noop = () => undefined;
+// past this the id streams another cut than its own length says, like a music video with an intro
+export const OTHER_CUT_MS = 5_000;
 
 function headStart(ms: number, signal: AbortSignal): { promise: Promise<null>; cancel(): void } {
   let cancel = noop;
@@ -339,6 +341,16 @@ export class SourceResolver {
     } catch (error) {
       if (isAbort(error)) throw error;
       throw youtubeCause(error, this.deps.online());
+    }
+    if (target === track && playable.durationMs && track.durationMs > 0 && Math.abs(playable.durationMs - track.durationMs) > OTHER_CUT_MS) {
+      const release = await this.deps.match.approvedOn("youtube", track, signal).catch((error: unknown) => {
+        if (isAbort(error)) throw error;
+        return null;
+      });
+      if (release && release.track.id !== track.id) {
+        playable.progressive?.release();
+        return this.youtube(track, release.track, signal, early, quality);
+      }
     }
     return this.attachPlayable(track, playable, "youtube");
   }

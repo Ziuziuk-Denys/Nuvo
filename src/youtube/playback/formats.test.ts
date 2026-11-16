@@ -73,4 +73,9 @@ describe("format choice", () => {
     });
     expect(report({ itag: 1, mimeType: "audio/webm" }).bitrate).toBe(160_000);
   });
+
+  it("reports the stream length when the format carries one", () => {
+    expect(report({ itag: 251, mimeType: "audio/webm", approxDurationMs: "123301" }).durationMs).toBe(123_301);
+    expect(report({ itag: 251, mimeType: "audio/webm" }).durationMs).toBeUndefined();
+  });
 });
