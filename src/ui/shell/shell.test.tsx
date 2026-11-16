@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   railPins: [] as { kind: string; id: string; title: string; href: string; imageUrl?: string }[],
   homePins: [] as { kind: string; id: string; title: string; href: string; imageUrl?: string }[],
   imports: [] as { status: string; done: number; total: number }[],
+  toggleWindowFullscreen: vi.fn(),
 }));
 
 const frame = vi.hoisted(() => ({ mac: false }));
@@ -30,11 +31,13 @@ vi.mock("../ports/navigation", () => ({
   get nativeFrame() {
     return frame.mac;
   },
-  useWindowState: () => ({ isMaximized: false, isFullScreen: false, isEdgeToEdge: frame.mac, trafficLights: frame.mac }),
+  useWindowState: () => ({ isMaximized: false, isFullScreen: false, isEdgeToEdge: frame.mac }),
+  useWindowFocused: () => true,
   useDisableButtonFocus: () => undefined,
   useModalStore: (select: (state: typeof modal) => unknown) => select(modal),
   minimizeWindow: vi.fn(),
   toggleMaximizeWindow: vi.fn(),
+  toggleWindowFullscreen: mocks.toggleWindowFullscreen,
   closeWindow: vi.fn(),
   canMinimizeWindow: () => true,
 }));
@@ -211,12 +214,14 @@ describe("Shell", () => {
     }
   });
 
-  it("on macOS leaves the window buttons to the system and makes room for the traffic lights", () => {
+  it("on macOS draws close, minimize and full screen at the right in that order", () => {
     frame.mac = true;
     try {
       mount("/");
-      for (const label of ["ui.window.minimize", "ui.window.maximize", "ui.window.close"]) expect(button(label)).toBeNull();
-      expect(host.querySelector("header")?.hasAttribute("data-traffic-lights")).toBe(true);
+      const labels = [...host.querySelectorAll("header [data-window-controls] button")].map((b) => b.getAttribute("aria-label"));
+      expect(labels).toEqual(["ui.window.close", "ui.window.minimize", "ui.window.enterFullscreen"]);
+      act(() => button("ui.window.enterFullscreen")!.click());
+      expect(mocks.toggleWindowFullscreen).toHaveBeenCalledTimes(1);
     } finally {
       frame.mac = false;
     }

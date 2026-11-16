@@ -1,6 +1,7 @@
 export {
   nativeFrame,
   useWindowState,
+  useWindowFocused,
   useDisableButtonFocus,
   canMinimizeWindow,
   minimizeWindow,
