@@ -185,10 +185,11 @@ describe("start-up", () => {
     applySwitches(wayland, true);
     expect(wayland.switches.filter(([n]) => n === "enable-features")).toEqual([["enable-features", "NetworkServiceInProcess2,GlobalShortcutsPortal"]]);
     expect(wayland.switches).toContainEqual(["disable-http2", undefined]);
-    expect(wayland.switches).toContainEqual(["disable-features", "AudioServiceOutOfProcess"]);
+    expect(wayland.switches.filter(([n]) => n === "disable-features")).toEqual([["disable-features", "AudioServiceOutOfProcess,WaylandWpColorManagerV1"]]);
     const x11 = fakeApp();
     applySwitches(x11, false);
     expect(x11.switches.find(([n]) => n === "enable-features")).toEqual(["enable-features", "NetworkServiceInProcess2"]);
+    expect(x11.switches.find(([n]) => n === "disable-features")).toEqual(["disable-features", "AudioServiceOutOfProcess"]);
   });
 
   it("switches: video decodes in software on Linux only", () => {
