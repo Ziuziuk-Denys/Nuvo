@@ -6,6 +6,9 @@ contact_links:
   - name: Question or idea to talk through
     url: {{repo}}/discussions
     about: Use Discussions for questions and open-ended ideas.
+  - name: Chat on Discord
+    url: https://discord.gg/rHz3dg9S9T
+    about: Ask and talk in the Nuvo Discord server.
   - name: Security vulnerability
     url: {{repo}}/blob/main/SECURITY.md
     about: Report privately by email. Do not open a public issue.

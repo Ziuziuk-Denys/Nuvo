@@ -98,7 +98,7 @@ This is a direction, not a schedule. Details are in [the roadmap]({{site}}/docs/
 ## Links
 
 - News and releases: [the Telegram channel](https://t.me/getnuvo)
-- Questions and bug reports: [the chat](https://t.me/getnuvo_chat) or [Issues]({{repo}}/issues)
+- Questions and bug reports: [the Telegram chat](https://t.me/getnuvo_chat), [the Discord server](https://discord.gg/rHz3dg9S9T) or [Issues]({{repo}}/issues)
 - Install files in Telegram: [@NuvoAppBot](https://t.me/NuvoAppBot)
 - Contact: hello@nuvo.quest
 
