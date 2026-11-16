@@ -69,7 +69,7 @@ describe("foundations", () => {
       .match(/font-family:([^;]+);/)?.[1]
       .replace(/\s+/g, " ")
       .trim();
-    expect(notch).toMatch(new RegExp(`, ${fallback.replace(/[()"]/g, "\\$&")}, sans-serif$`));
+    expect(notch?.endsWith(`, ${fallback}, sans-serif`), notch).toBe(true);
     const modules = fs.readdirSync(path.resolve(__dirname), { recursive: true, encoding: "utf8" }).filter((file) => file.endsWith(".css"));
     for (const file of modules) {
       for (const [, value] of read(file).matchAll(/font-family:([^;]+);/g)) {
