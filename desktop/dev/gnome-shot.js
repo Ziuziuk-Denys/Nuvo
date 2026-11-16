@@ -1,6 +1,7 @@
 import GLib from "gi://GLib";
 import Gio from "gi://Gio";
 import Shell from "gi://Shell";
+import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as Scripting from "resource:///org/gnome/shell/ui/scripting.js";
@@ -35,6 +36,14 @@ function read(indicator) {
 }
 
 export async function run() {
+  const scale = Number(GLib.getenv("NUVO_SHOT_SCALE") ?? 1);
+  // the test tool points GSettings at a throwaway keyfile, never at the real desktop settings
+  if (GLib.getenv("GSETTINGS_BACKEND") === "keyfile") {
+    const settings = new Gio.Settings({ schema_id: "org.gnome.desktop.interface" });
+    settings.set_string("color-scheme", GLib.getenv("NUVO_SHOT_SCHEME") ?? "default");
+    settings.set_double("text-scaling-factor", scale);
+  }
+  St.ThemeContext.get_for_stage(global.stage).scale_factor = scale;
   Main.overview.hide();
   await Scripting.sleep(4000);
   const indicator = Main.panel.statusArea["nuvo-panel@nuvo.quest"];
@@ -47,6 +56,11 @@ export async function run() {
     ["_dislike", "_like", "_play"].map((name) => [name.slice(1), { width: indicator[name].width, icon: indicator[name].child.width }]),
   );
   await shot("2-card");
+  indicator._play.hover = true;
+  indicator._like.grab_key_focus();
+  await Scripting.sleep(500);
+  await shot("2-hover-focus");
+  indicator._play.hover = false;
   indicator._like.emit("clicked", 1);
   indicator._play.emit("clicked", 1);
   await Scripting.sleep(1500);

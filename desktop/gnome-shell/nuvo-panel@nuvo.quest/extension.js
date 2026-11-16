@@ -17,6 +17,9 @@ const MPRIS_PATH = "/org/mpris/MediaPlayer2";
 const PLAYER_IFACE = "org.mpris.MediaPlayer2.Player";
 // the Nuvo accent of the dark preset, for songs without a colourful cover
 const FALLBACK_GLOW = [175, 200, 247];
+const FALLBACK_POPUP = [54, 54, 58];
+// secondary text fades the popup foreground instead of a fixed grey, so it keeps contrast in light and dark
+const MUTED = 170;
 
 const NuvoProxy = Gio.DBusProxy.makeProxyWrapper(`<node>
   <interface name="quest.nuvo.Nuvo.Player">
@@ -74,9 +77,33 @@ function formatTime(us) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
+function luminance(rgb) {
+  const [r, g, b] = rgb.map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a, b) {
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+}
+
+// the cover colour moves toward white or black until it holds 3:1 against the popup
+function readableOn(rgb, background) {
+  const target = luminance(background) > 0.5 ? [0, 0, 0] : [255, 255, 255];
+  let color = rgb;
+  for (let step = 1; step <= 10 && contrast(color, background) < 3; step++) {
+    color = rgb.map((v, i) => Math.round(v + ((target[i] - v) * step) / 10));
+  }
+  return color;
+}
+
 function iconButton(iconName, styleClass, accessibleName, onClick) {
   const button = new St.Button({
     style_class: `nuvo-button ${styleClass}`,
+    y_align: Clutter.ActorAlign.CENTER,
     can_focus: true,
     accessible_name: accessibleName,
     child: new St.Icon({ style_class: "nuvo-button-icon" }),
@@ -132,7 +159,7 @@ const NuvoIndicator = GObject.registerClass(
       this._cover.connect("clicked", () => this._open());
       const text = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER, style_class: "nuvo-text" });
       this._title = new St.Label({ style_class: "nuvo-title" });
-      this._artist = new St.Label({ style_class: "nuvo-artist" });
+      this._artist = new St.Label({ style_class: "nuvo-artist", opacity: MUTED });
       this._lyrics = new St.Label({ style_class: "nuvo-lyrics" });
       for (const label of [this._title, this._artist, this._lyrics]) {
         label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
@@ -148,8 +175,8 @@ const NuvoIndicator = GObject.registerClass(
       this._fill = new St.Widget({ style_class: "nuvo-fill", width: 0 });
       this._rail.add_child(this._fill);
       const times = new St.BoxLayout({ style_class: "nuvo-times" });
-      this._elapsed = new St.Label({ style_class: "nuvo-time", x_expand: true });
-      this._total = new St.Label({ style_class: "nuvo-time" });
+      this._elapsed = new St.Label({ style_class: "nuvo-time", x_expand: true, opacity: MUTED });
+      this._total = new St.Label({ style_class: "nuvo-time", opacity: MUTED });
       times.add_child(this._elapsed);
       times.add_child(this._total);
       progress.add_child(this._rail);
@@ -157,9 +184,9 @@ const NuvoIndicator = GObject.registerClass(
 
       const controls = new St.BoxLayout({ style_class: "nuvo-controls", x_align: Clutter.ActorAlign.CENTER });
       this._dislike = iconButton(this._icon("nuvo-dislike-symbolic"), "nuvo-side", "Dislike", () => this._callNuvo("DislikeAsync"));
-      const previous = iconButton(Gio.ThemedIcon.new("media-skip-backward-symbolic"), "nuvo-skip", "Previous", () => this._callPlayer("PreviousAsync"));
-      this._play = iconButton(Gio.ThemedIcon.new("media-playback-start-symbolic"), "nuvo-play", "Play or pause", () => this._callPlayer("PlayPauseAsync"));
-      const next = iconButton(Gio.ThemedIcon.new("media-skip-forward-symbolic"), "nuvo-skip", "Next", () => this._callPlayer("NextAsync"));
+      const previous = iconButton(this._icon("nuvo-previous-symbolic"), "nuvo-skip", "Previous", () => this._callPlayer("PreviousAsync"));
+      this._play = iconButton(this._icon("nuvo-play-symbolic"), "nuvo-play", "Play or pause", () => this._callPlayer("PlayPauseAsync"));
+      const next = iconButton(this._icon("nuvo-next-symbolic"), "nuvo-skip", "Next", () => this._callPlayer("NextAsync"));
       this._like = iconButton(this._icon("nuvo-like-symbolic"), "nuvo-side", "Like", () => this._callNuvo("ToggleLikeAsync"));
       for (const button of [this._dislike, previous, this._play, next, this._like]) controls.add_child(button);
 
@@ -249,17 +276,26 @@ const NuvoIndicator = GObject.registerClass(
         this._glow = [r, g, b];
         this._thumb.style = picture;
         this._cover.style = `${picture} box-shadow: 0 6px 22px 0 rgba(${r}, ${g}, ${b}, 0.55);`;
-        this._fill.style = `background-color: rgb(${r}, ${g}, ${b});`;
         this._card.style = `background-gradient-start: rgba(${r}, ${g}, ${b}, 0.16); background-gradient-end: rgba(${r}, ${g}, ${b}, 0);`;
-        this._play.style = `border: 1.5px solid rgba(${r}, ${g}, ${b}, 0.7); box-shadow: 0 0 14px 0 rgba(${r}, ${g}, ${b}, 0.3);`;
         this._thumb.child = artUrl ? null : new St.Icon({ gicon: this._icon("nuvo-symbolic"), style_class: "nuvo-thumb-icon" });
       }
-      this._play.child.gicon = Gio.ThemedIcon.new(status === "Playing" ? "media-playback-pause-symbolic" : "media-playback-start-symbolic");
+      this._play.child.gicon = this._icon(status === "Playing" ? "nuvo-pause-symbolic" : "nuvo-play-symbolic");
       const liked = Boolean(this._nuvo.Liked);
       this._like.child.gicon = this._icon(liked ? "nuvo-liked-symbolic" : "nuvo-like-symbolic");
       this._like.accessible_name = liked ? "Remove like" : "Like";
       this._like.checked = liked;
-      this._like.child.style = liked && this._glow ? `color: rgb(${this._glow.join(", ")});` : "";
+      this._paint(liked);
+    }
+
+    _paint(liked) {
+      const hex = this.menu.box.peek_theme_node()?.get_background_color().to_string();
+      const popup = hex ? [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)) : FALLBACK_POPUP;
+      const accent = readableOn(this._glow ?? FALLBACK_GLOW, popup);
+      const glyph = contrast(accent, [255, 255, 255]) >= 3 ? "#ffffff" : "#1e1e20";
+      const color = `rgb(${accent.join(", ")})`;
+      this._fill.style = `background-color: ${color};`;
+      this._play.style = `background-color: ${color}; color: ${glyph};`;
+      this._like.child.style = liked ? `color: ${color};` : "";
     }
 
     /* MPRIS does not signal the position, so the card asks once a second while it is open. */
@@ -269,6 +305,7 @@ const NuvoIndicator = GObject.registerClass(
         this._positionTimer = 0;
       }
       if (!open) return;
+      this._sync();
       this._readPosition();
       this._positionTimer = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
         this._readPosition();
