@@ -181,6 +181,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
           backgroundThrottling: false,
         },
       });
+      if (process.platform === "darwin") win.setWindowButtonVisibility(false);
       win.once("ready-to-show", () => {
         win.show();
         win.focus();
@@ -901,13 +902,13 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       discord.update(state);
       blocker.update(state.status);
     });
+    discord.setEnabled(settings.value.discord.enabled);
     windows.show();
     inbox.receive(findLinkArg(process.argv));
     youtube = startYoutube ? startYoutube({ partition: youtubePartition, log }) : null;
     startTray();
     // Plasma's mono glyph follows the light or dark theme
     nativeTheme.on("updated", () => trayIcon?.setImage(trayImage()));
-    discord.setEnabled(settings.value.discord.enabled);
     if (process.platform === "linux") void startPanel();
   });
 }

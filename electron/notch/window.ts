@@ -33,6 +33,7 @@ const MAX_CRASH_RELOADS = 3;
 const CRASH_WINDOW_MS = 60_000;
 const CAPTURE_POLL_MS = 100;
 const RAISE_MS = 1_000;
+const FOCUS_SETTLE_MS = 50;
 
 export interface NotchDeps {
   preloadPath: string;
@@ -63,15 +64,27 @@ export class NotchWindow {
   private loaded = false;
   private placementFailure: string | null = null;
   private listening = false;
-  private fullscreen = false;
   private placedDisplayId: number | null = null;
   private moveTimer: ReturnType<typeof setTimeout> | null = null;
+  private focusSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private crashRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly replace = () => void this.place();
   private readonly replaceIfDisplayChanged = () => {
     if (this.pickDisplay().id !== this.placedDisplayId) this.replace();
   };
-  private readonly onEnterFullscreen = () => this.setFullscreen(true);
-  private readonly onLeaveFullscreen = () => this.setFullscreen(false);
+  private readonly onMainFocus = () => {
+    if (this.focusSyncTimer) clearTimeout(this.focusSyncTimer);
+    this.focusSyncTimer = null;
+    this.syncMainVisibility();
+  };
+  private readonly onMainBlur = () => {
+    if (this.focusSyncTimer) clearTimeout(this.focusSyncTimer);
+    this.focusSyncTimer = setTimeout(() => {
+      this.focusSyncTimer = null;
+      this.syncMainVisibility();
+    }, FOCUS_SETTLE_MS);
+  };
+  private readonly onMainVisibilityChange = () => this.syncMainVisibility();
   private readonly onMainMove = () => {
     if (this.moveTimer) clearTimeout(this.moveTimer);
     this.moveTimer = setTimeout(this.replaceIfDisplayChanged, MOVE_SETTLE_MS);
@@ -179,6 +192,10 @@ export class NotchWindow {
 
   destroy(): void {
     if (this.moveTimer) clearTimeout(this.moveTimer);
+    if (this.focusSyncTimer) clearTimeout(this.focusSyncTimer);
+    this.focusSyncTimer = null;
+    if (this.crashRetryTimer) clearTimeout(this.crashRetryTimer);
+    this.crashRetryTimer = null;
     if (this.capturePoll) clearInterval(this.capturePoll);
     this.capturePoll = null;
     this.stopRaising();
@@ -237,17 +254,16 @@ export class NotchWindow {
       this.crashTimes = this.crashTimes.filter((t) => now - t < CRASH_WINDOW_MS);
       if (this.crashTimes.length >= MAX_CRASH_RELOADS) {
         if (this.crashTimes.length === MAX_CRASH_RELOADS) {
-          console.warn(`[notch] renderer gone (${details.reason}) too often, hiding the Notch`);
+          console.warn(`[notch] renderer gone (${details.reason}) too often, retrying in ${CRASH_WINDOW_MS} ms`);
           this.crashTimes.push(now);
         }
         win.hide();
+        this.retryAfterCrashWindow(win);
         return;
       }
       this.crashTimes.push(now);
       console.warn(`[notch] renderer gone (${details.reason}), reloading`);
-      this.setShape(islandRect(ISLAND_SIZES.idle));
-      this.setCapture(false);
-      this.deps.loadPage(win).catch((error) => console.warn("[notch] reload failed:", error));
+      this.reload(win);
     });
     this.listenToDisplays();
     this.attachMain();
@@ -260,7 +276,37 @@ export class NotchWindow {
         this.loaded = true;
         return this.place();
       })
-      .catch((error) => console.warn("[notch] load failed:", error));
+      .catch((error) => {
+        console.warn("[notch] load failed:", error);
+        if (this.win === win && !win.isDestroyed()) this.retryAfterCrashWindow(win);
+      });
+  }
+
+  private reload(win: BrowserWindow): void {
+    this.loaded = false;
+    this.setShape(islandRect(ISLAND_SIZES.idle));
+    this.setCapture(false);
+    this.ready = this.deps
+      .loadPage(win)
+      .then(() => {
+        if (win.isDestroyed()) return;
+        this.loaded = true;
+        return this.place();
+      })
+      .catch((error) => {
+        console.warn("[notch] reload failed:", error);
+        if (this.win === win && !win.isDestroyed()) this.retryAfterCrashWindow(win);
+      });
+  }
+
+  private retryAfterCrashWindow(win: BrowserWindow): void {
+    if (this.crashRetryTimer) return;
+    this.crashRetryTimer = setTimeout(() => {
+      this.crashRetryTimer = null;
+      if (this.win !== win || win.isDestroyed() || !notchEnabled(this.settings.mode, this.deps.session)) return;
+      this.crashTimes = [];
+      this.reload(win);
+    }, CRASH_WINDOW_MS);
   }
 
   private listenToDisplays(): void {
@@ -277,26 +323,45 @@ export class NotchWindow {
     this.detachMain();
     this.main = main;
     main.on("move", this.onMainMove);
-    main.on("enter-full-screen", this.onEnterFullscreen);
-    main.on("leave-full-screen", this.onLeaveFullscreen);
-    this.fullscreen = main.isFullScreen();
+    main.on("enter-full-screen", this.onMainVisibilityChange);
+    main.on("leave-full-screen", this.onMainVisibilityChange);
+    main.on("focus", this.onMainFocus);
+    main.on("blur", this.onMainBlur);
+    main.on("minimize", this.onMainVisibilityChange);
+    main.on("restore", this.onMainVisibilityChange);
+    main.on("show", this.onMainVisibilityChange);
+    main.on("hide", this.onMainVisibilityChange);
+    this.syncMainVisibility();
   }
 
   private detachMain(): void {
     this.main?.removeListener("move", this.onMainMove);
-    this.main?.removeListener("enter-full-screen", this.onEnterFullscreen);
-    this.main?.removeListener("leave-full-screen", this.onLeaveFullscreen);
+    this.main?.removeListener("enter-full-screen", this.onMainVisibilityChange);
+    this.main?.removeListener("leave-full-screen", this.onMainVisibilityChange);
+    this.main?.removeListener("focus", this.onMainFocus);
+    this.main?.removeListener("blur", this.onMainBlur);
+    this.main?.removeListener("minimize", this.onMainVisibilityChange);
+    this.main?.removeListener("restore", this.onMainVisibilityChange);
+    this.main?.removeListener("show", this.onMainVisibilityChange);
+    this.main?.removeListener("hide", this.onMainVisibilityChange);
     this.main = null;
   }
 
-  private setFullscreen(value: boolean): void {
-    this.fullscreen = value;
-    if (!this.win || this.win.isDestroyed()) return;
-    if (value) this.win.hide();
-    else if (this.loaded && notchEnabled(this.settings.mode, this.deps.session)) {
-      // The remap drops always-on-top on X11, so go through the full placement path.
-      this.ready = this.place();
+  private syncMainVisibility(): void {
+    if (this.focusSyncTimer) clearTimeout(this.focusSyncTimer);
+    this.focusSyncTimer = null;
+    const main = this.main;
+    const win = this.win;
+    if (!win || win.isDestroyed()) return;
+    if (this.mainInFocusedFullscreen(main)) {
+      win.hide();
+      return;
     }
+    if (this.loaded && notchEnabled(this.settings.mode, this.deps.session)) this.ready = this.place();
+  }
+
+  private mainInFocusedFullscreen(main: BrowserWindow | null): boolean {
+    return Boolean(main && !main.isDestroyed() && main.isVisible() && !main.isMinimized() && main.isFullScreen() && main.isFocused());
   }
 
   private pickDisplay() {
@@ -310,7 +375,12 @@ export class NotchWindow {
   private async place(): Promise<void> {
     const win = this.win;
     if (!win || win.isDestroyed() || !canPlaceNotch(this.deps.session)) return;
-    if (this.fullscreen || this.settings.mode === "off") return;
+    if (this.settings.mode === "off") return;
+    const main = this.deps.getMainWindow();
+    if (this.mainInFocusedFullscreen(main)) {
+      win.hide();
+      return;
+    }
     const display = this.pickDisplay();
     this.placedDisplayId = display.id;
     if (this.deps.readCutout) {
@@ -320,6 +390,10 @@ export class NotchWindow {
         this.cutout = cutout;
         this.send("notch:cutout", cutout);
       }
+    }
+    if (this.mainInFocusedFullscreen(main)) {
+      win.hide();
+      return;
     }
     const size = notchWindow(this.cutout);
     const geometry = { ...notchOrigin(display.bounds, size.width), ...size };

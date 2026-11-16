@@ -55,6 +55,8 @@ const electron = vi.hoisted(() => {
     restore = vi.fn();
     show = vi.fn();
     focus = vi.fn();
+    focused = false;
+    isFocused = () => this.focused;
     isMinimized = () => true;
     isVisible = () => true;
     isAlwaysOnTop = () => this.calls.some((c) => c[0] === "setAlwaysOnTop");
@@ -87,12 +89,12 @@ const electron = vi.hoisted(() => {
 });
 
 vi.mock("electron", () => electron.module);
-import { DEFAULT_NOTCH_SETTINGS as OFF_BY_DEFAULT, type NotchState } from "../../src/notch/contracts";
+import { DEFAULT_NOTCH_SETTINGS, type NotchState } from "../../src/notch/contracts";
 import { ISLAND_SIZES, islandRect } from "../../src/notch/lib/geometry";
 import type { NotchSession } from "./session";
 import { NOTCH_TITLE, NotchWindow, registerNotchIpc } from "./window";
 
-const DEFAULT_NOTCH_SETTINGS = { ...OFF_BY_DEFAULT, mode: "auto" as const };
+const ACTIVE_NOTCH_SETTINGS = { ...DEFAULT_NOTCH_SETTINGS, mode: "auto" as const };
 
 type FakeWin = InstanceType<typeof electron.module.BrowserWindow>;
 const lastWindow = () => electron.windows.at(-1)!;
@@ -111,7 +113,7 @@ function createNotch(opts: { session: NotchSession; main?: FakeWin | null; bridg
     readCutout: opts.readCutout,
   };
   const notch = new NotchWindow(deps);
-  if (opts.apply !== false) notch.applySettings(DEFAULT_NOTCH_SETTINGS);
+  if (opts.apply !== false) notch.applySettings(ACTIVE_NOTCH_SETTINGS);
   return { notch, deps, main: main as FakeWin };
 }
 
@@ -135,11 +137,11 @@ describe("NotchWindow", () => {
 
   it("creates the window only when settings arrive", async () => {
     const { notch } = createNotch({ session: "x11", apply: false });
-    expect(notch.hello().settings).toEqual(OFF_BY_DEFAULT);
+    expect(notch.hello().settings).toEqual(DEFAULT_NOTCH_SETTINGS);
     expect(electron.windows.filter((w) => w.options.title === NOTCH_TITLE)).toHaveLength(0);
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, mode: "off" });
     expect(electron.windows.filter((w) => w.options.title === NOTCH_TITLE)).toHaveLength(0);
-    notch.applySettings(DEFAULT_NOTCH_SETTINGS);
+    notch.applySettings(ACTIVE_NOTCH_SETTINGS);
     await notch.ready;
     expect(names(lastWindow())).toContain("showInactive");
   });
@@ -301,13 +303,21 @@ describe("NotchWindow", () => {
   it("does not place a window that stays hidden, and places it when shown", async () => {
     const main = new electron.module.BrowserWindow();
     main.fullscreen = true;
+    main.isMinimized = () => false;
+    main.focused = true;
     const { notch } = createNotch({ session: "x11", main });
     await notch.ready;
     const win = lastWindow();
     expect(names(win)).not.toContain("setBounds");
     expect(names(win)).not.toContain("showInactive");
+    main.fullscreen = false;
     main.emit("leave-full-screen");
+    main.focused = false;
+    vi.useFakeTimers();
+    main.emit("blur");
+    await vi.advanceTimersByTimeAsync(200);
     await notch.ready;
+    vi.useRealTimers();
     expect(names(win)).toContain("setBounds");
     expect(names(win)).toContain("showInactive");
   });
@@ -327,13 +337,16 @@ describe("NotchWindow", () => {
     const { notch, deps } = createNotch({ session: "x11" });
     await notch.ready;
     notch.setShape({ x: 0, y: 0, width: 500, height: 200 });
-    lastWindow().webContents.emit("render-process-gone", {}, { reason: "crashed" });
+    const win = lastWindow();
+    win.webContents.emit("render-process-gone", {}, { reason: "crashed" });
+    await notch.ready;
     expect(deps.loadPage).toHaveBeenCalledTimes(2);
     expect(notch.lastShape).toEqual({ x: 132, y: 0, width: 232, height: 34 });
+    expect(names(win)).toContain("showInactive");
     warn.mockRestore();
   });
 
-  it("stops reloading after 3 renderer crashes in 60 s, hides and logs once", async () => {
+  it("retries after repeated renderer crashes and restores the hidden window", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { notch, deps } = createNotch({ session: "x11" });
     await notch.ready;
@@ -346,9 +359,10 @@ describe("NotchWindow", () => {
     expect(deps.loadPage).toHaveBeenCalledTimes(4);
     expect(names(lastWindow()).at(-1)).toBe("hide");
     expect(warn.mock.calls.filter((c) => String(c[0]).includes("too often"))).toHaveLength(1);
-    vi.advanceTimersByTime(61_000);
-    crash();
+    await vi.advanceTimersByTimeAsync(61_000);
+    await notch.ready;
     expect(deps.loadPage).toHaveBeenCalledTimes(5);
+    expect(names(lastWindow())).toContain("showInactive");
     warn.mockRestore();
   });
 
@@ -393,6 +407,36 @@ describe("NotchWindow", () => {
     expect(names(win).lastIndexOf("setBounds")).toBeGreaterThan(names(win).indexOf("setAlwaysOnTop"));
     expect(win.webContents.send).toHaveBeenCalledWith("notch:cutout", { width: 200, height: 38 });
     expect(notch.hello().cutout).toEqual({ width: 200, height: 38 });
+    notch.destroy();
+  });
+
+  it("keeps the Notch visible while the main window is focused, blurred or minimized", async () => {
+    const { notch, main } = createNotch({ session: "macos" });
+    await notch.ready;
+    const win = lastWindow();
+    main.isMinimized = () => false;
+    const showCount = () => names(win).filter((name) => name === "showInactive").length;
+    const initiallyShown = showCount();
+
+    main.focused = true;
+    main.emit("focus");
+    await notch.ready;
+    expect(showCount()).toBeGreaterThan(initiallyShown);
+    expect(names(win).at(-1)).not.toBe("hide");
+
+    vi.useFakeTimers();
+    main.emit("blur");
+    main.focused = false;
+    await vi.advanceTimersByTimeAsync(200);
+    await notch.ready;
+    expect(showCount()).toBeGreaterThan(initiallyShown + 1);
+
+    main.isMinimized = () => true;
+    main.emit("minimize");
+    await vi.advanceTimersByTimeAsync(200);
+    await notch.ready;
+    expect(showCount()).toBeGreaterThan(initiallyShown + 2);
+    vi.useRealTimers();
     notch.destroy();
   });
 
@@ -503,14 +547,22 @@ describe("NotchWindow", () => {
     expect(notch.lastShape).toEqual({ x: 0, y: 0, width: 496, height: 35 });
   });
 
-  it("hides while the main window is fullscreen and shows again after", async () => {
+  it("hides while the focused main window is fullscreen and shows when it loses focus", async () => {
     const { notch, main } = createNotch({ session: "x11" });
     await notch.ready;
     const win = lastWindow();
+    main.isMinimized = () => false;
+    main.focused = true;
+    main.fullscreen = true;
     main.emit("enter-full-screen");
     expect(names(win).at(-1)).toBe("hide");
-    main.emit("leave-full-screen");
+
+    main.focused = false;
+    vi.useFakeTimers();
+    main.emit("blur");
+    await vi.advanceTimersByTimeAsync(200);
     await notch.ready;
+    vi.useRealTimers();
     const after = names(win).slice(names(win).lastIndexOf("hide"));
     expect(after.indexOf("showInactive")).toBeGreaterThanOrEqual(0);
     expect(after.indexOf("setAlwaysOnTop")).toBeGreaterThan(after.indexOf("showInactive"));

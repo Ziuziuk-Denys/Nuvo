@@ -6,10 +6,9 @@ interface NotchSettingsState extends NotchSettings {
   setSettings: (patch: Partial<NotchSettings>) => void;
 }
 
-// v1 turns the old default "auto" off; a Notch someone switched to "on" stays on
-export function migrateNotchSettings(persisted: unknown, version: number): Partial<NotchSettings> {
+export function migrateNotchSettings(persisted: unknown, _version: number): Partial<NotchSettings> {
   const saved = (persisted ?? {}) as Partial<NotchSettings>;
-  if (version < 1 && saved.mode === "auto") return { ...saved, mode: "off" };
+  if (_version < 2 && saved.mode === "off") return { ...saved, mode: "auto" };
   return saved;
 }
 
@@ -21,7 +20,7 @@ export const useNotchSettingsStore = create<NotchSettingsState>()(
     }),
     {
       name: "nuvo_notch_settings_v1",
-      version: 1,
+      version: 2,
       migrate: (persisted, version) => migrateNotchSettings(persisted, version) as NotchSettingsState,
       storage: createJSONStorage(() => localStorage),
       partialize: ({ mode, expandOn, showLyrics, pulseOnTrackChange, display }) => ({

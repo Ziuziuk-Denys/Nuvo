@@ -682,6 +682,7 @@
     },
     "window": {
       "close": "Close",
+      "fullscreen": "Toggle full screen",
       "maximize": "Maximize",
       "minimize": "Minimize",
       "restore": "Restore"

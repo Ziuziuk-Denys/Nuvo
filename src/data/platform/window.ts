@@ -5,10 +5,9 @@ export interface WindowState {
   isMaximized: boolean;
   isFullScreen: boolean;
   isEdgeToEdge: boolean;
-  trafficLights: boolean;
 }
 
-// macOS draws the frame, corners and traffic lights itself
+// macOS draws the frame and corners itself
 export const nativeFrame = typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent);
 
 let winState: WinState = { maximized: false, fullscreen: false, visible: true };
@@ -21,7 +20,6 @@ export function windowStateFrom(win: WinState, tiling: boolean, mac = nativeFram
     isMaximized: win.maximized,
     isFullScreen: win.fullscreen,
     isEdgeToEdge: mac || win.maximized || win.fullscreen || tiling,
-    trafficLights: mac && !win.fullscreen,
   };
 }
 

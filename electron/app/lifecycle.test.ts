@@ -307,8 +307,8 @@ describe("onScreenBounds", () => {
 });
 
 describe("window controls", () => {
-  it("macOS keeps the native traffic lights inset in the top bar; Linux and Windows draw their own frame", () => {
-    expect(frameOptions("darwin")).toEqual({ titleBarStyle: "hidden", trafficLightPosition: { x: 20, y: 24 } });
+  it("macOS hides the native traffic lights for custom controls; Linux and Windows draw their own frame", () => {
+    expect(frameOptions("darwin")).toEqual({ titleBarStyle: "hidden" });
     for (const platform of ["linux", "win32"] as const) expect(frameOptions(platform)).toEqual({ frame: false, transparent: true, hasShadow: false });
   });
 
@@ -339,6 +339,16 @@ describe("window controls", () => {
     expect(w.maximized).toBe(false);
     t.c.toggleMaximize();
     expect(w.maximized).toBe(true);
+  });
+
+  it("toggles native fullscreen", () => {
+    const t = controller();
+    t.c.show();
+    const w = t.windows[0];
+    t.c.toggleFullscreen();
+    expect(w.fullscreen).toBe(true);
+    t.c.toggleFullscreen();
+    expect(w.fullscreen).toBe(false);
   });
 
   it("every window change sends win:state", () => {
