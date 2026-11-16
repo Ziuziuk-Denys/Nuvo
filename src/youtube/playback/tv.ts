@@ -250,6 +250,7 @@ export class SignedInTv implements SignedInStep {
         bitrate: handle.format.bitrate || 160_000,
         sizeBytes: handle.format.contentLength,
         loudnessDb: response.playerConfig?.audioConfig?.loudnessDb,
+        durationMs: handle.format.approxDurationMs,
         servedBy: "TVHTML5 (account)",
       };
       let received = first.value.byteLength;
