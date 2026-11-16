@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { filterTracks } from "@/data/search/trackMatch";
 import { CORE_BASE_URL } from "@/engine/boot";
 import { isLocalId } from "@/engine/types";
-import { createLocalClient, scanLine, type LocalRootView, type LocalScanView, type LocalTrackView } from "@/local/client";
+import { createLocalClient, scanLine, skippedSummary, type LocalRootView, type LocalScanView, type LocalTrackView } from "@/local/client";
 import type { Track } from "./player";
 
 export type { LocalRootView, LocalScanView, LocalTrackView };
-export { scanLine };
+export { scanLine, skippedSummary };
 
 const client = createLocalClient(CORE_BASE_URL);
 const SCAN_POLL_MS = 500;

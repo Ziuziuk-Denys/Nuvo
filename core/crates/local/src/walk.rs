@@ -1,6 +1,6 @@
 // Links are never followed (they can leave the folder or loop); dot names are skipped
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
@@ -9,6 +9,8 @@ pub const AUDIO_EXTENSIONS: [&str; 8] = ["mp3", "flac", "m4a", "aac", "ogg", "og
 /// Folder images, best first.
 pub const FOLDER_ART: [&str; 4] = ["cover", "folder", "front", "album"];
 const ART_EXTENSIONS: [&str; 3] = ["jpg", "jpeg", "png"];
+/// Distinct extensions kept in the skipped tally; the rest are summed under "other".
+const SKIPPED_KINDS: usize = 32;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WalkLimits {
@@ -32,6 +34,8 @@ pub struct Found {
 #[derive(Debug, Default)]
 pub struct Walk {
     pub files: Vec<Found>,
+    /// Files that are not playable audio, by lowercase extension ("" when there is none).
+    pub skipped: BTreeMap<String, u64>,
     pub skipped_links: usize,
     pub unreadable_dirs: usize,
     pub truncated: bool,
@@ -83,6 +87,8 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
                 names.insert(name.to_lowercase(), name.to_string());
                 if is_audio(&path) {
                     audio.push(path);
+                } else {
+                    out.skip(&path);
                 }
             }
         }
@@ -103,6 +109,14 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
     }
     out.files.sort_by(|a, b| a.path.cmp(&b.path));
     out
+}
+
+impl Walk {
+    fn skip(&mut self, path: &Path) {
+        let ext = path.extension().and_then(|ext| ext.to_str()).map(str::to_ascii_lowercase).unwrap_or_default();
+        let key = if self.skipped.len() < SKIPPED_KINDS || self.skipped.contains_key(&ext) { ext } else { "other".into() };
+        *self.skipped.entry(key).or_default() += 1;
+    }
 }
 
 fn art_rank(lower_name: &str) -> Option<usize> {

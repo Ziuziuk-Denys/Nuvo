@@ -73,14 +73,14 @@ async fn swapped_for_a_link_is_not_served() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn unreadable_files_say_so() {
+async fn files_with_unreadable_tags_are_left_to_the_player() {
     let core = common::local_core();
     let music = tempfile::tempdir().unwrap();
     fs::write(music.path().join("x.m4a"), b"garbage").unwrap();
     let page = scanned(&core, music.path(), 1).await;
     let id = page["items"][0]["track"]["id"].as_str().unwrap();
-    let (status, body) = common::call(&core.app, "GET", &format!("/v1/local/tracks/{id}/audio"), None).await;
-    assert_eq!((status, body["code"].as_str()), (StatusCode::UNSUPPORTED_MEDIA_TYPE, Some("UNSUPPORTED_FORMAT")));
+    let (status, _, headers) = common::send(&core.app, get(&format!("/v1/local/tracks/{id}/audio"), None)).await;
+    assert_eq!((status, headers["content-type"].to_str().unwrap(), headers["x-nuvo-codec"].to_str().unwrap()), (StatusCode::OK, "audio/mp4", "unknown"));
 }
 
 #[tokio::test(flavor = "multi_thread")]

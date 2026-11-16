@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createLocalClient, downloadProgress, scanLine } from "./client";
+import { createLocalClient, downloadProgress, scanLine, skippedSummary } from "./client";
 
 const L = `local:${"a".repeat(32)}`;
 
@@ -40,19 +40,28 @@ describe("local client", () => {
     const base = {
       scanning: false,
       rootId: null,
+      startedAt: null,
+      found: 0,
+      unchanged: 0,
       total: 0,
       read: 0,
       added: 0,
       updated: 0,
       removed: 0,
       unreadable: 0,
+      skipped: {},
       skippedLinks: 0,
+      unreadableDirs: 0,
       truncated: false,
       watching: 1,
       polling: false,
       lastScanAt: 1,
     };
-    expect(scanLine({ ...base, scanning: true, total: 20000, read: 1200 }, ok)).toEqual({ key: "ui.local.scan_reading", vars: { read: 1200, total: 20000 } });
+    expect(scanLine({ ...base, scanning: true }, ok)).toEqual({ key: "ui.local.scan_finding" });
+    const reading = { ...base, scanning: true, startedAt: 1_000, found: 21000, unchanged: 1000, total: 20000, read: 10 };
+    expect(scanLine(reading, ok, 2_000)).toEqual({ key: "ui.local.scan_reading", vars: { read: 10, total: 20000 } });
+    expect(scanLine({ ...reading, read: 1200 }, ok, 61_000)).toEqual({ key: "ui.local.scan_reading_eta", vars: { read: 1200, total: 20000, minutes: 16 } });
+    expect(scanLine({ ...reading, read: 19_990 }, ok, 61_000)).toEqual({ key: "ui.local.scan_reading_eta", vars: { read: 19_990, total: 20000, minutes: 1 } });
     expect(scanLine(base, [{ ...ok[0], status: "missing" }])).toEqual({ key: "ui.local.scan_missing", vars: { path: "/m" } });
     const two = [
       { ...ok[0], status: "missing" as const },
@@ -63,6 +72,22 @@ describe("local client", () => {
     expect(scanLine({ ...base, polling: true }, ok)).toEqual({ key: "ui.local.scan_polling" });
     expect(scanLine(base, ok)).toEqual({ key: "ui.local.scan_watching", vars: { count: 1 } });
     expect(scanLine(base, [])).toBeNull();
+  });
+
+  it("skipped files are summed and the biggest kinds named first", () => {
+    const status = { skipped: { jpg: 2874, log: 444, png: 490, cue: 173, "": 2 }, skippedLinks: 4, unreadableDirs: 0 };
+    expect(skippedSummary(status)).toEqual({
+      count: 3983,
+      kinds: [
+        { ext: "jpg", count: 2874 },
+        { ext: "png", count: 490 },
+        { ext: "log", count: 444 },
+      ],
+      links: 4,
+      dirs: 0,
+    });
+    expect(skippedSummary({ skipped: {}, skippedLinks: 0, unreadableDirs: 0 })).toBeNull();
+    expect(skippedSummary({ skipped: {}, skippedLinks: 0, unreadableDirs: 2 })).toEqual({ count: 0, kinds: [], links: 0, dirs: 2 });
   });
 
   it("progress sums running saves only", () => {

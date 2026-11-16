@@ -7,7 +7,8 @@ use lofty::config::WriteOptions;
 use lofty::picture::{MimeType, Picture, PictureType};
 use lofty::prelude::*;
 use lofty::tag::{Tag, TagType};
-use nuvo_local::tags::{read_cover, read_meta};
+use common::read_cover;
+use nuvo_local::tags::{has_picture, read_meta};
 
 struct Counting;
 
@@ -61,6 +62,11 @@ fn a_big_embedded_picture_is_never_pulled_into_memory() {
     let peak = peak_during(|| cover = read_cover(&path).unwrap());
     assert!(cover.is_none(), "a 12 MiB picture is over the cap");
     assert!(peak < 4 * 1024 * 1024, "reading the cover allocated {peak} bytes");
+
+    let mut found = false;
+    let peak = peak_during(|| found = has_picture(&path));
+    assert!(found);
+    assert!(peak < 2 * 1024 * 1024, "probing for a picture allocated {peak} bytes");
 
     // Tag reading cannot skip a picture, so a 12 MiB one is read (and dropped), never more.
     let peak = peak_during(|| {

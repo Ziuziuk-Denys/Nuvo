@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -57,13 +59,22 @@ pub struct LocalStyle {
 pub struct LocalScanStatus {
     pub scanning: bool,
     pub root_id: Option<i64>,
+    pub started_at: Option<i64>,
+    /// Audio files in the folder, read or not.
+    pub found: u64,
+    /// Files already in the library with the same size and time, so not read again.
+    pub unchanged: u64,
+    /// Files left to read in this scan.
     pub total: u64,
     pub read: u64,
     pub added: u64,
     pub updated: u64,
     pub removed: u64,
     pub unreadable: u64,
+    /// Files that are not playable audio, by lowercase extension.
+    pub skipped: BTreeMap<String, u64>,
     pub skipped_links: u64,
+    pub unreadable_dirs: u64,
     pub truncated: bool,
     pub watching: u64,
     /// True when a folder could not be watched (inotify limit); it is rescanned every 15 minutes.

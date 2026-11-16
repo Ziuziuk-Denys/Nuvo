@@ -1,12 +1,13 @@
-import { useMemo, useState, type JSX } from "react";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { Icon } from "../../icons/Icon";
-import { useTranslation } from "../../ports/i18n";
+import { useTranslation, type TFunction } from "../../ports/i18n";
 import {
   addMusicFolder,
   removeMusicFolder,
   rescanMusicFolders,
   scanLine,
+  skippedSummary,
   toPlayerTrack,
   useLocalRoots,
   useLocalScan,
@@ -17,6 +18,19 @@ import { EntityTracks } from "../entity/EntityTracks";
 import look from "../look.module.css";
 import styles from "./LocalFiles.module.css";
 import { sortLocal, type LibrarySort } from "../library/libraryModel";
+
+type Skipped = NonNullable<ReturnType<typeof skippedSummary>>;
+
+function skippedText(skipped: Skipped, t: TFunction): string {
+  const kinds = [
+    ...skipped.kinds.map((kind) =>
+      kind.ext ? t("ui.local.skipped_kind", { ext: kind.ext, files: kind.count }) : t("ui.local.skipped_no_ext", { files: kind.count }),
+    ),
+    ...(skipped.links ? [t("ui.local.skipped_links", { count: skipped.links })] : []),
+    ...(skipped.dirs ? [t("ui.local.skipped_dirs", { count: skipped.dirs })] : []),
+  ].join(", ");
+  return skipped.count ? t("ui.local.scan_skipped", { count: skipped.count, kinds }) : t("ui.local.scan_skipped_plain", { kinds });
+}
 
 export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: LibrarySort }): JSX.Element {
   const { t } = useTranslation();
@@ -33,7 +47,13 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
     return reason ? t(`ui.local.unsupported_${reason}`) : null;
   };
   const add = async () => setError(await addMusicFolder());
+  const reading = scan?.scanning ? scan.read : null;
+  // The folder counts come from the library, so they follow each batch of read files
+  useEffect(() => {
+    if (reading !== null) reloadRoots();
+  }, [reading, reloadRoots]);
   const line = scanLine(scan, roots);
+  const skipped = scan && !scan.scanning ? skippedSummary(scan) : null;
   const errorLine = error ? (
     <p className={styles.line} role="alert">
       {error}
@@ -106,6 +126,7 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
           {t(line.key, line.vars)}
         </p>
       ) : null}
+      {skipped ? <p className={styles.line}>{skippedText(skipped, t)}</p> : null}
       {errorLine}
       {tracksFailed ? (
         <p className={styles.line} role="alert">

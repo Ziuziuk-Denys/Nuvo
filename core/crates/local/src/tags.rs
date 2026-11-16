@@ -3,6 +3,7 @@ use std::io::{BufReader, Read, Seek};
 use std::path::Path;
 
 use lofty::config::{GlobalOptions, ParseOptions, apply_global_options};
+use lofty::error::{AllocationError, TooMuchDataError};
 use lofty::file::{FileType, TaggedFile};
 use lofty::iff::wav::{WavFile, WavFormat};
 use lofty::mp4::{Mp4Codec, Mp4File};
@@ -18,6 +19,8 @@ use crate::walk::folder_art;
 pub const COVER_BASE: &str = "nuvo-core://local/v1/local/tracks/";
 const MAX_TEXT_CHARS: usize = 512;
 const MAX_COVER_BYTES: u64 = 8 * 1024 * 1024;
+/// A picture over this size is known to exist from its header alone, so the probe never reads it.
+const PICTURE_PROBE_BYTES: u64 = 1024 * 1024;
 /// Tag reading skips pictures, so the limit only guards text, lyrics and other frames.
 pub(crate) const MAX_TAG_ITEM_BYTES: u64 = 32 * 1024 * 1024;
 
@@ -87,8 +90,40 @@ pub fn format_of(file_type: FileType, mp4: Option<Mp4Codec>, wav: Option<WavForm
     }
 }
 
+// "02 - ", "02.", "1)" or a zero-led "02 " is a track number; "50 Cent" and "1979" are names
+fn without_track_number(stem: &str) -> &str {
+    let digits = stem.len() - stem.trim_start_matches(|c: char| c.is_ascii_digit()).len();
+    if digits == 0 || digits > 3 {
+        return stem;
+    }
+    let after = &stem[digits..];
+    let named = if let Some(rest) = after.trim_start().strip_prefix(['.', '-', ')', '_']) {
+        rest.trim_start()
+    } else if after.starts_with(' ') && digits > 1 && stem.starts_with('0') {
+        after.trim_start()
+    } else {
+        return stem;
+    };
+    if named.is_empty() { stem } else { named }
+}
+
+fn mime_from_extension(path: &Path) -> Option<&'static str> {
+    let ext = path.extension()?.to_str()?.to_ascii_lowercase();
+    Some(match ext.as_str() {
+        "mp3" => "audio/mpeg",
+        "flac" => "audio/flac",
+        "m4a" => "audio/mp4",
+        "aac" => "audio/aac",
+        "ogg" | "oga" | "opus" => "audio/ogg",
+        "wav" => "audio/wav",
+        _ => return None,
+    })
+}
+
+// Tags that fail to parse say nothing about the audio, which the player may still decode
 pub fn meta_from_name(path: &Path) -> LocalMeta {
-    let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("Unknown");
+    let stem = without_track_number(path.file_stem().and_then(|s| s.to_str()).unwrap_or("Unknown"));
+    let mime = mime_from_extension(path);
     let (artists, title) = match stem.split_once(" - ") {
         Some((artist, title)) if !artist.trim().is_empty() && !title.trim().is_empty() => (clean(artist).into_iter().collect(), clean(title)),
         _ => (Vec::new(), clean(stem)),
@@ -97,16 +132,25 @@ pub fn meta_from_name(path: &Path) -> LocalMeta {
         title: title.unwrap_or_else(|| "Unknown".into()),
         artists,
         codec: "unknown",
-        mime: "application/octet-stream",
-        unsupported: Some("unreadable"),
+        mime: mime.unwrap_or("application/octet-stream"),
+        unsupported: mime.is_none().then_some("unreadable"),
         ..LocalMeta::default()
     }
+}
+
+// Content decides; the extension names a file whose tag is followed by junk before the first frame
+fn probe(path: &Path, options: ParseOptions) -> Result<Probe<BufReader<File>>, TagError> {
+    let probe = Probe::new(BufReader::new(open_regular(path)?)).options(options).guess_file_type()?;
+    Ok(match (probe.file_type(), FileType::from_path(path)) {
+        (None, Some(named)) => probe.set_file_type(named),
+        _ => probe,
+    })
 }
 
 pub fn read_meta(path: &Path) -> Result<LocalMeta, TagError> {
     cap_allocations(MAX_TAG_ITEM_BYTES);
     let options = ParseOptions::new().read_cover_art(false);
-    let probe = Probe::new(BufReader::new(open_regular(path)?)).options(options).guess_file_type()?;
+    let probe = probe(path, options)?;
     let file_type = probe.file_type().ok_or_else(|| TagError::Parse("unknown format".into()))?;
     let (tagged, mp4, wav): (TaggedFile, Option<Mp4Codec>, Option<WavFormat>) = match file_type {
         FileType::Mp4 => {
@@ -130,11 +174,16 @@ pub fn read_meta(path: &Path) -> Result<LocalMeta, TagError> {
     let tag = tagged.primary_tag().or_else(|| tagged.first_tag());
     let named = meta_from_name(path);
     let artists: Vec<String> = tag.map(|t| t.get_strings(ItemKey::TrackArtist).filter_map(clean).collect()).unwrap_or_default();
+    let album_artist = tag.and_then(|t| t.get_string(ItemKey::AlbumArtist)).and_then(clean);
     Ok(LocalMeta {
         title: tag.and_then(|t| t.title()).and_then(|s| clean(&s)).unwrap_or(named.title),
-        artists: if artists.is_empty() { named.artists } else { artists },
+        artists: match (artists.is_empty(), &album_artist) {
+            (false, _) => artists,
+            (true, Some(album_artist)) => vec![album_artist.clone()],
+            (true, None) => named.artists,
+        },
         album: tag.and_then(|t| t.album()).and_then(|s| clean(&s)),
-        album_artist: tag.and_then(|t| t.get_string(ItemKey::AlbumArtist)).and_then(clean),
+        album_artist,
         track_no: tag.and_then(|t| t.track()),
         disc_no: tag.and_then(|t| t.disk()),
         year: tag.and_then(|t| t.date()).map(|date| date.year),
@@ -150,8 +199,26 @@ pub fn read_meta(path: &Path) -> Result<LocalMeta, TagError> {
     })
 }
 
-pub fn read_cover(path: &Path) -> Result<Option<Vec<u8>>, TagError> {
-    read_cover_from(open_regular(path)?, path.parent().unwrap_or(Path::new("")))
+// shortcut: any other item over the probe size also reads as a picture; the cover route then answers 404
+pub fn has_picture(path: &Path) -> bool {
+    cap_allocations(PICTURE_PROBE_BYTES);
+    let options = ParseOptions::new().read_properties(false).read_cover_art(true);
+    let Ok(probe) = probe(path, options) else { return false };
+    match probe.read() {
+        Ok(tagged) => tagged.tags().iter().any(|tag| !tag.pictures().is_empty()),
+        Err(err) => over_limit(&err),
+    }
+}
+
+fn over_limit(err: &(dyn std::error::Error + 'static)) -> bool {
+    let mut cause = Some(err);
+    while let Some(err) = cause {
+        if err.is::<AllocationError>() || err.is::<TooMuchDataError>() {
+            return true;
+        }
+        cause = err.source();
+    }
+    false
 }
 
 pub fn read_cover_from(file: File, dir: &Path) -> Result<Option<Vec<u8>>, TagError> {

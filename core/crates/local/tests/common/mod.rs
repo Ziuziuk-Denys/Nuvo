@@ -2,6 +2,9 @@
 
 use std::path::Path;
 
+use nuvo_local::open::open_regular;
+use nuvo_local::tags::{TagError, read_cover_from};
+
 pub fn wav_bytes(seconds: u32) -> Vec<u8> {
     let rate = 8000u32;
     let data_len = rate * seconds * 2;
@@ -25,4 +28,8 @@ pub fn wav_bytes(seconds: u32) -> Vec<u8> {
 pub fn write_wav(path: &Path, seconds: u32) {
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(path, wav_bytes(seconds)).unwrap();
+}
+
+pub fn read_cover(path: &Path) -> Result<Option<Vec<u8>>, TagError> {
+    read_cover_from(open_regular(path)?, path.parent().unwrap())
 }
