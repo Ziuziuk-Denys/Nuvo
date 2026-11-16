@@ -108,3 +108,21 @@ fn rank_orders_candidates() {
     let order: Vec<usize> = nuvo_match::rank(&src, &list).into_iter().map(|(i, _)| i).collect();
     assert_eq!(order, [1, 2, 0]);
 }
+
+#[test]
+fn an_instrumental_never_stands_in_for_the_song() {
+    let src = Source { title: "Жду чуда".into(), artists: vec!["25/17".into()], duration_ms: Some(235_000) };
+    let track = |id: &str, title: &str, album: bool, ms: i64| {
+        let mut value = json!({"id": id, "title": title, "artists": [{"name": "25/17"}], "durationMs": ms});
+        if album {
+            value["album"] = json!({"id": "MPREb", "title": "Пой со мной"});
+        }
+        Candidate::from_track(&value).unwrap()
+    };
+    let music = track("music", "Жду чуда (музыка)", true, 235_000);
+    assert!(!evaluate(&src, std::slice::from_ref(&music)).is_approved());
+    let pool = [music.clone(), track("vocal", "Жду чуда", false, 234_304)];
+    assert!(matches!(evaluate(&src, &pool), Decision::Approved { index: 1, .. }));
+    let wanted = Source { title: "Жду чуда (музыка)".into(), ..src };
+    assert!(matches!(evaluate(&wanted, &pool), Decision::Approved { index: 0, .. }));
+}

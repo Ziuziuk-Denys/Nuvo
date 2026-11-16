@@ -317,3 +317,35 @@ fn similarity_is_symmetric() {
     }
     assert!(similarity("alpha beta", "alpha alpha") < 100.0);
 }
+
+#[test]
+fn instrumental_markers_in_many_languages() {
+    for title in [
+        "Жду чуда (музыка)",
+        "Пісня [Музика]",
+        "Песня (без слов)",
+        "Песня (минусовка)",
+        "Пісня (мінусовка)",
+        "Пісня (інструментал)",
+        "Song (Instr.)",
+        "Song (Off Vocal)",
+        "Song - Off Vocal Ver.",
+        "夜に駆ける (オフボーカル)",
+        "夜に駆ける (インスト)",
+        "晴天 (伴奏)",
+        "晴天 (纯音乐)",
+    ] {
+        assert_eq!(markers(title), ["instrumental"], "{title}");
+    }
+    assert_eq!(markers("Песня (караоке)"), ["karaoke"]);
+    assert_eq!(markers("Song (Backing Track)"), ["karaoke"]);
+    assert_eq!(markers("夜に駆ける (カラオケ)"), ["karaoke"]);
+}
+
+#[test]
+fn music_and_without_words_are_markers_only_alone_in_brackets() {
+    for title in ["Музыка", "Музыка нас связала", "Без слов", "Слова без музыки", "Song (Музыка из фильма Брат)", "Музыка (Remix)"] {
+        assert!(!markers(title).contains(&"instrumental"), "{title}");
+    }
+    assert_eq!(base_title("Музыка"), "музыка");
+}

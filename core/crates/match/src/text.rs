@@ -1,5 +1,7 @@
 // Word boundaries are Unicode aware, so Cyrillic words work like Latin ones
 
+use std::cell::RefCell;
+
 use unicode_normalization::UnicodeNormalization;
 
 pub const MAX_TEXT_CHARS: usize = 300;
@@ -100,13 +102,13 @@ pub const MARKERS: [(&str, &[&[&str]]); 27] = [
     ("reverb", &[&["reverb"], &["реверб"]]),
     ("sped-up", &[&["sped", "up"], &["speed", "up"], &["spedup"], &["speedup"], &["спид", "ап"], &["спидап"], &["ускорен"], &["speed", "song"]]),
     ("nightcore", &[&["nightcore"], &["найткор"]]),
-    ("instrumental", &[&["instrumental"], &["inst"], &["инструментал"], &["минус"]]),
+    ("instrumental", &[&["instrumental"], &["inst"], &["instr"], &["off", "vocal"], &["offvocal"], &["инструментал"], &["минус"], &["минусовка"], &["інструментал"], &["мінус"], &["мінусовка"], &["オフボーカル"], &["インスト"], &["伴奏"], &["纯音乐"]]),
     ("acoustic", &[&["acoustic"], &["акустика"]]),
     ("live", &[&["live"], &["лайв"], &["концерт"]]),
     ("cover", &[&["cover"], &["кавер"], &["remake"]]),
     ("bass-boost", &[&["bass", "boost"], &["bass", "boosted"], &["bassboosted"], &["басс", "буст"]]),
     ("8d", &[&["8d"]]),
-    ("karaoke", &[&["karaoke"], &["караоке"], &["in", "the", "style", "of"], &["originally", "performed"], &["backing", "track"], &["play", "along"]]),
+    ("karaoke", &[&["karaoke"], &["караоке"], &["カラオケ"], &["in", "the", "style", "of"], &["originally", "performed"], &["backing", "track"], &["play", "along"]]),
     ("tribute", &[&["tribute"]]),
     ("lullaby", &[&["lullaby"], &["колыбельная"]]),
     ("voice-swap", &[&["женская", "версия"], &["мужская", "версия"]]),
@@ -118,6 +120,9 @@ pub const MARKERS: [(&str, &[&[&str]]); 27] = [
     ("reaction", &[&["reaction"], &["реакция"]]),
     ("tutorial", &[&["tutorial"], &["урок"]]),
 ];
+
+/// Ordinary title words, so they mark a version only as a whole bracket: "Жду чуда (музыка)".
+const BRACKET_MARKERS: [(&str, &[&[&str]]); 1] = [("instrumental", &[&["музыка"], &["музика"], &["без", "слов"], &["без", "вокала"], &["без", "вокалу"]])];
 
 const ALIASES: [&[&str]; 4] = [
     &["кино", "виктор цой", "в цой", "цой"],
@@ -488,8 +493,19 @@ pub fn artist_and_title(raw: &str) -> (Option<String>, String) {
 }
 
 pub fn markers(raw: &str) -> Vec<&'static str> {
-    let list = words(&remove_junk(raw));
-    MARKERS.iter().filter(|(_, forms)| forms.iter().any(|p| contains_phrase(&list, p))).map(|(name, _)| *name).collect()
+    let cleaned = remove_junk(raw);
+    let list = words(&cleaned);
+    let found = RefCell::new(MARKERS.iter().filter(|(_, forms)| forms.iter().any(|p| contains_phrase(&list, p))).map(|(name, _)| *name).collect::<Vec<_>>());
+    strip_brackets(&cleaned, &|content| {
+        let inner = words(content);
+        for (name, forms) in BRACKET_MARKERS {
+            if forms.iter().any(|p| inner.iter().eq(p.iter())) && !found.borrow().contains(&name) {
+                found.borrow_mut().push(name);
+            }
+        }
+        Verdict::Keep
+    });
+    found.into_inner()
 }
 
 pub struct Query {
