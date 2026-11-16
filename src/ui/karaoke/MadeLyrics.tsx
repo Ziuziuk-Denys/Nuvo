@@ -133,7 +133,12 @@ export function TimeWords({ trackId, have }: { trackId: string | null; have: Lyr
   const made = useMadeLyrics();
   useAutoWordTiming(trackId, have === "lines");
   const offer = makerOffer(timing, made, trackId, have);
-  const note = have === "lines" ? <span className={styles.lineOnly}>{t("ui.karaoke.highlight_line_only")}</span> : null;
+  const note =
+    have === "lines" ? (
+      <span className={styles.lineOnly} title={t("ui.karaoke.highlight_line_only")}>
+        {t("ui.karaoke.highlight_line_only")}
+      </span>
+    ) : null;
   if (offer.kind === "working" && trackId) {
     return (
       <>
@@ -152,7 +157,13 @@ export function TimeWords({ trackId, have }: { trackId: string | null; have: Lyr
       </>
     );
   }
-  if (offer.kind === "failed") return <span className={styles.lineOnly}>{failureText(offer, t)}</span>;
+  if (offer.kind === "failed") {
+    return (
+      <span className={styles.lineOnly} title={failureText(offer, t)}>
+        {failureText(offer, t)}
+      </span>
+    );
+  }
   if (offer.kind === "none" || !trackId) return note;
   const hint =
     t(have === "plain" ? "ui.karaoke.make.time_hint_plain" : "ui.karaoke.make.time_hint") +

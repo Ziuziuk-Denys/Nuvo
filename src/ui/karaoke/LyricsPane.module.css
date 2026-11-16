@@ -6,6 +6,10 @@
   mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 82%, transparent 100%);
 }
 
+.scroller {
+  container-type: size;
+}
+
 .lines {
   display: block;
 }

@@ -113,6 +113,7 @@
   align-items: center;
   gap: 2px;
   box-sizing: border-box;
+  max-width: 100%;
   height: 36px;
   padding: 0 4px;
   border-radius: var(--n-r-pill);
@@ -167,12 +168,16 @@
   border-inline-start: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* the only part that gives way, so a long note never reaches the window buttons */
 .lineOnly {
+  min-width: 0;
+  overflow: hidden;
   padding: 0 10px;
   font-size: 12px;
   font-weight: 500;
   line-height: 18px;
   white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--k-ink-3);
 }
 
@@ -363,9 +368,10 @@
   width: 170px;
 }
 
+/* starts under the top bar, so no line ever runs beneath the timing controls */
 .lines {
   position: absolute;
-  top: 0;
+  top: 62px;
   bottom: 0;
   left: var(--k-lyrics);
   width: var(--k-lines);
