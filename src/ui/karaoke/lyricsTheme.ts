@@ -21,6 +21,8 @@ export function lyricsTheme(lyrics: KaraokeLayout["lyrics"]): string {
     "  --blyrics-animate-instrumental: 0;",
     "  --blyrics-richsync-timing-offset: 0s;",
     "  --blyrics-padding: 20px;",
+    // lead-in room, so the first lines can scroll to the anchor instead of lighting at the top edge
+    `  padding-top: ${lyrics.scrollRatio * 100}cqh;`,
     "}",
     ".blyrics-container > div {",
     "  padding-inline: 0 !important;",

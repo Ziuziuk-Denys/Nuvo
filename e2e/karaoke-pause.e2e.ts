@@ -150,3 +150,21 @@ it("pausing keeps the sung line where it is and resuming goes on from there", as
     await main.waitForTimeout(75);
   }
 }, 60_000);
+
+it("the first line lights at the height of the later ones, below the top bar", async () => {
+  await player("seekTo(1200)");
+  await expect.poll(async () => (await sample()).lit).toBe(0);
+  await main.waitForTimeout(800);
+  const first = await sample();
+  await player("seekTo(16200)");
+  await expect.poll(async () => (await sample()).lit).toBe(6);
+  await main.waitForTimeout(800);
+  const later = await sample();
+  expect(Math.abs(first.top! - later.top!)).toBeLessThanOrEqual(4);
+  const clear = await main.evaluate(() => {
+    const lyrics = document.querySelector("braccato-lyrics")!;
+    const bar = lyrics.closest("[data-theme]")!.querySelector("header")!.getBoundingClientRect();
+    return lyrics.parentElement!.getBoundingClientRect().top >= bar.bottom;
+  });
+  expect(clear).toBe(true);
+}, 60_000);
