@@ -1,0 +1,53 @@
+.dock {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  display: grid;
+  gap: 12px;
+  width: min(420px, calc(100% - 32px));
+  padding: 14px 16px;
+  transform: translateX(-50%);
+  animation: rise 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.dock[data-intro] {
+  top: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+}
+
+.intro {
+  margin: 0;
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.count {
+  font: var(--n-type-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--n-ink-3);
+}
+
+.press {
+  font: var(--n-type-caption);
+  color: var(--n-accent);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    animation: none;
+  }
+}

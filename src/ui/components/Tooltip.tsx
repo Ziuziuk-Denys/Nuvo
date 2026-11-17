@@ -6,7 +6,15 @@ const HOVER_DELAY_MS = 500;
 const GAP_PX = 8;
 const EDGE_PX = 8;
 
-export function Tooltip({ text, children }: { text: string; children: ReactElement<{ "aria-describedby"?: string }> }): JSX.Element {
+export function Tooltip({
+  text,
+  side = "above",
+  children,
+}: {
+  text: string;
+  side?: "above" | "right";
+  children: ReactElement<{ "aria-describedby"?: string }>;
+}): JSX.Element {
   const id = useId();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const timer = useRef<number | undefined>(undefined);
@@ -60,12 +68,12 @@ export function Tooltip({ text, children }: { text: string; children: ReactEleme
   return (
     <span className={styles.anchor} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onMouseDown={onMouseDown} onFocus={onFocus} onBlur={onBlur}>
       {cloneElement(children, { "aria-describedby": describedBy })}
-      {shown ? createPortal(<Bubble id={id} text={text} anchor={anchor} />, document.body) : null}
+      {shown ? createPortal(<Bubble id={id} text={text} anchor={anchor} side={side} />, document.body) : null}
     </span>
   );
 }
 
-function Bubble({ id, text, anchor }: { id: string; text: string; anchor: HTMLElement }) {
+function Bubble({ id, text, anchor, side }: { id: string; text: string; anchor: HTMLElement; side: "above" | "right" }) {
   const ref = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<{ top: number; left: number } | null>(null);
 
@@ -75,12 +83,16 @@ function Bubble({ id, text, anchor }: { id: string; text: string; anchor: HTMLEl
     const box = anchor.getBoundingClientRect();
     const width = bubble.offsetWidth;
     const height = bubble.offsetHeight;
+    if (side === "right") {
+      setPlace({ top: box.top + box.height / 2 - height / 2, left: box.right + GAP_PX });
+      return;
+    }
     const above = box.top - GAP_PX - height;
     const top = above >= EDGE_PX ? above : box.bottom + GAP_PX;
     const centred = box.left + box.width / 2 - width / 2;
     const left = Math.min(Math.max(centred, EDGE_PX), window.innerWidth - width - EDGE_PX);
     setPlace({ top, left });
-  }, [anchor, text]);
+  }, [anchor, text, side]);
 
   return (
     <div ref={ref} id={id} role="tooltip" className={styles.tooltip} data-placed={place ? "" : undefined} style={place ?? undefined}>

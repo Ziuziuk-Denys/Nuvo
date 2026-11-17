@@ -54,6 +54,7 @@ import { saveFilter, validateSaveText, writeTextAtomic } from "./saveText";
 import { coreCall } from "./coreCall";
 import { coreBinaryName, coreSocketPath } from "./socketPath";
 import { createBackend, parseFeed, releasePageUrl, Updater, updateMode, type AutoUpdaterLike, type UpdateBackend } from "./updater";
+import { createClipExport, saveFolder } from "./clipExport";
 import { createFileActions } from "./fileActions";
 import { readCoverFile, type CoverRead } from "./coverFile";
 import { writeBufferAtomic } from "./files";
@@ -673,6 +674,26 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     ipc.handle(CHANNELS.recognizeFile, "main", (payload) => files.grantRecognizeFile(payload));
     ipc.handle(CHANNELS.exportSaveFiles, "main", (payload) => oneFileDialog(() => files.saveFiles(payload)));
     ipc.handle(CHANNELS.exportSaveDocument, "main", (payload) => oneFileDialog(() => files.saveDocument(payload)));
+    const clips = createClipExport({
+      call: (method, route, body) => coreCall(socketPath, core.token, method, route, body),
+      pickSavePath: async (title, defaultPath) => {
+        const picked = await dialog.showSaveDialog(parent(), { title, defaultPath, filters: [{ name: "Video", extensions: ["mp4"] }] });
+        return picked.canceled ? null : (picked.filePath ?? null);
+      },
+      videosDir: () => saveFolder(app.getPath("videos"), app.getPath("home")),
+      tempDir: () => app.getPath("temp"),
+      refuse: (channel, why) => refusals.refuse(channel, why),
+    });
+    ipc.handle(CHANNELS.visualClipBegin, "main", (payload) => oneFileDialog(() => clips.begin(payload)));
+    ipc.handle(CHANNELS.visualClipWrite, "main", (payload) => clips.write(payload));
+    ipc.handle(CHANNELS.visualClipAudio, "main", (payload) => clips.audio(payload));
+    ipc.handle(CHANNELS.visualClipFinish, "main", async (payload) => {
+      const result = await clips.finish(payload);
+      // the saved clip's folder is one reveal may open
+      if (result && "path" in result) lastSaveDir = path.dirname(result.path);
+      return result;
+    });
+    ipc.handle(CHANNELS.visualClipCancel, "main", (payload) => clips.cancel(payload));
   }
 
   function onTrayClick(id: TrayItemId): void {

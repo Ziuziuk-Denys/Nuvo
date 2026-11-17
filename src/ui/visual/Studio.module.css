@@ -1,0 +1,53 @@
+.studio {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr) 236px;
+  gap: 6px;
+  padding: 6px;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--s-bg);
+  color: var(--n-ink);
+  animation: open var(--n-t-base) var(--n-ease-out);
+}
+
+.work {
+  display: grid;
+  grid-template-columns: var(--s-columns);
+  min-height: 0;
+  gap: 6px;
+}
+
+.browser {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+.split {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.split > :first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.split > :last-of-type {
+  width: 30px;
+  padding: 0;
+  border-radius: 0 8px 8px 0;
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio {
+    animation: none;
+  }
+}

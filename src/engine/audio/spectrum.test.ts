@@ -82,4 +82,20 @@ describe("spectrum tap", () => {
     vi.advanceTimersByTime(3 * FRAME_MS);
     expect(s.frames.at(-1)!.clip).toBe(false);
   });
+
+  it("hands each frame its own copy of the time-domain window", () => {
+    const s = setup();
+    s.tap.subscribe((frame) => s.frames.push(frame));
+    const wave = s.analysers()[0].wave;
+    wave[7] = 0.25;
+    vi.advanceTimersByTime(FRAME_MS * 2);
+    const first = s.frames.at(-1)!;
+    wave[7] = -0.5;
+    vi.advanceTimersByTime(FRAME_MS * 2);
+    const second = s.frames.at(-1)!;
+    expect(first.wave).toHaveLength(2048);
+    expect(first.sampleRate).toBe(s.context.sampleRate);
+    expect(first.wave[7]).toBe(0.25);
+    expect(second.wave[7]).toBe(-0.5);
+  });
 });

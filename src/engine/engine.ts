@@ -1378,7 +1378,9 @@ export class Engine {
     if (pair === this.nextPair) return;
     this.nextPair = pair;
     this.deps.precache?.setNext(next?.track ?? null);
-    const candidate: DeckCandidate | null = next && startReached ? { entryId: next.entryId, trackId: next.track.id, tempo: this.tempoFor(next.track) } : null;
+    // a repeat of the same entry keeps playing at its own speed; only a new song takes the new-song speed
+    const tempo = next && next.entryId === here?.entryId ? this.tempo : next ? this.tempoFor(next.track) : this.tempo;
+    const candidate: DeckCandidate | null = next && startReached ? { entryId: next.entryId, trackId: next.track.id, tempo } : null;
     this.deps.decks.setCandidate(candidate);
     if (this.status !== "loading") this.prefetchNeighbour();
   }

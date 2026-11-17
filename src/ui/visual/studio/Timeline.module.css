@@ -1,0 +1,260 @@
+.timeline {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  grid-template-rows: 40px minmax(0, 1fr) 40px;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 8px;
+}
+
+.redo > svg {
+  transform: scaleX(-1);
+}
+
+.gutter {
+  display: grid;
+  grid-template-rows: 30px 64px;
+  row-gap: 6px;
+  align-content: start;
+  padding: 6px 0 0 14px;
+  color: var(--n-ink-3);
+}
+
+.laneIcon {
+  display: flex;
+  align-items: center;
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px 0 6px;
+  color: var(--n-ink-3);
+}
+
+.zoom > :last-child {
+  flex: 1;
+}
+
+.lanes {
+  grid-row: 1 / span 3;
+  grid-column: 2;
+  min-width: 0;
+  padding: 0 14px 10px 0;
+}
+
+.area {
+  position: relative;
+  display: grid;
+  grid-template-rows: 40px 30px 64px minmax(24px, 1fr);
+  row-gap: 6px;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.ruler {
+  position: relative;
+  margin-bottom: -6px;
+  border-bottom: 1px solid var(--s-line);
+}
+
+.ruler span {
+  position: absolute;
+  bottom: 6px;
+  padding-left: 5px;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  font: var(--n-type-caption);
+  font-variant-numeric: tabular-nums;
+  line-height: 12px;
+  color: var(--n-ink-3);
+}
+
+.text,
+.wave {
+  position: relative;
+}
+
+.line {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  overflow: hidden;
+  margin-left: 1px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: #4a3a1c;
+  color: #ffe3b3;
+  font: var(--n-type-caption);
+  line-height: 26px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.strip {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--s-raised);
+}
+
+.tile {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  border-right: 2px solid var(--s-panel-solid);
+}
+
+.tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: arrive var(--n-t-base) var(--n-ease-out);
+}
+
+.wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.85;
+}
+
+.wave i {
+  flex: 1;
+  border-radius: 1px;
+  background: #3fae8f;
+}
+
+.range {
+  position: absolute;
+  top: 40px;
+  bottom: 0;
+  border-radius: 6px;
+  background: rgba(41, 151, 255, 0.12);
+  box-shadow: inset 0 0 0 2px var(--n-accent);
+  cursor: grab;
+  transition: background var(--n-t-quick) var(--n-ease-out);
+}
+
+.range:hover {
+  background: rgba(41, 151, 255, 0.18);
+}
+
+.range:active {
+  cursor: grabbing;
+}
+
+.rangeLabel {
+  position: absolute;
+  top: 4px;
+  left: 14px;
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: var(--n-accent);
+  color: #04182c;
+  font: var(--n-type-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  background: var(--n-accent);
+  cursor: ew-resize;
+}
+
+.edge::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 2px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 1px;
+  background: rgba(4, 24, 44, 0.55);
+}
+
+.edge[data-edge="from"] {
+  left: 0;
+  border-radius: 6px 0 0 6px;
+}
+
+.edge[data-edge="to"] {
+  right: 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.hover {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+.hover span {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  font: var(--n-type-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--n-ink-2);
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.stamp {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: #fff;
+  color: #0c0c0e;
+  font: var(--n-type-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile img {
+    animation: none;
+  }
+}

@@ -6,6 +6,7 @@ import { equalPower, FADE_MS, raisedCosine } from "./curves";
 import { AudioGraph, type EqState, type GraphDeps } from "./graph";
 import type { MovingSoundState } from "./movingSound";
 import { PV_FRAME, PV_HOP } from "./phaseVocoder";
+import type { SoundEffects } from "./renderOffline";
 import type { SpectrumListener } from "./spectrum";
 
 export const PREPARE_LEAD_MS = 15_000;
@@ -444,6 +445,13 @@ export class DeckController implements DeckPort {
       this.graph?.setMovingSound(state);
     },
     currentFadeMs: () => this.lastFadeMs,
+    effects: (trackId: string): SoundEffects => ({
+      eq: this.eq,
+      bands: this.deps.graph.bands,
+      reverb: { ...this.reverb },
+      tempo: { ...this.tempo },
+      gainDb: this.trackGains.get(trackId) ?? 0,
+    }),
     pitchAvailable: () => this.graph?.pitchAvailable ?? true,
   };
 

@@ -22,6 +22,8 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 If you distribute a modified version, or let people use it over a network, you must offer them the complete source of your version under the AGPL-3.0-or-later. That includes your changes and any code you combine with Nuvo into one work. Keep the copyright and licence notices.
 
+If your version contains the visual engine (`src/visual`), keep the line "Visual engine by Denys Ziuziuk and contributors · nuvo.quest" in its About screen. This is the one additional term under section 7(b), set out in `NOTICE`.
+
 ## What the licence does not cover
 
 - Closed-source use is not licensed. You cannot ship Nuvo, or a work built on Nuvo code, as a proprietary product.

@@ -227,12 +227,12 @@ async fn run(state: &AppState, data: &Unlocked, track_id: &str, source: &'static
     data.db.call(move |c| lyrics_words::put(c, &id, source, &timing, now_ms())).await.map_err(|_| "failed")
 }
 
-enum Audio {
+pub(crate) enum Audio {
     File(PathBuf),
     Bytes { bytes: Vec<u8>, format: Option<&'static str> },
 }
 
-async fn audio_source(data: &Unlocked, track_id: &str, stop: &AtomicBool) -> Result<Audio, &'static str> {
+pub(crate) async fn audio_source(data: &Unlocked, track_id: &str, stop: &AtomicBool) -> Result<Audio, &'static str> {
     if track_id.starts_with("local:") {
         let id = track_id.to_string();
         let file = data.db.call(move |c| local::file_for(c, &id)).await.ok().flatten().ok_or("no_audio")?;

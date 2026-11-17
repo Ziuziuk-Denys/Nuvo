@@ -5,6 +5,7 @@ import { useTranslation, type TFunction } from "../../ports/i18n";
 import { usePlayerStore } from "../../ports/player";
 import { CloseToTrayRow, MenuEntryRow } from "./CloseToTrayRow";
 import { Segmented, SettingGroup, SettingRow, Switch } from "./controls";
+import { setVisualSettings, useVisualSettings } from "../../visual/settings";
 import { StatsPauseRow } from "./StatsPauseRow";
 import { WordTimingRow } from "./WordTimingRow";
 
@@ -22,6 +23,7 @@ const DOUBLE_CLICK = "settings.track_double_click";
 const START_CONTEXT = "settings.default_playback_context";
 const AUTOPLAY = "settings.autoplay_similar";
 const LYRICS_HIGHLIGHT = "settings.lyrics_highlight";
+const VISUAL_PLAYER = "settings.visual_player";
 
 export function PlaybackSection(): JSX.Element {
   const { t } = useTranslation();
@@ -40,6 +42,8 @@ export function PlaybackSection(): JSX.Element {
   const doubleClick = rowText(t, DOUBLE_CLICK);
   const startContext = rowText(t, START_CONTEXT);
   const lyricsHighlight = rowText(t, LYRICS_HIGHLIGHT);
+  const visualPlayer = rowText(t, VISUAL_PLAYER);
+  const visual = useVisualSettings();
   const highlightMode = useHighlightMode();
 
   return (
@@ -86,6 +90,11 @@ export function PlaybackSection(): JSX.Element {
           }
         />
         <WordTimingRow />
+        <SettingRow
+          {...visualPlayer}
+          explained
+          control={<Switch checked={visual.enabled} label={visualPlayer.title} onChange={(enabled) => setVisualSettings({ enabled })} />}
+        />
       </SettingGroup>
       <SettingGroup label={t("settings.page.computer")}>
         <CloseToTrayRow />

@@ -1,0 +1,34 @@
+.field {
+  --blur: 32px;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--s-bg);
+  transition: background-color 380ms ease-out;
+  pointer-events: none;
+}
+
+.cover {
+  position: absolute;
+  inset: 0 0 50%;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.9) 45%, transparent 100%);
+}
+
+/* the picture overhangs by three blur radii so the blur never fades its edges */
+.cover > canvas {
+  position: absolute;
+  inset: calc(-3 * var(--blur));
+  width: calc(100% + 6 * var(--blur));
+  height: calc(100% + 6 * var(--blur));
+  opacity: 0.6;
+  filter: blur(var(--blur)) saturate(130%);
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .cover {
+    display: none;
+  }
+}

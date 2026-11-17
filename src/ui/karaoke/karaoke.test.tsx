@@ -1,6 +1,6 @@
 import { act, type JSX } from "react";
 import { createRoot } from "react-dom/client";
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import look from "./look.json";
 import { RISE_CURVE, bezierY } from "./rise";
 
@@ -98,6 +98,7 @@ vi.mock("../ports/lyrics", () => ({
     texts.some((text) => /[가-힣]/.test(text)) ? (text: string) => text : texts.some((text) => /[ぁ-ん]/.test(text)) ? romanizeKana : null,
 }));
 vi.mock("./backdrop/Backdrop", () => ({ Backdrop: () => null }));
+vi.mock("../visual/Stage", () => ({ Stage: () => null }));
 vi.mock("../ports/wordTiming", () => ({
   useWordTiming: () => timing.view,
   useAutoWordTiming: timing.auto,
@@ -123,6 +124,7 @@ vi.mock("./LyricsPane", () => ({
 import { setHighlightMode } from "./highlightMode";
 import { Karaoke } from "./Karaoke";
 import { KaraokeOverlay } from "./KaraokeOverlay";
+import { setVisualSettings } from "../visual/settings";
 
 function mount(node: JSX.Element) {
   const host = document.createElement("div");
@@ -137,6 +139,10 @@ function mount(node: JSX.Element) {
     },
   };
 }
+
+beforeEach(() => {
+  setVisualSettings({ chosen: true });
+});
 
 afterEach(() => {
   vi.useRealTimers();
@@ -185,6 +191,15 @@ describe("karaoke view", () => {
     for (const name of ["ui.karaoke.seek", "ui.karaoke.volume"]) expect(view.host.querySelector(`[role=slider][aria-label="${name}"]`), name).not.toBeNull();
     expect(view.host.querySelector("[data-theme=dark]")).not.toBeNull();
     view.unmount();
+  });
+
+  it("a song with no lyrics says so plainly over the scene", () => {
+    current = { id: "t", title: "Song", artists: "Ann", coverUrl: "" };
+    act(() => setVisualSettings({ chosen: true, enabled: true, stage: true, toured: true }));
+    const view = mount(<Karaoke onClose={() => undefined} />);
+    expect(view.host.querySelector("[role=status]")?.textContent).toBe("visual.stage.no_lyrics");
+    view.unmount();
+    act(() => setVisualSettings({ enabled: false, stage: false }));
   });
 
   it("no lyrics: one quiet line in the lyric column, no lines; found lyrics show the lines", () => {

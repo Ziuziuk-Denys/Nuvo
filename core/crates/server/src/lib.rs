@@ -59,6 +59,7 @@ pub fn router(state: AppState) -> Router {
         .merge(routes::stats::routes())
         .merge(routes::downloads::routes())
         .merge(routes::word_timing::routes())
+        .merge(routes::clips::routes())
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))
         .layer(middleware::from_fn_with_state(state.clone(), auth::require_token))
         .with_state(state)

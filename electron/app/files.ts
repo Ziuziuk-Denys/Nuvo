@@ -48,7 +48,7 @@ export function validateSaveDocument(raw: unknown): SaveDocumentRequest | null {
   return null;
 }
 
-export function documentName(title: string, format: "m3u8" | "csv" | "json"): string {
+export function documentName(title: string, format: "m3u8" | "csv" | "json" | "mp4"): string {
   // eslint-disable-next-line no-control-regex
   const clean = title
     .replace(/[\u0000-\u001f/\\:*?"<>|]/g, "_")

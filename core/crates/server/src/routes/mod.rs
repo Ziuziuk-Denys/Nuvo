@@ -27,3 +27,4 @@ pub mod stats;
 pub mod export;
 pub mod downloads;
 pub mod word_timing;
+pub mod clips;
