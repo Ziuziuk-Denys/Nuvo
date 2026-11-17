@@ -4,7 +4,7 @@ use std::path::Path;
 
 use nuvo_contracts::CreatePlaylist;
 use nuvo_store::settings::{self, Secrets};
-use nuvo_store::{Connection, MIGRATIONS, StoreError, convert_database, is_plain_database, library, open_connection, open_library, playlists};
+use nuvo_store::{Connection, MIGRATIONS, StoreError, convert_database, library, open_connection, open_library, opens_with, playlists};
 use serde_json::json;
 
 const MASTER: [u8; 32] = [6u8; 32];
@@ -31,11 +31,11 @@ fn an_encrypted_library_turns_plain_with_everything_in_it() {
     let path = dir.path().join("library.db");
     let backups = dir.path().join("backups");
     fill(&open_library(&path, Some(&MASTER), &backups).unwrap());
-    assert!(!is_plain_database(&path));
+    assert!(!opens_with(&path, None) && opens_with(&path, Some(&MASTER)));
 
     convert_database(&path, Some(&MASTER), None, &backups).unwrap();
 
-    assert!(is_plain_database(&path));
+    assert!(opens_with(&path, None) && !opens_with(&path, Some(&MASTER)));
     assert_eq!(header(&path), b"SQLite format 3\0");
     let conn = open_library(&path, None, &backups).unwrap();
     check(&conn);
@@ -51,11 +51,11 @@ fn a_plain_library_turns_encrypted_with_everything_in_it() {
     let path = dir.path().join("library.db");
     let backups = dir.path().join("backups");
     fill(&open_library(&path, None, &backups).unwrap());
-    assert!(is_plain_database(&path));
+    assert!(opens_with(&path, None) && !opens_with(&path, Some(&MASTER)));
 
     convert_database(&path, None, Some(&MASTER), &backups).unwrap();
 
-    assert!(!is_plain_database(&path));
+    assert!(!opens_with(&path, None) && opens_with(&path, Some(&MASTER)));
     check(&open_library(&path, Some(&MASTER), &backups).unwrap());
     assert!(matches!(open_library(&path, None, &backups), Err(StoreError::WrongKey)));
 }
@@ -106,4 +106,20 @@ fn a_plain_library_without_secrets_never_asks_for_the_key() {
     let sealed = Secrets::sealed(|| panic!("no secret was read or written"));
     assert_eq!(settings::get_secret(&conn, &sealed, settings::LASTFM_SESSION_KEY).unwrap(), None);
     settings::reseal(&conn, &Secrets::Clear, &sealed).unwrap();
+}
+
+#[test]
+fn an_encrypted_library_left_with_its_wal_is_known_as_encrypted_and_converts() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("library.db");
+    let backups = dir.path().join("backups");
+    let conn = open_library(&path, Some(&MASTER), &backups).unwrap();
+    fill(&conn);
+    // the daemon leaves through process::exit, which closes nothing
+    std::mem::forget(conn);
+
+    assert!(!opens_with(&path, None));
+    assert!(opens_with(&path, Some(&MASTER)));
+    convert_database(&path, Some(&MASTER), None, &backups).unwrap();
+    check(&open_library(&path, None, &backups).unwrap());
 }

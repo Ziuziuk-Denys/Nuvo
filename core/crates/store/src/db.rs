@@ -1,11 +1,10 @@
 use std::fs;
-use std::io::Read;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use nuvo_crypto::{MasterKey, derive_key, to_hex};
 use rusqlite::functions::FunctionFlags;
-use rusqlite::{Connection, ErrorCode, params};
+use rusqlite::{Connection, ErrorCode, OpenFlags, params};
 
 use crate::{StoreError, now_ms, schema::MIGRATIONS};
 
@@ -29,9 +28,15 @@ fn key_literal(db_key: Option<&[u8; 32]>) -> String {
     db_key.map(|key| format!("x'{}'", to_hex(key))).unwrap_or_default()
 }
 
-pub fn is_plain_database(path: &Path) -> bool {
-    let mut header = [0u8; 16];
-    fs::File::open(path).and_then(|mut file| file.read_exact(&mut header)).is_ok() && &header == b"SQLite format 3\0"
+// Decided by opening the file read-only, so a wrong guess changes nothing; a library always holds a schema
+pub fn opens_with(path: &Path, master: Option<&MasterKey>) -> bool {
+    let Ok(conn) = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX) else {
+        return false;
+    };
+    if master.is_some() && conn.execute_batch(&format!("PRAGMA key = \"{}\";", key_literal(master.map(db_key).as_ref()))).is_err() {
+        return false;
+    }
+    conn.query_row("SELECT count(*) FROM sqlite_master", [], |row| row.get::<_, i64>(0)).is_ok_and(|tables| tables > 0)
 }
 
 /// Rewrites library.db from one master key to another, or to or from none; the old file goes to the backups first.

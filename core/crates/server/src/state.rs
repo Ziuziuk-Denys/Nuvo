@@ -17,7 +17,7 @@ use nuvo_net::Net;
 use nuvo_recognize::{Pace, Shazam};
 use nuvo_soundcloud::{Limits, SoundCloud};
 use nuvo_store::settings::Secrets;
-use nuvo_store::{Db, StoreError, cache_index, convert_database, is_plain_database, now_ms, open_library, settings};
+use nuvo_store::{Db, StoreError, cache_index, convert_database, now_ms, open_library, opens_with, settings};
 use reqwest::Url;
 use serde_json::json;
 use tokio::sync::{Mutex, Notify};
@@ -161,7 +161,7 @@ fn load_or_create(keystore: &dyn KeyStore) -> Result<MasterKey, KeyStoreError> {
 }
 
 fn holds_sealed_files(paths: &Paths) -> bool {
-    (paths.db.exists() && !is_plain_database(&paths.db))
+    (paths.db.exists() && !opens_with(&paths.db, None))
         || AudioCache::plain(paths.audio.clone()).other_format_present()
         || AudioCache::plain(covers_dir(paths)).other_format_present()
 }
@@ -183,8 +183,13 @@ fn open(paths: &Paths, edition: Edition, master: Option<MasterKey>, keystore: &A
             (None, files(audio), files(covers))
         }
     };
-    let sealed_db = paths.db.exists() && !is_plain_database(&paths.db);
-    let mut db_master = if sealed_db { master } else { None };
+    let sealed_db = paths.db.exists() && (master.is_some_and(|master| opens_with(&paths.db, Some(&master))) || !opens_with(&paths.db, None));
+    // a new library starts in the edition's own format
+    let mut db_master = match (paths.db.exists(), sealed_db) {
+        (false, _) => wanted,
+        (true, true) => master,
+        (true, false) => None,
+    };
     if paths.db.exists() && sealed_db != wanted.is_some() && (!sealed_db || master.is_some()) {
         match convert_database(&paths.db, db_master.as_ref(), wanted.as_ref(), &paths.backups) {
             Ok(()) => db_master = wanted,
@@ -363,13 +368,13 @@ impl AppState {
                 }
                 Err(err) => return Err(err.into()),
             },
-            Ok(None) if paths.db.exists() && !is_plain_database(&paths.db) => None,
+            Ok(None) if paths.db.exists() && !opens_with(&paths.db, None) => None,
             Ok(None) => {
                 let master: MasterKey = random_bytes();
                 self.keystore.save(&master)?;
                 Some(open(paths, self.edition, Some(master), &self.keystore)?)
             }
-            Err(err) if paths.db.exists() && !is_plain_database(&paths.db) => {
+            Err(err) if paths.db.exists() && !opens_with(&paths.db, None) => {
                 tracing::warn!(%err, "secret service unavailable, starting locked");
                 None
             }

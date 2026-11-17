@@ -5,7 +5,7 @@ use nuvo_crypto::{KeyStore, KeyStoreError, MasterKey, MemoryKeyStore, phrase_fro
 use nuvo_server::{AppState, Edition};
 use nuvo_store::cache_index::{self, CacheEntry};
 use nuvo_contracts::CreatePlaylist;
-use nuvo_store::{is_plain_database, library, lyrics_cache, playlists, settings};
+use nuvo_store::{library, lyrics_cache, opens_with, playlists, settings};
 use serde_json::json;
 use tempfile::TempDir;
 
@@ -113,7 +113,7 @@ async fn a_new_plain_library_never_touches_the_keyring() {
     core.state.data().unwrap().db.call(move |c| library::like(c, "t1", Some(one), 1)).await.unwrap();
     store_audio(&core.state).await;
 
-    assert!(is_plain_database(&core.state.paths.db));
+    assert!(opens_with(&core.state.paths.db, None));
     assert_eq!(files(&core.state.paths.audio, "bin"), 1);
     assert_eq!(common::call(&core.app, "GET", "/v1/system/key-storage", None).await.1["protection"], "none");
     assert_eq!(common::call(&core.app, "GET", "/v1/recovery/phrase", None).await.0, StatusCode::NOT_FOUND);
@@ -140,7 +140,7 @@ async fn an_encrypted_library_opens_in_the_plain_edition_with_everything_in_it()
     let core = boot(dir, Edition::Plain, MemoryKeyStore::with_key(KEY)).await;
 
     check(&core.state).await;
-    assert!(is_plain_database(&core.state.paths.db));
+    assert!(opens_with(&core.state.paths.db, None));
     assert_eq!((files(&core.state.paths.audio, "lac"), files(&core.state.paths.audio, "bin")), (0, 1));
     assert!(!raw_session(&core.state).contains("session-123"), "the token must stay sealed");
     let dir = close(core);
@@ -158,7 +158,7 @@ async fn a_plain_library_opens_in_the_encrypted_edition_with_everything_in_it() 
     let core = boot(dir, Edition::Encrypted, MemoryKeyStore::with_key(KEY)).await;
 
     check(&core.state).await;
-    assert!(!is_plain_database(&core.state.paths.db));
+    assert!(!opens_with(&core.state.paths.db, None));
     assert_eq!((files(&core.state.paths.audio, "lac"), files(&core.state.paths.audio, "bin")), (1, 0));
     let data = core.state.data().unwrap();
     let inside = data.db.call(|c| settings::get(c, settings::LASTFM_SESSION_KEY)).await.unwrap();
@@ -178,7 +178,7 @@ async fn a_plain_edition_without_the_key_starts_locked_and_the_phrase_converts_t
     converted(&core.state.data().unwrap()).await;
 
     check(&core.state).await;
-    assert!(is_plain_database(&core.state.paths.db));
+    assert!(opens_with(&core.state.paths.db, None));
     assert_eq!(files(&core.state.paths.audio, "lac"), 0);
 }
 
@@ -208,7 +208,7 @@ async fn a_conversion_cut_short_finishes_on_the_next_start() {
     let data = core.state.data().unwrap();
     assert_eq!(data.cache.read_range("t2", 0, 1).await.unwrap(), b"t2");
     assert_eq!(data.cache.read_range("t3", 0, 1).await.unwrap(), b"t3");
-    assert!(is_plain_database(&paths.db));
+    assert!(opens_with(&paths.db, None));
     assert!(!paths.db.with_extension("next").exists());
     let names: Vec<String> = std::fs::read_dir(&paths.audio).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
     assert!(names.iter().all(|n| n.ends_with(".bin")), "{names:?}");
@@ -225,13 +225,13 @@ async fn a_library_that_cannot_be_rewritten_opens_as_it_is_and_converts_later() 
 
     let core = boot(dir, Edition::Plain, MemoryKeyStore::with_key(KEY)).await;
     check(&core.state).await;
-    assert!(!is_plain_database(&paths.db), "untouched while it cannot be rewritten");
+    assert!(!opens_with(&paths.db, None), "untouched while it cannot be rewritten");
     let dir = close(core);
 
     std::fs::remove_dir(&blocker).unwrap();
     let core = boot(dir, Edition::Plain, MemoryKeyStore::with_key(KEY)).await;
     check(&core.state).await;
-    assert!(is_plain_database(&paths.db));
+    assert!(opens_with(&paths.db, None));
     assert!(!raw_session(&core.state).contains("session-123"));
 }
 
@@ -281,6 +281,7 @@ async fn benchmark_an_encrypted_library_turning_plain() {
         data.db.call(move |c| cache_index::upsert(c, &entry, 1)).await.unwrap();
     }
     let db_bytes = std::fs::metadata(&first.state.paths.db).unwrap().len();
+    assert!(!opens_with(&first.state.paths.db, None), "the benchmark starts from an encrypted library");
     drop(data);
     let dir = close(first);
 
@@ -297,7 +298,7 @@ async fn benchmark_an_encrypted_library_turning_plain() {
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     }
     let all = started.elapsed();
-    assert!(is_plain_database(&core.state.paths.db));
+    assert!(opens_with(&core.state.paths.db, None));
     assert_eq!(data.db.call(library::liked_ids).await.unwrap().len(), 5000);
     println!(
         "library.db {:.1} MB converted and opened in {opened:?}; ready in {ready:?}; first 1 MB read before conversion {first_read:?}; {megabytes} MB of audio converted in {:?} ({:.0} MB/s)",
@@ -305,4 +306,30 @@ async fn benchmark_an_encrypted_library_turning_plain() {
         all - ready,
         megabytes as f64 / (all - ready).as_secs_f64()
     );
+}
+
+#[tokio::test]
+async fn an_encrypted_library_left_with_its_wal_converts_and_keeps_everything() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = nuvo_server::paths::Paths::under(dir.path());
+    let conn = nuvo_store::open_library(&paths.db, Some(&KEY), &paths.backups).unwrap();
+    let one = json!({"id": "t1", "title": "One", "artists": [{"id": "a", "name": "A"}], "durationMs": 1000});
+    library::like(&conn, "t1", Some(one), 1).unwrap();
+    std::mem::forget(conn);
+
+    let core = boot(dir, Edition::Encrypted, MemoryKeyStore::with_key([1u8; 32])).await;
+    assert!(core.state.is_locked(), "a wrong key never turns into an empty library");
+    let dir = close(core);
+
+    let core = boot(dir, Edition::Plain, MemoryKeyStore::with_key(KEY)).await;
+    assert_eq!(core.state.data().unwrap().db.call(library::liked_ids).await.unwrap(), vec!["t1".to_string()]);
+    assert!(opens_with(&paths.db, None));
+}
+
+#[tokio::test]
+async fn a_new_library_starts_in_its_edition_format() {
+    let encrypted = boot(tempfile::tempdir().unwrap(), Edition::Encrypted, MemoryKeyStore::with_key(KEY)).await;
+    assert!(!opens_with(&encrypted.state.paths.db, None) && opens_with(&encrypted.state.paths.db, Some(&KEY)));
+    let plain = boot(tempfile::tempdir().unwrap(), Edition::Plain, NoKeyring).await;
+    assert!(opens_with(&plain.state.paths.db, None));
 }
