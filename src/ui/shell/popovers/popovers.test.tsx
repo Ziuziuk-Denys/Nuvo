@@ -44,6 +44,8 @@ const mocks = vi.hoisted(() => {
     byArtist: {} as Record<string, unknown>,
     tempoByTrack: {} as Record<string, unknown>,
     tempoByArtist: {} as Record<string, unknown>,
+    moving: { on: false, preset: "8d", speed: "medium" },
+    setMoving: vi.fn(),
     setEnabled: vi.fn(),
     setGains: vi.fn(),
     applyPreset: vi.fn(),
@@ -88,12 +90,14 @@ vi.mock("../../ports/player", () => ({
 vi.mock("../../ports/sound", async () => {
   const eq = await vi.importActual<typeof import("@/features/sound/lib/eq")>("@/features/sound/lib/eq");
   const tempo = await vi.importActual<typeof import("@/features/sound/lib/tempo")>("@/features/sound/lib/tempo");
+  const moving = await vi.importActual<typeof import("@/engine/audio/movingSound")>("@/engine/audio/movingSound");
   const store = Object.assign((select: (state: typeof mocks.sound) => unknown) => select(mocks.sound), {
     getState: () => mocks.sound,
   });
   return {
     ...eq,
     ...tempo,
+    ...moving,
     useSoundStore: store,
     presetNameFor: (_gains: number[], preferred: string) => preferred,
     profileGains: (profile: unknown) => (Array.isArray(profile) ? profile : mocks.sound.gains),
@@ -275,6 +279,21 @@ describe("Speed", () => {
     mount(<SoundPopover tab="speed" onTab={() => undefined} />);
     expect(slider("player.reverb_amount")!.getAttribute("aria-valuetext")).toBe("40%");
     mocks.player.reverbLevel = 0.35;
+  });
+
+  it("turns moving sound on and shows its path and speed only while on", () => {
+    mount(<SoundPopover tab="speed" onTab={() => undefined} />);
+    expect(button("16D")).toBeUndefined();
+    click(button("sound.moving.title")!);
+    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ on: true });
+    mocks.sound.moving = { on: true, preset: "8d", speed: "medium" };
+    mount(<SoundPopover tab="speed" onTab={() => undefined} />);
+    expect(button("8D")!.getAttribute("aria-pressed")).toBe("true");
+    click(button("16D")!);
+    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ preset: "16d" });
+    click(button("sound.moving.speeds.fast")!);
+    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ speed: "fast" });
+    mocks.sound.moving = { on: false, preset: "8d", speed: "medium" };
   });
 
   it("remembers the tempo for the track", () => {

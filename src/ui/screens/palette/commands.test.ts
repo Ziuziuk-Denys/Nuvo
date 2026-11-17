@@ -153,14 +153,16 @@ describe("sound commands", () => {
     "sound.presets.bass_boost": ["Bass boost", "Усиление басов"],
     "sound.tempo.slowed": ["Slowed", "Замедленно"],
     "player.speed": ["Speed", "Скорость"],
+    "sound.moving.title": ["Moving sound", "Движущийся звук"],
   };
   const t = (key: string, vars?: Record<string, string | number>) => (vars ? `${key}(${Object.values(vars).join(",")})` : (SOUND[key]?.[0] ?? key));
-  const build = (eqOn: boolean) => {
-    const deps = { toggleEq: vi.fn(), applyEq: vi.fn(), applyTempo: vi.fn() };
+  const build = (eqOn: boolean, movingOn = false) => {
+    const deps = { toggleEq: vi.fn(), toggleMoving: vi.fn(), applyEq: vi.fn(), applyTempo: vi.fn() };
     const commands = soundCommands({
       t,
       translations: (key) => SOUND[key] ?? [key],
       eqOn,
+      movingOn,
       eqPresets: ["bass_boost"],
       ownPresets: ["Car"],
       tempoPresets: [{ key: "slowed", labelKey: "sound.tempo.slowed" }],
@@ -173,6 +175,7 @@ describe("sound commands", () => {
     const { commands, toggleEq, applyEq, applyTempo } = build(false);
     expect(commands.map((command) => [command.id, command.title])).toEqual([
       ["eq:toggle", "ui.palette.eq_on"],
+      ["moving:toggle", "ui.palette.moving_on"],
       ["eq:bass_boost", "ui.palette.eq_preset(Bass boost)"],
       ["eq:Car", "ui.palette.eq_preset(Car)"],
       ["tempo:slowed", "ui.palette.speed_preset(Slowed)"],
@@ -185,5 +188,14 @@ describe("sound commands", () => {
     expect(applyEq.mock.calls).toEqual([["bass_boost"], ["Car"]]);
     expect(applyTempo).toHaveBeenCalledWith("slowed");
     expect(build(true).commands[0].title).toBe("ui.palette.eq_off");
+  });
+
+  it("switches moving sound, found by its name or a preset", () => {
+    const { commands, toggleMoving } = build(false);
+    expect(rankCommands(commands, "движущ").map((command) => command.id)).toEqual(["moving:toggle"]);
+    expect(rankCommands(commands, "8d").map((command) => command.id)).toEqual(["moving:toggle"]);
+    commands.find((command) => command.id === "moving:toggle")!.run();
+    expect(toggleMoving).toHaveBeenCalledOnce();
+    expect(build(false, true).commands[1].title).toBe("ui.palette.moving_off");
   });
 });

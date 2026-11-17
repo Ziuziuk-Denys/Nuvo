@@ -13,6 +13,7 @@ export {
   type EqGains,
 } from "@/features/sound/lib/eq";
 export { TEMPO_PRESETS, presetOf, type TempoPresetKey } from "@/features/sound/lib/tempo";
+export { MOVING_PRESETS, TURN_SECONDS, type MovingPreset, type MovingSpeed } from "@/engine/audio/movingSound";
 export { applyTempo, readPlayerTempo } from "@/features/sound/useTempoSync";
 export { selectArtist } from "@/features/sound/useSoundSync";
 export { useAbLoopStore } from "@/features/sound/useAbLoop";

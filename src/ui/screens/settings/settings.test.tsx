@@ -88,6 +88,8 @@ const mocks = vi.hoisted(() => {
       setNormalization: vi.fn(),
       globalTempo: tempo.normal,
       setGlobalTempo: vi.fn(),
+      moving: { on: false, preset: "8d", speed: "medium" },
+      setMoving: vi.fn(),
     }),
     custom: store({
       preset: "nuvo",
@@ -157,6 +159,8 @@ vi.mock("../../ports/player", () => ({
 vi.mock("../../ports/sound", () => ({
   useSoundStore: mocks.sound,
   TEMPO_PRESETS: mocks.tempo,
+  MOVING_PRESETS: { "4d": {}, "8d": {}, "16d": {} },
+  TURN_SECONDS: { slow: 16, medium: 8, fast: 4 },
   presetOf: (value: { rate: number }) => (value.rate === 1 ? "normal" : "slowed"),
 }));
 vi.mock("../../ports/settings", () => ({
@@ -412,6 +416,13 @@ describe("each setting writes through its port", () => {
     expect(mocks.player.getState().setKeepSpeedAcrossTracks).toHaveBeenCalledWith(false);
     click(byText("Slowed"));
     expect(mocks.sound.getState().setGlobalTempo).toHaveBeenCalledWith(mocks.tempo.slowed);
+    expect(document.body.textContent).toContain("sound.moving.hint");
+    click(switchNamed("sound.moving.title"));
+    expect(mocks.sound.getState().setMoving).toHaveBeenCalledWith({ on: true });
+    click(byText("16D"));
+    expect(mocks.sound.getState().setMoving).toHaveBeenCalledWith({ preset: "16d" });
+    click(byText("sound.moving.speeds.fast"));
+    expect(mocks.sound.getState().setMoving).toHaveBeenCalledWith({ speed: "fast" });
   });
 
   it("appearance: preset, mode, accent and language", () => {

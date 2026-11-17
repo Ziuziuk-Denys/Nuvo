@@ -94,8 +94,25 @@ describe("graph", () => {
     expect(filters[10].type).toBe("highpass");
     const analyser = ctx.ofType("analyser")[0] as unknown as { fftSize: number; smoothingTimeConstant: number };
     expect(analyser).toMatchObject({ fftSize: 4096, smoothingTimeConstant: 0.8 });
-    expect(ctx.ofType("convolver")).toHaveLength(1);
+    expect(ctx.ofType("convolver")).toHaveLength(2);
     expect(ctx.ofType("worklet")).toHaveLength(0);
+  });
+
+  it("moving sound sits between the master and the output, the analyser hears the master, and a rebuild keeps the setting", async () => {
+    const s = setup();
+    s.decks.soundBus.setMovingSound({ on: true, preset: "16d", speed: "fast" });
+    await playing(s);
+    const ctx = s.context;
+    const analyser = ctx.ofType("analyser").at(-1)!;
+    const master = gains(ctx).find((g) => g.outputs.includes(analyser))!;
+    const stageInput = master.outputs.find((node) => node !== analyser)!;
+    const merger = ctx.ofType("merger")[0];
+    expect(merger.outputs[0].outputs).toEqual([ctx.destination]);
+    expect(stageInput.outputs).toHaveLength(2);
+    expect(master.outputs).not.toContain(ctx.destination);
+    s.decks.rebuildGraph();
+    const [, sweep] = ctx.ofType("oscillator").slice(-2) as unknown as Array<{ frequency: FakeParam }>;
+    expect(sweep.frequency.last("target")?.value).toBeCloseTo(0.25, 9);
   });
 
   it("a spectrum listener subscribed before the first play gets its analyser on the graph, and a rebuild keeps it", async () => {

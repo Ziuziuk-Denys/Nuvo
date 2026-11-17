@@ -21,6 +21,7 @@ export function useSoundSync(): void {
   const autoGain = useSoundStore((state) => state.autoGain);
   const bypass = useSoundStore((state) => state.bypass);
   const normalization = useSoundStore((state) => state.normalization);
+  const moving = useSoundStore((state) => state.moving);
 
   useEffect(() => {
     const profile = resolveProfile(trackId, artist, byTrack, byArtist, gains);
@@ -32,6 +33,8 @@ export function useSoundSync(): void {
       bypass,
     });
   }, [trackId, artist, eqEnabled, gains, customPresets, byTrack, byArtist, autoGain, bypass]);
+
+  useEffect(() => soundActions.setMovingSound(moving), [moving]);
 
   // Read once per track start: a measurement landing mid-track would be an audible level step
   useEffect(() => {

@@ -1,7 +1,16 @@
 import type { JSX } from "react";
 import { useTranslation } from "../../ports/i18n";
 import { playerEngine, usePlayerStore } from "../../ports/player";
-import { presetOf, TEMPO_PRESETS, useSoundStore, type TempoPresetKey } from "../../ports/sound";
+import {
+  MOVING_PRESETS,
+  presetOf,
+  TEMPO_PRESETS,
+  TURN_SECONDS,
+  useSoundStore,
+  type MovingPreset,
+  type MovingSpeed,
+  type TempoPresetKey,
+} from "../../ports/sound";
 import { CrossfadeBlock } from "./CrossfadeBlock";
 import { OutputRow } from "./OutputRow";
 import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
@@ -15,6 +24,9 @@ const SPEED_LABELS: Record<TempoPresetKey, string> = {
   nightcore: "sound.tempo.nightcore",
   daycore: "sound.tempo.daycore",
 };
+
+const MOVING_PATHS = Object.keys(MOVING_PRESETS) as MovingPreset[];
+const MOVING_SPEEDS = Object.keys(TURN_SECONDS) as MovingSpeed[];
 
 export function SoundSection(): JSX.Element {
   const { t } = useTranslation();
@@ -97,6 +109,37 @@ export function SoundSection(): JSX.Element {
             value={speed}
             onChange={(key) => sound.setGlobalTempo(TEMPO_PRESETS[key])}
             options={speeds.map((key) => ({ value: key, label: t(SPEED_LABELS[key]) }))}
+          />
+        </SettingBlock>
+      </SettingGroup>
+      <SettingGroup label={t("settings.page.moving")}>
+        <SettingRow
+          title={t("sound.moving.title")}
+          description={t("sound.moving.hint")}
+          titleKey="sound.moving.title"
+          descKey="sound.moving.hint"
+          explained
+          control={<Switch label={t("sound.moving.title")} checked={sound.moving.on} onChange={(on) => sound.setMoving({ on })} />}
+        />
+        <SettingBlock title={t("sound.moving.path")} description={t("sound.moving.path_desc")} titleKey="sound.moving.path" descKey="sound.moving.path_desc">
+          <Segmented
+            label={t("sound.moving.path")}
+            value={sound.moving.preset}
+            onChange={(preset) => sound.setMoving({ preset })}
+            options={MOVING_PATHS.map((key) => ({ value: key, label: key.toUpperCase() }))}
+          />
+        </SettingBlock>
+        <SettingBlock
+          title={t("sound.moving.speed")}
+          description={t("sound.moving.speed_desc")}
+          titleKey="sound.moving.speed"
+          descKey="sound.moving.speed_desc"
+        >
+          <Segmented
+            label={t("sound.moving.speed")}
+            value={sound.moving.speed}
+            onChange={(speed) => sound.setMoving({ speed })}
+            options={MOVING_SPEEDS.map((key) => ({ value: key, label: t(`sound.moving.speeds.${key}`) }))}
           />
         </SettingBlock>
       </SettingGroup>

@@ -1,7 +1,20 @@
 import type { JSX } from "react";
 import { useTranslation } from "../../ports/i18n";
 import { playerEngine, usePlayerState, usePlayerStore } from "../../ports/player";
-import { applyTempo, presetOf, readPlayerTempo, selectArtist, TEMPO_PRESETS, useSoundStore, type ProfileScope, type TempoPresetKey } from "../../ports/sound";
+import {
+  applyTempo,
+  MOVING_PRESETS,
+  presetOf,
+  readPlayerTempo,
+  selectArtist,
+  TEMPO_PRESETS,
+  TURN_SECONDS,
+  useSoundStore,
+  type MovingPreset,
+  type MovingSpeed,
+  type ProfileScope,
+  type TempoPresetKey,
+} from "../../ports/sound";
 import { LabeledSwitch, OptionRow, PanelChip, Ruler } from "./controls";
 import styles from "./popovers.module.css";
 
@@ -14,6 +27,8 @@ const PRESET_LABELS: Record<TempoPresetKey, string> = {
   daycore: "sound.tempo.daycore",
 };
 const PRESET_KEYS = Object.keys(TEMPO_PRESETS) as TempoPresetKey[];
+const MOVING_PATHS = Object.keys(MOVING_PRESETS) as MovingPreset[];
+const MOVING_SPEEDS = Object.keys(TURN_SECONDS) as MovingSpeed[];
 
 const SPEED_RANGE = { min: 0.5, max: 2, step: 0.05, neutral: 1 };
 const PITCH_RANGE = { min: -12, max: 12, step: 0.5, neutral: 0 };
@@ -50,6 +65,8 @@ export function SpeedPanel(): JSX.Element {
   const artist = usePlayerStore(selectArtist);
   const trackRemembered = useSoundStore((state) => trackId !== null && state.tempoByTrack[trackId] !== undefined);
   const artistRemembered = useSoundStore((state) => artist !== null && state.tempoByArtist[artist.toLowerCase()] !== undefined);
+  const moving = useSoundStore((state) => state.moving);
+  const setMoving = useSoundStore((state) => state.setMoving);
 
   const remember = (scope: ProfileScope, key: string | null, on: boolean) => {
     if (key === null) return;
@@ -111,6 +128,31 @@ export function SpeedPanel(): JSX.Element {
               format={percentText}
               onChange={(next) => playerEngine.setReverbLevel(next)}
             />
+          </div>
+        ) : null}
+        <OptionRow
+          title={t("sound.moving.title")}
+          label={t("sound.moving.title")}
+          hint={t("sound.moving.hint")}
+          checked={moving.on}
+          onChange={(on) => setMoving({ on })}
+        />
+        {moving.on ? (
+          <div className={styles.reveal}>
+            <div className={styles.chips} role="group" aria-label={t("sound.moving.path")}>
+              {MOVING_PATHS.map((key) => (
+                <PanelChip key={key} pressed={moving.preset === key} onClick={() => setMoving({ preset: key })}>
+                  {key.toUpperCase()}
+                </PanelChip>
+              ))}
+            </div>
+            <div className={styles.chips} role="group" aria-label={t("sound.moving.speed")}>
+              {MOVING_SPEEDS.map((key) => (
+                <PanelChip key={key} pressed={moving.speed === key} onClick={() => setMoving({ speed: key })}>
+                  {t(`sound.moving.speeds.${key}`)}
+                </PanelChip>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>

@@ -4,6 +4,7 @@ import { pitchStageActive, type Tempo } from "../tempo";
 import type { RepeatMode } from "../types";
 import { equalPower, FADE_MS, raisedCosine } from "./curves";
 import { AudioGraph, type EqState, type GraphDeps } from "./graph";
+import type { MovingSoundState } from "./movingSound";
 import { PV_FRAME, PV_HOP } from "./phaseVocoder";
 import type { SpectrumListener } from "./spectrum";
 
@@ -119,6 +120,7 @@ export class DeckController implements DeckPort {
   private readonly elementListeners = new Set<(element: HTMLMediaElement) => void>();
   private readonly trackGains = new Map<string, number>();
   private eq: EqState | null = null;
+  private moving: MovingSoundState | null = null;
   private reverb = { on: false, level: 0.35 };
   private sleepLevel = 1;
   private candidate: DeckCandidate | null = null;
@@ -182,6 +184,7 @@ export class DeckController implements DeckPort {
     graph.decks[this.activeIndex].transition.gain.value = 1;
     if (this.eq) graph.shapeEq(this.eq);
     graph.setReverb(this.reverb.on, this.reverb.level);
+    if (this.moving) graph.setMovingSound(this.moving);
     graph.setSleepLevel(this.sleepLevel);
     void graph.setPitch(pitchStageActive(this.tempo), this.tempo.semitones);
     for (const deck of this.decks) if (deck.trackId) graph.presetLoudness(deck.index, this.trackGains.get(deck.trackId) ?? 0);
@@ -435,6 +438,10 @@ export class DeckController implements DeckPort {
     setReverb: (on: boolean, level: number) => {
       this.reverb = { on, level };
       this.graph?.setReverb(on, level);
+    },
+    setMovingSound: (state: MovingSoundState) => {
+      this.moving = state;
+      this.graph?.setMovingSound(state);
     },
     currentFadeMs: () => this.lastFadeMs,
     pitchAvailable: () => this.graph?.pitchAvailable ?? true,

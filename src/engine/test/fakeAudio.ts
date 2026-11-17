@@ -95,6 +95,7 @@ export class FakeParam {
 
 export class FakeNode {
   readonly outputs: FakeNode[] = [];
+  readonly paramOutputs: FakeParam[] = [];
   constructor(
     readonly ctx: FakeContext,
     readonly kind: string,
@@ -103,11 +104,13 @@ export class FakeNode {
   }
   connect(target: FakeNode | FakeParam) {
     if (target instanceof FakeNode) this.outputs.push(target);
+    else this.paramOutputs.push(target);
     return target;
   }
   disconnect(target?: FakeNode) {
     if (!target) {
       this.outputs.length = 0;
+      this.paramOutputs.length = 0;
       return;
     }
     const at = this.outputs.indexOf(target);
@@ -155,6 +158,37 @@ export class FakeBiquad extends FakeNode {
   }
 }
 
+export class FakeDelay extends FakeNode {
+  readonly delayTime: FakeParam;
+  constructor(
+    ctx: FakeContext,
+    readonly maxDelayTime: number,
+  ) {
+    super(ctx, "delay");
+    this.delayTime = new FakeParam(ctx, 0);
+  }
+}
+
+export class FakeOscillator extends FakeNode {
+  readonly frequency: FakeParam;
+  wave: { real: Float32Array; imag: Float32Array } | null = null;
+  startedAt: number | null = null;
+  stopped = false;
+  constructor(ctx: FakeContext) {
+    super(ctx, "oscillator");
+    this.frequency = new FakeParam(ctx, 440);
+  }
+  setPeriodicWave(wave: { real: Float32Array; imag: Float32Array }) {
+    this.wave = wave;
+  }
+  start(time = 0) {
+    this.startedAt = time;
+  }
+  stop() {
+    this.stopped = true;
+  }
+}
+
 export class FakeContext {
   readonly nodes: FakeNode[] = [];
   readonly destination: FakeNode;
@@ -185,6 +219,18 @@ export class FakeContext {
   }
   createAnalyser() {
     return new FakeAnalyser(this);
+  }
+  createDelay(maxDelayTime = 1) {
+    return new FakeDelay(this, maxDelayTime);
+  }
+  createChannelMerger() {
+    return new FakeNode(this, "merger");
+  }
+  createOscillator() {
+    return new FakeOscillator(this);
+  }
+  createPeriodicWave(real: Float32Array, imag: Float32Array) {
+    return { real, imag };
   }
   createConvolver() {
     const node = new FakeNode(this, "convolver") as FakeNode & { buffer: unknown; normalize: boolean };
