@@ -176,7 +176,7 @@ export function createStage(canvas: GlCanvas): Stage | null {
   function advance(timeMs: number, features: Features): number {
     const delta = lastMs === null ? 1000 / 60 : Math.max(0, Math.min(250, timeMs - lastMs));
     lastMs = timeMs;
-    if (features.onset === 1) {
+    if (features.onset === 1 && delta > 0) {
       cuts += 1;
       cutAtMs = timeMs;
     }

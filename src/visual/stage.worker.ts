@@ -5,7 +5,8 @@ import { DISPLAY_LEAD_MS, paint } from "./paint";
 import { DEFAULT_PALETTE } from "./render/palette";
 import { SHADERS } from "./render/shaders/library";
 import { createStage, type Stage } from "./render/stage";
-import { createExtractor, WINDOW, type Extractor } from "./signal/features";
+import { createExtractor, WINDOW } from "./signal/features";
+import { createSongFeatures, type SongFeatures } from "./signal/songFeatures";
 import { windowAt } from "./signal/offline";
 import { createStageClock } from "./stageClock";
 import { sharedNow, type FromStage, type ToStage } from "./stageProtocol";
@@ -30,7 +31,7 @@ let template: Template | null = null;
 let aspect: Aspect = "wide";
 let lines: Line[] = [];
 let reduced = false;
-let extractor: Extractor | null = null;
+let features: SongFeatures | null = null;
 let rate = 0;
 let song: { pcm: Float32Array; sampleRate: number } | null = null;
 let tap: { wave: Float32Array; sampleRate: number } | null = null;
@@ -62,18 +63,18 @@ function applySize(): void {
 
 const SILENCE = { wave: new Float32Array(WINDOW), sampleRate: 48_000 };
 
-function draw(atMs: number, deltaMs: number): void {
+function draw(atMs: number): void {
   if (!stage || !template) return;
   // before any sound arrives the scene still draws, on silence
   const heard = tap && tap.wave.length >= WINDOW ? tap : SILENCE;
   const sampleRate = song?.sampleRate ?? heard.sampleRate;
-  if (!extractor || rate !== sampleRate) {
+  if (!features || rate !== sampleRate) {
     rate = sampleRate;
-    extractor = createExtractor(rate);
+    features = createSongFeatures(createExtractor(rate));
   }
   // the decoded song never stalls and matches export; the tap covers the seconds before it is decoded
   const input = song ? windowAt(song.pcm, song.sampleRate, atMs, songWindow) : heard.wave.subarray(heard.wave.length - WINDOW);
-  paint(stage, raster, template, aspect, lines, atMs, extractor.step(input, Math.min(100, deltaMs)), { reduced, displayLeadMs: DISPLAY_LEAD_MS });
+  paint(stage, raster, template, aspect, lines, atMs, features.at(input, atMs), { reduced, displayLeadMs: DISPLAY_LEAD_MS });
 }
 
 function shareFoot(now: number): void {
@@ -108,7 +109,6 @@ function shareTone(now: number, changed: boolean): void {
 function loop(now: number): void {
   frameId = self.requestAnimationFrame(loop);
   if (lastFrame !== null && governor.frame(now - lastFrame) !== null) applySize();
-  const deltaMs = lastFrame === null ? 1000 / 60 : now - lastFrame;
   lastFrame = now;
   const { atMs, playing } = clock.read(sharedNow());
   // a paused song holds its frame; only a seek or a change to the scene draws again
@@ -119,7 +119,7 @@ function loop(now: number): void {
   const changed = dirty;
   dirty = false;
   drawnAtMs = atMs;
-  draw(atMs, deltaMs);
+  draw(atMs);
   shareTone(now, changed);
   if (mirror && canvas && frames++ % 2 === 0) {
     mirror.drawImage(canvas, 0, 0, mirror.canvas.width, mirror.canvas.height);
