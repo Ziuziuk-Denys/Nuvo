@@ -39,7 +39,7 @@ function fakeEngine() {
 }
 
 function fakeBus() {
-  return { shapeEq: vi.fn(), setTrackGainDb: vi.fn(), analyser: vi.fn(() => null), setSleepLevel: vi.fn(), seekMasked: vi.fn() };
+  return { shapeEq: vi.fn(), setMovingSound: vi.fn(), setTrackGainDb: vi.fn(), analyser: vi.fn(() => null), setSleepLevel: vi.fn(), seekMasked: vi.fn() };
 }
 
 afterEach(() => vi.restoreAllMocks());

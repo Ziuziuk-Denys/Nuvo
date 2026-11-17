@@ -269,6 +269,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
   const openSettingsSection = useModalStore((state) => state.openSettingsSection);
   const bindingOf = useShortcutBindings();
   const eqEnabled = useSoundStore((state) => state.eqEnabled);
+  const movingOn = useSoundStore((state) => state.moving.on);
   const ownPresets = useSoundStore((state) => state.customPresets);
   const history = useSearchHistoryStore((state) => state.items);
   const addHistory = useSearchHistoryStore((state) => state.addItem);
@@ -337,10 +338,12 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
       t,
       translations: getTranslationsForAllLocales,
       eqOn: eqEnabled,
+      movingOn,
       eqPresets: Object.keys(BUILT_IN_PRESETS),
       ownPresets: Object.keys(ownPresets),
       tempoPresets: TEMPO_KEYS,
       toggleEq: () => useSoundStore.getState().setEnabled(!eqEnabled),
+      toggleMoving: () => useSoundStore.getState().setMoving({ on: !movingOn }),
       applyEq,
       applyTempo: (key) => applyTempo(TEMPO_PRESETS[key as TempoPresetKey]),
     }),

@@ -39,6 +39,7 @@ const noop = () => undefined;
 connectSound(
   {
     setEq: noop,
+    setMovingSound: noop,
     setTrackGainDb: noop,
     analyser: () => fakeAnalyser as never,
     setSleepLevel: noop,

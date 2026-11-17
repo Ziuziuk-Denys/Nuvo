@@ -70,7 +70,20 @@
       "daycore": "Daycore",
       "nightcore": "Nightcore"
     },
-    "title": "Equalizer"
+    "title": "Equalizer",
+    "moving": {
+      "title": "Moving sound",
+      "hint": "The music circles around your head. Best on headphones.",
+      "path": "Path",
+      "path_desc": "4D circles at ear level. 8D adds room echo. 16D tilts the circle, higher on the right and lower on the left, with more echo.",
+      "speed": "Speed",
+      "speed_desc": "One turn takes 16, 8 or 4 seconds.",
+      "speeds": {
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast"
+      }
+    }
   },
   "ui": {
     "add": {
@@ -563,7 +576,9 @@
       "hint_open": "open",
       "hint_queue": "add to queue",
       "hint_section": "next section",
-      "hint_close": "close"
+      "hint_close": "close",
+      "moving_on": "Turn moving sound on",
+      "moving_off": "Turn moving sound off"
     },
     "recs": {
       "home": {
@@ -1996,7 +2011,8 @@
       "connection": "Connection",
       "trouble": "When something doesn't load",
       "updates": "Updates",
-      "help": "Help"
+      "help": "Help",
+      "moving": "Around your head"
     }
   }
 }

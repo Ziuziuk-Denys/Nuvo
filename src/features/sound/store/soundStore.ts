@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { debouncedStorage } from "@/data/platform/debouncedStorage";
+import type { MovingSoundState } from "@/engine/audio/movingSound";
 import { TEMPO_PRESETS, type TempoSettings } from "../lib/tempo";
 import { BUILT_IN_PRESETS, FLAT, clampGain, type EqGains } from "../lib/eq";
 
@@ -34,6 +35,7 @@ export interface SoundState {
   globalTempo: TempoSettings;
   tempoByTrack: Record<string, TempoSettings>;
   tempoByArtist: Record<string, TempoSettings>;
+  moving: MovingSoundState;
 
   setEnabled: (enabled: boolean) => void;
   setGain: (index: number, db: number) => void;
@@ -56,6 +58,7 @@ export interface SoundState {
   setGlobalTempo: (settings: TempoSettings) => void;
   rememberTempo: (scope: ProfileScope, key: string, settings: TempoSettings) => void;
   forgetTempo: (scope: ProfileScope, key: string) => void;
+  setMoving: (change: Partial<MovingSoundState>) => void;
 }
 
 function currentProfile(state: SoundState): Profile {
@@ -104,6 +107,7 @@ export const useSoundStore = create<SoundState>()(
       globalTempo: TEMPO_PRESETS.normal,
       tempoByTrack: {},
       tempoByArtist: {},
+      moving: { on: false, preset: "8d", speed: "medium" },
 
       setEnabled: (eqEnabled) => set({ eqEnabled }),
       setGain: (index, db) =>
@@ -207,6 +211,7 @@ export const useSoundStore = create<SoundState>()(
           const { [profileKey(scope, key)]: _removed, ...rest } = state[field];
           return { [field]: rest };
         }),
+      setMoving: (change) => set((state) => ({ moving: { ...state.moving, ...change } })),
     }),
     {
       name: "nuvo_sound_v1",
@@ -231,6 +236,7 @@ export const useSoundStore = create<SoundState>()(
         globalTempo: state.globalTempo,
         tempoByTrack: state.tempoByTrack,
         tempoByArtist: state.tempoByArtist,
+        moving: state.moving,
       }),
     },
   ),

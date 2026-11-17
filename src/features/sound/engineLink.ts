@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Engine } from "@/engine/engine";
 import type { EqState } from "@/engine/audio/graph";
+import type { MovingSoundState } from "@/engine/audio/movingSound";
 import type { Status, TuningState, Track } from "@/engine/types";
 import type { TempoSettings } from "./lib/tempo";
 
@@ -34,6 +35,7 @@ export const usePlayerSnapshot = create<PlayerSnapshot>(() => EMPTY);
 
 export interface SoundBackend {
   setEq(state: EqState): void;
+  setMovingSound(state: MovingSoundState): void;
   setTrackGainDb(trackId: string, db: number): void;
   analyser(): AnalyserNode | null;
   setSleepLevel(multiplier: number): void;
@@ -60,6 +62,7 @@ export function connectSound(next: SoundBackend, mirror: SnapshotMirror): () => 
 
 interface Bus {
   shapeEq(state: EqState, rampSeconds?: number): void;
+  setMovingSound(state: MovingSoundState): void;
   setTrackGainDb(trackId: string, db: number): void;
   analyser(): AnalyserNode | null;
   setSleepLevel(multiplier: number): void;
@@ -70,6 +73,7 @@ export function engineSound(engine: Engine, bus: Bus, livePositionMs: () => numb
   return {
     backend: {
       setEq: (state) => bus.shapeEq(state),
+      setMovingSound: (state) => bus.setMovingSound(state),
       setTrackGainDb: (trackId, db) => bus.setTrackGainDb(trackId, db),
       analyser: () => bus.analyser(),
       setSleepLevel: (multiplier) => bus.setSleepLevel(multiplier),
@@ -120,6 +124,7 @@ export function engineSound(engine: Engine, bus: Bus, livePositionMs: () => numb
 
 export const soundActions: SoundBackend = {
   setEq: (state) => backend?.setEq(state),
+  setMovingSound: (state) => backend?.setMovingSound(state),
   setTrackGainDb: (trackId, db) => backend?.setTrackGainDb(trackId, db),
   analyser: () => backend?.analyser() ?? null,
   setSleepLevel: (multiplier) => backend?.setSleepLevel(multiplier),

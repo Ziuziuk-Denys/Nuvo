@@ -67,15 +67,29 @@ export interface SoundDeps {
   t: TFunction;
   translations: (key: string) => string[];
   eqOn: boolean;
+  movingOn: boolean;
   eqPresets: readonly string[];
   ownPresets: readonly string[];
   tempoPresets: readonly { key: string; labelKey: string }[];
   toggleEq(): void;
+  toggleMoving(): void;
   applyEq(name: string): void;
   applyTempo(key: string): void;
 }
 
-export function soundCommands({ t, translations, eqOn, eqPresets, ownPresets, tempoPresets, toggleEq, applyEq, applyTempo }: SoundDeps): Command[] {
+export function soundCommands({
+  t,
+  translations,
+  eqOn,
+  movingOn,
+  eqPresets,
+  ownPresets,
+  tempoPresets,
+  toggleEq,
+  toggleMoving,
+  applyEq,
+  applyTempo,
+}: SoundDeps): Command[] {
   const eqWords = translations("sound.title");
   const eq = (id: string, name: string, keywords: string[]): Command => ({
     id: `eq:${id}`,
@@ -86,6 +100,13 @@ export function soundCommands({ t, translations, eqOn, eqPresets, ownPresets, te
   });
   return [
     { id: "eq:toggle", group: "sound", title: t(eqOn ? "ui.palette.eq_off" : "ui.palette.eq_on"), keywords: eqWords, run: toggleEq },
+    {
+      id: "moving:toggle",
+      group: "sound",
+      title: t(movingOn ? "ui.palette.moving_off" : "ui.palette.moving_on"),
+      keywords: [...translations("sound.moving.title"), "4D", "8D", "16D"],
+      run: toggleMoving,
+    },
     ...eqPresets.map((key) => eq(key, t(`sound.presets.${key}`), translations(`sound.presets.${key}`))),
     ...ownPresets.map((name) => eq(name, name, [name])),
     ...tempoPresets.map(({ key, labelKey }) => ({

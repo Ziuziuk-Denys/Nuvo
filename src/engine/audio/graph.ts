@@ -1,5 +1,6 @@
 import type { Random } from "../shuffle";
 import { dbToGain } from "./curves";
+import { MovingSound, type MovingSoundState } from "./movingSound";
 import { generateImpulse } from "./reverbIr";
 import { createSpectrumTap, type SpectrumTap } from "./spectrum";
 
@@ -61,6 +62,7 @@ export class AudioGraph {
   private readonly wet: GainNode;
   private irBuilt = false;
   readonly master: GainNode;
+  private readonly moving: MovingSound;
   private sleepLevel = 1;
   private readonly nodes: AudioNode[] = [];
   private sendConnected = false;
@@ -129,7 +131,10 @@ export class AudioGraph {
     this.analyser = this.own(ctx.createAnalyser());
     this.analyser.fftSize = ANALYSER_FFT;
     this.analyser.smoothingTimeConstant = 0.8;
-    this.master.connect(ctx.destination);
+    this.moving = new MovingSound(ctx, deps.random);
+    this.master.connect(this.moving.input);
+    this.moving.output.connect(ctx.destination);
+    // The analysis stays before the moving stage: its ear filters would make the visuals pulse with the rotation
     this.master.connect(this.analyser);
   }
 
@@ -147,6 +152,7 @@ export class AudioGraph {
     this.pitchTimer = null;
     for (const node of this.nodes) node.disconnect();
     if (this.pitchNode) this.pitchNode.disconnect();
+    this.moving.dispose();
   }
 
   private get now(): number {
@@ -242,6 +248,11 @@ export class AudioGraph {
     }
     this.send.gain.setTargetAtTime(open ? 1 : 0, this.now, EQ_RAMP_S);
     this.wet.gain.setTargetAtTime(open ? level * REVERB_WET_SCALE : 0, this.now, EQ_RAMP_S);
+  }
+
+  setMovingSound(state: MovingSoundState): void {
+    this.resume();
+    this.moving.set(state);
   }
 
   get impulseBuilt(): boolean {
