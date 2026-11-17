@@ -8,6 +8,8 @@ export const CACHE_SIZE = 20;
 export const PREFETCH_GIVE_UP_MS = 8000;
 /** A held nudge button makes one daemon write. */
 export const OFFSET_SAVE_DELAY_MS = 400;
+/** Past this the stream is another cut than the lyrics were timed for. */
+export const OTHER_CUT_MS = 2000;
 
 interface Known {
   entries: Entry[];
@@ -16,6 +18,7 @@ interface Known {
   offsetMs: number;
   offsetSet: boolean;
   arrivals: number;
+  requestedMs: number;
 }
 
 export interface LyricsDeps {
@@ -26,7 +29,15 @@ export interface LyricsDeps {
   now(): number;
 }
 
-const blank = (): Known => ({ entries: [], chosen: null, outcome: "none", offsetMs: 0, offsetSet: false, arrivals: 0 });
+const blank = (requestedMs = 0): Known => ({ entries: [], chosen: null, outcome: "none", offsetMs: 0, offsetSet: false, arrivals: 0, requestedMs });
+
+const apart = (a: number, b: number) => a > 0 && b > 0 && Math.abs(a - b) > OTHER_CUT_MS;
+
+/** Lyrics made on this audio or set by the owner keep their timing; the rest must be timed for this cut. */
+function timedForStream(entry: Entry, streamMs: number): boolean {
+  const { candidate } = entry;
+  return candidate.topPriority === true || candidate.made !== undefined || !apart(candidate.matchedTrack?.durationMs ?? 0, streamMs);
+}
 
 function fold(known: Known, event: StreamEvent, trackMs: number): boolean {
   if (event.type === "metadata" && !known.offsetSet) known.offsetMs = clampOffset(event.offsetMs ?? 0);
@@ -50,6 +61,7 @@ export class LyricsEngine {
   private readonly tracker: LineTracker;
   private track: Track | null = null;
   private live: Known | null = null;
+  private streamMs = 0;
   private controller: AbortController | null = null;
   private pendingOffset: { trackId: string; offsetMs: number; timer: ReturnType<typeof setTimeout> } | null = null;
 
@@ -77,6 +89,23 @@ export class LyricsEngine {
 
   connectAudio(audio: AudioPort): void {
     this.tracker.connect(audio);
+    audio.subscribe(() => this.checkCut(audio));
+  }
+
+  /** A stream of another length than the lyrics were asked for: ask again for this cut. */
+  private checkCut(audio: AudioPort): void {
+    const track = this.track;
+    const known = this.live;
+    const streamMs = track ? (audio.streamMs?.(track.id) ?? 0) : 0;
+    if (!track || !known || streamMs <= 0 || streamMs === this.streamMs) return;
+    this.streamMs = streamMs;
+    if (!apart(streamMs, known.requestedMs)) return;
+    known.requestedMs = streamMs;
+    this.render(track, this.state.status);
+    if (this.controller) return;
+    const controller = new AbortController();
+    this.controller = controller;
+    void this.stream({ ...track, durationMs: streamMs }, controller, known);
   }
 
   clock(): { atMs: number; playing: boolean } {
@@ -94,6 +123,7 @@ export class LyricsEngine {
     this.controller = null;
     this.track = track;
     this.live = null;
+    this.streamMs = 0;
     if (!track) {
       this.tracker.setLines([], false, 0);
       this.set(EMPTY_STATE);
@@ -107,7 +137,7 @@ export class LyricsEngine {
     }
     const controller = new AbortController();
     this.controller = controller;
-    const known = blank();
+    const known = blank(track.durationMs);
     this.live = known;
     this.render(track, "loading");
     const prefetch = this.prefetching.get(track.id);
@@ -223,7 +253,7 @@ export class LyricsEngine {
   }
 
   private async collect(track: Track, signal: AbortSignal): Promise<void> {
-    const known = blank();
+    const known = blank(track.durationMs);
     try {
       for await (const event of this.deps.stream(track, signal)) {
         if (fold(known, event, track.durationMs)) {
@@ -236,10 +266,14 @@ export class LyricsEngine {
 
   private render(track: Track, status: LyricsStatus): void {
     const known = this.live ?? blank();
-    const entry = known.entries.find((candidate) => candidate.candidate.provider === known.chosen) ?? known.entries[0];
+    const fits = (candidate: Entry) => timedForStream(candidate, this.streamMs);
+    const entry =
+      known.entries.find((candidate) => candidate.candidate.provider === known.chosen) ??
+      known.entries.find((candidate) => !candidate.parsed.synced || fits(candidate)) ??
+      known.entries[0];
     const parsed = entry?.parsed;
-    const lines = shiftLines(parsed?.lines ?? [], known.offsetMs);
-    const synced = parsed?.synced ?? false;
+    const synced = entry !== undefined && entry.parsed.synced && fits(entry);
+    const lines = synced ? shiftLines(entry.parsed.lines, known.offsetMs) : [];
     const currentLine = this.tracker.setLines(lines, status === "ready" && synced, track.durationMs);
     this.set({
       trackId: track.id,
@@ -247,7 +281,7 @@ export class LyricsEngine {
       lines,
       plainText: parsed?.plainText ?? null,
       synced,
-      wordTimed: parsed?.wordTimed ?? false,
+      wordTimed: synced && entry.parsed.wordTimed,
       versions: known.entries.map(toVersion),
       activeVersion: entry?.candidate.provider ?? null,
       offsetMs: known.offsetMs,

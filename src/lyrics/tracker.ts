@@ -7,6 +7,8 @@ export interface AudioPort {
   playing(): boolean;
   rate?(): number;
   audioTime?(): AudioTime | null;
+  /** Length of the stream playing `trackId`, once the player knows it. */
+  streamMs?(trackId: string): number | null;
   subscribe(listener: () => void): () => void;
 }
 

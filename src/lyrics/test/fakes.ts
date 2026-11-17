@@ -12,9 +12,10 @@ export const line = (fromMs: number, extra: Partial<Line> = {}): Line => ({
 export function fakeAudio(positionMs = 0, playing = false) {
   const listeners = new Set<() => void>();
   const audio = {
-    state: { positionMs, playing },
+    state: { positionMs, playing } as { positionMs: number; playing: boolean; streamMs?: number },
     positionMs: () => audio.state.positionMs,
     playing: () => audio.state.playing,
+    streamMs: () => audio.state.streamMs ?? null,
     subscribe: (listener: () => void) => {
       listeners.add(listener);
       return () => {

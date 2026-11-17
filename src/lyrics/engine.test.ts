@@ -216,3 +216,40 @@ describe("follow and streaming", () => {
     await expect(engine.prefetch(track("u"))).resolves.toBeUndefined();
   });
 });
+
+describe("the cut that plays", () => {
+  const timedFor = (durationMs: number, extra = {}) => {
+    const event = found("lrclib");
+    return event.type === "provider" && event.candidate ? { ...event, candidate: { ...event.candidate, matchedTrack: { durationMs }, ...extra } } : event;
+  };
+
+  it("a longer stream asks again for its length and shows lyrics timed for the release untimed", async () => {
+    const s = setup({ t: [timedFor(200_000), done()] });
+    await s.engine.follow(track("t"));
+    expect(s.state().synced).toBe(true);
+    s.audio.state.streamMs = 225_000;
+    s.audio.emit();
+    await flush();
+    expect(s.daemon.lengths).toEqual([200_000, 225_000]);
+    expect(s.state()).toMatchObject({ status: "ready", synced: false, lines: [], plainText: PLAIN_TWO });
+  });
+
+  it("a stream within two seconds keeps the timing and asks nothing", async () => {
+    const s = setup({ t: [timedFor(200_000), done()] });
+    await s.engine.follow(track("t"));
+    s.audio.state.streamMs = 201_500;
+    s.audio.emit();
+    await flush();
+    expect(s.daemon.lengths).toEqual([200_000]);
+    expect(s.state().synced).toBe(true);
+  });
+
+  it("lyrics made on this audio keep their timing on any cut", async () => {
+    const s = setup({ t: [timedFor(200_000, { made: { source: "synced" } }), done()] });
+    await s.engine.follow(track("t"));
+    s.audio.state.streamMs = 225_000;
+    s.audio.emit();
+    await flush();
+    expect(s.state().synced).toBe(true);
+  });
+});

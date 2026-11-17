@@ -1,4 +1,4 @@
-// AMLL TTML database (CC0); a file counts only when its timing fits the playing track
+// AMLL TTML database (CC0); a file counts only when its timing fits the playing stream
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -9,7 +9,7 @@ use reqwest::redirect::Policy;
 use serde::Deserialize;
 use tokio::sync::Mutex;
 
-use crate::{LyricsError, Query};
+use crate::{DURATION_TOLERANCE_MS, LyricsError, MusicBrainz, Query, USER_AGENT};
 
 pub const AMLL_URL: &str = "https://raw.githubusercontent.com/amll-dev/amll-ttml-db/main";
 const ALLOWED_HOST: &str = "raw.githubusercontent.com";
@@ -32,6 +32,7 @@ struct Row {
 struct Entry {
     titles: Vec<String>,
     artists: Vec<String>,
+    isrcs: Vec<String>,
     file: String,
 }
 
@@ -44,6 +45,7 @@ pub struct Amll {
     client: reqwest::Client,
     base: String,
     index: Mutex<Option<Index>>,
+    lengths: Option<Arc<MusicBrainz>>,
 }
 
 // Deny by default: https on the one allowed host; plain http only for a local stand-in
@@ -61,20 +63,20 @@ fn safe_file(name: &str) -> bool {
 }
 
 impl Amll {
-    pub fn new(base: &str) -> Option<Self> {
-        Self::with_proxy(base, None)
+    pub fn new(base: &str, lengths: Option<Arc<MusicBrainz>>) -> Option<Self> {
+        Self::with_proxy(base, lengths, None)
     }
 
-    pub fn with_proxy(base: &str, proxy: Option<reqwest::Proxy>) -> Option<Self> {
+    pub fn with_proxy(base: &str, lengths: Option<Arc<MusicBrainz>>, proxy: Option<reqwest::Proxy>) -> Option<Self> {
         if !allowed(base) {
             return None;
         }
-        let mut builder = reqwest::Client::builder().user_agent("nuvo-core/0.1 (personal music player)").timeout(Duration::from_secs(10)).redirect(Policy::none());
+        let mut builder = reqwest::Client::builder().user_agent(USER_AGENT).timeout(Duration::from_secs(10)).redirect(Policy::none());
         if let Some(proxy) = proxy {
             builder = builder.proxy(proxy);
         }
         let client = builder.build().expect("static reqwest config is valid");
-        Some(Self { client, base: base.trim_end_matches('/').to_string(), index: Mutex::new(None) })
+        Some(Self { client, base: base.trim_end_matches('/').to_string(), index: Mutex::new(None), lengths })
     }
 
     pub async fn lookup(&self, query: &Query) -> Result<Option<LyricsCandidate>, LyricsError> {
@@ -86,12 +88,27 @@ impl Amll {
         let entries = self.entries().await?;
         let matching = entries.iter().rev().filter(|entry| entry.titles.contains(&title) && entry.artists.iter().any(|name| artist.contains(name.as_str())));
         for entry in matching.filter(|entry| safe_file(&entry.file)).take(MAX_FILES_PER_LOOKUP) {
+            let release_ms = self.release_length(entry).await;
+            if !same_cut(release_ms.as_deref(), query.duration_ms) {
+                continue;
+            }
             let Some(content) = self.file(&entry.file).await else { continue };
             if fits(&content, query.duration_ms) {
-                return Ok(Some(candidate(query, content)));
+                let length = closest(release_ms.as_deref(), query.duration_ms);
+                return Ok(Some(candidate(query, content, length)));
             }
         }
         Ok(None)
+    }
+
+    async fn release_length(&self, entry: &Entry) -> Option<Vec<i64>> {
+        let lengths = self.lengths.as_ref()?;
+        for isrc in &entry.isrcs {
+            if let Some(found) = lengths.isrc_lengths(isrc).await.filter(|found| !found.is_empty()) {
+                return Some(found);
+            }
+        }
+        None
     }
 
     async fn entries(&self) -> Result<Arc<Vec<Entry>>, LyricsError> {
@@ -134,7 +151,12 @@ async fn read_capped(mut response: reqwest::Response, limit: usize) -> Result<Op
 fn parse_index(text: &str) -> Vec<Entry> {
     text.lines()
         .filter_map(|line| serde_json::from_str::<Row>(line).ok())
-        .map(|row| Entry { titles: field(&row, "musicName", plain_title), artists: field(&row, "artists", plain), file: row.raw_lyric_file.clone() })
+        .map(|row| Entry {
+            titles: field(&row, "musicName", plain_title),
+            artists: field(&row, "artists", plain),
+            isrcs: field(&row, "isrc", |isrc| isrc.trim().to_ascii_uppercase()),
+            file: row.raw_lyric_file.clone(),
+        })
         .collect()
 }
 
@@ -181,13 +203,27 @@ fn last_word_end(ttml: &str) -> Option<i64> {
     .max()
 }
 
-/// Another cut of the song has other timing: the words must end inside the track and cover at least half of it.
+/// With the release length known, the stream must be that cut; a music video with an intro is not.
+fn same_cut(release_ms: Option<&[i64]>, duration_ms: Option<i64>) -> bool {
+    match (release_ms, duration_ms.filter(|ms| *ms > 0)) {
+        (Some(lengths), Some(duration)) => lengths.iter().any(|length| (length - duration).abs() <= DURATION_TOLERANCE_MS),
+        _ => true,
+    }
+}
+
+fn closest(release_ms: Option<&[i64]>, duration_ms: Option<i64>) -> Option<i64> {
+    let lengths = release_ms?;
+    let duration = duration_ms.unwrap_or_default();
+    lengths.iter().copied().min_by_key(|length| (length - duration).abs())
+}
+
+/// Without a release length: the words must end inside the track and cover at least half of it.
 fn fits(ttml: &str, duration_ms: Option<i64>) -> bool {
     let Some(end) = last_word_end(ttml) else { return false };
     duration_ms.filter(|ms| *ms > 0).is_none_or(|duration| end <= duration + END_SLACK_MS && end * 2 >= duration)
 }
 
-fn candidate(query: &Query, content: String) -> LyricsCandidate {
+fn candidate(query: &Query, content: String, release_ms: Option<i64>) -> LyricsCandidate {
     let match_score = if query.duration_ms.is_some() { 1.0 } else { 0.8 };
     LyricsCandidate {
         provider: "amll".into(),
@@ -195,7 +231,7 @@ fn candidate(query: &Query, content: String) -> LyricsCandidate {
         sync_level: "word_level".into(),
         quality: LyricsQuality { total: 0.9, match_score, content: 1.0, sync: 1.0, source: 0.8, reasons: vec![] },
         lyrics: RawLyrics { format: "ttml".into(), content },
-        matched_track: Some(MatchedTrack { title: query.title.clone(), artists: vec![query.artist.clone()], duration_ms: query.duration_ms }),
+        matched_track: Some(MatchedTrack { title: query.title.clone(), artists: vec![query.artist.clone()], duration_ms: release_ms.or(query.duration_ms) }),
         top_priority: false,
         made: None,
     }
