@@ -30,3 +30,5 @@ Compare the file with `SHA256SUMS`, or ask GitHub which workflow built it:
 sha256sum -c SHA256SUMS --ignore-missing
 gh attestation verify FILE --repo {{slug}}
 ```
+
+{{more}}

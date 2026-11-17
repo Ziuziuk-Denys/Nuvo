@@ -7,11 +7,15 @@
 
 <br>
 
-Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays YouTube, SoundCloud and your own files, with synced lyrics, a ten-band equalizer and mixes made on your computer. You never make an account: your library, playlists and history stay in an encrypted database on your machine.
+Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays YouTube, SoundCloud and your own files, with synced lyrics, a ten-band equalizer and mixes made on your computer. Scene, its own visual engine, draws each song to the beat and turns any moment into a short video. You never make an account: your library, playlists and history stay on your machine.
 
-<sub>[nuvo.quest]({{site}}) · [Docs]({{site}}/docs) · [Install](#install) · [Why Nuvo](#why-nuvo) · [Roadmap](#roadmap)</sub>
+<sub>[nuvo.quest]({{site}}) · [Docs]({{site}}/docs) · [Scene](#scene) · [Install](#install) · [Why Nuvo](#why-nuvo) · [Roadmap](#roadmap)</sub>
 
 </div>
+
+## Scene
+
+{{scene}}
 
 ## New in {{version}}
 
@@ -78,6 +82,8 @@ Get the files from [the latest release]({{repo}}/releases/latest).
 
 {{platforms}}
 
+**Nuvo Encrypted** is the same app with the library and the audio cache encrypted on disk, under a key kept in your system keyring. Its files in the same release start with `Nuvo-Encrypted-`. Install either edition over the other and your library converts on the next start.
+
 Each release lists SHA-256 checksums. Full steps and building from source are in [the install guide]({{site}}/docs/install).
 
 <details>
@@ -106,7 +112,7 @@ This is a direction, not a schedule. Details are in [the roadmap]({{site}}/docs/
 
 ## Licence
 
-Nuvo is licensed under the [GNU AGPL-3.0-or-later](LICENSE). [LICENSING.md](LICENSING.md) has a plain summary, and a commercial licence is available from the author. [TRADEMARKS.md](TRADEMARKS.md) covers the name and the mark. [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES) lists third-party software and icon sets.
+Nuvo is licensed under the [GNU AGPL-3.0-or-later](LICENSE), with one added term in [NOTICE](NOTICE): versions that contain the visual engine keep its author credit in the About screen. [LICENSING.md](LICENSING.md) has a plain summary, and a commercial licence is available from the author. [TRADEMARKS.md](TRADEMARKS.md) covers the name and the mark. [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES) lists third-party software and icon sets.
 
 <div align="center">
 
