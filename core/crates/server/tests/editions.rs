@@ -4,7 +4,8 @@ use axum::http::StatusCode;
 use nuvo_crypto::{KeyStore, KeyStoreError, MasterKey, MemoryKeyStore, phrase_from_key};
 use nuvo_server::{AppState, Edition};
 use nuvo_store::cache_index::{self, CacheEntry};
-use nuvo_store::{is_plain_database, library, settings};
+use nuvo_contracts::CreatePlaylist;
+use nuvo_store::{is_plain_database, library, lyrics_cache, playlists, settings};
 use serde_json::json;
 use tempfile::TempDir;
 
@@ -179,4 +180,129 @@ async fn a_plain_edition_without_the_key_starts_locked_and_the_phrase_converts_t
     check(&core.state).await;
     assert!(is_plain_database(&core.state.paths.db));
     assert_eq!(files(&core.state.paths.audio, "lac"), 0);
+}
+
+#[tokio::test]
+async fn a_conversion_cut_short_finishes_on_the_next_start() {
+    let first = boot(tempfile::tempdir().unwrap(), Edition::Encrypted, MemoryKeyStore::with_key(KEY)).await;
+    fill(&first.state).await;
+    let data = first.state.data().unwrap();
+    for id in ["t2", "t3"] {
+        let mut writer = data.cache.begin(id).await.unwrap();
+        writer.write(id.as_bytes()).await.unwrap();
+        let path = writer.finish().await.unwrap().path.to_string_lossy().into_owned();
+        let entry = CacheEntry { track_id: id.into(), path, size_bytes: 2, mime: "audio/webm".into(), codec: None };
+        data.db.call(move |c| cache_index::upsert(c, &entry, 1)).await.unwrap();
+    }
+    let (paths, t2) = (first.state.paths.clone(), data.cache.path_for("t2"));
+    drop(data);
+    let dir = close(first);
+
+    std::fs::write(paths.db.with_extension("next"), b"half an export").unwrap();
+    let plain_t2 = t2.with_extension("bin");
+    std::fs::write(&plain_t2, b"t2").unwrap();
+    std::fs::write(t2.with_extension("bin.00aa.part"), b"t").unwrap();
+
+    let core = boot(dir, Edition::Plain, MemoryKeyStore::with_key(KEY)).await;
+    check(&core.state).await;
+    let data = core.state.data().unwrap();
+    assert_eq!(data.cache.read_range("t2", 0, 1).await.unwrap(), b"t2");
+    assert_eq!(data.cache.read_range("t3", 0, 1).await.unwrap(), b"t3");
+    assert!(is_plain_database(&paths.db));
+    assert!(!paths.db.with_extension("next").exists());
+    let names: Vec<String> = std::fs::read_dir(&paths.audio).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+    assert!(names.iter().all(|n| n.ends_with(".bin")), "{names:?}");
+}
+
+#[tokio::test]
+async fn a_library_that_cannot_be_rewritten_opens_as_it_is_and_converts_later() {
+    let first = boot(tempfile::tempdir().unwrap(), Edition::Encrypted, MemoryKeyStore::with_key(KEY)).await;
+    fill(&first.state).await;
+    let paths = first.state.paths.clone();
+    let dir = close(first);
+    let blocker = paths.db.with_extension("next");
+    std::fs::create_dir(&blocker).unwrap();
+
+    let core = boot(dir, Edition::Plain, MemoryKeyStore::with_key(KEY)).await;
+    check(&core.state).await;
+    assert!(!is_plain_database(&paths.db), "untouched while it cannot be rewritten");
+    let dir = close(core);
+
+    std::fs::remove_dir(&blocker).unwrap();
+    let core = boot(dir, Edition::Plain, MemoryKeyStore::with_key(KEY)).await;
+    check(&core.state).await;
+    assert!(is_plain_database(&paths.db));
+    assert!(!raw_session(&core.state).contains("session-123"));
+}
+
+#[tokio::test]
+async fn cached_audio_plays_before_its_conversion() {
+    let first = boot(tempfile::tempdir().unwrap(), Edition::Encrypted, MemoryKeyStore::with_key(KEY)).await;
+    fill(&first.state).await;
+    let dir = close(first);
+    let core = common::boot_config(dir, MemoryKeyStore::with_key(KEY), |config| config.edition = Edition::Plain);
+    let data = core.state.data().unwrap();
+    assert!(data.cache.other_format_present(), "nothing converts before start");
+    assert_eq!(data.cache.read_range("t1", 0, 10).await.unwrap(), b"audio bytes");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "a benchmark: run in release with TMPDIR on a disk and NUVO_BENCH_MB of cached audio"]
+async fn benchmark_an_encrypted_library_turning_plain() {
+    let megabytes: usize = std::env::var("NUVO_BENCH_MB").ok().and_then(|v| v.parse().ok()).unwrap_or(1024);
+    let first = boot(tempfile::tempdir().unwrap(), Edition::Encrypted, MemoryKeyStore::with_key(KEY)).await;
+    let data = first.state.data().unwrap();
+    data.db
+        .call(|c| {
+            let tracks: Vec<serde_json::Value> = (0..5000)
+                .map(|i| json!({"id": format!("t{i}"), "title": format!("Song {i}"), "artists": [{"id": format!("a{}", i % 700), "name": format!("Artist {}", i % 700)}], "album": {"id": format!("al{}", i % 900), "title": format!("Album {}", i % 900)}, "durationMs": 200000}))
+                .collect();
+            library::like_many(c, &tracks, 1)?;
+            for list in 0..20 {
+                let created = playlists::create(c, &CreatePlaylist { title: format!("List {list}"), description: None, is_public: false }, 2)?;
+                playlists::add_tracks(c, &created.id, tracks[list * 250..(list + 1) * 250].to_vec(), 3)?;
+            }
+            for i in 0..5000 {
+                lyrics_cache::put(c, &format!("t{i}"), None, true, 4)?;
+            }
+            Ok(())
+        })
+        .await
+        .unwrap();
+    let chunk = vec![7u8; 1 << 20];
+    for file in 0..megabytes / 8 {
+        let id = format!("t{file}");
+        let mut writer = data.cache.begin(&id).await.unwrap();
+        for _ in 0..8 {
+            writer.write(&chunk).await.unwrap();
+        }
+        let path = writer.finish().await.unwrap().path.to_string_lossy().into_owned();
+        let entry = CacheEntry { track_id: id, path, size_bytes: 8 << 20, mime: "audio/webm".into(), codec: None };
+        data.db.call(move |c| cache_index::upsert(c, &entry, 1)).await.unwrap();
+    }
+    let db_bytes = std::fs::metadata(&first.state.paths.db).unwrap().len();
+    drop(data);
+    let dir = close(first);
+
+    let started = std::time::Instant::now();
+    let core = common::boot_config(dir, MemoryKeyStore::with_key(KEY), |config| config.edition = Edition::Plain);
+    let opened = started.elapsed();
+    core.state.start().await.unwrap();
+    let ready = started.elapsed();
+    let data = core.state.data().unwrap();
+    let played = std::time::Instant::now();
+    assert_eq!(data.cache.read_range("t0", 0, (1 << 20) - 1).await.unwrap(), chunk);
+    let first_read = played.elapsed();
+    while data.cache.other_format_present() {
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    let all = started.elapsed();
+    assert!(is_plain_database(&core.state.paths.db));
+    assert_eq!(data.db.call(library::liked_ids).await.unwrap().len(), 5000);
+    println!(
+        "library.db {:.1} MB converted and opened in {opened:?}; ready in {ready:?}; first 1 MB read before conversion {first_read:?}; {megabytes} MB of audio converted in {:?} ({:.0} MB/s)",
+        db_bytes as f64 / 1e6,
+        all - ready,
+        megabytes as f64 / (all - ready).as_secs_f64()
+    );
 }

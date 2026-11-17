@@ -31,6 +31,8 @@ pub enum CacheError {
 pub struct AudioCache {
     dir: PathBuf,
     cipher: Option<Arc<ChunkCipher>>,
+    /// The other format in the same folder, read until its files are converted.
+    fallback: Option<Arc<AudioCache>>,
 }
 
 #[derive(Debug)]
@@ -41,19 +43,20 @@ pub struct Finished {
 
 impl AudioCache {
     pub fn new(dir: PathBuf, master: &[u8; 32]) -> Self {
-        Self { dir, cipher: Some(Arc::new(ChunkCipher::new(&derive_key(master, AUDIO_KEY_INFO)))) }
+        Self { dir, cipher: Some(Arc::new(ChunkCipher::new(&derive_key(master, AUDIO_KEY_INFO)))), fallback: None }
     }
 
     pub fn plain(dir: PathBuf) -> Self {
-        Self { dir, cipher: None }
+        Self { dir, cipher: None, fallback: None }
+    }
+
+    pub fn with_fallback(mut self, other: AudioCache) -> Self {
+        self.fallback = Some(Arc::new(other));
+        self
     }
 
     pub fn dir(&self) -> &Path {
         &self.dir
-    }
-
-    pub fn is_sealed(&self) -> bool {
-        self.cipher.is_some()
     }
 
     fn ext(&self) -> &'static str {
@@ -82,7 +85,10 @@ impl AudioCache {
     }
 
     pub async fn size(&self, track_id: &str) -> Result<Option<u64>, CacheError> {
-        self.size_at(&self.path_for(track_id)).await
+        match (self.size_at(&self.path_for(track_id)).await?, &self.fallback) {
+            (None, Some(fallback)) => fallback.size_at(&fallback.path_for(track_id)).await,
+            (size, _) => Ok(size),
+        }
     }
 
     async fn size_at(&self, path: &Path) -> Result<Option<u64>, CacheError> {
@@ -96,7 +102,17 @@ impl AudioCache {
 
     /// Inclusive byte range of the plaintext.
     pub async fn read_range(&self, track_id: &str, start: u64, end: u64) -> Result<Vec<u8>, CacheError> {
-        self.read_at(&self.path_for(track_id), start, end).await
+        let own = self.path_for(track_id);
+        if let Some(fallback) = &self.fallback
+            && !fs::try_exists(&own).await?
+        {
+            // the conversion may move the file between the check and the read
+            match fallback.read_at(&fallback.path_for(track_id), start, end).await {
+                Err(CacheError::Range | CacheError::Io(_)) if fs::try_exists(&own).await? => {}
+                result => return result,
+            }
+        }
+        self.read_at(&own, start, end).await
     }
 
     async fn read_at(&self, path: &Path, start: u64, end: u64) -> Result<Vec<u8>, CacheError> {
@@ -111,17 +127,7 @@ impl AudioCache {
             file.read_exact(&mut out).await?;
             return Ok(out);
         };
-        let mut header = [0u8; HEADER_LEN as usize];
-        if let Err(e) = file.read_exact(&mut header).await {
-            if e.kind() == std::io::ErrorKind::UnexpectedEof {
-                return Err(CacheError::Corrupt);
-            }
-            return Err(e.into());
-        }
-        if &header[..MAGIC.len()] != MAGIC {
-            return Err(CacheError::Corrupt);
-        }
-        let prefix: [u8; NONCE_PREFIX_LEN] = header[MAGIC.len()..].try_into().expect("header length");
+        let prefix = read_prefix(&mut file).await?;
         let first = start / CHUNK_PLAIN as u64;
         let last = end / CHUNK_PLAIN as u64;
         file.seek(SeekFrom::Start(HEADER_LEN + first * CHUNK_CIPHER as u64)).await?;
@@ -140,6 +146,9 @@ impl AudioCache {
     }
 
     pub async fn delete(&self, track_id: &str) -> Result<(), CacheError> {
+        if let Some(fallback) = &self.fallback {
+            remove_if_exists(&fallback.path_for(track_id)).await?;
+        }
         remove_if_exists(&self.path_for(track_id)).await
     }
 
@@ -161,8 +170,15 @@ impl AudioCache {
         std::fs::read_dir(&self.dir).is_ok_and(|entries| entries.filter_map(Result::ok).any(|entry| entry.path().extension().is_some_and(|ext| ext == other)))
     }
 
-    /// Rewrites the files `other` left in this folder into this cache's format and returns how many moved.
-    pub async fn adopt(&self, other: &AudioCache) -> Result<usize, CacheError> {
+    /// Rewrites the fallback's files into this cache's format and returns how many moved; a write error stops it with the rest kept for the next start.
+    pub async fn convert(&self) -> Result<usize, CacheError> {
+        match &self.fallback {
+            Some(fallback) => self.adopt(fallback).await,
+            None => Ok(0),
+        }
+    }
+
+    async fn adopt(&self, other: &AudioCache) -> Result<usize, CacheError> {
         let mut moved = 0;
         let mut entries = match fs::read_dir(&self.dir).await {
             Ok(entries) => entries,
@@ -179,25 +195,55 @@ impl AudioCache {
                 remove_if_exists(&from).await?;
                 continue;
             }
-            // a file that does not convert is dropped: it is only a cache
-            if self.copy_from(other, &from, to).await.is_ok() {
-                moved += 1;
+            match self.copy_from(other, &from, to).await {
+                Ok(()) => moved += 1,
+                // an unreadable original is lost anyway; it is only a cache
+                Err(CacheError::Corrupt | CacheError::Empty) => {}
+                Err(err) => return Err(err),
             }
             remove_if_exists(&from).await?;
         }
         Ok(moved)
     }
 
+    // The original goes only after the copy is on disk with the same length; the AEAD tags check every sealed chunk on the way
     async fn copy_from(&self, other: &AudioCache, from: &Path, to: PathBuf) -> Result<(), CacheError> {
-        let size = other.size_at(from).await?.unwrap_or(0);
+        let expected = other.size_at(from).await?.ok_or(CacheError::Corrupt)?;
+        let mut input = fs::File::open(from).await?;
         let mut writer = self.begin_at(to).await?;
-        let mut start = 0;
-        while start < size {
-            let end = (start + CHUNK_PLAIN as u64).min(size) - 1;
-            writer.write(&other.read_at(from, start, end).await?).await?;
-            start = end + 1;
+        match &other.cipher {
+            Some(cipher) => {
+                let prefix = read_prefix(&mut input).await?;
+                let mut sealed = Vec::with_capacity(CHUNK_CIPHER);
+                for index in 0.. {
+                    sealed.clear();
+                    (&mut input).take(CHUNK_CIPHER as u64).read_to_end(&mut sealed).await?;
+                    if sealed.is_empty() {
+                        break;
+                    }
+                    writer.write(&cipher.open(&prefix, index, &sealed).map_err(|_| CacheError::Corrupt)?).await?;
+                }
+            }
+            None => {
+                let mut buffer = vec![0u8; CHUNK_PLAIN];
+                loop {
+                    let read = input.read(&mut buffer).await?;
+                    if read == 0 {
+                        break;
+                    }
+                    writer.write(&buffer[..read]).await?;
+                }
+            }
         }
-        writer.finish().await.map(drop)
+        if writer.size() != expected {
+            return Err(CacheError::Corrupt);
+        }
+        let finished = writer.finish().await?;
+        if self.size_at(&finished.path).await? != Some(expected) {
+            remove_if_exists(&finished.path).await?;
+            return Err(CacheError::Io(std::io::Error::other("the converted file has the wrong length")));
+        }
+        Ok(())
     }
 
     async fn remove_where(&self, doomed: impl Fn(&Path) -> bool) -> Result<usize, CacheError> {
@@ -216,6 +262,20 @@ impl AudioCache {
         }
         Ok(removed)
     }
+}
+
+async fn read_prefix(file: &mut fs::File) -> Result<[u8; NONCE_PREFIX_LEN], CacheError> {
+    let mut header = [0u8; HEADER_LEN as usize];
+    if let Err(e) = file.read_exact(&mut header).await {
+        if e.kind() == std::io::ErrorKind::UnexpectedEof {
+            return Err(CacheError::Corrupt);
+        }
+        return Err(e.into());
+    }
+    if &header[..MAGIC.len()] != MAGIC {
+        return Err(CacheError::Corrupt);
+    }
+    Ok(header[MAGIC.len()..].try_into().expect("header length"))
 }
 
 async fn remove_if_exists(path: &Path) -> Result<(), CacheError> {

@@ -151,21 +151,72 @@ async fn a_plain_cache_keeps_the_bytes_as_they_are() {
 #[tokio::test]
 async fn files_move_between_the_sealed_and_the_plain_format() {
     let dir = tempfile::tempdir().unwrap();
-    let sealed = AudioCache::new(dir.path().to_path_buf(), &random_bytes());
-    let plain = AudioCache::plain(dir.path().to_path_buf());
-    let (one, two) = (sample(CHUNK_PLAIN + 5), sample(77));
+    let key = random_bytes();
+    let sealed = AudioCache::new(dir.path().to_path_buf(), &key);
+    let (one, two) = (sample(3 * CHUNK_PLAIN + 5), sample(77));
     store(&sealed, "one", &one, 4096).await;
     store(&sealed, "two", &two, 4096).await;
+    let plain = AudioCache::plain(dir.path().to_path_buf()).with_fallback(AudioCache::new(dir.path().to_path_buf(), &key));
     store(&plain, "two", &two, 4096).await;
     assert!(plain.other_format_present());
+    assert_eq!(plain.size("one").await.unwrap(), Some(one.len() as u64), "a file not yet converted is still there");
+    assert_eq!(plain.read_range("one", 10, 20).await.unwrap(), &one[10..=20]);
 
-    assert_eq!(plain.adopt(&sealed).await.unwrap(), 1);
+    assert_eq!(plain.convert().await.unwrap(), 1);
     assert!(!plain.other_format_present());
-    assert_eq!(plain.read_range("one", 0, one.len() as u64 - 1).await.unwrap(), one);
-    assert_eq!(sealed.size("one").await.unwrap(), None);
+    assert_eq!(std::fs::read(plain.path_for("one")).unwrap(), one);
     assert_eq!(sealed.size("two").await.unwrap(), None, "a copy already in the new format wins");
 
-    assert_eq!(sealed.adopt(&plain).await.unwrap(), 2);
-    assert_eq!(sealed.read_range("two", 0, two.len() as u64 - 1).await.unwrap(), two);
+    let back = AudioCache::new(dir.path().to_path_buf(), &key).with_fallback(AudioCache::plain(dir.path().to_path_buf()));
+    assert_eq!(back.convert().await.unwrap(), 2);
+    assert_eq!(back.read_range("two", 0, two.len() as u64 - 1).await.unwrap(), two);
     assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 2);
+}
+
+#[tokio::test]
+async fn delete_removes_a_track_in_either_format() {
+    let dir = tempfile::tempdir().unwrap();
+    let key = random_bytes();
+    store(&AudioCache::new(dir.path().to_path_buf(), &key), "t", &sample(10), 10).await;
+    let plain = AudioCache::plain(dir.path().to_path_buf()).with_fallback(AudioCache::new(dir.path().to_path_buf(), &key));
+    plain.delete("t").await.unwrap();
+    assert_eq!(plain.size("t").await.unwrap(), None);
+    assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 0);
+}
+
+#[tokio::test]
+async fn a_corrupt_original_is_dropped_and_the_rest_converts() {
+    let dir = tempfile::tempdir().unwrap();
+    let key = random_bytes();
+    let sealed = AudioCache::new(dir.path().to_path_buf(), &key);
+    store(&sealed, "good", &sample(CHUNK_PLAIN + 9), 4096).await;
+    store(&sealed, "bad", &sample(CHUNK_PLAIN + 9), 4096).await;
+    let mut bytes = std::fs::read(sealed.path_for("bad")).unwrap();
+    bytes[100] ^= 1;
+    std::fs::write(sealed.path_for("bad"), bytes).unwrap();
+    let plain = AudioCache::plain(dir.path().to_path_buf()).with_fallback(AudioCache::new(dir.path().to_path_buf(), &key));
+    assert_eq!(plain.convert().await.unwrap(), 1);
+    assert_eq!(plain.read_range("good", 0, 9).await.unwrap(), &sample(10)[..]);
+    assert_eq!(plain.size("bad").await.unwrap(), None);
+    assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn a_failed_write_keeps_every_original_for_the_next_start() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let key = random_bytes();
+    let data = sample(2 * CHUNK_PLAIN);
+    store(&AudioCache::new(dir.path().to_path_buf(), &key), "t", &data, 4096).await;
+    let plain = AudioCache::plain(dir.path().to_path_buf()).with_fallback(AudioCache::new(dir.path().to_path_buf(), &key));
+    std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o500)).unwrap();
+    assert!(plain.convert().await.is_err());
+    std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    assert_eq!(plain.read_range("t", 0, data.len() as u64 - 1).await.unwrap(), data, "still readable in the old format");
+
+    std::fs::write(dir.path().join("half.bin.0011.part"), b"left by a crash").unwrap();
+    assert_eq!(plain.remove_partials().await.unwrap(), 1);
+    assert_eq!(plain.convert().await.unwrap(), 1);
+    assert_eq!(std::fs::read(plain.path_for("t")).unwrap(), data);
 }

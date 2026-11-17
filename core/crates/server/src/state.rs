@@ -168,28 +168,39 @@ fn holds_sealed_files(paths: &Paths) -> bool {
 
 // A library from the other edition is converted here, so either edition opens what the other left
 fn open(paths: &Paths, edition: Edition, master: Option<MasterKey>, keystore: &Arc<dyn KeyStore>) -> Result<Unlocked, StoreError> {
-    let (db_master, secrets, cache, cover_files) = match (edition, master) {
+    let (audio, covers) = (paths.audio.clone(), covers_dir(paths));
+    let (wanted, cache, cover_files) = match (edition, master) {
         (Edition::Encrypted, Some(master)) => {
-            if paths.db.exists() && is_plain_database(&paths.db) {
-                convert_database(&paths.db, None, Some(&master), &paths.backups)?;
-            }
-            (Some(master), Secrets::Clear, AudioCache::new(paths.audio.clone(), &master), AudioCache::new(covers_dir(paths), &master))
+            let files = |dir: PathBuf| AudioCache::new(dir.clone(), &master).with_fallback(AudioCache::plain(dir));
+            (Some(master), files(audio), files(covers))
         }
         (Edition::Encrypted, None) => return Err(StoreError::WrongKey),
         (Edition::Plain, master) => {
-            if let Some(master) = master
-                && paths.db.exists()
-                && !is_plain_database(&paths.db)
-            {
-                convert_database(&paths.db, Some(&master), None, &paths.backups)?;
-            }
-            let keystore = keystore.clone();
-            let secrets = Secrets::sealed(move || match master {
-                Some(master) => Ok(master),
-                None => load_or_create(keystore.as_ref()).map_err(|err| StoreError::Io(std::io::Error::other(err.to_string()))),
-            });
-            (None, secrets, AudioCache::plain(paths.audio.clone()), AudioCache::plain(covers_dir(paths)))
+            let files = |dir: PathBuf| match master {
+                Some(master) => AudioCache::plain(dir.clone()).with_fallback(AudioCache::new(dir, &master)),
+                None => AudioCache::plain(dir),
+            };
+            (None, files(audio), files(covers))
         }
+    };
+    let sealed_db = paths.db.exists() && !is_plain_database(&paths.db);
+    let mut db_master = if sealed_db { master } else { None };
+    if paths.db.exists() && sealed_db != wanted.is_some() && (!sealed_db || master.is_some()) {
+        match convert_database(&paths.db, db_master.as_ref(), wanted.as_ref(), &paths.backups) {
+            Ok(()) => db_master = wanted,
+            Err(StoreError::WrongKey) => return Err(StoreError::WrongKey),
+            // a full disk, say: the library stays as it is for this run and converts on the next start
+            Err(err) => tracing::warn!(%err, "library.db could not be converted, opening it as it is"),
+        }
+    }
+    let secrets = if db_master.is_some() {
+        Secrets::Clear
+    } else {
+        let keystore = keystore.clone();
+        Secrets::sealed(move || match master {
+            Some(master) => Ok(master),
+            None => load_or_create(keystore.as_ref()).map_err(|err| StoreError::Io(std::io::Error::other(err.to_string()))),
+        })
     };
     let conn = open_library(&paths.db, db_master.as_ref(), &paths.backups)?;
     match (&secrets, master) {
@@ -199,19 +210,13 @@ fn open(paths: &Paths, edition: Edition, master: Option<MasterKey>, keystore: &A
     Ok(Unlocked { master, db: Db::new(conn), cache, cover_files, secrets, history: Arc::default() })
 }
 
-// In the background after the stray-file sweep: caches can be large, and a file not yet converted only misses
+// In the background after the stray-file sweep; until then the files of the other format are read as they are
 async fn convert_caches(data: &Unlocked) {
     for files in [&data.cache, &data.cover_files] {
-        let dir = files.dir().to_path_buf();
-        let other = match data.master {
-            Some(master) if !files.is_sealed() => AudioCache::new(dir, &master),
-            _ if files.is_sealed() => AudioCache::plain(dir),
-            _ => continue,
-        };
-        match files.adopt(&other).await {
+        match files.convert().await {
             Ok(0) => {}
             Ok(moved) => tracing::info!(moved, dir = %files.dir().display(), "converted cache files from the other edition"),
-            Err(err) => tracing::warn!(%err, "cache files from the other edition could not be converted"),
+            Err(err) => tracing::warn!(%err, "cache files from the other edition stay as they are until the next start"),
         }
     }
 }

@@ -41,11 +41,18 @@ pub fn convert_database(path: &Path, from: Option<&MasterKey>, to: Option<&Maste
     backup_database(&conn, path, backups_dir, usize::try_from(version).unwrap_or_default())?;
     let next = path.with_extension("next");
     remove_if_exists(&next)?;
-    conn.execute("ATTACH DATABASE ?1 AS next KEY ?2", params![next.to_string_lossy(), key_literal(to.map(db_key).as_ref())])?;
-    conn.query_row("SELECT sqlcipher_export('next')", [], |_| Ok(()))?;
-    conn.pragma_update(Some("next"), "user_version", version)?;
-    conn.execute_batch("DETACH DATABASE next;")?;
+    let exported = (|| -> Result<(), StoreError> {
+        conn.execute("ATTACH DATABASE ?1 AS next KEY ?2", params![next.to_string_lossy(), key_literal(to.map(db_key).as_ref())])?;
+        conn.query_row("SELECT sqlcipher_export('next')", [], |_| Ok(()))?;
+        conn.pragma_update(Some("next"), "user_version", version)?;
+        conn.execute_batch("DETACH DATABASE next;")?;
+        Ok(())
+    })();
     drop(conn);
+    if let Err(err) = exported {
+        remove_if_exists(&next)?;
+        return Err(err);
+    }
     for suffix in ["-wal", "-shm"] {
         let mut side = path.as_os_str().to_owned();
         side.push(suffix);
@@ -160,7 +167,12 @@ pub fn backup_database(conn: &Connection, path: &Path, backups_dir: &Path, versi
     conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")?;
     fs::create_dir_all(backups_dir)?;
     // Millisecond prefix keeps lexicographic order chronological.
-    fs::copy(path, backups_dir.join(format!("library-{}-v{version}.db", now_ms())))?;
+    let backup = backups_dir.join(format!("library-{}-v{version}.db", now_ms()));
+    if let Err(err) = fs::copy(path, &backup) {
+        // a half copy must not push a good backup out of the rotation
+        let _ = fs::remove_file(&backup);
+        return Err(err.into());
+    }
     let mut backups: Vec<_> = fs::read_dir(backups_dir)?
         .filter_map(Result::ok)
         .map(|entry| entry.path())
