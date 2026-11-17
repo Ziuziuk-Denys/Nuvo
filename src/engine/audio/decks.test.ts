@@ -470,6 +470,31 @@ describe("transitions (sound part B slots)", () => {
     expect(s.switches).toEqual(["e2"]);
   });
 
+  it("a pause near the end holds the armed switch until play resumes", async () => {
+    const s = setup();
+    await nearEnd(s);
+    void s.decks.pause();
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(s.switches).toEqual([]);
+    expect(s.elements[1].paused).toBe(true);
+    await s.decks.resume();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(s.switches).toEqual(["e2"]);
+  });
+
+  it("a deck that finishes preparing during a pause does not start", async () => {
+    const s = setup();
+    await playing(s);
+    void s.decks.pause();
+    await vi.advanceTimersByTimeAsync(200);
+    s.decks.setCandidate({ entryId: "e2", trackId: "b", tempo });
+    s.elements[0].currentTime = 190;
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(s.elements[1].src).toBe("nuvo-core://local/v1/cache/audio/b");
+    expect(s.switches).toEqual([]);
+    expect(s.elements[1].paused).toBe(true);
+  });
+
   it("pause during a crossfade pauses both; next to another entry fades the outgoing deck", async () => {
     const policy: TransitionPolicy = (i) => ({ kind: "crossfade", startAtMediaMs: i.current.endMs - 6000, fadeMs: 6000 });
     const s = setup({ policy });
