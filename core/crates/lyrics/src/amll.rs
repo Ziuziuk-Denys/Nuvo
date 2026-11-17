@@ -29,6 +29,7 @@ struct Row {
     raw_lyric_file: String,
 }
 
+#[derive(Clone)]
 struct Entry {
     titles: Vec<String>,
     artists: Vec<String>,
@@ -79,16 +80,20 @@ impl Amll {
         Some(Self { client, base: base.trim_end_matches('/').to_string(), index: Mutex::new(None), lengths })
     }
 
-    pub async fn lookup(&self, query: &Query) -> Result<Option<LyricsCandidate>, LyricsError> {
-        let title = plain_title(&query.title);
-        let artist = plain(&query.artist);
+    /// Index entries for the query, newest first, at most a few.
+    async fn matching(&self, query: &Query) -> Result<Vec<Entry>, LyricsError> {
+        let (title, artist) = (plain_title(&query.title), plain(&query.artist));
         if title.is_empty() || artist.is_empty() {
-            return Ok(None);
+            return Ok(Vec::new());
         }
         let entries = self.entries().await?;
-        let matching = entries.iter().rev().filter(|entry| entry.titles.contains(&title) && entry.artists.iter().any(|name| artist.contains(name.as_str())));
-        for entry in matching.filter(|entry| safe_file(&entry.file)).take(MAX_FILES_PER_LOOKUP) {
-            let release_ms = self.release_length(entry).await;
+        let found = entries.iter().rev().filter(|entry| entry.titles.contains(&title) && entry.artists.iter().any(|name| artist.contains(name.as_str())));
+        Ok(found.filter(|entry| safe_file(&entry.file)).take(MAX_FILES_PER_LOOKUP).cloned().collect())
+    }
+
+    pub async fn lookup(&self, query: &Query) -> Result<Option<LyricsCandidate>, LyricsError> {
+        for entry in self.matching(query).await? {
+            let release_ms = self.release_length(&entry).await;
             if !same_cut(release_ms.as_deref(), query.duration_ms) {
                 continue;
             }
@@ -99,6 +104,17 @@ impl Amll {
             }
         }
         Ok(None)
+    }
+
+    /// Word-timed files for a search the owner typed, newest first, whatever their length.
+    pub async fn search_all(&self, query: &Query) -> Result<Vec<LyricsCandidate>, LyricsError> {
+        let mut found = Vec::new();
+        for entry in self.matching(query).await? {
+            let Some(content) = self.file(&entry.file).await.filter(|content| last_word_end(content).is_some()) else { continue };
+            let length = closest(self.release_length(&entry).await.as_deref(), query.duration_ms);
+            found.push(candidate(&Query { duration_ms: None, ..query.clone() }, content, length));
+        }
+        Ok(found)
     }
 
     async fn release_length(&self, entry: &Entry) -> Option<Vec<i64>> {

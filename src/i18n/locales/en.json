@@ -872,7 +872,18 @@
       "version_word": "Timed by word",
       "version_own": "Your lyrics",
       "version_timed": "Timed on this computer",
-      "version_written": "Written by Nuvo"
+      "version_written": "Written by Nuvo",
+      "find": "Find lyrics",
+      "find_title": "Title",
+      "find_artist": "Artist",
+      "find_search": "Search",
+      "find_results": "Found versions",
+      "find_searching": "Searching",
+      "find_none": "Nothing found. Try another spelling of the title or artist.",
+      "find_failed": "Couldn't search for lyrics. Check the connection and try again.",
+      "find_partial": "One source didn't answer, so the list may be incomplete.",
+      "find_hint": "Pick a version to open it in the editor, then save it.",
+      "find_fits": "Same length as this track"
     },
     "settings": {
       "auto_gain_desc": "Lowers the level before boosts so they don't clip",

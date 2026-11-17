@@ -1,3 +1,6 @@
+import { parseLyrics } from "./parse";
+import type { RawLyrics } from "./types";
+
 export interface SyncLine {
   text: string;
   atMs: number | null;
@@ -54,5 +57,22 @@ export function toLrc(lines: SyncLine[]): string {
   return lines
     .filter((line) => line.atMs !== null)
     .map((line) => `${formatStamp(line.atMs!)}${line.text ? ` ${line.text}` : ""}`)
+    .join("\n");
+}
+
+const wordStamp = (ms: number) => `<${formatStamp(ms).slice(1, -1)}>`;
+
+/** Text the editor can hold: word-timed TTML becomes LRC with a stamp before every word. */
+export function editableText(lyrics: RawLyrics): string {
+  if (lyrics.format !== "ttml") return lyrics.content;
+  const parsed = parseLyrics(lyrics, 0);
+  if (!parsed?.synced) return parsed?.plainText ?? "";
+  return parsed.lines
+    .filter((line) => !line.instrumental)
+    .map((line) => {
+      const words = (line.words ?? []).filter((word) => !word.background);
+      if (words.length === 0) return `${formatStamp(line.fromMs)}${line.text}`;
+      return `${formatStamp(line.fromMs)}${words.map((word) => `${wordStamp(word.fromMs)}${word.text}`).join("")}${wordStamp(line.toMs)}`;
+    })
     .join("\n");
 }

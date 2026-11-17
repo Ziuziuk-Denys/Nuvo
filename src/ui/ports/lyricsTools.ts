@@ -1,10 +1,12 @@
 import { playerRuntime, usePlayerStore } from "@/engine/compat";
 import type { Track } from "@/engine/types";
 import { lyrics } from "@/lyrics";
-import { deleteUserLyrics, editableLyrics, ensureTranslator, putUserLyrics, translateLines } from "@/lyrics/stream";
+import { deleteUserLyrics, editableLyrics, ensureTranslator, findLyrics, putUserLyrics, translateLines, type FoundLyrics } from "@/lyrics/stream";
 import { targetLanguage, textLines } from "@/lyrics/translation";
 
-export { clearStamp, detectFormat, formatStamp, isComplete, markEnd, nudge, stamp, startSync, toLrc, type SyncLine } from "@/lyrics/tapSync";
+export { clearStamp, detectFormat, editableText, formatStamp, isComplete, markEnd, nudge, stamp, startSync, toLrc, type SyncLine } from "@/lyrics/tapSync";
+export type { Candidate as FoundVersion } from "@/lyrics/types";
+export { formatDuration } from "@/imports/report";
 
 export { NoTranslatorError } from "@/lyrics/stream";
 
@@ -33,6 +35,10 @@ export function loadEditable(track: LyricsTrack, signal: AbortSignal) {
 export async function saveLyrics(track: LyricsTrack, lyrics: { format: "lrc" | "plain"; content: string }): Promise<void> {
   await putUserLyrics(fetcher, track.id, lyrics);
   await reloadShown(track);
+}
+
+export function searchLyrics(query: { title: string; artist: string; durationMs: number }, signal: AbortSignal): Promise<FoundLyrics> {
+  return findLyrics(fetcher, query, signal);
 }
 
 export async function dropUserLyrics(track: LyricsTrack): Promise<void> {

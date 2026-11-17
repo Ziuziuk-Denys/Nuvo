@@ -1,5 +1,5 @@
 import type { Track } from "@/engine/types";
-import type { RawLyrics, StreamEvent } from "./types";
+import type { Candidate, RawLyrics, StreamEvent } from "./types";
 
 export const CORE_URL = "nuvo-core://local";
 
@@ -149,6 +149,19 @@ export async function editableLyrics(fetcher: Fetch, track: Track, signal: Abort
     if (!best || rank > best.rank) best = { lyrics: event.candidate.lyrics, rank };
   }
   return best?.lyrics ?? null;
+}
+
+export interface FoundLyrics {
+  results: Candidate[];
+  failed: string[];
+}
+
+export async function findLyrics(fetcher: Fetch, query: { title: string; artist: string; durationMs: number }, signal: AbortSignal): Promise<FoundLyrics> {
+  const params = new URLSearchParams({ title: query.title, artist: query.artist });
+  if (query.durationMs > 0) params.set("durationMs", String(Math.round(query.durationMs)));
+  const response = await fetcher(`${CORE_URL}/v1/lyrics/search?${params}`, { signal });
+  if (!response.ok) throw new Error(`lyrics search answered ${response.status}`);
+  return (await response.json()) as FoundLyrics;
 }
 
 export class NoTranslatorError extends Error {}

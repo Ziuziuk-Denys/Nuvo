@@ -152,3 +152,16 @@ async fn retry_after_pauses_every_request_and_the_client_names_itself() {
     assert_eq!(hits.load(Ordering::SeqCst), 1, "the second lookup waits out Retry-After");
     assert!(agent.lock().unwrap().starts_with("Nuvo/"));
 }
+
+#[tokio::test]
+async fn a_typed_search_lists_every_version_with_lyrics() {
+    let search = json!([
+        record(20, 150.0, Some("[00:01.00] short"), None, false),
+        record(21, 240.0, None, Some("long text"), false),
+        record(22, 200.0, None, None, true),
+    ]);
+    let (base, _) = mock(search).await;
+    let found = Lrclib::new(base).search_all(&query("Other", None)).await.unwrap();
+    let seen: Vec<_> = found.iter().map(|c| (c.lyrics.format.as_str(), c.matched_track.as_ref().unwrap().duration_ms)).collect();
+    assert_eq!(seen, [("lrc", Some(150_000)), ("plain", Some(240_000))]);
+}
