@@ -60,6 +60,7 @@ async fn unavailable_secret_service_locks_an_existing_library_and_fails_a_fresh_
         shazam_url: String::new(),
         pace: common::FAST,
         lastfm_url: String::new(),
+        edition: nuvo_server::Edition::Encrypted,
         exit_on_stdin_eof: false,
         net_rewrite: None,
         env: Default::default(),
@@ -115,7 +116,7 @@ impl KeyStore for PromptStore {
 async fn health_answers_starting_and_data_routes_wait_while_the_keyring_prompt_is_open() {
     let dir = tempfile::tempdir().unwrap();
     let (answer, prompt) = mpsc::channel();
-    let config = Config { tools_url: None, paths: Paths::under(dir.path()), token: common::TOKEN.into(), lrclib_url: String::new(), amll_url: String::new(), shazam_url: String::new(), lastfm_url: String::new(), pace: common::FAST, exit_on_stdin_eof: false, net_rewrite: None, env: Default::default(), test: Default::default() };
+    let config = Config { tools_url: None, paths: Paths::under(dir.path()), token: common::TOKEN.into(), lrclib_url: String::new(), amll_url: String::new(), shazam_url: String::new(), lastfm_url: String::new(), pace: common::FAST, edition: nuvo_server::Edition::Encrypted, exit_on_stdin_eof: false, net_rewrite: None, env: Default::default(), test: Default::default() };
     let state = AppState::new(config, Box::new(PromptStore { answer: Mutex::new(prompt), inner: MemoryKeyStore::default() }));
     let app = router(state.clone());
     let booting = tokio::spawn({

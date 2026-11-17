@@ -16,7 +16,8 @@ use nuvo_lyrics::{Amll, Lrclib};
 use nuvo_net::Net;
 use nuvo_recognize::{Pace, Shazam};
 use nuvo_soundcloud::{Limits, SoundCloud};
-use nuvo_store::{Db, StoreError, cache_index, now_ms, settings};
+use nuvo_store::settings::Secrets;
+use nuvo_store::{Db, StoreError, cache_index, convert_database, is_plain_database, now_ms, open_library, settings};
 use reqwest::Url;
 use serde_json::json;
 use tokio::sync::{Mutex, Notify};
@@ -27,8 +28,16 @@ use crate::routes::recognize::FileGrants;
 use crate::{netcheck, precache};
 use crate::paths::{Paths, ensure_private_dir};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Edition {
+    /// Library and caches stay as they are on disk; only service tokens are sealed, by the system keyring.
+    Plain,
+    Encrypted,
+}
+
 pub struct Config {
     pub paths: Paths,
+    pub edition: Edition,
     pub token: String,
     pub lrclib_url: String,
     pub amll_url: String,
@@ -66,10 +75,12 @@ pub enum BootError {
 
 #[derive(Clone)]
 pub struct Unlocked {
-    pub master: MasterKey,
+    /// Always known in the encrypted edition; in the plain one only while files sealed by an earlier edition remain.
+    pub master: Option<MasterKey>,
     pub db: Db,
     pub cache: AudioCache,
     pub cover_files: AudioCache,
+    pub secrets: Secrets,
     pub history: Arc<std::sync::Mutex<nuvo_store::listening::History>>,
 }
 
@@ -113,7 +124,8 @@ pub struct Inner {
     pub word_timing: crate::word_timing::Jobs,
     pub made_lyrics: crate::word_timing::Jobs,
     pub shutdown: Notify,
-    keystore: Box<dyn KeyStore>,
+    pub edition: Edition,
+    keystore: Arc<dyn KeyStore>,
     unlocked: RwLock<Option<Unlocked>>,
     starting: AtomicBool,
 }
@@ -139,14 +151,69 @@ pub fn covers_dir(paths: &Paths) -> PathBuf {
     paths.audio.with_file_name("covers")
 }
 
-fn open(paths: &Paths, master: MasterKey) -> Result<Unlocked, StoreError> {
-    Ok(Unlocked {
-        master,
-        db: Db::open(&paths.db, &master, &paths.backups)?,
-        cache: AudioCache::new(paths.audio.clone(), &master),
-        cover_files: AudioCache::new(covers_dir(paths), &master),
-        history: Arc::default(),
-    })
+fn load_or_create(keystore: &dyn KeyStore) -> Result<MasterKey, KeyStoreError> {
+    if let Some(master) = keystore.load()? {
+        return Ok(master);
+    }
+    let master: MasterKey = random_bytes();
+    keystore.save(&master)?;
+    Ok(master)
+}
+
+fn holds_sealed_files(paths: &Paths) -> bool {
+    (paths.db.exists() && !is_plain_database(&paths.db))
+        || AudioCache::plain(paths.audio.clone()).other_format_present()
+        || AudioCache::plain(covers_dir(paths)).other_format_present()
+}
+
+// A library from the other edition is converted here, so either edition opens what the other left
+fn open(paths: &Paths, edition: Edition, master: Option<MasterKey>, keystore: &Arc<dyn KeyStore>) -> Result<Unlocked, StoreError> {
+    let (db_master, secrets, cache, cover_files) = match (edition, master) {
+        (Edition::Encrypted, Some(master)) => {
+            if paths.db.exists() && is_plain_database(&paths.db) {
+                convert_database(&paths.db, None, Some(&master), &paths.backups)?;
+            }
+            (Some(master), Secrets::Clear, AudioCache::new(paths.audio.clone(), &master), AudioCache::new(covers_dir(paths), &master))
+        }
+        (Edition::Encrypted, None) => return Err(StoreError::WrongKey),
+        (Edition::Plain, master) => {
+            if let Some(master) = master
+                && paths.db.exists()
+                && !is_plain_database(&paths.db)
+            {
+                convert_database(&paths.db, Some(&master), None, &paths.backups)?;
+            }
+            let keystore = keystore.clone();
+            let secrets = Secrets::sealed(move || match master {
+                Some(master) => Ok(master),
+                None => load_or_create(keystore.as_ref()).map_err(|err| StoreError::Io(std::io::Error::other(err.to_string()))),
+            });
+            (None, secrets, AudioCache::plain(paths.audio.clone()), AudioCache::plain(covers_dir(paths)))
+        }
+    };
+    let conn = open_library(&paths.db, db_master.as_ref(), &paths.backups)?;
+    match (&secrets, master) {
+        (Secrets::Clear, Some(master)) => settings::reseal(&conn, &Secrets::sealed(move || Ok(master)), &secrets)?,
+        _ => settings::reseal(&conn, &Secrets::Clear, &secrets)?,
+    }
+    Ok(Unlocked { master, db: Db::new(conn), cache, cover_files, secrets, history: Arc::default() })
+}
+
+// In the background after the stray-file sweep: caches can be large, and a file not yet converted only misses
+async fn convert_caches(data: &Unlocked) {
+    for files in [&data.cache, &data.cover_files] {
+        let dir = files.dir().to_path_buf();
+        let other = match data.master {
+            Some(master) if !files.is_sealed() => AudioCache::new(dir, &master),
+            _ if files.is_sealed() => AudioCache::plain(dir),
+            _ => continue,
+        };
+        match files.adopt(&other).await {
+            Ok(0) => {}
+            Ok(moved) => tracing::info!(moved, dir = %files.dir().display(), "converted cache files from the other edition"),
+            Err(err) => tracing::warn!(%err, "cache files from the other edition could not be converted"),
+        }
+    }
 }
 
 impl AppState {
@@ -159,6 +226,7 @@ impl AppState {
     }
 
     pub fn new(config: Config, keystore: Box<dyn KeyStore>) -> Self {
+        let keystore: Arc<dyn KeyStore> = Arc::from(keystore);
         let proxy = Arc::new(RwLock::new(None));
         let hook = proxy_hook(&proxy);
         let net = Net::with_proxy(config.net_rewrite, Some(hook.clone()));
@@ -205,6 +273,7 @@ impl AppState {
             made_lyrics: Default::default(),
             shutdown: Notify::new(),
             paths: config.paths,
+            edition: config.edition,
             keystore,
             unlocked: RwLock::new(None),
             starting: AtomicBool::new(true),
@@ -243,6 +312,7 @@ impl AppState {
             let stray = data.cover_files.remove_partials().await.map_err(std::io::Error::other)? + data.cover_files.remove_unindexed(&covers).await.map_err(std::io::Error::other)?;
             tracing::info!(stray, "removed stray cover files");
             crate::downloads::clean_stale(&data).await;
+            tokio::spawn(async move { convert_caches(&data).await });
         }
         self.starting.store(false, Ordering::SeqCst);
         crate::local::poke(self, crate::local::Msg::All);
@@ -259,8 +329,28 @@ impl AppState {
         }
         ensure_private_dir(&paths.audio)?;
         ensure_private_dir(&covers_dir(paths))?;
+        if self.edition == Edition::Plain {
+            let master = if holds_sealed_files(paths) {
+                self.keystore.load().unwrap_or_else(|err| {
+                    tracing::warn!(%err, "secret service unavailable, files from the encrypted edition stay as they are");
+                    None
+                })
+            } else {
+                None
+            };
+            let unlocked = match open(paths, self.edition, master, &self.keystore) {
+                Ok(unlocked) => Some(unlocked),
+                Err(StoreError::WrongKey) => {
+                    tracing::warn!("library.db is encrypted and its key is not at hand, starting locked");
+                    None
+                }
+                Err(err) => return Err(err.into()),
+            };
+            *self.unlocked.write().expect("state lock") = unlocked;
+            return Ok(());
+        }
         let unlocked = match self.keystore.load() {
-            Ok(Some(master)) => match open(paths, master) {
+            Ok(Some(master)) => match open(paths, self.edition, Some(master), &self.keystore) {
                 Ok(unlocked) => Some(unlocked),
                 Err(StoreError::WrongKey) => {
                     tracing::warn!("keyring key does not open library.db, starting locked");
@@ -268,13 +358,13 @@ impl AppState {
                 }
                 Err(err) => return Err(err.into()),
             },
-            Ok(None) if paths.db.exists() => None,
+            Ok(None) if paths.db.exists() && !is_plain_database(&paths.db) => None,
             Ok(None) => {
                 let master: MasterKey = random_bytes();
                 self.keystore.save(&master)?;
-                Some(open(paths, master)?)
+                Some(open(paths, self.edition, Some(master), &self.keystore)?)
             }
-            Err(err) if paths.db.exists() => {
+            Err(err) if paths.db.exists() && !is_plain_database(&paths.db) => {
                 tracing::warn!(%err, "secret service unavailable, starting locked");
                 None
             }
@@ -352,6 +442,9 @@ impl AppState {
     }
 
     pub fn key_protection(&self) -> &'static str {
+        if self.edition == Edition::Plain {
+            return "none";
+        }
         match self.keystore.protection() {
             Protection::Keyring => "keyring",
             Protection::File => "file",
@@ -378,7 +471,7 @@ impl AppState {
     }
 
     pub async fn set_key_passphrase(&self, passphrase: Option<String>) -> Result<(), ApiError> {
-        let master = self.data()?.master;
+        let master = self.data()?.master.ok_or_else(|| ApiError::Conflict("this edition keeps no key to protect".into()))?;
         let state = self.clone();
         tokio::task::spawn_blocking(move || state.keystore.set_passphrase(&master, passphrase.as_deref()))
             .await
@@ -390,8 +483,8 @@ impl AppState {
     }
 
     pub async fn unlock_with(&self, master: MasterKey) -> Result<(), ApiError> {
-        let paths = self.paths.clone();
-        let unlocked = tokio::task::spawn_blocking(move || open(&paths, master))
+        let (paths, edition, keystore) = (self.paths.clone(), self.edition, self.keystore.clone());
+        let unlocked = tokio::task::spawn_blocking(move || open(&paths, edition, Some(master), &keystore))
             .await
             .map_err(|e| ApiError::Internal(e.to_string()))?
             .map_err(|err| match err {
@@ -402,6 +495,8 @@ impl AppState {
             tracing::warn!(%err, "unlocked, but the key could not be saved; the phrase will be needed again");
         }
         unlocked.db.call(|c| settings::set(c, settings::RECOVERY_CONFIRMED, &json!(true))).await?;
+        let converting = unlocked.clone();
+        tokio::spawn(async move { convert_caches(&converting).await });
         *self.unlocked.write().expect("state lock") = Some(unlocked);
         crate::local::poke(self, crate::local::Msg::All);
         crate::downloads::poke(self);

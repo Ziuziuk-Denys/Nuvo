@@ -131,3 +131,41 @@ async fn out_of_range_reads_are_rejected() {
     assert!(matches!(cache.read_range("t", 50, 100).await.unwrap_err(), CacheError::Range));
     assert!(matches!(cache.read_range("t", 60, 50).await.unwrap_err(), CacheError::Range));
 }
+
+#[tokio::test]
+async fn a_plain_cache_keeps_the_bytes_as_they_are() {
+    let dir = tempfile::tempdir().unwrap();
+    let cache = AudioCache::plain(dir.path().to_path_buf());
+    for len in [1, CHUNK_PLAIN - 1, CHUNK_PLAIN, 3 * CHUNK_PLAIN + 777] {
+        let data = sample(len);
+        let id = format!("t{len}");
+        assert_eq!(store(&cache, &id, &data, 10_000).await, len as u64);
+        assert_eq!(cache.size(&id).await.unwrap(), Some(len as u64));
+        assert_eq!(std::fs::read(cache.path_for(&id)).unwrap(), data);
+        let (start, end) = (len as u64 / 3, len as u64 - 1);
+        assert_eq!(cache.read_range(&id, start, end).await.unwrap(), &data[start as usize..]);
+    }
+    assert!(!cache.other_format_present());
+}
+
+#[tokio::test]
+async fn files_move_between_the_sealed_and_the_plain_format() {
+    let dir = tempfile::tempdir().unwrap();
+    let sealed = AudioCache::new(dir.path().to_path_buf(), &random_bytes());
+    let plain = AudioCache::plain(dir.path().to_path_buf());
+    let (one, two) = (sample(CHUNK_PLAIN + 5), sample(77));
+    store(&sealed, "one", &one, 4096).await;
+    store(&sealed, "two", &two, 4096).await;
+    store(&plain, "two", &two, 4096).await;
+    assert!(plain.other_format_present());
+
+    assert_eq!(plain.adopt(&sealed).await.unwrap(), 1);
+    assert!(!plain.other_format_present());
+    assert_eq!(plain.read_range("one", 0, one.len() as u64 - 1).await.unwrap(), one);
+    assert_eq!(sealed.size("one").await.unwrap(), None);
+    assert_eq!(sealed.size("two").await.unwrap(), None, "a copy already in the new format wins");
+
+    assert_eq!(sealed.adopt(&plain).await.unwrap(), 2);
+    assert_eq!(sealed.read_range("two", 0, two.len() as u64 - 1).await.unwrap(), two);
+    assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 2);
+}

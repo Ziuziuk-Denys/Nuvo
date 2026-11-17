@@ -49,6 +49,7 @@ async fn update_settings(State(state): State<AppState>, JsonBody(body): JsonBody
     let api_secret = body.api_secret.as_deref().map(|v| checked(v, "apiSecret")).transpose()?;
     let enabled = body.enabled;
     let data = state.data()?;
+    let secrets = data.secrets.clone();
     let status = data
         .db
         .call(move |c| {
@@ -56,9 +57,9 @@ async fn update_settings(State(state): State<AppState>, JsonBody(body): JsonBody
             let mut changed = false;
             for (key, value) in [(settings::LASTFM_API_KEY, api_key), (settings::LASTFM_API_SECRET, api_secret)] {
                 if let Some(value) = value
-                    && scrobbler::text(&tx, key)?.as_deref() != Some(value.as_str())
+                    && scrobbler::secret_text(&tx, &secrets, key)?.as_deref() != Some(value.as_str())
                 {
-                    settings::set(&tx, key, &json!(value))?;
+                    settings::set_secret(&tx, &secrets, key, &json!(value))?;
                     changed = true;
                 }
             }
@@ -79,9 +80,10 @@ async fn update_settings(State(state): State<AppState>, JsonBody(body): JsonBody
 
 async fn auth_token(State(state): State<AppState>) -> Result<Json<LastfmToken>, ApiError> {
     let data = state.data()?;
+    let secrets = data.secrets.clone();
     let creds = data
         .db
-        .call(scrobbler::credentials)
+        .call(move |c| scrobbler::credentials(c, &secrets))
         .await?
         .ok_or_else(|| ApiError::Invalid("enter the Last.fm API key and secret first".into()))?;
     let token = state.lastfm.get_token(&creds).await.map_err(lastfm_error)?;
@@ -91,9 +93,13 @@ async fn auth_token(State(state): State<AppState>) -> Result<Json<LastfmToken>, 
 async fn auth_session(State(state): State<AppState>, JsonBody(body): JsonBody<LastfmSessionRequest>) -> Result<Json<LastfmStatus>, ApiError> {
     let token = checked(&body.token, "token")?;
     let data = state.data()?;
+    let secrets = data.secrets.clone();
     let creds = data
         .db
-        .call(scrobbler::credentials)
+        .call({
+            let secrets = secrets.clone();
+            move |c| scrobbler::credentials(c, &secrets)
+        })
         .await?
         .ok_or_else(|| ApiError::Invalid("enter the Last.fm API key and secret first".into()))?;
     let session = state.lastfm.get_session(&creds, &token).await.map_err(lastfm_error)?;
@@ -101,7 +107,7 @@ async fn auth_session(State(state): State<AppState>, JsonBody(body): JsonBody<La
         .db
         .call(move |c| {
             let tx = c.unchecked_transaction()?;
-            settings::set(&tx, settings::LASTFM_SESSION_KEY, &json!(session.key))?;
+            settings::set_secret(&tx, &secrets, settings::LASTFM_SESSION_KEY, &json!(session.key))?;
             settings::set(&tx, settings::LASTFM_USER, &json!(session.name))?;
             settings::set(&tx, settings::LASTFM_LAST_ERROR, &Value::Null)?;
             tx.commit()?;

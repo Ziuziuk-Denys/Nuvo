@@ -136,7 +136,7 @@ async fn a_locked_library_serves_covers_without_writing_them() {
 #[tokio::test]
 async fn stray_cover_files_are_removed_at_start() {
     let first = common::core();
-    let key = first.state.data().unwrap().master;
+    let key = first.state.data().unwrap().master.unwrap();
     let covers = first.dir.path().join("cache/covers");
     std::fs::write(covers.join("0000orphan.lac"), b"LAC1 left behind").unwrap();
     std::fs::write(covers.join("0000orphan.lac.ab12.part"), b"half").unwrap();
@@ -148,6 +148,7 @@ async fn stray_cover_files_are_removed_at_start() {
         shazam_url: String::new(),
         lastfm_url: String::new(),
         pace: common::FAST,
+        edition: nuvo_server::Edition::Encrypted,
         exit_on_stdin_eof: false,
         net_rewrite: None,
         env: Default::default(),
@@ -170,6 +171,7 @@ async fn covers_load_while_the_daemon_is_starting() {
         shazam_url: String::new(),
         lastfm_url: String::new(),
         pace: common::FAST,
+        edition: nuvo_server::Edition::Encrypted,
         exit_on_stdin_eof: false,
         net_rewrite: Some(fx.base.clone()),
         env: Default::default(),

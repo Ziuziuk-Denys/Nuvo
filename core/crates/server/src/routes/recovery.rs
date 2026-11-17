@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 
 use crate::error::ApiError;
 use crate::extract::JsonBody;
-use crate::state::AppState;
+use crate::state::{AppState, Edition};
 
 pub fn routes() -> Router<AppState> {
     Router::new()
@@ -25,7 +25,8 @@ async fn phrase(State(state): State<AppState>) -> Result<Json<RecoveryPhrase>, A
     if confirmed == Some(Value::Bool(true)) {
         return Err(ApiError::NotFound("recovery phrase was already confirmed".into()));
     }
-    Ok(Json(RecoveryPhrase { phrase: phrase_from_key(&data.master) }))
+    let master = data.master.filter(|_| state.edition == Edition::Encrypted).ok_or_else(|| ApiError::NotFound("this edition keeps no recovery phrase".into()))?;
+    Ok(Json(RecoveryPhrase { phrase: phrase_from_key(&master) }))
 }
 
 async fn confirm(State(state): State<AppState>) -> Result<StatusCode, ApiError> {

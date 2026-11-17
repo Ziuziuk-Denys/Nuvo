@@ -144,7 +144,7 @@ async fn the_discovered_id_survives_a_restart() {
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
     assert_eq!(stored.unwrap()["id"], ID_A);
-    let key = data.master;
+    let key = data.master.unwrap();
     drop(data);
     let dir = first.dir;
     drop(first.state);

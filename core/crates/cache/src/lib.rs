@@ -1,4 +1,4 @@
-// On disk: <sha256(track_id)>.lac = "LAC1" || 16-byte nonce prefix || sealed 64 KiB chunks
+// On disk: <sha256(track_id)>.lac = "LAC1" || 16-byte nonce prefix || sealed 64 KiB chunks, or <sha256(track_id)>.bin as is
 
 use std::collections::HashSet;
 use std::io::SeekFrom;
@@ -12,6 +12,8 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 pub const AUDIO_KEY_INFO: &str = "nuvo/audio/v1";
 const MAGIC: &[u8; 4] = b"LAC1";
 const HEADER_LEN: u64 = (MAGIC.len() + NONCE_PREFIX_LEN) as u64;
+const SEALED_EXT: &str = "lac";
+const PLAIN_EXT: &str = "bin";
 
 #[derive(Debug, thiserror::Error)]
 pub enum CacheError {
@@ -28,7 +30,7 @@ pub enum CacheError {
 #[derive(Clone)]
 pub struct AudioCache {
     dir: PathBuf,
-    cipher: Arc<ChunkCipher>,
+    cipher: Option<Arc<ChunkCipher>>,
 }
 
 #[derive(Debug)]
@@ -39,28 +41,54 @@ pub struct Finished {
 
 impl AudioCache {
     pub fn new(dir: PathBuf, master: &[u8; 32]) -> Self {
-        Self { dir, cipher: Arc::new(ChunkCipher::new(&derive_key(master, AUDIO_KEY_INFO))) }
+        Self { dir, cipher: Some(Arc::new(ChunkCipher::new(&derive_key(master, AUDIO_KEY_INFO)))) }
+    }
+
+    pub fn plain(dir: PathBuf) -> Self {
+        Self { dir, cipher: None }
+    }
+
+    pub fn dir(&self) -> &Path {
+        &self.dir
+    }
+
+    pub fn is_sealed(&self) -> bool {
+        self.cipher.is_some()
+    }
+
+    fn ext(&self) -> &'static str {
+        if self.cipher.is_some() { SEALED_EXT } else { PLAIN_EXT }
     }
 
     pub fn path_for(&self, track_id: &str) -> PathBuf {
-        self.dir.join(format!("{}.lac", sha256_hex(track_id.as_bytes())))
+        self.dir.join(format!("{}.{}", sha256_hex(track_id.as_bytes()), self.ext()))
     }
 
     pub async fn begin(&self, track_id: &str) -> Result<CacheWriter, CacheError> {
+        self.begin_at(self.path_for(track_id)).await
+    }
+
+    async fn begin_at(&self, path: PathBuf) -> Result<CacheWriter, CacheError> {
         fs::create_dir_all(&self.dir).await?;
-        let path = self.path_for(track_id);
         // Unique per upload: two concurrent uploads of one track must not share a file.
         let part = path.with_extension(format!("{}.part", nuvo_crypto::to_hex(&random_bytes::<8>())));
         let prefix: [u8; NONCE_PREFIX_LEN] = random_bytes();
         let mut file = fs::File::create(&part).await?;
-        file.write_all(MAGIC).await?;
-        file.write_all(&prefix).await?;
+        if self.cipher.is_some() {
+            file.write_all(MAGIC).await?;
+            file.write_all(&prefix).await?;
+        }
         Ok(CacheWriter { cipher: self.cipher.clone(), file, part, path, prefix, buffer: Vec::with_capacity(CHUNK_PLAIN), index: 0, size: 0 })
     }
 
     pub async fn size(&self, track_id: &str) -> Result<Option<u64>, CacheError> {
-        match fs::metadata(self.path_for(track_id)).await {
-            Ok(meta) => Ok(Some(plain_len(meta.len().saturating_sub(HEADER_LEN)))),
+        self.size_at(&self.path_for(track_id)).await
+    }
+
+    async fn size_at(&self, path: &Path) -> Result<Option<u64>, CacheError> {
+        match fs::metadata(path).await {
+            Ok(meta) if self.cipher.is_some() => Ok(Some(plain_len(meta.len().saturating_sub(HEADER_LEN)))),
+            Ok(meta) => Ok(Some(meta.len())),
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(None),
             Err(err) => Err(err.into()),
         }
@@ -68,11 +96,21 @@ impl AudioCache {
 
     /// Inclusive byte range of the plaintext.
     pub async fn read_range(&self, track_id: &str, start: u64, end: u64) -> Result<Vec<u8>, CacheError> {
-        let size = self.size(track_id).await?.ok_or(CacheError::Range)?;
+        self.read_at(&self.path_for(track_id), start, end).await
+    }
+
+    async fn read_at(&self, path: &Path, start: u64, end: u64) -> Result<Vec<u8>, CacheError> {
+        let size = self.size_at(path).await?.ok_or(CacheError::Range)?;
         if start > end || end >= size {
             return Err(CacheError::Range);
         }
-        let mut file = fs::File::open(self.path_for(track_id)).await?;
+        let mut file = fs::File::open(path).await?;
+        let Some(cipher) = &self.cipher else {
+            file.seek(SeekFrom::Start(start)).await?;
+            let mut out = vec![0u8; (end - start + 1) as usize];
+            file.read_exact(&mut out).await?;
+            return Ok(out);
+        };
         let mut header = [0u8; HEADER_LEN as usize];
         if let Err(e) = file.read_exact(&mut header).await {
             if e.kind() == std::io::ErrorKind::UnexpectedEof {
@@ -92,7 +130,7 @@ impl AudioCache {
         for index in first..=last {
             sealed.clear();
             (&mut file).take(CHUNK_CIPHER as u64).read_to_end(&mut sealed).await?;
-            let plain = self.cipher.open(&prefix, index, &sealed).map_err(|_| CacheError::Corrupt)?;
+            let plain = cipher.open(&prefix, index, &sealed).map_err(|_| CacheError::Corrupt)?;
             let chunk_start = index * CHUNK_PLAIN as u64;
             let from = start.saturating_sub(chunk_start) as usize;
             let to = ((end - chunk_start) as usize).min(plain.len() - 1);
@@ -115,7 +153,51 @@ impl AudioCache {
 
     pub async fn remove_unindexed(&self, indexed_track_ids: &[String]) -> Result<usize, CacheError> {
         let keep: HashSet<PathBuf> = indexed_track_ids.iter().map(|id| self.path_for(id)).collect();
-        self.remove_where(|path| path.extension().is_some_and(|ext| ext == "lac") && !keep.contains(path)).await
+        self.remove_where(|path| path.extension().is_some_and(|ext| ext == self.ext()) && !keep.contains(path)).await
+    }
+
+    pub fn other_format_present(&self) -> bool {
+        let other = if self.cipher.is_some() { PLAIN_EXT } else { SEALED_EXT };
+        std::fs::read_dir(&self.dir).is_ok_and(|entries| entries.filter_map(Result::ok).any(|entry| entry.path().extension().is_some_and(|ext| ext == other)))
+    }
+
+    /// Rewrites the files `other` left in this folder into this cache's format and returns how many moved.
+    pub async fn adopt(&self, other: &AudioCache) -> Result<usize, CacheError> {
+        let mut moved = 0;
+        let mut entries = match fs::read_dir(&self.dir).await {
+            Ok(entries) => entries,
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+            Err(err) => return Err(err.into()),
+        };
+        while let Some(entry) = entries.next_entry().await? {
+            let from = entry.path();
+            if from.extension().is_none_or(|ext| ext != other.ext()) {
+                continue;
+            }
+            let to = from.with_extension(self.ext());
+            if fs::try_exists(&to).await? {
+                remove_if_exists(&from).await?;
+                continue;
+            }
+            // a file that does not convert is dropped: it is only a cache
+            if self.copy_from(other, &from, to).await.is_ok() {
+                moved += 1;
+            }
+            remove_if_exists(&from).await?;
+        }
+        Ok(moved)
+    }
+
+    async fn copy_from(&self, other: &AudioCache, from: &Path, to: PathBuf) -> Result<(), CacheError> {
+        let size = other.size_at(from).await?.unwrap_or(0);
+        let mut writer = self.begin_at(to).await?;
+        let mut start = 0;
+        while start < size {
+            let end = (start + CHUNK_PLAIN as u64).min(size) - 1;
+            writer.write(&other.read_at(from, start, end).await?).await?;
+            start = end + 1;
+        }
+        writer.finish().await.map(drop)
     }
 
     async fn remove_where(&self, doomed: impl Fn(&Path) -> bool) -> Result<usize, CacheError> {
@@ -144,7 +226,7 @@ async fn remove_if_exists(path: &Path) -> Result<(), CacheError> {
 }
 
 pub struct CacheWriter {
-    cipher: Arc<ChunkCipher>,
+    cipher: Option<Arc<ChunkCipher>>,
     file: fs::File,
     part: PathBuf,
     path: PathBuf,
@@ -177,8 +259,10 @@ impl CacheWriter {
     }
 
     async fn flush_chunk(&mut self) -> Result<(), CacheError> {
-        let sealed = self.cipher.seal(&self.prefix, self.index, &self.buffer);
-        self.file.write_all(&sealed).await?;
+        match &self.cipher {
+            Some(cipher) => self.file.write_all(&cipher.seal(&self.prefix, self.index, &self.buffer)).await?,
+            None => self.file.write_all(&self.buffer).await?,
+        }
         self.buffer.clear();
         self.index += 1;
         Ok(())

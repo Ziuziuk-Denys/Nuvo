@@ -1,10 +1,11 @@
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use nuvo_crypto::{MasterKey, derive_key, to_hex};
 use rusqlite::functions::FunctionFlags;
-use rusqlite::{Connection, ErrorCode};
+use rusqlite::{Connection, ErrorCode, params};
 
 use crate::{StoreError, now_ms, schema::MIGRATIONS};
 
@@ -12,13 +13,65 @@ pub const DB_KEY_INFO: &str = "nuvo/db/v1";
 const KEEP_BACKUPS: usize = 3;
 
 pub fn open_connection(path: &Path, db_key: &[u8; 32], backups_dir: &Path) -> Result<Connection, StoreError> {
+    connect(path, Some(db_key), backups_dir)
+}
+
+pub fn open_library(path: &Path, master: Option<&MasterKey>, backups_dir: &Path) -> Result<Connection, StoreError> {
+    connect(path, master.map(db_key).as_ref(), backups_dir)
+}
+
+fn db_key(master: &MasterKey) -> [u8; 32] {
+    derive_key(master, DB_KEY_INFO)
+}
+
+// Raw-key syntax skips PBKDF2; an empty key means no encryption
+fn key_literal(db_key: Option<&[u8; 32]>) -> String {
+    db_key.map(|key| format!("x'{}'", to_hex(key))).unwrap_or_default()
+}
+
+pub fn is_plain_database(path: &Path) -> bool {
+    let mut header = [0u8; 16];
+    fs::File::open(path).and_then(|mut file| file.read_exact(&mut header)).is_ok() && &header == b"SQLite format 3\0"
+}
+
+/// Rewrites library.db from one master key to another, or to or from none; the old file goes to the backups first.
+pub fn convert_database(path: &Path, from: Option<&MasterKey>, to: Option<&MasterKey>, backups_dir: &Path) -> Result<(), StoreError> {
+    let conn = open_library(path, from, backups_dir)?;
+    let version: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+    backup_database(&conn, path, backups_dir, usize::try_from(version).unwrap_or_default())?;
+    let next = path.with_extension("next");
+    remove_if_exists(&next)?;
+    conn.execute("ATTACH DATABASE ?1 AS next KEY ?2", params![next.to_string_lossy(), key_literal(to.map(db_key).as_ref())])?;
+    conn.query_row("SELECT sqlcipher_export('next')", [], |_| Ok(()))?;
+    conn.pragma_update(Some("next"), "user_version", version)?;
+    conn.execute_batch("DETACH DATABASE next;")?;
+    drop(conn);
+    for suffix in ["-wal", "-shm"] {
+        let mut side = path.as_os_str().to_owned();
+        side.push(suffix);
+        remove_if_exists(Path::new(&side))?;
+    }
+    fs::rename(&next, path)?;
+    Ok(())
+}
+
+fn remove_if_exists(path: &Path) -> Result<(), StoreError> {
+    match fs::remove_file(path) {
+        Err(err) if err.kind() != std::io::ErrorKind::NotFound => Err(err.into()),
+        _ => Ok(()),
+    }
+}
+
+fn connect(path: &Path, db_key: Option<&[u8; 32]>, backups_dir: &Path) -> Result<Connection, StoreError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
     let existed = path.exists();
     let mut conn = Connection::open(path)?;
-    // Raw-key syntax skips PBKDF2; pragma_update quoting would turn the key into a passphrase
-    conn.execute_batch(&format!("PRAGMA key = \"x'{}'\";", to_hex(db_key)))?;
+    // pragma_update quoting would turn the raw key into a passphrase
+    if db_key.is_some() {
+        conn.execute_batch(&format!("PRAGMA key = \"{}\";", key_literal(db_key)))?;
+    }
     if let Err(err) = conn.query_row("SELECT count(*) FROM sqlite_master", [], |row| row.get::<_, i64>(0)) {
         return Err(match err.sqlite_error_code() {
             Some(ErrorCode::NotADatabase) => StoreError::WrongKey,
@@ -127,9 +180,8 @@ pub struct Db {
 }
 
 impl Db {
-    pub fn open(path: &Path, master: &MasterKey, backups_dir: &Path) -> Result<Self, StoreError> {
-        let key = derive_key(master, DB_KEY_INFO);
-        Ok(Self::new(open_connection(path, &key, backups_dir)?))
+    pub fn open(path: &Path, master: Option<&MasterKey>, backups_dir: &Path) -> Result<Self, StoreError> {
+        Ok(Self::new(open_library(path, master, backups_dir)?))
     }
 
     pub fn new(conn: Connection) -> Self {

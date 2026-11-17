@@ -44,10 +44,11 @@ fn preferences(conn: &Connection) -> Result<YoutubePreferences, StoreError> {
 
 async fn account(State(state): State<AppState>) -> Result<Json<YoutubeAccount>, ApiError> {
     let data = state.data()?;
+    let secrets = data.secrets.clone();
     let view = data
         .db
-        .call(|c| {
-            let session = settings::get(c, settings::YOUTUBE_SESSION)?.and_then(|value| serde_json::from_value(value).ok());
+        .call(move |c| {
+            let session = settings::get_secret(c, &secrets, settings::YOUTUBE_SESSION)?.and_then(|value| serde_json::from_value(value).ok());
             Ok(YoutubeAccount { session, preferences: preferences(c)? })
         })
         .await?;
@@ -58,7 +59,8 @@ async fn save_session(State(state): State<AppState>, JsonBody(session): JsonBody
     checked(&session)?;
     let value = serde_json::to_value(&session).map_err(StoreError::from)?;
     let data = state.data()?;
-    data.db.call(move |c| settings::set(c, settings::YOUTUBE_SESSION, &value)).await?;
+    let secrets = data.secrets.clone();
+    data.db.call(move |c| settings::set_secret(c, &secrets, settings::YOUTUBE_SESSION, &value)).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

@@ -10,7 +10,7 @@ use nuvo_lastfm::LASTFM_URL;
 use nuvo_lyrics::{AMLL_URL, LRCLIB_URL};
 use nuvo_recognize::{Pace, SHAZAM_URL};
 use nuvo_server::paths::Paths;
-use nuvo_server::{Config, logging, run};
+use nuvo_server::{Config, Edition, logging, run};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -42,6 +42,7 @@ async fn main() -> ExitCode {
     let pace = if shazam_url.is_some() { Pace { burst: 1, refill: Duration::ZERO, ..Pace::SHAZAM } } else { Pace::SHAZAM };
     let config = Config {
         paths,
+        edition: if env("NUVO_CORE_EDITION").as_deref() == Some("plain") { Edition::Plain } else { Edition::Encrypted },
         token,
         lrclib_url: env("NUVO_CORE_LRCLIB_URL").unwrap_or_else(|| LRCLIB_URL.into()),
         amll_url: env("NUVO_CORE_AMLL_URL").unwrap_or_else(|| AMLL_URL.into()),

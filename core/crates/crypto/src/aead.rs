@@ -45,3 +45,22 @@ pub fn plain_len(sealed_len: u64) -> u64 {
     let rest = sealed_len % CHUNK_CIPHER as u64;
     full * CHUNK_PLAIN as u64 + rest.saturating_sub(TAG_LEN as u64)
 }
+
+const VALUE_NONCE_LEN: usize = 24;
+
+// Small values seal whole under a random nonce stored in front
+pub fn seal_value(key: &[u8; 32], plain: &[u8]) -> Vec<u8> {
+    let nonce: [u8; VALUE_NONCE_LEN] = crate::random_bytes();
+    let mut out = nonce.to_vec();
+    out.extend(XChaCha20Poly1305::new(&Key::from(*key)).encrypt(&XNonce::from(nonce), plain).expect("in-memory encryption does not fail"));
+    out
+}
+
+pub fn open_value(key: &[u8; 32], sealed: &[u8]) -> Result<Vec<u8>, ChunkError> {
+    if sealed.len() < VALUE_NONCE_LEN {
+        return Err(ChunkError);
+    }
+    let (nonce, body) = sealed.split_at(VALUE_NONCE_LEN);
+    let nonce: [u8; VALUE_NONCE_LEN] = nonce.try_into().expect("nonce length");
+    XChaCha20Poly1305::new(&Key::from(*key)).decrypt(&XNonce::from(nonce), body).map_err(|_| ChunkError)
+}
