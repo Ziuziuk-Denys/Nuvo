@@ -27,7 +27,12 @@ vi.mock("../../ports/homeShelves", () => ({
   playSongs: mocks.playSongs,
   shuffled: <T,>(items: T[]) => [...items].reverse(),
 }));
-vi.mock("../../ports/recs", () => ({ recs: { homeMixes: mocks.homeMixes }, recsChanged: new EventTarget(), playMix: mocks.playMix }));
+vi.mock("../../ports/recs", async (original) => ({
+  ...(await original<object>()),
+  recs: { homeMixes: mocks.homeMixes },
+  recsChanged: new EventTarget(),
+  playMix: mocks.playMix,
+}));
 vi.mock("../../ports/i18n", () => ({
   useTranslation: () => ({
     t: (key: string, params?: { count?: number; name?: string; style?: string; names?: string }) =>
@@ -236,6 +241,15 @@ describe("Home songs", () => {
     expect(host.textContent).toContain("ui.home.songs_for_you");
     act(() => rows[2].click());
     expect(mocks.playMix).toHaveBeenCalledWith("daily-mix-discover", expect.arrayContaining([expect.objectContaining({ id: "d0" })]), 2);
+  });
+
+  it("opens the song menu on a right click, as in the library", async () => {
+    mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-discover", title: "", description: "", tracks: tracks("d", 20) }]);
+    await mount();
+    const row = host.querySelector<HTMLElement>("[data-shelf=songs] [data-song]")!;
+    act(() => row.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 40, clientY: 40 })));
+    const items = [...document.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent);
+    expect(items).toEqual(expect.arrayContaining(["ui.entity.play_next", "ui.entity.add_to_playlist"]));
   });
 
   it("takes songs from every mix in turn, each song once", () => {

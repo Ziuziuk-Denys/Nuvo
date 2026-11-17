@@ -1,4 +1,4 @@
-import type { CSSProperties, JSX, ReactNode } from "react";
+import type { CSSProperties, JSX, MouseEvent, ReactNode } from "react";
 import { Button } from "../../components/Button";
 import { Cover } from "../../components/Cover";
 import { Icon } from "../../icons/Icon";
@@ -10,14 +10,30 @@ import { ShelfHeading } from "./ShelfHeading";
 import shelf from "./SavedShelf.module.css";
 import styles from "./SongCovers.module.css";
 import type { Shelf } from "./useShelf";
+import { useTrackMenu } from "../entity/useTrackMenu";
 
 type ShelfState = Pick<Shelf, "round" | "arrived" | "busy" | "refresh">;
 const order = (index: number) => ({ "--i": index }) as CSSProperties;
 const rowClass = (state: ShelfState, base: string) => (state.arrived ? `${base} ${shelf.arrive}` : base);
 
-function SongCard({ track, size, index, onPlay }: { track: Track; size: number; index: number; onPlay(): void }): JSX.Element {
+interface SongCardProps {
+  track: Track;
+  size: number;
+  index: number;
+  onPlay(): void;
+  onContextMenu(event: MouseEvent<HTMLElement>): void;
+}
+
+function SongCard({ track, size, index, onPlay, onContextMenu }: SongCardProps): JSX.Element {
   return (
-    <button type="button" className={`${shelf.card} ${styles.card}`} style={{ ...order(index), width: size }} data-song={track.id} onClick={onPlay}>
+    <button
+      type="button"
+      className={`${shelf.card} ${styles.card}`}
+      style={{ ...order(index), width: size }}
+      data-song={track.id}
+      onClick={onPlay}
+      onContextMenu={onContextMenu}
+    >
       <Cover src={track.coverUrl} size={size} />
       <span className={shelf.name}>{track.title}</span>
       <span className={shelf.subtitle}>{track.artists}</span>
@@ -37,6 +53,7 @@ export interface CoverShelfProps {
 }
 
 export function CoverShelf({ name, title, icon, shelf: state, songs, size, lead, onPlay }: CoverShelfProps): JSX.Element {
+  const menu = useTrackMenu();
   return (
     <section className={shelf.shelf} aria-label={title} data-shelf={name}>
       <ShelfHeading icon={icon} title={title} busy={state.busy} onRefresh={state.refresh} />
@@ -44,10 +61,11 @@ export function CoverShelf({ name, title, icon, shelf: state, songs, size, lead,
         {lead}
         <div key={state.round} className={rowClass(state, styles.covers)}>
           {songs.map((track, index) => (
-            <SongCard key={track.id} track={track} size={size} index={index} onPlay={() => onPlay(index)} />
+            <SongCard key={track.id} track={track} size={size} index={index} onPlay={() => onPlay(index)} onContextMenu={menu.onContextMenu(track)} />
           ))}
         </div>
       </div>
+      {menu.element}
     </section>
   );
 }
@@ -78,6 +96,7 @@ export function ShuffleCard({
   onPlay(index: number): void;
 }): JSX.Element {
   const { t } = useTranslation();
+  const menu = useTrackMenu();
   const names = [...new Set(songs.map((track) => firstArtist(track)).filter(Boolean))].slice(0, 3).join(", ");
   return (
     <section className={shelf.shelf} aria-label={title} data-shelf="shuffle">
@@ -93,6 +112,7 @@ export function ShuffleCard({
               data-song={track.id}
               aria-label={`${track.title}, ${track.artists}`}
               onClick={() => onPlay(index)}
+              onContextMenu={menu.onContextMenu(track)}
             >
               <Cover src={track.coverUrl} size={STACK_SIZE - index * 12} />
             </button>
@@ -107,6 +127,7 @@ export function ShuffleCard({
           </Button>
         </div>
       </div>
+      {menu.element}
     </section>
   );
 }
