@@ -10,7 +10,7 @@ Include the version (Settings, Application, About), your system and its version,
 
 ## In scope
 
-- The background service `nuvo-core`: its local API, authentication, the encrypted database, the encrypted audio cache, the recovery phrase.
+- The background service `nuvo-core`: its local API, authentication, the database and the audio cache, and in the Encrypted edition their encryption and the recovery phrase.
 - The app window: its bridge to the service, window and permission policy, content security policy, link and file handling, the custom CSS and theme file checks, the tools it downloads and how it checks them.
 - Anything that leaks the master key, library contents or listening history to another user, process or host.
 
