@@ -151,9 +151,11 @@ export async function launchNuvo(options: { profile: "fresh" | "seeded"; locale?
         await app.evaluate(({ BrowserWindow }, value) => {
           const win = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().startsWith("file:") && !w.webContents.getURL().includes("#/notch"));
           if (!win) throw new Error("no main window");
+          if (win.isFullScreen()) win.setFullScreen(false);
           if (win.isMaximized()) win.unmaximize();
           win.setSize(value.width, value.height);
         }, size);
+        await main.waitForFunction((value) => innerWidth === value.width && innerHeight === value.height, size, { timeout: 10_000 });
         await main.waitForTimeout(300);
       },
 

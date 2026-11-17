@@ -4,7 +4,7 @@ import { useModalStore } from "../ports/navigation";
 import { navigateWithTransition } from "../shell/navigate";
 import type { Step, TargetId } from "./chapters";
 import type { TourStage } from "./runStep";
-import { targetElement } from "./targets";
+import { fullyShown, targetElement } from "./targets";
 
 const FIND_FRAMES = 60;
 const PAGE_SETTLE_MS = 480;
@@ -64,10 +64,8 @@ export function useTourStage(navigate: NavigateFunction): { stage: TourStage; sh
 async function waitFor(target: TargetId): Promise<HTMLElement | null> {
   for (let frame = 0; frame < FIND_FRAMES; frame += 1) {
     const element = targetElement(target);
-    if (element) {
-      element.scrollIntoView({ block: "nearest", inline: "nearest" });
-      return element;
-    }
+    if (element && fullyShown(element)) return element;
+    element?.scrollIntoView({ block: "nearest", inline: "nearest" });
     await nextFrame();
   }
   return null;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type JSX, type WheelEvent } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { focusables, LAYER_ATTRIBUTE, usePresence } from "../components/layers";
@@ -11,7 +11,7 @@ import { dockLeft, dockOnTop, ringAround, type Area, type Box, type Ring } from 
 import { runStep } from "./runStep";
 import { SkipPrompt } from "./SkipPrompt";
 import { StartStep } from "./StartStep";
-import { boxOf, panelOf, sameBox, targetElement } from "./targets";
+import { fullyShown, panelOf, radiusOf, sameBox, scrollerOf, seenBox, targetElement } from "./targets";
 import { TourDock } from "./TourDock";
 import { TourPoster } from "./TourPoster";
 import { briefWaiting, lastStep, useTour, waiting } from "./tourStore";
@@ -27,6 +27,7 @@ const MORE_CHECK_MS = 2000;
 interface Frame {
   box: Box & { radius: number };
   panel: Box | null;
+  whole: boolean;
 }
 
 function useWindowSize(): { width: number; height: number } {
@@ -141,18 +142,33 @@ export function TourLayer(): JSX.Element | null {
     if (!shown) return;
     let id = 0;
     let previous: Frame | null = null;
+    // Late content or a resize can push the target out; bring it back until the user scrolls on purpose
+    let steered = false;
+    const onScroll = () => {
+      steered = true;
+    };
+    window.addEventListener("wheel", onScroll, { capture: true, passive: true });
+    window.addEventListener("touchmove", onScroll, { capture: true, passive: true });
     const read = () => {
       const element = targetElement(shown.target);
-      const next = element ? { box: boxOf(element), panel: panelOf(element) } : null;
-      const same = previous && next && sameBox(previous.box, next.box) && sameBox(previous.panel, next.panel);
-      if (next && !same) {
+      const whole = element ? fullyShown(element) : false;
+      if (element && !whole && !steered) element.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const seen = element ? seenBox(element) : null;
+      const next = element && seen ? { box: { ...seen, radius: radiusOf(element) }, panel: panelOf(element), whole } : null;
+      const same =
+        previous === next || (previous && next && previous.whole === next.whole && sameBox(previous.box, next.box) && sameBox(previous.panel, next.panel));
+      if (!same) {
         previous = next;
         setFrame(next);
       }
       id = requestAnimationFrame(read);
     };
     read();
-    return () => cancelAnimationFrame(id);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener("wheel", onScroll, { capture: true });
+      window.removeEventListener("touchmove", onScroll, { capture: true });
+    };
   }, [phase, shown]);
 
   useEffect(() => {
@@ -222,6 +238,12 @@ export function TourLayer(): JSX.Element | null {
 
   if (presence === null) return null;
 
+  // An interactive target can be scrolled away through its outline; the wheel must bring it back once the outline is gone
+  const scrollTarget = (event: WheelEvent<HTMLDivElement>) => {
+    const element = shown ? targetElement(shown.target) : null;
+    if (element) scrollerOf(element)?.scrollBy(event.deltaX, event.deltaY);
+  };
+
   const tour = useTour.getState();
   const inChapter = phase === "chapter";
   const ring = inChapter && frame ? ringAround(frame.box, size) : null;
@@ -247,10 +269,14 @@ export function TourLayer(): JSX.Element | null {
       onContextMenu={(event) => event.preventDefault()}
       {...{ [LAYER_ATTRIBUTE]: "" }}
     >
-      <div className={styles.blocker} style={ring && shown?.interactive && !prompt ? { clipPath: holeClip(ring) } : undefined} />
-      <div className={styles.hole} style={holeStyle} data-empty={ring ? undefined : ""} />
+      <div
+        className={styles.blocker}
+        style={ring && shown?.interactive && !prompt ? { clipPath: holeClip(ring) } : undefined}
+        onWheel={shown?.interactive ? scrollTarget : undefined}
+      />
+      <div className={styles.hole} style={holeStyle} data-hole="" data-target={shown?.target} data-empty={ring ? undefined : ""} />
 
-      {inChapter && ring && frame && shown && ready ? (
+      {inChapter && ring && frame?.whole && shown && ready ? (
         <Callout ring={ring} panel={frame.panel} area={area} side={shown.side} text={t(`ui.tour.steps.${shown.text}`)} stepKey={`${id}:${step}`} />
       ) : null}
 

@@ -41,6 +41,7 @@
   color: inherit;
   font: 400 14px/20px var(--n-font);
   caret-color: var(--n-accent);
+  text-overflow: ellipsis;
   user-select: text;
 }
 

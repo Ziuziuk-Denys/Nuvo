@@ -36,20 +36,62 @@ export function targetElement(target: TargetId): HTMLElement | null {
   const element = TARGETS[target]();
   if (!(element instanceof HTMLElement)) return null;
   const box = element.getBoundingClientRect();
-  if (box.width <= 0 || box.height <= 0) return null;
-  const seenWidth = Math.min(box.right, window.innerWidth) - Math.max(box.left, 0);
-  const seenHeight = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
-  return Math.max(0, seenWidth) * Math.max(0, seenHeight) >= (box.width * box.height) / 2 ? element : null;
+  return box.width > 0 && box.height > 0 ? element : null;
 }
 
-export function boxOf(element: Element): Box & { radius: number } {
+// What the window and every scrolling or clipping ancestor leave of the element
+function clipOf(element: Element): Box {
+  let left = 0;
+  let top = 0;
+  let right = window.innerWidth;
+  let bottom = window.innerHeight;
+  for (let parent = element.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+    const style = getComputedStyle(parent);
+    if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+    const clip = parent.getBoundingClientRect();
+    left = Math.max(left, clip.left);
+    top = Math.max(top, clip.top);
+    right = Math.min(right, clip.right);
+    bottom = Math.min(bottom, clip.bottom);
+  }
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+export function seenBox(element: Element): Box | null {
   const box = element.getBoundingClientRect();
-  return { x: box.left, y: box.top, width: box.width, height: box.height, radius: parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0 };
+  const clip = clipOf(element);
+  const left = Math.max(box.left, clip.x);
+  const top = Math.max(box.top, clip.y);
+  const right = Math.min(box.right, clip.x + clip.width);
+  const bottom = Math.min(box.bottom, clip.y + clip.height);
+  return right > left && bottom > top ? { x: left, y: top, width: right - left, height: bottom - top } : null;
+}
+
+// All of it shows, or as much as its clip can hold
+export function fullyShown(element: Element): boolean {
+  const seen = seenBox(element);
+  if (!seen) return false;
+  const box = element.getBoundingClientRect();
+  const clip = clipOf(element);
+  return seen.width >= Math.min(box.width, clip.width) - 1 && seen.height >= Math.min(box.height, clip.height) - 1;
+}
+
+export function scrollerOf(element: Element): Element | null {
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    if (/auto|scroll/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight > parent.clientHeight) return parent;
+  }
+  return null;
+}
+
+export function radiusOf(element: Element): number {
+  return parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0;
 }
 
 export function panelOf(element: Element): Box | null {
   const panel = element.closest('[role="dialog"]');
-  return panel ? boxOf(panel) : null;
+  if (!panel) return null;
+  const box = panel.getBoundingClientRect();
+  return { x: box.left, y: box.top, width: box.width, height: box.height };
 }
 
 export function sameBox(a: Box | null, b: Box | null): boolean {
