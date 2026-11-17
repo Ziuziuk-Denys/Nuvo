@@ -2,3 +2,7 @@ allowBuilds:
   electron: true
   esbuild: true
   electron-winstaller: true
+auditConfig:
+  ignoreGhsas:
+    # dev-only via vite/tinyglobby, no patched picomatch yet; remove when one exists
+    - GHSA-fc5q-39xc-vjpf
