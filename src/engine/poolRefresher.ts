@@ -13,7 +13,8 @@ export const POOL_RETRY_MIN_MS = 30 * 60_000;
 export const POOL_ITEMS = 50;
 export const POOL_SOURCE = "yt_radio";
 export const SC_SOURCE = "sc_related";
-const WARM_TIMEOUT_MS = 20_000;
+// a fresh profile first finds the SoundCloud client before it can match a seed there
+const WARM_TIMEOUT_MS = 30_000;
 
 export interface PoolDeps {
   base: string;

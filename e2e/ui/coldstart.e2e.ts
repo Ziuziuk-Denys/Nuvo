@@ -78,7 +78,7 @@ describe("first start to Home", () => {
 
   it("with YouTube's radio blocked the rows come from SoundCloud", async () => {
     const { live, started } = await throughTour("no-radio");
-    await homeFills(live.page, started);
+    await homeFills(live.page, started, SLOW_ROWS_MS);
   }, 180_000);
 
   it("picks from Home's cold-start ask fill Home within seconds", async () => {
