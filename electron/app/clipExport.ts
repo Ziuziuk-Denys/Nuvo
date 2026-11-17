@@ -6,6 +6,10 @@ import { CHANNELS } from "./ipc";
 import { type CoreAnswer, coreError } from "./coreCall";
 import { documentName } from "./files";
 
+export function saveFolder(videos: string, home: string): string {
+  return fs.existsSync(videos) ? videos : home;
+}
+
 export interface ClipExportDeps {
   call(method: string, route: string, body?: unknown): Promise<CoreAnswer>;
   pickSavePath(title: string, defaultPath: string): Promise<string | null>;

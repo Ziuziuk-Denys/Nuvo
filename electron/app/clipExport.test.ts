@@ -3,7 +3,7 @@ import { default as fs } from "node:fs";
 import { default as os } from "node:os";
 import { default as path } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { createClipExport } from "./clipExport";
+import { createClipExport, saveFolder } from "./clipExport";
 import type { CoreAnswer } from "./coreCall";
 
 const answer = (status: number, body: unknown): CoreAnswer => ({ status, body: Buffer.from(JSON.stringify(body)), contentType: "application/json" });
@@ -91,5 +91,14 @@ describe("clip export", () => {
     await clips.cancel({ id: second.id });
     expect(fs.readdirSync(temp)).toEqual([]);
     expect(await clips.write({ id: second.id, bytes: new Uint8Array([1]) })).toBe(false);
+  });
+
+  it("opens the save dialog in Videos, or in Home when Videos does not exist", () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-home-"));
+    const videos = path.join(home, "Videos");
+    expect(saveFolder(videos, home)).toBe(home);
+    fs.mkdirSync(videos);
+    expect(saveFolder(videos, home)).toBe(videos);
+    fs.rmSync(home, { recursive: true });
   });
 });

@@ -54,7 +54,7 @@ import { saveFilter, validateSaveText, writeTextAtomic } from "./saveText";
 import { coreCall } from "./coreCall";
 import { coreBinaryName, coreSocketPath } from "./socketPath";
 import { createBackend, parseFeed, releasePageUrl, Updater, updateMode, type AutoUpdaterLike, type UpdateBackend } from "./updater";
-import { createClipExport } from "./clipExport";
+import { createClipExport, saveFolder } from "./clipExport";
 import { createFileActions } from "./fileActions";
 import { readCoverFile, type CoverRead } from "./coverFile";
 import { writeBufferAtomic } from "./files";
@@ -680,7 +680,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         const picked = await dialog.showSaveDialog(parent(), { title, defaultPath, filters: [{ name: "Video", extensions: ["mp4"] }] });
         return picked.canceled ? null : (picked.filePath ?? null);
       },
-      videosDir: () => app.getPath("videos"),
+      videosDir: () => saveFolder(app.getPath("videos"), app.getPath("home")),
       tempDir: () => app.getPath("temp"),
       refuse: (channel, why) => refusals.refuse(channel, why),
     });
