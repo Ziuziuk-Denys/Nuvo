@@ -3,7 +3,8 @@ import { playerEngine } from "@/engine/compat";
 import { POOL_KEY } from "@/engine/poolRefresher";
 import { recs, recsChanged, seedFavorites, type FavoritePick } from "./recs";
 
-export const STARTER_PICKS = 3;
+// The store keeps 15 starter tracks, so each pick still lands one
+export const STARTER_PICKS = 15;
 const STATION_WAIT_MS = 60_000;
 
 function refreshWhenStationFills(): void {

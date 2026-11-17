@@ -151,7 +151,7 @@ export function TastePicker({ start, action, rows, className }: TastePickerProps
           ) : state === "busy" ? (
             t("ui.tour.start.taste_busy")
           ) : (
-            t("ui.tour.start.taste_count", { n: picks.length, total: STARTER_PICKS })
+            t(full ? "ui.tour.start.taste_full" : "ui.tour.start.taste_count", { n: picks.length })
           )}
         </span>
         {sent ? null : (
