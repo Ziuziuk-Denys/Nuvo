@@ -1,16 +1,27 @@
 import { describe, expect, it } from "vitest";
-import type { NetCheck } from "../ports/system";
+import type { NetCheck, ServiceCheck } from "../ports/system";
 import { adviceFor, checkHeadline } from "./connectionAdvice";
 
-const check = (code?: string, service?: string): NetCheck => ({ checkedAt: "", rows: [], services: [], summary: "", code, service });
+const soundCloudWorks: ServiceCheck[] = [{ service: "SoundCloud", state: "works", ms: 300 }];
+const check = (code?: string, service?: string, services: ServiceCheck[] = []): NetCheck => ({ checkedAt: "", rows: [], services, summary: "", code, service });
 
 describe("adviceFor", () => {
   it("offline, a dead proxy, interception and the clock speak for themselves", () => {
     for (const code of ["offline", "proxy_failed", "tls_intercepted", "clock"]) expect(adviceFor(check(code), null)).toBe(code);
   });
 
-  it("YouTube unreachable is blocked, whatever playback saw", () => {
-    for (const code of ["blocked", "dns_failed", "timeout"]) expect(adviceFor(check(code, "YouTube"), "timeout")).toBe("blocked");
+  it("YouTube unreachable while another service gets through is blocked, whatever playback saw", () => {
+    for (const code of ["blocked", "dns_failed"]) expect(adviceFor(check(code, "YouTube", soundCloudWorks), "timeout")).toBe("blocked");
+  });
+
+  it("a slow link is not a block: a timeout alone says nothing", () => {
+    expect(adviceFor(check("timeout", "YouTube", soundCloudWorks), "timeout")).toBeNull();
+    expect(adviceFor(check("timeout", "YouTube", soundCloudWorks), "blocked")).toBeNull();
+  });
+
+  it("YouTube failing along with everything else is the link, not a block", () => {
+    const allDown: ServiceCheck[] = [{ service: "SoundCloud", state: "blocked", ms: 5000 }];
+    expect(adviceFor(check("blocked", "YouTube", allDown), null)).toBeNull();
   });
 
   it("reachable YouTube with refused streams is a refusal of this address", () => {
@@ -27,7 +38,7 @@ describe("adviceFor", () => {
 
 describe("checkHeadline", () => {
   it("says what to do when YouTube is blocked or the proxy is down", () => {
-    expect(checkHeadline(check("blocked", "YouTube"))).toEqual({ key: "ui.network_advice.blocked" });
+    expect(checkHeadline(check("blocked", "YouTube", soundCloudWorks))).toEqual({ key: "ui.network_advice.blocked" });
     expect(checkHeadline(check("proxy_failed"))).toEqual({ key: "ui.network_advice.proxy_failed" });
   });
 

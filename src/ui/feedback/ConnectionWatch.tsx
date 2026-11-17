@@ -32,18 +32,20 @@ export function ConnectionWatch() {
       });
     };
     const onCheck = (event: Event) => void check(String((event as CustomEvent).detail ?? ""));
-    const onChange = () => {
+    const onOnline = () => void check(null);
+    // a weak link drops and comes back every few seconds, so only a new proxy or VPN tells again
+    const onProxyChange = () => {
       told.clear();
       void check(null);
     };
     const first = setTimeout(() => void check(null), FIRST_CHECK_MS);
     window.addEventListener("nuvo:network-check", onCheck);
-    window.addEventListener("online", onChange);
-    const off = window.nuvoShell?.onNetworkChanged(onChange);
+    window.addEventListener("online", onOnline);
+    const off = window.nuvoShell?.onNetworkChanged(onProxyChange);
     return () => {
       clearTimeout(first);
       window.removeEventListener("nuvo:network-check", onCheck);
-      window.removeEventListener("online", onChange);
+      window.removeEventListener("online", onOnline);
       off?.();
     };
   }, [t, tourOff]);
