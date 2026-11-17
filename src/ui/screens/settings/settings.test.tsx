@@ -349,10 +349,9 @@ describe("settings frame", () => {
     expect(mocks.modal.getState().closeSettings).toHaveBeenCalledTimes(2);
   });
 
-  it("never shows Discord or a link in About", () => {
+  it("never shows a raw link in About", () => {
     mocks.modal.getState().settingsSection = "About";
     render();
-    expect(document.querySelector('[role="tabpanel"]')!.textContent).not.toMatch(/discord/i);
     expect(document.querySelectorAll("a[href]")).toHaveLength(0);
     expect(document.body.textContent).not.toMatch(/t\.me|github/i);
     expect(document.body.textContent).toContain("0.2.10");

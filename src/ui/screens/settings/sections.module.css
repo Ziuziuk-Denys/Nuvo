@@ -766,6 +766,17 @@
     transform 200ms var(--n-ease-out);
 }
 
+.actionLead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actionMark {
+  flex: none;
+  color: var(--n-ink-2);
+}
+
 .action:hover .actionIcon,
 .action:focus-visible .actionIcon {
   color: var(--n-ink);

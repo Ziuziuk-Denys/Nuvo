@@ -8,6 +8,7 @@ import styles from "./sections.module.css";
 import { DonateLink } from "./DonateLink";
 import { HelpLinks, ReleaseNotes } from "./HelpSheets";
 import { AutoUpdateRow, UpdateStatus } from "./UpdateRows";
+import { CommunityLinks } from "./CommunityLinks";
 
 export function AboutSection(): JSX.Element {
   const { t } = useTranslation();
@@ -33,6 +34,7 @@ export function AboutSection(): JSX.Element {
           </div>
         </div>
       ) : null}
+      <CommunityLinks />
       <SettingGroup label={t("settings.page.updates")}>
         <UpdateStatus />
         <AutoUpdateRow />

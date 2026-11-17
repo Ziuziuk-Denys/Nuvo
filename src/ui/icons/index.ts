@@ -91,6 +91,7 @@ export const ICON_NAMES = [
   "youtube",
   "lastfm",
   "discord",
+  "telegram",
   "soundcloud",
   "database",
   "info-circle",
