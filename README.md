@@ -17,6 +17,8 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/scene-dark.svg"><img src=".github/readme/scene-light.svg" width="100%" alt="Songs you can watch. Each song draws itself to the beat, and the words land as they are sung. Pick a moment and Nuvo turns it into a clip. 12 ready scenes, or build your own; 4K MP4 export at up to 60 fps; 9:16 or 1:1 and 16:9."></picture>
 
+<img src=".github/readme/motion/scene.gif" width="100%" alt="Nuvo Scene: the words of the song land as they are sung">
+
 ## New in 0.4.0
 
 - Scene, Nuvo's own visual engine: each song draws itself to the beat and the words land as they are sung, with twelve ready scenes and a clip studio that exports MP4 up to 4K at 60 fps
