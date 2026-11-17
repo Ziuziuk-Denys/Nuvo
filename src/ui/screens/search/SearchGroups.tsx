@@ -1,26 +1,17 @@
-import { useState, type JSX, type KeyboardEvent, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import type { JSX, KeyboardEvent, ReactNode } from "react";
 import { Cover } from "../../components/Cover";
 import { Explicit } from "../../components/Explicit";
 import { Icon } from "../../icons/Icon";
-import { Menu } from "../../components/Menu";
-import { Popover } from "../../components/Popover";
 import { useTranslation, type TFunction } from "../../ports/i18n";
-import { saveAsFiles } from "../../ports/exports";
-import { revealLocalTrack } from "../../ports/localFiles";
-import { isSoundCloudId, playerEngine, usePlayerStore, type Track } from "../../ports/player";
+import { isSoundCloudId, usePlayerStore } from "../../ports/player";
 import type { SearchResult } from "../../ports/search";
-import { navigateWithTransition } from "../../shell/navigate";
-import { AddToPlaylistPopover } from "../../shell/popovers/AddToPlaylistPopover";
 import { formatDuration } from "../entity/entityModel";
 import { MediaRow } from "../MediaRow";
 import { useUnavailable } from "../entity/EntityTracks";
 import { DislikeButton } from "../../recs/DislikeButton";
-import { songMenuNotInterested } from "../../recs/notInterested";
-import { trackMenuItems, type TrackMenuActions } from "../entity/trackMenu";
+import { useTrackMenu } from "../entity/useTrackMenu";
 import { subtitleOf, type GroupKey, type SearchFilter, type SearchGroups as Groups } from "./searchModel";
 import styles from "./Search.module.css";
-import { openLyricsTool } from "../lyrics/lyricsTools";
 
 const GROUP_ORDER: GroupKey[] = ["songs", "albums", "artists", "playlists"];
 
@@ -54,53 +45,19 @@ function songBadge(result: SearchResult, t: TFunction): ReactNode {
   );
 }
 
-interface MenuState {
-  track: Track;
-  anchor: HTMLElement | null;
-  at?: { x: number; y: number };
-}
-
 function SongRows({ songs, onActivate }: { songs: SearchResult[]; onActivate: (result: SearchResult) => void }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const currentId = usePlayerStore((state) => state.currentTrack?.id ?? null);
   const tracks = songs.map((song) => song.track!);
   const unavailable = useUnavailable(tracks);
-  const [menu, setMenu] = useState<MenuState | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [add, setAdd] = useState<{ track: Track; anchor: HTMLElement | null } | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
-
-  const openAddToPlaylist = (track: Track, anchor: HTMLElement | null) => {
-    setAdd({ track, anchor });
-    setAddOpen(true);
-  };
-  const actions: TrackMenuActions = {
-    t,
-    playNext: (track) => playerEngine.playNext(track),
-    addToQueue: (track) => playerEngine.addToQueue(track),
-    addToPlaylist: (track) => openAddToPlaylist(track, menu?.anchor ?? null),
-    startRadio: (track) => void playerEngine.startRadioStation(track),
-    goToArtist: (artistId) => navigateWithTransition(navigate, `/artist?id=${encodeURIComponent(artistId)}`),
-    goToAlbum: (albumId) => navigateWithTransition(navigate, `/collection?type=album&id=${encodeURIComponent(albumId)}`),
-    editLyrics: (track) => openLyricsTool(track, "edit"),
-    translateLyrics: (track) => openLyricsTool(track, "translate"),
-    remove: () => undefined,
-    notInterested: songMenuNotInterested,
-    saveAsFile: (track) => void saveAsFiles({ trackIds: [track.id], label: track.title, playlistFile: false }),
-    showInFolder: (track) => revealLocalTrack(track.id),
-  };
-  const openMenu = (track: Track, anchor: HTMLElement | null, at?: { x: number; y: number }) => {
-    setMenu({ track, anchor, at });
-    setMenuOpen(true);
-  };
+  const menu = useTrackMenu();
 
   return (
     <>
       <div className={styles.rows}>
         {songs.map((song) => {
           const track = song.track!;
-          const selected = menuOpen && menu?.track === track;
+          const selected = menu.isOpenFor(track);
           return (
             <MediaRow
               key={song.id}
@@ -114,26 +71,14 @@ function SongRows({ songs, onActivate }: { songs: SearchResult[]; onActivate: (r
               active={track.id === currentId}
               unavailableReason={unavailable(track) ?? undefined}
               onActivate={() => onActivate(song)}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                openMenu(track, event.currentTarget, { x: event.clientX, y: event.clientY });
-              }}
+              onContextMenu={menu.onContextMenu(track)}
               menuLabel={t("ui.entity.more")}
-              onMenu={(anchor) => openMenu(track, anchor)}
+              onMenu={(anchor) => menu.open(track, anchor)}
             />
           );
         })}
       </div>
-      <Menu
-        open={menuOpen}
-        anchor={menu?.anchor ?? null}
-        at={menu?.at}
-        onClose={() => setMenuOpen(false)}
-        items={menu ? trackMenuItems(menu.track, {}, actions) : []}
-      />
-      <Popover open={addOpen} anchor={add?.anchor ?? null} onClose={() => setAddOpen(false)} title={t("ui.add.title")} width={320}>
-        {add ? <AddToPlaylistPopover track={add.track} onDone={() => setAddOpen(false)} /> : null}
-      </Popover>
+      {menu.element}
     </>
   );
 }

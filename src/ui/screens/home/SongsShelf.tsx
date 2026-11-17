@@ -3,6 +3,7 @@ import { Cover } from "../../components/Cover";
 import { Row } from "../../components/Row";
 import type { IconName } from "../../icons";
 import type { Track } from "../../ports/recs";
+import { useTrackMenu } from "../entity/useTrackMenu";
 import { ShelfHeading } from "./ShelfHeading";
 import type { Shelf } from "./useShelf";
 import shelf from "./SavedShelf.module.css";
@@ -19,6 +20,7 @@ export interface SongsShelfProps {
 }
 
 export function SongsShelf({ name, title, icon, shelf: state, songs, onPlay }: SongsShelfProps): JSX.Element {
+  const menu = useTrackMenu();
   return (
     <section className={shelf.shelf} aria-label={title} data-shelf={name}>
       <ShelfHeading icon={icon} title={title} busy={state.busy} onRefresh={state.refresh} />
@@ -32,9 +34,11 @@ export function SongsShelf({ name, title, icon, shelf: state, songs, onPlay }: S
             title={track.title}
             subtitle={track.artists}
             onActivate={() => onPlay(index)}
+            onContextMenu={menu.onContextMenu(track)}
           />
         ))}
       </div>
+      {menu.element}
     </section>
   );
 }
