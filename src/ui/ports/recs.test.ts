@@ -42,6 +42,17 @@ describe("seedFavorites", () => {
     recsChanged.removeEventListener("change", changed);
   });
 
+  it("keeps a track from every pick when more picks than starters come in", async () => {
+    mocks.artist.mockImplementation(async (id: string) => ({ tracks: [yt(`${id}-1`), yt(`${id}-2`), yt(`${id}-3`)] }));
+    mocks.fetch.mockResolvedValue(new Response(null, { status: 204 }));
+    const picks = Array.from({ length: 12 }, (_, index) => ({ kind: "artist" as const, id: `a${index}`, title: `Artist ${index}` }));
+
+    const seeds = await seedFavorites(picks);
+    expect(seeds).toHaveLength(15);
+    expect(picks.every((pick) => seeds.some((track) => track.id === `${pick.id}-1`))).toBe(true);
+    expect(seeds[0].id).toBe("a0-1");
+  });
+
   it("fails when the catalog finds nothing or the daemon refuses", async () => {
     mocks.track.mockRejectedValue(new Error("offline"));
     await expect(seedFavorites([{ kind: "song", id: "s1", title: "x" }])).rejects.toThrow();

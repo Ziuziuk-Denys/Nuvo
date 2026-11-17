@@ -114,11 +114,14 @@ export async function seedFavorites(picks: FavoritePick[]): Promise<Track[]> {
       }
     }),
   );
+  // Round-robin over the picks, so the cut at STARTER_LIMIT keeps something from every pick
+  const interleaved: Track[] = [];
+  const longest = Math.max(...lists.map((list) => list.length));
+  for (let index = 0; index < longest; index += 1) {
+    for (const list of lists) if (list[index]) interleaved.push(list[index]);
+  }
   const seen = new Set<string>();
-  const tracks = lists
-    .flat()
-    .filter((track) => !seen.has(track.id) && seen.add(track.id))
-    .slice(0, STARTER_LIMIT);
+  const tracks = interleaved.filter((track) => !seen.has(track.id) && seen.add(track.id)).slice(0, STARTER_LIMIT);
   if (tracks.length === 0) throw new Error("no starters found");
   const saved = await recs.saveStarters(tracks);
   if (saved !== true) throw new Error(`starters not saved: ${saved}`);

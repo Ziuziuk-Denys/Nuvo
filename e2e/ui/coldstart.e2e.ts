@@ -13,8 +13,10 @@ afterEach(async () => {
   session = null;
 });
 
-async function pick(page: Page, scope: string): Promise<void> {
-  await page.locator(scope).getByRole("textbox", { name: "Song or artist" }).fill(QUERY);
+const MANY = ["Daft Punk", "Massive Attack", "Portishead", "Radiohead", "Björk", "Air", "Moby", "Röyksopp", "The Prodigy", "Kraftwerk", "Justice", "Gorillaz"];
+
+async function pick(page: Page, scope: string, query = QUERY): Promise<void> {
+  await page.locator(scope).getByRole("textbox", { name: "Song or artist" }).fill(query);
   await page.locator(`${scope} [aria-label="Suggestions"] button`).first().click({ timeout: 30_000 });
 }
 
@@ -70,6 +72,26 @@ describe("first start to Home", () => {
     const { live, started } = await throughTour();
     await homeFills(live.page, started);
   }, 180_000);
+
+  it("twelve picks all count and still fill Home within seconds", async () => {
+    const live = await launchNuvo({ profile: "fresh" });
+    session = live;
+    const { page } = live;
+    const scope = "[aria-labelledby=tour-start-title]";
+    await page.locator("[data-testid=recovery-word]").first().waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: "I wrote it down" }).click();
+    for (const name of MANY) await pick(page, scope, name);
+    await expect.poll(() => page.locator("[data-seed]").count()).toBe(MANY.length);
+    expect(await page.locator(scope).getByRole("status").textContent()).toBe(`${MANY.length} picked`);
+    await page.getByRole("button", { name: "Use these" }).click();
+    const started = Date.now();
+    await page.getByText("Home will start from these.").waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Skip the tour", exact: true }).click({ timeout: 30_000 });
+    await page.locator('[data-tour-layer] [data-next]:not([aria-disabled="true"])').click({ timeout: 30_000 });
+    await page.locator("[data-tour-layer]").waitFor({ state: "detached", timeout: 10_000 });
+    await live.go("#/");
+    await homeFills(page, started);
+  }, 240_000);
 
   it("on a slow link Home shows its outline, then the rows", async () => {
     const { live, started } = await throughTour("slow");
