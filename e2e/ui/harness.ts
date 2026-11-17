@@ -88,6 +88,7 @@ export async function launchNuvo(options: { profile: "fresh" | "seeded"; locale?
     XDG_CONFIG_HOME: path.join(work, "config"),
     NUVO_CORE_SOCKET: path.join(socketDir, "core.sock"),
     NUVO_CORE_KEYRING_SERVICE: KEYRING_SERVICE,
+    NUVO_CORE_EDITION: "encrypted",
   };
   delete env.VITE_DEV_SERVER_URL;
 

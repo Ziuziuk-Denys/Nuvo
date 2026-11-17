@@ -8,7 +8,15 @@
 |---|---|
 {{install}}
 
-On Linux, Nuvo keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Full steps: [the install guide]({{site}}/docs/install).
+### Encrypted edition
+
+The same Nuvo with the library and the audio cache encrypted on disk, under a key kept in the system keyring. Switching editions keeps your likes, playlists, lyrics and settings.
+
+| System | Download |
+|---|---|
+{{install_encrypted}}
+
+On Linux, the encrypted edition keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet; the standard edition uses the keyring only for the accounts you connect. Full steps: [the install guide]({{site}}/docs/install).
 
 ## Unsigned builds
 

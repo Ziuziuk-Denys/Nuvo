@@ -173,6 +173,7 @@ vi.mock("../../ports/settings", () => ({
   ],
   PRIMARY_LOCALES: ["en", "ru"],
   useAppVersion: () => "0.2.10",
+  useAppEdition: () => "plain",
   notesFor: () => ["- **Bold lead,** then [a page](https://nuvo.test)"],
   takeWhatsNew: () => false,
 }));
@@ -359,6 +360,7 @@ describe("settings frame", () => {
     expect(document.querySelectorAll("a[href]")).toHaveLength(0);
     expect(document.body.textContent).not.toMatch(/t\.me|github/i);
     expect(document.body.textContent).toContain("0.2.10");
+    expect(document.body.textContent).toContain("settings.about.edition_plain");
   });
 });
 

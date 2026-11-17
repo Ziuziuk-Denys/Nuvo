@@ -1,6 +1,6 @@
 import { useContext, type JSX } from "react";
 import { useTranslation } from "../../ports/i18n";
-import { useAppVersion } from "../../ports/settings";
+import { useAppEdition, useAppVersion } from "../../ports/settings";
 import { presetIconSvg, useLook } from "../../ports/theme";
 import { SearchQuery, SettingBlock, SettingGroup } from "./controls";
 import { matchesQuery } from "./sections";
@@ -16,6 +16,7 @@ const ENGINE_CREDIT = "Visual engine by Denys Ziuziuk and contributors · nuvo.q
 export function AboutSection(): JSX.Element {
   const { t } = useTranslation();
   const version = useAppVersion();
+  const edition = useAppEdition();
   const query = useContext(SearchQuery);
   const { preset, mode } = useLook();
 
@@ -34,6 +35,7 @@ export function AboutSection(): JSX.Element {
           <div className={styles.aboutText}>
             <span className={styles.aboutName}>{t("settings.about.nuvo")}</span>
             <span className={styles.version}>{version}</span>
+            {edition ? <span className={styles.edition}>{t(`settings.about.edition_${edition}`)}</span> : null}
             <span className={styles.version}>{ENGINE_CREDIT}</span>
           </div>
         </div>

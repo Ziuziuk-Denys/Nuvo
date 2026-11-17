@@ -20,6 +20,7 @@ const env: Record<string, string> = {
   XDG_CONFIG_HOME: path.join(work, "config"),
   NUVO_CORE_SOCKET: path.join(socketDir, "core.sock"),
   NUVO_CORE_KEYRING_SERVICE: KEYRING_SERVICE,
+  NUVO_CORE_EDITION: "encrypted",
 };
 delete env.VITE_DEV_SERVER_URL;
 const TRACK = {
@@ -29,6 +30,8 @@ const TRACK = {
   durationMs: 354_000,
 };
 
+const AUDIO_ID = "e2e-cached-audio";
+const AUDIO_BYTES = 300_000;
 let app: ElectronApplication | null = null;
 const requested: string[] = [];
 
@@ -154,6 +157,11 @@ describe("Nuvo with nuvo-core", () => {
     )) as { liked: string[]; playlists: string[] };
     expect(state.liked).toEqual([TRACK.id]);
     expect(state.playlists).toEqual(["E2E Playlist"]);
+    const cached = await core(
+      page,
+      `return (await fetch(base + "/v1/cache/audio/${AUDIO_ID}", { method: "PUT", headers: { "Content-Type": "audio/webm", "X-Nuvo-Codec": "opus" }, body: new Uint8Array(${AUDIO_BYTES}).map((_, i) => i % 251) })).status;`,
+    );
+    expect(cached).toBe(204);
     await close();
 
     const remote = requested.filter((url) => /^(https?|wss?):/.test(url)).map((url) => new URL(url).hostname);
@@ -166,5 +174,35 @@ describe("Nuvo with nuvo-core", () => {
         stdio: "pipe",
       }),
     ).toThrow();
+  });
+
+  it("third run, standard edition: the encrypted library converts and keeps everything", async () => {
+    env.NUVO_CORE_EDITION = "plain";
+    const page = await launch();
+    await page.getByRole("navigation").first().waitFor({ timeout: 30_000 });
+    expect(await page.locator("[data-testid=recovery-word]").count()).toBe(0);
+    const state = (await core(
+      page,
+      `const liked = await fetch(base + "/v1/me/library/tracks").then((r) => r.json());
+       const playlists = await fetch(base + "/v1/me/playlists").then((r) => r.json());
+       const audio = new Uint8Array(await fetch(base + "/v1/cache/audio/${AUDIO_ID}").then((r) => r.arrayBuffer()));
+       const lyrics = await fetch(base + "/v1/tracks/${TRACK.id}/lyrics?title=Bohemian%20Rhapsody&artist=Queen&durationMs=354000").then((r) => r.text());
+       return {
+         liked: liked.items.map((i) => i.track.id),
+         playlists: playlists.items.map((p) => p.title),
+         audio: audio.length === ${AUDIO_BYTES} && audio.every((b, i) => b === i % 251),
+         lyrics: lyrics.includes('"status":"found"'),
+       };`,
+    )) as { liked: string[]; playlists: string[]; audio: boolean; lyrics: boolean };
+    expect(state).toEqual({ liked: [TRACK.id], playlists: ["E2E Playlist"], audio: true, lyrics: true });
+    const audioDir = path.join(work, "cache", "nuvo", "audio");
+    const deadline = Date.now() + 15_000;
+    while (fs.readdirSync(audioDir).some((name) => name.endsWith(".lac")) && Date.now() < deadline) await page.waitForTimeout(200);
+    expect(fs.readdirSync(audioDir).filter((name) => !name.endsWith(".bin"))).toEqual([]);
+    await close();
+
+    const db = path.join(work, "data", "nuvo", "library.db");
+    expect(fs.readFileSync(db).subarray(0, 15).toString()).toBe("SQLite format 3");
+    expect(execFileSync("sqlite3", [db, "SELECT count(*) FROM liked_tracks"], { stdio: "pipe" }).toString().trim()).toBe("1");
   });
 });

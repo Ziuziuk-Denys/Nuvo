@@ -25,6 +25,7 @@ export function isolate(prefix: string): Isolation {
     XDG_CONFIG_HOME: path.join(work, "config"),
     NUVO_CORE_SOCKET: path.join(socketDir, "core.sock"),
     NUVO_CORE_KEYRING_SERVICE: keyringService,
+    NUVO_CORE_EDITION: "encrypted",
     NUVO_CORE_TOOLS_URL: "",
   } as Record<string, string>;
   delete env.VITE_DEV_SERVER_URL;

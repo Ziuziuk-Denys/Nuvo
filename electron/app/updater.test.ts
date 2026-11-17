@@ -254,6 +254,7 @@ describe("createBackend", () => {
       autoInstallOnAppQuit: true,
       allowPrerelease: true,
       allowDowngrade: true,
+      channel: null,
       checkForUpdates: async () => ({
         isUpdateAvailable: true,
         updateInfo: { version: "2.0.0" },
@@ -267,15 +268,21 @@ describe("createBackend", () => {
 
   const noTag = async () => Promise.reject(new Error("no tag"));
 
+  it("reads the encrypted edition's feed and still refuses a downgrade", () => {
+    const updater = fake();
+    createBackend(updater, noTag, "encrypted");
+    expect([updater.channel, updater.allowDowngrade]).toEqual(["encrypted", false]);
+  });
+
   it("turns off every automatic behaviour", () => {
     const updater = fake();
-    createBackend(updater, noTag);
+    createBackend(updater, noTag, null);
     expect([updater.autoDownload, updater.autoInstallOnAppQuit, updater.allowPrerelease, updater.allowDowngrade]).toEqual([false, false, false, false]);
   });
 
   it("maps check, progress and install", async () => {
     const updater = fake();
-    const backend = createBackend(updater, noTag);
+    const backend = createBackend(updater, noTag, null);
     expect(await backend.check()).toEqual({ version: "2.0.0" });
     const seen: number[] = [];
     await backend.download((p) => seen.push(p));
@@ -293,7 +300,7 @@ describe("createBackend", () => {
     updater.downloadUpdate = async () => {
       armedDuringDownload = updater.autoInstallOnAppQuit;
     };
-    const backend = createBackend(updater, noTag);
+    const backend = createBackend(updater, noTag, null);
     await backend.download(() => undefined);
     expect(armedDuringDownload).toBe(true);
     updater.downloadUpdate = async () => Promise.reject(new Error("reset"));
@@ -306,7 +313,7 @@ describe("createBackend", () => {
     const checkForUpdates = vi.fn(async () => ({ isUpdateAvailable: false, updateInfo: { version: "2.0.0" } }));
     updater.checkForUpdates = checkForUpdates;
     let tag = "v2.0.0";
-    const backend = createBackend(updater, async () => tag);
+    const backend = createBackend(updater, async () => tag, null);
     expect(await backend.check()).toBeNull();
     expect(await backend.check()).toBeNull();
     expect(checkForUpdates).toHaveBeenCalledTimes(1);
@@ -319,7 +326,7 @@ describe("createBackend", () => {
     const updater = fake();
     const checkForUpdates = vi.fn(async () => ({ isUpdateAvailable: false, updateInfo: { version: "2.0.0" } }));
     updater.checkForUpdates = checkForUpdates;
-    const backend = createBackend(updater, noTag);
+    const backend = createBackend(updater, noTag, null);
     await backend.check();
     await backend.check();
     expect(checkForUpdates).toHaveBeenCalledTimes(2);
