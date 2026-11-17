@@ -18,6 +18,7 @@ export interface PanelStatus {
   session: string;
   supported: boolean;
   placementError: string | null;
+  displays: Array<{ id: `${number}`; label: string }>;
   panel: PanelInfo | null;
 }
 export interface PanelInfo {

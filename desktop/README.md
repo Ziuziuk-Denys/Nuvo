@@ -34,6 +34,53 @@ mkdir -p ~/.config/waybar/nuvo && cp desktop/waybar/* ~/.config/waybar/nuvo/
 Paste the modules from `waybar/config.jsonc` into your Waybar config, add `"group/nuvo"` to a module list, and put
 `@import "nuvo/style.css";` at the end of your `style.css`. Middle click on the title plays or pauses, the wheel skips.
 
+## QuickShell and other MPRIS widgets
+
+Any widget that reads MPRIS shows Nuvo with no setup: title, artist, album, cover, length, position, play and pause,
+next, previous and seeking. Nuvo's player calls itself `Nuvo` (its `Identity`). A QuickShell bar item, for example:
+
+```qml
+import QtQuick
+import Quickshell.Services.Mpris
+
+Row {
+  id: nuvo
+  readonly property MprisPlayer player: Mpris.players.values.find((p) => p.identity === "Nuvo") ?? null
+  visible: player !== null
+  spacing: 8
+
+  Image {
+    width: 20
+    height: 20
+    source: nuvo.player?.trackArtUrl ?? ""
+    fillMode: Image.PreserveAspectCrop
+  }
+  Text {
+    text: `${nuvo.player?.trackTitle ?? ""} · ${nuvo.player?.trackArtist ?? ""}`
+    MouseArea {
+      anchors.fill: parent
+      acceptedButtons: Qt.LeftButton | Qt.RightButton
+      onClicked: (mouse) => mouse.button === Qt.RightButton ? nuvo.player.next() : nuvo.player.togglePlaying()
+    }
+  }
+  // QuickShell reads the position on demand; this keeps a progress bar moving
+  Timer {
+    running: nuvo.player?.isPlaying ?? false
+    interval: 1000
+    repeat: true
+    onTriggered: nuvo.player.positionChanged()
+  }
+}
+```
+
+Like, dislike and the lyrics line come from the D-Bus interface below.
+
+## The Notch next to a bar
+
+On Hyprland and Sway a bar drawn by the shell stays above every window, so by default the Notch sits right below it.
+**Settings > Notch > Placement** moves it: the screen, the side, the top edge (screen edge or below the bar), a gap and,
+outside Hyprland and Sway, whether it stays above everything.
+
 ## The D-Bus interface
 
 Playback, metadata and the cover come from Nuvo's MPRIS player, the standard one every desktop reads. What MPRIS

@@ -30,7 +30,7 @@ import { promisify } from "node:util";
 import { CORE_SCHEME, CORE_SCHEME_PRIVILEGES, forwardToCore } from "../core-bridge";
 import { createCoreHost } from "../core-host";
 import { cutoutFor, parseScreens, SCREENS_SCRIPT } from "../notch/cutout";
-import { NotchWindow, registerNotchIpc } from "../notch/window";
+import { NotchWindow, notchDisplays, registerNotchIpc } from "../notch/window";
 import { canPlaceNotch, detectNotchSession } from "../notch/session";
 import { loadKwinScript, unloadKwinScript } from "../notch/kwin";
 import { createCompositorBridge, detectCompositor, type Exec } from "./compositor";
@@ -528,6 +528,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         session,
         supported: canPlaceNotch(session),
         placementError: notch?.placementError ?? null,
+        displays: notchDisplays(),
         panel: target
           ? {
               target,

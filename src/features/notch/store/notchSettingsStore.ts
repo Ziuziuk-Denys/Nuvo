@@ -24,12 +24,16 @@ export const useNotchSettingsStore = create<NotchSettingsState>()(
       version: 1,
       migrate: (persisted, version) => migrateNotchSettings(persisted, version) as NotchSettingsState,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ mode, expandOn, showLyrics, pulseOnTrackChange, display }) => ({
+      partialize: ({ mode, expandOn, showLyrics, pulseOnTrackChange, display, position, edge, offset, stacking }) => ({
         mode,
         expandOn,
         showLyrics,
         pulseOnTrackChange,
         display,
+        position,
+        edge,
+        offset,
+        stacking,
       }),
     },
   ),

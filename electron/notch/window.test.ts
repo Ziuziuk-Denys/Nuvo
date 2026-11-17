@@ -5,7 +5,8 @@ const electron = vi.hoisted(() => {
   const ipcOn = new Map<string, (...args: any[]) => unknown>();
   const ipcHandle = new Map<string, (...args: any[]) => unknown>();
   const windows: FakeWindow[] = [];
-  const display = { id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 } };
+  const display = { id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 }, workArea: { x: 0, y: 32, width: 1920, height: 1048 } };
+  const side = { id: 2, bounds: { x: 1920, y: 0, width: 1920, height: 1080 }, workArea: { x: 1920, y: 0, width: 1920, height: 1080 } };
   const screenEvents = new EventEmitter();
 
   class FakeWindow extends EventEmitter {
@@ -70,6 +71,7 @@ const electron = vi.hoisted(() => {
     ipcHandle,
     windows,
     display,
+    side,
     screenEvents,
     module: {
       BrowserWindow: FakeWindow,
@@ -80,6 +82,7 @@ const electron = vi.hoisted(() => {
       screen: {
         getPrimaryDisplay: vi.fn(() => display),
         getDisplayMatching: vi.fn(() => display),
+        getAllDisplays: vi.fn(() => [display, side]),
         getCursorScreenPoint: vi.fn(() => ({ x: 0, y: 900 })),
         on: (e: string, h: () => void) => screenEvents.on(e, h),
         removeListener: (e: string, h: () => void) => screenEvents.removeListener(e, h),
@@ -92,13 +95,18 @@ vi.mock("electron", () => electron.module);
 import { DEFAULT_NOTCH_SETTINGS as OFF_BY_DEFAULT, type NotchState } from "../../src/notch/contracts";
 import { ISLAND_SIZES, islandRect } from "../../src/notch/lib/geometry";
 import type { NotchSession } from "./session";
-import { NOTCH_TITLE, NotchWindow, registerNotchIpc } from "./window";
+import { NOTCH_TITLE, NotchWindow, notchDisplays, registerNotchIpc } from "./window";
 
 const DEFAULT_NOTCH_SETTINGS = { ...OFF_BY_DEFAULT, mode: "auto" as const };
 
 type FakeWin = InstanceType<typeof electron.module.BrowserWindow>;
 const lastWindow = () => electron.windows.at(-1)!;
 const names = (win: FakeWin) => win.calls.map((c) => c[0]);
+const lastCall = (win: FakeWin, name: string) =>
+  win.calls
+    .filter((c) => c[0] === name)
+    .at(-1)!
+    .slice(1);
 
 function createNotch(opts: { session: NotchSession; main?: FakeWin | null; bridge?: any; loadKwin?: any; apply?: boolean; readCutout?: any }) {
   const main = opts.main === undefined ? new electron.module.BrowserWindow() : opts.main;
@@ -206,9 +214,67 @@ describe("NotchWindow", () => {
       anchor: "top-center",
       pinned: true,
       margin: 0,
-      bounds: "monitor",
+      bounds: "workArea",
+      display: electron.display.bounds,
     });
     expect(names(lastWindow()).indexOf("showInactive")).toBeGreaterThanOrEqual(0);
+  });
+
+  it("asks the bridge for the chosen side, edge and gap", async () => {
+    const bridge = { placeOverlay: vi.fn(async () => true) };
+    const { notch } = createNotch({ session: "sway", bridge });
+    await notch.ready;
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, position: "left", edge: "screen", offset: 16 });
+    await notch.ready;
+    expect(bridge.placeOverlay).toHaveBeenLastCalledWith(expect.objectContaining({ anchor: "top-left", bounds: "monitor", margin: 16 }));
+  });
+
+  it("places at the chosen side, below the bar and with a gap on X11", async () => {
+    const { notch } = createNotch({ session: "x11" });
+    await notch.ready;
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, position: "right", edge: "bar", offset: 8 });
+    await notch.ready;
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 1416, y: 40, width: 496, height: 200 }]);
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, position: "left", offset: 16 });
+    await notch.ready;
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 16, y: 16, width: 496, height: 200 }]);
+  });
+
+  it("places on a display chosen by id and falls back to the primary when it is gone", async () => {
+    const { notch } = createNotch({ session: "x11" });
+    await notch.ready;
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, display: "2" });
+    await notch.ready;
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 2632, y: 0, width: 496, height: 200 }]);
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, display: "7" });
+    await notch.ready;
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 712, y: 0, width: 496, height: 200 }]);
+  });
+
+  it("stacks like other windows when asked, and stops raising itself on Windows", async () => {
+    vi.useFakeTimers();
+    const { notch } = createNotch({ session: "windows" });
+    await vi.advanceTimersByTimeAsync(1_000);
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, stacking: "normal" });
+    await vi.advanceTimersByTimeAsync(1_000);
+    await notch.ready;
+    const win = lastWindow();
+    expect(lastCall(win, "setAlwaysOnTop")).toEqual([false, "screen-saver"]);
+    const raises = names(win).filter((name) => name === "moveTop").length;
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(names(win).filter((name) => name === "moveTop").length).toBe(raises);
+    notch.destroy();
+  });
+
+  it("tells KWin to keep the Notch above only when it should stack above", async () => {
+    const loadKwin = vi.fn(async () => true);
+    const { notch } = createNotch({ session: "kde-wayland", loadKwin });
+    await notch.ready;
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, stacking: "normal", edge: "bar" });
+    await notch.ready;
+    const script = (loadKwin.mock.calls.at(-1) as unknown as [string])[0];
+    expect(script).toContain("keepAbove = false");
+    expect(script).toContain('"y":32');
   });
 
   it("loads a KWin script on KDE", async () => {
@@ -287,8 +353,7 @@ describe("NotchWindow", () => {
     main.emit("move");
     vi.advanceTimersByTime(300);
     expect(count()).toBe(4);
-    const other = { id: 2, bounds: { x: 1920, y: 0, width: 1920, height: 1080 } };
-    electron.module.screen.getDisplayMatching.mockImplementation(() => other);
+    electron.module.screen.getDisplayMatching.mockImplementation(() => electron.side);
     main.emit("move");
     vi.advanceTimersByTime(100);
     main.emit("move");
@@ -395,6 +460,11 @@ describe("NotchWindow", () => {
     expect(names(win).lastIndexOf("setBounds")).toBeGreaterThan(names(win).indexOf("setAlwaysOnTop"));
     expect(win.webContents.send).toHaveBeenCalledWith("notch:cutout", { width: 200, height: 38 });
     expect(notch.hello().cutout).toEqual({ width: 200, height: 38 });
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, edge: "bar" });
+    await notch.ready;
+    expect(lastCall(win, "setBounds")).toEqual([{ x: 712, y: 32, width: 496, height: 200 }]);
+    expect(win.webContents.send).toHaveBeenCalledWith("notch:cutout", null);
+    expect(notch.hello().cutout).toBeNull();
     notch.destroy();
   });
 
@@ -596,6 +666,16 @@ describe("NotchWindow", () => {
   });
 });
 
+describe("notchDisplays", () => {
+  it("names each display by its label, else by its size", () => {
+    electron.module.screen.getAllDisplays.mockReturnValueOnce([{ ...electron.display, label: "DP-2" }, electron.side] as never);
+    expect(notchDisplays()).toEqual([
+      { id: "1", label: "DP-2" },
+      { id: "2", label: "1920 × 1080" },
+    ]);
+  });
+});
+
 describe("registerNotchIpc", () => {
   it("hands notch actions to onAction, from the Notch only", async () => {
     const { notch, main } = createNotch({ session: "x11" });
@@ -659,12 +739,28 @@ describe("registerNotchIpc", () => {
     settings(fromMain, { ...DEFAULT_NOTCH_SETTINGS, mode: "bogus" });
     settings(fromMain, { ...DEFAULT_NOTCH_SETTINGS, showLyrics: "yes" });
     settings(fromMain, { ...DEFAULT_NOTCH_SETTINGS, pulseOnTrackChange: 1 });
+    for (const bad of [
+      { position: "bottom" },
+      { edge: "middle" },
+      { offset: -1 },
+      { offset: 1.5 },
+      { offset: 999 },
+      { offset: "8" },
+      { stacking: "below" },
+      { display: "screen-2" },
+      { display: 2 },
+    ]) {
+      settings(fromMain, { ...DEFAULT_NOTCH_SETTINGS, ...bad });
+    }
     settings(fromMain, null);
     settings({ sender: {} }, { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
     settings({ sender }, { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
     expect(notch.hello().settings).toEqual(DEFAULT_NOTCH_SETTINGS);
     settings(fromMain, { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
     expect(notch.hello().settings).toEqual({ ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
+    const placed = { ...DEFAULT_NOTCH_SETTINGS, position: "right", edge: "bar", offset: 32, stacking: "normal", display: "2" };
+    settings(fromMain, placed);
+    expect(notch.hello().settings).toEqual(placed);
   });
 
   it("answers notch:hello and notch:session for the Notch only", async () => {

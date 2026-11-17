@@ -24,12 +24,19 @@ export interface NotchLyrics {
 
 export type NotchExpandOn = "hover" | "click";
 
+export type NotchPosition = "center" | "left" | "right";
+export type NotchEdge = "auto" | "screen" | "bar";
+
 export interface NotchSettings {
   mode: "auto" | "on" | "off";
   expandOn: NotchExpandOn;
   showLyrics: boolean;
   pulseOnTrackChange: boolean;
-  display: "follow" | "primary";
+  display: "follow" | "primary" | `${number}`;
+  position: NotchPosition;
+  edge: NotchEdge;
+  offset: number;
+  stacking: "above" | "normal";
 }
 
 export const DEFAULT_NOTCH_SETTINGS: NotchSettings = {
@@ -38,6 +45,10 @@ export const DEFAULT_NOTCH_SETTINGS: NotchSettings = {
   showLyrics: true,
   pulseOnTrackChange: true,
   display: "follow",
+  position: "center",
+  edge: "auto",
+  offset: 0,
+  stacking: "above",
 };
 
 export type NotchAction =

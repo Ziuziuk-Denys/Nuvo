@@ -1,3 +1,5 @@
+import type { NotchEdge } from "../../src/notch/contracts";
+
 export type NotchSession = "gnome-wayland" | "kde-wayland" | "hyprland" | "sway" | "x11" | "other-wayland" | "windows" | "macos";
 export type NotchMode = "auto" | "on" | "off";
 
@@ -22,6 +24,12 @@ export function canPlaceNotch(session: NotchSession): boolean {
 export function notchEnabled(mode: NotchMode, session: NotchSession): boolean {
   if (mode === "off") return false;
   return canPlaceNotch(session);
+}
+
+// Layer-shell bars draw over every window on Hyprland and Sway, so the Notch goes below them there
+export function resolveEdge(edge: NotchEdge, session: NotchSession): "screen" | "bar" {
+  if (edge !== "auto") return edge;
+  return session === "hyprland" || session === "sway" ? "bar" : "screen";
 }
 
 // Windows and macOS have no input shape; the window ignores the mouse until the pointer is on the pill

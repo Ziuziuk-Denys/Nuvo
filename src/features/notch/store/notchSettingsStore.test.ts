@@ -42,6 +42,14 @@ describe("Notch settings", () => {
     expect((await freshStore()).mode).toBe("auto");
   });
 
+  it("give settings saved before placement existed the default placement", async () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ state: { mode: "on", expandOn: "hover", showLyrics: true, pulseOnTrackChange: true, display: "primary" }, version: 1 }),
+    );
+    expect(await freshStore()).toMatchObject({ display: "primary", position: "center", edge: "auto", offset: 0, stacking: "above" });
+  });
+
   it("migrate only the mode", () => {
     expect(migrateNotchSettings({ mode: "off" }, 0)).toEqual({ mode: "off" });
     expect(migrateNotchSettings(undefined, 0)).toEqual({});
