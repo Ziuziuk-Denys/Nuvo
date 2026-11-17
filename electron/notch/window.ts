@@ -10,8 +10,9 @@ import {
   type ShapeRect,
 } from "../../src/notch/contracts";
 import { ISLAND_SIZES, capturesPointer, islandRect, notchWindow } from "../../src/notch/lib/geometry";
-import { kwinScript, notchOrigin, type DisplayBounds } from "./placement";
-import { canPlaceNotch, clicksPassThrough, notchEnabled, type NotchSession } from "./session";
+import { overlayOrigin } from "../app/compositor";
+import { kwinScript, type DisplayBounds } from "./placement";
+import { canPlaceNotch, clicksPassThrough, notchEnabled, resolveEdge, type NotchSession } from "./session";
 
 export const NOTCH_TITLE = "Nuvo Notch";
 
@@ -24,6 +25,7 @@ export interface OverlayPlacer {
     pinned: boolean;
     margin: number;
     bounds?: "monitor" | "workArea";
+    display?: DisplayBounds;
   }): Promise<boolean>;
 }
 const MOVE_SETTLE_MS = 300;
@@ -339,11 +341,12 @@ export class NotchWindow {
   }
 
   private pickDisplay() {
+    const { display } = this.settings;
     const main = this.deps.getMainWindow();
-    if (this.settings.display === "follow" && main && !main.isDestroyed()) {
+    if (display === "follow" && main && !main.isDestroyed()) {
       return screen.getDisplayMatching(main.getBounds());
     }
-    return screen.getPrimaryDisplay();
+    return screen.getAllDisplays().find((candidate) => String(candidate.id) === display) ?? screen.getPrimaryDisplay();
   }
 
   private async place(): Promise<void> {
@@ -356,8 +359,12 @@ export class NotchWindow {
     }
     const display = this.pickDisplay();
     this.placedDisplayId = display.id;
+    const { position, offset } = this.settings;
+    const edge = resolveEdge(this.settings.edge, this.deps.session);
+    const above = this.settings.stacking === "above";
     if (this.deps.readCutout) {
-      const cutout = await this.deps.readCutout(display.bounds).catch(() => null);
+      const atCamera = position === "center" && edge === "screen" && offset === 0;
+      const cutout = atCamera ? await this.deps.readCutout(display.bounds).catch(() => null) : null;
       if (win.isDestroyed()) return;
       if (cutout?.width !== this.cutout?.width || cutout?.height !== this.cutout?.height) {
         this.cutout = cutout;
@@ -365,25 +372,27 @@ export class NotchWindow {
       }
     }
     const size = notchWindow(this.cutout);
-    const geometry = { ...notchOrigin(display.bounds, size.width), ...size };
+    const anchor = `top-${position}` as const;
+    const geometry = { ...overlayOrigin(edge === "bar" ? display.workArea : display.bounds, size.width, offset, anchor), ...size };
     const session = this.deps.session;
     if (session === "x11" || clicksPassThrough(session)) {
       win.setBounds(geometry);
       win.showInactive();
-      win.setAlwaysOnTop(true, "screen-saver");
+      win.setAlwaysOnTop(above, "screen-saver");
       win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
       // showing can push the frame below the menu bar; above it the panel's level holds it
       if (session === "macos") win.setBounds(geometry);
       // Mutter drops always-on-top asked for before the window is mapped, so it is asked again until it holds.
-      for (let tries = 0; tries < ON_TOP_TRIES; tries++) {
+      for (let tries = 0; above && tries < ON_TOP_TRIES; tries++) {
         await new Promise((resolve) => setTimeout(resolve, ON_TOP_RETRY_MS));
         if (win.isDestroyed() || !win.isVisible() || win.isAlwaysOnTop()) break;
         win.setAlwaysOnTop(true, "screen-saver");
       }
-      if (session === "windows") this.keepRaising(win);
+      if (session === "windows" && above) this.keepRaising(win);
+      else this.stopRaising();
     } else if (session === "kde-wayland") {
       // The script pins the window as KWin maps it, so it never shows where KWin would put it.
-      const ok = await this.deps.loadKwin(kwinScript(NOTCH_TITLE, geometry)).catch(() => false);
+      const ok = await this.deps.loadKwin(kwinScript(NOTCH_TITLE, geometry, above)).catch(() => false);
       if (ok && !win.isDestroyed()) win.showInactive();
       this.recordPlacement(win, ok, "KWin script failed");
     } else {
@@ -392,10 +401,11 @@ export class NotchWindow {
         ?.placeOverlay({
           title: NOTCH_TITLE,
           ...size,
-          anchor: "top-center",
+          anchor,
           pinned: true,
-          margin: 0,
-          bounds: "monitor",
+          margin: offset,
+          bounds: edge === "bar" ? "workArea" : "monitor",
+          display: display.bounds,
         })
         .catch(() => false);
       this.recordPlacement(win, Boolean(ok), "compositor placement failed");
@@ -428,9 +438,20 @@ export class NotchWindow {
   }
 }
 
+export function notchDisplays(): Array<{ id: `${number}`; label: string }> {
+  return screen.getAllDisplays().map((display) => ({
+    id: `${display.id}`,
+    label: display.label || `${display.bounds.width} × ${display.bounds.height}`,
+  }));
+}
+
 const MODES = ["auto", "on", "off"];
 const EXPAND_ON = ["hover", "click"];
 const DISPLAYS = ["follow", "primary"];
+const POSITIONS = ["center", "left", "right"];
+const EDGES = ["auto", "screen", "bar"];
+const STACKING = ["above", "normal"];
+const MAX_OFFSET = 200;
 
 function isValidSettings(value: unknown): value is NotchSettings {
   if (!value || typeof value !== "object") return false;
@@ -438,9 +459,15 @@ function isValidSettings(value: unknown): value is NotchSettings {
   return (
     MODES.includes(s.mode as string) &&
     EXPAND_ON.includes(s.expandOn as string) &&
-    DISPLAYS.includes(s.display as string) &&
+    (DISPLAYS.includes(s.display as string) || (typeof s.display === "string" && /^-?\d{1,20}$/.test(s.display))) &&
     typeof s.showLyrics === "boolean" &&
-    typeof s.pulseOnTrackChange === "boolean"
+    typeof s.pulseOnTrackChange === "boolean" &&
+    POSITIONS.includes(s.position as string) &&
+    EDGES.includes(s.edge as string) &&
+    Number.isInteger(s.offset) &&
+    (s.offset as number) >= 0 &&
+    (s.offset as number) <= MAX_OFFSET &&
+    STACKING.includes(s.stacking as string)
   );
 }
 

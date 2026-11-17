@@ -13,6 +13,7 @@ export interface PlaceRequest {
   pinned: boolean;
   margin: number;
   bounds?: "monitor" | "workArea";
+  display?: Rect;
 }
 
 export type Rect = Record<"x" | "y" | "width" | "height", number>;
@@ -41,6 +42,13 @@ export function overlayOrigin(area: Rect, width: number, margin: number, anchor:
   if (anchor === "top-left") return { x: Math.round(area.x + margin), y };
   if (anchor === "top-right") return { x: Math.round(area.x + area.width - width - margin), y };
   return { x: Math.round(area.x + (area.width - width) / 2), y };
+}
+
+function holdsCenterOf(area: Rect, display: Rect | undefined): boolean {
+  if (!display) return false;
+  const x = display.x + display.width / 2;
+  const y = display.y + display.height / 2;
+  return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height;
 }
 
 export type HyprMonitor = Rect & {
@@ -127,7 +135,7 @@ export function createHyprlandPlacer(socketPath: string, pid: number, request = 
     const monitors = JSON.parse(await request(socketPath, "j/monitors")) as HyprMonitor[];
     if (!Array.isArray(monitors)) throw new Error("hyprland: malformed monitors");
     const valid = monitors.filter(isHyprMonitor);
-    const monitor = valid.find((m) => m.focused) ?? valid[0];
+    const monitor = valid.find((m) => holdsCenterOf(hyprWorkArea({ ...m, reserved: [0, 0, 0, 0] }), place.display)) ?? valid.find((m) => m.focused) ?? valid[0];
     if (!monitor) throw new Error("hyprland: no monitor");
     const area = place.bounds === "monitor" ? hyprWorkArea({ ...monitor, reserved: [0, 0, 0, 0] }) : hyprWorkArea(monitor);
     const origin = overlayOrigin(area, place.width, place.margin, place.anchor);
@@ -178,7 +186,7 @@ export function createSwayPlacer(pid: number, exec: Exec = execText) {
     const workspaces = JSON.parse(await exec("swaymsg", ["-r", "-t", query], REQUEST_TIMEOUT_MS)) as Array<{ focused: boolean; rect: Rect }>;
     if (!Array.isArray(workspaces)) throw new Error("sway: malformed workspaces");
     const rects = workspaces.filter((w) => isRect(w?.rect));
-    const area = (rects.find((w) => w.focused) ?? rects[0])?.rect;
+    const area = (rects.find((w) => holdsCenterOf(w.rect, place.display)) ?? rects.find((w) => w.focused) ?? rects[0])?.rect;
     if (!area) throw new Error("sway: no workspace");
     const origin = overlayOrigin(area, place.width, place.margin, place.anchor);
     const criteria = `[pid=${pid} title="^${escapeSwayTitle(place.title)}$"]`;

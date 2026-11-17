@@ -3,7 +3,6 @@ import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { notchOrigin } from "../notch/placement";
 import { createCompositorBridge, createHyprlandPlacer, createSwayPlacer, detectCompositor, hyprRequest, hyprWorkArea, overlayOrigin } from "./compositor";
 
 const request = { title: "Nuvo Notch", width: 400, height: 60, anchor: "top-center" as const, pinned: true, margin: 8 };
@@ -76,6 +75,42 @@ describe("compositor", () => {
       expect(batch.includes("dispatch pin address:0xabc")).toBe(!pinned);
       for (const prop of ["noborder 1", "noshadow 1", "rounding 0", "noblur 1"]) expect(batch).toContain(`setprop address:0xabc ${prop}`);
     }
+  });
+
+  it("places on the monitor holding the chosen display, else on the focused one", async () => {
+    const side = { ...monitor, focused: false, x: 1920, reserved: [0, 0, 0, 0] as [number, number, number, number] };
+    const hypr = await fakeHyprland((r) => {
+      if (r === "j/clients") return JSON.stringify([{ address: "0xabc", title: "Nuvo Notch", pid: 42, mapped: true, pinned: true }]);
+      if (r === "j/monitors") return JSON.stringify([monitor, side]);
+      if (r.startsWith("dispatch hl.dsp")) return "unknown request";
+      return r
+        .split(";")
+        .map(() => "ok")
+        .join("\n");
+    });
+    const place = createHyprlandPlacer(hypr.path, 42);
+    await place({ ...request, display: { x: 1920, y: 0, width: 1920, height: 1080 } });
+    await place({ ...request, display: { x: 5000, y: 0, width: 1920, height: 1080 } });
+    const moves = hypr.requests.filter((r) => r.startsWith("[[BATCH]]"));
+    expect(moves[0]).toContain("movewindowpixel exact 2680 8,");
+    expect(moves[1]).toContain("movewindowpixel exact 760 38,");
+
+    const calls: string[][] = [];
+    const outputs = [
+      { focused: true, rect: { x: 0, y: 0, width: 1920, height: 1080 } },
+      { focused: false, rect: { x: 1920, y: 0, width: 1920, height: 1080 } },
+    ];
+    const exec = async (_f: string, args: string[]) => {
+      calls.push(args);
+      if (args.includes("get_outputs")) return JSON.stringify(outputs);
+      if (args.includes("get_workspaces")) return JSON.stringify(outputs.map((o) => ({ ...o, rect: { ...o.rect, y: 28, height: 1052 } })));
+      return JSON.stringify([{ success: true }]);
+    };
+    const display = { x: 1920, y: 0, width: 1920, height: 1080 };
+    await createSwayPlacer(7, exec)({ ...request, bounds: "monitor", display });
+    expect(calls[1][1]).toContain("position 2680 8");
+    await createSwayPlacer(7, exec)({ ...request, bounds: "workArea", display });
+    expect(calls[3][1]).toContain("position 2680 36");
   });
 
   it("Lua Hyprland: one function with float, move, pin and four properties", async () => {
@@ -199,7 +234,7 @@ describe("compositor input validation", () => {
     for (const g of geometries) {
       const area = hyprWorkArea({ ...monitor, ...g, reserved: [0, 0, 0, 0] });
       const display = { x: g.x, y: g.y, width: g.width / g.scale, height: g.height / g.scale };
-      expect(overlayOrigin(area, 400, 0, "top-center")).toEqual(notchOrigin(display, 400));
+      expect(overlayOrigin(area, 400, 0, "top-center")).toEqual({ x: Math.round(display.x + (display.width - 400) / 2), y: display.y });
     }
   });
 
@@ -217,7 +252,7 @@ describe("compositor input validation", () => {
     });
     const notch = { ...request, margin: 0, bounds: "monitor" as const };
     expect(await createHyprlandPlacer(hypr.path, 42)(notch)).toBe(true);
-    const expected = notchOrigin(display, 400);
+    const expected = { x: 760, y: 0 };
     expect(hypr.requests.find((r) => r.startsWith("[[BATCH]]"))).toContain(`movewindowpixel exact ${expected.x} ${expected.y},`);
 
     const calls: string[][] = [];

@@ -22,6 +22,10 @@ const SETTINGS: NotchSettings = {
   showLyrics: true,
   pulseOnTrackChange: true,
   display: "primary",
+  position: "center",
+  edge: "auto",
+  offset: 0,
+  stacking: "above",
 };
 
 function playingState(status: NotchState["status"]): NotchState {
@@ -176,6 +180,22 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
       top: true,
       visible: true,
     });
+  });
+
+  it("moves to the chosen side with a gap, stacks like other windows when asked, and comes back", async () => {
+    const display = await launched.app.evaluate(({ screen }) => screen.getPrimaryDisplay().bounds);
+    const notchWindow = () =>
+      launched.app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === "Nuvo Notch");
+        return win ? { bounds: win.getBounds(), top: win.isAlwaysOnTop() } : null;
+      });
+    await setSettings({ ...SETTINGS, position: "right", edge: "screen", offset: 16, stacking: "normal" });
+    await expect.poll(notchWindow).toEqual({
+      bounds: { x: display.x + display.width - NOTCH_WINDOW.width - 16, y: display.y + 16, width: NOTCH_WINDOW.width, height: NOTCH_WINDOW.height },
+      top: false,
+    });
+    await setSettings(SETTINGS);
+    await expect.poll(notchWindow).toMatchObject({ bounds: { x: display.x + Math.round((display.width - NOTCH_WINDOW.width) / 2), y: display.y }, top: true });
   });
 
   it("goes idle, live, hover, expanded and back to live", async () => {
@@ -482,6 +502,44 @@ describe.skipIf(!hasBusTools)("Panel widget bus", () => {
       )
       .toBe("(<'Nuvo'>,)");
     await launched.main.evaluate(() => (window as unknown as { __tone: HTMLAudioElement }).__tone.pause());
+  });
+
+  it("publishes the title, artist, cover, length, position and controls that shell widgets read", async () => {
+    const mainPid = await launched.app.evaluate(() => process.pid);
+    await playTone(launched.main);
+    await launched.main.evaluate(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 128;
+      const session = navigator.mediaSession;
+      session.metadata = new MediaMetadata({ title: "Song", artist: "Band", album: "Record", artwork: [{ src: canvas.toDataURL("image/png") }] });
+      session.setActionHandler("nexttrack", () => undefined);
+      session.setActionHandler("previoustrack", () => undefined);
+      session.setActionHandler("seekto", () => undefined);
+      session.setPositionState({ duration: 200, playbackRate: 1, position: 30 });
+    });
+    const player = () =>
+      busCall(
+        `org.mpris.MediaPlayer2.chromium.instance${mainPid}`,
+        "/org/mpris/MediaPlayer2",
+        "org.freedesktop.DBus.Properties.GetAll",
+        "org.mpris.MediaPlayer2.Player",
+      );
+    await expect.poll(player, { timeout: 10_000 }).toContain("'mpris:artUrl': <'file://");
+    const props = player();
+    console.log(`[e2e] MPRIS Player ${props}`);
+    await launched.main.evaluate(() => (window as unknown as { __tone: HTMLAudioElement }).__tone.pause());
+    for (const part of [
+      "'xesam:title': <'Song'>",
+      "'xesam:artist': <['Band']>",
+      "'xesam:album': <'Record'>",
+      "'mpris:length': <int64 200000000>",
+      "'CanGoNext': <true>",
+      "'CanGoPrevious': <true>",
+      "'CanSeek': <true>",
+    ]) {
+      expect(props).toContain(part);
+    }
+    expect(Number(props.match(/'Position': <int64 (\d+)>/)?.[1])).toBeGreaterThanOrEqual(30_000_000);
   });
 
   it("carries the like state and the lyrics line, and turns its methods into player commands", async () => {

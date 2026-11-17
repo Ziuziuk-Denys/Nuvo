@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPlaceNotch, clicksPassThrough, detectNotchSession, notchEnabled } from "./session";
+import { canPlaceNotch, clicksPassThrough, detectNotchSession, notchEnabled, resolveEdge } from "./session";
 
 describe("notch session", () => {
   it("detects sessions from the environment", () => {
@@ -28,5 +28,13 @@ describe("notch session", () => {
     expect(clicksPassThrough("macos")).toBe(true);
     expect(clicksPassThrough("x11")).toBe(false);
     expect(clicksPassThrough("kde-wayland")).toBe(false);
+  });
+
+  it("puts the Notch below the bar by default only where bars draw over every window", () => {
+    expect(resolveEdge("auto", "hyprland")).toBe("bar");
+    expect(resolveEdge("auto", "sway")).toBe("bar");
+    for (const session of ["x11", "kde-wayland", "windows", "macos"] as const) expect(resolveEdge("auto", session)).toBe("screen");
+    expect(resolveEdge("screen", "hyprland")).toBe("screen");
+    expect(resolveEdge("bar", "macos")).toBe("bar");
   });
 });

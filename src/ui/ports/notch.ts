@@ -4,6 +4,7 @@ export interface NotchSession {
   session: string;
   supported: boolean;
   placementError?: string | null;
+  displays?: Array<{ id: `${number}`; label: string }>;
   panel?: { target: "gnome" | "plasma" | "waybar"; available: boolean; manual?: boolean; source?: string; pendingEnable?: boolean } | null;
 }
 

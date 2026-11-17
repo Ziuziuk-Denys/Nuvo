@@ -1,4 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
+import { Button } from "../../components/Button";
+import { Menu, type MenuItem } from "../../components/Menu";
 import { useTranslation } from "../../ports/i18n";
 import { getNotchSession, useNotchSettingsStore, type NotchSession } from "../../ports/notch";
 import { Segmented, SettingGroup, SettingRow, Switch } from "./controls";
@@ -16,10 +18,15 @@ const DESKTOP_NAMES: Record<string, string> = {
   "other-wayland": "settings.notch.desktop_wayland",
 };
 
+const OFFSETS = ["0", "4", "8", "16", "32"] as const;
+// Hyprland and Sway draw layer-shell bars over every window, so a window cannot choose its stacking there
+const FIXED_STACKING = new Set(["hyprland", "sway"]);
+
 export function NotchSection(): JSX.Element {
   const { t } = useTranslation();
   const notch = useNotchSettingsStore();
   const [session, setSession] = useState<NotchSession | null>(null);
+  const [displayMenu, setDisplayMenu] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -33,6 +40,20 @@ export function NotchSection(): JSX.Element {
 
   const unsupported = session !== null && !session.supported;
   const desktopName = session ? t(DESKTOP_NAMES[session.session] ?? "settings.notch.desktop_wayland") : "";
+  const displays = session?.displays ?? [];
+  const chosenDisplay = displays.find((display) => display.id === notch.display);
+  const displayLabel = chosenDisplay?.label ?? t(notch.display === "follow" ? "settings.notch.display_follow" : "settings.notch.display_primary");
+  const displayChoice = (display: typeof notch.display, label: string): MenuItem => ({
+    label,
+    icon: notch.display === display ? "check" : undefined,
+    onSelect: () => notch.setSettings({ display }),
+  });
+  const displayItems: MenuItem[] = [
+    displayChoice("follow", t("settings.notch.display_follow")),
+    displayChoice("primary", t("settings.notch.display_primary")),
+    ...(displays.length > 0 ? ["separator" as const] : []),
+    ...displays.map((display) => displayChoice(display.id, display.label)),
+  ];
 
   return (
     <>
@@ -105,18 +126,80 @@ export function NotchSection(): JSX.Element {
           title={t("settings.notch.display")}
           titleKey="settings.notch.display"
           control={
+            <Button size="s" aria-haspopup="menu" aria-expanded={displayMenu !== null} onClick={(event) => setDisplayMenu(event.currentTarget)}>
+              {displayLabel}
+            </Button>
+          }
+        />
+        <SettingRow
+          title={t("settings.notch.position")}
+          titleKey="settings.notch.position"
+          control={
             <Segmented
-              label={t("settings.notch.display")}
-              value={notch.display}
-              onChange={(display) => notch.setSettings({ display })}
+              label={t("settings.notch.position")}
+              value={notch.position}
+              onChange={(position) => notch.setSettings({ position })}
               options={[
-                { value: "follow", label: t("settings.notch.display_follow") },
-                { value: "primary", label: t("settings.notch.display_primary") },
+                { value: "left", label: t("settings.notch.position_left") },
+                { value: "center", label: t("settings.notch.position_center") },
+                { value: "right", label: t("settings.notch.position_right") },
               ]}
             />
           }
         />
+        <SettingRow
+          title={t("settings.notch.edge")}
+          description={t("settings.notch.edge_desc")}
+          titleKey="settings.notch.edge"
+          descKey="settings.notch.edge_desc"
+          control={
+            <Segmented
+              label={t("settings.notch.edge")}
+              value={notch.edge}
+              onChange={(edge) => notch.setSettings({ edge })}
+              options={[
+                { value: "auto", label: t("settings.notch.edge_auto") },
+                { value: "screen", label: t("settings.notch.edge_screen") },
+                { value: "bar", label: t("settings.notch.edge_bar") },
+              ]}
+            />
+          }
+        />
+        <SettingRow
+          title={t("settings.notch.offset")}
+          description={t("settings.notch.offset_desc")}
+          titleKey="settings.notch.offset"
+          descKey="settings.notch.offset_desc"
+          control={
+            <Segmented
+              label={t("settings.notch.offset")}
+              value={String(notch.offset)}
+              onChange={(offset) => notch.setSettings({ offset: Number(offset) })}
+              options={OFFSETS.map((px) => ({ value: px, label: t("settings.notch.offset_px", { px }) }))}
+            />
+          }
+        />
+        {session && !FIXED_STACKING.has(session.session) ? (
+          <SettingRow
+            title={t("settings.notch.stacking")}
+            description={t("settings.notch.stacking_desc")}
+            titleKey="settings.notch.stacking"
+            descKey="settings.notch.stacking_desc"
+            control={
+              <Segmented
+                label={t("settings.notch.stacking")}
+                value={notch.stacking}
+                onChange={(stacking) => notch.setSettings({ stacking })}
+                options={[
+                  { value: "above", label: t("settings.notch.stacking_above") },
+                  { value: "normal", label: t("settings.notch.stacking_normal") },
+                ]}
+              />
+            }
+          />
+        ) : null}
       </SettingGroup>
+      <Menu open={displayMenu !== null} anchor={displayMenu} onClose={() => setDisplayMenu(null)} items={displayItems} />
       {session?.panel ? (
         <SettingGroup label={t("settings.page.notch_panel")}>
           <PanelWidgetRow panel={session.panel} instead={unsupported} />

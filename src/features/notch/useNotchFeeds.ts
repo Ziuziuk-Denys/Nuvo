@@ -9,8 +9,8 @@ export interface NotchLyricsInput {
 }
 
 function pick(settings: NotchSettings): NotchSettings {
-  const { mode, expandOn, showLyrics, pulseOnTrackChange, display } = settings;
-  return { mode, expandOn, showLyrics, pulseOnTrackChange, display };
+  const { mode, expandOn, showLyrics, pulseOnTrackChange, display, position, edge, offset, stacking } = settings;
+  return { mode, expandOn, showLyrics, pulseOnTrackChange, display, position, edge, offset, stacking };
 }
 
 export function useNotchFeeds(lyrics: NotchLyricsInput): void {
