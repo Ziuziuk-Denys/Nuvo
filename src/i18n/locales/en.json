@@ -572,7 +572,11 @@
         "empty_title": "Nothing to suggest yet",
         "empty_message": "Play some music and suggestions will show up here.",
         "search": "Search for music",
-        "import_from": "Or bring your playlists from"
+        "import_from": "Or bring your playlists from",
+        "building": "Finding songs close to your picks",
+        "offline_title": "Can't reach music right now",
+        "offline_message": "Your picks are saved. Check the connection, then try again.",
+        "retry": "Try again"
       },
       "menu": {
         "exact": "Not this recording",

@@ -27,6 +27,11 @@ export function catalog(): CatalogPort {
   return booted.catalog;
 }
 
+export function warmPool(seeds: readonly string[], onStored: () => void): Promise<void> {
+  if (!booted) throw new Error("engine not started");
+  return booted.pool.warm(seeds, onStored);
+}
+
 export function soundBus() {
   if (!booted) throw new Error("engine not started");
   return booted.decks.soundBus;

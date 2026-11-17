@@ -50,6 +50,7 @@ export interface Booted {
   precache: PrecacheScheduler;
   downloads: DownloadFetcher;
   catalog: CatalogPort;
+  pool: PoolRefresher;
   dispose(): void;
 }
 
@@ -305,5 +306,5 @@ export function bootEngine(deps: BootDeps): Booted {
     shared.elements = null;
     shared.sources = new WeakMap();
   };
-  return { engine, decks, output, resolver, precache, downloads, catalog: deps.catalog, dispose };
+  return { engine, decks, output, resolver, precache, downloads, catalog: deps.catalog, pool, dispose };
 }
