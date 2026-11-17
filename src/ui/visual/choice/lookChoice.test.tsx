@@ -56,6 +56,7 @@ it.each(["scene", "karaoke"] as const)("picking %s lets the other half go, then 
 it("points at the switch in the corner and steps aside on a press or after a while", () => {
   const target = document.createElement("button");
   target.dataset.tour = "look-switch";
+  target.getBoundingClientRect = () => new DOMRect(900, 12, 32, 32);
   document.body.append(target);
   const onDone = vi.fn();
   act(() => root.render(<CornerHint onDone={onDone} />));

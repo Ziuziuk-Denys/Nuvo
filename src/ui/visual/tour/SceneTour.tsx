@@ -5,7 +5,7 @@ import { LAYER_ATTRIBUTE } from "../../components/layers";
 import { useTranslation } from "../../ports/i18n";
 import { Callout } from "../../tour/Callout";
 import { holeClip, ringAround, type Box } from "../../tour/placement";
-import { boxOf, sameBox } from "../../tour/targets";
+import { radiusOf, sameBox, seenBox } from "../../tour/targets";
 import tour from "../../tour/tour.module.css";
 import { SCENE_TOUR } from "./steps";
 import styles from "./SceneTour.module.css";
@@ -15,7 +15,7 @@ const query = (target: string) => document.querySelector(`[data-tour="${target}"
 export function SceneTour({ onDone }: { onDone(): void }): JSX.Element {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
-  const [box, setBox] = useState<Box | null>(null);
+  const [box, setBox] = useState<(Box & { radius: number }) | null>(null);
   const [view, setView] = useState({ width: innerWidth, height: innerHeight });
   const step = SCENE_TOUR[index];
   const last = index === SCENE_TOUR.length - 1;
@@ -26,7 +26,8 @@ export function SceneTour({ onDone }: { onDone(): void }): JSX.Element {
     let frame = 0;
     const follow = () => {
       const element = step.target ? query(step.target) : null;
-      const found = element ? boxOf(element) : null;
+      const seen = element ? seenBox(element) : null;
+      const found = element && seen ? { ...seen, radius: radiusOf(element) } : null;
       setBox((previous) => (sameBox(previous, found) ? previous : found));
       setView((previous) => (previous.width === innerWidth && previous.height === innerHeight ? previous : { width: innerWidth, height: innerHeight }));
       frame = requestAnimationFrame(follow);

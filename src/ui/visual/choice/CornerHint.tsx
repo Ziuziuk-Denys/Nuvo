@@ -3,16 +3,17 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "../../ports/i18n";
 import { Callout } from "../../tour/Callout";
 import { ringAround, type Box } from "../../tour/placement";
-import { boxOf } from "../../tour/targets";
+import { radiusOf, seenBox } from "../../tour/targets";
 
 const SHOWN_MS = 5_000;
 
 export function CornerHint({ onDone }: { onDone(): void }): JSX.Element | null {
   const { t } = useTranslation();
-  const [box, setBox] = useState<Box | null>(null);
+  const [box, setBox] = useState<(Box & { radius: number }) | null>(null);
   useLayoutEffect(() => {
     const target = document.querySelector('[data-tour="look-switch"]');
-    setBox(target ? boxOf(target) : null);
+    const seen = target ? seenBox(target) : null;
+    setBox(target && seen ? { ...seen, radius: radiusOf(target) } : null);
   }, []);
 
   useEffect(() => {
