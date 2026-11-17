@@ -7,7 +7,7 @@ import { lyricsCommands, useLyrics } from "../ports/lyrics";
 import { usePlayerStore } from "../ports/player";
 import { partsFor, sceneOf, SCENES, type Aspect, type Media, type Part, type Selection } from "../ports/visual";
 import { chooseScene, setVisualSettings, useVisualSettings } from "./settings";
-import { setStudioOpen } from "./studio";
+import { setStudioOpen } from "./studioOpen";
 import { Assets } from "./studio/Assets";
 import { ExportClip } from "./studio/ExportClip";
 import { Glow } from "./studio/Glow";

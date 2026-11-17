@@ -10,7 +10,7 @@ import { useTranslation } from "../ports/i18n";
 import { bootImports } from "../ports/importsRuntime";
 import { Karaoke, KaraokeOverlay } from "../ports/karaoke";
 import { Studio } from "../visual/Studio";
-import { useStudioOpen } from "../visual/studio";
+import { useStudioOpen } from "../visual/studioOpen";
 import { useDisableButtonFocus, useModalStore, useWindowState } from "../ports/navigation";
 import { onShareLink } from "../ports/links";
 import { playerEngine, usePlayerStore } from "../ports/player";

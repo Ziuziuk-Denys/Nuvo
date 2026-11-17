@@ -27,7 +27,7 @@ import { EXAMPLE_SCENE, LookChoice, type LookView } from "../visual/choice/LookC
 import { playDemo, restorePlayback, type Playback } from "../visual/tour/demoSong";
 import { SceneTour } from "../visual/tour/SceneTour";
 import { chooseScene, setVisualSettings, useVisualSettings } from "../visual/settings";
-import { setStudioOpen, useStudioOpen } from "../visual/studio";
+import { setStudioOpen, useStudioOpen } from "../visual/studioOpen";
 import { templateFor } from "../ports/visual";
 import styles from "./Karaoke.module.css";
 
