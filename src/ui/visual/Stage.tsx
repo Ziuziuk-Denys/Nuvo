@@ -10,16 +10,15 @@ interface StageProps {
   media?: Media | null;
   mirror?: HTMLCanvasElement | null;
   onFoot?: (rgb: [number, number, number]) => void;
-  onTone?: (light: boolean) => void;
   className?: string;
 }
 
-export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, onTone, className }: StageProps): JSX.Element {
+export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, className }: StageProps): JSX.Element {
   const host = useRef<HTMLDivElement>(null);
   const liveRef = useRef<Live | null>(null);
-  const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot, onTone });
+  const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot });
   useEffect(() => {
-    latest.current = { template, aspect, coverUrl, lines, media, mirror, onFoot, onTone };
+    latest.current = { template, aspect, coverUrl, lines, media, mirror, onFoot };
   });
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
     live?.setMedia(now.media);
     live?.setMirror(now.mirror);
     live?.onFoot(now.onFoot ?? null);
-    live?.onTone(now.onTone ?? null);
     const size = () => live?.resize(canvas.clientWidth * devicePixelRatio, canvas.clientHeight * devicePixelRatio);
     size();
     const observer = new ResizeObserver(size);
@@ -57,7 +55,6 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
   useEffect(() => liveRef.current?.setMedia(media), [media]);
   useEffect(() => liveRef.current?.setMirror(mirror), [mirror]);
   useEffect(() => liveRef.current?.onFoot(onFoot ?? null), [onFoot]);
-  useEffect(() => liveRef.current?.onTone(onTone ?? null), [onTone]);
 
   return <div ref={host} style={{ display: "contents" }} />;
 }

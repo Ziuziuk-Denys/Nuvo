@@ -181,7 +181,7 @@ it("a scene picked in the studio becomes the player's scene, even from random mo
   expect(stored.scene).toMatchObject({ background: "glass", lyrics: "wipe" });
 });
 
-it("controls turn dark over a light scene", async () => {
+it("the player controls sit on a dark plate over a white scene", async () => {
   const page = session.page;
   await page.evaluate(() =>
     localStorage.setItem(
@@ -198,9 +198,16 @@ it("controls turn dark over a light scene", async () => {
   );
   await page.reload();
   await session.go("#/player");
-  await page.locator("[data-scene-tone=light]").waitFor({ timeout: 10_000 });
-  await page.locator("section[class*=left]").hover();
+  const column = page.locator("section[class*=left]");
+  await column.waitFor({ timeout: 10_000 });
+  await page.waitForTimeout(1_500);
+  await column.hover();
   await page.waitForTimeout(900);
+  const plate = await column.evaluate((element) => {
+    const style = getComputedStyle(element, "::before");
+    return { background: style.backgroundColor, opacity: style.opacity };
+  });
+  expect(plate).toEqual({ background: "rgba(8, 10, 16, 0.86)", opacity: "1" });
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "stage-light.png") });
 });
 

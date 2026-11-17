@@ -601,6 +601,19 @@
   inset: -28px;
   z-index: -1;
   border-radius: 28px;
+  background: var(--k-scrim);
+  opacity: 0;
+  transition: opacity 260ms var(--n-ease-out);
+}
+
+.stageZone .left:hover::before,
+.stageZone .left:has(:focus-visible)::before {
+  opacity: 1;
+  transition: opacity 620ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.root[data-stage] .top :where(button) {
+  background: var(--k-scrim);
 }
 
 .stageZone .left > * {
@@ -677,21 +690,6 @@
   height: 36px;
 }
 
-.root[data-scene-tone="light"] {
-  --k-ink: #101320;
-  --k-solid: #101320;
-  --k-ink-2: rgba(16, 19, 32, 0.72);
-  --k-ink-3: rgba(16, 19, 32, 0.5);
-  --k-hover: rgba(16, 19, 32, 0.08);
-  --k-on: rgba(16, 19, 32, 0.12);
-  --k-track: rgba(16, 19, 32, 0.18);
-  --k-halo: rgba(16, 19, 32, 0.22);
-}
-
-.root[data-scene-tone="light"] .play {
-  color: #fff;
-}
-
 .noLyrics {
   position: absolute;
   z-index: 1;
@@ -700,7 +698,7 @@
   margin: 0;
   padding: 10px 18px;
   border-radius: var(--n-r-pill);
-  background: rgba(11, 13, 21, 0.9);
+  background: var(--k-scrim);
   color: #fff;
   font: var(--n-type-label);
   translate: -50% 0;
