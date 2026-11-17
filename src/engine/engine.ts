@@ -490,7 +490,7 @@ export class Engine {
     if (this.disposed) return;
     const current = Q.current(this.queue);
     const startMs = (current && this.spans?.(current.track.id)?.startMs) || 0;
-    const step = Q.previousStep(this.queue, this.history, this.livePositionMs() - startMs, this.prefs.repeat, this.station);
+    const step = Q.previousStep(this.queue, this.history, this.prefs.repeat, this.station);
     if (!step) return;
     this.commandRan();
     if (step.kind === "restart") {
