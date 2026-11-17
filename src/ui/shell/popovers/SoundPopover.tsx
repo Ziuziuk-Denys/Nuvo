@@ -4,22 +4,25 @@ import { POPOVER } from "../../geometry";
 import { useTranslation } from "../../ports/i18n";
 import { EqHeader, EqPanel } from "./EqPanel";
 import { SleepPanel, SleepStatus } from "./SleepPanel";
+import { SpaceHeader, SpacePanel } from "./SpacePanel";
 import { MomentsPanel } from "./MomentsPanel";
 import { SpeedPanel } from "./SpeedPanel";
 import styles from "./popovers.module.css";
 
-export type SoundTab = "eq" | "speed" | "sleep" | "moments";
+export type SoundTab = "eq" | "speed" | "space" | "sleep" | "moments";
 
-export const SOUND_TABS: { id: SoundTab; width: 320 | 440 }[] = [
+export const SOUND_TABS: { id: SoundTab; width: 380 | 440 }[] = [
   { id: "eq", width: POPOVER.sound },
-  { id: "speed", width: POPOVER.narrow },
-  { id: "sleep", width: POPOVER.narrow },
-  { id: "moments", width: POPOVER.narrow },
+  { id: "speed", width: POPOVER.soundNarrow },
+  { id: "space", width: POPOVER.soundNarrow },
+  { id: "sleep", width: POPOVER.soundNarrow },
+  { id: "moments", width: POPOVER.soundNarrow },
 ];
 
 const TAB_LABELS: Record<SoundTab, string> = {
   eq: "ui.sound.tab_eq",
   speed: "ui.sound.tab_speed",
+  space: "ui.sound.tab_space",
   sleep: "ui.sound.tab_sleep",
   moments: "ui.sound.tab_moments",
 };
@@ -63,13 +66,14 @@ export function SoundPopover({ tab, onTab }: { tab: SoundTab; onTab(tab: SoundTa
           </button>
         ))}
       </div>
-      {tab === "eq" ? <EqPanel /> : tab === "speed" ? <SpeedPanel /> : tab === "sleep" ? <SleepPanel /> : <MomentsPanel />}
+      {tab === "eq" ? <EqPanel /> : tab === "speed" ? <SpeedPanel /> : tab === "space" ? <SpacePanel /> : tab === "sleep" ? <SleepPanel /> : <MomentsPanel />}
     </div>
   );
 }
 
 export function SoundTrailing({ tab }: { tab: SoundTab }): JSX.Element | null {
   if (tab === "eq") return <EqHeader />;
+  if (tab === "space") return <SpaceHeader />;
   if (tab === "sleep") return <SleepStatus />;
   return null;
 }

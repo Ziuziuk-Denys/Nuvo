@@ -53,6 +53,7 @@ const DYNAMIC: Record<string, string[]> = {
   ],
   "settings.theme.": ["system", "light", "dark"],
   "settings.youtube.": ["account_playback", "prompt_sign_in", "sync_library"].flatMap((name) => [`${name}.title`, `${name}.description`]),
+  "sound.moving.paths.": ["4d", "8d", "16d"],
   "sound.moving.speeds.": ["slow", "medium", "fast"],
   "sound.presets.": [
     "flat",

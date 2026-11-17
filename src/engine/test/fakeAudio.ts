@@ -223,6 +223,11 @@ export class FakeContext {
   createDelay(maxDelayTime = 1) {
     return new FakeDelay(this, maxDelayTime);
   }
+  createWaveShaper() {
+    const node = new FakeNode(this, "shaper") as FakeNode & { curve: Float32Array | null };
+    node.curve = null;
+    return node;
+  }
   createChannelMerger() {
     return new FakeNode(this, "merger");
   }

@@ -12,7 +12,7 @@ export interface PopoverProps {
   anchor: HTMLElement | null;
   onClose: () => void;
   title: string;
-  width: 300 | 320 | 440 | 560;
+  width: 300 | 320 | 380 | 440 | 560;
   trailing?: ReactNode;
   showClose?: boolean;
   solid?: boolean;

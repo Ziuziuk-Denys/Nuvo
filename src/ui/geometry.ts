@@ -39,7 +39,8 @@ export const QUEUE_PANEL = { width: 360, radius: 16 } as const;
 
 export const POPOVER = {
   narrow: 320,
-  // The four Sound tabs fit one row, in Russian too
+  // The five Sound tabs fit one row with their full padding, in Russian too
+  soundNarrow: 380,
   sound: 440,
   wide: 560,
   wideHeight: 360,

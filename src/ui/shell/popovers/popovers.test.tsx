@@ -177,20 +177,21 @@ function type(input: HTMLInputElement, value: string) {
 }
 
 describe("SoundPopover", () => {
-  it("sizes the equalizer wider than the compact speed, sleep and moments tabs", () => {
+  it("sizes the equalizer wider than the compact speed, space, sleep and moments tabs", () => {
     expect(SOUND_TABS).toEqual([
       { id: "eq", width: 440 },
-      { id: "speed", width: 320 },
-      { id: "sleep", width: 320 },
-      { id: "moments", width: 320 },
+      { id: "speed", width: 380 },
+      { id: "space", width: 380 },
+      { id: "sleep", width: 380 },
+      { id: "moments", width: 380 },
     ]);
   });
 
-  it("renders the four tabs and the active panel, and reports a tab change", () => {
+  it("renders the five tabs and the active panel, and reports a tab change", () => {
     const onTab = vi.fn();
     mount(<SoundPopover tab="speed" onTab={onTab} />);
     const tabs = [...host.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent);
-    expect(tabs).toEqual(["ui.sound.tab_eq", "ui.sound.tab_speed", "ui.sound.tab_sleep", "ui.sound.tab_moments"]);
+    expect(tabs).toEqual(["ui.sound.tab_eq", "ui.sound.tab_speed", "ui.sound.tab_space", "ui.sound.tab_sleep", "ui.sound.tab_moments"]);
     expect(slider("player.speed")).not.toBeNull();
     click(button("ui.sound.tab_sleep")!);
     expect(onTab).toHaveBeenCalledWith("sleep");
@@ -198,6 +199,29 @@ describe("SoundPopover", () => {
     expect(onTab).toHaveBeenLastCalledWith("eq");
     key(host.querySelector('[role="tab"][aria-selected="true"]')!, "End");
     expect(onTab).toHaveBeenLastCalledWith("moments");
+  });
+});
+
+describe("Space", () => {
+  it("the header switch turns moving sound on, and the speed tab no longer carries it", () => {
+    mount(<SoundTrailing tab="space" />);
+    click(button("sound.moving.title")!);
+    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ on: true });
+    mount(<SoundPopover tab="speed" onTab={() => undefined} />);
+    expect(button("sound.moving.title")).toBeUndefined();
+    expect(button("8D")).toBeUndefined();
+  });
+
+  it("shows the chosen path and speed with the path described, and a chip turns the effect on", () => {
+    mount(<SoundPopover tab="space" onTab={() => undefined} />);
+    expect(button("8D")!.getAttribute("aria-pressed")).toBe("true");
+    expect(button("sound.moving.speeds.medium")!.getAttribute("aria-pressed")).toBe("true");
+    expect(host.textContent).toContain("sound.moving.paths.8d");
+    expect(host.textContent).toContain("sound.moving.headphones");
+    click(button("16D")!);
+    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ preset: "16d", on: true });
+    click(button("sound.moving.speeds.fast")!);
+    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ speed: "fast", on: true });
   });
 });
 
@@ -279,21 +303,6 @@ describe("Speed", () => {
     mount(<SoundPopover tab="speed" onTab={() => undefined} />);
     expect(slider("player.reverb_amount")!.getAttribute("aria-valuetext")).toBe("40%");
     mocks.player.reverbLevel = 0.35;
-  });
-
-  it("turns moving sound on and shows its path and speed only while on", () => {
-    mount(<SoundPopover tab="speed" onTab={() => undefined} />);
-    expect(button("16D")).toBeUndefined();
-    click(button("sound.moving.title")!);
-    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ on: true });
-    mocks.sound.moving = { on: true, preset: "8d", speed: "medium" };
-    mount(<SoundPopover tab="speed" onTab={() => undefined} />);
-    expect(button("8D")!.getAttribute("aria-pressed")).toBe("true");
-    click(button("16D")!);
-    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ preset: "16d" });
-    click(button("sound.moving.speeds.fast")!);
-    expect(mocks.sound.setMoving).toHaveBeenCalledWith({ speed: "fast" });
-    mocks.sound.moving = { on: false, preset: "8d", speed: "medium" };
   });
 
   it("remembers the tempo for the track", () => {
