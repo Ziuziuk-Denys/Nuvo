@@ -35,6 +35,40 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/tracks/{id}/lyrics/offset", put(set_offset))
         .route("/v1/tracks/{id}/lyrics/user", put(set_user_lyrics).delete(clear_user_lyrics))
         .route("/v1/lyrics/offsets", put(import_offsets))
+        .route("/v1/lyrics/search", get(search))
+}
+
+const MAX_SEARCH_CHARS: usize = 200;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Search {
+    title: String,
+    artist: String,
+    duration_ms: Option<i64>,
+}
+
+/// Versions from every source for a title and artist the owner typed; one source down still answers.
+async fn search(State(state): State<AppState>, Query(search): Query<Search>) -> Result<Json<Value>, ApiError> {
+    let (title, artist) = (search.title.trim().to_string(), search.artist.trim().to_string());
+    let fits = |text: &str| !text.is_empty() && text.chars().count() <= MAX_SEARCH_CHARS;
+    if !fits(&title) || !fits(&artist) {
+        return Err(ApiError::Invalid(format!("title and artist must be 1 to {MAX_SEARCH_CHARS} characters")));
+    }
+    let query = nuvo_lyrics::Query { title, artist, duration_ms: search.duration_ms.filter(|ms| *ms > 0) };
+    let words = async {
+        match state.amll.as_ref() {
+            Some(amll) => amll.search_all(&query).await,
+            None => Ok(Vec::new()),
+        }
+    };
+    let (lines, words) = tokio::join!(state.lrclib.search_all(&query), words);
+    if let (Err(err), Err(_)) = (&lines, &words) {
+        return Err(ApiError::Upstream(err.to_string()));
+    }
+    let failed: Vec<&str> = [("lrclib", lines.is_err()), ("amll", words.is_err())].into_iter().filter(|(_, failed)| *failed).map(|(name, _)| name).collect();
+    let results: Vec<LyricsCandidate> = words.unwrap_or_default().into_iter().chain(lines.unwrap_or_default()).collect();
+    Ok(Json(json!({ "results": results, "failed": failed })))
 }
 
 fn valid_track_id(id: &str) -> bool {

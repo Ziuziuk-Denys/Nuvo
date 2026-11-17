@@ -181,3 +181,11 @@ async fn without_a_known_release_length_the_words_decide() {
     let found = Amll::new(&m.base, lengths).unwrap().lookup(&query("Song", "Artist", Some(215_000))).await.unwrap().expect("found");
     assert_eq!(found.matched_track.unwrap().duration_ms, Some(215_000));
 }
+
+#[tokio::test]
+async fn a_typed_search_lists_files_of_any_length() {
+    let m = mock([row("Song", &["Artist"], "words.ttml"), row("Song", &["Artist"], "none.ttml")].join("\n")).await;
+    let found = Amll::new(&m.base, None).unwrap().search_all(&query("Song", "Artist", Some(30_000))).await.unwrap();
+    assert_eq!(found.len(), 1, "only the file with timed words");
+    assert_eq!(found[0].lyrics.content, WORDS);
+}

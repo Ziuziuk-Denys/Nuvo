@@ -378,3 +378,35 @@ async fn a_soundcloud_upload_finds_lyrics_under_its_performer_and_clean_title() 
     assert_eq!(list.last().unwrap()["best"]["provider"], "lrclib");
     assert_eq!(asked.lock().unwrap()[0], ("Linkin Park".to_string(), "Numb".to_string()));
 }
+
+#[tokio::test]
+async fn a_typed_search_lists_versions_and_names_a_source_that_is_down() {
+    let listed = json!([
+        {"trackName": "Song", "artistName": "Artist", "duration": 200.0, "instrumental": false, "plainLyrics": "line", "syncedLyrics": "[00:01.00] line"},
+        {"trackName": "Song (Live)", "artistName": "Artist", "duration": 260.0, "instrumental": false, "plainLyrics": "live line", "syncedLyrics": null},
+    ]);
+    let app = Router::new().route("/api/search", get(move || {
+        let listed = listed.clone();
+        async move { Json(listed) }
+    }));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let core = common::boot(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), &format!("http://{addr}"));
+
+    let (status, body, _) = common::send(&core.app, common::request("GET", "/v1/lyrics/search?title=Song&artist=Artist", None)).await;
+    assert_eq!(status, 200);
+    let found: Value = serde_json::from_slice(&body).unwrap();
+    let formats: Vec<_> = found["results"].as_array().unwrap().iter().map(|c| c["lyrics"]["format"].as_str().unwrap()).collect();
+    assert_eq!(formats, ["lrc", "plain"]);
+    assert_eq!(found["results"][1]["matchedTrack"]["title"], "Song (Live)");
+    assert_eq!(found["failed"], json!([]));
+
+    let (status, _, _) = common::send(&core.app, common::request("GET", "/v1/lyrics/search?title=%20&artist=Artist", None)).await;
+    assert_eq!(status, 400);
+
+    let down = common::boot(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), "http://127.0.0.1:9");
+    let (status, body, _) = common::send(&down.app, common::request("GET", "/v1/lyrics/search?title=Song&artist=Artist", None)).await;
+    assert_eq!(status, 200, "the word source has nothing to say, so the line source's failure is named, not raised");
+    assert_eq!(serde_json::from_slice::<Value>(&body).unwrap()["failed"], json!(["lrclib"]));
+}

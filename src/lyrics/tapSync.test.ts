@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clearStamp, detectFormat, formatStamp, isComplete, markEnd, nudge, stamp, startSync, toLrc } from "./tapSync";
+import { clearStamp, detectFormat, editableText, formatStamp, isComplete, markEnd, nudge, stamp, startSync, toLrc } from "./tapSync";
 
 describe("tap to sync", () => {
   it("starts from the non-empty lines of plain text", () => {
@@ -55,5 +55,18 @@ describe("tap to sync", () => {
   it("detects LRC by a leading time stamp", () => {
     expect(detectFormat("[00:01.00] One")).toBe("lrc");
     expect(detectFormat("[Verse]\nOne")).toBe("plain");
+  });
+});
+
+describe("a found version in the editor", () => {
+  it("keeps LRC and plain text as they are", () => {
+    expect(editableText({ format: "lrc", content: "[00:01.00]Hi" })).toBe("[00:01.00]Hi");
+    expect(editableText({ format: "plain", content: "Hi" })).toBe("Hi");
+  });
+
+  it("turns word-timed TTML into LRC with a stamp before every word", () => {
+    const ttml =
+      '<tt><body><div><p begin="00:01.000" end="00:02.500"><span begin="00:01.000" end="00:01.600">Hi </span><span begin="00:01.600" end="00:02.500">there</span></p></div></body></tt>';
+    expect(editableText({ format: "ttml", content: ttml })).toBe("[00:01.00]<00:01.00>Hi <00:01.60>there<00:02.50>");
   });
 });

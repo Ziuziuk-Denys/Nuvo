@@ -6,7 +6,11 @@ import { LyricsEditor } from "./LyricsEditor";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const tools = vi.hoisted(() => ({ position: 0, raw: null as null | { format: string; content: string } }));
+const tools = vi.hoisted(() => ({
+  position: 0,
+  raw: null as null | { format: string; content: string },
+  found: { results: [] as unknown[], failed: [] as string[] },
+}));
 vi.mock("../../ports/lyricsTools", async () => {
   const sync = await import("@/lyrics/tapSync");
   return {
@@ -16,6 +20,8 @@ vi.mock("../../ports/lyricsTools", async () => {
     dropUserLyrics: vi.fn(async () => undefined),
     isPlayingTrack: () => true,
     playbackPositionMs: () => tools.position,
+    searchLyrics: vi.fn(async () => tools.found),
+    formatDuration: (ms: number) => `${Math.round(ms / 1000)}s`,
   };
 });
 vi.mock("../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -82,5 +88,38 @@ describe("LyricsEditor", () => {
     await act(async () => root.render(<LyricsEditor open track={TRACK} onClose={() => undefined} />));
     await act(async () => button("ui.lyrics.use_found").click());
     expect(ports.dropUserLyrics).toHaveBeenCalledWith(TRACK);
+  });
+
+  it("finds versions by title and artist, the same length first, and a pick fills the editor", async () => {
+    const version = (title: string, durationMs: number, content: string) => ({
+      provider: "lrclib",
+      syncLevel: "line_level",
+      quality: { total: 0.8 },
+      lyrics: { format: "lrc", content },
+      matchedTrack: { title, artists: ["A"], durationMs },
+    });
+    tools.found = { results: [version("Song (Live)", 260_000, "[00:09.00] live"), version("Song", 200_500, "[00:01.00] studio")], failed: [] };
+    await act(async () => root.render(<LyricsEditor open track={TRACK} onClose={() => undefined} />));
+    await act(async () => button("ui.lyrics.find").click());
+    expect(ports.searchLyrics).toHaveBeenCalledWith({ title: "Song", artist: "A", durationMs: 200_000 }, expect.any(AbortSignal));
+    const picks = [...document.body.querySelectorAll("ul button")];
+    expect(picks.map((pick) => pick.textContent)).toEqual([
+      "Song · A201s · ui.lyrics.version_synced · ui.lyrics.find_fits",
+      "Song (Live) · A260s · ui.lyrics.version_synced",
+    ]);
+    await act(async () => (picks[0] as HTMLButtonElement).click());
+    expect(document.body.querySelector("textarea")!.value).toBe("[00:01.00] studio");
+    await act(async () => button("ui.lyrics.save").click());
+    expect(ports.saveLyrics).toHaveBeenCalledWith(TRACK, { format: "lrc", content: "[00:01.00] studio" });
+  });
+
+  it("says so when the search finds nothing or fails", async () => {
+    tools.found = { results: [], failed: [] };
+    await act(async () => root.render(<LyricsEditor open track={TRACK} onClose={() => undefined} />));
+    await act(async () => button("ui.lyrics.find").click());
+    expect(document.body.querySelector("[role=status]")!.textContent).toBe("ui.lyrics.find_none");
+    vi.mocked(ports.searchLyrics).mockRejectedValueOnce(new Error("down"));
+    await act(async () => button("ui.lyrics.find_search").click());
+    expect(document.body.querySelector("[role=status]")!.textContent).toBe("ui.lyrics.find_failed");
   });
 });

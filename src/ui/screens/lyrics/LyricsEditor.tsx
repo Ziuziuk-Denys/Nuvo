@@ -20,6 +20,7 @@ import {
   type SyncLine,
 } from "../../ports/lyricsTools";
 import styles from "./Lyrics.module.css";
+import { LyricsFinder, useLyricsFinder } from "./LyricsFinder";
 
 interface LyricsEditorProps {
   open: boolean;
@@ -35,11 +36,14 @@ export function LyricsEditor({ open, track, draft = null, onClose }: LyricsEdito
   const [sync, setSync] = useState<SyncLine[] | null>(null);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [finding, setFinding] = useState(false);
+  const finder = useLyricsFinder(track);
   const list = useRef<HTMLOListElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setSync(null);
+    setFinding(false);
     if (draft !== null) {
       setText(draft);
       setLoading(false);
@@ -100,37 +104,62 @@ export function LyricsEditor({ open, track, draft = null, onClose }: LyricsEdito
   };
 
   const format = detectFormat(text);
-  const actions: SheetAction[] = sync
+  const closeFinder = () => {
+    finder.stop();
+    setFinding(false);
+  };
+  const actions: SheetAction[] = finding
     ? [
-        { label: t("ui.lyrics.back"), onClick: () => setSync(null) },
-        {
-          label: t("ui.lyrics.save_synced"),
-          primary: true,
-          disabled: !isComplete(sync),
-          onClick: () => void run(() => saveLyrics(track, { format: "lrc", content: toLrc(sync) })),
-        },
+        { label: t("ui.lyrics.back"), onClick: closeFinder },
+        { label: t("ui.lyrics.find_search"), primary: true, disabled: !finder.ready, onClick: finder.run },
       ]
-    : [
-        { label: t("ui.lyrics.use_found"), onClick: () => void run(() => dropUserLyrics(track)) },
-        {
-          label: t("ui.lyrics.sync"),
-          disabled: format !== "plain" || text.trim() === "" || !isPlayingTrack(track.id),
-          onClick: () => {
-            setSync(startSync(text));
-            setIndex(0);
+    : sync
+      ? [
+          { label: t("ui.lyrics.back"), onClick: () => setSync(null) },
+          {
+            label: t("ui.lyrics.save_synced"),
+            primary: true,
+            disabled: !isComplete(sync),
+            onClick: () => void run(() => saveLyrics(track, { format: "lrc", content: toLrc(sync) })),
           },
-        },
-        {
-          label: t("ui.lyrics.save"),
-          primary: true,
-          disabled: text.trim() === "",
-          onClick: () => void run(() => saveLyrics(track, { format, content: text })),
-        },
-      ];
+        ]
+      : [
+          {
+            label: t("ui.lyrics.find"),
+            onClick: () => {
+              setFinding(true);
+              finder.start();
+            },
+          },
+          { label: t("ui.lyrics.use_found"), onClick: () => void run(() => dropUserLyrics(track)) },
+          {
+            label: t("ui.lyrics.sync"),
+            disabled: format !== "plain" || text.trim() === "" || !isPlayingTrack(track.id),
+            onClick: () => {
+              setSync(startSync(text));
+              setIndex(0);
+            },
+          },
+          {
+            label: t("ui.lyrics.save"),
+            primary: true,
+            disabled: text.trim() === "",
+            onClick: () => void run(() => saveLyrics(track, { format, content: text })),
+          },
+        ];
 
   return (
     <Sheet open={open} onClose={onClose} title={t("ui.lyrics.edit_title")} actions={actions}>
-      {sync ? (
+      {finding ? (
+        <LyricsFinder
+          finder={finder}
+          track={track}
+          onPick={(picked) => {
+            setText(picked);
+            closeFinder();
+          }}
+        />
+      ) : sync ? (
         <>
           <ol ref={list} tabIndex={0} className={styles.lines} aria-label={t("ui.lyrics.sync_list")} onKeyDown={onSyncKey}>
             {sync.map((line, at) => (

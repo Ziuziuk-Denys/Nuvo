@@ -38,6 +38,7 @@ pub fn lrc_sync_level(content: &str) -> &'static str {
     if stamped { "word_level" } else { "line_level" }
 }
 
+#[derive(Clone)]
 pub struct Query {
     pub title: String,
     pub artist: String,
@@ -116,6 +117,16 @@ impl Lrclib {
             Some(record) => to_lookup(record, 0.8),
             None => other_cut(&records).map_or(Lookup::NotFound, as_plain),
         })
+    }
+
+    /// Every record with lyrics for a search the owner typed, in LRCLIB's order.
+    pub async fn search_all(&self, query: &Query) -> Result<Vec<LyricsCandidate>, LyricsError> {
+        let records = self.search(query).await?;
+        let found = records.iter().filter(|record| has_lyrics(record)).filter_map(|record| match to_lookup(record, 0.8) {
+            Lookup::Found(candidate) => Some(*candidate),
+            _ => None,
+        });
+        Ok(found.collect())
     }
 
     async fn send(&self, request: reqwest::RequestBuilder) -> Result<reqwest::Response, LyricsError> {
