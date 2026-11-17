@@ -16,7 +16,7 @@ export type ToStage =
   | { type: "motion"; reduced: boolean }
   | { type: "dispose" };
 
-export type FromStage = { type: "foot"; rgb: [number, number, number] };
+export type FromStage = { type: "foot"; rgb: [number, number, number] } | { type: "tone"; light: boolean };
 
 // each thread's performance.now starts at its own origin
 export const sharedNow = (): number => performance.timeOrigin + performance.now();

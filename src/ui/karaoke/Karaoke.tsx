@@ -23,7 +23,6 @@ import { isRunning, timeWords, useWordTiming } from "../ports/wordTiming";
 import { AddLyrics, MadeMark, TimeWords } from "./MadeLyrics";
 import { Stage } from "../visual/Stage";
 import { CornerHint } from "../visual/choice/CornerHint";
-import { scrimCss } from "./scrim";
 import { EXAMPLE_SCENE, LookChoice, type LookView } from "../visual/choice/LookChoice";
 import { playDemo, restorePlayback, type Playback } from "../visual/tour/demoSong";
 import { SceneTour } from "../visual/tour/SceneTour";
@@ -375,10 +374,10 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
     "--k-left": `${Math.max(24, along(WIDE.cover.x, NARROW.cover.x, width))}px`,
     "--k-lyrics": `${along(WIDE.lyrics.x, NARROW.lyrics.x, width)}px`,
     "--k-lines": `${WIDE.lyrics.width}px`,
-    "--k-scrim": scrimCss,
   } as CSSProperties;
   const maximized = isMaximized || isFullScreen;
   const stageOn = visual.chosen && visual.enabled && visual.stage;
+  const [lightScene, setLightScene] = useState(false);
   const [hint, setHint] = useState(false);
   const beforeDemo = useRef<Playback | null | undefined>(undefined);
   const choose = useCallback((view: LookView) => {
@@ -432,9 +431,9 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   );
 
   return (
-    <div className={styles.root} style={vars} data-theme="dark" data-stage={stageOn ? "" : undefined}>
+    <div className={styles.root} style={vars} data-theme="dark" data-scene-tone={stageOn && lightScene ? "light" : undefined}>
       {stageOn && !editing ? (
-        <Stage className={styles.stage} template={scene} aspect="wide" coverUrl={track?.coverUrl ?? ""} lines={lines} />
+        <Stage className={styles.stage} template={scene} aspect="wide" coverUrl={track?.coverUrl ?? ""} lines={lines} onTone={setLightScene} />
       ) : (
         <Backdrop cover={track?.coverUrl ?? ""} open />
       )}

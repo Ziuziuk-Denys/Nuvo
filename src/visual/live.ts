@@ -26,6 +26,7 @@ export interface Live {
   setMedia(media: Media | null): void;
   setMirror(target: HTMLCanvasElement | null): void;
   onFoot(listener: ((rgb: [number, number, number]) => void) | null): void;
+  onTone(listener: ((light: boolean) => void) | null): void;
   resize(width: number, height: number): void;
   dispose(): void;
 }
@@ -44,9 +45,11 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
   post({ type: "init", canvas: offscreen, reduced: motion.matches }, [offscreen]);
 
   let footListener: ((rgb: [number, number, number]) => void) | null = null;
+  let toneListener: ((light: boolean) => void) | null = null;
   worker.onerror = (event) => console.error("[visual] the stage worker failed:", event.message);
   worker.onmessage = (event: MessageEvent<FromStage>) => {
-    footListener?.(event.data.rgb);
+    if (event.data.type === "foot") footListener?.(event.data.rgb);
+    else toneListener?.(event.data.light);
   };
   const onMotion = () => post({ type: "motion", reduced: motion.matches });
   motion.addEventListener("change", onMotion);
@@ -145,6 +148,9 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
     },
     onFoot(listener) {
       footListener = listener;
+    },
+    onTone(listener) {
+      toneListener = listener;
     },
     resize(width, height) {
       post({ type: "size", width, height });
