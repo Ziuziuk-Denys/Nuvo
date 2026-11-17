@@ -44,7 +44,7 @@
       ],
       [
         "9:16",
-        "or 1:1 and 16:9 for any feed"
+        "or 1:1 and 16:9"
       ]
     ]
   },
@@ -260,9 +260,9 @@
     {
       "name": "Scene",
       "widget": "scene",
-      "title": "Songs you can watch.",
-      "sub": "Each song draws itself to the beat, and the words land as they are sung.",
-      "alt": "A song playing as a Scene: its lyrics set in large type over a moving background.",
+      "title": "A clip studio in the player.",
+      "sub": "Pick the moment on the timeline, tune each part and export an MP4.",
+      "alt": "The clip studio: scenes on the left, a 9:16 preview of Blinding Lights in the middle, the timeline with a clip range below.",
       "bullets": [
         "Twelve ready scenes, or your own from a background, up to three effects, a centrepiece and a text style",
         "The stage runs on its own thread and its own clock, so a busy app never makes a lyric late",
@@ -321,7 +321,7 @@
       "bullets": [
         "Synced lyrics and karaoke by line, word, fill or step",
         "Lyrics follow the version that plays, and Find lyrics searches by title and artist",
-        "Every word timed on your computer, and lyrics written for songs that have none. The model downloads once, 82 MB",
+        "Every word timed on your computer, and lyrics written for songs that have none. The models download once: 82 MB for timing, 264 MB for writing",
         "Paste LRC or plain text and tap to sync, with a timing offset per track",
         "Romanized lyrics for Korean, Chinese and Japanese kana, and translation through a local model"
       ]
