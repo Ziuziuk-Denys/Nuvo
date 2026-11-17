@@ -1,7 +1,9 @@
 // The binary must match the release SHA2-256SUMS and run before it replaces the old one
 
+use std::collections::HashMap;
 use std::io::{Read, Seek, SeekFrom};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use reqwest::header::RANGE;
 use reqwest::{Client, RequestBuilder, StatusCode};
@@ -342,8 +344,13 @@ pub const WHISPER_SMALL: Pinned = Pinned {
     bytes: 264_464_607,
 };
 
+// A cancelled job's download runs on, so a new job for the same file waits for it instead of writing the partial file too
+static INSTALLING: LazyLock<Mutex<HashMap<PathBuf, Arc<tokio::sync::Mutex<()>>>>> = LazyLock::new(Mutex::default);
+
 /// Downloads `file` to `path` once; a file of the pinned size is taken as installed, since only a checked download is ever renamed there.
 pub async fn install_pinned(client: &Client, file: &Pinned, path: &Path, progress: Progress<'_>) -> Result<Outcome, UpdateError> {
+    let lock = INSTALLING.lock().expect("pinned install locks").entry(path.to_path_buf()).or_default().clone();
+    let _installing = lock.lock().await;
     if tokio::fs::metadata(path).await.is_ok_and(|m| m.len() == file.bytes) {
         return Ok(Outcome::UpToDate);
     }

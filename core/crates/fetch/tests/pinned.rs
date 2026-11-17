@@ -8,6 +8,7 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use nuvo_fetch::update::{Outcome, Pinned, TOOL_HOST_SUFFIX, TOOL_HOSTS, UpdateError, WHISPER_BASE, WHISPER_SMALL, install_pinned};
 use sha2::{Digest, Sha256};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 const BODY: &[u8] = b"a small stand-in for a speech model";
 
@@ -75,6 +76,71 @@ async fn a_file_that_misses_its_hash_is_dropped() {
     let result = install_pinned(&reqwest::Client::new(), file, &path, &|_, _| ()).await;
     assert!(matches!(result, Err(UpdateError::Checksum)), "{result:?}");
     assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 0);
+}
+
+// Sends the first half of BODY, then waits until `release` before the rest; Range requests get the rest at once
+async fn serve_halting(release: Arc<tokio::sync::Notify>) -> (String, Arc<AtomicUsize>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/model.bin", listener.local_addr().unwrap());
+    let hits = Arc::new(AtomicUsize::new(0));
+    let counter = hits.clone();
+    tokio::spawn(async move {
+        loop {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            counter.fetch_add(1, Ordering::SeqCst);
+            let release = release.clone();
+            tokio::spawn(async move {
+                let mut request = Vec::new();
+                let mut buffer = [0; 1024];
+                while !request.ends_with(b"\r\n\r\n") {
+                    let read = socket.read(&mut buffer).await.unwrap();
+                    request.extend_from_slice(&buffer[..read]);
+                }
+                let request = String::from_utf8_lossy(&request).to_lowercase();
+                let from = request.split("range: bytes=").nth(1).and_then(|rest| rest.split('-').next()?.parse::<usize>().ok());
+                let status = if from.is_some() { "206 Partial Content" } else { "200 OK" };
+                let body = &BODY[from.unwrap_or(0)..];
+                let head = format!("HTTP/1.1 {status}\r\ncontent-length: {}\r\nconnection: close\r\n\r\n", body.len());
+                socket.write_all(head.as_bytes()).await.unwrap();
+                if from.is_none() {
+                    socket.write_all(&body[..body.len() / 2]).await.unwrap();
+                    release.notified().await;
+                    socket.write_all(&body[body.len() / 2..]).await.unwrap();
+                } else {
+                    socket.write_all(body).await.unwrap();
+                }
+            });
+        }
+    });
+    (url, hits)
+}
+
+#[tokio::test]
+async fn a_second_install_waits_for_the_running_download() {
+    let dir = tempfile::tempdir().unwrap();
+    let release = Arc::new(tokio::sync::Notify::new());
+    let (url, hits) = serve_halting(release.clone()).await;
+    let file = pinned(url, sha(BODY));
+    let path = dir.path().join("model.bin");
+    let partial = dir.path().join(".test-model.partial");
+    let client = reqwest::Client::new();
+    let first = tokio::spawn({
+        let (client, path) = (client.clone(), path.clone());
+        async move { install_pinned(&client, file, &path, &|_, _| ()).await }
+    });
+    while std::fs::metadata(&partial).map_or(0, |m| m.len()) == 0 {
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+    let second = tokio::spawn({
+        let (client, path) = (client.clone(), path.clone());
+        async move { install_pinned(&client, file, &path, &|_, _| ()).await }
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    release.notify_one();
+    assert_eq!(first.await.unwrap().unwrap(), Outcome::Installed);
+    assert_eq!(second.await.unwrap().unwrap(), Outcome::UpToDate);
+    assert_eq!(std::fs::read(&path).unwrap(), BODY);
+    assert_eq!(hits.load(Ordering::SeqCst), 1, "the model is downloaded once");
 }
 
 #[test]

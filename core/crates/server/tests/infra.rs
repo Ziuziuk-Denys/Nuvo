@@ -21,6 +21,7 @@ fn paths_follow_xdg_defaults_and_overrides() {
     assert_eq!(defaults.audio, PathBuf::from("/home/u/.cache/nuvo/audio"));
     assert_eq!(defaults.log, PathBuf::from("/home/u/.local/state/nuvo/core.log"));
     assert_eq!(defaults.socket, PathBuf::from("/run/user/1/nuvo/core.sock"));
+    assert_eq!(defaults.tools, PathBuf::from("/home/u/.local/share/nuvo/tools"), "downloaded tools and models outlive the cache and the app");
 
     let custom = Paths::from_env(env(&[
         ("HOME", "/home/u"),

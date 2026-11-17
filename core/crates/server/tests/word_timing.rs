@@ -6,9 +6,9 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use nuvo_crypto::MemoryKeyStore;
 use nuvo_fetch::tools::ToolEnv;
-use nuvo_fetch::update::WHISPER_BASE;
+use nuvo_fetch::update::{WHISPER_BASE, WHISPER_SMALL};
 use nuvo_contracts::{ToolDownload, WordTimingJob};
-use nuvo_server::word_timing::{model_path, source_hash, with_download};
+use nuvo_server::word_timing::{installed, model_path, source_hash, with_download};
 use nuvo_store::lyrics_words::{self, ALIGNED, SYNCED, TRANSCRIBED, Timing};
 use serde_json::{Value, json};
 
@@ -232,6 +232,19 @@ async fn cached_audio_gets_transcribed_and_its_plain_lyrics_timed() {
     let ttml = timed["candidate"]["lyrics"]["content"].as_str().unwrap();
     assert_eq!(ttml.matches("<p ").count(), 3, "{ttml}");
     assert_eq!(ttml.matches("<span ").count(), 21, "{ttml}");
+}
+
+#[test]
+fn a_downloaded_model_is_found_where_it_was_saved() {
+    let core = common::core();
+    let path = model_path(&core.state, &WHISPER_SMALL);
+    assert_eq!(path, core.state.paths.tools.join("models/whisper-small.bin"));
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let file = std::fs::File::create(&path).unwrap();
+    file.set_len(WHISPER_SMALL.bytes - 1).unwrap();
+    assert!(installed(&core.state).is_empty(), "an unfinished file is not the model");
+    file.set_len(WHISPER_SMALL.bytes).unwrap();
+    assert_eq!(installed(&core.state), ["whisper-small"]);
 }
 
 #[test]
