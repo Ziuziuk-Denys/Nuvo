@@ -980,6 +980,12 @@
       },
       "update_available": "Version {version} is available",
       "update_restart": "Restart now",
+      "community": {
+        "title": "Community",
+        "channel": "Telegram channel",
+        "chat": "Telegram chat",
+        "discord": "Discord server"
+      },
       "support": "Support Nuvo",
       "stats_pause": {
         "title": "Pause statistics",

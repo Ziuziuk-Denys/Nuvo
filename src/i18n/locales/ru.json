@@ -1032,6 +1032,12 @@
       },
       "update_available": "Доступна версия {version}",
       "update_restart": "Перезапустить",
+      "community": {
+        "title": "Сообщество",
+        "channel": "Telegram-канал",
+        "chat": "Чат в Telegram",
+        "discord": "Discord-сервер"
+      },
       "support": "Поддержать Nuvo",
       "stats_pause": {
         "title": "Пауза статистики",
