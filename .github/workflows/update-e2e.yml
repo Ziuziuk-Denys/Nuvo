@@ -137,7 +137,8 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 --directory out-0.90.1 > feed.log 2>&1 &
           home=$(mktemp -d)
-          mkdir -p "$home/apps"
+          # the app creates .cache only once it runs; find under pipefail fails on a missing folder
+          mkdir -p "$home/apps" "$home/.cache"
           cp out-0.90.0/Nuvo-0.90.0-linux-x86_64.AppImage "$home/apps/"
           HOME=$home xvfb-run -a "$home/apps/Nuvo-0.90.0-linux-x86_64.AppImage" --no-sandbox --mute-audio > app.log 2>&1 &
           info=
