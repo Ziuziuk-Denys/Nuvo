@@ -23,7 +23,7 @@ pub mod tracks;
 pub mod trims;
 mod util;
 
-pub use db::{DB_KEY_INFO, Db, backup_database, open_connection};
+pub use db::{DB_KEY_INFO, Db, backup_database, convert_database, open_connection, open_library, opens_with};
 pub use error::StoreError;
 pub use schema::MIGRATIONS;
 pub use rusqlite::Connection;

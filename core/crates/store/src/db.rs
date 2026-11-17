@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use nuvo_crypto::{MasterKey, derive_key, to_hex};
 use rusqlite::functions::FunctionFlags;
-use rusqlite::{Connection, ErrorCode};
+use rusqlite::{Connection, ErrorCode, OpenFlags, params};
 
 use crate::{StoreError, now_ms, schema::MIGRATIONS};
 
@@ -12,13 +12,78 @@ pub const DB_KEY_INFO: &str = "nuvo/db/v1";
 const KEEP_BACKUPS: usize = 3;
 
 pub fn open_connection(path: &Path, db_key: &[u8; 32], backups_dir: &Path) -> Result<Connection, StoreError> {
+    connect(path, Some(db_key), backups_dir)
+}
+
+pub fn open_library(path: &Path, master: Option<&MasterKey>, backups_dir: &Path) -> Result<Connection, StoreError> {
+    connect(path, master.map(db_key).as_ref(), backups_dir)
+}
+
+fn db_key(master: &MasterKey) -> [u8; 32] {
+    derive_key(master, DB_KEY_INFO)
+}
+
+// Raw-key syntax skips PBKDF2; an empty key means no encryption
+fn key_literal(db_key: Option<&[u8; 32]>) -> String {
+    db_key.map(|key| format!("x'{}'", to_hex(key))).unwrap_or_default()
+}
+
+// Decided by opening the file read-only, so a wrong guess changes nothing; a library always holds a schema
+pub fn opens_with(path: &Path, master: Option<&MasterKey>) -> bool {
+    let Ok(conn) = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX) else {
+        return false;
+    };
+    if master.is_some() && conn.execute_batch(&format!("PRAGMA key = \"{}\";", key_literal(master.map(db_key).as_ref()))).is_err() {
+        return false;
+    }
+    conn.query_row("SELECT count(*) FROM sqlite_master", [], |row| row.get::<_, i64>(0)).is_ok_and(|tables| tables > 0)
+}
+
+/// Rewrites library.db from one master key to another, or to or from none; the old file goes to the backups first.
+pub fn convert_database(path: &Path, from: Option<&MasterKey>, to: Option<&MasterKey>, backups_dir: &Path) -> Result<(), StoreError> {
+    let conn = open_library(path, from, backups_dir)?;
+    let version: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+    backup_database(&conn, path, backups_dir, usize::try_from(version).unwrap_or_default())?;
+    let next = path.with_extension("next");
+    remove_if_exists(&next)?;
+    let exported = (|| -> Result<(), StoreError> {
+        conn.execute("ATTACH DATABASE ?1 AS next KEY ?2", params![next.to_string_lossy(), key_literal(to.map(db_key).as_ref())])?;
+        conn.query_row("SELECT sqlcipher_export('next')", [], |_| Ok(()))?;
+        conn.pragma_update(Some("next"), "user_version", version)?;
+        conn.execute_batch("DETACH DATABASE next;")?;
+        Ok(())
+    })();
+    drop(conn);
+    if let Err(err) = exported {
+        remove_if_exists(&next)?;
+        return Err(err);
+    }
+    for suffix in ["-wal", "-shm"] {
+        let mut side = path.as_os_str().to_owned();
+        side.push(suffix);
+        remove_if_exists(Path::new(&side))?;
+    }
+    fs::rename(&next, path)?;
+    Ok(())
+}
+
+fn remove_if_exists(path: &Path) -> Result<(), StoreError> {
+    match fs::remove_file(path) {
+        Err(err) if err.kind() != std::io::ErrorKind::NotFound => Err(err.into()),
+        _ => Ok(()),
+    }
+}
+
+fn connect(path: &Path, db_key: Option<&[u8; 32]>, backups_dir: &Path) -> Result<Connection, StoreError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
     let existed = path.exists();
     let mut conn = Connection::open(path)?;
-    // Raw-key syntax skips PBKDF2; pragma_update quoting would turn the key into a passphrase
-    conn.execute_batch(&format!("PRAGMA key = \"x'{}'\";", to_hex(db_key)))?;
+    // pragma_update quoting would turn the raw key into a passphrase
+    if db_key.is_some() {
+        conn.execute_batch(&format!("PRAGMA key = \"{}\";", key_literal(db_key)))?;
+    }
     if let Err(err) = conn.query_row("SELECT count(*) FROM sqlite_master", [], |row| row.get::<_, i64>(0)) {
         return Err(match err.sqlite_error_code() {
             Some(ErrorCode::NotADatabase) => StoreError::WrongKey,
@@ -107,7 +172,12 @@ pub fn backup_database(conn: &Connection, path: &Path, backups_dir: &Path, versi
     conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")?;
     fs::create_dir_all(backups_dir)?;
     // Millisecond prefix keeps lexicographic order chronological.
-    fs::copy(path, backups_dir.join(format!("library-{}-v{version}.db", now_ms())))?;
+    let backup = backups_dir.join(format!("library-{}-v{version}.db", now_ms()));
+    if let Err(err) = fs::copy(path, &backup) {
+        // a half copy must not push a good backup out of the rotation
+        let _ = fs::remove_file(&backup);
+        return Err(err.into());
+    }
     let mut backups: Vec<_> = fs::read_dir(backups_dir)?
         .filter_map(Result::ok)
         .map(|entry| entry.path())
@@ -127,9 +197,8 @@ pub struct Db {
 }
 
 impl Db {
-    pub fn open(path: &Path, master: &MasterKey, backups_dir: &Path) -> Result<Self, StoreError> {
-        let key = derive_key(master, DB_KEY_INFO);
-        Ok(Self::new(open_connection(path, &key, backups_dir)?))
+    pub fn open(path: &Path, master: Option<&MasterKey>, backups_dir: &Path) -> Result<Self, StoreError> {
+        Ok(Self::new(open_library(path, master, backups_dir)?))
     }
 
     pub fn new(conn: Connection) -> Self {

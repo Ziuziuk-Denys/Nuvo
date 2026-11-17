@@ -269,6 +269,7 @@ async fn live_youtube_link_is_recognized() {
         shazam_url: nuvo_recognize::SHAZAM_URL.into(),
         lastfm_url: "http://127.0.0.1:9/2.0/".into(),
         pace: nuvo_recognize::Pace::SHAZAM,
+        edition: nuvo_server::Edition::Encrypted,
         exit_on_stdin_eof: false,
         net_rewrite: None,
         env: Default::default(),

@@ -23,7 +23,7 @@ use axum::middleware;
 use nuvo_crypto::KeyStore;
 use tokio::io::AsyncReadExt;
 
-pub use state::{AppState, BootError, Config, TestHooks};
+pub use state::{AppState, BootError, Config, Edition, TestHooks};
 
 /// Bulk playlist imports send thousands of snapshots in one body.
 const BODY_LIMIT_BYTES: usize = 16 * 1024 * 1024;

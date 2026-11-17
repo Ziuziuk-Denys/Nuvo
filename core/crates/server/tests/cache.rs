@@ -220,6 +220,7 @@ async fn start_removes_cache_files_nothing_indexes_and_keeps_the_dir_private() {
         shazam_url: String::new(),
         lastfm_url: String::new(),
         pace: common::FAST,
+        edition: nuvo_server::Edition::Encrypted,
         exit_on_stdin_eof: false,
         net_rewrite: None,
         env: Default::default(),

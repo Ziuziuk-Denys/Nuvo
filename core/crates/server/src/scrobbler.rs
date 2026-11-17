@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use nuvo_contracts::LastfmStatus;
 use nuvo_lastfm::{Credentials, INVALID_PARAMETERS, INVALID_SESSION, LastfmError, MAX_BATCH, Scrobble, TrackInfo};
+use nuvo_store::settings::Secrets;
 use nuvo_store::{Connection, StoreError, now_ms, scrobbles, settings, tracks};
 use serde_json::{Value, json};
 
@@ -14,8 +15,12 @@ pub fn text(conn: &Connection, key: &str) -> Result<Option<String>, StoreError> 
     Ok(settings::get(conn, key)?.and_then(|v| v.as_str().map(str::to_string)))
 }
 
-pub fn credentials(conn: &Connection) -> Result<Option<Credentials>, StoreError> {
-    Ok(match (text(conn, settings::LASTFM_API_KEY)?, text(conn, settings::LASTFM_API_SECRET)?) {
+pub fn secret_text(conn: &Connection, secrets: &Secrets, key: &str) -> Result<Option<String>, StoreError> {
+    Ok(settings::get_secret(conn, secrets, key)?.and_then(|v| v.as_str().map(str::to_string)))
+}
+
+pub fn credentials(conn: &Connection, secrets: &Secrets) -> Result<Option<Credentials>, StoreError> {
+    Ok(match (text(conn, settings::LASTFM_API_KEY)?, secret_text(conn, secrets, settings::LASTFM_API_SECRET)?) {
         (Some(api_key), Some(api_secret)) => Some(Credentials { api_key, api_secret }),
         _ => None,
     })
@@ -23,7 +28,7 @@ pub fn credentials(conn: &Connection) -> Result<Option<Credentials>, StoreError>
 
 pub fn status(conn: &Connection) -> Result<LastfmStatus, StoreError> {
     Ok(LastfmStatus {
-        has_credentials: credentials(conn)?.is_some(),
+        has_credentials: text(conn, settings::LASTFM_API_KEY)?.is_some() && text(conn, settings::LASTFM_API_SECRET)?.is_some(),
         connected: text(conn, settings::LASTFM_SESSION_KEY)?.is_some(),
         user: text(conn, settings::LASTFM_USER)?,
         enabled: settings::get(conn, settings::LASTFM_ENABLED)?.and_then(|v| v.as_bool()).unwrap_or(true),
@@ -37,11 +42,11 @@ pub fn clear_session(conn: &Connection) -> Result<(), StoreError> {
     settings::set(conn, settings::LASTFM_USER, &Value::Null)
 }
 
-fn account(conn: &Connection) -> Result<Option<(Credentials, String)>, StoreError> {
+fn account(conn: &Connection, secrets: &Secrets) -> Result<Option<(Credentials, String)>, StoreError> {
     if !scrobbles::active(conn)? {
         return Ok(None);
     }
-    Ok(credentials(conn)?.zip(text(conn, settings::LASTFM_SESSION_KEY)?))
+    Ok(credentials(conn, secrets)?.zip(secret_text(conn, secrets, settings::LASTFM_SESSION_KEY)?))
 }
 
 // Clears the session only if it is still the one that failed: a reconnect may have replaced it
@@ -49,10 +54,11 @@ pub async fn note_failure(data: &Unlocked, session_key: &str, err: &LastfmError)
     let message = err.to_string();
     let drop_session = err.is_permanent_auth() || matches!(err, LastfmError::Api { code: INVALID_SESSION, .. });
     let failed_key = session_key.to_string();
+    let secrets = data.secrets.clone();
     data.db
         .call(move |c| {
             let tx = c.unchecked_transaction()?;
-            if drop_session && text(&tx, settings::LASTFM_SESSION_KEY)?.as_deref() == Some(failed_key.as_str()) {
+            if drop_session && secret_text(&tx, &secrets, settings::LASTFM_SESSION_KEY)?.as_deref() == Some(failed_key.as_str()) {
                 clear_session(&tx)?;
             }
             settings::set(&tx, settings::LASTFM_LAST_ERROR, &json!(message))?;
@@ -68,12 +74,13 @@ pub async fn flush(state: &AppState, now: i64) -> Result<usize, ApiError> {
     let data = state.data()?;
     let mut sent = 0;
     loop {
+        let secrets = data.secrets.clone();
         let (account, batch) = data
             .db
             .call(move |c| {
                 // Last.fm refuses plays older than 14 days, so they are not worth keeping.
                 scrobbles::drop_old(c, now)?;
-                Ok((account(c)?, scrobbles::due(c, now, MAX_BATCH)?))
+                Ok((account(c, &secrets)?, scrobbles::due(c, now, MAX_BATCH)?))
             })
             .await?;
         let Some((creds, session_key)) = account else {
@@ -147,10 +154,11 @@ pub fn spawn_timer(state: AppState) {
 
 pub async fn now_playing(state: &AppState, track_id: String, snapshot: Option<Value>) -> Result<(), ApiError> {
     let data = state.data()?;
+    let secrets = data.secrets.clone();
     let found = data
         .db
         .call(move |c| {
-            let Some(account) = account(c)? else {
+            let Some(account) = account(c, &secrets)? else {
                 return Ok(None);
             };
             tracks::ensure(c, &track_id, snapshot.as_ref(), now_ms())?;
