@@ -373,6 +373,7 @@ export function Library(): JSX.Element {
                 className={`${look.pill} ${look.glass} ${styles.create}`}
                 aria-label={t("ui.library.import")}
                 title={t("ui.library.import")}
+                data-tour="library-import"
                 onClick={() => useImportsUi.getState().openImport()}
               >
                 <Icon name="import" size={16} />

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { targetElement } from "./targets";
+import { fullyShown, seenBox, targetElement } from "./targets";
 
 type Rect = { left: number; top: number; width: number; height: number };
 
@@ -73,8 +73,33 @@ describe("targetElement", () => {
     expect(targetElement("queue")).toBeNull();
   });
 
-  it("treats a panel that opened mostly past the window edge as missing", () => {
-    place("presets", { left: 100, top: innerHeight - 10, width: 300, height: 600 });
-    expect(targetElement("presets")).toBeNull();
+  it("finds a control below the fold, so the tour can scroll to it", () => {
+    const element = place("modes", { left: 100, top: innerHeight + 20, width: 300, height: 100 });
+    expect(targetElement("modes")).toBe(element);
+    expect(fullyShown(element)).toBe(false);
+  });
+
+  it("treats a panel that opened mostly past the window edge as off screen", () => {
+    const element = place("presets", { left: 100, top: innerHeight - 10, width: 300, height: 600 });
+    expect(fullyShown(element)).toBe(false);
+  });
+});
+
+describe("seenBox", () => {
+  it("cuts the target at the list that scrolls it, not only at the window", () => {
+    const list = sized(document.createElement("div"), { left: 300, top: 60, width: 600, height: 500 });
+    list.style.overflowY = "auto";
+    document.body.append(list);
+    const element = place("presets", { left: 320, top: -100, width: 560, height: 300 }, list);
+    expect(seenBox(element)).toEqual({ x: 320, y: 60, width: 560, height: 140 });
+    expect(fullyShown(element)).toBe(false);
+  });
+
+  it("has nothing to show once the list scrolled the target away", () => {
+    const list = sized(document.createElement("div"), { left: 300, top: 60, width: 600, height: 500 });
+    list.style.overflowY = "hidden";
+    document.body.append(list);
+    const element = place("presets", { left: 320, top: -260, width: 560, height: 300 }, list);
+    expect(seenBox(element)).toBeNull();
   });
 });
