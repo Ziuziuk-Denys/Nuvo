@@ -75,13 +75,19 @@
       "title": "Moving sound",
       "hint": "The music circles around your head. Best on headphones.",
       "path": "Path",
-      "path_desc": "4D circles at ear level. 8D adds room echo. 16D tilts the circle, higher on the right and lower on the left, with more echo.",
+      "path_desc": "4D swings from ear to ear. 8D circles your head, darker behind, with room echo. 16D goes wider and tilts, higher on the right, with more echo.",
       "speed": "Speed",
       "speed_desc": "One turn takes 16, 8 or 4 seconds.",
       "speeds": {
         "slow": "Slow",
         "medium": "Medium",
         "fast": "Fast"
+      },
+      "headphones": "Best on headphones.",
+      "paths": {
+        "4d": "Swings from ear to ear.",
+        "8d": "Circles your head, darker behind, with room echo.",
+        "16d": "Goes wider and tilts, higher on the right, with more room echo."
       }
     }
   },
@@ -691,7 +697,8 @@
         "label": "Moment {n}",
         "empty": "Mark a part of this song to jump back to it later.",
         "remove": "Forget {name}"
-      }
+      },
+      "tab_space": "Space"
     },
     "volume": {
       "mute": "Mute",
@@ -2050,7 +2057,7 @@
       "trouble": "When something doesn't load",
       "updates": "Updates",
       "help": "Help",
-      "moving": "Around your head"
+      "moving": "Space"
     }
   }
 }
