@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.4.0
+
+Songs you can watch now. Scene, Nuvo's own visual engine, draws each song to the beat while the words land as they are sung, and its clip studio turns any moment into a short video. This release also brings two editions, moving sound, lyrics that follow the version that plays, and every fix since 0.3.0.
+
+- **Scene draws each song to the beat.** Open the lyrics view and pick Scene. Start from twelve ready scenes, or build your own from a background, up to three effects, a centrepiece and a text style.
+- **A clip studio inside the player.** Pick a moment on the timeline and export MP4 in 9:16, 1:1 or 16:9, up to 4K at 60 fps. Your EQ, reverb and speed stay in the sound, and every frame carries a small "Made with Nuvo" mark.
+- **Two editions, the same features.** Standard is the main download. Nuvo Encrypted keeps the library and the audio cache encrypted under a key in your system keyring.
+- **Moving sound in 4D, 8D and 16D.** The music circles around your head on headphones, at three speeds. It sits in the Sound panel, on the Space tab.
+- **Lyrics follow the version that plays.** A music video with a long intro no longer gets the album's timing, and Find lyrics in the lyrics editor searches by title and artist.
+- **Notch placement.** Choose the screen, the side, the top edge, a gap and the stacking. On Hyprland and Sway the Notch sits below your bar.
+- **Back goes back.** One press always plays the previous track.
+
+**Updating from 0.3.** The update moves you to the Standard edition and converts your library on the first start: likes, playlists, lyrics and settings stay. To keep encryption, install the Nuvo Encrypted download instead.
+
+Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on [Discord](https://discord.gg/rHz3dg9S9T) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
+### По-русски
+
+Песни, которые можно смотреть. Сцена, собственный визуальный движок Nuvo, рисует каждую песню в такт, а слова появляются, когда их поют. Студия сцены превращает любой момент в короткое видео. Ещё в релизе две версии, объёмный звук, текст под ту версию песни, что играет, и все исправления с 0.3.0.
+
+- **Сцена рисует песню в такт.** Откройте текст песни и выберите «Сцена». Двенадцать готовых сцен или своя: фон, до трёх эффектов, центральный элемент и стиль текста.
+- **Студия сцены прямо в плеере.** Выберите момент на таймлайне и сохраните MP4 в 9:16, 1:1 или 16:9, до 4K и 60 fps. Эквалайзер, реверб и скорость остаются в звуке, на каждом кадре небольшая метка «Made with Nuvo».
+- **Две версии, функции одинаковые.** Стандартная версия - основная загрузка. Версия с шифрованием хранит библиотеку и кэш аудио зашифрованными, ключ лежит в системной связке ключей.
+- **Объёмный звук 4D, 8D и 16D.** Музыка кружит вокруг головы в наушниках, на трёх скоростях. Он в панели звука, на вкладке «Объём».
+- **Текст идёт за той версией, что играет.** Клип с длинным вступлением больше не получает тайминг альбома, а «Найти текст» в редакторе ищет по названию и исполнителю.
+- **Место нотча.** Экран, сторона, верхний край, отступ и слой. В Hyprland и Sway нотч встаёт под вашу панель.
+- **«Назад» значит назад.** Одно нажатие всегда включает предыдущий трек.
+
+**Обновление с 0.3.** Обновление переводит на стандартную версию и при первом запуске переносит библиотеку: лайки, плейлисты, тексты и настройки остаются. Нужно шифрование - поставьте версию с шифрованием.
+
+### All changes
+
+#### New
+
+- Scene, Nuvo's own visual engine: 12 ready scenes or your own
+- Clip studio: MP4 up to 4K 60 fps, 9:16, 1:1 or 16:9, with your EQ and speed
+- Standard and Encrypted editions, data converts on start
+- Moving sound 4D, 8D, 16D, three speeds, Space tab
+- Find lyrics by title and artist in the lyrics editor
+- Notch placement: screen, side, top edge, gap, stacking
+- Updates install on quit, plus Check for updates
+- Right-click song menu on Home
+- Telegram and Discord links in About
+- Taskbar thumbnail buttons on Windows, NixOS support
+
+#### Better
+
+- Lyrics follow the cut that plays
+- Back always goes to the previous track
+- Home fills within seconds after the first picks, up to 15 picks
+- The tour points at what it describes
+- macOS: native window, Notch around the camera
+- GNOME panel: larger controls
+- Big local libraries import faster
+
+#### Fixed
+
+- SoundCloud starts at once
+- Lyrics keep their place on pause
+- A pause near the end no longer skips
+- Hyprland fullscreen no longer turns on HDR
+- Kaomoji no longer show as boxes
+- Files with old-encoding names play
+- Import never picks an instrumental
+- Liked songs lists every song
+- The Whisper model downloads once
+
 ## 0.3.1-beta.2
 
 A beta with a reworked updater. Install on quit is checked by an automated test with the Linux AppImage and the Windows installer. Not checked yet: the Restart now button from start to finish, Windows arm64 and macOS.

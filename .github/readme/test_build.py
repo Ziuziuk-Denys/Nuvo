@@ -64,6 +64,10 @@ assert all(f"{name} {build.BENCH['pending']}" in build.speed_alt() for name in p
 assert build.wrap("Ten bands over a live spectrum.", 42, 332) == ["Ten bands over", "a live spectrum."]
 assert len(build.wrap("A B C", 42, 0)) == 3
 
+split = release_notes.render("v1.0.0", ["Nuvo-1.0.0-linux-x86_64.AppImage", "Nuvo-Encrypted-1.0.0-linux-x86_64.AppImage"], "Lead.\n\n- **A.** B.\n\n### По-русски\n\nТекст.\n\n### All changes\n\n#### New\n\n- C\n")
+assert split.index("## Install") < split.index("\n## По-русски\n") < split.index("\n## All changes\n") < split.index("\n### New\n"), split
+assert "## Install" not in split.split("Lead.")[0] and "####" not in split, split
+
 bug = (build.ROOT / ".github/ISSUE_TEMPLATE/bug.yml").read_text()
 assert f"placeholder: {build.DATA['version']}" in bug
 for page in ("SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "DESIGN-NOTES.md", ".github/SUPPORT.md"):

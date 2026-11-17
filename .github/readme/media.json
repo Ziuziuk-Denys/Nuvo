@@ -4,13 +4,26 @@
   "sources": {
     "home": "stills/player-{theme}.png",
     "search": "stills/palette-{theme}.png",
-    "sound": "stills/sound-{theme}.png",
+    "sound": "sound-{theme}.png",
     "lyrics": "stills/add-lyrics-dark.png",
     "import": "stills/import-{theme}.png",
     "background": "stills/wallpaper-settings-{theme}.png",
-    "lock": "stills/lock-{theme}.png"
+    "lock": "stills/lock-{theme}.png",
+    "scene": "scene-weeknd-snowfall-{theme}.png",
+    "studio": "studio-weeknd-dark.png"
   },
   "widgets": {
+    "scene": {
+      "shot": "studio",
+      "box": [
+        0,
+        0,
+        0.735,
+        1
+      ],
+      "radius": 14,
+      "width": 520
+    },
     "search": {
       "shot": "search",
       "box": [
@@ -39,7 +52,7 @@
         0.622,
         0.378,
         0.37,
-        0.53
+        0.512
       ],
       "radius": 16,
       "width": 440
@@ -118,5 +131,9 @@
       "alt": "",
       "video": "<img src=\".github/readme/motion/queue.gif\" width=\"100%\" alt=\"The queue panel sliding open beside Home while a song plays\">"
     }
-  ]
+  ],
+  "scene": {
+    "shot": "scene",
+    "video": ""
+  }
 }

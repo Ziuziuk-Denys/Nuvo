@@ -1,7 +1,7 @@
 {
   "repo": "https://github.com/Ziuziuk-Denys/Nuvo",
   "site": "https://nuvo.quest",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "tagline": "The local-first music player.",
   "social": "Free and open source, for Linux, Windows and macOS. No account.",
   "pills": {
@@ -30,17 +30,35 @@
       "alt": "Join the Nuvo server on Discord"
     }
   },
+  "scene": {
+    "title": "Songs you can watch.",
+    "sub": "Each song draws itself to the beat, and the words land as they are sung. Pick a moment and Nuvo turns it into a clip.",
+    "facts": [
+      [
+        "12",
+        "ready scenes, or build your own"
+      ],
+      [
+        "4K",
+        "MP4 export at up to 60 fps"
+      ],
+      [
+        "9:16",
+        "or 1:1 and 16:9"
+      ]
+    ]
+  },
   "new": [
-    "A new interface: a top bar with search in it, the search palette (Ctrl K) and every screen redrawn with our own icons",
-    "Nine themes, Matcha and Blossom among them, with an illustrated app icon for eight",
-    "Wallpapers in both themes: a photo, a GIF or a video",
-    "SoundCloud search, with YouTube and SoundCloud songs ranked in one list",
-    "Imports from Soundiiz, TuneMyMusic, Google Takeout, XSPF and TXT files, and public Yandex Music playlists, albums and tracks by link",
-    "Lyrics made on your computer: every word timed, plain lyrics timed, and lyrics written for songs that have none",
-    "SOCKS5 proxies with a login, and a check of each service through the proxy",
-    "yt-dlp, Deno and ffmpeg download by themselves on every platform",
-    "Last.fm shows the song as now playing, and the Discord status is on by default",
-    "Fixes for the Notch on KDE Plasma and per-track loudness normalization, and SQLCipher 4.20"
+    "Scene, Nuvo's own visual engine: each song draws itself to the beat and the words land as they are sung, with twelve ready scenes and a clip studio that exports MP4 up to 4K at 60 fps",
+    "Two editions with the same features: Standard by default, and Encrypted as a second download. Install the other one and your library converts on the next start",
+    "Moving sound: 4D, 8D and 16D circle the music around your head, in the new Space tab of the Sound panel",
+    "Lyrics follow the version that plays, and Find lyrics searches by title and artist in the lyrics editor",
+    "Notch placement: the screen, the side, the top edge, a gap and the stacking. On Hyprland and Sway it sits below your bar",
+    "Back always goes to the previous track, and a right click on a song on Home opens its menu",
+    "Home fills within seconds after your first picks, and the picker takes up to 15 songs and artists",
+    "Updates install when you quit, with a check every 4 hours and a Check for updates button",
+    "macOS gets the native window frame, the Notch over the menu bar and Discord status",
+    "Fixes for lyrics timing, imports, file names in old encodings, kaomoji on Linux and HDR on Hyprland"
   ],
   "why": [
     {
@@ -99,7 +117,7 @@
     },
     {
       "claim": "Encrypted, with a way back in.",
-      "why": "Nuvo encrypts your library and its audio cache. If the system keyring goes missing, your 24-word recovery phrase opens it. We found no encrypted library or recovery phrase on the official pages of Liner, Riff or Mpthree.",
+      "why": "The Encrypted edition encrypts your library and its audio cache. If the system keyring goes missing, your 24-word recovery phrase opens it. We found no encrypted library or recovery phrase on the official pages of Liner, Riff or Mpthree.",
       "sources": [
         [
           "Liner privacy",
@@ -240,6 +258,20 @@
   ],
   "features": [
     {
+      "name": "Scene",
+      "widget": "scene",
+      "title": "A clip studio in the player.",
+      "sub": "Pick the moment on the timeline, tune each part and export an MP4.",
+      "alt": "The clip studio: scenes on the left, a 9:16 preview of Blinding Lights in the middle, the timeline with a clip range below.",
+      "bullets": [
+        "Twelve ready scenes, or your own from a background, up to three effects, a centrepiece and a text style",
+        "The stage runs on its own thread and its own clock, so a busy app never makes a lyric late",
+        "A clip studio with a timeline, a waveform and live frames: pick the moment, tune each part and see it at once",
+        "MP4 export in 9:16, 1:1 or 16:9, from 720p to 4K at 30 or 60 fps, the whole song or a cut, with fades. Your EQ, reverb and speed stay in the sound",
+        "Every exported frame carries a small \"Made with Nuvo\" mark"
+      ]
+    },
+    {
       "name": "Search and play",
       "widget": "search",
       "title": "Two sources, one list.",
@@ -275,6 +307,7 @@
       "bullets": [
         "Gapless playback, crossfade of 1 to 12 seconds, queue, shuffle, repeat",
         "Loudness normalization, speed and pitch with presets, reverb",
+        "Moving sound: 4D, 8D and 16D circle the music around your head, best on headphones",
         "Sleep timer, A-B loop, moments to jump back to, trims for a song's start and end",
         "Media keys, and MPRIS on Linux"
       ]
@@ -287,7 +320,8 @@
       "alt": "Lyric lines that Nuvo wrote for a song, marked as written by Nuvo.",
       "bullets": [
         "Synced lyrics and karaoke by line, word, fill or step",
-        "Every word timed on your computer, and lyrics written for songs that have none. The model downloads once, 82 MB",
+        "Lyrics follow the version that plays, and Find lyrics searches by title and artist",
+        "Every word timed on your computer, and lyrics written for songs that have none. The models download once: 82 MB for timing, 264 MB for writing",
         "Paste LRC or plain text and tap to sync, with a timing offset per track",
         "Romanized lyrics for Korean, Chinese and Japanese kana, and translation through a local model"
       ]
@@ -313,7 +347,7 @@
       "bullets": [
         "Nine themes, a colour editor with contrast checks, theme files, system or custom fonts",
         "Custom CSS with a strict checker and a safe mode",
-        "The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11. Off until you turn it on",
+        "The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. Off until you turn it on",
         "A panel widget for the GNOME top bar, the Plasma panel and Waybar",
         "Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian"
       ]
@@ -322,10 +356,10 @@
       "name": "Private by design",
       "widget": "lock",
       "title": "No account. No Nuvo server.",
-      "sub": "Your library is an encrypted database on your machine, and its key stays in your system keyring.",
-      "alt": "The unlock screen that asks for the 24-word recovery phrase.",
+      "sub": "Your library stays on your machine. The Encrypted edition locks it with a key kept in your system keyring.",
+      "alt": "The Encrypted edition's unlock screen, which asks for the 24-word recovery phrase.",
       "bullets": [
-        "Encrypted database and audio cache, a 24-word recovery phrase, an optional passphrase for the key",
+        "Two editions with the same features. Standard is the default; Encrypted encrypts the database and the audio cache, with a 24-word recovery phrase and an optional passphrase for the key",
         "A local API on a private socket with a token per launch",
         "HTTP and SOCKS5 proxies with a login, and a connection check for each service",
         "Last.fm scrobbling with your own API key, off until you turn it on",
@@ -340,7 +374,7 @@
       "brand": "linux",
       "status": "Main platform",
       "formats": "AppImage, .deb, .rpm",
-      "text": "AppImage, `.deb` or `.rpm`, for x64 and arm64. Nuvo keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file that you can seal with a passphrase in Settings, Application, Storage. On a Chromebook, turn on Linux in the ChromeOS settings and install the `.deb`."
+      "text": "AppImage, `.deb` or `.rpm`, for x64 and arm64. The Encrypted edition keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file that you can seal with a passphrase in Settings, Application, Storage. On a Chromebook, turn on Linux in the ChromeOS settings and install the `.deb`."
     },
     {
       "name": "Windows",
@@ -352,9 +386,9 @@
     {
       "name": "macOS",
       "brand": "apple",
-      "status": "Supported, testers wanted",
+      "status": "Supported",
       "formats": ".dmg",
-      "text": "The `.dmg` for Apple silicon or Intel. We are looking for testers: tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat)."
+      "text": "The `.dmg` for Apple silicon or Intel."
     }
   ],
   "roadmap": [
@@ -405,7 +439,7 @@
       "Liner cells come from its README, docs and website at commit 197179b, and Riff cells from its README at ac68b13 and riff.hs.vc, all read on 2026-11-14. Older cells keep their 2026-11-07 sources. On 2026-11-14 we turned 14 Liner and Riff cells whose earlier source was never recorded into unknown.",
       "Mpthree cells come from mpthree.fun, its tariffs and its terms (in Russian, updated 2026-11-07), read on 2026-11-14. Mpthree Plus costs 149 ₽ per 30 days; features that need Plus are marked Partly.",
       "Spotify, YouTube Music and Apple Music cells come from their help pages, except three cells sourced from SlashGear. Several rows carry over from an earlier pass whose source was not recorded; they are marked in the sources file.",
-      "Nuvo cells describe the app on Linux, its main platform. The Windows and macOS builds are the same app, except that MPRIS, the panel widgets and recognition from the microphone or system sound are Linux only. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.",
+      "Nuvo cells describe the app on Linux, its main platform. The Windows and macOS builds are the same app, except that MPRIS, the panel widgets and recognition from the microphone or system sound are Linux only. Rows added on 2026-11-08 and 2026-11-17 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere. The encryption rows describe the Encrypted edition.",
       "The rows are the features of the Nuvo app, so they favour Nuvo by construction. A feature another app has and Nuvo lacks is not listed here."
     ],
     "sources": [
@@ -529,6 +563,10 @@
           {
             "label": "Choose which source a song plays from",
             "cells": "yuuuuuuu"
+          },
+          {
+            "label": "Moving sound around your head (4D, 8D, 16D)",
+            "cells": "yuuuuuuu"
           }
         ]
       },
@@ -569,6 +607,14 @@
           },
           {
             "label": "Lyrics timed on your machine for songs that have none",
+            "cells": "yuuuuuuu"
+          },
+          {
+            "label": "Visuals drawn to the beat, with the lyrics",
+            "cells": "yuuuuuuu"
+          },
+          {
+            "label": "Video clip export with the lyrics (MP4, up to 4K)",
             "cells": "yuuuuuuu"
           }
         ]
@@ -911,7 +957,7 @@
         ]
       }
     ],
-    "total": 109,
+    "total": 112,
     "summary": "Each bar counts the rows of the tables below. Unknown means we found no source we could cite, not that the app lacks the feature."
   }
 }

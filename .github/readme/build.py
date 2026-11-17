@@ -276,6 +276,32 @@ def block(theme, spec, index, narrow):
     return a
 
 
+def scene(theme, narrow):
+    spec = DATA["scene"]
+    a = Art(theme, NARROW if narrow else WIDE, 0, f"{spec['title']} {spec['sub']}")
+    t = a.t
+    pad = 32 if narrow else 56
+    title, rows = a.lines(pad, pad + 30, spec["title"], 32 if narrow else 42, a.width - 2 * pad, 38 if narrow else 50)
+    sub, subs = a.lines(pad, pad + 30 + rows * (38 if narrow else 50) + 4, spec["sub"], 17 if narrow else 19, a.width - 2 * pad, 25 if narrow else 28, t["ink-3"], 500)
+    top = pad + 30 + rows * (38 if narrow else 50) + subs * (25 if narrow else 28) + 24
+    drawn, h = a.picture(window(MEDIA["scene"]["shot"], theme), pad, top, a.width - 2 * pad, 14)
+    y = top + h + (32 if narrow else 44)
+    column = (a.width - 2 * pad) / len(spec["facts"])
+    facts = []
+    for index, (value, label) in enumerate(spec["facts"]):
+        x = pad + index * column
+        if index:
+            facts.append(a.rect(x - 0.5, y - 4, 1, 64 if narrow else 58, 0, f' fill="{t["hair"]}"'))
+        x += 0 if index == 0 else (12 if narrow else 24)
+        facts.append(a.text(x, y + 30, value, 28 if narrow else 36, t["ink"], 700, tracking=-0.02))
+        label_rows, _ = a.lines(x, y + 54, label, 13 if narrow else 15, column - (16 if narrow else 32), 18, t["ink-3"], 500)
+        facts.append(label_rows)
+    a.height = y + (76 if narrow else 64) + pad - 16
+    a.card()
+    a.add(title, sub, drawn, *facts)
+    return a
+
+
 def format_number(value):
     return f"{value:g}"
 
@@ -448,6 +474,7 @@ def build_art():
             save(f"speed{suffix}-{theme}", speed(theme, narrow))
             save(f"matrix{suffix}-{theme}", matrix_chart(theme, narrow))
             save(f"platforms{suffix}-{theme}", platforms(theme, narrow))
+            save(f"scene{suffix}-{theme}", scene(theme, narrow))
             for index, spec in enumerate(DATA["features"]):
                 save(f"feature-{spec['widget']}{suffix}-{theme}", block(theme, spec, index, narrow))
         for name in DATA["pills"]:
@@ -483,6 +510,12 @@ def pills():
 def shot(key, alt):
     light, dark = (shot_path(key, theme).relative_to(ROOT) for theme in THEMES)
     return f'<picture><source media="(prefers-color-scheme: dark)" srcset="{dark}"><img src="{light}" width="100%" alt="{html.escape(alt, quote=True)}"></picture>'
+
+
+def scene_section():
+    video = MEDIA["scene"]["video"]
+    card = picture("scene", f"{DATA['scene']['title']} {DATA['scene']['sub']} " + "; ".join(" ".join(fact) for fact in DATA["scene"]["facts"]) + ".")
+    return card + (f"\n\n{video}" if video else "")
 
 
 def showcase():
@@ -569,6 +602,7 @@ def build_readme():
     values = {
         "head": picture("head", "Nuvo. " + DATA["tagline"] + " " + MEDIA["heroAlt"]),
         "pills": pills(),
+        "scene": scene_section(),
         "new": "\n".join(f"- {line}" for line in DATA["new"]),
         "why": "\n".join(why_line(item) for item in DATA["why"]),
         "speed-summary": speed_summary(),

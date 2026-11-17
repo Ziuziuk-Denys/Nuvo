@@ -7,26 +7,30 @@
 
 <br>
 
-Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays YouTube, SoundCloud and your own files, with synced lyrics, a ten-band equalizer and mixes made on your computer. You never make an account: your library, playlists and history stay in an encrypted database on your machine.
+Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays YouTube, SoundCloud and your own files, with synced lyrics, a ten-band equalizer and mixes made on your computer. Scene, its own visual engine, draws each song to the beat and turns any moment into a short video. You never make an account: your library, playlists and history stay on your machine.
 
-<sub>[nuvo.quest](https://nuvo.quest) · [Docs](https://nuvo.quest/docs) · [Install](#install) · [Why Nuvo](#why-nuvo) · [Roadmap](#roadmap)</sub>
+<sub>[nuvo.quest](https://nuvo.quest) · [Docs](https://nuvo.quest/docs) · [Scene](#scene) · [Install](#install) · [Why Nuvo](#why-nuvo) · [Roadmap](#roadmap)</sub>
 
 </div>
 
-## New in 0.3.0
+## Scene
 
-- A new interface: a top bar with search in it, the search palette (Ctrl K) and every screen redrawn with our own icons
-- Nine themes, Matcha and Blossom among them, with an illustrated app icon for eight
-- Wallpapers in both themes: a photo, a GIF or a video
-- SoundCloud search, with YouTube and SoundCloud songs ranked in one list
-- Imports from Soundiiz, TuneMyMusic, Google Takeout, XSPF and TXT files, and public Yandex Music playlists, albums and tracks by link
-- Lyrics made on your computer: every word timed, plain lyrics timed, and lyrics written for songs that have none
-- SOCKS5 proxies with a login, and a check of each service through the proxy
-- yt-dlp, Deno and ffmpeg download by themselves on every platform
-- Last.fm shows the song as now playing, and the Discord status is on by default
-- Fixes for the Notch on KDE Plasma and per-track loudness normalization, and SQLCipher 4.20
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/scene-dark.svg"><img src=".github/readme/scene-light.svg" width="100%" alt="Songs you can watch. Each song draws itself to the beat, and the words land as they are sung. Pick a moment and Nuvo turns it into a clip. 12 ready scenes, or build your own; 4K MP4 export at up to 60 fps; 9:16 or 1:1 and 16:9."></picture>
 
-The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.3.0).
+## New in 0.4.0
+
+- Scene, Nuvo's own visual engine: each song draws itself to the beat and the words land as they are sung, with twelve ready scenes and a clip studio that exports MP4 up to 4K at 60 fps
+- Two editions with the same features: Standard by default, and Encrypted as a second download. Install the other one and your library converts on the next start
+- Moving sound: 4D, 8D and 16D circle the music around your head, in the new Space tab of the Sound panel
+- Lyrics follow the version that plays, and Find lyrics searches by title and artist in the lyrics editor
+- Notch placement: the screen, the side, the top edge, a gap and the stacking. On Hyprland and Sway it sits below your bar
+- Back always goes to the previous track, and a right click on a song on Home opens its menu
+- Home fills within seconds after your first picks, and the picker takes up to 15 songs and artists
+- Updates install when you quit, with a check every 4 hours and a Check for updates button
+- macOS gets the native window frame, the Notch over the menu bar and Discord status
+- Fixes for lyrics timing, imports, file names in old encodings, kaomoji on Linux and HDR on Hyprland
+
+The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.4.0).
 
 ## See it
 
@@ -70,6 +74,16 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 ## Features
 
+### Scene
+
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-scene-dark.svg"><img src=".github/readme/feature-scene-light.svg" width="100%" alt="A clip studio in the player. The clip studio: scenes on the left, a 9:16 preview of Blinding Lights in the middle, the timeline with a clip range below."></picture>
+
+- Twelve ready scenes, or your own from a background, up to three effects, a centrepiece and a text style
+- The stage runs on its own thread and its own clock, so a busy app never makes a lyric late
+- A clip studio with a timeline, a waveform and live frames: pick the moment, tune each part and see it at once
+- MP4 export in 9:16, 1:1 or 16:9, from 720p to 4K at 30 or 60 fps, the whole song or a cut, with fades. Your EQ, reverb and speed stay in the sound
+- Every exported frame carries a small "Made with Nuvo" mark
+
 ### Search and play
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-search-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-search-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-search-dark.svg"><img src=".github/readme/feature-search-light.svg" width="100%" alt="Two sources, one list. The search palette with a top result and songs from both sources."></picture>
@@ -95,6 +109,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 - Gapless playback, crossfade of 1 to 12 seconds, queue, shuffle, repeat
 - Loudness normalization, speed and pitch with presets, reverb
+- Moving sound: 4D, 8D and 16D circle the music around your head, best on headphones
 - Sleep timer, A-B loop, moments to jump back to, trims for a song's start and end
 - Media keys, and MPRIS on Linux
 
@@ -103,7 +118,8 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-lyrics-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-lyrics-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-lyrics-dark.svg"><img src=".github/readme/feature-lyrics-light.svg" width="100%" alt="Lyrics for songs that have none. Lyric lines that Nuvo wrote for a song, marked as written by Nuvo."></picture>
 
 - Synced lyrics and karaoke by line, word, fill or step
-- Every word timed on your computer, and lyrics written for songs that have none. The model downloads once, 82 MB
+- Lyrics follow the version that plays, and Find lyrics searches by title and artist
+- Every word timed on your computer, and lyrics written for songs that have none. The models download once: 82 MB for timing, 264 MB for writing
 - Paste LRC or plain text and tap to sync, with a timing offset per track
 - Romanized lyrics for Korean, Chinese and Japanese kana, and translation through a local model
 
@@ -121,15 +137,15 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 - Nine themes, a colour editor with contrast checks, theme files, system or custom fonts
 - Custom CSS with a strict checker and a safe mode
-- The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11. Off until you turn it on
+- The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. Off until you turn it on
 - A panel widget for the GNOME top bar, the Plasma panel and Waybar
 - Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian
 
 ### Private by design
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-lock-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-lock-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-lock-dark.svg"><img src=".github/readme/feature-lock-light.svg" width="100%" alt="No account. No Nuvo server. The unlock screen that asks for the 24-word recovery phrase."></picture>
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-lock-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-lock-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-lock-dark.svg"><img src=".github/readme/feature-lock-light.svg" width="100%" alt="No account. No Nuvo server. The Encrypted edition&#x27;s unlock screen, which asks for the 24-word recovery phrase."></picture>
 
-- Encrypted database and audio cache, a 24-word recovery phrase, an optional passphrase for the key
+- Two editions with the same features. Standard is the default; Encrypted encrypts the database and the audio cache, with a 24-word recovery phrase and an optional passphrase for the key
 - A local API on a private socket with a token per launch
 - HTTP and SOCKS5 proxies with a login, and a connection check for each service
 - Last.fm scrobbling with your own API key, off until you turn it on
@@ -143,7 +159,7 @@ Each point links its sources, read on 2026-11-14, and says so when another playe
 - **Free, all of it.** Every feature, no plan to pick. Nuvo Plus costs nothing, since it does not exist. Liner Plus costs $4 a month, and Mpthree Plus costs 149 ₽ per 30 days and holds Mpthree's equalizer, effects, crossfade, shortcuts and song recognition. Riff is free too. <sub>[Liner pricing](https://tryliner.fun/) · [Mpthree plans](https://mpthree.fun/tariffs) · [Riff FAQ](https://github.com/rootscripts/riff/blob/ac68b13/README.md#faq)</sub>
 - **The source is right here.** AGPL-3.0-or-later: read it, build it, fork it and share your fork. Liner's licence forbids public forks and any build that talks to a server other than Liner's. Mpthree publishes no source. Riff is open as well, under MIT. <sub>[Liner licence](https://github.com/tryliner/desktop/blob/197179b/LICENSE) · [Mpthree terms, 2.1](https://mpthree.fun/legal) · [Riff licence](https://github.com/rootscripts/riff/blob/ac68b13/LICENSE)</sub>
 - **No account, no Nuvo server.** Your library lives in one file on your machine, so you have no password to forget. Liner keeps your library, playlists and plays on its server under your account, and Mpthree needs an account for Plus. Riff skips the account too. <sub>[Liner privacy](https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md) · [Mpthree terms, 7.3](https://mpthree.fun/legal) · [Riff FAQ](https://github.com/rootscripts/riff/blob/ac68b13/README.md#faq)</sub>
-- **Encrypted, with a way back in.** Nuvo encrypts your library and its audio cache. If the system keyring goes missing, your 24-word recovery phrase opens it. We found no encrypted library or recovery phrase on the official pages of Liner, Riff or Mpthree. <sub>[Liner privacy](https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md) · [Liner storage](https://github.com/tryliner/desktop/blob/197179b/docs/STORAGE.md) · [Riff README](https://github.com/rootscripts/riff/blob/ac68b13/README.md) · [Mpthree terms](https://mpthree.fun/legal)</sub>
+- **Encrypted, with a way back in.** The Encrypted edition encrypts your library and its audio cache. If the system keyring goes missing, your 24-word recovery phrase opens it. We found no encrypted library or recovery phrase on the official pages of Liner, Riff or Mpthree. <sub>[Liner privacy](https://github.com/tryliner/desktop/blob/197179b/docs/PRIVACY.md) · [Liner storage](https://github.com/tryliner/desktop/blob/197179b/docs/STORAGE.md) · [Riff README](https://github.com/rootscripts/riff/blob/ac68b13/README.md) · [Mpthree terms](https://mpthree.fun/legal)</sub>
 - **The whole sound kit, free.** A ten-band equalizer with twelve presets, speed, pitch and reverb, crossfade, gapless playback and loudness normalization. Mpthree sells its equalizer, speed, reverb and crossfade as Plus. Riff gives you an equalizer, speed, pitch and reverb at no cost. <sub>[Mpthree terms, 2.3](https://mpthree.fun/legal) · [Riff README](https://github.com/rootscripts/riff/blob/ac68b13/README.md)</sub>
 - **Name that song.** Nuvo recognizes a song from a file, a link, your microphone or what your computer plays (the last two on Linux), and keeps a history. Mpthree puts recognition in Plus. Liner and Riff do not document it. <sub>[Mpthree terms, 2.3](https://mpthree.fun/legal) · [Liner site](https://tryliner.fun/) · [Riff site](https://riff.hs.vc/)</sub>
 - **Lyrics for songs that have none.** Nuvo listens to the track and times every word on your computer. Liner, Riff and Mpthree describe online lyrics, LRC files and manual offsets. <sub>[Nuvo 0.3.0](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.3.0) · [Liner site](https://tryliner.fun/) · [Riff README](https://github.com/rootscripts/riff/blob/ac68b13/README.md) · [Mpthree site](https://mpthree.fun/)</sub>
@@ -186,14 +202,14 @@ Nuvo 0.3.0 shows text in its window 354 ms after launch, then idles at 364.6 MB 
 
 </details>
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/matrix-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/matrix-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/matrix-dark.svg"><img src=".github/readme/matrix-light.svg" width="100%" alt="Nuvo&#x27;s 109 features, app by app. Liner: 32 yes, 11 partly, 4 no, 62 unknown; Riff: 44 yes, 25 partly, 1 no, 39 unknown; Spotify: 12 yes, 7 partly, 0 no, 90 unknown; YouTube Music: 3 yes, 3 partly, 0 no, 103 unknown; Apple Music: 9 yes, 4 partly, 0 no, 96 unknown; Strawberry: 8 yes, 2 partly, 0 no, 99 unknown; Mpthree: 0 yes, 11 partly, 1 no, 97 unknown."></picture>
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/matrix-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/matrix-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/matrix-dark.svg"><img src=".github/readme/matrix-light.svg" width="100%" alt="Nuvo&#x27;s 112 features, app by app. Liner: 32 yes, 11 partly, 4 no, 65 unknown; Riff: 44 yes, 25 partly, 1 no, 42 unknown; Spotify: 12 yes, 7 partly, 0 no, 93 unknown; YouTube Music: 3 yes, 3 partly, 0 no, 106 unknown; Apple Music: 9 yes, 4 partly, 0 no, 99 unknown; Strawberry: 8 yes, 2 partly, 0 no, 102 unknown; Mpthree: 0 yes, 11 partly, 1 no, 100 unknown."></picture>
 
 <details>
 <summary><b>Every row, app by app</b></summary>
 
 <br>
 
-#### Playback and sound (22)
+#### Playback and sound (23)
 
 | Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
 |---|---|---|---|---|---|---|---|---|
@@ -219,8 +235,9 @@ Nuvo 0.3.0 shows text in its window 354 ms after launch, then idles at 364.6 MB 
 | Moments: mark a place in a song and jump back to it | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 | Trim a song's start and end | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 | Choose which source a song plays from | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Moving sound around your head (4D, 8D, 16D) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
-#### Lyrics (9)
+#### Lyrics (11)
 
 | Feature | Nuvo | Liner | Riff | Spotify | YouTube Music | Apple Music | Strawberry | Mpthree |
 |---|---|---|---|---|---|---|---|---|
@@ -233,6 +250,8 @@ Nuvo 0.3.0 shows text in its window 354 ms after launch, then idles at 364.6 MB 
 | Lyrics version choice (plain, line, word) | Yes | *unknown* | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 | Karaoke highlight modes (line, word, fill, step) | Yes | Partly | Partly | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 | Lyrics timed on your machine for songs that have none | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Visuals drawn to the beat, with the lyrics | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
+| Video clip export with the lyrics (MP4, up to 4K) | Yes | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* | *unknown* |
 
 #### Discovery (13)
 
@@ -349,7 +368,7 @@ Nuvo 0.3.0 shows text in its window 354 ms after launch, then idles at 364.6 MB 
 - Liner cells come from its README, docs and website at commit 197179b, and Riff cells from its README at ac68b13 and riff.hs.vc, all read on 2026-11-14. Older cells keep their 2026-11-07 sources. On 2026-11-14 we turned 14 Liner and Riff cells whose earlier source was never recorded into unknown.
 - Mpthree cells come from mpthree.fun, its tariffs and its terms (in Russian, updated 2026-11-07), read on 2026-11-14. Mpthree Plus costs 149 ₽ per 30 days; features that need Plus are marked Partly.
 - Spotify, YouTube Music and Apple Music cells come from their help pages, except three cells sourced from SlashGear. Several rows carry over from an earlier pass whose source was not recorded; they are marked in the sources file.
-- Nuvo cells describe the app on Linux, its main platform. The Windows and macOS builds are the same app, except that MPRIS, the panel widgets and recognition from the microphone or system sound are Linux only. Rows added on 2026-11-08 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere.
+- Nuvo cells describe the app on Linux, its main platform. The Windows and macOS builds are the same app, except that MPRIS, the panel widgets and recognition from the microphone or system sound are Linux only. Rows added on 2026-11-08 and 2026-11-17 carry yes for Nuvo and unknown for the others: we did not look for them elsewhere. The encryption rows describe the Encrypted edition.
 - The rows are the features of the Nuvo app, so they favour Nuvo by construction. A feature another app has and Nuvo lacks is not listed here.
 
 Checked 2026-11-14. Sources: [Riff](https://github.com/rootscripts/riff), [Liner](https://github.com/tryliner/desktop), [Strawberry](https://github.com/strawberrymusicplayer/strawberry), [Mpthree](https://mpthree.fun/), [Spotify help](https://support.spotify.com/), [YouTube Music help](https://support.google.com/youtubemusic), [Apple Music guide](https://support.apple.com/guide/music-windows/). Every cell has its source in [comparison-sources.json](.github/readme/comparison-sources.json). If a cell is wrong, open an issue.
@@ -358,13 +377,15 @@ Checked 2026-11-14. Sources: [Riff](https://github.com/rootscripts/riff), [Liner
 
 ## Install
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/platforms-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/platforms-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/platforms-dark.svg"><img src=".github/readme/platforms-light.svg" width="100%" alt="Linux: Main platform, AppImage, .deb, .rpm; Windows: Supported, Installer, portable .zip; macOS: Supported, testers wanted, .dmg"></picture>
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/platforms-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/platforms-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/platforms-dark.svg"><img src=".github/readme/platforms-light.svg" width="100%" alt="Linux: Main platform, AppImage, .deb, .rpm; Windows: Supported, Installer, portable .zip; macOS: Supported, .dmg"></picture>
 
 Get the files from [the latest release](https://github.com/Ziuziuk-Denys/Nuvo/releases/latest).
 
-- **Linux:** AppImage, `.deb` or `.rpm`, for x64 and arm64. Nuvo keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file that you can seal with a passphrase in Settings, Application, Storage. On a Chromebook, turn on Linux in the ChromeOS settings and install the `.deb`.
+- **Linux:** AppImage, `.deb` or `.rpm`, for x64 and arm64. The Encrypted edition keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file that you can seal with a passphrase in Settings, Application, Storage. On a Chromebook, turn on Linux in the ChromeOS settings and install the `.deb`.
 - **Windows:** The installer (`.exe`) or the portable `.zip`, for x64 and arm64.
-- **macOS:** The `.dmg` for Apple silicon or Intel. We are looking for testers: tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat).
+- **macOS:** The `.dmg` for Apple silicon or Intel.
+
+**Nuvo Encrypted** is the same app with the library and the audio cache encrypted on disk, under a key kept in your system keyring. Its files in the same release start with `Nuvo-Encrypted-`. Install either edition over the other and your library converts on the next start.
 
 Each release lists SHA-256 checksums. Full steps and building from source are in [the install guide](https://nuvo.quest/docs/install).
 

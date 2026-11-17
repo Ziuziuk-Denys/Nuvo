@@ -59,6 +59,8 @@ def install_table(names, tag):
 
 
 def render(tag, names, changes):
+    changes, _, more = changes.partition("\n### ")
+    more = re.sub(r"^#(#+) ", r"\1 ", "### " + more, flags=re.M).strip() if more else ""
     values = {
         "tag": tag,
         "changes": changes.strip(),
@@ -69,6 +71,7 @@ def render(tag, names, changes):
         "site": DATA["site"],
         "repo": DATA["repo"],
         "slug": DATA["repo"].removeprefix("https://github.com/"),
+        "more": more,
     }
     text = (HERE / "release-notes.template.md").read_text()
     for key, value in values.items():
