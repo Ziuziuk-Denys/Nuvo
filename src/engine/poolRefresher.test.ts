@@ -199,3 +199,40 @@ describe("pool refresher", () => {
     s.refresher.dispose();
   });
 });
+
+describe("pool warm-up after the first picks", () => {
+  it("fetches every seed's radio at once, even while music plays, and reports each stored list", async () => {
+    const s = setup([]);
+    s.setBusy(true);
+    const stored = vi.fn();
+    await s.refresher.warm(["y1", "y2"], stored);
+    expect(s.radioCalls).toEqual(["y1", "y2"]);
+    expect(s.daemon.callsTo("PUT", "/v1/recs/pool").map((c) => JSON.parse(c.body!).seedId)).toEqual(["y1", "y2"]);
+    expect(stored).toHaveBeenCalledTimes(2);
+    s.refresher.dispose();
+  });
+
+  it("asks SoundCloud for a seed whose YouTube radio fails, and for a SoundCloud seed directly", async () => {
+    const s = setup([], (id) => (id === "y1" ? new Error("blocked") : [track(`${id}-1`)]));
+    const stored = vi.fn();
+    await s.refresher.warm(["y1", "sc:2"], stored);
+    expect(s.radioCalls).toEqual(["y1"]);
+    expect(
+      s.daemon
+        .callsTo("POST", "/v1/recs/pool/sc-related")
+        .map((c) => JSON.parse(c.body!).seedId)
+        .sort(),
+    ).toEqual(["sc:2", "y1"]);
+    expect(stored).toHaveBeenCalledTimes(2);
+    s.refresher.dispose();
+  });
+
+  it("reports nothing when every source is down", async () => {
+    const s = setup([], () => new Error("offline"));
+    s.daemon.on("POST /v1/recs/pool/sc-related", () => new Response(null, { status: 503 }));
+    const stored = vi.fn();
+    await s.refresher.warm(["y1"], stored);
+    expect(stored).not.toHaveBeenCalled();
+    s.refresher.dispose();
+  });
+});

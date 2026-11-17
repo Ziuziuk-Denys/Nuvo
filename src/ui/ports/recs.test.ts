@@ -6,14 +6,15 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn(),
   playList: vi.fn(),
   catalog: vi.fn(),
+  warm: vi.fn(),
 }));
 
-vi.mock("@/engine", () => ({ player: () => ({ playList: mocks.playList }), usePlayerView: vi.fn(), catalog: mocks.catalog }));
+vi.mock("@/engine", () => ({ player: () => ({ playList: mocks.playList }), usePlayerView: vi.fn(), catalog: mocks.catalog, warmPool: mocks.warm }));
 vi.mock("@/engine/boot", () => ({ CORE_BASE_URL: "http://core" }));
 vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog: { track: mocks.track, artist: mocks.artist } }) }));
 vi.stubGlobal("fetch", mocks.fetch);
 
-import { playSuggestions, recsChanged, seedFavorites, suggest } from "./recs";
+import { playSuggestions, recsChanged, seedFavorites, suggest, useWarmup, warmHome } from "./recs";
 
 const yt = (id: string) => ({ id, title: `Song ${id}`, artists: [{ id: "a1", name: "Nova" }], durationMs: 1000 });
 
@@ -49,6 +50,42 @@ describe("seedFavorites", () => {
     mocks.track.mockResolvedValue(yt("s1"));
     mocks.fetch.mockResolvedValue(new Response(null, { status: 423 }));
     await expect(seedFavorites([{ kind: "song", id: "s1", title: "x" }])).rejects.toThrow(/locked/);
+  });
+});
+
+describe("Home warm-up", () => {
+  const mixes = (count: number) => Response.json({ items: count ? [{ id: "daily-mix-discover", title: "New", description: "", tracks: [yt("n1")] }] : [] });
+
+  it("starts from the first song of each pick and keeps Home building until a list is stored", async () => {
+    mocks.track.mockResolvedValue(yt("s1"));
+    mocks.artist.mockResolvedValue({ tracks: [yt("s1"), yt("t2")] });
+    mocks.fetch.mockImplementation(async (url: string) => (url.endsWith("/starters") ? new Response(null, { status: 204 }) : mixes(1)));
+    let finish = () => {};
+    mocks.warm.mockImplementation((_seeds: string[], stored: () => void) => new Promise<void>((resolve) => (finish = () => (stored(), resolve()))));
+    const changed = vi.fn();
+    recsChanged.addEventListener("change", changed);
+
+    await seedFavorites([
+      { kind: "artist", id: "a1", title: "Nova" },
+      { kind: "song", id: "s9", title: "Song s1" },
+    ]);
+    expect(mocks.warm).toHaveBeenCalledWith(["s1"], expect.any(Function));
+    expect(useWarmup.getState().phase).toBe("building");
+    finish();
+    await vi.waitFor(() => expect(useWarmup.getState().phase).toBe("idle"));
+    expect(changed).toHaveBeenCalledTimes(2);
+    recsChanged.removeEventListener("change", changed);
+  });
+
+  it("fails when no source stored anything, and a retry warms the same seeds again", async () => {
+    mocks.warm.mockResolvedValue(undefined);
+    await warmHome(["s1", "t2"]);
+    expect(useWarmup.getState()).toEqual({ phase: "failed", seeds: ["s1", "t2"] });
+    mocks.warm.mockImplementation(async (_seeds: string[], stored: () => void) => stored());
+    mocks.fetch.mockResolvedValue(mixes(1));
+    await warmHome(useWarmup.getState().seeds);
+    expect(mocks.warm).toHaveBeenLastCalledWith(["s1", "t2"], expect.any(Function));
+    expect(useWarmup.getState().phase).toBe("idle");
   });
 });
 

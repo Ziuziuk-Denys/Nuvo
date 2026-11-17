@@ -13,6 +13,8 @@ export const POOL_RETRY_MIN_MS = 30 * 60_000;
 export const POOL_ITEMS = 50;
 export const POOL_SOURCE = "yt_radio";
 export const SC_SOURCE = "sc_related";
+// a fresh profile first finds the SoundCloud client before it can match a seed there
+const WARM_TIMEOUT_MS = 30_000;
 
 export interface PoolDeps {
   base: string;
@@ -129,6 +131,25 @@ export class PoolRefresher {
     } finally {
       if (this.run === run) this.run = null;
     }
+  }
+
+  // The first picks need their lists now: no idle wait, no gap, not paused by the station they start
+  async warm(seeds: readonly string[], onStored: () => void): Promise<void> {
+    await Promise.all(
+      seeds.map(async (seed) => {
+        const signal = AbortSignal.timeout(WARM_TIMEOUT_MS);
+        try {
+          if (!seed.startsWith("sc:") && (await this.storeRadio(seed, signal))) return onStored();
+        } catch (error) {
+          this.deps.log("pool warm-up: radio failed", error);
+        }
+        try {
+          if (await this.storeRelated(seed, signal)) onStored();
+        } catch (error) {
+          this.deps.log("pool warm-up: related failed", error);
+        }
+      }),
+    );
   }
 
   private async storeRadio(seed: string, signal: AbortSignal): Promise<boolean> {

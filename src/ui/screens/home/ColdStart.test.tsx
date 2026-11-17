@@ -2,6 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
+import { useWarmup } from "../../ports/recs";
 import { useTour } from "../../tour/tourStore";
 import { ColdStart } from "./ColdStart";
 import { HiddenLink } from "./HiddenLink";
@@ -15,9 +16,18 @@ const mocks = vi.hoisted(() => ({
   openSettingsSection: vi.fn(),
   openImportSheet: vi.fn(),
   startFrom: vi.fn(),
+  warmHome: vi.fn(),
   changed: new EventTarget(),
 }));
-vi.mock("../../ports/recs", () => ({ recs: { suppressions: mocks.suppressions }, recsChanged: mocks.changed }));
+vi.mock("../../ports/recs", async () => {
+  const { create } = await import("zustand");
+  return {
+    recs: { suppressions: mocks.suppressions },
+    recsChanged: mocks.changed,
+    useWarmup: create(() => ({ phase: "idle", seeds: [] as string[] })),
+    warmHome: mocks.warmHome,
+  };
+});
 vi.mock("../../ports/starters", () => ({ coldStartNeeded: mocks.coldStart, startFromPicks: mocks.startFrom }));
 vi.mock("../../ports/network", () => ({ useStreamingReachable: () => true }));
 vi.mock("../../ports/importSources", () => ({ IMPORT_SOURCES: ["spotify", "apple"], openImportSheet: mocks.openImportSheet }));
@@ -44,6 +54,7 @@ beforeEach(() => {
   mocks.coldStart.mockResolvedValue(false);
   mocks.suppressions.mockResolvedValue([{ suppressionId: 1 }]);
   useTour.setState({ phase: "off" });
+  useWarmup.setState({ phase: "idle", seeds: [] });
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -53,14 +64,30 @@ afterEach(() => {
 const button = (text: string) => [...host.querySelectorAll("button")].find((b) => b.textContent === text);
 
 describe("ColdStart", () => {
-  it("asks for a few songs or artists when nothing tells the taste yet, then leaves the space to the station's mixes", async () => {
+  it("asks for a few songs or artists when nothing tells the taste yet, then shows Home being built", async () => {
     mocks.coldStart.mockResolvedValue(true);
-    mocks.startFrom.mockResolvedValue(true);
+    mocks.startFrom.mockImplementation(async () => {
+      useWarmup.setState({ phase: "building", seeds: ["s1"] });
+      return true;
+    });
     await act(async () => root.render(<ColdStart />));
     await act(async () => button("start-with-picks")!.click());
     expect(mocks.startFrom).toHaveBeenCalledWith([{ kind: "song", id: "s1", title: "Teardrop" }]);
     expect(host.textContent).not.toContain("ui.recs.home.empty_title");
     expect(button("start-with-picks")).toBeUndefined();
+    const status = host.querySelector("[data-building]")!;
+    expect(status.getAttribute("role")).toBe("status");
+    expect(status.textContent).toBe("ui.recs.home.building");
+  });
+
+  it("when no source answered for the picks, says so and tries the same picks again", async () => {
+    useWarmup.setState({ phase: "failed", seeds: ["s1", "t2"] });
+    await act(async () => root.render(<ColdStart />));
+    expect(host.textContent).toContain("ui.recs.home.offline_title");
+    act(() => button("ui.recs.home.retry")!.click());
+    expect(mocks.warmHome).toHaveBeenCalledWith(["s1", "t2"]);
+    act(() => button("ui.recs.home.search")!.click());
+    expect(mocks.openSearch).toHaveBeenCalled();
   });
 
   it("stays on the ask when the picks could not be saved", async () => {

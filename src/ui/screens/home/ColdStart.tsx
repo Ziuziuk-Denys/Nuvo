@@ -1,10 +1,10 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useState, type CSSProperties, type JSX } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { useTranslation } from "../../ports/i18n";
 import { IMPORT_SOURCES, openImportSheet } from "../../ports/importSources";
 import { useModalStore } from "../../ports/navigation";
 import { useStreamingReachable } from "../../ports/network";
-import { recsChanged } from "../../ports/recs";
+import { recsChanged, useWarmup, warmHome } from "../../ports/recs";
 import { coldStartNeeded, startFromPicks } from "../../ports/starters";
 import { TastePicker } from "../../recs/TastePicker";
 import { ServiceMark } from "../../tour/ServiceMark";
@@ -12,14 +12,28 @@ import { useTour } from "../../tour/tourStore";
 import styles from "./ColdStart.module.css";
 
 const COLD_ROWS = 5;
+const OUTLINE_CARDS = 4;
+
+function Building(): JSX.Element {
+  const { t } = useTranslation();
+  return (
+    <div className={styles.building} role="status" data-building="">
+      <div className={styles.outline} aria-hidden="true">
+        {Array.from({ length: OUTLINE_CARDS }, (_, index) => (
+          <span key={index} className={styles.card} data-lead={index === 0 ? "" : undefined} style={{ "--i": index } as CSSProperties} />
+        ))}
+      </div>
+      <p className={styles.note}>{t("ui.recs.home.building")}</p>
+    </div>
+  );
+}
 
 export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Element | null {
   const { t } = useTranslation();
   const online = useStreamingReachable();
   const tourOff = useTour((state) => state.phase === "off");
   const [cold, setCold] = useState<boolean | null>(null);
-  // after "Start listening" a station plays and Home refetches its mixes, so "nothing to suggest" would be wrong
-  const [started, setStarted] = useState(false);
+  const warmup = useWarmup((state) => state.phase);
 
   useEffect(() => {
     let live = true;
@@ -36,7 +50,20 @@ export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Ele
     };
   }, []);
 
-  if (cold === null || started) return null;
+  if (warmup === "building") return <Building />;
+  if (warmup === "failed") {
+    return (
+      <EmptyState
+        title={t("ui.recs.home.offline_title")}
+        message={t("ui.recs.home.offline_message")}
+        actions={[
+          { label: t("ui.recs.home.retry"), primary: true, onClick: () => void warmHome(useWarmup.getState().seeds) },
+          { label: t("ui.recs.home.search"), onClick: () => useModalStore.getState().openSearch() },
+        ]}
+      />
+    );
+  }
+  if (cold === null) return null;
   if (cold && online && tourOff) {
     return (
       <div className={styles.ask} data-cold-ask="">
@@ -45,16 +72,7 @@ export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Ele
             {t("ui.recs.start.title")}
           </h2>
           <p className={styles.message}>{t("ui.recs.start.message")}</p>
-          <TastePicker
-            className={styles.picker}
-            action={t("ui.recs.start.go")}
-            rows={COLD_ROWS}
-            start={async (picks) => {
-              const ok = await startFromPicks(picks);
-              if (ok) setStarted(true);
-              return ok;
-            }}
-          />
+          <TastePicker className={styles.picker} action={t("ui.recs.start.go")} rows={COLD_ROWS} start={startFromPicks} />
         </section>
         {onImport ? (
           <section className={styles.import} aria-labelledby="cold-import-title">

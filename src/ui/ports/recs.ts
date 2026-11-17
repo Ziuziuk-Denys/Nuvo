@@ -1,6 +1,7 @@
-import { catalog, player, usePlayerView } from "@/engine";
+import { catalog, player, usePlayerView, warmPool } from "@/engine";
 import { createContinuation } from "@/engine/adapters";
 import { useEffect, useState } from "react";
+import { create } from "zustand";
 import { coreRequest } from "@/data/core/request";
 import { CORE_BASE_URL } from "@/engine/boot";
 import type { Suggested } from "@/engine/continuation";
@@ -122,7 +123,25 @@ export async function seedFavorites(picks: FavoritePick[]): Promise<Track[]> {
   const saved = await recs.saveStarters(tracks);
   if (saved !== true) throw new Error(`starters not saved: ${saved}`);
   recsChanged.dispatchEvent(new Event("change"));
+  void warmHome([...new Set(lists.flatMap((list) => list.slice(0, 1).map((track) => track.id)))]);
   return tracks;
+}
+
+export const useWarmup = create<{ phase: "idle" | "building" | "failed"; seeds: string[] }>(() => ({ phase: "idle", seeds: [] }));
+
+export async function warmHome(seeds: readonly string[]): Promise<void> {
+  useWarmup.setState({ phase: "building", seeds: [...seeds] });
+  let stored = 0;
+  try {
+    await warmPool(seeds, () => {
+      stored += 1;
+      recsChanged.dispatchEvent(new Event("change"));
+    });
+    // Home asked for its mixes on the last change; that answer lands before the skeleton goes
+    if (stored > 0) await recs.homeMixes();
+  } finally {
+    useWarmup.setState({ phase: stored > 0 ? "idle" : "failed" });
+  }
 }
 
 export async function suggest(playlistId: string, trackIds: readonly string[]): Promise<Suggested[]> {

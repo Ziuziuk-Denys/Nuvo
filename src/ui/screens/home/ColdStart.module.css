@@ -100,3 +100,51 @@
     transform: none;
   }
 }
+
+/* Mirrors the mix row: one lead card, then the smaller ones, bottoms aligned */
+.building {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-3);
+}
+
+.outline {
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  overflow: hidden;
+}
+
+.card {
+  flex: none;
+  width: 175px;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: var(--n-fill);
+  animation: breathe 1.6s ease-in-out calc(var(--i) * 120ms) infinite alternate both;
+}
+
+.card[data-lead] {
+  width: 240px;
+}
+
+.note {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+}
+
+@keyframes breathe {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+}
