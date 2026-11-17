@@ -99,3 +99,11 @@ export function dockLeft(ring: Box | null, viewWidth: number, dockWidth: number,
   if (rightOfRing + dockWidth <= viewWidth - EDGE) return Math.max(centred, rightOfRing);
   return centred;
 }
+
+// an even-odd polygon: the window minus the outline, so presses inside it reach the real control
+export function holeClip(ring: Ring): string {
+  const { x, y, width, height } = ring;
+  const right = x + width;
+  const bottom = y + height;
+  return `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${x}px ${y}px, ${right}px ${y}px, ${right}px ${bottom}px, ${x}px ${bottom}px, ${x}px ${y}px)`;
+}

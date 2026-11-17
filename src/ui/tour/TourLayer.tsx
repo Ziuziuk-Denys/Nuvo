@@ -7,7 +7,7 @@ import { useGateStore } from "../screens/lock/gateState";
 import { Brief } from "./Brief";
 import { Callout } from "./Callout";
 import { chapterById, type Step } from "./chapters";
-import { dockLeft, dockOnTop, ringAround, type Area, type Box, type Ring } from "./placement";
+import { type Area, type Box, dockLeft, dockOnTop, holeClip, ringAround } from "./placement";
 import { runStep } from "./runStep";
 import { SkipPrompt } from "./SkipPrompt";
 import { StartStep } from "./StartStep";
@@ -38,14 +38,6 @@ function useWindowSize(): { width: number; height: number } {
     return () => window.removeEventListener("resize", onResize);
   }, []);
   return size;
-}
-
-/* An even-odd polygon: the whole window minus the outline, so presses inside the outline reach the real control */
-function holeClip(ring: Ring): string {
-  const { x, y, width, height } = ring;
-  const right = x + width;
-  const bottom = y + height;
-  return `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${x}px ${y}px, ${right}px ${y}px, ${right}px ${bottom}px, ${x}px ${bottom}px, ${x}px ${y}px)`;
 }
 
 function cycleFocus(event: KeyboardEvent, scope: HTMLElement[]): void {

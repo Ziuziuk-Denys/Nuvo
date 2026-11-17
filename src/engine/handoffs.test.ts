@@ -373,6 +373,18 @@ describe("commands from main", () => {
     expect(h.engine.getView().volume).toBe(0.23);
   });
 
+  it("a repeated song is prepared at the speed it plays, even when speed resets between songs", async () => {
+    const h = createHarness();
+    await start(h, list("a", "b"));
+    h.engine.setKeepTempo(false);
+    h.engine.setTempo({ rate: 1.25 });
+    h.engine.setRepeat("one");
+    await flush();
+    const prepared = h.deck.candidates.filter(Boolean).at(-1)!;
+    expect(prepared.trackId).toBe(y("a"));
+    expect(prepared.tempo.rate).toBe(1.25);
+  });
+
   it("neighbour prefetch touches only the next entry, once per pair", async () => {
     const h = createHarness();
     const tracks = ["a", "b", "c", "d"].map((l) => track(y(l), { coverUrl: `https://i.ytimg.com/${l}.jpg` }));

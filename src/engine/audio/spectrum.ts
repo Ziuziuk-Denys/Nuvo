@@ -9,6 +9,8 @@ export const CLIP_HOLD_MS = 500;
 export interface SpectrumFrame {
   bands: Float32Array;
   clip: boolean;
+  wave: Float32Array;
+  sampleRate: number;
 }
 export type SpectrumListener = (frame: SpectrumFrame) => void;
 
@@ -60,7 +62,7 @@ export function createSpectrumTap(context: AudioContext, source: AudioNode): Spe
         break;
       }
     }
-    const frame = { bands: bands.slice(), clip: now < clipUntil };
+    const frame = { bands: bands.slice(), clip: now < clipUntil, wave: wave.slice(), sampleRate: context.sampleRate };
     for (const listener of [...listeners]) listener(frame);
     if (analyser) schedule();
   }

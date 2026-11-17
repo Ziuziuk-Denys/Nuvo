@@ -9,6 +9,8 @@ import { DURATION_MS, EASE, seconds } from "../motion";
 import { useTranslation } from "../ports/i18n";
 import { bootImports } from "../ports/importsRuntime";
 import { Karaoke, KaraokeOverlay } from "../ports/karaoke";
+import { Studio } from "../visual/Studio";
+import { useStudioOpen } from "../visual/studio";
 import { useDisableButtonFocus, useModalStore, useWindowState } from "../ports/navigation";
 import { onShareLink } from "../ports/links";
 import { playerEngine, usePlayerStore } from "../ports/player";
@@ -78,6 +80,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const pageLit = usePageLit();
 
   const onKaraokeRoute = pathname === KARAOKE_PATH;
+  const studioOpen = useStudioOpen();
   const karaokeShown = fullscreen || onKaraokeRoute;
   useUndoToast(trackLoaded && !karaokeShown && !gated);
 
@@ -185,6 +188,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
       <LyricsToolsHost />
       <TourLayer />
       <KaraokeOverlay open={fullscreen} onClose={() => setFullscreen(false)} />
+      {studioOpen ? <Studio /> : null}
       {!fullscreen && onKaraokeRoute ? (
         <div className={styles.karaoke} data-theme="dark">
           <Karaoke onClose={leaveKaraoke} />

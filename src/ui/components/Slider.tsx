@@ -9,12 +9,13 @@ export interface SliderProps {
   onChange: (value: number) => void;
   label: string;
   format?: (value: number) => string;
+  hideValue?: boolean;
 }
 
 const KNOB_PX = 14;
 const PAGE_STEPS = 10;
 
-export function Slider({ value, min, max, step, onChange, label, format }: SliderProps): JSX.Element {
+export function Slider({ value, min, max, step, onChange, label, format, hideValue = false }: SliderProps): JSX.Element {
   const dragging = useRef(false);
   const span = max - min;
   const progress = span > 0 ? (clamp(value, min, max) - min) / span : 0;
@@ -86,7 +87,7 @@ export function Slider({ value, min, max, step, onChange, label, format }: Slide
           <span className={styles.knob} />
         </span>
       </div>
-      <span className={styles.value}>{text}</span>
+      {hideValue ? null : <span className={styles.value}>{text}</span>}
     </div>
   );
 }

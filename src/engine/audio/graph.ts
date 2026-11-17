@@ -10,6 +10,7 @@ export const SLEEP_RAMP_S = 0.3;
 export const MASK_RAMP_S = 0.008;
 export const REVERB_CLOSED_AT = 0.01;
 export const REVERB_WET_SCALE = 1.2;
+export const REVERB_HIGHPASS_HZ = 120;
 export const ANALYSER_FFT = 4096;
 /** The send ramps to zero in about 20 ms; the edge is cut after the ramp has settled. */
 const SEND_CLOSE_MS = 200;
@@ -121,7 +122,7 @@ export class AudioGraph {
     this.convolver = this.own(ctx.createConvolver());
     const highpass = this.own(ctx.createBiquadFilter());
     highpass.type = "highpass";
-    highpass.frequency.value = 120;
+    highpass.frequency.value = REVERB_HIGHPASS_HZ;
     highpass.Q.value = 0.7;
     this.wet = this.own(ctx.createGain());
     this.wet.gain.value = 0;

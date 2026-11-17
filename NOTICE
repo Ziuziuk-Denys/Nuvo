@@ -1,0 +1,12 @@
+Nuvo
+Copyright (C) 2026 Denys Ziuziuk
+
+Nuvo is licensed under the GNU Affero General Public License, version 3 or any later version (see LICENSE), with the additional term below.
+
+Additional term under section 7(b) of the AGPL-3.0
+
+Any version of Nuvo, modified or not, that contains the visual engine (src/visual) must keep this author attribution, legible and unchanged, in the Appropriate Legal Notices it displays, such as its About screen:
+
+    Visual engine by Denys Ziuziuk and contributors · nuvo.quest
+
+This term only asks for attribution. It adds no other restriction, and it does not require any mark in the media the program produces.

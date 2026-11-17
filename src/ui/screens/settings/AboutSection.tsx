@@ -10,6 +10,9 @@ import { HelpLinks, ReleaseNotes } from "./HelpSheets";
 import { AutoUpdateRow, UpdateStatus } from "./UpdateRows";
 import { CommunityLinks } from "./CommunityLinks";
 
+// required by the AGPL section 7(b) term in NOTICE; a legal notice, so it is never translated
+const ENGINE_CREDIT = "Visual engine by Denys Ziuziuk and contributors · nuvo.quest";
+
 export function AboutSection(): JSX.Element {
   const { t } = useTranslation();
   const version = useAppVersion();
@@ -31,6 +34,7 @@ export function AboutSection(): JSX.Element {
           <div className={styles.aboutText}>
             <span className={styles.aboutName}>{t("settings.about.nuvo")}</span>
             <span className={styles.version}>{version}</span>
+            <span className={styles.version}>{ENGINE_CREDIT}</span>
           </div>
         </div>
       ) : null}

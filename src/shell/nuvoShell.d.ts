@@ -148,6 +148,18 @@ export interface NuvoShell {
   recognizeFile(file: File): Promise<{ id: string } | null>;
   saveAsFiles(request: SaveFilesRequest): Promise<{ jobId: string } | { error: string } | null>;
   saveDocument(request: SaveDocumentRequest): Promise<{ path: string } | { error: string } | null>;
+  clipBegin(name: string): Promise<{ id: string } | null>;
+  clipWrite(id: string, bytes: Uint8Array): Promise<boolean>;
+  clipAudio(id: string, bytes: Uint8Array): Promise<boolean>;
+  clipFinish(request: {
+    id: string;
+    trackId: string;
+    startMs: number;
+    lenMs: number;
+    fps: number;
+    fadeMs: number;
+  }): Promise<{ path: string } | { error: string } | null>;
+  clipCancel(id: string): Promise<void>;
   appearanceReady(): void;
   appearanceApplying(): void;
   /** Tooltips for the Windows taskbar buttons, in the app language. */

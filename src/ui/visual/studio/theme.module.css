@@ -1,0 +1,146 @@
+/* the studio is always dark; its portalled popovers take these tokens too */
+.dark {
+  --s-bg: #0c0c0e;
+  --s-panel: rgba(22, 22, 24, 0.86);
+  --s-panel-solid: #161618;
+  --s-rail: #0f0f11;
+  --s-columns: 360px minmax(0, 1fr) 312px;
+  --s-raised: #1f1f23;
+  --s-line: rgba(255, 255, 255, 0.06);
+  --n-ink: #f2f2f4;
+  --n-ink-2: rgba(242, 242, 244, 0.66);
+  --n-ink-3: rgba(242, 242, 244, 0.46);
+  --n-field: #161618;
+  --n-deep: #0c0c0e;
+  --n-raised: #26262b;
+  --n-accent: #2997ff;
+  --n-tray: rgba(255, 255, 255, 0.05);
+  --n-tray-hover: rgba(255, 255, 255, 0.09);
+  --n-tray-item-hover: rgba(255, 255, 255, 0.07);
+  --n-tray-edge: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --n-lens: rgba(255, 255, 255, 0.14);
+  --n-lens-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --n-switch: rgba(255, 255, 255, 0.12);
+  --n-fill: rgba(255, 255, 255, 0.08);
+  --n-hair: rgba(255, 255, 255, 0.08);
+  --n-focus-glow: 0 0 0 3px rgba(41, 151, 255, 0.35);
+  --n-pop-solid: #1c1c20;
+  --n-panel-rim: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 48px rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
+}
+
+.panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--s-panel);
+}
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 44px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--s-line);
+}
+
+.title {
+  margin: 0;
+  font: var(--n-type-label);
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  font: var(--n-type-caption);
+  color: var(--n-ink-3);
+}
+
+.icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-ink-2);
+  cursor: pointer;
+  transition:
+    background var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out);
+}
+
+.icon:hover:not(:disabled),
+.icon:focus-visible {
+  outline: none;
+  background: var(--n-tray-hover);
+  color: var(--n-ink);
+}
+
+.icon:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--n-accent);
+  color: #04182c;
+  font: var(--n-type-label);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    opacity var(--n-t-quick) var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
+}
+
+.primary:hover {
+  opacity: 0.9;
+}
+
+.primary:active {
+  transform: scale(0.97);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--n-focus-glow);
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--n-tray-hover);
+  color: var(--n-ink);
+  font: var(--n-type-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--n-t-quick) var(--n-ease-out);
+}
+
+.secondary:hover {
+  background: var(--n-lens);
+}

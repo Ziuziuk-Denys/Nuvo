@@ -17,6 +17,7 @@ export const SETTING_ITEMS: SettingItem[] = [
   playback("settings.track_double_click"),
   playback("settings.default_playback_context"),
   playback("settings.lyrics_highlight"),
+  playback("settings.visual_player"),
   row("Playback", "ui.settings.close_to_tray.title", "ui.settings.close_to_tray.description"),
   row("Playback", "ui.settings.menu_entry.title", "ui.settings.menu_entry.description"),
   row("Playback", "ui.settings.stats_pause.title", "ui.settings.stats_pause.description"),

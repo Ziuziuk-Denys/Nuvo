@@ -1,6 +1,6 @@
 import { act, type JSX } from "react";
 import { createRoot } from "react-dom/client";
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import look from "./look.json";
 import { RISE_CURVE, bezierY } from "./rise";
 
@@ -123,6 +123,7 @@ vi.mock("./LyricsPane", () => ({
 import { setHighlightMode } from "./highlightMode";
 import { Karaoke } from "./Karaoke";
 import { KaraokeOverlay } from "./KaraokeOverlay";
+import { setVisualSettings } from "../visual/settings";
 
 function mount(node: JSX.Element) {
   const host = document.createElement("div");
@@ -137,6 +138,10 @@ function mount(node: JSX.Element) {
     },
   };
 }
+
+beforeEach(() => {
+  setVisualSettings({ chosen: true });
+});
 
 afterEach(() => {
   vi.useRealTimers();

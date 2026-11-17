@@ -400,7 +400,7 @@ This is a direction, not a schedule. Details are in [the roadmap](https://nuvo.q
 
 ## Licence
 
-Nuvo is licensed under the [GNU AGPL-3.0-or-later](LICENSE). [LICENSING.md](LICENSING.md) has a plain summary, and a commercial licence is available from the author. [TRADEMARKS.md](TRADEMARKS.md) covers the name and the mark. [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES) lists third-party software and icon sets.
+Nuvo is licensed under the [GNU AGPL-3.0-or-later](LICENSE), with one added term in [NOTICE](NOTICE): versions that contain the visual engine keep its author credit in the About screen. [LICENSING.md](LICENSING.md) has a plain summary, and a commercial licence is available from the author. [TRADEMARKS.md](TRADEMARKS.md) covers the name and the mark. [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES) lists third-party software and icon sets.
 
 <div align="center">
 

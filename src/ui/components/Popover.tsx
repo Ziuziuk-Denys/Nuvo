@@ -16,6 +16,7 @@ export interface PopoverProps {
   trailing?: ReactNode;
   showClose?: boolean;
   solid?: boolean;
+  className?: string;
   onWheel?: (event: WheelEvent<HTMLDivElement>) => void;
   children: ReactNode;
 }
@@ -65,6 +66,7 @@ function PopoverPanel({
   trailing,
   showClose = false,
   solid = false,
+  className,
   onWheel,
   children,
   phase,
@@ -135,7 +137,12 @@ function PopoverPanel({
   } as CSSProperties;
 
   return createPortal(
-    <div className={styles.frame} style={frameStyle} data-settled={settled ? "" : undefined} {...{ [LAYER_ATTRIBUTE]: "" }}>
+    <div
+      className={className ? `${styles.frame} ${className}` : styles.frame}
+      style={frameStyle}
+      data-settled={settled ? "" : undefined}
+      {...{ [LAYER_ATTRIBUTE]: "" }}
+    >
       <div
         ref={panelRef}
         role="dialog"

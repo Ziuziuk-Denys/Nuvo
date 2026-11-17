@@ -66,7 +66,10 @@ beforeAll(async () => {
   });
   main = await app.firstWindow();
   await main.waitForFunction(() => Boolean(window.nuvoShell));
-  await main.evaluate(() => localStorage.setItem("nuvo.e2e", "1"));
+  await main.evaluate(() => {
+    localStorage.setItem("nuvo.e2e", "1");
+    localStorage.setItem("nuvo.visual", JSON.stringify({ chosen: true }));
+  });
   await main.reload();
   await main.waitForFunction(() => Boolean((window as unknown as { __nuvoLyrics?: unknown }).__nuvoLyrics), undefined, { timeout: 60_000 });
   await main.waitForFunction(async () => (await window.nuvoShell!.getCoreStatus()) === "ready", undefined, { timeout: 60_000 });

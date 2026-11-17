@@ -1,6 +1,14 @@
 const files = import.meta.glob<string>("./svg/*.svg", { query: "?raw", import: "default", eager: true });
 
 export const ICON_NAMES = [
+  "studio-scenes",
+  "studio-background",
+  "studio-effects",
+  "studio-centre",
+  "studio-text",
+  "studio-media",
+  "studio-in",
+  "studio-out",
   "play",
   "pause",
   "next",

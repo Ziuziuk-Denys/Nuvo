@@ -771,7 +771,7 @@
         "waiting": "Getting ready",
         "running": "Timing words {percent}%",
         "improving": "Improving {percent}%",
-        "improve": "Improve timing",
+        "improve": "Recognise again, more precisely",
         "no_lines": "Word timing needs lyrics with timed lines",
         "no_audio": "The song is not saved on this computer yet",
         "no_ffmpeg": "Word timing waits for ffmpeg to download",
@@ -800,7 +800,9 @@
         "timed": "Timed by Nuvo, may be off in places",
         "edit": "Edit",
         "replace": "Replace"
-      }
+      },
+      "stage_on": "Show the scene",
+      "stage_off": "Show the lyrics"
     },
     "local": {
       "add_folder": "Add a music folder",
@@ -875,10 +877,10 @@
       "translating": "Translating",
       "use_found": "Use the found lyrics",
       "version_plain": "Plain text",
-      "version_synced": "Timed by line",
+      "version_synced": "Line by line",
       "version_word": "Timed by word",
       "version_own": "Your lyrics",
-      "version_timed": "Timed on this computer",
+      "version_timed": "Word by word, recognised",
       "version_written": "Written by Nuvo",
       "find": "Find lyrics",
       "find_title": "Title",
@@ -2058,6 +2060,318 @@
       "updates": "Updates",
       "help": "Help",
       "moving": "Space"
+    },
+    "visual_player": {
+      "title": "Scene",
+      "description": "Experimental. In the karaoke view the song draws a scene that moves with the music and carries the lyrics."
+    }
+  },
+  "visual": {
+    "editor": {
+      "edit": "Edit the scene",
+      "background": "Background",
+      "atmosphere": "Effects",
+      "centrepiece": "Centre",
+      "lyrics": "Lyrics",
+      "frame": "Frame",
+      "balance": "Balance",
+      "calm": "Calm",
+      "full": "Full",
+      "busy": "A lot at once",
+      "random": "Random per song",
+      "own": "Every song",
+      "busy_note": "The lyrics got lighter so the centre has room.",
+      "weather_note": "One weather at a time.",
+      "heavy_note": "Some effects were left out to keep it clear.",
+      "colour_a": "Light",
+      "colour_b": "Dark"
+    },
+    "part": {
+      "cover": {
+        "title": "Cover glow",
+        "description": "The cover, blurred and drifting"
+      },
+      "night": {
+        "title": "Night",
+        "description": "A darker, quieter cover glow"
+      },
+      "still": {
+        "title": "Cover",
+        "description": "The cover, sharp, slowly moving"
+      },
+      "white": {
+        "title": "White",
+        "description": "Clean white page"
+      },
+      "sheet": {
+        "title": "Paper",
+        "description": "Paper tinted by the cover"
+      },
+      "black": {
+        "title": "Black",
+        "description": "Deep black from the cover"
+      },
+      "duo": {
+        "title": "Two colours",
+        "description": "Flips between two colours on the beat"
+      },
+      "columns": {
+        "title": "Columns",
+        "description": "The cover cut into colour columns"
+      },
+      "ascii": {
+        "title": "Text video",
+        "description": "Your video drawn in characters"
+      },
+      "glass": {
+        "title": "Fogged glass",
+        "description": "Rain drops on a fogged window"
+      },
+      "dusk": {
+        "title": "Dusk",
+        "description": "Dark, monochrome, flashes on drops"
+      },
+      "dusk-colour": {
+        "title": "Dusk in colour",
+        "description": "Dark cover with light rays"
+      },
+      "snow": {
+        "title": "Snow",
+        "description": "Soft flakes at three depths"
+      },
+      "rain": {
+        "title": "Rain",
+        "description": "Slanted rain behind everything"
+      },
+      "dust": {
+        "title": "Dust",
+        "description": "Fine dust and soft specks"
+      },
+      "streak": {
+        "title": "Light streak",
+        "description": "A streak of light on accents"
+      },
+      "petals": {
+        "title": "Petals",
+        "description": "Soft shapes drifting past"
+      },
+      "film": {
+        "title": "Film",
+        "description": "Grain, flicker, scratches, black and white"
+      },
+      "emblem": {
+        "title": "Chrome emblem",
+        "description": "Chrome ring, thorns and a ribbon"
+      },
+      "liquid": {
+        "title": "Liquid",
+        "description": "A ring of liquid that moves on the beat"
+      },
+      "disc": {
+        "title": "Disc",
+        "description": "The cover as a round disc"
+      },
+      "orbit": {
+        "title": "Orbit",
+        "description": "A spectrum ribbon around the cover"
+      },
+      "ink": {
+        "title": "Ink",
+        "description": "The waveform drawn like charcoal"
+      },
+      "ridgeline": {
+        "title": "Ridges",
+        "description": "The spectrum as receding lines"
+      },
+      "line": {
+        "title": "Line",
+        "description": "The current line, clean and large"
+      },
+      "whisper": {
+        "title": "Whisper",
+        "description": "A small italic line below"
+      },
+      "paper": {
+        "title": "Word by word",
+        "description": "Words appear as they are sung"
+      },
+      "kinetic": {
+        "title": "Kinetic",
+        "description": "Words punch in on the beat"
+      },
+      "collage": {
+        "title": "Collage",
+        "description": "Words flicker between typefaces"
+      },
+      "lens": {
+        "title": "Lens",
+        "description": "Letters bend what is behind them"
+      },
+      "chrome-type": {
+        "title": "Chrome type",
+        "description": "Letters made of polished chrome"
+      },
+      "glitch": {
+        "title": "Glitch",
+        "description": "Letters tear and split on hits"
+      },
+      "extrude": {
+        "title": "Depth",
+        "description": "Letters extruded in 3D"
+      },
+      "wipe": {
+        "title": "Wiped glass",
+        "description": "The line is wiped clear in the fog"
+      },
+      "smoke": {
+        "title": "Smoke",
+        "description": "Lines dissolve like smoke"
+      },
+      "media": {
+        "title": "Your media",
+        "description": "Your photo or video"
+      }
+    },
+    "param": {
+      "dim": "Brightness",
+      "bloom": "Glow on bass",
+      "speed": "Speed",
+      "zoom": "Zoom",
+      "drift": "Drift",
+      "tint": "Cover tint",
+      "fibre": "Paper texture",
+      "bright": "Brightness",
+      "wave": "Wave in letters",
+      "pulse": "Pulse",
+      "count": "Columns",
+      "levels": "Tones",
+      "flicker": "Flicker",
+      "original": "Original colours",
+      "cell": "Character size",
+      "fog": "Fog",
+      "tear": "Tears",
+      "noise": "Static",
+      "drops": "Drops",
+      "blur": "Blur",
+      "rays": "Light rays",
+      "amount": "Amount",
+      "size": "Size",
+      "wind": "Wind",
+      "slant": "Slant",
+      "density": "Density",
+      "chance": "How often",
+      "scratches": "Scratches",
+      "letterbox": "Letterbox",
+      "radius": "Size",
+      "ears": "Ears on bass",
+      "thorns": "Thorns",
+      "amp": "Movement",
+      "second": "Second ribbon",
+      "lobes": "Bass lobes",
+      "keep": "Trail",
+      "pressure": "Pressure",
+      "lines": "Lines",
+      "height": "Height",
+      "strength": "Strength",
+      "depth": "Depth",
+      "rise": "Rise",
+      "swirl": "Swirl"
+    },
+    "studio": {
+      "title": "Scene studio",
+      "back": "Back",
+      "use": "Use as player",
+      "rail_scenes": "Scenes",
+      "rail_background": "Background",
+      "rail_atmosphere": "Effects",
+      "rail_centrepiece": "Centre",
+      "rail_lyrics": "Text",
+      "rail_media": "Media",
+      "import": "Add a photo or video",
+      "import_hint": "It stays on this computer and plays behind the scene.",
+      "media_in_use": "Your media is the background now.",
+      "undo": "Undo",
+      "redo": "Redo",
+      "mark_in": "Start the clip here",
+      "mark_out": "End the clip here",
+      "nothing_to_tune": "This scene has nothing to tune.",
+      "reset_part": "Reset {name}",
+      "use_options": "Where it plays",
+      "effects_full": "Up to {max} effects. Turn one off to add this one.",
+      "clip": "Clip {length}",
+      "fit": "Show the whole song",
+      "zoom": "Zoom",
+      "pick_weather": "One weather at a time. Turn the other one off first.",
+      "pick_heavy": "The scene is full. Turn off an effect or pick a lighter text style.",
+      "pick_background": "{part} needs the {background} background, so it is on now.",
+      "pick_calm": "{part} would cover the centre, so the text is {calm} for now."
+    },
+    "scene": {
+      "kinetic-ice": "Ice",
+      "emblem": "Emblem",
+      "ascii": "Signal",
+      "glass": "Glass",
+      "film": "Film",
+      "kinetic-lens": "Lens",
+      "kinetic-glitch": "Glitch",
+      "kinetic-chrome": "Chrome",
+      "kinetic-3d": "Depth",
+      "kinetic-rain": "Rain type",
+      "snowfall": "Snowfall",
+      "rain": "Night rain"
+    },
+    "export": {
+      "open": "Export",
+      "title": "Export clip",
+      "quality": "Quality",
+      "smoothness": "Smoothness",
+      "cancel": "Cancel",
+      "show": "Show in folder",
+      "start": "Save clip",
+      "about": "About {size}",
+      "rendering": "Rendering {percent} %",
+      "length": "Length",
+      "clip": "Clip {length}",
+      "song": "Whole song {length}",
+      "fade": "Fade in and out"
+    },
+    "done": {
+      "title": "Your clip is ready",
+      "tiktok": "Post on TikTok",
+      "tiktok_hint": "TikTok opens in your browser; drop the saved file into its upload page.",
+      "caption": "Caption for the post",
+      "copy": "Copy",
+      "copied": "Copied",
+      "close": "Done",
+      "style_song": "Song",
+      "style_line": "Line",
+      "style_short": "Short",
+      "credit": "made with nuvo"
+    },
+    "tour": {
+      "label": "Getting to know the scene",
+      "intro": "This is the Scene: the song draws its own picture to the beat, and the words come in as they are sung. Let us make it yours.",
+      "switch": "This button brings karaoke back. Press it any time to switch.",
+      "edit": "Press the pencil to open the studio, where the scene is yours to change.",
+      "browser": "Pick a ready scene here, or build one from a background, effects, a centrepiece and a text style. The icons on the left switch between them.",
+      "player": "Every change shows here at once. Above it you choose the frame: phone, square or wide.",
+      "inspector": "Fine-tune each part of the scene: brightness, motion, colours. The arrow resets a part.",
+      "timeline": "Pick the moment for a clip: drag the blue edges, scroll to move, Ctrl and the wheel to zoom.",
+      "export": "Export saves the clip as a video for TikTok, Reels or Shorts, with the song under it.",
+      "use": "Press Use as player to make this scene what you see while you listen.",
+      "next": "Next",
+      "done": "Done",
+      "count": "{step} of {total}",
+      "press": "Press the highlighted button"
+    },
+    "choice": {
+      "title": "How should songs look?",
+      "scene": "Scene",
+      "scene_note": "The song draws itself to the beat.",
+      "karaoke": "Karaoke",
+      "karaoke_note": "Large lyrics, line by line.",
+      "later": "Click the half you like. You can switch back any time.",
+      "here": "Switch between karaoke and the scene here, any time."
     }
   }
 }

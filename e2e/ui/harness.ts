@@ -112,6 +112,8 @@ export async function launchNuvo(options: { profile: "fresh" | "seeded"; locale?
     const cdp = await main.context().newCDPSession(main);
     await cdp.send("Page.setBypassCSP", { enabled: true });
     await serveFixtureCovers(main);
+    // the karaoke view asks once how songs should look; only the visual tests answer it
+    await main.evaluate(() => localStorage.setItem("nuvo.visual", JSON.stringify({ chosen: true })));
 
     let currentLook: Look | null = null;
     let closed = false;

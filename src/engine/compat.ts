@@ -270,6 +270,7 @@ export const pitchShifter = {
   getAnalyser: () => soundBus().analyser(),
   subscribeSpectrum: (listener: SpectrumListener) => soundBus().subscribeSpectrum(listener),
   setEq: (state: Parameters<ReturnType<typeof soundBus>["shapeEq"]>[0]) => soundBus().shapeEq(state),
+  effects: (trackId: string) => soundBus().effects(trackId),
   setNormalizationDb: (db: number) => {
     const id = player().getView().current?.track.id;
     if (id) soundBus().setTrackGainDb(id, db);

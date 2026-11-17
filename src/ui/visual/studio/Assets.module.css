@@ -1,0 +1,186 @@
+.assets {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--s-panel-solid);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px 8px;
+  min-height: 0;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.tile {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-ink-2);
+  text-align: start;
+  cursor: pointer;
+  animation: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 24ms);
+  transition: opacity var(--n-t-base) var(--n-ease-out);
+}
+
+.tile[data-dim] {
+  opacity: 0.42;
+}
+
+.art {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 9 / 16;
+  border-radius: 8px;
+  background: var(--s-raised);
+  transition:
+    transform var(--n-t-quick) var(--n-ease-out),
+    box-shadow var(--n-t-quick) var(--n-ease-out);
+}
+
+.art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter var(--n-t-quick) var(--n-ease-out);
+}
+
+.tile:hover .art {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.tile:hover .art img {
+  filter: brightness(1.08);
+}
+
+.tile:focus-visible {
+  outline: none;
+}
+
+.tile:focus-visible .art {
+  box-shadow: var(--n-focus-glow);
+}
+
+.tile[aria-selected="true"] .art {
+  box-shadow: 0 0 0 2px var(--n-accent);
+}
+
+.check {
+  animation: pop 260ms cubic-bezier(0.2, 0.7, 0.2, 1.3) both;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--n-accent);
+  color: #04182c;
+}
+
+.name {
+  overflow: hidden;
+  font: var(--n-type-caption);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tile[aria-selected="true"] .name {
+  color: var(--n-ink);
+}
+
+.media {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.drop {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: var(--n-tray);
+  color: var(--n-ink-2);
+  text-align: center;
+  cursor: pointer;
+  transition: background var(--n-t-quick) var(--n-ease-out);
+}
+
+.drop b {
+  font: var(--n-type-label);
+  color: var(--n-ink);
+}
+
+.drop span {
+  font: var(--n-type-caption);
+  color: var(--n-ink-3);
+}
+
+.drop:hover,
+.drop:focus-visible {
+  outline: none;
+  background: var(--n-tray-hover);
+}
+
+.notice {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #26262b;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(0, 0, 0, 0.45);
+  color: var(--n-ink);
+  font: var(--n-type-caption);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--n-t-base) var(--n-ease-out),
+    transform var(--n-t-base) var(--n-ease-out);
+  pointer-events: none;
+}
+
+.notice[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .check {
+    animation: none;
+  }
+
+  .notice {
+    transform: none;
+  }
+}

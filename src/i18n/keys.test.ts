@@ -1,5 +1,8 @@
 // @vitest-environment node
 import { default as fs } from "node:fs";
+import { PARTS } from "../visual/template/parts";
+import { SCENES } from "../visual/template/templates";
+import { SCENE_TOUR } from "../ui/visual/tour/steps";
 import { default as path } from "node:path";
 import { expect, it, describe } from "vitest";
 import en from "./locales/en.json";
@@ -24,10 +27,21 @@ const ROOTS = [
   "playerBoot.ts",
   "youtubeBoot.ts",
 ];
-const NAMESPACES = "ui|sound|common|import|artist|core|library|player|playlist|search|settings|track_search";
+const NAMESPACES = "ui|sound|common|import|artist|core|library|player|playlist|search|settings|track_search|visual";
 const EXEMPT = "appearance.";
 
+const VISUAL_PARTS = PARTS.map((part) => part.id);
+const VISUAL_PARAMS = [...new Set(PARTS.flatMap((part) => (part.controls ?? []).map((control) => control.split(".")[1])))];
+
 const DYNAMIC: Record<string, string[]> = {
+  "visual.part.": VISUAL_PARTS.flatMap((id) => [`${id}.title`, `${id}.description`]),
+  "visual.param.": VISUAL_PARAMS,
+  "visual.scene.": SCENES.map((scene) => scene.id),
+  "visual.done.style_": ["song", "line", "short"],
+  "visual.tour.": SCENE_TOUR.map((step) => step.text),
+  "visual.choice.": ["karaoke", "scene", "karaoke_note", "scene_note"],
+  "visual.studio.rail_": ["scenes", "background", "atmosphere", "centrepiece", "lyrics", "media"],
+  "visual.editor.": ["background", "atmosphere", "centrepiece", "lyrics", "calm", "full", "busy", "busy_note", "weather_note", "heavy_note"],
   "library.search_": LIBRARY_TABS,
   "player.repeat_": ["off", "all", "one"],
   "settings.notch.panel_": ["gnome", "plasma", "waybar", "ready", "relogin", "add_widget"],
