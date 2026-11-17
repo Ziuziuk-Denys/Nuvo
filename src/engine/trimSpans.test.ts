@@ -82,17 +82,10 @@ describe("trimmed songs", () => {
     expect(resolver).toHaveBeenLastCalledWith(null);
   });
 
-  it("restart at the kept start on Previous, and count the restart window from there", async () => {
+  it("restart at the kept start on Previous when nothing is before", async () => {
     const h = createHarness();
     h.engine.setSpans((id) => (id === A ? KEPT : null));
-    h.engine.playList([track(B), track(A)]);
-    await flush();
-    h.engine.next();
-    await flush();
-    await playTo(h, 30_000, 31_000);
-    h.engine.previous();
-    expect(h.engine.getView().current?.track.id).toBe(B);
-    h.engine.next();
+    h.engine.playList([track(A), track(B)]);
     await flush();
     await playTo(h, 30_000, 40_000);
     h.engine.previous();

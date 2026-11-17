@@ -88,7 +88,7 @@ describe("transport", () => {
     expect(h.deck.loads.at(-1)?.trackId).toBe(y("b"));
   });
 
-  it("previous past 3 s restarts the entry", async () => {
+  it("previous on the first entry restarts it", async () => {
     const h = createHarness();
     await playing(h);
     h.deck.emit("timeupdate", { positionMs: 3500 });
@@ -98,7 +98,19 @@ describe("transport", () => {
     expect(h.engine.getView().status).toBe("playing");
   });
 
-  it("previous within 3 s goes to the entry before", async () => {
+  it("previous goes to the entry before on one press, however far the track has played", async () => {
+    const h = createHarness();
+    await playing(h);
+    h.engine.next();
+    await flush();
+    h.deck.emit("timeupdate", { positionMs: 90_000 });
+    h.engine.previous();
+    await flush();
+    expect(h.engine.getView().index).toBe(0);
+    expect(h.deck.loads.at(-1)?.trackId).toBe(y("a"));
+  });
+
+  it("previous goes back through the history", async () => {
     const h = createHarness();
     await playing(h);
     h.engine.next();

@@ -184,13 +184,10 @@ export class PlayHistory {
   }
 }
 
-export const PREVIOUS_RESTART_MS = 3000;
-
 export type PreviousStep = { kind: "restart" } | { kind: "index"; index: number };
 
-export function previousStep(state: QueueState, history: PlayHistory, positionMs: number, repeat: RepeatMode, station: boolean): PreviousStep | null {
+export function previousStep(state: QueueState, history: PlayHistory, repeat: RepeatMode, station: boolean): PreviousStep | null {
   if (state.index < 0) return null;
-  if (positionMs > PREVIOUS_RESTART_MS) return { kind: "restart" };
   const fromHistory = history.back(state);
   if (fromHistory !== null) return { kind: "index", index: fromHistory };
   if (state.index > 0) return { kind: "index", index: state.index - 1 };
