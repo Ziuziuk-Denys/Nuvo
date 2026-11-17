@@ -78,7 +78,14 @@ describe("NetworkSection", () => {
   });
 
   it("says what to do when YouTube is blocked", async () => {
-    system.runNetworkCheck.mockResolvedValueOnce({ checkedAt: "", summary: "", code: "blocked", service: "YouTube", rows: [], services: [] });
+    system.runNetworkCheck.mockResolvedValueOnce({
+      checkedAt: "",
+      summary: "",
+      code: "blocked",
+      service: "YouTube",
+      rows: [],
+      services: [{ service: "SoundCloud", state: "works", ms: 300 }],
+    });
     await act(async () => root.render(<NetworkSection />));
     await act(async () => byText("ui.settings.check").click());
     expect(host.textContent).toContain("ui.network_advice.blocked");

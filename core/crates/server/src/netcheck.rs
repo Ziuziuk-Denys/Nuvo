@@ -163,13 +163,13 @@ async fn check_host(target: &Target, setup: &Setup, client: &reqwest::Client, pr
         let started = Instant::now();
         let resolved = match timeout(STEP_TIMEOUT, (setup.resolver)(target.host.clone(), port)).await {
             Ok(Ok(addrs)) if !addrs.is_empty() => match addrs.iter().find(|a| !setup.private_ok && !is_public(a.ip())) {
-                Some(sinkhole) => Err(format!("resolves to {}", sinkhole.ip())),
+                Some(sinkhole) => Err(("dns_failed", format!("resolves to {}", sinkhole.ip()))),
                 None => Ok(addrs),
             },
-            Ok(_) => Err("does not resolve".to_string()),
-            Err(_) => Err("no DNS answer in time".to_string()),
+            Ok(_) => Err(("dns_failed", "does not resolve".to_string())),
+            Err(_) => Err(("timeout", "no DNS answer in time".to_string())),
         };
-        rows.push(host_row("dns", target, started, resolved.as_ref().err().map(|d| ("dns_failed", d.clone()))));
+        rows.push(host_row("dns", target, started, resolved.as_ref().err().cloned()));
 
         if let Ok(addrs) = &resolved {
             let started = Instant::now();

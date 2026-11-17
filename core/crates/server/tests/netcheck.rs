@@ -177,6 +177,15 @@ async fn sinkholes_and_offline_are_dns_causes() {
 }
 
 #[tokio::test]
+async fn a_late_dns_answer_is_a_timeout_not_a_block() {
+    let resolver: Resolver = Arc::new(|_host: String, _port: u16| Box::pin(std::future::pending()));
+    let setup = Setup { targets: vec![target("YouTube", "https://slow.invalid/")], resolver, private_ok: false };
+    let check = run(&setup, None).await;
+    let dns = check.rows.iter().find(|r| r.check == "dns").unwrap();
+    assert_eq!((dns.code, dns.detail.as_deref()), (Some("timeout"), Some("no DNS answer in time")));
+}
+
+#[tokio::test]
 async fn proxy_problems_come_first() {
     let ok = http_status(200).await;
     let setup = local(vec![target("Lyrics", &ok)]);
