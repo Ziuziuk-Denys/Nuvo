@@ -268,10 +268,10 @@ describe("createBackend", () => {
 
   const noTag = async () => Promise.reject(new Error("no tag"));
 
-  it("reads the plain edition's feed and still refuses a downgrade", () => {
+  it("reads the encrypted edition's feed and still refuses a downgrade", () => {
     const updater = fake();
-    createBackend(updater, noTag, "plain");
-    expect([updater.channel, updater.allowDowngrade]).toEqual(["plain", false]);
+    createBackend(updater, noTag, "encrypted");
+    expect([updater.channel, updater.allowDowngrade]).toEqual(["encrypted", false]);
   });
 
   it("turns off every automatic behaviour", () => {

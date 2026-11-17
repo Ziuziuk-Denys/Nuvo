@@ -257,7 +257,7 @@ jobs:
           done
           rm -f "$key"
 
-      # The encrypted edition keeps the latest*.yml feeds older installs read; the standard one gets plain*.yml.
+      # The standard edition keeps the latest*.yml feeds every earlier install reads; the encrypted one gets encrypted*.yml.
       # Both Windows jobs write latest.yml, so each keeps its own name and publish joins them.
       - name: Collect files
         shell: bash
@@ -267,14 +267,14 @@ jobs:
         run: |
           shopt -s nullglob
           mkdir -p out
-          for f in release/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/encrypted/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/encrypted/latest*.yml; do cp "$f" out/; done
-          for f in release/latest*.yml; do cp "$f" "out/plain${f##*/latest}"; done
+          for f in release/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/encrypted/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/latest*.yml; do cp "$f" out/; done
+          for f in release/encrypted/latest*.yml; do cp "$f" "out/encrypted${f##*/latest}"; done
           if [ "$OS" = "windows" ]; then
             mv out/latest.yml "out/latest-${NAME}.yml"
-            mv out/plain.yml "out/plain-${NAME}.yml"
+            mv out/encrypted.yml "out/encrypted-${NAME}.yml"
           fi
           ls -l out
-          ls out/latest*.yml out/plain*.yml > /dev/null
+          ls out/latest*.yml out/encrypted*.yml > /dev/null
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -304,12 +304,12 @@ jobs:
           name: notes
           path: notes
 
-      # electron-updater reads <channel>.yml, -mac.yml, -linux.yml and -linux-arm64.yml: latest for the encrypted edition, plain for the standard one
+      # electron-updater reads <channel>.yml, -mac.yml, -linux.yml and -linux-arm64.yml: latest for the standard edition, encrypted for the other
       - name: Update feeds
         shell: bash
         run: |
           shopt -s nullglob
-          for channel in latest plain; do
+          for channel in latest encrypted; do
             parts=("assets/$channel-windows-x64.yml" "assets/$channel-windows-arm64.yml")
             present=()
             for f in "${parts[@]}"; do [ -f "$f" ] && present+=("$f"); done
@@ -322,7 +322,7 @@ jobs:
               [ -f "assets/$required" ] || { echo "missing $required" >&2; exit 1; }
             done
           done
-          for feed in assets/latest*.yml assets/plain*.yml; do
+          for feed in assets/latest*.yml assets/encrypted*.yml; do
             while read -r file; do
               [ -f "assets/$file" ] || { echo "$feed lists $file, which is not in the release" >&2; exit 1; }
             done < <(sed -n 's/^  - url: //p' "$feed")

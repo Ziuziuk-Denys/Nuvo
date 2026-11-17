@@ -10,7 +10,7 @@ describe("edition", () => {
   });
 
   it("reads its own update feed", () => {
-    expect(updateChannel("plain")).toBe("plain");
-    expect(updateChannel("encrypted")).toBeNull();
+    expect(updateChannel("plain")).toBeNull();
+    expect(updateChannel("encrypted")).toBe("encrypted");
   });
 });
