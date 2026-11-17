@@ -270,6 +270,8 @@ export class DeckController implements DeckPort {
   }
 
   async pause(): Promise<void> {
+    if (this.armTimer) clearTimeout(this.armTimer);
+    this.armTimer = null;
     const decks = this.switching && this.outgoing ? [this.active, this.outgoing] : [this.active];
     if (this.switching) this.cancelTransition(false);
     for (const deck of decks) this.fade(deck, 0, FADE_MS);
@@ -624,7 +626,7 @@ export class DeckController implements DeckPort {
     if (this.armTimer) clearTimeout(this.armTimer);
     this.armTimer = null;
     const prepared = this.prepared;
-    if (!prepared?.ready || this.switching) return;
+    if (!prepared?.ready || this.switching || this.pauseTimer || this.active.element.paused) return;
     const active = this.active;
     const rate = active.element.playbackRate || 1;
     const context = this.deps.transitionContext();
