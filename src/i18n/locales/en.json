@@ -2350,7 +2350,7 @@
     },
     "tour": {
       "label": "Getting to know the scene",
-      "intro": "This is the Scene: the song draws its own picture to the beat, and the words come in as they are sung. Let us make it yours.",
+      "intro": "We built Scene for Nuvo from scratch, and it can do a lot. Next, a short tutorial: we'll show you around.",
       "switch": "This button brings karaoke back. Press it any time to switch.",
       "edit": "Press the pencil to open the studio, where the scene is yours to change.",
       "browser": "Pick a ready scene here, or build one from a background, effects, a centrepiece and a text style. The icons on the left switch between them.",
