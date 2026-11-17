@@ -170,6 +170,7 @@ export interface AutoUpdaterLike {
   autoInstallOnAppQuit: boolean;
   allowPrerelease: boolean;
   allowDowngrade: boolean;
+  channel: string | null;
   checkForUpdates(): Promise<{
     isUpdateAvailable?: boolean;
     updateInfo: { version: string };
@@ -181,7 +182,9 @@ export interface AutoUpdaterLike {
 }
 
 /** Requests go through Electron's `net` on the default session, so the app's proxy settings apply to them too. */
-export function createBackend(updater: AutoUpdaterLike, latestTag: () => Promise<string>): UpdateBackend {
+export function createBackend(updater: AutoUpdaterLike, latestTag: () => Promise<string>, channel: string | null): UpdateBackend {
+  // before allowDowngrade: setting a channel turns downgrades on
+  if (channel) updater.channel = channel;
   updater.autoDownload = false;
   updater.autoInstallOnAppQuit = false;
   updater.allowPrerelease = false;

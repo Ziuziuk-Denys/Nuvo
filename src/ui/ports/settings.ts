@@ -8,7 +8,7 @@ export {
   type WallpaperFit,
   type WallpaperKind,
 } from "@/data/look/lookStore";
-export { useAppVersion } from "@/data/platform/version";
+export { useAppEdition, useAppVersion } from "@/data/platform/version";
 export { notesFor, takeWhatsNew } from "@/data/platform/releaseNotes";
 import { shippedLocales } from "@/i18n";
 

@@ -69,6 +69,9 @@ jobs:
     runs-on: ${{ matrix.runner }}
     # Windows and macOS are untested on real machines, so their jobs must not block Linux
     continue-on-error: ${{ matrix.experimental }}
+    # Every package step builds the standard edition into release/ and then the encrypted one into release/encrypted/
+    env:
+      ENCRYPTED: -c.extraMetadata.nuvoEdition=encrypted -c.directories.output=release/encrypted -c.artifactName=${productName}-Encrypted-${version}-${os}-${arch}.${ext}
     strategy:
       fail-fast: false
       matrix:
@@ -157,7 +160,11 @@ jobs:
         if: matrix.os == 'linux'
         env:
           BUILDER: ${{ matrix.builder }}
-        run: pnpm exec electron-builder $BUILDER --publish never
+        run: |
+          for edition in "" "$ENCRYPTED"; do
+            # shellcheck disable=SC2086
+            pnpm exec electron-builder $BUILDER --publish never $edition
+          done
 
       - name: Package (Windows)
         if: matrix.os == 'windows'
@@ -184,8 +191,10 @@ jobs:
             unset AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET
           fi
           [ -z "$WIN_CSC_LINK" ] && unset WIN_CSC_LINK WIN_CSC_KEY_PASSWORD
-          # shellcheck disable=SC2086
-          pnpm exec electron-builder $BUILDER --publish never "${extra[@]}"
+          for edition in "" "$ENCRYPTED"; do
+            # shellcheck disable=SC2086
+            pnpm exec electron-builder $BUILDER --publish never "${extra[@]}" $edition
+          done
 
       - name: Package (macOS)
         if: matrix.os == 'macos'
@@ -203,21 +212,26 @@ jobs:
             export CSC_IDENTITY_AUTO_DISCOVERY=false
             extra+=("-c.mac.identity=-" "-c.mac.hardenedRuntime=false")
           fi
-          # shellcheck disable=SC2086
-          pnpm exec electron-builder $BUILDER --publish never "${extra[@]}"
+          for edition in "" "$ENCRYPTED"; do
+            # shellcheck disable=SC2086
+            pnpm exec electron-builder $BUILDER --publish never "${extra[@]}" $edition
+          done
 
       - name: Check the macOS apps start
         if: matrix.os == 'macos'
         shell: bash
         run: |
-          for app in release/mac*/Nuvo.app; do
+          for app in release/mac*/Nuvo.app release/encrypted/mac*/Nuvo.app; do
             codesign --verify --deep --strict --verbose=2 "$app"
           done
-          release/mac-arm64/Nuvo.app/Contents/MacOS/Nuvo &
-          pid=$!
-          sleep 15
-          kill -0 "$pid"
-          kill "$pid"
+          for app in release/mac-arm64/Nuvo.app release/encrypted/mac-arm64/Nuvo.app; do
+            "$app/Contents/MacOS/Nuvo" &
+            pid=$!
+            sleep 15
+            kill -0 "$pid"
+            kill "$pid"
+            wait "$pid" || true
+          done
 
       - name: Check notarization secrets
         id: notary
@@ -237,13 +251,14 @@ jobs:
         run: |
           key="$RUNNER_TEMP/AuthKey.p8"
           printf '%s' "$APPLE_API_KEY_P8" > "$key"
-          for dmg in release/*.dmg; do
+          for dmg in release/*.dmg release/encrypted/*.dmg; do
             xcrun notarytool submit "$dmg" --key "$key" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER" --wait
             xcrun stapler staple "$dmg"
           done
           rm -f "$key"
 
-      # Both Windows jobs write latest.yml, so each keeps its own name and publish joins them
+      # The encrypted edition keeps the latest*.yml feeds older installs read; the standard one gets plain*.yml.
+      # Both Windows jobs write latest.yml, so each keeps its own name and publish joins them.
       - name: Collect files
         shell: bash
         env:
@@ -252,10 +267,14 @@ jobs:
         run: |
           shopt -s nullglob
           mkdir -p out
-          for f in release/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/latest*.yml; do cp "$f" out/; done
-          if [ "$OS" = "windows" ]; then mv out/latest.yml "out/latest-${NAME}.yml"; fi
+          for f in release/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/encrypted/*.{AppImage,deb,rpm,exe,zip,dmg,blockmap} release/encrypted/latest*.yml; do cp "$f" out/; done
+          for f in release/latest*.yml; do cp "$f" "out/plain${f##*/latest}"; done
+          if [ "$OS" = "windows" ]; then
+            mv out/latest.yml "out/latest-${NAME}.yml"
+            mv out/plain.yml "out/plain-${NAME}.yml"
+          fi
           ls -l out
-          ls out/latest*.yml > /dev/null
+          ls out/latest*.yml out/plain*.yml > /dev/null
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -285,23 +304,25 @@ jobs:
           name: notes
           path: notes
 
-      # electron-updater reads latest.yml, latest-mac.yml, latest-linux.yml and latest-linux-arm64.yml
+      # electron-updater reads <channel>.yml, -mac.yml, -linux.yml and -linux-arm64.yml: latest for the encrypted edition, plain for the standard one
       - name: Update feeds
         shell: bash
         run: |
           shopt -s nullglob
-          parts=(assets/latest-windows-x64.yml assets/latest-windows-arm64.yml)
-          present=()
-          for f in "${parts[@]}"; do [ -f "$f" ] && present+=("$f"); done
-          if [ "${#present[@]}" -gt 0 ]; then
-            node scripts/merge-update-feed.mjs assets/latest.yml "${present[@]}"
-            [ -s assets/latest.yml ] || { echo "the Windows feeds were not joined" >&2; exit 1; }
-            rm -f "${parts[@]}"
-          fi
-          for required in latest-linux.yml latest-linux-arm64.yml; do
-            [ -f "assets/$required" ] || { echo "missing $required" >&2; exit 1; }
+          for channel in latest plain; do
+            parts=("assets/$channel-windows-x64.yml" "assets/$channel-windows-arm64.yml")
+            present=()
+            for f in "${parts[@]}"; do [ -f "$f" ] && present+=("$f"); done
+            if [ "${#present[@]}" -gt 0 ]; then
+              node scripts/merge-update-feed.mjs "assets/$channel.yml" "${present[@]}"
+              [ -s "assets/$channel.yml" ] || { echo "the Windows $channel feeds were not joined" >&2; exit 1; }
+              rm -f "${parts[@]}"
+            fi
+            for required in "$channel-linux.yml" "$channel-linux-arm64.yml"; do
+              [ -f "assets/$required" ] || { echo "missing $required" >&2; exit 1; }
+            done
           done
-          for feed in assets/latest*.yml; do
+          for feed in assets/latest*.yml assets/plain*.yml; do
             while read -r file; do
               [ -f "assets/$file" ] || { echo "$feed lists $file, which is not in the release" >&2; exit 1; }
             done < <(sed -n 's/^  - url: //p' "$feed")

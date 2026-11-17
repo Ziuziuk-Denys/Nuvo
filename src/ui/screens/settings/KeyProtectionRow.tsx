@@ -6,7 +6,7 @@ import { useTranslation } from "../../ports/i18n";
 import { SettingBlock } from "./controls";
 import styles from "./sections.module.css";
 
-type Protection = "keyring" | "file" | "passphrase";
+type Protection = "keyring" | "file" | "passphrase" | "none";
 
 const SEEN_KEY = "nuvo.keyFileWarned";
 const MIN_LENGTH = 8;
@@ -44,7 +44,7 @@ export function KeyProtectionRow(): JSX.Element | null {
     };
   }, []);
 
-  if (protection === null || protection === "keyring") return null;
+  if (protection === null || protection === "keyring" || protection === "none") return null;
 
   const apply = async (next: string | null) => {
     if (next !== null && next.length < MIN_LENGTH) {

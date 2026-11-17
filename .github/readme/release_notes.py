@@ -8,7 +8,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 DATA = json.loads((HERE / "data.json").read_text())
-NAME = re.compile(r"^Nuvo-[^-]+(?:-[^-]+)?-(linux|win|mac)-(x86_64|amd64|x64|arm64|aarch64)\.(AppImage|deb|rpm|exe|zip|dmg)$")
+NAME = re.compile(r"^Nuvo-(Encrypted-)?\d[^-]*(?:-[^-]+)?-(linux|win|mac)-(x86_64|amd64|x64|arm64|aarch64)\.(AppImage|deb|rpm|exe|zip|dmg)$")
 SYSTEMS = {"linux": "Linux", "win": "Windows", "mac": "macOS"}
 LABELS = {
     ("linux", "AppImage"): "AppImage",
@@ -25,9 +25,9 @@ RANK = list(LABELS)
 
 def describe(name):
     match = NAME.match(name)
-    if not match or (match[1], match[3]) not in LABELS:
+    if not match or (match[2], match[4]) not in LABELS:
         return None
-    system, arch, extension = match.groups()
+    _, system, arch, extension = match.groups()
     arm = arch in ("arm64", "aarch64")
     row = f"macOS {'Apple silicon' if arm else 'Intel'}" if system == "mac" else f"{SYSTEMS[system]} {'arm64' if arm else 'x64'}"
     return row, LABELS[(system, extension)]
@@ -35,7 +35,12 @@ def describe(name):
 
 def rank(name):
     match = NAME.match(name)
-    return RANK.index((match[1], match[3])) if match and (match[1], match[3]) in LABELS else len(RANK)
+    return RANK.index((match[2], match[4])) if match and (match[2], match[4]) in LABELS else len(RANK)
+
+
+def encrypted(name):
+    match = NAME.match(name)
+    return bool(match and match[1])
 
 
 def install_table(names, tag):
@@ -57,7 +62,8 @@ def render(tag, names, changes):
     values = {
         "tag": tag,
         "changes": changes.strip(),
-        "install": install_table(names, tag),
+        "install": install_table([name for name in names if not encrypted(name)], tag),
+        "install_encrypted": install_table([name for name in names if encrypted(name)], tag),
         "tagline": DATA["tagline"],
         "unsigned": DATA["unsigned"],
         "site": DATA["site"],

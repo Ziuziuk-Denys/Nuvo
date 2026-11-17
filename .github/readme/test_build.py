@@ -79,8 +79,11 @@ for theme in build.THEMES:
     assert (build.HERE / f"banner-{theme}.png").exists(), theme
 assert sum(path.stat().st_size for path in build.HERE.rglob("*") if path.is_file()) < 15 * 1024 * 1024
 
-files = ["Nuvo-1.0.0-linux-x86_64.AppImage", "Nuvo-1.0.0-linux-amd64.deb", "Nuvo-1.0.0-linux-aarch64.rpm", "Nuvo-1.0.0-win-x64.exe", "Nuvo-1.0.0-win-x64.zip", "Nuvo-1.0.0-win-x64.exe.blockmap", "Nuvo-1.0.0-mac-arm64.dmg", "Nuvo-1.0.0-mac-x64.zip", "latest.yml", "SHA256SUMS"]
+files = ["Nuvo-1.0.0-linux-x86_64.AppImage", "Nuvo-1.0.0-linux-amd64.deb", "Nuvo-1.0.0-linux-aarch64.rpm", "Nuvo-1.0.0-win-x64.exe", "Nuvo-1.0.0-win-x64.zip", "Nuvo-1.0.0-win-x64.exe.blockmap", "Nuvo-1.0.0-mac-arm64.dmg", "Nuvo-1.0.0-mac-x64.zip", "latest.yml", "plain.yml", "SHA256SUMS"]
+files += ["Nuvo-Encrypted-1.0.0-linux-x86_64.AppImage", "Nuvo-Encrypted-1.0.0-win-x64.exe"]
 notes = release_notes.render("v1.0.0", files, "The changes.\n")
-assert notes.count("releases/download/v1.0.0/") == 7 and "SHA256SUMS)" not in notes and "blockmap" not in notes, notes
+standard, encrypted = notes.split("### Encrypted edition")
+assert "Encrypted" not in standard.split("## Install")[1] and encrypted.count("releases/download/v1.0.0/Nuvo-Encrypted-") == 2, notes
+assert notes.count("releases/download/v1.0.0/") == 9 and "SHA256SUMS)" not in notes and "blockmap" not in notes, notes
 assert "| Linux arm64 | [.rpm]" in notes and "| Windows x64 | [Installer]" in notes and "· [Portable .zip]" in notes, notes
 assert "| macOS Apple silicon | [.dmg]" in notes and "| macOS Intel | [.zip]" in notes and "Windows arm64" not in notes, notes

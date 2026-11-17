@@ -19,3 +19,20 @@ export function useAppVersion(): string {
   }, []);
   return current;
 }
+
+export function useAppEdition(): "plain" | "encrypted" | null {
+  const [edition, setEdition] = useState<"plain" | "encrypted" | null>(null);
+  useEffect(() => {
+    let live = true;
+    window.nuvoShell
+      ?.getAppInfo()
+      .then((info) => {
+        if (live) setEdition(info.edition);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  return edition;
+}

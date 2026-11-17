@@ -53,6 +53,7 @@ import { relaxCors, rewriteRequestHeaders } from "./requestRules";
 import { saveFilter, validateSaveText, writeTextAtomic } from "./saveText";
 import { coreCall } from "./coreCall";
 import { coreBinaryName, coreSocketPath } from "./socketPath";
+import { editionOf, updateChannel } from "./edition";
 import { createBackend, parseFeed, releasePageUrl, Updater, updateMode, type AutoUpdaterLike, type UpdateBackend } from "./updater";
 import { createClipExport, saveFolder } from "./clipExport";
 import { createFileActions } from "./fileActions";
@@ -148,12 +149,14 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   };
   let lastSaveDir: string | null = null;
 
+  const edition = editionOf(JSON.parse(fs.readFileSync(path.join(app.getAppPath(), "package.json"), "utf8")) as { nuvoEdition?: unknown });
   const socketPath = coreSocketPath({ platform: process.platform, env: process.env, tmpdir: os.tmpdir(), random: randomBytes(16).toString("hex") });
   const coreBinary = coreBinaryName(process.platform);
   const core = createCoreHost({
     binaryPath: app.isPackaged ? path.join(process.resourcesPath, "bin", coreBinary) : path.join(app.getAppPath(), "core", "target", "debug", coreBinary),
     socketPath,
-    env: process.env,
+    // e2e pins the edition through the environment
+    env: { NUVO_CORE_EDITION: edition, ...process.env },
     onStatus: (status) => {
       sendToMain(CHANNELS.coreStatus, status);
       // a restarted daemon starts direct; it has to hear the proxy again
@@ -271,7 +274,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   const backend = () =>
     (loadedBackend ??= import("electron-updater").then((pkg) => {
       pkg.default.autoUpdater.on("appimage-filename-updated", (file: string) => retargetDesktopEntry(file, os.homedir()));
-      return createBackend(pkg.default.autoUpdater as unknown as AutoUpdaterLike, latestTag);
+      return createBackend(pkg.default.autoUpdater as unknown as AutoUpdaterLike, latestTag, updateChannel(edition));
     }));
   const updater = new Updater({
     mode: updateMode({
@@ -433,6 +436,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     ipc.handle(CHANNELS.winGetState, "main", () => windows.state());
     ipc.handle(CHANNELS.appInfo, "main", () => ({
       version: app.getVersion(),
+      edition,
       platform: process.platform,
       packaged: app.isPackaged,
       compositor,

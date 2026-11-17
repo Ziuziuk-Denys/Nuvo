@@ -42,6 +42,7 @@ const DYNAMIC: Record<string, string[]> = {
   "visual.choice.": ["karaoke", "scene", "karaoke_note", "scene_note"],
   "visual.studio.rail_": ["scenes", "background", "atmosphere", "centrepiece", "lyrics", "media"],
   "visual.editor.": ["background", "atmosphere", "centrepiece", "lyrics", "calm", "full", "busy", "busy_note", "weather_note", "heavy_note"],
+  "settings.about.edition_": ["plain", "encrypted"],
   "library.search_": LIBRARY_TABS,
   "player.repeat_": ["off", "all", "one"],
   "settings.notch.panel_": ["gnome", "plasma", "waybar", "ready", "relogin", "add_widget"],

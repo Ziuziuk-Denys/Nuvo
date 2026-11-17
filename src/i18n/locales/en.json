@@ -1742,7 +1742,9 @@
     },
     "about": {
       "nuvo": "Nuvo",
-      "tagline": "A music player for the songs you love"
+      "tagline": "A music player for the songs you love",
+      "edition_plain": "Standard edition",
+      "edition_encrypted": "Encrypted edition"
     },
     "playback": {
       "description": "How songs start and what happens next"

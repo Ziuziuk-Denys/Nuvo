@@ -9,6 +9,7 @@ export interface WinState {
 }
 export interface AppInfo {
   version: string;
+  edition: "plain" | "encrypted";
   platform: string;
   packaged: boolean;
   compositor: "hyprland" | "sway" | "wayland" | "none";

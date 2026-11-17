@@ -95,6 +95,8 @@ jobs:
             ' "$version"
             # shellcheck disable=SC2086
             pnpm exec electron-builder $BUILDER --publish never "-c.directories.output=out-$version"
+            # the standard edition reads its own feed, named as the release names it
+            for feed in "out-$version"/latest*.yml; do cp "$feed" "out-$version/plain${feed##*/latest}"; done
           done
           ls out-0.90.1
 

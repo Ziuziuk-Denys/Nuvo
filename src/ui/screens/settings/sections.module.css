@@ -724,6 +724,11 @@
   user-select: text;
 }
 
+.edition {
+  color: var(--n-ink-3);
+  font: 400 12.5px/1.45 var(--n-font);
+}
+
 .progress {
   display: block;
   overflow: hidden;
