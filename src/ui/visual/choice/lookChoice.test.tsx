@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { CornerHint } from "./CornerHint";
-import { exampleScene, LEAVE_MS, LookChoice } from "./LookChoice";
+import { LEAVE_MS, LookChoice } from "./LookChoice";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -38,17 +38,6 @@ it("splits the view: a live scene of this song on one half, its karaoke on the o
   expect(host.textContent).toContain("visual.choice.later");
 });
 
-it("shows icy black words on white when the song has lyrics, and the chrome emblem when it has none", () => {
-  expect(exampleScene(true)).toEqual({
-    background: "duo",
-    atmosphere: [],
-    centrepiece: null,
-    lyrics: "kinetic",
-    colors: { a: [1, 1, 1], b: [0.02, 0.02, 0.03] },
-  });
-  expect(exampleScene(false)).toMatchObject({ centrepiece: "emblem" });
-});
-
 it("quiets the other half while one is hovered", () => {
   mount();
   act(() => pick("visual.choice.karaoke").dispatchEvent(new MouseEvent("pointerover", { bubbles: true })));
@@ -61,7 +50,7 @@ it.each(["scene", "karaoke"] as const)("picking %s lets the other half go, then 
   expect(host.firstElementChild?.getAttribute("data-leaving")).toBe(view);
   expect(onChosen).not.toHaveBeenCalled();
   act(() => vi.advanceTimersByTime(LEAVE_MS));
-  expect(onChosen).toHaveBeenCalledWith(view, exampleScene(false));
+  expect(onChosen).toHaveBeenCalledWith(view);
 });
 
 it("points at the switch in the corner and steps aside on a press or after a while", () => {

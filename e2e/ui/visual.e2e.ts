@@ -204,7 +204,7 @@ it("controls turn dark over a light scene", async () => {
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "stage-light.png") });
 });
 
-it("the karaoke view asks once how songs should look, and the first scene pauses and walks through the studio", async () => {
+it("the karaoke view asks once how songs should look, and the first scene plays a demo song through the tour, then returns to the song", async () => {
   type Player = { engine: { getView(): { status: string; current: { track: { id: string } } | null } } };
   const page = session.page;
   await page.evaluate(() => {
@@ -234,7 +234,7 @@ it("the karaoke view asks once how songs should look, and the first scene pauses
     },
     { id: track.id, content: lrc },
   );
-  const choice = page.getByRole("group", { name: "How should songs look?" });
+  const choice = page.getByRole("group", { name: "Choose how songs look" });
   await choice.waitFor({ timeout: 10_000 });
   await page.waitForTimeout(2_500);
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "choice.png") });
@@ -243,7 +243,8 @@ it("the karaoke view asks once how songs should look, and the first scene pauses
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "choice-hover.png") });
   await choice.getByRole("button", { name: /^Scene/ }).click();
   await choice.waitFor({ state: "detached", timeout: 5_000 });
-  expect(await page.evaluate(() => (window as unknown as { __nuvoPlayer: Player }).__nuvoPlayer.engine.getView().status)).not.toBe("playing");
+  const playing = () => page.evaluate(() => (window as unknown as { __nuvoPlayer: Player }).__nuvoPlayer.engine.getView().current?.track.id);
+  expect(await playing()).toBe("fHI8X4OXluQ");
   const tour = page.getByRole("dialog", { name: "Getting to know the scene" });
   await tour.waitFor({ timeout: 10_000 });
   await tour.getByRole("button", { name: "Next" }).click();
@@ -260,5 +261,6 @@ it("the karaoke view asks once how songs should look, and the first scene pauses
   }
   await page.locator("[data-tour=studio-use]").click();
   await tour.waitFor({ state: "detached", timeout: 10_000 });
+  await expect.poll(playing, { timeout: 5_000 }).toBe(track.id);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("nuvo.visual") ?? "{}").toured)).toBe(true);
 });

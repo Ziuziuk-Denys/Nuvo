@@ -23,11 +23,12 @@ import { isRunning, timeWords, useWordTiming } from "../ports/wordTiming";
 import { AddLyrics, MadeMark, TimeWords } from "./MadeLyrics";
 import { Stage } from "../visual/Stage";
 import { CornerHint } from "../visual/choice/CornerHint";
-import { LookChoice, type LookView } from "../visual/choice/LookChoice";
+import { EXAMPLE_SCENE, LookChoice, type LookView } from "../visual/choice/LookChoice";
+import { playDemo, restorePlayback, type Playback } from "../visual/tour/demoSong";
 import { SceneTour } from "../visual/tour/SceneTour";
 import { chooseScene, setVisualSettings, useVisualSettings } from "../visual/settings";
 import { setStudioOpen, useStudioOpen } from "../visual/studio";
-import { templateFor, type Selection } from "../ports/visual";
+import { templateFor } from "../ports/visual";
 import styles from "./Karaoke.module.css";
 
 const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
@@ -267,12 +268,18 @@ function LyricsColumn({ track, mode }: { track: LyricsTrack | null; mode: Highli
 }
 
 function StageLyricsHelp({ track }: { track: LyricsTrack | null }): JSX.Element | null {
+  const { t } = useTranslation();
   const status = useLyrics((state) => (state.trackId === track?.id ? state.status : "loading"));
   if (status !== "none" || !track) return null;
   return (
-    <div className={styles.stageLayer} data-stage-reveal="">
-      <AddLyrics track={track} />
-    </div>
+    <>
+      <p role="status" className={styles.noLyrics}>
+        {t("visual.stage.no_lyrics")}
+      </p>
+      <div className={styles.stageLayer} data-stage-reveal="">
+        <AddLyrics track={track} />
+      </div>
+    </>
   );
 }
 
@@ -372,14 +379,24 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const stageOn = visual.chosen && visual.enabled && visual.stage;
   const [lightScene, setLightScene] = useState(false);
   const [hint, setHint] = useState(false);
-  const choose = useCallback((view: LookView, example: Selection) => {
+  const beforeDemo = useRef<Playback | null | undefined>(undefined);
+  const choose = useCallback((view: LookView) => {
     setVisualSettings({ enabled: true, stage: view === "scene", chosen: true });
-    // the scene the user picked from stays as their scene, unless it was the no-lyrics stand-in
-    if (view === "scene" && example.lyrics) chooseScene(example);
-    // the scene path pauses for its tour, which points at the switch itself
-    if (view === "scene") void playerEngine.pause();
-    else setHint(true);
+    if (view === "karaoke") return setHint(true);
+    chooseScene(EXAMPLE_SCENE);
+    beforeDemo.current = playDemo();
   }, []);
+  const finishTour = useCallback(() => {
+    setVisualSettings({ toured: true });
+    if (beforeDemo.current !== undefined) restorePlayback(beforeDemo.current);
+    beforeDemo.current = undefined;
+  }, []);
+  useEffect(
+    () => () => {
+      if (beforeDemo.current !== undefined) restorePlayback(beforeDemo.current);
+    },
+    [],
+  );
   const hideHint = useCallback(() => setHint(false), []);
 
   const transport = (
@@ -509,7 +526,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
 
       {stageOn ? <StageLyricsHelp track={track} /> : <LyricsColumn track={track} mode={mode} />}
       {hint ? <CornerHint onDone={hideHint} /> : null}
-      {stageOn && !hint && !visual.toured ? <SceneTour onDone={() => setVisualSettings({ toured: true })} /> : null}
+      {stageOn && !hint && !visual.toured ? <SceneTour onDone={finishTour} /> : null}
       {lyricsReady && track ? (
         <div className={stageOn ? styles.stageLayer : styles.zoneOff} data-stage-reveal={stageOn ? "" : undefined}>
           <MadeMark track={track} />
