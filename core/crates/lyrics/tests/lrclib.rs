@@ -108,3 +108,47 @@ async fn an_exact_hit_without_lyrics_or_a_5xx_falls_through_to_the_search() {
         assert_eq!(gets.load(Ordering::SeqCst), 1, "{title}");
     }
 }
+
+async fn serve(app: Router) -> String {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    format!("http://{addr}")
+}
+
+#[tokio::test]
+async fn word_timing_from_the_lyricsfile_wins_over_the_lines() {
+    let mut words = record(10, 180.0, Some("[00:01.00] Hi there"), Some("Hi there"), false);
+    words["hasWordSync"] = json!(true);
+    words["lyricsfile"] = json!("lines:\n- text: Hi there\n  start_ms: 1000\n  end_ms: 2500\n  words:\n  - text: 'Hi '\n    start_ms: 1000\n  - text: there\n    start_ms: 1600\n");
+    let (base, _) = mock(json!([words])).await;
+    let Lookup::Found(candidate) = Lrclib::new(base).lookup(&query("Other", Some(180_000))).await.unwrap() else { panic!("expected lyrics") };
+    assert_eq!((candidate.content_kind.as_str(), candidate.sync_level.as_str()), ("word_synced", "word_level"));
+    assert_eq!(candidate.lyrics.content, "[00:01.00]<00:01.00>Hi <00:01.60>there<00:02.50>\n");
+}
+
+#[tokio::test]
+async fn lyrics_of_another_cut_come_as_plain_text_with_their_length() {
+    let (base, _) = mock(json!([record(11, 215.0, Some("[ar:Artist]\n[00:26.00] First\n[00:30.00][01:30.00] Hook"), None, false)])).await;
+    let Lookup::Found(candidate) = Lrclib::new(base).lookup(&query("Other", Some(190_000))).await.unwrap() else { panic!("expected plain lyrics") };
+    assert_eq!((candidate.lyrics.format.as_str(), candidate.sync_level.as_str()), ("plain", "plain"));
+    assert_eq!(candidate.lyrics.content, "First\nHook");
+    assert_eq!(candidate.matched_track.unwrap().duration_ms, Some(215_000));
+}
+
+#[tokio::test]
+async fn retry_after_pauses_every_request_and_the_client_names_itself() {
+    let hits = Arc::new(AtomicUsize::new(0));
+    let agent = Arc::new(std::sync::Mutex::new(String::new()));
+    let (counter, seen) = (hits.clone(), agent.clone());
+    let app = Router::new().route("/api/search", get(move |headers: axum::http::HeaderMap| {
+        counter.fetch_add(1, Ordering::SeqCst);
+        *seen.lock().unwrap() = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or_default().to_string();
+        async move { (StatusCode::TOO_MANY_REQUESTS, [("retry-after", "120")], Json(json!({"name": "RateLimitExceeded"}))) }
+    }));
+    let lrclib = Lrclib::new(serve(app).await);
+    assert!(lrclib.lookup(&query("Other", None)).await.is_err());
+    assert!(lrclib.lookup(&query("Other", None)).await.is_err());
+    assert_eq!(hits.load(Ordering::SeqCst), 1, "the second lookup waits out Retry-After");
+    assert!(agent.lock().unwrap().starts_with("Nuvo/"));
+}

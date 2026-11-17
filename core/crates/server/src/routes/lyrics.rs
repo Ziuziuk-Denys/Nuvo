@@ -14,7 +14,7 @@ use nuvo_contracts::{
     ImportLyricsOffsets, ImportedLyricsOffsets, LyricsBest, LyricsCandidate, LyricsOffset, MadeBy, LyricsQuality, LyricsStreamEvent,
     LyricsTrackMeta, MAX_TRACK_ID_LEN, RawLyrics, SetLyricsOffset, SetUserLyrics,
 };
-use nuvo_lyrics::Lookup;
+use nuvo_lyrics::{DURATION_TOLERANCE_MS, Lookup};
 use nuvo_store::lyrics_words::{self, ALIGNED, SYNCED, TRANSCRIBED};
 use nuvo_store::{lyrics_cache, lyrics_user, now_ms, tracks};
 use serde::Deserialize;
@@ -355,10 +355,19 @@ impl LineOutcome {
     }
 }
 
+/// Timed lyrics cached for one cut of the song are looked up again when another cut plays.
+fn timed_for_another_cut(candidate: &LyricsCandidate, duration_ms: Option<i64>) -> bool {
+    let length = candidate.matched_track.as_ref().and_then(|track| track.duration_ms);
+    candidate.sync_level != "plain"
+        && matches!((length, duration_ms), (Some(length), Some(duration)) if duration > 0 && (length - duration).abs() > DURATION_TOLERANCE_MS)
+}
+
 async fn line_version(state: &AppState, data: &Unlocked, id: &str, queries: &[nuvo_lyrics::Query]) -> LineOutcome {
     let cache_id = id.to_string();
+    let duration_ms = queries.first().and_then(|query| query.duration_ms);
     if let Ok(Some(cached)) = data.db.call(move |c| lyrics_cache::get(c, &cache_id)).await {
         match cached.candidate {
+            Some(candidate) if timed_for_another_cut(&candidate, duration_ms) => {}
             Some(candidate) => return LineOutcome { candidate: Some(candidate), instrumental: false, cached: true, duration_ms: 0, message: None },
             None if now_ms() - cached.fetched_at < MISS_TTL_MS => return LineOutcome::miss(true, cached.instrumental, 0),
             None => {}
@@ -392,8 +401,10 @@ async fn word_version(state: &AppState, data: &Unlocked, id: &str, query: Option
     let amll = state.amll.as_ref()?;
     let key = format!("{id}#words");
     let cache_key = key.clone();
+    let duration_ms = query.and_then(|query| query.duration_ms);
     if let Ok(Some(cached)) = data.db.call(move |c| lyrics_cache::get(c, &cache_key)).await {
         match cached.candidate {
+            Some(candidate) if timed_for_another_cut(&candidate, duration_ms) => {}
             Some(candidate) => return Some(candidate),
             None if now_ms() - cached.fetched_at < MISS_TTL_MS => return None,
             None => {}

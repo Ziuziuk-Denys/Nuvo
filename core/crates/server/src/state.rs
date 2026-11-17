@@ -12,7 +12,7 @@ use nuvo_fetch::tools::ToolEnv;
 use nuvo_fetch::bridge::Bridge;
 use nuvo_fetch::{FetchError, TIKTOK_URL, TikTok};
 use nuvo_lastfm::Lastfm;
-use nuvo_lyrics::{Amll, Lrclib};
+use nuvo_lyrics::{Amll, Lrclib, MUSICBRAINZ_URL, MusicBrainz};
 use nuvo_net::Net;
 use nuvo_recognize::{Pace, Shazam};
 use nuvo_soundcloud::{Limits, SoundCloud};
@@ -49,6 +49,7 @@ pub struct TestHooks {
     pub fetch_hosts: Vec<String>,
     pub job_timeout: Option<std::time::Duration>,
     pub tiktok_url: Option<String>,
+    pub musicbrainz_url: Option<String>,
     pub local_debounce: Option<Duration>,
     pub system_clip: Option<std::path::PathBuf>,
     pub finish_failures: std::sync::Arc<std::sync::atomic::AtomicUsize>,
@@ -165,7 +166,11 @@ impl AppState {
         let state = Self(Arc::new(Inner {
             token: config.token,
             lrclib: Lrclib::with_proxy(config.lrclib_url, Some(hook.clone())),
-            amll: Amll::with_proxy(&config.amll_url, Some(hook.clone())),
+            amll: Amll::with_proxy(
+                &config.amll_url,
+                MusicBrainz::with_proxy(config.test.musicbrainz_url.as_deref().unwrap_or(MUSICBRAINZ_URL), Some(hook.clone())).map(Arc::new),
+                Some(hook.clone()),
+            ),
             shazam: Shazam::with_proxy(config.shazam_url, config.pace, Some(hook.clone())),
             tiktok: TikTok::with_proxy(config.test.tiktok_url.as_deref().unwrap_or(TIKTOK_URL), Some(hook.clone())),
             links: LinkCache::default(),

@@ -23,6 +23,10 @@ export function linkLyricsToPlayer(): void {
     playing: () => player().getView().status === "playing",
     rate: () => player().getView().tempo.rate,
     audioTime: () => player().audioTime(),
+    streamMs: (trackId) => {
+      const view = player().getView();
+      return view.current?.track.id === trackId ? view.durationMs : null;
+    },
     subscribe: (listener) => player().subscribe(listener),
   });
   void migrateLegacyLyrics(localStorage, (offsets) => putOffsets((input, init) => fetch(input, init), offsets));

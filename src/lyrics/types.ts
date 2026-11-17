@@ -30,6 +30,7 @@ export interface Candidate {
   quality: { total: number };
   lyrics: RawLyrics;
   made?: { source: string };
+  matchedTrack?: { durationMs?: number | null } | null;
 }
 
 export interface Version {

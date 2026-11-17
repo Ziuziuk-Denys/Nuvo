@@ -64,6 +64,40 @@ async fn streams_lrclib_lyrics_then_serves_them_from_cache() {
     assert_eq!(hits.load(Ordering::SeqCst), 1, "second request is served from the encrypted cache");
 }
 
+#[tokio::test]
+async fn a_longer_cut_looks_again_and_gets_the_release_words_untimed() {
+    let record = json!({"trackName": "Song", "artistName": "Artist", "duration": 200.0, "instrumental": false, "plainLyrics": "line", "syncedLyrics": "[00:01.00] line"});
+    let hits = Arc::new(AtomicUsize::new(0));
+    let (get_hits, search_hits, exact, listed) = (hits.clone(), hits.clone(), record.clone(), record);
+    let app = Router::new()
+        .route("/api/get", get(move |axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>| {
+            get_hits.fetch_add(1, Ordering::SeqCst);
+            let found = q.get("duration").map(String::as_str) == Some("200");
+            let exact = exact.clone();
+            async move { if found { Json(exact).into_response() } else { axum::http::StatusCode::NOT_FOUND.into_response() } }
+        }))
+        .route("/api/search", get(move || {
+            search_hits.fetch_add(1, Ordering::SeqCst);
+            let listed = listed.clone();
+            async move { Json(json!([listed])) }
+        }));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let core = common::boot(tempfile::tempdir().unwrap(), MemoryKeyStore::default(), &format!("http://{addr}"));
+
+    let (_, body, _) = common::send(&core.app, common::request("GET", "/v1/tracks/t1/lyrics?title=Song&artist=Artist&durationMs=200000", None)).await;
+    assert_eq!(events(&body)[1]["candidate"]["lyrics"]["format"], "lrc");
+    let longer = "/v1/tracks/t1/lyrics?title=Song&artist=Artist&durationMs=225000";
+    let (_, body, _) = common::send(&core.app, common::request("GET", longer, None)).await;
+    let found = events(&body);
+    assert_eq!(found[1]["candidate"]["lyrics"]["format"], "plain", "release timing would run 25 s early");
+    assert_eq!(found[1]["candidate"]["matchedTrack"]["durationMs"], 200_000);
+    let (_, body, _) = common::send(&core.app, common::request("GET", longer, None)).await;
+    assert_eq!(events(&body)[2]["cached"], true);
+    assert_eq!(hits.load(Ordering::SeqCst), 3, "one exact hit, then one exact miss and one search");
+}
+
 const WORD_TTML: &str = r#"<tt><body><div><p begin="00:01.000" end="03:10.000"><span begin="00:01.000" end="03:10.000">One</span></p></div></body></tt>"#;
 
 async fn mock_words() -> (String, Arc<AtomicUsize>) {

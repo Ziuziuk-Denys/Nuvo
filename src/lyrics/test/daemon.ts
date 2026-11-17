@@ -10,11 +10,13 @@ export function fakeDaemon(scripts: Record<string, Step[]> = {}) {
   const releases = new Map<string, () => void>();
   const daemon = {
     requests: [] as string[],
+    lengths: [] as number[],
     saved: [] as Array<[string, number]>,
     failSaves: false,
     release: (trackId: string) => releases.get(trackId)?.(),
     async *stream(track: Track, signal: AbortSignal): AsyncGenerator<StreamEvent> {
       daemon.requests.push(track.id);
+      daemon.lengths.push(track.durationMs);
       for (const step of scripts[track.id] ?? [done()]) {
         if (signal.aborted) throw aborted();
         if (step === "fail") throw new Error("stream broke");
