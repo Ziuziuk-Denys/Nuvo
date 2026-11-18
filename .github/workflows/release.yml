@@ -219,6 +219,7 @@ jobs:
 
       - name: Check the macOS apps start
         if: matrix.os == 'macos'
+        timeout-minutes: 5
         shell: bash
         run: |
           for app in release/mac*/Nuvo.app release/encrypted/mac*/Nuvo.app; do
@@ -230,6 +231,9 @@ jobs:
             sleep 15
             kill -0 "$pid"
             kill "$pid"
+            for _ in $(seq 20); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+            # an unattended runner can leave the encrypted edition waiting on a Keychain prompt
+            pkill -9 -f "$app/Contents" || true
             wait "$pid" || true
           done
 
