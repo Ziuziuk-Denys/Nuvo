@@ -4,6 +4,7 @@ import type { YoutubePort } from "./engine/sources/ports";
 import type { Track } from "./engine/types";
 import { coverUrl } from "./data/covers/coverUrl";
 import { startLibrary } from "./data/library/library";
+import { notifyLibraryChanged } from "./data/library/changes";
 import { trimSpan } from "./data/library/trims";
 import { progressiveSource } from "./youtube/playback/progressive";
 
@@ -36,12 +37,13 @@ function daemonLibrary() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ track: track ?? null }),
-      }).catch(() => undefined);
+      }).then(notifyLibraryChanged, notifyLibraryChanged);
     },
     unlike: (trackId: string) => {
       liked.delete(trackId);
       changed();
-      void fetch(`${CORE}/v1/me/library/tracks/${encodeURIComponent(trackId)}`, { method: "DELETE" }).catch(() => undefined);
+      void fetch(`${CORE}/v1/me/library/tracks/${encodeURIComponent(trackId)}`, { method: "DELETE" })
+        .then(notifyLibraryChanged, notifyLibraryChanged);
     },
     dislike: (track: Track) => void import("./ui/recs/notInterested").then(({ songMenuNotInterested }) => songMenuNotInterested?.(track, "exact")),
   };
