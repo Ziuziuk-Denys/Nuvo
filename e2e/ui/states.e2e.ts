@@ -179,7 +179,7 @@ async function run(l: Locale): Promise<void> {
     await shootNow(page, `status-retrying-${look.preset}-${look.mode}-${l.sizes[0].width}`);
     await page.getByText(l.text.retrying).waitFor({ state: "detached", timeout: 30_000 });
     await live.go("#/library");
-    await page.locator('[data-tour="library-import"]').waitFor({ timeout: 30_000 });
+    await page.locator('[data-tour="library-import"]').first().waitFor({ timeout: 30_000 });
     await live.go("#/");
   }
 

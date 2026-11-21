@@ -188,8 +188,8 @@ describe("recs UI", () => {
       await live.go("#/");
       await page.getByRole("button", { name: /^(Hidden from recommendations|Скрыто из рекомендаций)$/ }).click({ timeout: 20_000 });
       await page
-        .locator("[role=dialog] h2")
-        .filter({ hasText: /Hidden music|Скрытая музыка/ })
+        .locator("[role=dialog]")
+        .getByText(/^(Hidden music|Скрытая музыка)$/)
         .waitFor();
       await page
         .getByText(/Roygbiv/)

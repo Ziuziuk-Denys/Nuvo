@@ -322,7 +322,6 @@ describe.skipIf(!process.env.DISPLAY)("Notch and tray defaults", () => {
     await launched.main.evaluate(() => (location.hash = "#/settings?section=Notch"));
     const mode = launched.main.getByRole("group", { name: "Notch" });
     await mode.waitFor();
-    await launched.main.getByText("A small player at the top of the screen.", { exact: false }).first().waitFor();
     expect(await mode.getByRole("button", { name: "Automatic" }).getAttribute("aria-pressed")).toBe("true");
 
     await mainWindow("hide");

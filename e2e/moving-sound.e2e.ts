@@ -214,7 +214,6 @@ it("rendered offline, each preset is clearly different, turns at the set rate, h
     return { off, presets, levelDb, fastHz: turn(2, 15), mediumHz: turn(17, 41), clicks };
   });
   const { off, presets, levelDb } = result;
-  console.log("TEMP pumpDb", JSON.stringify({ off: off.pumpDb, ...Object.fromEntries(Object.entries(presets).map(([key, value]) => [key, value.pumpDb])) }));
 
   expect(Math.abs(off.sideDb)).toBeLessThan(1);
   expect(presets["4d"].sideDb).toBeGreaterThan(6);

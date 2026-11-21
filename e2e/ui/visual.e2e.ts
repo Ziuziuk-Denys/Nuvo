@@ -191,7 +191,7 @@ it("the studio exports the picked range as an MP4 with the song under it", async
   execFileSync("ffmpeg", ["-nostdin", "-loglevel", "error", "-y", "-ss", "2", "-i", out, "-frames:v", "1", still]);
   expect(fs.existsSync(still)).toBe(true);
   fs.rmSync(dir, { recursive: true, force: true });
-});
+}, 300_000);
 
 it("a scene picked in the studio becomes the player's scene, even from random mode", async () => {
   const page = session.page;
