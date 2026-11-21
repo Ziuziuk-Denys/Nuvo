@@ -6,15 +6,36 @@ import { summarize } from "./stats.mjs";
 const exe = option("--exe");
 const runs = Number(option("--runs", 5));
 const live = process.env.NUVO_BENCH_LIVE === "1";
+const thinkMs = Number(option("--think", 1500));
 const WARM_ROWS = 4;
-const QUERIES = ["Queen Bohemian Rhapsody", "Daft Punk Get Lucky", "Adele Hello", "Radiohead Creep", "Nirvana Smells Like Teen Spirit"];
+const QUERIES = [
+  "Queen Bohemian Rhapsody",
+  "Daft Punk Get Lucky",
+  "Adele Hello",
+  "Radiohead Creep",
+  "Nirvana Smells Like Teen Spirit",
+  "Massive Attack Teardrop",
+  "Billie Eilish Lovely",
+  "Kino Gruppa krovi",
+  "The Weeknd Blinding Lights",
+  "Portishead Glory Box",
+];
 
 function arm(page) {
   return page.evaluate(() => {
-    const state = { clickAt: 0, playingAt: 0, audioAt: 0 };
+    const state = { clickAt: 0, loadAt: 0, playingAt: 0, audioAt: 0 };
     window.__bench = state;
     document.addEventListener("dblclick", () => (state.clickAt ||= performance.now()), { capture: true, once: true });
     const handle = window.__nuvoPlayer;
+    const load = handle.decks.load;
+    handle.decks.load = function (...args) {
+      if (state.clickAt && !state.loadAt) {
+        state.loadAt = performance.now();
+        state.kind = args[0].source.kind;
+        state.trackId = args[0].trackId;
+      }
+      return load.apply(this, args);
+    };
     const stop = handle.decks.on((event) => {
       if (state.clickAt && event.type === "playing") state.playingAt ||= performance.now();
     });
@@ -32,9 +53,12 @@ async function measure(page, row) {
   await arm(page);
   await row.dblclick();
   const done = await page.waitForFunction(() => window.__bench.audioAt && window.__bench, null, { timeout: 30_000 });
-  const { clickAt, audioAt, playingAt } = await done.jsonValue();
-  await page.evaluate(() => window.__nuvoPlayer.engine.pause());
-  return { audioMs: audioAt - clickAt, playingMs: playingAt - clickAt };
+  const { clickAt, audioAt, playingAt, loadAt, kind, trackId } = await done.jsonValue();
+  await page.evaluate(() => {
+    delete window.__nuvoPlayer.decks.load;
+    window.__nuvoPlayer.engine.pause();
+  });
+  return { audioMs: audioAt - clickAt, playingMs: playingAt - clickAt, resolveMs: loadAt - clickAt, kind, trackId };
 }
 
 const results = { cold: [], warm: [], liveNetwork: [], liveReplay: [], failures: [] };
@@ -73,13 +97,22 @@ async function liveRun(page) {
   for (const pass of ["liveNetwork", "liveReplay"]) {
     for (const query of QUERIES) {
       try {
-        await input.fill(query);
         const row = page
           .locator('[role="button"]')
           .filter({ hasText: /\d:\d\d$/ })
           .first();
+        const before = (await row.count()) ? await row.innerText() : null;
+        await input.fill(query);
         await row.waitFor({ timeout: 20_000 });
-        results[pass].push(await measure(page, row));
+        await page.waitForFunction(
+          (before) => [...document.querySelectorAll('[role="button"]')].find((el) => /\d:\d\d$/.test(el.innerText))?.innerText !== before,
+          before,
+          { timeout: 20_000 },
+        );
+        await sleep(thinkMs);
+        const sample = await measure(page, row);
+        results[pass].push(sample);
+        console.log(`${pass} ${query}: audio ${Math.round(sample.audioMs)} ms, resolve ${Math.round(sample.resolveMs)} ms, ${sample.kind} ${sample.trackId}`);
       } catch (error) {
         results.failures.push({ pass, query, error: String(error).split("\n")[0] });
       }
@@ -95,6 +128,10 @@ const both = (samples) => ({
   ),
   playingMs: summarize(
     samples.map((s) => s.playingMs),
+    0,
+  ),
+  resolveMs: summarize(
+    samples.map((s) => s.resolveMs),
     0,
   ),
 });
