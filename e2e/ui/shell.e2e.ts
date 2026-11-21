@@ -505,6 +505,25 @@ describe("shell", () => {
     await page.waitForTimeout(400);
   }, 900_000);
 
+  it("keeps one player panel open at a time", async () => {
+    const page = session!.page;
+    const queue = page.locator('button[aria-label="Queue"]');
+    const queuePanel = page.locator("#queue-panel");
+    const dialog = page.locator('[role="dialog"]');
+    await queue.click();
+    await queuePanel.waitFor({ timeout: 5_000 });
+    for (const name of ["Sound", "Add to playlist", "Volume"]) {
+      await page.locator(`button[aria-label="${name}"]`).click();
+      await expect.poll(() => dialog.count(), { message: `${name} opens` }).toBe(1);
+      await expect.poll(() => queuePanel.count(), { message: `${name} closes the queue` }).toBe(0);
+      await queue.click();
+      await queuePanel.waitFor({ timeout: 5_000 });
+      await expect.poll(() => dialog.count(), { message: `the queue closes ${name}` }).toBe(0);
+    }
+    await page.keyboard.press("Escape");
+    await expect.poll(() => queuePanel.count(), { message: "Escape closes the queue" }).toBe(0);
+  });
+
   it("says radio in the island's state line", async () => {
     const live = session!;
     const page = live.page;
