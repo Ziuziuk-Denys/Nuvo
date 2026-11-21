@@ -536,13 +536,22 @@ describe("a slow SoundCloud start", () => {
     expect(s.approvedOn).toHaveBeenCalledTimes(1);
   });
 
-  it("a SoundCloud start that answers in time asks for no stand-in, and a late answer stops it", async () => {
+  it("a SoundCloud answer in time asks for no stand-in, even when its stream opens slowly, and a late answer stops it", async () => {
     const fast = setup({
       sc: async () => ({ kind: "direct", url: "https://sc/x", expiresAt: null, codec: "mp3", mimeType: "audio/mpeg", bitrate: 128_000, contentLength: null }),
     });
     await fast.resolver.resolve(track("sc:1"), opts({ early: true }));
     await vi.advanceTimersByTimeAsync(1000);
     expect(fast.approvedOn).not.toHaveBeenCalled();
+
+    const live = setup({
+      sc: async () => ({ kind: "live", url: "", expiresAt: null, codec: "mp3", mimeType: "audio/mpeg", bitrate: 128_000, contentLength: null }),
+    });
+    vi.mocked(live.daemon.scLive).mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve(new ReadableStream<Uint8Array>()), 800)));
+    const opening = live.resolver.resolve(track("sc:1"), opts({ early: true }));
+    await vi.advanceTimersByTimeAsync(900);
+    await opening;
+    expect(live.approvedOn).not.toHaveBeenCalled();
 
     let seen: AbortSignal | undefined;
     const slow = setup({
