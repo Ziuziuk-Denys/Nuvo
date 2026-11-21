@@ -92,12 +92,10 @@ const electron = vi.hoisted(() => {
 });
 
 vi.mock("electron", () => electron.module);
-import { DEFAULT_NOTCH_SETTINGS as OFF_BY_DEFAULT, type NotchState } from "../../src/notch/contracts";
+import { DEFAULT_NOTCH_SETTINGS, type NotchState } from "../../src/notch/contracts";
 import { ISLAND_SIZES, islandRect } from "../../src/notch/lib/geometry";
 import type { NotchSession } from "./session";
 import { NOTCH_TITLE, NotchWindow, notchDisplays, registerNotchIpc } from "./window";
-
-const DEFAULT_NOTCH_SETTINGS = { ...OFF_BY_DEFAULT, mode: "auto" as const };
 
 type FakeWin = InstanceType<typeof electron.module.BrowserWindow>;
 const lastWindow = () => electron.windows.at(-1)!;
@@ -145,7 +143,7 @@ describe("NotchWindow", () => {
 
   it("creates the window only when settings arrive", async () => {
     const { notch } = createNotch({ session: "x11", apply: false });
-    expect(notch.hello().settings).toEqual(OFF_BY_DEFAULT);
+    expect(notch.hello().settings).toEqual(DEFAULT_NOTCH_SETTINGS);
     expect(electron.windows.filter((w) => w.options.title === NOTCH_TITLE)).toHaveLength(0);
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, mode: "off" });
     expect(electron.windows.filter((w) => w.options.title === NOTCH_TITLE)).toHaveLength(0);
@@ -591,6 +589,7 @@ describe("NotchWindow", () => {
 
   it("on macOS shows over fullscreen Spaces unless the focused main window is fullscreen", async () => {
     const { notch, main } = createNotch({ session: "macos" });
+    notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, mode: "on" });
     await notch.ready;
     const win = lastWindow();
     main.isMinimized = () => false;
@@ -623,6 +622,30 @@ describe("NotchWindow", () => {
     notch.destroy();
   });
 
+  it("in automatic mode stays while the main window is away and plays its exit before hiding", async () => {
+    const { notch, main } = createNotch({ session: "x11" });
+    await notch.ready;
+    const win = lastWindow();
+    const lastPresence = () => win.webContents.send.mock.calls.filter((call) => call[0] === "notch:presence").at(-1)?.[1];
+    expect(lastPresence()).toBe("in");
+
+    vi.useFakeTimers();
+    main.isMinimized = () => false;
+    main.emit("restore");
+    await notch.ready;
+    expect(lastPresence()).toBe("out");
+    expect(names(win).at(-1)).not.toBe("hide");
+    await vi.advanceTimersByTimeAsync(160);
+    expect(names(win).at(-1)).toBe("hide");
+    vi.useRealTimers();
+
+    main.isVisible = () => false;
+    main.emit("hide");
+    await notch.ready;
+    expect(names(win).slice(names(win).lastIndexOf("hide"))).toContain("showInactive");
+    expect(lastPresence()).toBe("in");
+  });
+
   it("remembers state and lyrics, forwards them and answers hello", async () => {
     const { notch } = createNotch({ session: "x11" });
     await notch.ready;
@@ -634,7 +657,7 @@ describe("NotchWindow", () => {
     expect(win.webContents.send).toHaveBeenCalledWith("notch:state", state);
     expect(win.webContents.send).toHaveBeenCalledWith("notch:lyrics", lyrics);
     expect(win.webContents.send).toHaveBeenCalledWith("notch:settings", { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
-    expect(notch.hello()).toEqual({ state, lyrics, settings: { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" }, cutout: null });
+    expect(notch.hello()).toEqual({ state, lyrics, settings: { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" }, cutout: null, presence: "in" });
   });
 
   it("focusApp restores, shows and focuses the main window", () => {

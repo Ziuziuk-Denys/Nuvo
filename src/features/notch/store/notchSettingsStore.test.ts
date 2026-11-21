@@ -12,8 +12,8 @@ async function freshStore() {
 afterEach(() => localStorage.clear());
 
 describe("Notch settings", () => {
-  it("are off on a fresh install", async () => {
-    expect((await freshStore()).mode).toBe("off");
+  it("are automatic on a fresh install", async () => {
+    expect((await freshStore()).mode).toBe("auto");
   });
 
   it("turn the old automatic default off and keep the rest", async () => {

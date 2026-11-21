@@ -5,6 +5,7 @@ import {
   type NotchAction,
   type NotchHello,
   type NotchLyrics,
+  type NotchPresence,
   type NotchSettings,
   type NotchState,
   type ShapeRect,
@@ -36,6 +37,7 @@ const CRASH_WINDOW_MS = 60_000;
 const CAPTURE_POLL_MS = 100;
 const RAISE_MS = 1_000;
 const FOCUS_SETTLE_MS = 50;
+const LEAVE_MS = 160;
 
 export interface NotchDeps {
   preloadPath: string;
@@ -70,6 +72,8 @@ export class NotchWindow {
   private placedDisplayId: number | null = null;
   private moveTimer: ReturnType<typeof setTimeout> | null = null;
   private focusSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private leaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private presence: NotchPresence = "out";
   private readonly replace = () => void this.place();
   private readonly replaceIfDisplayChanged = () => {
     if (this.pickDisplay().id !== this.placedDisplayId) this.replace();
@@ -83,6 +87,9 @@ export class NotchWindow {
       this.focusSyncTimer = null;
       this.syncMacFullscreenVisibility();
     }, FOCUS_SETTLE_MS);
+  };
+  private readonly onMainVisibility = () => {
+    if (this.loaded && notchEnabled(this.settings.mode, this.deps.session)) this.ready = this.place();
   };
   private readonly onMainMove = () => {
     if (this.moveTimer) clearTimeout(this.moveTimer);
@@ -178,7 +185,7 @@ export class NotchWindow {
   }
 
   hello(): NotchHello {
-    return { state: this.state, lyrics: this.lyrics, settings: this.settings, cutout: this.cutout };
+    return { state: this.state, lyrics: this.lyrics, settings: this.settings, cutout: this.cutout, presence: this.presence };
   }
 
   focusApp(): void {
@@ -193,6 +200,7 @@ export class NotchWindow {
     if (this.moveTimer) clearTimeout(this.moveTimer);
     if (this.focusSyncTimer) clearTimeout(this.focusSyncTimer);
     this.focusSyncTimer = null;
+    this.cancelLeave();
     if (this.capturePoll) clearInterval(this.capturePoll);
     this.capturePoll = null;
     this.stopRaising();
@@ -293,6 +301,10 @@ export class NotchWindow {
     main.on("move", this.onMainMove);
     main.on("enter-full-screen", this.onEnterFullscreen);
     main.on("leave-full-screen", this.onLeaveFullscreen);
+    main.on("show", this.onMainVisibility);
+    main.on("hide", this.onMainVisibility);
+    main.on("minimize", this.onMainVisibility);
+    main.on("restore", this.onMainVisibility);
     if (this.deps.session === "macos") {
       main.on("focus", this.onMainFocus);
       main.on("blur", this.onMainBlur);
@@ -306,6 +318,10 @@ export class NotchWindow {
     this.main?.removeListener("leave-full-screen", this.onLeaveFullscreen);
     this.main?.removeListener("focus", this.onMainFocus);
     this.main?.removeListener("blur", this.onMainBlur);
+    this.main?.removeListener("show", this.onMainVisibility);
+    this.main?.removeListener("hide", this.onMainVisibility);
+    this.main?.removeListener("minimize", this.onMainVisibility);
+    this.main?.removeListener("restore", this.onMainVisibility);
     this.main = null;
   }
 
@@ -357,6 +373,11 @@ export class NotchWindow {
       win.hide();
       return;
     }
+    if (!this.wanted()) {
+      this.leave(win);
+      return;
+    }
+    this.cancelLeave();
     const display = this.pickDisplay();
     this.placedDisplayId = display.id;
     const { position, offset } = this.settings;
@@ -410,6 +431,35 @@ export class NotchWindow {
         .catch(() => false);
       this.recordPlacement(win, Boolean(ok), "compositor placement failed");
     }
+    if (!win.isDestroyed() && win.isVisible()) this.setPresence("in");
+  }
+
+  private wanted(): boolean {
+    if (this.settings.mode !== "auto") return true;
+    const main = this.main;
+    return !main || main.isDestroyed() || !main.isVisible() || main.isMinimized();
+  }
+
+  private leave(win: BrowserWindow): void {
+    if (this.leaveTimer || !win.isVisible()) return;
+    this.setPresence("out");
+    this.leaveTimer = setTimeout(() => {
+      this.leaveTimer = null;
+      if (win.isDestroyed() || this.wanted()) return;
+      this.stopRaising();
+      win.hide();
+    }, LEAVE_MS);
+  }
+
+  private setPresence(presence: NotchPresence): void {
+    if (presence === this.presence) return;
+    this.presence = presence;
+    this.send("notch:presence", presence);
+  }
+
+  private cancelLeave(): void {
+    if (this.leaveTimer) clearTimeout(this.leaveTimer);
+    this.leaveTimer = null;
   }
 
   // A topmost window that activates later, like a borderless game, stacks above the Notch until it is raised again.

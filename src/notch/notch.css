@@ -18,6 +18,9 @@ body,
   --placeholder: #1c1c1e;
   --fade-ms: 250ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --enter-ms: 420ms;
+  --leave-ms: 160ms;
 
   position: fixed;
   inset: 0;
@@ -42,6 +45,18 @@ body,
   -webkit-font-smoothing: antialiased;
   user-select: none;
   cursor: default;
+  transform-origin: 50% 0;
+  transition:
+    opacity var(--enter-ms) var(--ease-out),
+    transform var(--enter-ms) var(--ease-out);
+}
+
+.notch-stage[data-presence="out"] {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.92);
+  pointer-events: none;
+  transition-duration: var(--leave-ms);
+  transition-timing-function: var(--ease-in);
 }
 
 :where(.notch-stage button) {
@@ -644,6 +659,12 @@ body,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .notch-stage,
+  .notch-stage[data-presence="out"] {
+    transform: none;
+    transition: opacity var(--leave-ms) linear;
+  }
+
   .island,
   .island-body,
   .island-shape path {

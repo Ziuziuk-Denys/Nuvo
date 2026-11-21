@@ -40,7 +40,7 @@ export interface NotchSettings {
 }
 
 export const DEFAULT_NOTCH_SETTINGS: NotchSettings = {
-  mode: "off",
+  mode: "auto",
   expandOn: "hover",
   showLyrics: true,
   pulseOnTrackChange: true,
@@ -67,11 +67,14 @@ export interface Cutout {
   height: number;
 }
 
+export type NotchPresence = "in" | "out";
+
 export interface NotchHello {
   state: NotchState | null;
   lyrics: NotchLyrics | null;
   settings: NotchSettings;
   cutout: Cutout | null;
+  presence: NotchPresence;
 }
 
 export interface ShapeRect {

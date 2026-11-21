@@ -1826,7 +1826,7 @@
       "more": "More languages"
     },
     "notch": {
-      "description": "A small player at the top of the screen. Turn it on to see the song and its controls there.",
+      "description": "A small player at the top of the screen. Automatic shows it while the Nuvo window is hidden or minimized; Always on keeps it there.",
       "mode": "Notch",
       "mode_auto": "Automatic",
       "mode_on": "Always on",

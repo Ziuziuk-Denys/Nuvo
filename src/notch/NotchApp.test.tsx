@@ -2,7 +2,7 @@ import { act } from "react";
 import { type Root, createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import NotchApp from "./NotchApp";
-import { DEFAULT_NOTCH_SETTINGS, type Cutout, type NotchHello, type NotchLyrics, type NotchSettings, type NotchState } from "./contracts";
+import { DEFAULT_NOTCH_SETTINGS, type Cutout, type NotchHello, type NotchLyrics, type NotchPresence, type NotchSettings, type NotchState } from "./contracts";
 import { ISLAND_SIZES, grownRect, islandPath, islandRect, islandSizes } from "./lib/geometry";
 import { MORPH_SPRING, simulateSpring, springEasing } from "./lib/spring";
 
@@ -40,10 +40,12 @@ interface Harness {
   pushLyrics: (lyrics: NotchLyrics) => void;
   pushSettings: (settings: NotchSettings) => void;
   pushCutout: (cutout: Cutout | null) => void;
+  pushPresence: (presence: NotchPresence) => void;
 }
 
-function installApi(partial: Omit<NotchHello, "cutout"> & { cutout?: Cutout | null }): Harness {
-  const hello: NotchHello = { cutout: null, ...partial };
+function installApi(partial: Omit<NotchHello, "cutout" | "presence"> & { cutout?: Cutout | null; presence?: NotchPresence }): Harness {
+  const hello: NotchHello = { cutout: null, presence: "in", ...partial };
+  const presenceListeners: Array<(presence: NotchPresence) => void> = [];
   const cutoutListeners: Array<(cutout: Cutout | null) => void> = [];
   const stateListeners: Array<(state: NotchState) => void> = [];
   const lyricsListeners: Array<(lyrics: NotchLyrics) => void> = [];
@@ -60,6 +62,7 @@ function installApi(partial: Omit<NotchHello, "cutout"> & { cutout?: Cutout | nu
     onNotchLyrics: subscribe(lyricsListeners),
     onNotchSettings: subscribe(settingsListeners),
     onNotchCutout: subscribe(cutoutListeners),
+    onNotchPresence: subscribe(presenceListeners),
     notchAction: vi.fn(),
     notchSetShape: vi.fn(),
     notchSetCapture: vi.fn(),
@@ -71,6 +74,7 @@ function installApi(partial: Omit<NotchHello, "cutout"> & { cutout?: Cutout | nu
     pushLyrics: (lyrics) => act(() => lyricsListeners.forEach((cb) => cb(lyrics))),
     pushSettings: (settings) => act(() => settingsListeners.forEach((cb) => cb(settings))),
     pushCutout: (cutout) => act(() => cutoutListeners.forEach((cb) => cb(cutout))),
+    pushPresence: (presence) => act(() => presenceListeners.forEach((cb) => cb(presence))),
   };
 }
 
@@ -125,6 +129,17 @@ describe("NotchApp", () => {
     expect(mode()).toBe("idle");
     harness.pushState(makeState());
     expect(mode()).toBe("live");
+  });
+
+  it("enters and leaves as the app says, starting from hello", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS, presence: "out" });
+    await mount();
+    const presence = () => host.querySelector(".notch-stage")!.getAttribute("data-presence");
+    expect(presence()).toBe("out");
+    harness.pushPresence("in");
+    expect(presence()).toBe("in");
+    harness.pushPresence("out");
+    expect(presence()).toBe("out");
   });
 
   it("uses the state from hello", async () => {
