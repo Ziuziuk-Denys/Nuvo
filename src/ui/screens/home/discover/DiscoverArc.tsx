@@ -18,6 +18,7 @@ const WHEEL_SETTLE_MS = 140;
 const DRAG_SLOP = 4;
 const INERTIA_MS = 220;
 const CONTEXT = "home:discover";
+const AWAKE_MS = 30_000;
 
 interface Drag {
   x: number;
@@ -74,6 +75,8 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   const swallowClick = useRef(false);
   const [width, setWidth] = useState(0);
   const [centre, setCentre] = useState(0);
+  const [awake, setAwake] = useState(true);
+  const rest = useRef(0);
   const onScreen = useOnScreen(rootRef);
   const focused = useWindowFocused();
   const count = tracks.length;
@@ -97,7 +100,14 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
     paint();
   });
 
+  const wake = () => {
+    setAwake(true);
+    clearTimeout(rest.current);
+    rest.current = window.setTimeout(() => setAwake(false), AWAKE_MS);
+  };
+
   const run = () => {
+    wake();
     if (frame.current) return;
     let last = performance.now();
     const tick = (now: number) => {
@@ -115,7 +125,13 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
     runRef.current = run;
   });
 
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  useEffect(() => {
+    rest.current = window.setTimeout(() => setAwake(false), AWAKE_MS);
+    return () => {
+      cancelAnimationFrame(frame.current);
+      clearTimeout(rest.current);
+    };
+  }, []);
 
   useEffect(() => {
     const root = rootRef.current!;
@@ -217,7 +233,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   };
 
   const current = tracks[Math.min(centre, tracks.length - 1)];
-  usePageBackdrop(current.coverUrl, { sky: onScreen && focused ? "live" : "still" });
+  usePageBackdrop(current.coverUrl, { sky: awake && onScreen && focused ? "live" : "still" });
   const title = t("ui.recs.home.discover");
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>

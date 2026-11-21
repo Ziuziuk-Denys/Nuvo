@@ -17,7 +17,7 @@ vi.mock("@/data/covers/colors", () => ({
 }));
 
 function fakeRenderer() {
-  return { setCover: vi.fn(), settle: vi.fn(), draw: vi.fn(), resize: vi.fn(), uniform: vi.fn(), dispose: vi.fn() };
+  return { setCover: vi.fn(), settle: vi.fn(), draw: vi.fn(), resize: vi.fn(), uniform: vi.fn(), hold: vi.fn(), dispose: vi.fn() };
 }
 
 function fakeFrames() {

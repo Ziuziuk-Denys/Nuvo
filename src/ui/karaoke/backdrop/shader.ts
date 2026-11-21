@@ -50,6 +50,7 @@ const TEXTURE_PX = 64;
 export interface FlowRenderer {
   setCover(image: TexImageSource, fadeMs?: number): boolean;
   settle(): void;
+  hold(held: boolean): void;
   draw(timeMs: number): void;
   resize(width: number, height: number): void;
   uniform(name: string, values: readonly number[]): void;
@@ -116,7 +117,8 @@ export function createFlowRenderer(canvas: HTMLCanvasElement, overlay?: string):
   small.width = TEXTURE_PX;
   small.height = TEXTURE_PX;
   const smallContext = small.getContext("2d");
-  const origin = performance.now();
+  let origin = performance.now();
+  let heldAt: number | null = null;
   let hasCover = false;
   let fadeFrom = 0;
   let fadeMs = 0;
@@ -146,13 +148,21 @@ export function createFlowRenderer(canvas: HTMLCanvasElement, overlay?: string):
       hasCover = true;
       return true;
     },
+    hold(held) {
+      const now = performance.now();
+      if (held && heldAt === null) heldAt = now;
+      if (!held && heldAt !== null) {
+        origin += now - heldAt;
+        heldAt = null;
+      }
+    },
     settle() {
       fadeMs = 0;
     },
     draw(timeMs) {
       const blend = fadeMs > 0 ? Math.min(1, Math.max(0, (timeMs - fadeFrom) / fadeMs)) : 1;
       gl.uniform1f(blendAt, blend);
-      gl.uniform1f(timeAt, (timeMs - origin) / 1000);
+      gl.uniform1f(timeAt, ((heldAt ?? timeMs) - origin) / 1000);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
     resize(width, height) {

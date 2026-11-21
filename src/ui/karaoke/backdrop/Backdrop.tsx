@@ -129,11 +129,13 @@ export function Backdrop({ cover, open, overlay, uniforms }: BackdropProps): JSX
     if (!animate) {
       const renderer = rendererRef.current;
       if (renderer && showCanvas) {
+        renderer.hold(true);
         renderer.settle();
         renderer.draw(performance.now());
       }
       return;
     }
+    rendererRef.current?.hold(false);
     let frame = 0;
     let last = -Infinity;
     const tick = (now: number) => {

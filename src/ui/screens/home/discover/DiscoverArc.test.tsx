@@ -100,4 +100,26 @@ describe("DiscoverArc", () => {
     expect(document.activeElement).toBe(buttons()[10]);
     expect(mocks.playSongs).not.toHaveBeenCalled();
   });
+
+  it("keeps the sky live while seen and touched, and lets it rest after a while", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(private readonly callback: IntersectionObserverCallback) {}
+        observe() {
+          this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+        }
+        disconnect() {}
+      },
+    );
+    await render();
+    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "live" });
+    await act(async () => vi.advanceTimersByTime(30_000));
+    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "still" });
+    await act(async () => buttons()[1].click());
+    expect(mocks.backdrop.mock.lastCall?.[1]).toEqual({ sky: "live" });
+    vi.useRealTimers();
+  });
 });
