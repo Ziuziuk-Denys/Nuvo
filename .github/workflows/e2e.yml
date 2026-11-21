@@ -63,7 +63,7 @@ jobs:
               e2e e2e/ui/home.e2e.ts -t "seeded: For you leads" || status=1
               ;;
             "smoke 2/2")
-              e2e e2e/ui/settings.e2e.ts e2e/ui/theme-picker.e2e.ts || status=1
+              e2e e2e/ui/settings.e2e.ts e2e/ui/theme-picker.e2e.ts e2e/ui/navigation.e2e.ts || status=1
               e2e e2e/ui/visual.e2e.ts -t "at 60 fps" || status=1
               e2e e2e/ui/home-overlays.e2e.ts || status=1
               ;;

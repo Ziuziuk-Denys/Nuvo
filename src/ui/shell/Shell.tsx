@@ -46,7 +46,7 @@ const KARAOKE_PATH = "/player";
 const STAY_IN_PLACE = { replace: true } as const;
 const LEGACY_SCROLLERS = ".overflow-y-auto";
 
-const CHROME = { hidden: { opacity: 0 } };
+const CHROME = { hidden: { opacity: 0 }, shown: { opacity: 1 } };
 const RAIL_SHIFT_PX = 62;
 
 const watchEngine = (notify: () => void) => playerEngine.subscribe(notify);
@@ -179,7 +179,14 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   });
 
   const chrome = karaokeShown ? null : (
-    <motion.div key="chrome" variants={CHROME} exit="hidden" transition={{ ease: EASE.in, duration: seconds(DURATION_MS.quick) }}>
+    <motion.div
+      key="chrome"
+      variants={CHROME}
+      initial={false}
+      animate="shown"
+      exit="hidden"
+      transition={{ ease: EASE.in, duration: seconds(DURATION_MS.quick) }}
+    >
       <TopBar />
     </motion.div>
   );
