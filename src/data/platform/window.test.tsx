@@ -50,7 +50,7 @@ describe("window state", () => {
     expect(windowStateFrom({ maximized: false, fullscreen: false, visible: true }, true).isEdgeToEdge).toBe(true);
   });
 
-  it("on macOS the system rounds the window", async () => {
+  it("on macOS and Windows the system rounds the window", async () => {
     const { windowStateFrom } = await load();
     expect(windowStateFrom({ maximized: false, fullscreen: false, visible: true }, false, true).isEdgeToEdge).toBe(true);
   });

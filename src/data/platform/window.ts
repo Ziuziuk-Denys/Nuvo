@@ -9,17 +9,18 @@ export interface WindowState {
 
 // macOS draws the frame and corners itself
 export const nativeFrame = typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent);
+const systemCorners = nativeFrame || (typeof navigator !== "undefined" && /Windows/.test(navigator.userAgent));
 
 let winState: WinState = { maximized: false, fullscreen: false, visible: true };
 let appInfo: AppInfo | null = null;
 let connected = false;
 const listeners = new Set<() => void>();
 
-export function windowStateFrom(win: WinState, tiling: boolean, mac = nativeFrame): WindowState {
+export function windowStateFrom(win: WinState, tiling: boolean, corners = systemCorners): WindowState {
   return {
     isMaximized: win.maximized,
     isFullScreen: win.fullscreen,
-    isEdgeToEdge: mac || win.maximized || win.fullscreen || tiling,
+    isEdgeToEdge: corners || win.maximized || win.fullscreen || tiling,
   };
 }
 
