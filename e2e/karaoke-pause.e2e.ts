@@ -130,7 +130,7 @@ afterAll(async () => {
   isolation?.dispose();
 });
 
-it("pausing keeps the sung line where it is and resuming goes on from there", async () => {
+it("pausing keeps the sung line where it is and resuming goes on from there", { retry: 0, timeout: 60_000 }, async () => {
   await player("seekTo(26000)");
   await main.waitForTimeout(3_000);
   const before = await sample();
@@ -152,9 +152,9 @@ it("pausing keeps the sung line where it is and resuming goes on from there", as
     expect(Math.abs(now.top! - before.top!)).toBeLessThanOrEqual(before.pitch);
     await main.waitForTimeout(75);
   }
-}, 60_000);
+});
 
-it("the first line lights at the height of the later ones, below the top bar", async () => {
+it("the first line lights at the height of the later ones, below the top bar", { retry: 0, timeout: 60_000 }, async () => {
   await player("seekTo(1200)");
   await expect.poll(async () => (await sample()).lit).toBe(0);
   await main.waitForTimeout(800);
@@ -170,4 +170,4 @@ it("the first line lights at the height of the later ones, below the top bar", a
     return lyrics.parentElement!.getBoundingClientRect().top >= bar.bottom;
   });
   expect(clear).toBe(true);
-}, 60_000);
+});

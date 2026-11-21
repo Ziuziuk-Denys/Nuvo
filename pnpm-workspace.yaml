@@ -6,3 +6,5 @@ auditConfig:
   ignoreGhsas:
     # dev-only via vite/tinyglobby, no patched picomatch yet; remove when one exists
     - GHSA-fc5q-39xc-vjpf
+patchedDependencies:
+  "@braccato/core@1.4.0": patches/@braccato__core@1.4.0.patch
