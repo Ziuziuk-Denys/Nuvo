@@ -50,7 +50,7 @@ export async function launch(profile, exe) {
   const startedAt = Date.now();
   const app = await electron.launch({
     executablePath: exe,
-    args: [...(exe ? [] : [ROOT]), `--user-data-dir=${profile.userDataDir}`],
+    args: [...(exe ? [] : [ROOT]), "--mute-audio", `--user-data-dir=${profile.userDataDir}`],
     cwd: ROOT,
     env: profile.env,
   });
@@ -159,8 +159,6 @@ export function core(page, script, arg) {
 }
 
 export async function passFirstRun(page) {
-  await page.locator("[data-testid=recovery-word]").first().waitFor({ timeout: 30_000 });
-  await page.getByRole("button", { name: "I wrote it down" }).click();
   // Skip the tour and close its short version, or its layer sits over the rows
   await page.getByRole("button", { name: "Skip the tour", exact: true }).click({ timeout: 30_000 });
   await page.locator('[data-tour-layer] [data-next]:not([aria-disabled="true"])').click({ timeout: 30_000 });
