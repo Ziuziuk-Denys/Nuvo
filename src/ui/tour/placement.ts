@@ -49,8 +49,9 @@ export function ringAround(box: Box & { radius?: number }, view: { width: number
 }
 
 const ORDER: Side[] = ["below", "above", "right", "left"];
+const ACROSS: Record<Side, Side[]> = { above: ["right", "left"], below: ["right", "left"], right: ["below", "above"], left: ["below", "above"] };
 
-export function placeCallout(ring: Box, size: { width: number; height: number }, area: Area, prefer?: Side, panel?: Box | null): CalloutPlace {
+export function placeCallout(ring: Box, size: { width: number; height: number }, area: Area, prefer?: Side, panel?: Box | null): CalloutPlace | null {
   const { width, height } = size;
   const minX = EDGE;
   const maxX = area.width - EDGE - width;
@@ -76,9 +77,9 @@ export function placeCallout(ring: Box, size: { width: number; height: number },
   };
 
   const fits = (place: CalloutPlace) => place.x >= minX && place.x <= maxX && place.y >= minY && place.y <= maxY;
-  const order = prefer ? [prefer, ...ORDER.filter((side) => side !== prefer)] : ORDER;
+  const order = prefer ? [prefer, ...ACROSS[prefer]] : ORDER;
   const found = order.map(candidate).find(fits);
-  if (found) return found;
+  if (found || prefer) return found ?? null;
 
   const below = candidate("below");
   const y = Math.max(ring.y + ring.height + 4, Math.min(below.y, maxY));

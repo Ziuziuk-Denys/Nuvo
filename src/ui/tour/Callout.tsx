@@ -17,7 +17,7 @@ interface CalloutProps {
   stepKey: string;
 }
 
-export function Callout({ ring, panel, area, side, text, stepKey }: CalloutProps): JSX.Element {
+export function Callout({ ring, panel, area, side, text, stepKey }: CalloutProps): JSX.Element | null {
   const cardRef = useRef<HTMLParagraphElement>(null);
   const [height, setHeight] = useState(GUESS_HEIGHT);
 
@@ -27,6 +27,7 @@ export function Callout({ ring, panel, area, side, text, stepKey }: CalloutProps
   });
 
   const place = placeCallout(ring, { width: CALLOUT_WIDTH, height }, area, side, panel);
+  if (!place) return null;
   const style = {
     width: CALLOUT_WIDTH,
     transform: `translate3d(${Math.round(place.x)}px, ${Math.round(place.y)}px, 0)`,
