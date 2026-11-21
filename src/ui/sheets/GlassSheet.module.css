@@ -35,6 +35,8 @@
 }
 
 .panel {
+  composes: pop from "../components/Popover.module.css";
+  --shift: 8px;
   position: relative;
   box-sizing: border-box;
   display: flex;
@@ -51,11 +53,6 @@
   color: var(--n-ink);
   outline: none;
   transform-origin: 50% 40%;
-  animation: panel-in 220ms var(--n-ease-out) both;
-}
-
-.panel[data-state="out"] {
-  animation: panel-out var(--n-t-quick) var(--n-ease-in) both;
 }
 
 .panel > * {
@@ -72,20 +69,6 @@
 
 .panel > :nth-child(n + 4) {
   animation-delay: 90ms;
-}
-
-@keyframes panel-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.97);
-  }
-}
-
-@keyframes panel-out {
-  to {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
-  }
 }
 
 @keyframes rise {
@@ -171,8 +154,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel,
-  .panel[data-state="out"],
   .backdrop,
   .backdrop[data-state="out"] {
     animation-name: dim-in;
@@ -180,7 +161,6 @@
     animation-timing-function: linear;
   }
 
-  .panel[data-state="out"],
   .backdrop[data-state="out"] {
     animation-name: dim-out;
   }

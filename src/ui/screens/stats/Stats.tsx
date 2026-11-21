@@ -4,6 +4,7 @@ import { Button } from "../../components/Button";
 import { Cover } from "../../components/Cover";
 import { EmptyState } from "../../components/EmptyState";
 import { Enter } from "../../components/Enter";
+import { Lens } from "../../components/Lens";
 import { Menu, type MenuItem } from "../../components/Menu";
 import { Popover } from "../../components/Popover";
 import { Sheet } from "../../components/Sheet";
@@ -232,7 +233,7 @@ function Top({ stats }: { stats: StatsOverview }): JSX.Element {
   const named = rows.map((row) => (shownKind === "playlists" && row.id === "likes" ? { ...row, title: t("ui.library.liked") } : row));
   return (
     <Section id="top" title={t("ui.stats.top")}>
-      <div className={styles.topTabs} role="tablist" aria-label={t("ui.stats.top")}>
+      <div className={`${styles.topTabs} ${look.segments}`} role="tablist" aria-label={t("ui.stats.top")}>
         {kinds.map((item) => (
           <button
             key={item}
@@ -245,6 +246,7 @@ function Top({ stats }: { stats: StatsOverview }): JSX.Element {
               setAll(false);
             }}
           >
+            {item === shownKind ? <Lens group="stats-top" value={shownKind} radius={16} className={look.solidLens} /> : null}
             {t(`ui.stats.top_${item}`)}
           </button>
         ))}
@@ -546,7 +548,7 @@ export function Stats(): JSX.Element {
       <Enter index={0} screen="stats">
         <h1 className={styles.title}>{t("ui.stats.title")}</h1>
         <div className={styles.bar} hidden={state === "never"}>
-          <div className={styles.ranges} role="tablist" aria-label={t("ui.stats.range")}>
+          <div className={`${styles.ranges} ${look.segments}`} role="tablist" aria-label={t("ui.stats.range")}>
             {RANGE_KEYS.map((key) => (
               <button
                 key={key}
@@ -556,6 +558,7 @@ export function Stats(): JSX.Element {
                 className={`${look.pill} ${key === range ? look.solid : look.glass}`}
                 onClick={(event) => pick(key, event.currentTarget)}
               >
+                {key === range ? <Lens group="stats-range" value={range} radius={16} className={look.solidLens} /> : null}
                 {key === "custom" ? customLabel : t(`ui.stats.range_${key}`)}
               </button>
             ))}

@@ -1,4 +1,7 @@
 .panel {
+  composes: panel from "../../components/Popover.module.css";
+  --radius: var(--queue-radius);
+  --from: calc(100% - 1px) 0 0 calc(100% - 44px);
   position: fixed;
   top: 60px;
   right: 8px;
@@ -7,17 +10,6 @@
   display: flex;
   width: var(--queue-width);
   flex-direction: column;
-  overflow: hidden;
-  border-radius: var(--queue-radius);
-  background: var(--n-pop);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
-  color: var(--n-ink);
-  box-shadow: var(--n-panel-shadow);
-}
-
-.panel[data-state="out"] {
-  pointer-events: none;
 }
 
 .head {
@@ -157,58 +149,22 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .panel {
-    animation: slide-in 240ms var(--n-ease-out) both;
-  }
-
-  .panel[data-state="out"] {
-    animation: slide-out var(--n-t-quick) var(--n-ease-in) both;
-  }
-
   .panel[data-fresh] .item {
-    animation: rise 240ms var(--n-ease-out) both;
-    animation-delay: calc(60ms + var(--i) * 30ms);
+    animation: rise var(--n-t-entrance) var(--n-ease-out) both;
+    animation-delay: calc(200ms + var(--i) * 45ms);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel {
-    animation: fade-in var(--n-t-quick) linear both;
-  }
-
-  .panel[data-state="out"] {
-    animation: fade-in var(--n-t-quick) linear reverse both;
-  }
-
   .item,
   .chevron {
     transition: none;
   }
 }
 
-@keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(10px) scale(0.98);
-  }
-}
-
-@keyframes slide-out {
-  to {
-    opacity: 0;
-    transform: translateX(10px) scale(0.98);
-  }
-}
-
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
+    transform: translateY(8px);
   }
 }

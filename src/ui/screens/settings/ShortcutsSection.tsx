@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState, type JSX } from "react";
+import { Lens } from "../../components/Lens";
 import { Sheet } from "../../components/Sheet";
 import { Icon } from "../../icons/Icon";
 import type { IconName } from "../../icons";
@@ -8,6 +9,7 @@ import { SearchQuery } from "./controls";
 import { KeyRecorder, type Rejection } from "./KeyRecorder";
 import { matchesQuery } from "./sections";
 import { ClearGlyph } from "./SectionIcon";
+import look from "../look.module.css";
 import styles from "./shortcuts.module.css";
 
 const ACTIONS: { id: string; scope: ShortcutScope; action: string; icon: IconName }[] = [
@@ -67,7 +69,7 @@ export function ShortcutsSection(): JSX.Element {
   return (
     <div className={styles.shortcuts}>
       <div className={styles.bar}>
-        <div role="tablist" className={styles.scopes}>
+        <div role="tablist" className={`${styles.scopes} ${look.segments}`}>
           {(["app", "global"] as const).map((which) => (
             <button
               key={which}
@@ -80,6 +82,7 @@ export function ShortcutsSection(): JSX.Element {
                 setScope(which);
               }}
             >
+              {!query && scope === which ? <Lens group="shortcut-scope" value={which} radius={10} className={styles.scopeLens} /> : null}
               {t(which === "app" ? "settings.shortcuts.tab_main_app" : "settings.shortcuts.tab_global")}
               <span className={styles.count}>{count(which)}</span>
             </button>

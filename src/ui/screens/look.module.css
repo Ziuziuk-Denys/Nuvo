@@ -302,3 +302,26 @@
     transform: none;
   }
 }
+
+.segments {
+  isolation: isolate;
+}
+
+.segments > [role="tab"] {
+  position: relative;
+}
+
+.segments > [role="tab"][aria-selected="true"] {
+  background: transparent;
+  box-shadow: none;
+}
+
+.solidLens {
+  background: var(--btn-primary-bg);
+  box-shadow: none;
+}
+
+.fillLens {
+  background: var(--n-fill);
+  box-shadow: none;
+}

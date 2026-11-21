@@ -48,8 +48,13 @@
 
 .scope[aria-selected="true"],
 :global(:root[data-theme="dark"]) .scope[aria-selected="true"] {
-  background: color-mix(in srgb, var(--n-ink) 70%, transparent);
+  background: transparent;
   color: var(--n-field);
+}
+
+.scopeLens {
+  background: color-mix(in srgb, var(--n-ink) 70%, transparent);
+  box-shadow: none;
 }
 
 .count {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExter
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShallow } from "zustand/react/shallow";
-import { hasOpenLayer } from "../components/layers";
+import { hasOpenLayer, usePresence } from "../components/layers";
 import { useScrollActivity } from "../components/useScrollActivity";
 import { Field } from "../field/Field";
 import { DURATION_MS, EASE, seconds } from "../motion";
@@ -81,7 +81,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const pageLit = usePageLit();
 
   const onKaraokeRoute = pathname === KARAOKE_PATH;
-  const studioOpen = useStudioOpen();
+  const studioPhase = usePresence(useStudioOpen());
   const karaokeShown = fullscreen || onKaraokeRoute;
   useUndoToast(trackLoaded && !karaokeShown && !gated);
 
@@ -192,7 +192,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
       <LyricsToolsHost />
       <TourLayer />
       <KaraokeOverlay open={fullscreen} onClose={() => setFullscreen(false)} />
-      {studioOpen ? <Studio /> : null}
+      {studioPhase ? <Studio phase={studioPhase} /> : null}
       {!fullscreen && onKaraokeRoute ? (
         <div className={styles.karaoke} data-theme="dark">
           <Karaoke onClose={leaveKaraoke} />

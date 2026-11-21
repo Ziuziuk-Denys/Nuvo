@@ -39,6 +39,7 @@ a.tab[aria-current="page"] {
 }
 
 .tabs[role="tablist"] {
+  isolation: isolate;
   align-self: flex-start;
   gap: 8px;
   width: fit-content;
@@ -46,7 +47,6 @@ a.tab[aria-current="page"] {
 }
 
 .tabs[role="tablist"] .tab {
-  z-index: 1;
   height: 32px;
   padding: 0 16px;
   border-radius: 9px;
@@ -67,23 +67,16 @@ a.tab[aria-current="page"] {
   color: var(--btn-primary-text);
 }
 
-.tabs[role="tablist"] .line {
-  top: 0;
-  height: 32px;
-  width: calc(var(--w) * 1px);
-  border-radius: 9px;
+.tabs[role="tablist"] .lens {
   background: var(--btn-primary-bg);
-  transform: translateX(var(--x));
-  transition:
-    transform var(--n-t-page) var(--n-ease-out),
-    width var(--n-t-page) var(--n-ease-out);
+  box-shadow: none;
 }
 
 .tabs[role="tablist"] .tab:focus-visible:not([aria-selected="true"]) {
   background: var(--n-focus-fill);
 }
 
-.tabs[role="tablist"]:has(.tab[aria-selected="true"]:focus-visible) .line {
+.tabs[role="tablist"] .tab[aria-selected="true"]:focus-visible .lens {
   box-shadow: var(--n-focus-glow);
 }
 
