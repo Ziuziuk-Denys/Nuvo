@@ -531,20 +531,19 @@ describe("shell", () => {
   it("opens the search palette under the field on Ctrl+K: suggestions, a match, nothing, a settings entry and full screen", async () => {
     const live = session ?? (session = await launchNuvo({ profile: "seeded" }));
     const page = live.page;
-    // the catalogue never answers here, so every row the checks read comes from the library and the commands
     await page.route(/youtubei\/v1\/search/, (route) => route.abort());
-    // the look shots reload the page, so the stub has to come back with every load
     await page.addInitScript(() => {
-      if (!sessionStorage.getItem("e2e.no-soundcloud")) return;
+      if (!sessionStorage.getItem("e2e.sc-echo")) return;
       const real = window.fetch.bind(window);
       window.fetch = async (input, init) => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-        if (url.startsWith("nuvo-core://local/v1/sc/search"))
-          return new Response(JSON.stringify({ items: [] }), { headers: { "content-type": "application/json" } });
-        return real(input, init);
+        if (!url.startsWith("nuvo-core://local/v1/sc/search")) return real(input, init);
+        const query = new URL(url).searchParams.get("q") ?? "";
+        const items = [{ type: "track", id: "sc-echo", title: query, artists: [{ id: "sc-echo-a", name: "Echo" }], durationMs: 200_000 }];
+        return new Response(JSON.stringify({ items }), { headers: { "content-type": "application/json" } });
       };
     });
-    await page.evaluate(() => sessionStorage.setItem("e2e.no-soundcloud", "1"));
+    await page.evaluate(() => sessionStorage.setItem("e2e.sc-echo", "1"));
     await page.reload();
     const palette = page.locator('[role="dialog"][data-state="in"]');
     const field = page.locator("header input[role=combobox]");
@@ -580,6 +579,8 @@ describe("shell", () => {
     expect(await page.evaluate(() => location.hash), "palette: Escape stays on the page").toBe("#/library");
 
     await openWith("cover glow")();
+    await palette.locator('[role="option"]', { hasText: "Echo" }).first().waitFor({ timeout: 10_000 });
+    expect(await palette.locator('[role="option"]').first().textContent(), "palette: the setting comes before a song with its name").toContain("Cover glow");
     await page.keyboard.press("Enter");
     await page.getByText("Cover glow", { exact: true }).first().waitFor({ timeout: 5_000 });
     await page.keyboard.press("Escape");
