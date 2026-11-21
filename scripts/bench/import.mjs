@@ -26,7 +26,12 @@ async function importOnce(page) {
   await start.click();
   for (;;) {
     const item = await core(page, `return (await (await fetch(base + "/v1/imports")).json()).items.find((item) => !arg.includes(item.id)) ?? null;`, before);
-    if (item?.status === "done") return { readMs, matchMs: Date.now() - matchAt, total: item.total, counts: item.counts };
+    if (item?.status === "done") {
+      const matchMs = Date.now() - matchAt;
+      await page.keyboard.press("Escape");
+      await page.locator('[role="dialog"]').waitFor({ state: "detached", timeout: 10_000 });
+      return { readMs, matchMs, total: item.total, counts: item.counts };
+    }
     if (Date.now() - matchAt > 600_000) throw new Error("import did not finish in 10 min");
     await sleep(100);
   }
