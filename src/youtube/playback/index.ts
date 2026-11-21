@@ -1,6 +1,6 @@
 import type { FetchLike, Innertube } from "../http";
 import { YtError } from "../types";
-import { downloadWhole } from "./download";
+import { downloadWhole, fetchRange } from "./download";
 import { PlayerScript } from "./player";
 import { StreamResolver, type ResolveOptions, type YtSource } from "./resolver";
 import { SignedInTv, type SignedInDeps } from "./tv";
@@ -11,6 +11,8 @@ export type { ResolveOptions, YtSource } from "./resolver";
 export interface YtPlayback {
   resolve(track: { id: string }, options: ResolveOptions, signal: AbortSignal): Promise<YtSource>;
   fetchWhole(source: Pick<YtSource, "url" | "progressive" | "bytes" | "mimeType" | "sizeBytes">, signal: AbortSignal): Promise<Blob>;
+  range(url: string, from: number, to: number, signal: AbortSignal): Promise<Uint8Array>;
+  canPrefetch(): boolean;
   warmUp(): void;
   reset(): void;
 }
@@ -51,6 +53,8 @@ export function createPlayback(deps: PlaybackRuntimeDeps): YtPlayback {
       if (!blob) throw new YtError("rejected-stream", { text: "not cacheable" });
       return blob;
     },
+    range: (url, from, to, signal) => fetchRange(deps.fetch, url, from, to, signal),
+    canPrefetch: () => !signedIn.enabled(),
     warmUp() {
       // The worker starts on the first stream that needs it, so an idle app keeps no second renderer
       void deps.yt.visitor.get();

@@ -82,39 +82,7 @@ async function chunked(fetchFn: FetchLike, url: string, length: number, mimeType
   const fetchChunk = async (index: number) => {
     const start = index * CHUNK_BYTES;
     const end = Math.min(start + CHUNK_BYTES, length) - 1;
-    const target = new URL(url);
-    target.searchParams.set("range", `${start}-${end}`);
-    let lastError: unknown;
-    for (let attempt = 0; attempt < CHUNK_ATTEMPTS; attempt += 1) {
-      if (inner.signal.aborted) throw abortError();
-      try {
-        const response = await fetchFn(target.toString(), {
-          signal: inner.signal,
-        });
-        if (!response.ok) throw new YtError("http", { status: response.status });
-        const bytes = new Uint8Array(await response.arrayBuffer());
-        if (bytes.byteLength !== end - start + 1)
-          throw new YtError("rejected-stream", {
-            text: `short chunk ${bytes.byteLength}`,
-          });
-        buffer.set(bytes, start);
-        return;
-      } catch (error) {
-        if (isAbortError(error) || inner.signal.aborted) throw abortError();
-        const isYtError = error instanceof YtError;
-        const is4xxNonRetryable =
-          isYtError &&
-          error.code === "http" &&
-          typeof error.status === "number" &&
-          error.status >= 400 &&
-          error.status < 500 &&
-          error.status !== 408 &&
-          error.status !== 429;
-        if (is4xxNonRetryable) throw error;
-        lastError = error;
-      }
-    }
-    throw lastError;
+    buffer.set(await fetchRange(fetchFn, url, start, end, inner.signal), start);
   };
 
   const lane = async () => {
@@ -135,4 +103,37 @@ async function chunked(fetchFn: FetchLike, url: string, length: number, mimeType
     signal.removeEventListener("abort", stop);
   }
   return new Blob([buffer], { type: mimeType });
+}
+
+export async function fetchRange(fetchFn: FetchLike, url: string, start: number, end: number, signal: AbortSignal): Promise<Uint8Array> {
+  const target = new URL(url);
+  target.searchParams.set("range", `${start}-${end}`);
+  let lastError: unknown;
+  for (let attempt = 0; attempt < CHUNK_ATTEMPTS; attempt += 1) {
+    if (signal.aborted) throw abortError();
+    try {
+      const response = await fetchFn(target.toString(), { signal });
+      if (!response.ok) throw new YtError("http", { status: response.status });
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength !== end - start + 1)
+        throw new YtError("rejected-stream", {
+          text: `short chunk ${bytes.byteLength}`,
+        });
+      return bytes;
+    } catch (error) {
+      if (isAbortError(error) || signal.aborted) throw abortError();
+      const isYtError = error instanceof YtError;
+      const is4xxNonRetryable =
+        isYtError &&
+        error.code === "http" &&
+        typeof error.status === "number" &&
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.status !== 408 &&
+        error.status !== 429;
+      if (is4xxNonRetryable) throw error;
+      lastError = error;
+    }
+  }
+  throw lastError;
 }

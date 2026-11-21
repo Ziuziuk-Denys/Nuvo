@@ -243,6 +243,12 @@ export class FakeYoutube implements YoutubePort {
   fetchWhole(source: PlayableSource): Promise<Blob> {
     return Promise.resolve(source.bytes ?? new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])]));
   }
+  range(_url: string, from: number, to: number): Promise<Uint8Array> {
+    return Promise.resolve(new Uint8Array(to - from + 1));
+  }
+  canPrefetch() {
+    return true;
+  }
   warmUp() {
     this.warmUps += 1;
   }

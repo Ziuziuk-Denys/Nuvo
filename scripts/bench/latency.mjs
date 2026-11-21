@@ -7,6 +7,7 @@ const exe = option("--exe");
 const runs = Number(option("--runs", 5));
 const live = process.env.NUVO_BENCH_LIVE === "1";
 const thinkMs = Number(option("--think", 1500));
+const prepare = !process.argv.includes("--no-prepare");
 const WARM_ROWS = 4;
 const QUERIES = [
   "Queen Bohemian Rhapsody",
@@ -92,6 +93,7 @@ try {
 
 // shortcut: unverified offline, selectors follow the Search page rows (variant track, duration at the end)
 async function liveRun(page) {
+  if (!prepare) await page.evaluate(() => (window.__nuvoPlayer.engine.prepareStarts = () => undefined));
   await page.evaluate(() => (location.hash = "#/search"));
   const input = page.getByRole("textbox").first();
   for (const pass of ["liveNetwork", "liveReplay"]) {

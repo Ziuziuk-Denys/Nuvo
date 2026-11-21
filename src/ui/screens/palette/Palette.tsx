@@ -29,6 +29,7 @@ import { useTour } from "../../tour/tourStore";
 import { formatDuration } from "../entity/entityModel";
 import { useGateStore } from "../lock/gateState";
 import { historyHref, localResults, songsToRank, subtitleOf, withSoundCloud } from "../search/searchModel";
+import { usePreparedStarts } from "../search/usePreparedStarts";
 import { useAddMusic } from "../local/addMusic";
 import { SETTING_ITEMS } from "../settings/settingItems";
 import { buildCommands, rankCommands, soundCommands } from "./commands";
@@ -318,6 +319,8 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
   const toRank = useMemo(() => songsToRank(shown, soundCloudResults, "all"), [shown, soundCloudResults]);
   const rankedSongs = useRankedSongs(trimmed, toRank);
   const found = useMemo(() => paletteResults(local, withSoundCloud(shown, rankedSongs, "all")), [local, shown, rankedSongs]);
+  const startable = useMemo(() => [found.top, ...found.songs], [found]);
+  usePreparedStarts(startable, search.hasLoaded);
 
   const go = (href: string) => navigateWithTransition(navigate, href);
   const withTrack = (action: (track: Track) => void) => () => {

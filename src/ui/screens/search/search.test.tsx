@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => {
       playNext: vi.fn(),
       addToQueue: vi.fn(),
       startRadioStation: vi.fn(),
+      prepareStarts: vi.fn(),
     },
   };
 });
@@ -288,6 +289,19 @@ describe("Search", () => {
     expect(host.querySelector("[data-swap]")).toBe(results);
     act(() => button("ui.search.tab_songs").closest("button")!.click());
     expect(host.querySelector("[data-swap]")).not.toBe(results);
+  });
+
+  it("prepares the first songs once the results stay put, and lets them go on leave", async () => {
+    mocks.search.mockResolvedValue([mocks.ytTrack("s1", "Bohemian Rhapsody"), mocks.ytTrack("s2", "Under Pressure")]);
+    renderSearch();
+    typeInto(field(), "queen");
+    await settle(320);
+    await settle(400);
+    const prepared = mocks.engine.prepareStarts.mock.calls.at(-1)![0] as unknown as { id: string }[];
+    expect(prepared.map((t) => t.id)).toEqual(["s1", "s2"]);
+    act(() => root!.unmount());
+    root = null;
+    expect(mocks.engine.prepareStarts).toHaveBeenLastCalledWith([]);
   });
 
   it("plays a song result alone and files it in the history", async () => {

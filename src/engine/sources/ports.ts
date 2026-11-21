@@ -21,6 +21,8 @@ export interface YoutubePort {
     signal: AbortSignal,
   ): Promise<PlayableSource>;
   fetchWhole(source: PlayableSource, signal: AbortSignal): Promise<Blob>;
+  range(url: string, from: number, to: number, signal: AbortSignal): Promise<Uint8Array>;
+  canPrefetch(): boolean;
   warmUp(): void;
 }
 
