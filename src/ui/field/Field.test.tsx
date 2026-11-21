@@ -16,6 +16,7 @@ const look = vi.hoisted(() => ({ current: { preset: "nuvo" as PresetId, mode: "d
 
 vi.mock("../ports/covers", () => ({ useCoverSrc: (url: string | undefined) => url }));
 vi.mock("../ports/theme", () => ({ useLook: () => look.current }));
+vi.mock("../karaoke/backdrop/Backdrop", () => ({ Backdrop: ({ overlay }: { overlay?: string }) => <div data-overlay={overlay ? "" : undefined} /> }));
 
 function Calm() {
   useCalmLight();
@@ -49,6 +50,14 @@ afterEach(() => {
 });
 
 describe("Field", () => {
+  it("paints the page's sky instead of the blurred cover, still under reduced motion", () => {
+    useEffectsStore.setState({ reduce: true });
+    mount(<Field />);
+    act(() => usePageBackdropStore.setState({ coverUrl: "c1.jpg", options: { sky: "live" } }));
+    expect(covers()).toEqual([]);
+    expect(host.querySelector("[data-overlay]")).not.toBeNull();
+  });
+
   it("is a plain canvas without a page cover and hides from assistive tech", () => {
     mount(<Field />);
     expect(host.firstElementChild!.getAttribute("aria-hidden")).toBe("true");

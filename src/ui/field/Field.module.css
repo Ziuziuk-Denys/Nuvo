@@ -16,6 +16,15 @@
   transition: background-color 380ms ease-out;
 }
 
+.sky {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 0;
+  will-change: transform;
+}
+
 .cover {
   position: absolute;
   inset: 0 0 50%;

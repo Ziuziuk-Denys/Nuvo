@@ -58,6 +58,7 @@ vi.mock("../../ports/network", () => ({
   useStreamingReachable: () => mocks.network.reachable,
 }));
 vi.mock("./HiddenLink", () => ({ HiddenLink: () => <p>hidden-link</p> }));
+vi.mock("./discover/DiscoverArc", () => ({ DiscoverArc: () => null }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: mocks.backdrop }));
 vi.mock("../../shell/navigate", () => ({ navigateWithTransition: (_navigate: unknown, to: string) => mocks.go(to) }));
 vi.mock("../../ports/library", () => ({

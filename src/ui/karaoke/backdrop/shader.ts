@@ -50,8 +50,10 @@ const TEXTURE_PX = 64;
 export interface FlowRenderer {
   setCover(image: TexImageSource, fadeMs?: number): boolean;
   settle(): void;
+  hold(held: boolean): void;
   draw(timeMs: number): void;
   resize(width: number, height: number): void;
+  uniform(name: string, values: readonly number[]): void;
   dispose(): void;
 }
 
@@ -73,11 +75,20 @@ function createTexture(gl: WebGL2RenderingContext): WebGLTexture | null {
   return texture;
 }
 
-export function createFlowRenderer(canvas: HTMLCanvasElement): FlowRenderer | null {
-  const gl = canvas.getContext("webgl2", { antialias: false, alpha: false, depth: false, powerPreference: "low-power" });
+export function createFlowRenderer(canvas: HTMLCanvasElement, overlay?: string): FlowRenderer | null {
+  const gl = overlay
+    ? canvas.getContext("webgl2", {
+        antialias: false,
+        alpha: true,
+        premultipliedAlpha: true,
+        depth: false,
+        powerPreference: "low-power",
+        failIfMajorPerformanceCaveat: true,
+      })
+    : canvas.getContext("webgl2", { antialias: false, alpha: false, depth: false, powerPreference: "low-power" });
   if (!gl) return null;
   const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
-  const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+  const fragment = compile(gl, gl.FRAGMENT_SHADER, overlay ?? FRAGMENT);
   const program = gl.createProgram();
   if (!vertex || !fragment || !program) return null;
   gl.attachShader(program, vertex);
@@ -106,7 +117,8 @@ export function createFlowRenderer(canvas: HTMLCanvasElement): FlowRenderer | nu
   small.width = TEXTURE_PX;
   small.height = TEXTURE_PX;
   const smallContext = small.getContext("2d");
-  const origin = performance.now();
+  let origin = performance.now();
+  let heldAt: number | null = null;
   let hasCover = false;
   let fadeFrom = 0;
   let fadeMs = 0;
@@ -136,13 +148,21 @@ export function createFlowRenderer(canvas: HTMLCanvasElement): FlowRenderer | nu
       hasCover = true;
       return true;
     },
+    hold(held) {
+      const now = performance.now();
+      if (held && heldAt === null) heldAt = now;
+      if (!held && heldAt !== null) {
+        origin += now - heldAt;
+        heldAt = null;
+      }
+    },
     settle() {
       fadeMs = 0;
     },
     draw(timeMs) {
       const blend = fadeMs > 0 ? Math.min(1, Math.max(0, (timeMs - fadeFrom) / fadeMs)) : 1;
       gl.uniform1f(blendAt, blend);
-      gl.uniform1f(timeAt, (timeMs - origin) / 1000);
+      gl.uniform1f(timeAt, ((heldAt ?? timeMs) - origin) / 1000);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
     resize(width, height) {
@@ -151,6 +171,12 @@ export function createFlowRenderer(canvas: HTMLCanvasElement): FlowRenderer | nu
       gl.viewport(0, 0, canvas.width, canvas.height);
       const long = Math.max(canvas.width, canvas.height);
       gl.uniform2f(aspectAt, canvas.width / long, canvas.height / long);
+    },
+    uniform(name, values) {
+      const at = gl.getUniformLocation(program, name);
+      if (values.length === 1) gl.uniform1f(at, values[0]);
+      else if (values.length === 2) gl.uniform2f(at, values[0], values[1]);
+      else gl.uniform3f(at, values[0], values[1], values[2]);
     },
     dispose() {
       gl.deleteTexture(current);

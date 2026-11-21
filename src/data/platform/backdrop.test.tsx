@@ -5,7 +5,7 @@ import { usePageBackdrop, usePageBackdropStore } from "./backdrop";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-function Screen({ cover }: { cover: string }) {
+function Screen({ cover }: { cover?: string }) {
   usePageBackdrop(cover, { blur: 56, dim: 0.22 });
   return null;
 }
@@ -27,5 +27,15 @@ describe("page backdrop", () => {
     act(() => first.unmount());
     expect(usePageBackdropStore.getState().coverUrl).toBe("new.jpg");
     act(() => second.unmount());
+  });
+
+  it("a screen without a cover leaves the backdrop to one that has it", () => {
+    const parent = createRoot(document.createElement("div"));
+    const child = createRoot(document.createElement("div"));
+    act(() => child.render(<Screen cover="ring.jpg" />));
+    act(() => parent.render(<Screen />));
+    expect(usePageBackdropStore.getState().coverUrl).toBe("ring.jpg");
+    act(() => parent.unmount());
+    act(() => child.unmount());
   });
 });

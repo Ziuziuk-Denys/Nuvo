@@ -17,7 +17,7 @@ vi.mock("@/data/covers/colors", () => ({
 }));
 
 function fakeRenderer() {
-  return { setCover: vi.fn(), settle: vi.fn(), draw: vi.fn(), resize: vi.fn(), dispose: vi.fn() };
+  return { setCover: vi.fn(), settle: vi.fn(), draw: vi.fn(), resize: vi.fn(), uniform: vi.fn(), hold: vi.fn(), dispose: vi.fn() };
 }
 
 function fakeFrames() {
@@ -81,6 +81,26 @@ describe("backdrop rules", () => {
 });
 
 describe("Backdrop", () => {
+  it("breathes between keyframes without a frame loop, and draws live only while open", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "setTimeout", "clearTimeout"] });
+    const renderer = fakeRenderer();
+    gpu.renderer = renderer;
+    const frames = fakeFrames();
+    await act(async () => root.render(<Backdrop cover="c.jpg" open={false} breathe overlay="sky" />));
+    const backdrop = host.firstElementChild as HTMLElement;
+    const keys = [...host.querySelectorAll("canvas")].slice(1);
+    expect(backdrop.dataset.keys).toBe("");
+    expect(frames.pending()).toBe(0);
+    const before = renderer.draw.mock.calls.length;
+    act(() => vi.advanceTimersByTime(40_000));
+    expect(renderer.draw.mock.calls.length).toBe(before + 2);
+    expect(keys.map((key) => key.style.opacity).sort()).toEqual(["0", "1"]);
+    await act(async () => root.render(<Backdrop cover="c.jpg" open breathe={false} overlay="sky" />));
+    expect(backdrop.dataset.keys).toBeUndefined();
+    expect(frames.pending()).toBe(1);
+    vi.useRealTimers();
+  });
+
   it("shows the still field when WebGL2 is missing", async () => {
     await act(async () => root.render(<Backdrop cover="c.jpg" open />));
     const still = host.querySelector("[data-still]") as HTMLElement;

@@ -8,9 +8,21 @@ import styles from "./Backdrop.module.css";
 
 const COVER_FADE_MS = 800;
 const COVER_PX = 64;
+const KEY_MS = 20_000;
+const BREATH_MS = 5000;
 
-export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX.Element {
+interface BackdropProps {
+  cover: string;
+  open: boolean;
+  breathe?: boolean;
+  overlay?: string;
+  uniforms?: Record<string, readonly number[]>;
+}
+
+export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: BackdropProps): JSX.Element {
+  const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const keysRef = useRef<Array<HTMLCanvasElement | null>>([]);
   const rendererRef = useRef<FlowRenderer | null>(null);
   const [webgl, setWebgl] = useState(true);
   const [coverColors, setCoverColors] = useState({ cover: "", colors: DEFAULT_COVER_COLORS });
@@ -40,7 +52,7 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const first = createFlowRenderer(canvas);
+    const first = createFlowRenderer(canvas, overlay);
     if (!first) {
       setWebgl(false);
       return;
@@ -54,7 +66,7 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
     };
     const restored = () => {
       // every GPU resource is gone: build the renderer again, the cover effect then reloads and redraws the cover
-      const next = createFlowRenderer(canvas);
+      const next = createFlowRenderer(canvas, overlay);
       if (!next) return;
       rendererRef.current?.dispose();
       rendererRef.current = next;
@@ -64,7 +76,8 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
     function size() {
       const renderer = rendererRef.current;
       if (!renderer) return;
-      renderer.resize(canvas!.clientWidth * devicePixelRatio * RENDER_SCALE, canvas!.clientHeight * devicePixelRatio * RENDER_SCALE);
+      const scale = (overlay ? Math.min(devicePixelRatio, 1) : devicePixelRatio) * RENDER_SCALE;
+      renderer.resize(canvas!.clientWidth * scale, canvas!.clientHeight * scale);
       renderer.draw(performance.now());
     }
     size();
@@ -79,7 +92,14 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
       rendererRef.current?.dispose();
       rendererRef.current = null;
     };
-  }, []);
+  }, [overlay]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer || !uniforms) return;
+    for (const [name, values] of Object.entries(uniforms)) renderer.uniform(name, values);
+    renderer.draw(performance.now());
+  }, [uniforms, webgl]);
 
   useEffect(() => {
     if (!webgl || !cover) return;
@@ -114,11 +134,15 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
     if (!animate) {
       const renderer = rendererRef.current;
       if (renderer && showCanvas) {
+        renderer.hold(true);
         renderer.settle();
         renderer.draw(performance.now());
       }
       return;
     }
+    rendererRef.current?.hold(false);
+    const root = rootRef.current!;
+    delete root.dataset.keys;
     let frame = 0;
     let last = -Infinity;
     const tick = (now: number) => {
@@ -133,11 +157,61 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
     return () => cancelAnimationFrame(frame);
   }, [animate, showCanvas, fps]);
 
+  const breathing = Boolean(overlay) && breathe && showCanvas && !animate && visible && !reduced;
+  useEffect(() => {
+    if (!breathing) return;
+    const root = rootRef.current!;
+    const canvas = canvasRef.current!;
+    const keys = keysRef.current.filter((key): key is HTMLCanvasElement => key !== null);
+    rendererRef.current?.hold(false);
+    let jump = !("keys" in root.dataset);
+    let next = Number(keys[0].style.opacity || 0) > Number(keys[1].style.opacity || 0) ? 1 : 0;
+    // a keyframe is drawn once and the compositor blends it in, so the sky costs nothing between breaths
+    const keyframe = () => {
+      const renderer = rendererRef.current;
+      if (!renderer) return;
+      renderer.draw(performance.now());
+      const key = keys[next];
+      if (key.width !== canvas.width || key.height !== canvas.height) Object.assign(key, { width: canvas.width, height: canvas.height });
+      const pen = key.getContext("2d");
+      pen?.clearRect(0, 0, key.width, key.height);
+      pen?.drawImage(canvas, 0, 0);
+      for (const each of keys) each.style.transition = jump ? "none" : `opacity ${BREATH_MS}ms ease-in-out`;
+      key.style.opacity = "1";
+      keys[1 - next].style.opacity = "0";
+      root.dataset.keys = "";
+      jump = false;
+      next = 1 - next;
+    };
+    keyframe();
+    const timer = window.setInterval(keyframe, KEY_MS);
+    return () => {
+      window.clearInterval(timer);
+      for (const each of keys) {
+        each.style.opacity = getComputedStyle(each).opacity;
+        each.style.transition = "none";
+      }
+    };
+  }, [breathing]);
+
   return (
-    <div className={styles.root} aria-hidden="true">
+    <div ref={rootRef} className={styles.root} data-overlay={overlay ? "" : undefined} aria-hidden="true">
       {showCanvas ? null : <div data-still="" className={styles.layer} style={{ background: stillBackground(colors) }} />}
-      <canvas ref={canvasRef} className={styles.layer} data-hidden={showCanvas ? undefined : ""} />
-      <div className={styles.shade} />
+      <div className={styles.motion}>
+        <canvas ref={canvasRef} className={styles.layer} data-gl="" data-hidden={showCanvas ? undefined : ""} />
+        {overlay
+          ? [0, 1].map((index) => (
+              <canvas
+                key={index}
+                ref={(node) => {
+                  keysRef.current[index] = node;
+                }}
+                className={`${styles.layer} ${styles.key}`}
+              />
+            ))
+          : null}
+      </div>
+      {overlay ? null : <div className={styles.shade} />}
     </div>
   );
 }
