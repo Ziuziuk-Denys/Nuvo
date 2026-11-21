@@ -1,5 +1,5 @@
 import { fontFor } from "../raster";
-import { easeOutCubic, lerp, phraseAt } from "./kit";
+import { easeOutCubic, phraseAt } from "./kit";
 import { QUIET, type LyricAnimation } from "./types";
 
 const MARGIN = 0.125;
@@ -33,7 +33,7 @@ function groupsOf(texts: string[], measure: (text: string) => number, available:
   return groups;
 }
 
-export function paperRows(texts: string[], complete: boolean, width: number, measure: (text: string) => number, size = 72, perRow = 3): PaperRow[] {
+export function paperRows(texts: string[], width: number, measure: (text: string) => number, size = 72, perRow = 3): PaperRow[] {
   const left = width * MARGIN;
   const right = width * (1 - MARGIN);
   const space = size * OPEN_SPACING_EM;
@@ -49,12 +49,6 @@ export function paperRows(texts: string[], complete: boolean, width: number, mea
       }),
     };
   };
-
-  if (!complete) {
-    const widths = groups.map((group) => group.reduce((sum, text) => sum + measure(text), 0) + space * (group.length - 1));
-    const start = Math.max(left, (width - Math.max(0, ...widths)) / 2);
-    return groups.map((group) => open(group, start));
-  }
 
   return groups.map((group, index) => {
     if (index === groups.length - 1 || group.length < 2) return open(group, left);
@@ -90,7 +84,6 @@ const NEUTRAL = { family: "neutral" as const, weight: 400, italic: false, upper:
 const ASCENT = 0.72;
 const LEADING = 1.19;
 const APPEAR_MS = 70;
-const SETTLE_MS = 220;
 
 export const paper: LyricAnimation = {
   id: "paper",
@@ -100,36 +93,27 @@ export const paper: LyricAnimation = {
   draw({ ctx, lines, nowMs, width, height }) {
     const phrase = phraseAt(lines, nowMs);
     if (!phrase || phrase.shown.length === 0) return QUIET;
-    const texts = phrase.shown.map((word) => word.text.trim());
+    const texts = phrase.words.map((word) => word.text.trim());
     const measureAt = (text: string, px: number) => {
       ctx.font = fontFor(NEUTRAL, px);
       return ctx.measureText(text).width;
     };
-    // sized for the whole phrase, so the type does not shrink while words arrive
-    const size = paperSize(
-      phrase.words.map((word) => word.text.trim()),
-      width,
-      height,
-      measureAt,
-      0.125 * Math.min(width, height),
-    );
+    const size = paperSize(texts, width, height, measureAt, 0.125 * Math.min(width, height));
     ctx.font = fontFor(NEUTRAL, size);
     const measure = (text: string) => ctx.measureText(text).width;
-    const open = paperRows(texts, false, width, measure, size);
-    const settled = phrase.complete ? paperRows(texts, true, width, measure, size) : open;
-    const settle = phrase.complete ? easeOutCubic((nowMs - phrase.words.at(-1)!.fromMs) / SETTLE_MS) : 0;
+    const rows = paperRows(texts, width, measure, size);
     const top = height * (height > width * 1.2 ? 0.3 : 0.252);
     ctx.fillStyle = "#fff";
     let index = 0;
-    settled.forEach((row, rowIndex) => {
+    rows.forEach((row, rowIndex) => {
       const baseline = top + size * ASCENT + rowIndex * size * LEADING;
-      row.words.forEach((word, wordIndex) => {
-        const age = nowMs - phrase.shown[index].fromMs;
-        const appear = easeOutCubic(age / APPEAR_MS);
+      for (const word of row.words) {
+        if (index >= phrase.shown.length) break;
+        const appear = easeOutCubic((nowMs - phrase.shown[index].fromMs) / APPEAR_MS);
         ctx.globalAlpha = appear;
-        ctx.fillText(word.text, lerp(open[rowIndex].words[wordIndex].x, word.x, settle), baseline + (1 - appear) * size * 0.06);
+        ctx.fillText(word.text, word.x, baseline + (1 - appear) * size * 0.06);
         index++;
-      });
+      }
     });
     ctx.globalAlpha = 1;
     return QUIET;

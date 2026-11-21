@@ -704,6 +704,46 @@
   color: #fff;
 }
 
+.stageZone [data-ink="light"] {
+  --k-ink: #fff;
+  --k-solid: #fff;
+  --k-ink-2: rgba(255, 255, 255, 0.72);
+  --k-ink-3: rgba(255, 255, 255, 0.5);
+  --k-hover: rgba(255, 255, 255, 0.1);
+  --k-on: rgba(255, 255, 255, 0.16);
+  --k-track: rgba(255, 255, 255, 0.18);
+  --k-halo: rgba(255, 255, 255, 0.32);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.stageZone [data-ink="dark"] {
+  --k-ink: #101320;
+  --k-solid: #101320;
+  --k-ink-2: rgba(16, 19, 32, 0.72);
+  --k-ink-3: rgba(16, 19, 32, 0.5);
+  --k-hover: rgba(16, 19, 32, 0.08);
+  --k-on: rgba(16, 19, 32, 0.12);
+  --k-track: rgba(16, 19, 32, 0.18);
+  --k-halo: rgba(16, 19, 32, 0.22);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.3);
+}
+
+:where(.stageZone [data-ink]) {
+  color: var(--k-ink);
+}
+
+:where(.stageZone .times > [data-ink]) {
+  color: var(--k-ink-3);
+}
+
+.stageZone .play[data-ink="light"] {
+  color: #101320;
+}
+
+.stageZone .play[data-ink="dark"] {
+  color: #fff;
+}
+
 .noLyrics {
   position: absolute;
   z-index: 1;

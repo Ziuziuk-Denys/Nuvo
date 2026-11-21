@@ -19,6 +19,7 @@ import { usePlayerStore } from "./player";
 import { subscribeSpectrum } from "./sound";
 
 export type { Quality };
+export { LUMA_COLS, LUMA_ROWS } from "@/visual/render/stage";
 export { drawWatermark } from "@/visual/watermark";
 const AUDIO_BITS = 192_000;
 

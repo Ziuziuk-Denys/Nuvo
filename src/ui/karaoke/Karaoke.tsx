@@ -32,6 +32,7 @@ import { setStudioOpen, useStudioOpen } from "../visual/studioOpen";
 import { useLook } from "../ports/theme";
 import { templateFor } from "../ports/visual";
 import styles from "./Karaoke.module.css";
+import { useSceneInk } from "./sceneInk";
 
 const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
   line: { label: "ui.karaoke.highlight_line", hint: "ui.karaoke.highlight_line_hint" },
@@ -390,6 +391,9 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const maximized = isMaximized || isFullScreen;
   const stageOn = visual.chosen && visual.enabled && visual.stage;
   const [lightScene, setLightScene] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const columnRef = useRef<HTMLElement>(null);
+  const onLuma = useSceneInk(rootRef, columnRef, stageOn && !editing, `${track?.id ?? ""}:${liked}`);
   const [hint, setHint] = useState(false);
   const lightLook = useLook().mode === "light";
   const beforeDemo = useRef<Playback | null | undefined>(undefined);
@@ -448,6 +452,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
 
   return (
     <div
+      ref={rootRef}
       className={styles.root}
       style={vars}
       data-theme="dark"
@@ -455,7 +460,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       data-choosing={visual.chosen ? undefined : ""}
     >
       {stageOn && !editing ? (
-        <Stage className={styles.stage} template={scene} aspect="wide" coverUrl={track?.coverUrl ?? ""} lines={lines} onTone={setLightScene} />
+        <Stage className={styles.stage} template={scene} aspect="wide" coverUrl={track?.coverUrl ?? ""} lines={lines} onTone={setLightScene} onLuma={onLuma} />
       ) : (
         <Backdrop cover={track?.coverUrl ?? ""} open />
       )}
@@ -496,7 +501,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
 
       {stageOn ? <div className={styles.stageDim} /> : null}
       <div className={stageOn ? styles.stageZone : styles.zoneOff}>
-        <section className={styles.left}>
+        <section ref={columnRef} className={styles.left}>
           <Cover src={track?.coverUrl ?? ""} size={340} radius={12} />
           <h1 className={styles.title}>{track?.title ?? ""}</h1>
           <p className={styles.artist}>{track?.artists ?? ""}</p>

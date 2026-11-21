@@ -19,7 +19,7 @@ declare const self: DedicatedWorkerGlobalScope;
 const FOOT_EVERY_MS = 500;
 const FOOT_WIDTH = 16;
 const FOOT_DARKEN = 0.38;
-const TONE_EVERY_MS = 500;
+const LUMA_STEP = 6;
 const LIGHT_ABOVE = 0.62;
 const DARK_BELOW = 0.5;
 
@@ -42,9 +42,8 @@ let dirty = true;
 let drawnAtMs = Number.NaN;
 let lastFrame: number | null = null;
 let lastFoot = 0;
-let lastTone = 0;
 let light = false;
-const toneSampler = new OffscreenCanvas(16, 9).getContext("2d", { willReadFrequently: true });
+let lastCells: Uint8Array | null = null;
 let frames = 0;
 let frameId: number | null = null;
 const clock = createStageClock();
@@ -92,18 +91,24 @@ function shareFoot(now: number): void {
 }
 
 // a gap between the two thresholds keeps a frame near the middle from flipping the controls back and forth
-function shareTone(now: number, changed: boolean): void {
-  if (!toneSampler || !canvas || (!changed && now - lastTone < TONE_EVERY_MS)) return;
-  lastTone = now;
-  toneSampler.drawImage(canvas, 0, 0, 16, 9);
-  const data = toneSampler.getImageData(0, 0, 16, 9).data;
+function shareLuma(fresh: boolean): void {
+  const cells = stage?.luma(fresh);
+  if (!cells) return;
   let total = 0;
-  for (let i = 0; i < data.length; i += 4) total += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
-  const mean = total / (data.length / 4) / 255;
+  let moved = !lastCells;
+  for (let i = 0; i < cells.length; i++) {
+    total += cells[i];
+    if (lastCells && Math.abs(cells[i] - lastCells[i]) >= LUMA_STEP) moved = true;
+  }
+  const mean = total / cells.length / 255;
   const next = light ? mean > DARK_BELOW : mean > LIGHT_ABOVE;
-  if (next === light) return;
-  light = next;
-  self.postMessage({ type: "tone", light } satisfies FromStage);
+  if (next !== light) {
+    light = next;
+    self.postMessage({ type: "tone", light } satisfies FromStage);
+  }
+  if (!moved) return;
+  lastCells = cells;
+  self.postMessage({ type: "luma", cells } satisfies FromStage);
 }
 
 function loop(now: number): void {
@@ -113,14 +118,14 @@ function loop(now: number): void {
   const { atMs, playing } = clock.read(sharedNow());
   // a paused song holds its frame; only a seek or a change to the scene draws again
   if (!playing && !dirty && atMs === drawnAtMs) {
+    shareLuma(false);
     prepareOne();
     return;
   }
-  const changed = dirty;
   dirty = false;
   drawnAtMs = atMs;
   draw(atMs);
-  shareTone(now, changed);
+  shareLuma(true);
   if (mirror && canvas && frames++ % 2 === 0) {
     mirror.drawImage(canvas, 0, 0, mirror.canvas.width, mirror.canvas.height);
     shareFoot(now);

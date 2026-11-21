@@ -99,6 +99,7 @@ vi.mock("../ports/lyrics", () => ({
 }));
 vi.mock("./backdrop/Backdrop", () => ({ Backdrop: () => null }));
 vi.mock("../visual/Stage", () => ({ Stage: () => null }));
+vi.mock("./sceneInk", () => ({ useSceneInk: () => () => undefined }));
 vi.mock("../ports/wordTiming", () => ({
   useWordTiming: () => timing.view,
   useAutoWordTiming: timing.auto,

@@ -44,6 +44,24 @@ void main() {
   outColor = vec4(c, 1.0);
 }`;
 
+export const LUMA_COLS = 16;
+export const LUMA_ROWS = 9;
+
+const LUMA = `#version 300 es
+precision highp float;
+in vec2 vUv;
+out vec4 outColor;
+uniform sampler2D uScene;
+void main() {
+  vec2 cell = vec2(1.0 / ${LUMA_COLS}.0, 1.0 / ${LUMA_ROWS}.0);
+  vec2 origin = floor(vUv / cell) * cell;
+  float sum = 0.0;
+  for (int y = 0; y < 6; y++) {
+    for (int x = 0; x < 6; x++) sum += dot(texture(uScene, origin + (vec2(x, y) + 0.5) / 6.0 * cell).rgb, vec3(0.2126, 0.7152, 0.0722));
+  }
+  outColor = vec4(pow(clamp(sum / 36.0, 0.0, 1.0), 1.0 / 2.2), 0.0, 0.0, 1.0);
+}`;
+
 const COPY = `#version 300 es
 precision highp float;
 in vec2 vUv;
@@ -61,6 +79,7 @@ export interface Stage {
   render(signals: Signals, reduced?: boolean): void;
   resize(width: number, height: number): void;
   reset(): void;
+  luma(fresh: boolean): Uint8Array | null;
   dispose(): void;
 }
 
@@ -83,6 +102,20 @@ export function createStage(canvas: GlCanvas): Stage | null {
   const programs = new Map<string, Program>();
   const finish = createProgram(gl, FINISH);
   const copy = createProgram(gl, COPY);
+  const lumaProgram = createProgram(gl, LUMA);
+  const lumaTexture = createTexture(gl, gl.NEAREST);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, LUMA_COLS, LUMA_ROWS, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  const lumaFramebuffer = gl.createFramebuffer()!;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, lumaFramebuffer);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, lumaTexture, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  const lumaBuffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, lumaBuffer);
+  gl.bufferData(gl.PIXEL_PACK_BUFFER, LUMA_COLS * LUMA_ROWS * 4, gl.STREAM_READ);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  const lumaPixels = new Uint8Array(LUMA_COLS * LUMA_ROWS * 4);
+  let lumaFence: WebGLSync | null = null;
 
   const cover = createTexture(gl, gl.LINEAR_MIPMAP_LINEAR, gl.MIRRORED_REPEAT);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([20, 22, 28, 255]));
@@ -418,11 +451,50 @@ export function createStage(canvas: GlCanvas): Stage | null {
       dropTargets();
     },
     reset,
+    // read back through a fenced buffer a frame or two later, so the page never waits on the GPU
+    luma(fresh) {
+      if (lumaFence) {
+        if (gl.getSyncParameter(lumaFence, gl.SYNC_STATUS) !== gl.SIGNALED) return null;
+        gl.deleteSync(lumaFence);
+        lumaFence = null;
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, lumaBuffer);
+        gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, lumaPixels);
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+        const cells = new Uint8Array(LUMA_COLS * LUMA_ROWS);
+        for (let row = 0; row < LUMA_ROWS; row++) {
+          for (let col = 0; col < LUMA_COLS; col++) cells[row * LUMA_COLS + col] = lumaPixels[((LUMA_ROWS - 1 - row) * LUMA_COLS + col) * 4];
+        }
+        return cells;
+      }
+      if (!fresh || !scene || gl.isContextLost()) return null;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, lumaFramebuffer);
+      gl.viewport(0, 0, LUMA_COLS, LUMA_ROWS);
+      gl.disable(gl.BLEND);
+      gl.bindVertexArray(quad);
+      gl.useProgram(lumaProgram.program);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, scene.texture);
+      gl.uniform1i(lumaProgram.uniforms.get("uScene")!, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, lumaBuffer);
+      gl.readPixels(0, 0, LUMA_COLS, LUMA_ROWS, gl.RGBA, gl.UNSIGNED_BYTE, 0);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+      lumaFence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, width, height);
+      gl.flush();
+      return null;
+    },
     dispose() {
       dropTargets();
       for (const p of programs.values()) gl.deleteProgram(p.program);
       gl.deleteProgram(finish.program);
       gl.deleteProgram(copy.program);
+      gl.deleteProgram(lumaProgram.program);
+      gl.deleteFramebuffer(lumaFramebuffer);
+      gl.deleteTexture(lumaTexture);
+      gl.deleteBuffer(lumaBuffer);
+      if (lumaFence) gl.deleteSync(lumaFence);
       for (const texture of [cover, text, bands, wave, history, image, glyphs, ringTexture]) gl.deleteTexture(texture);
       gl.deleteVertexArray(quad);
     },
