@@ -1,6 +1,6 @@
 // Paths come from native dialogs or user-picked files read by the preload; a page never names one
 import path from "node:path";
-import type { AddFolderResult } from "../../src/shell/nuvoShell";
+import type { AddFilesResult, AddFolderResult } from "../../src/shell/nuvoShell";
 import { type CoreAnswer, coreError } from "./coreCall";
 import { CHANNELS } from "./ipc";
 import { documentName, LOCAL_ID, validateSaveDocument, validateSaveFiles } from "./files";
@@ -8,6 +8,7 @@ import { documentName, LOCAL_ID, validateSaveDocument, validateSaveFiles } from 
 export interface FileActionDeps {
   call(method: string, route: string, body?: unknown): Promise<CoreAnswer>;
   pickFolder(title: string, defaultPath: string): Promise<string | null>;
+  pickFiles(title: string, defaultPath: string): Promise<string[]>;
   pickSavePath(title: string, defaultPath: string): Promise<string | null>;
   musicDir(): string;
   documentsDir(): string;
@@ -18,6 +19,7 @@ export interface FileActionDeps {
 }
 
 const DOWN = "nuvo-core is not running";
+const MAX_DROPPED = 500;
 
 export function createFileActions(deps: FileActionDeps) {
   const ask = async (method: string, route: string, body?: unknown): Promise<CoreAnswer | null> => {
@@ -43,6 +45,28 @@ export function createFileActions(deps: FileActionDeps) {
       if (!answer) return { error: DOWN };
       const root = answer.status === 202 ? json<{ id: number; path: string }>(answer) : null;
       return root ? { root } : { error: coreError(answer) };
+    },
+
+    async addFiles(payload: unknown): Promise<AddFilesResult> {
+      const dropped = (payload as { paths?: unknown } | null | undefined)?.paths;
+      if (
+        dropped !== undefined &&
+        (!Array.isArray(dropped) || dropped.length > MAX_DROPPED || !dropped.every((item) => typeof item === "string" && path.isAbsolute(item)))
+      ) {
+        deps.refuse(CHANNELS.localAddFiles, "shape");
+        return null;
+      }
+      const paths = (dropped as string[] | undefined) ?? (await deps.pickFiles("Add music files", deps.lastDir.get() ?? deps.musicDir()));
+      if (paths.length === 0) return null;
+      let added = 0;
+      let error = "";
+      for (const item of paths) {
+        const answer = await ask("POST", "/v1/fs/local/roots", { path: item });
+        if (!answer) return { error: DOWN };
+        if (answer.status === 202) added += 1;
+        else error ||= coreError(answer);
+      }
+      return added > 0 ? { added } : { error };
     },
 
     async reveal(payload: unknown): Promise<boolean> {

@@ -81,6 +81,7 @@ export const CHANNELS = {
   shellReveal: "shell:reveal",
   fileSaveText: "file:save-text",
   localAddFolder: "local:add-folder",
+  localAddFiles: "local:add-files",
   localReveal: "local:reveal",
   recognizeFile: "recognize:file",
   exportSaveFiles: "export:save-files",

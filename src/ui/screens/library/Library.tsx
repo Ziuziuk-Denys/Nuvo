@@ -49,6 +49,7 @@ import { LocalFiles } from "../local/LocalFiles";
 import look from "../look.module.css";
 import { MediaRowPlaceholder } from "../MediaRow";
 import { SearchField } from "../SearchField";
+import { useAddMusic } from "../local/addMusic";
 import styles from "./Library.module.css";
 import { RecentlyDeletedSheet } from "./RecentlyDeletedSheet";
 import { progressByPlaylist } from "../../ports/imports";
@@ -171,8 +172,13 @@ function menuItems(entry: LibraryEntry, pinned: boolean, t: TFunction, open: () 
 export function Library(): JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { search } = useLocation();
+  const { search, key } = useLocation();
   const [tab, setTab] = useState<LibraryTab>(() => tabFromSearch(search));
+  const [linkKey, setLinkKey] = useState(key);
+  if (linkKey !== key) {
+    setLinkKey(key);
+    setTab(tabFromSearch(search));
+  }
   const [query, setQuery] = useState("");
   const [view, setView] = useState<LibraryViewMode>(readView);
   const [sorts, setSorts] = useState(readSorts);
@@ -192,6 +198,7 @@ export function Library(): JSX.Element {
   const scroller = useShellScroller();
 
   const { entries, loading, failed } = useLibraryEntries(t);
+  const addMusic = useAddMusic();
   const contentKey = `${tab}:${view}:${loading}`;
   usePageBackdrop(useLikesCover(), { blur: 56, dim: 0.22 });
   const sort = sortOf(sorts, tab);
@@ -282,8 +289,8 @@ export function Library(): JSX.Element {
         message={t("ui.library.empty_message")}
         tour="library-import"
         actions={[
-          { label: t("ui.library.create_playlist"), primary: true, onClick: () => useModalStore.getState().openCreatePlaylist() },
-          { label: t("ui.library.import"), onClick: () => useImportsUi.getState().openImport() },
+          { label: t("ui.library.import"), primary: true, onClick: () => useImportsUi.getState().openImport() },
+          { label: t("ui.local.add_files"), onClick: () => void addMusic() },
         ]}
       />
     );

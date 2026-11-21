@@ -12,7 +12,20 @@ export interface Command {
 }
 
 export type ActionId =
-  "home" | "library" | "search" | "settings" | "play_pause" | "next" | "previous" | "radio" | "lyrics" | "shuffle" | "repeat" | "fullscreen" | "tour";
+  | "home"
+  | "library"
+  | "add_files"
+  | "search"
+  | "settings"
+  | "play_pause"
+  | "next"
+  | "previous"
+  | "radio"
+  | "lyrics"
+  | "shuffle"
+  | "repeat"
+  | "fullscreen"
+  | "tour";
 
 export interface CommandDeps {
   t: TFunction;
@@ -26,6 +39,7 @@ export interface CommandDeps {
 const ACTIONS: { id: ActionId; group: CommandGroup; shortcut?: string }[] = [
   { id: "home", group: "go" },
   { id: "library", group: "go" },
+  { id: "add_files", group: "go" },
   { id: "search", group: "go", shortcut: "nav.search" },
   { id: "settings", group: "go" },
   { id: "play_pause", group: "playback", shortcut: "player.toggle" },

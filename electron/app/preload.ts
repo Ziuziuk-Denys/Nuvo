@@ -29,6 +29,11 @@ const shell: NuvoShell = {
   reveal: (path) => invoke("shell:reveal", { path }),
   saveTextFile: (name, text) => invoke("file:save-text", { name, text }),
   addMusicFolder: () => invoke("local:add-folder"),
+  addMusicFiles: (files) => {
+    if (!files) return invoke("local:add-files");
+    const paths = files.map((file) => webUtils.getPathForFile(file)).filter(Boolean);
+    return paths.length > 0 ? invoke("local:add-files", { paths }) : Promise.resolve(null);
+  },
   revealLocalTrack: (trackId) => invoke("local:reveal", { trackId }),
   // read here, not in the page: only a File the user picked or dropped has a path
   recognizeFile: async (file) => {

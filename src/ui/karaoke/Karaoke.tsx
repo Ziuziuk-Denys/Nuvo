@@ -64,9 +64,10 @@ interface GlyphButtonProps {
   size?: 18 | 20 | 24;
   on?: boolean;
   tour?: string;
+  hint?: string;
 }
 
-function GlyphButton({ icon, label, className, onClick, size = 20, on, tour }: GlyphButtonProps): JSX.Element {
+function GlyphButton({ icon, label, className, onClick, size = 20, on, tour, hint }: GlyphButtonProps): JSX.Element {
   return (
     <button
       type="button"
@@ -77,6 +78,7 @@ function GlyphButton({ icon, label, className, onClick, size = 20, on, tour }: G
       onClick={onClick}
       data-no-window-drag
       data-tour={tour}
+      title={hint}
     >
       <Icon name={icon} size={size} />
     </button>
@@ -499,6 +501,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
             <GlyphButton
               icon="dislike"
               label={t("ui.recs.dislike")}
+              hint={t("ui.recs.dislike_hint")}
               className={`${styles.like} ${styles.dislike}`}
               onClick={() => songMenuNotInterested?.(track, "exact")}
             />

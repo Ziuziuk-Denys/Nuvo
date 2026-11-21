@@ -41,7 +41,6 @@ export interface RecsClient {
   undo(suppressionId: number): Promise<true | RecsFailure>;
   homeMixes(): Promise<HomeMix[]>;
   suppressions(): Promise<Suppression[] | RecsFailure>;
-  coldStart(): Promise<boolean>;
   saveStarters(tracks: Track[]): Promise<true | RecsFailure>;
 }
 
@@ -116,16 +115,6 @@ export function createRecsClient(base: string, doFetch: typeof fetch): RecsClien
         });
       } catch {
         return "unavailable";
-      }
-    },
-    async coldStart() {
-      try {
-        const response = await doFetch(`${base}/v1/recs/start`);
-        if (!response.ok) return false;
-        const body = (await response.json()) as { needed?: unknown };
-        return body.needed === true;
-      } catch {
-        return false;
       }
     },
     async saveStarters(tracks) {

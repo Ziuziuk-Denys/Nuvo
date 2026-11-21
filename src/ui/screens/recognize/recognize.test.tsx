@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Recognize } from "./Recognize";
-import { isRecognizable, useDroppedFile, useRecognizeDrop } from "./recognizeDrop";
+import { isRecognizable, useDroppedFile, useWindowDrop } from "./recognizeDrop";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -312,29 +312,37 @@ describe("Recognize", () => {
 });
 
 describe("dropping a file on the window", () => {
-  function Host({ open }: { open(): void }) {
-    useRecognizeDrop(open);
+  function Host({ open, add }: { open(): void; add(files: File[]): void }) {
+    useWindowDrop(open, add);
     return null;
   }
-  const drop = (file: File, taken = false) => {
+  const drop = (files: File[], taken = false, folders: boolean[] = []) => {
     const event = new Event("drop", { bubbles: true, cancelable: true }) as DragEvent;
-    Object.defineProperty(event, "dataTransfer", { value: { types: ["Files"], files: [file] } });
+    const items = files.map((_, index) => ({ webkitGetAsEntry: () => ({ isDirectory: folders[index] === true }) }));
+    Object.defineProperty(event, "dataTransfer", { value: { types: ["Files"], files, items } });
     if (taken) event.preventDefault();
     window.dispatchEvent(event);
     return event;
   };
 
-  it("opens Recognize with a sound or video file, and leaves other files and taken drops alone", () => {
+  it("adds songs and folders to the library, opens Recognize with a video, and leaves other files and taken drops alone", () => {
     const open = vi.fn();
-    act(() => root.render(<Host open={open} />));
-    expect(drop(new File(["x"], "notes.txt", { type: "text/plain" })).defaultPrevented).toBe(true);
+    const add = vi.fn();
+    act(() => root.render(<Host open={open} add={add} />));
+    expect(drop([new File(["x"], "notes.txt", { type: "text/plain" })]).defaultPrevented).toBe(true);
     expect(open).not.toHaveBeenCalled();
-    drop(new File(["x"], "song.flac", { type: "audio/flac" }), true);
+    expect(add).not.toHaveBeenCalled();
+    drop([new File(["x"], "song.flac", { type: "audio/flac" })], true);
+    expect(add).not.toHaveBeenCalled();
+    const song = new File(["x"], "song.MP3", { type: "" });
+    const album = new File([""], "Album", { type: "" });
+    drop([song, album, new File(["x"], "notes.txt")], false, [false, true, false]);
+    expect(add).toHaveBeenCalledWith([song, album]);
     expect(open).not.toHaveBeenCalled();
-    const song = new File(["x"], "song.mp3", { type: "audio/mpeg" });
-    drop(song);
+    const clip = new File(["x"], "clip.mp4", { type: "video/mp4" });
+    drop([clip]);
     expect(open).toHaveBeenCalledTimes(1);
-    expect(useDroppedFile.getState().take()).toBe(song);
+    expect(useDroppedFile.getState().take()).toBe(clip);
     expect(isRecognizable({ type: "video/webm" })).toBe(true);
   });
 });

@@ -20,7 +20,8 @@ import { useAppIconSync, useLookSync } from "../ports/theme";
 import { ImportsHost } from "../screens/imports/ImportsHost";
 import { LyricsToolsHost } from "../screens/lyrics/LyricsToolsHost";
 import { useGateStore } from "../screens/lock/gateState";
-import { useRecognizeDrop } from "../screens/recognize/recognizeDrop";
+import { useAddMusic } from "../screens/local/addMusic";
+import { useWindowDrop } from "../screens/recognize/recognizeDrop";
 import { useUndoToast } from "../recs/UndoNotice";
 import { ShareSheetHost } from "../sheets/ShareSheet";
 import { SourceSheetHost } from "../sheets/SourceSheet";
@@ -155,7 +156,10 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     onEscapeFallback: unlocked(escapeBack, false),
     openRecognize: unlocked(openRecognize, undefined),
   });
-  useRecognizeDrop(unlocked(openRecognize, undefined));
+  const addMusic = useAddMusic();
+  useWindowDrop(unlocked(openRecognize, undefined), (files) => {
+    if (!useGateStore.getState().locked) void addMusic(files);
+  });
 
   const chrome = karaokeShown ? null : (
     <motion.div key="chrome" variants={CHROME} exit="hidden" transition={{ ease: EASE.in, duration: seconds(DURATION_MS.quick) }}>

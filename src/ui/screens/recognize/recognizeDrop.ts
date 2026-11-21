@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
+import { isMusicFile } from "../local/addMusic";
 
 export const useDroppedFile = create<{ file: File | null; take(): File | null }>((set, get) => ({
   file: null,
@@ -16,10 +17,15 @@ export function isRecognizable(file: { type: string }): boolean {
 
 const carriesFiles = (event: DragEvent) => event.dataTransfer?.types.includes("Files") === true;
 
-export function useRecognizeDrop(open: () => void): void {
-  const latest = useRef(open);
+function musicIn(transfer: DataTransfer): File[] {
+  const items = [...(transfer.items ?? [])];
+  return [...transfer.files].filter((file, index) => isMusicFile(file.name) || items[index]?.webkitGetAsEntry?.()?.isDirectory === true);
+}
+
+export function useWindowDrop(open: () => void, addMusic: (files: File[]) => void): void {
+  const latest = useRef({ open, addMusic });
   useEffect(() => {
-    latest.current = open;
+    latest.current = { open, addMusic };
   });
   useEffect(() => {
     const over = (event: DragEvent) => {
@@ -29,10 +35,12 @@ export function useRecognizeDrop(open: () => void): void {
       if (event.defaultPrevented || !carriesFiles(event)) return;
       // the window never opens a dropped file as a page
       event.preventDefault();
+      const music = musicIn(event.dataTransfer!);
+      if (music.length > 0) return latest.current.addMusic(music);
       const file = event.dataTransfer?.files[0];
       if (!file || !isRecognizable(file)) return;
       useDroppedFile.setState({ file });
-      latest.current();
+      latest.current.open();
     };
     window.addEventListener("dragover", over);
     window.addEventListener("drop", drop);

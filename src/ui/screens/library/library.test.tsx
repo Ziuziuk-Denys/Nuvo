@@ -261,7 +261,7 @@ describe("Library imports", () => {
 });
 
 describe("Library states", () => {
-  it("an empty library explains itself and offers Create playlist and Import", () => {
+  it("an empty library explains itself and offers Import, Add files and Create playlist", () => {
     mocks.state.empty = true;
     mocks.state.liked = 0;
     render();
@@ -269,6 +269,7 @@ describe("Library states", () => {
     expect(text()).toContain("ui.library.empty_message");
     click(button("ui.library.create_playlist"));
     expect(mocks.modal.openCreatePlaylist).toHaveBeenCalled();
+    expect(button("ui.local.add_files")).toBeTruthy();
     click(button("ui.library.import"));
     expect(useImportsUi.getState().sheet).toEqual({});
     act(() => useImportsUi.getState().close());

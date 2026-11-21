@@ -4,6 +4,8 @@ import { default as path } from "node:path";
 import type { SaveDocumentRequest, SaveFilesRequest } from "../../src/shell/nuvoShell";
 
 export const LOCAL_ID = /^local:[0-9a-f]{32}$/;
+// the same list nuvo-core scans for
+export const AUDIO_EXTENSIONS = ["mp3", "flac", "m4a", "aac", "ogg", "oga", "opus", "wav"];
 const TRACK_ID = /^[A-Za-z0-9_:.-]{1,64}$/;
 const ENTITY_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_TRACKS = 5000;

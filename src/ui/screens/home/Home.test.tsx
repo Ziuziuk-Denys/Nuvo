@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { useImportsUi } from "../imports/importsUi";
 import { Home } from "./Home";
-import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCovers } from "./homeModel";
+import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCovers, starterGenres } from "./homeModel";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -19,12 +19,20 @@ const mocks = vi.hoisted(() => ({
   songsLike: vi.fn(),
   localStyle: vi.fn(),
   playSongs: vi.fn(),
+  genreSongs: vi.fn(),
+  offlineMixes: vi.fn(),
+  offlineSongs: vi.fn(),
+  addMusic: vi.fn(),
+  network: { offlineMode: false, reachable: true },
 }));
 vi.mock("../../ports/homeShelves", () => ({
   librarySongs: mocks.librarySongs,
   songsLike: mocks.songsLike,
   localStyle: mocks.localStyle,
   playSongs: mocks.playSongs,
+  genreSongs: mocks.genreSongs,
+  offlineMixes: mocks.offlineMixes,
+  offlineSongs: mocks.offlineSongs,
   shuffled: <T,>(items: T[]) => [...items].reverse(),
 }));
 vi.mock("../../ports/recs", async (original) => ({
@@ -43,15 +51,11 @@ vi.mock("../../ports/covers", () => ({
   coverSrc: (src: string) => src,
   useCoverFluidColors: () => ({ color1: "rgb(0, 0, 0)", logoColor: "rgb(255, 255, 255)" }),
 }));
-vi.mock("./ColdStart", () => ({
-  ColdStart: ({ onImport }: { onImport?: () => void }) =>
-    onImport ? (
-      <button type="button" onClick={onImport}>
-        ui.library.import
-      </button>
-    ) : (
-      <p>cold-start</p>
-    ),
+vi.mock("./ColdStart", () => ({ ColdStart: () => <p>cold-start</p> }));
+vi.mock("../local/addMusic", () => ({ useAddMusic: () => mocks.addMusic }));
+vi.mock("../../ports/network", () => ({
+  useOfflineMode: () => mocks.network.offlineMode,
+  useStreamingReachable: () => mocks.network.reachable,
 }));
 vi.mock("./HiddenLink", () => ({ HiddenLink: () => <p>hidden-link</p> }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: mocks.backdrop }));
@@ -81,6 +85,8 @@ beforeEach(() => {
   mocks.librarySongs.mockResolvedValue([]);
   mocks.songsLike.mockResolvedValue([]);
   mocks.localStyle.mockResolvedValue(null);
+  mocks.genreSongs.mockResolvedValue([]);
+  mocks.network = { offlineMode: false, reachable: true };
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -169,7 +175,7 @@ describe("Home slots", () => {
 describe("Home import entry", () => {
   const importButton = () => [...host.querySelectorAll("button")].find((node) => node.textContent === "ui.library.import");
 
-  it("offers Import only while the library is empty: under the mixes, or in the empty state without them", async () => {
+  it("offers Import under the mixes only while the library is empty; without mixes the cold-start block carries it", async () => {
     mocks.library = { liked: 0, playlists: 0 };
     mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 3) }]);
     await mount();
@@ -180,12 +186,63 @@ describe("Home import entry", () => {
     root = createRoot(host);
     mocks.homeMixes.mockResolvedValue([]);
     await mount();
-    expect(importButton()).toBeDefined();
+    expect(importButton()).toBeUndefined();
+    expect(host.querySelector("[data-slot=cold-start]")).not.toBeNull();
     act(() => root.unmount());
     root = createRoot(host);
+    mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 3) }]);
     mocks.library = { liked: 0, playlists: 2 };
     await mount();
     expect(importButton()).toBeUndefined();
+  });
+});
+
+describe("Home first run", () => {
+  it("is never empty: popular songs by genre play right away, under the import block", async () => {
+    mocks.homeMixes.mockResolvedValue([]);
+    mocks.genreSongs.mockImplementation(async (query: string) => tracks(query.split(" ")[0], 6));
+    await mount();
+    expect(mocks.genreSongs.mock.calls.map(([query]) => query)).toEqual(["pop hits", "hip hop hits", "rock classics", "electronic hits"]);
+    const shelves = [...host.querySelectorAll("[data-shelf=genre]")];
+    expect(shelves.map((shelf) => shelf.getAttribute("aria-label"))).toEqual([
+      "ui.home.genre.pop",
+      "ui.home.genre.hiphop",
+      "ui.home.genre.rock",
+      "ui.home.genre.electronic",
+    ]);
+    expect(host.querySelector("[data-slot=cold-start]")!.compareDocumentPosition(shelves[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("adds a shelf in the user's language first", () => {
+    expect(starterGenres("ru")[0]).toEqual({ genre: "russian", query: "русские хиты" });
+    expect(starterGenres("en").map((entry) => entry.genre)).toEqual(["pop", "hiphop", "rock", "electronic"]);
+  });
+});
+
+describe("Home offline", () => {
+  it("keeps only what plays without a network and asks nothing of it", async () => {
+    mocks.network.offlineMode = true;
+    mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 8) }]);
+    mocks.offlineMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 4) }]);
+    mocks.offlineSongs.mockResolvedValue(tracks("s", 6));
+    await mount();
+    expect(host.querySelectorAll("[data-mix]")).toHaveLength(1);
+    expect(mocks.genreSongs).not.toHaveBeenCalled();
+    expect(mocks.songsLike).not.toHaveBeenCalled();
+    expect(mocks.librarySongs).not.toHaveBeenCalled();
+    expect(host.querySelector("[data-shelf=shuffle]")).not.toBeNull();
+  });
+
+  it("says it calmly when nothing is saved, and offers to add files", async () => {
+    mocks.network.reachable = false;
+    mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 8) }]);
+    mocks.offlineMixes.mockResolvedValue([]);
+    mocks.offlineSongs.mockResolvedValue([]);
+    await mount();
+    expect(host.textContent).toContain("ui.home.offline.title");
+    expect(host.querySelector("[data-slot=cold-start]")).toBeNull();
+    act(() => [...host.querySelectorAll("button")].find((node) => node.textContent === "ui.local.add_files")!.click());
+    expect(mocks.addMusic).toHaveBeenCalledOnce();
   });
 });
 

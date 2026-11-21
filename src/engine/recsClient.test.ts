@@ -97,18 +97,15 @@ describe("recs client", () => {
     expect(await createRecsClient(BASE, locked.fetch).suppressions()).toBe("locked");
   });
 
-  it("asks whether to start from artists and saves the starters as snapshots", async () => {
+  it("saves the starters as snapshots", async () => {
     const daemon = new FakeDaemon();
-    daemon.on("GET /v1/recs/start", () => Response.json({ needed: true }));
     daemon.on("PUT /v1/recs/starters", () => new Response(null, { status: 204 }));
     const recs = createRecsClient(BASE, daemon.fetch);
-    expect(await recs.coldStart()).toBe(true);
     expect(await recs.saveStarters([track("s1", { artists: "Sol" })])).toBe(true);
     expect(JSON.parse(daemon.callsTo("PUT", "/v1/recs/starters")[0].body!)).toEqual({
       tracks: [{ id: "s1", title: "Title s1", artists: [{ id: "unknown", name: "Sol" }], durationMs: 200_000 }],
     });
     const down = (() => Promise.reject(new Error("down"))) as unknown as typeof fetch;
-    expect(await createRecsClient(BASE, down).coldStart()).toBe(false);
     expect(await createRecsClient(BASE, down).saveStarters([track("s1")])).toBe("unavailable");
   });
 

@@ -10,7 +10,7 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   size?: "m" | "s";
   tone?: "field" | "island" | "solo";
   active?: boolean;
-  tooltip?: boolean;
+  tooltip?: boolean | string;
 }
 
 export function IconButton({
@@ -25,7 +25,7 @@ export function IconButton({
   ...buttonProps
 }: IconButtonProps): JSX.Element {
   return (
-    <Tooltip text={tooltip ? label : ""}>
+    <Tooltip text={typeof tooltip === "string" ? tooltip : tooltip ? label : ""}>
       <button
         {...buttonProps}
         type={type}

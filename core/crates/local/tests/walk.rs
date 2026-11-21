@@ -148,3 +148,23 @@ fn stored_paths_round_trip_and_utf8_ones_stay_readable() {
     assert!(!text_of(legacy).starts_with('/'), "never mistaken for a real path");
     assert_eq!(path_of(&text_of(legacy)), legacy);
 }
+
+#[test]
+fn a_single_audio_file_is_its_own_root() {
+    let dir = tempfile::tempdir().unwrap();
+    let song = dir.path().join("One.mp3");
+    touch(&song, b"xyz");
+    touch(&dir.path().join("One.lrc"), b"[00:01.00]hi");
+    touch(&dir.path().join("Other.mp3"), b"x");
+    let found = walk(&song, WalkLimits::DEFAULT);
+    assert_eq!(found.files.len(), 1);
+    assert_eq!(found.files[0].path, song);
+    assert_eq!(found.files[0].size, 3);
+    assert_eq!(found.files[0].lrc.as_deref(), Some(dir.path().join("One.lrc").as_path()));
+
+    let text = dir.path().join("notes.txt");
+    touch(&text, b"no");
+    let skipped = walk(&text, WalkLimits::DEFAULT);
+    assert!(skipped.files.is_empty());
+    assert_eq!(skipped.skipped.get("txt"), Some(&1));
+}

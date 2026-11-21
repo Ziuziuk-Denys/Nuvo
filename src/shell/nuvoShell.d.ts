@@ -90,6 +90,7 @@ export type SaveDocumentRequest =
   | { kind: "stats"; format: "json" | "csv"; from?: string; to?: string };
 
 export type AddFolderResult = { root: { id: number; path: string } } | { error: string } | null;
+export type AddFilesResult = { added: number } | { error: string } | null;
 
 export interface NuvoShell {
   minimize(): Promise<void>;
@@ -146,6 +147,7 @@ export interface NuvoShell {
   exportTheme(name: string, text: string): Promise<boolean | "failed">;
   importThemeFile(): Promise<{ ok: true; text: string } | { ok: false; error: "cancelled" | "theme_size" | "theme_encoding" | "theme_css" }>;
   addMusicFolder(): Promise<AddFolderResult>;
+  addMusicFiles(files?: File[]): Promise<AddFilesResult>;
   revealLocalTrack(trackId: string): Promise<boolean>;
   recognizeFile(file: File): Promise<{ id: string } | null>;
   saveAsFiles(request: SaveFilesRequest): Promise<{ jobId: string } | { error: string } | null>;

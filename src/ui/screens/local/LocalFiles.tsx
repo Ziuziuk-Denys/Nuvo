@@ -16,6 +16,7 @@ import {
 import { playerEngine, type Track } from "../../ports/player";
 import { EntityTracks } from "../entity/EntityTracks";
 import look from "../look.module.css";
+import { isMusicFile, useAddMusic } from "./addMusic";
 import styles from "./LocalFiles.module.css";
 import { sortLocal, type LibrarySort } from "../library/libraryModel";
 
@@ -47,6 +48,7 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
     return reason ? t(`ui.local.unsupported_${reason}`) : null;
   };
   const add = async () => setError(await addMusicFolder());
+  const addFiles = useAddMusic();
   const reading = scan?.scanning ? scan.read : null;
   // The folder counts come from the library, so they follow each batch of read files
   useEffect(() => {
@@ -78,7 +80,10 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
         <EmptyState
           title={t("ui.local.empty_title")}
           message={t("ui.local.empty_message")}
-          actions={[{ label: t("ui.local.add_folder"), primary: true, onClick: () => void add() }]}
+          actions={[
+            { label: t("ui.local.add_files"), primary: true, onClick: () => void addFiles() },
+            { label: t("ui.local.add_folder"), onClick: () => void add() },
+          ]}
         />
         {errorLine}
       </div>
@@ -91,7 +96,7 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
         <ul className={styles.folders}>
           {roots.map((root) => (
             <li key={root.id} className={`${look.chip} ${styles.folder}`} data-missing={root.status === "missing" ? "" : undefined} title={root.path}>
-              <Icon name="folder" size={14} />
+              <Icon name={isMusicFile(root.path) ? "track" : "folder"} size={14} />
               <span className={styles.path}>{root.path}</span>
               {root.status === "missing" ? (
                 <span className={styles.missing}>
@@ -112,6 +117,10 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
           ))}
         </ul>
         <div className={styles.actions}>
+          <button type="button" className={`${look.pill} ${look.glass}`} onClick={() => void addFiles()}>
+            <Icon name="add" size={16} />
+            {t("ui.local.add_files")}
+          </button>
           <button type="button" className={`${look.pill} ${look.glass}`} onClick={() => void add()}>
             <Icon name="folder-add" size={16} />
             {t("ui.local.add_folder")}

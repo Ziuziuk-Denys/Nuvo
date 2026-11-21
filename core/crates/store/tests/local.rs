@@ -84,6 +84,19 @@ fn roots_nest_by_rules() {
 }
 
 #[test]
+fn a_file_root_skips_the_folder_cap_and_joins_a_known_folder() {
+    let (_dir, conn) = common::open();
+    let music = local::add_root(&conn, "/home/u/Music", 1).unwrap();
+    assert_eq!(local::add_file_root(&conn, "/home/u/Music/a.mp3", 2).unwrap().id, music.id);
+    for n in 0..local::MAX_ROOTS {
+        local::add_file_root(&conn, &format!("/home/u/Downloads/{n}.mp3"), 3).unwrap();
+    }
+    let single = local::add_file_root(&conn, "/home/u/Downloads/0.mp3", 4).unwrap();
+    assert_eq!(single.path, "/home/u/Downloads/0.mp3");
+    assert_eq!(local::roots(&conn).unwrap().len(), local::MAX_ROOTS + 1);
+}
+
+#[test]
 fn files_list_search_and_hide_missing_folders() {
     let (_dir, conn) = common::open();
     let root = local::add_root(&conn, "/m", 1).unwrap();

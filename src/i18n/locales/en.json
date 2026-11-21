@@ -179,7 +179,22 @@
       "mood_energy": "Energy",
       "mood_calm": "Calm",
       "mood_bright": "Bright",
-      "mood_late_night": "Late night"
+      "mood_late_night": "Late night",
+      "bring": {
+        "title": "Bring your music",
+        "message": "Import playlists from Spotify, Apple Music, YouTube and more, or add files from this computer. Until then, here is what people play."
+      },
+      "genre": {
+        "russian": "Russian hits",
+        "pop": "Pop hits",
+        "hiphop": "Hip-hop hits",
+        "rock": "Rock classics",
+        "electronic": "Electronic"
+      },
+      "offline": {
+        "title": "You’re offline",
+        "message": "Songs you save or add from this computer play here without a connection."
+      }
     },
     "imports": {
       "title": "Import",
@@ -558,6 +573,7 @@
     "palette": {
       "home": "Home",
       "library": "Library",
+      "add_files": "Add music files",
       "search": "Search",
       "settings": "Settings",
       "play_pause": "Play or pause",
@@ -591,10 +607,7 @@
       "home": {
         "discover": "Something new",
         "for_you": "For you",
-        "empty_title": "Nothing to suggest yet",
-        "empty_message": "Play some music and suggestions will show up here.",
         "search": "Search for music",
-        "import_from": "Or bring your playlists from",
         "building": "Finding songs close to your picks",
         "offline_title": "Can't reach music right now",
         "offline_message": "Your picks are saved. Check the connection, then try again.",
@@ -640,10 +653,7 @@
         "scope_artist_forever": "Artist, always"
       },
       "start": {
-        "failed": "Couldn't save your picks. Try again.",
-        "go": "Listen",
-        "message": "Type a song you love or an artist you play a lot. Nuvo builds your first suggestions from them.",
-        "title": "Start with a few songs or artists"
+        "failed": "Couldn't save your picks. Try again."
       },
       "suggest": {
         "add": "Add to this playlist",
@@ -651,6 +661,7 @@
         "title": "Suggestions"
       },
       "dislike": "Dislike",
+      "dislike_hint": "Dislike skips the song and teaches your suggestions",
       "excluded": {
         "exclude": "Leave out of recommendations",
         "include": "Use for recommendations",
@@ -807,12 +818,16 @@
     },
     "local": {
       "add_folder": "Add a music folder",
-      "empty_message": "Add a folder with music files and Nuvo will read the tags and play them.",
+      "add_files": "Add files",
+      "added": "Added to On this computer",
+      "add_failed": "Couldn’t add these files",
+      "open": "Open",
+      "empty_message": "Drop songs or a folder anywhere in the window, or pick them here. Nuvo reads the tags and plays them.",
       "empty_title": "Play your own files",
       "files_one": "{count} file",
       "files_other": "{count} files",
       "folder_missing": "Folder not found",
-      "remove_folder": "Remove folder {path}",
+      "remove_folder": "Remove {path}",
       "rescan": "Scan again",
       "show_in_folder": "Show in folder",
       "unsupported_unreadable": "Can't read this file",
@@ -1165,7 +1180,7 @@
       "steps": {
         "add": "Add the playing song to a playlist from here",
         "eq": "The equalizer shapes the whole sound",
-        "library_import": "Bring playlists from another service, or start your own",
+        "library_import": "Bring playlists from another service, or drop your own music files anywhere in the window",
         "library_tabs": "Switch between playlists, albums and artists",
         "mixes": "Mixes are built from what you play and like",
         "home_start": "Mixes appear here as you play and like songs. Start with a search or an import",

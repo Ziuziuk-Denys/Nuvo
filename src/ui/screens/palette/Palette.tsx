@@ -19,6 +19,7 @@ import { useTour } from "../../tour/tourStore";
 import { formatDuration } from "../entity/entityModel";
 import { useGateStore } from "../lock/gateState";
 import { historyHref, localResults, subtitleOf } from "../search/searchModel";
+import { useAddMusic } from "../local/addMusic";
 import { SETTING_ITEMS } from "../settings/settingItems";
 import { buildCommands, rankCommands, soundCommands } from "./commands";
 import { paletteResults } from "./paletteModel";
@@ -308,6 +309,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
     const track = playerEngine.getSnapshot().currentTrack;
     if (track) action(track);
   };
+  const addMusic = useAddMusic();
   const commands = buildCommands({
     t,
     translations: getTranslationsForAllLocales,
@@ -317,6 +319,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
     actions: {
       home: () => go("/"),
       library: () => go("/library"),
+      add_files: () => void addMusic(),
       search: () => go(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : "/search"),
       settings: openSettings,
       play_pause: () => playerEngine.togglePlayPause(),

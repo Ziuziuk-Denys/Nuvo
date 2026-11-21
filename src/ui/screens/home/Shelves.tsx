@@ -1,6 +1,6 @@
 import { useRef, useState, type JSX } from "react";
 import { useTranslation } from "../../ports/i18n";
-import { librarySongs, localStyle, playSongs, shuffled, songsLike } from "../../ports/homeShelves";
+import { genreSongs, librarySongs, localStyle, playSongs, shuffled, songsLike } from "../../ports/homeShelves";
 import { playMix, type HomeMix, type Track } from "../../ports/recs";
 import { byOthers, freshFirst, homeSongs, type LikeArtist } from "./homeModel";
 import { ArtistLead, CoverShelf, ShuffleCard } from "./SongCovers";
@@ -36,11 +36,11 @@ export function SongsForYou({ mixes }: { mixes: HomeMix[] }): JSX.Element | null
   return <SongsShelf name="songs" title={t("ui.home.songs_for_you")} icon="track" shelf={shelf} songs={songs} onPlay={play} />;
 }
 
-export function ShuffleShelf(): JSX.Element | null {
+export function ShuffleShelf({ songs: from }: { songs?: Track[] } = {}): JSX.Element | null {
   const { t } = useTranslation();
   const pool = useRef<Promise<Track[]> | null>(null);
-  const shelf = useShelf("shuffle", async (shown, taken) => {
-    pool.current ??= librarySongs();
+  const shelf = useShelf(from ? "shuffle:offline" : "shuffle", async (shown, taken) => {
+    pool.current ??= from ? Promise.resolve(from) : librarySongs();
     const library = await pool.current;
     return freshFirst(shuffled(library.filter(notIn(taken()))), shown, SHELF_SIZE);
   });
@@ -92,6 +92,29 @@ export function StyleShelf(): JSX.Element | null {
       songs={songs}
       size={STYLE_COVER}
       onPlay={(index) => playSongs(songs, index, `home:style:${genre}`)}
+    />
+  );
+}
+
+export function GenreShelf({ genre, query }: { genre: string; query: string }): JSX.Element | null {
+  const { t } = useTranslation();
+  const context = `home:genre:${genre}`;
+  const pool = useRef<Promise<Track[]> | null>(null);
+  const shelf = useShelf(context, async (shown, taken) => {
+    pool.current ??= genreSongs(query);
+    return freshFirst((await pool.current).filter(notIn(taken())), shown, SHELF_SIZE);
+  });
+  const { songs } = shelf;
+  if (songs.length < MIN_SONGS) return null;
+  return (
+    <CoverShelf
+      name="genre"
+      title={t(`ui.home.genre.${genre}`)}
+      icon="album"
+      shelf={shelf}
+      songs={songs}
+      size={STYLE_COVER}
+      onPlay={(index) => playSongs(songs, index, context)}
     />
   );
 }
