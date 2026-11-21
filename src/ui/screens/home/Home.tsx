@@ -12,6 +12,7 @@ import { playMix, recs, recsChanged, type HomeMix, type Track } from "../../port
 import { navigateWithTransition } from "../../shell/navigate";
 import { useImportsUi } from "../imports/importsUi";
 import { useAddMusic } from "../local/addMusic";
+import { DiscoverArc } from "./discover/DiscoverArc";
 import { arrangeMixes, likeArtists, mixText, mosaicCovers, starterGenres } from "./homeModel";
 import { MixCard } from "./MixCard";
 import { GenreShelf, LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
@@ -78,6 +79,7 @@ export function Home(): JSX.Element | null {
     for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
   }
   if (mixes.length > 0) {
+    sections.push({ key: "discover", node: <DiscoverArc mixes={mixes} /> });
     sections.push({
       key: "mixes",
       node: (

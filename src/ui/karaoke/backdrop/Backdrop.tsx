@@ -9,7 +9,14 @@ import styles from "./Backdrop.module.css";
 const COVER_FADE_MS = 800;
 const COVER_PX = 64;
 
-export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX.Element {
+interface BackdropProps {
+  cover: string;
+  open: boolean;
+  overlay?: string;
+  uniforms?: Record<string, readonly number[]>;
+}
+
+export function Backdrop({ cover, open, overlay, uniforms }: BackdropProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<FlowRenderer | null>(null);
   const [webgl, setWebgl] = useState(true);
@@ -40,7 +47,7 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const first = createFlowRenderer(canvas);
+    const first = createFlowRenderer(canvas, overlay);
     if (!first) {
       setWebgl(false);
       return;
@@ -54,7 +61,7 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
     };
     const restored = () => {
       // every GPU resource is gone: build the renderer again, the cover effect then reloads and redraws the cover
-      const next = createFlowRenderer(canvas);
+      const next = createFlowRenderer(canvas, overlay);
       if (!next) return;
       rendererRef.current?.dispose();
       rendererRef.current = next;
@@ -64,7 +71,8 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
     function size() {
       const renderer = rendererRef.current;
       if (!renderer) return;
-      renderer.resize(canvas!.clientWidth * devicePixelRatio * RENDER_SCALE, canvas!.clientHeight * devicePixelRatio * RENDER_SCALE);
+      const scale = (overlay ? Math.min(devicePixelRatio, 1) : devicePixelRatio) * RENDER_SCALE;
+      renderer.resize(canvas!.clientWidth * scale, canvas!.clientHeight * scale);
       renderer.draw(performance.now());
     }
     size();
@@ -79,7 +87,14 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
       rendererRef.current?.dispose();
       rendererRef.current = null;
     };
-  }, []);
+  }, [overlay]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer || !uniforms) return;
+    for (const [name, values] of Object.entries(uniforms)) renderer.uniform(name, values);
+    renderer.draw(performance.now());
+  }, [uniforms, webgl]);
 
   useEffect(() => {
     if (!webgl || !cover) return;
@@ -134,10 +149,10 @@ export function Backdrop({ cover, open }: { cover: string; open: boolean }): JSX
   }, [animate, showCanvas, fps]);
 
   return (
-    <div className={styles.root} aria-hidden="true">
+    <div className={styles.root} data-overlay={overlay ? "" : undefined} aria-hidden="true">
       {showCanvas ? null : <div data-still="" className={styles.layer} style={{ background: stillBackground(colors) }} />}
       <canvas ref={canvasRef} className={styles.layer} data-hidden={showCanvas ? undefined : ""} />
-      <div className={styles.shade} />
+      {overlay ? null : <div className={styles.shade} />}
     </div>
   );
 }
