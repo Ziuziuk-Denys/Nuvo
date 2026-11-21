@@ -7,7 +7,7 @@ const PREPARE_AFTER_MS = 150;
 export function usePreparedStarts(results: readonly (SearchResult | null | undefined)[], ready: boolean): void {
   const tracks = useMemo(() => results.flatMap((result) => (result?.track ? [result.track] : [])), [results]);
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || tracks.length === 0) return;
     const timer = setTimeout(() => playerEngine.prepareStarts(tracks), PREPARE_AFTER_MS);
     return () => clearTimeout(timer);
   }, [ready, tracks]);
