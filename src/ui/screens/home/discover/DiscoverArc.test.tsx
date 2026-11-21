@@ -4,22 +4,17 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HomeMix, Track } from "../../../ports/recs";
 import { DISCOVER, FOR_YOU } from "../homeModel";
+import { ringTracks } from "./ring";
 import { DiscoverArc } from "./DiscoverArc";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const mocks = vi.hoisted(() => ({ playSongs: vi.fn(), offline: false, backdrop: vi.fn() }));
+const mocks = vi.hoisted(() => ({ playSongs: vi.fn(), backdrop: vi.fn(), moveSky: vi.fn() }));
 vi.mock("../../../ports/homeShelves", () => ({ playSongs: mocks.playSongs }));
 vi.mock("../../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock("../../../ports/network", () => ({ useOfflineMode: () => mocks.offline, useStreamingReachable: () => true }));
-vi.mock("../../../ports/theme", () => ({ useLook: () => ({ preset: "nuvo", mode: "dark" }) }));
+vi.mock("../../../ports/backdrop", () => ({ usePageBackdrop: mocks.backdrop }));
+vi.mock("../../../field/Sky", () => ({ moveSky: mocks.moveSky }));
 vi.mock("../../../effects", () => ({ useReducedEffects: () => true }));
-vi.mock("../../../karaoke/backdrop/Backdrop", () => ({
-  Backdrop: (props: { cover: string; open: boolean }) => {
-    mocks.backdrop(props);
-    return null;
-  },
-}));
 vi.mock("../../../components/Cover", () => ({ Cover: () => null }));
 vi.mock("../ShelfHeading", () => ({ ShelfHeading: ({ title }: { title: string }) => <h2>{title}</h2> }));
 
@@ -31,7 +26,6 @@ let root: Root;
 let host: HTMLDivElement;
 
 beforeEach(() => {
-  mocks.offline = false;
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -63,8 +57,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-async function render(mixes: HomeMix[] = MIXES) {
-  await act(async () => root.render(<DiscoverArc mixes={mixes} />));
+async function render() {
+  await act(async () => root.render(<DiscoverArc tracks={ringTracks(MIXES)} />));
 }
 
 const buttons = () => [...host.querySelectorAll<HTMLButtonElement>("li button")];
@@ -78,7 +72,8 @@ describe("DiscoverArc", () => {
     expect(centre().getAttribute("aria-label")).toBe("Title n0, Artist n0");
     expect(centre().tabIndex).toBe(0);
     expect(host.querySelector("p")?.textContent).toContain("Title n0");
-    expect(mocks.backdrop).toHaveBeenLastCalledWith(expect.objectContaining({ cover: "https://covers/n0.jpg" }));
+    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "still" });
+    expect(mocks.moveSky).toHaveBeenCalled();
   });
 
   it("plays the centre track on a click", async () => {
@@ -93,7 +88,7 @@ describe("DiscoverArc", () => {
     expect(mocks.playSongs).toHaveBeenCalledWith(expect.any(Array), 2, "home:discover");
     await frames();
     expect(centre()).toBe(buttons()[2]);
-    expect(mocks.backdrop).toHaveBeenLastCalledWith(expect.objectContaining({ cover: "https://covers/n2.jpg" }));
+    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n2.jpg", { sky: "still" });
   });
 
   it("turns with the arrow keys and moves focus with the centre", async () => {
@@ -104,14 +99,5 @@ describe("DiscoverArc", () => {
     expect(centre()).toBe(buttons()[10]);
     expect(document.activeElement).toBe(buttons()[10]);
     expect(mocks.playSongs).not.toHaveBeenCalled();
-  });
-
-  it("stays away offline and without enough new tracks", async () => {
-    mocks.offline = true;
-    await render();
-    expect(host.innerHTML).toBe("");
-    mocks.offline = false;
-    await render([mix(FOR_YOU, ["k0"]), mix(DISCOVER, ["n0", "n1"])]);
-    expect(host.innerHTML).toBe("");
   });
 });

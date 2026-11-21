@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
@@ -13,6 +13,7 @@ import { navigateWithTransition } from "../../shell/navigate";
 import { useImportsUi } from "../imports/importsUi";
 import { useAddMusic } from "../local/addMusic";
 import { DiscoverArc } from "./discover/DiscoverArc";
+import { ringTracks } from "./discover/ring";
 import { arrangeMixes, likeArtists, mixText, mosaicCovers, starterGenres } from "./homeModel";
 import { MixCard } from "./MixCard";
 import { GenreShelf, LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
@@ -67,7 +68,8 @@ export function Home(): JSX.Element | null {
   const playlists = usePlaylistsList();
   const libraryEmpty = likedCount === 0 && !playlists.isLoading && playlists.data.playlists.length === 0;
   const mixes = offline ? (kept?.mixes ?? null) : all;
-  usePageBackdrop(mixes?.[0] ? mosaicCovers(mixes[0].tracks)[0] : undefined);
+  const ring = useMemo(() => (offline || !mixes ? [] : ringTracks(mixes)), [offline, mixes]);
+  usePageBackdrop(ring.length === 0 && mixes?.[0] ? mosaicCovers(mixes[0].tracks)[0] : undefined);
 
   if (mixes === null) return null;
   const open = (href: string) => navigateWithTransition(navigate, href);
@@ -78,8 +80,8 @@ export function Home(): JSX.Element | null {
     sections.push({ key: "cold-start", node: <ColdStartSlot /> });
     for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
   }
+  if (ring.length > 0) sections.push({ key: "discover", node: <DiscoverArc tracks={ring} /> });
   if (mixes.length > 0) {
-    sections.push({ key: "discover", node: <DiscoverArc mixes={mixes} /> });
     sections.push({
       key: "mixes",
       node: (

@@ -1,15 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
 import { Cover } from "../../../components/Cover";
 import { useReducedEffects } from "../../../effects";
-import { Backdrop } from "../../../karaoke/backdrop/Backdrop";
+import { moveSky } from "../../../field/Sky";
+import { usePageBackdrop } from "../../../ports/backdrop";
 import { playSongs } from "../../../ports/homeShelves";
 import { useTranslation } from "../../../ports/i18n";
-import { useOfflineMode, useStreamingReachable } from "../../../ports/network";
-import type { HomeMix, Track } from "../../../ports/recs";
-import { useLook } from "../../../ports/theme";
+import type { Track } from "../../../ports/recs";
 import { ShelfHeading } from "../ShelfHeading";
-import { PERSPECTIVE, place, ringFor, ringOffset, ringTracks } from "./ring";
-import { SKY } from "./sky";
+import { PERSPECTIVE, place, ringFor, ringOffset } from "./ring";
 import styles from "./DiscoverArc.module.css";
 
 const HEIGHT = 460;
@@ -57,16 +55,14 @@ function useOnScreen(target: RefObject<HTMLElement | null>): boolean {
   return shown;
 }
 
-export function DiscoverArc({ mixes }: { mixes: HomeMix[] }): JSX.Element | null {
-  const tracks = useMemo(() => ringTracks(mixes), [mixes]);
-  const offline = useOfflineMode() || !useStreamingReachable();
-  if (offline || tracks.length === 0) return null;
-  return <Ring tracks={tracks} />;
+function scrollParent(node: HTMLElement): HTMLElement | null {
+  let parent = node.parentElement;
+  while (parent && !/(auto|scroll)/.test(getComputedStyle(parent).overflowY)) parent = parent.parentElement;
+  return parent;
 }
 
-function Ring({ tracks }: { tracks: Track[] }): JSX.Element {
+export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   const { t } = useTranslation();
-  const { mode } = useLook();
   const reduced = useReducedEffects();
   const rootRef = useRef<HTMLElement>(null);
   const items = useRef<Array<HTMLLIElement | null>>([]);
@@ -82,7 +78,6 @@ function Ring({ tracks }: { tracks: Track[] }): JSX.Element {
   const focused = useWindowFocused();
   const count = tracks.length;
   const ring = useMemo(() => ringFor(width, HEIGHT, CLEAR_TOP), [width]);
-  const uniforms = useMemo(() => ({ dark: [mode === "dark" ? 1 : 0] }), [mode]);
   const wrap = (index: number) => ((index % count) + count) % count;
 
   const paint = () => {
@@ -121,6 +116,25 @@ function Ring({ tracks }: { tracks: Track[] }): JSX.Element {
   });
 
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
+
+  useEffect(() => {
+    const root = rootRef.current!;
+    const scroller = scrollParent(root);
+    const sync = () => {
+      const rect = root.getBoundingClientRect();
+      moveSky(rect.bottom, rect.bottom + (scroller?.scrollTop ?? 0));
+    };
+    sync();
+    (scroller ?? window).addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    // the entrance lifts the section, so its edge settles only when the animation ends
+    document.addEventListener("animationend", sync, true);
+    return () => {
+      (scroller ?? window).removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+      document.removeEventListener("animationend", sync, true);
+    };
+  }, []);
 
   useEffect(() => {
     const root = rootRef.current!;
@@ -202,11 +216,11 @@ function Ring({ tracks }: { tracks: Track[] }): JSX.Element {
     playSongs(tracks, index, CONTEXT);
   };
 
+  const current = tracks[Math.min(centre, tracks.length - 1)];
+  usePageBackdrop(current.coverUrl, { sky: onScreen && focused ? "live" : "still" });
   const title = t("ui.recs.home.discover");
-  const current = tracks[centre];
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>
-      <Backdrop cover={current.coverUrl} open={onScreen && focused} overlay={SKY} uniforms={uniforms} />
       <div className={styles.heading}>
         <ShelfHeading icon="radio" title={title} />
       </div>

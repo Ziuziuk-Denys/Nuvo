@@ -5,6 +5,7 @@ import { useCustomizationStore, wallpaperKind } from "../ports/settings";
 import { isWindowVisible, onWindowVisibilityChange } from "../ports/window";
 import { useLook } from "../ports/theme";
 import { useCalmStore } from "./calm";
+import { Sky } from "./Sky";
 import { useReducedEffects } from "../effects";
 import styles from "./Field.module.css";
 
@@ -45,11 +46,18 @@ export function Field(): JSX.Element {
   const reduced = useReducedEffects();
   const pageCover = usePageBackdropStore((s) => s.coverUrl);
   const options = usePageBackdropStore((s) => s.options);
-  const cover = useCoverSrc(coverGlow && !calm && !reduced ? (pageCover ?? undefined) : undefined);
+  const sky = options?.sky;
+  const cover = useCoverSrc(coverGlow && !calm && (sky || !reduced) ? (pageCover ?? undefined) : undefined);
   const dark = look.mode === "dark";
   return (
     <div className={styles.field} aria-hidden="true" data-mode={look.mode}>
-      {wallpaper ? <Wallpaper src={wallpaper} /> : cover ? <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} /> : null}
+      {wallpaper ? (
+        <Wallpaper src={wallpaper} />
+      ) : cover && sky ? (
+        <Sky cover={cover} live={sky === "live"} dark={dark} />
+      ) : cover ? (
+        <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} />
+      ) : null}
     </div>
   );
 }
