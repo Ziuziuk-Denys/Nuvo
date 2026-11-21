@@ -6,7 +6,7 @@ interface NotchSettingsState extends NotchSettings {
   setSettings: (patch: Partial<NotchSettings>) => void;
 }
 
-// v1 turns the old default "auto" off; a Notch someone switched to "on" stays on
+// v1 turns the old default "auto" off; a Notch someone switched to "on" stays on.
 export function migrateNotchSettings(persisted: unknown, version: number): Partial<NotchSettings> {
   const saved = (persisted ?? {}) as Partial<NotchSettings>;
   if (version < 1 && saved.mode === "auto") return { ...saved, mode: "off" };

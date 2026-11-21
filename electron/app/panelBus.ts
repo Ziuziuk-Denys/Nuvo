@@ -13,9 +13,13 @@ export const INTROSPECTION = `<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS O
 <node>
   <interface name="${INTERFACE}">
     <property name="MprisName" type="s" access="read"/>
+    <property name="TrackId" type="s" access="read"/>
     <property name="Liked" type="b" access="read"/>
     <property name="LyricsLine" type="s" access="read"/>
+    <property name="LyricsJson" type="s" access="read"/>
+    <property name="UpNextJson" type="s" access="read"/>
     <method name="ToggleLike"/>
+    <method name="PlayUpNext"><arg type="s" direction="in"/></method>
     <method name="Dislike"/>
     <method name="Show"/>
   </interface>
@@ -49,11 +53,23 @@ export interface PanelDeps {
 
 interface Exposed {
   MprisName: string;
+  TrackId: string;
   Liked: boolean;
   LyricsLine: string;
+  LyricsJson: string;
+  UpNextJson: string;
 }
 
-const TYPES: Record<keyof Exposed, string> = { MprisName: "s", Liked: "b", LyricsLine: "s" };
+const TYPES: Record<keyof Exposed, string> = {
+  MprisName: "s",
+  TrackId: "s",
+  Liked: "b",
+  LyricsLine: "s",
+  LyricsJson: "s",
+  UpNextJson: "s",
+};
+const PANEL_LYRIC_LINES_MAX = 500;
+const PANEL_LYRIC_TEXT_MAX = 120;
 
 export class PanelService {
   private state: SurfaceState | null = null;
@@ -65,7 +81,7 @@ export class PanelService {
     private readonly bus: PanelBusLike,
     private readonly deps: PanelDeps,
   ) {
-    this.exposed = { MprisName: deps.mprisName, Liked: false, LyricsLine: "" };
+    this.exposed = { MprisName: deps.mprisName, TrackId: "", Liked: false, LyricsLine: "", LyricsJson: "[]", UpNextJson: "[]" };
     bus.onCall = (call) => this.handle(call);
   }
 
@@ -102,7 +118,30 @@ export class PanelService {
       const wait = playing ? msUntilNextLine(lines, position) : null;
       if (wait !== null) this.lineTimer = setTimeout(() => this.refresh(), wait);
     }
-    this.publish({ MprisName: this.deps.mprisName, Liked: hasTrack && Boolean(state?.liked), LyricsLine: line });
+    const currentLyrics = state && this.lyrics?.trackId === state.trackId ? this.lyrics.lines : [];
+    const lyricsJson = JSON.stringify(
+      currentLyrics.slice(0, PANEL_LYRIC_LINES_MAX).map((item) => ({
+        timeMs: item.timeMs,
+        text: item.text.slice(0, PANEL_LYRIC_TEXT_MAX),
+      })),
+    );
+    const upNextJson = JSON.stringify(
+      (state?.upNext ?? []).slice(0, 3).map((item) => ({
+        id: item.id.slice(0, 256),
+        title: item.title.slice(0, 256),
+        artist: item.artist.slice(0, 256),
+        coverUrl: item.coverUrl.slice(0, 2048),
+        durationMs: item.durationMs,
+      })),
+    );
+    this.publish({
+      MprisName: this.deps.mprisName,
+      TrackId: hasTrack ? state!.trackId! : "",
+      Liked: hasTrack && Boolean(state?.liked),
+      LyricsLine: line,
+      LyricsJson: lyricsJson,
+      UpNextJson: upNextJson,
+    });
   }
 
   private publish(next: Exposed): void {
@@ -141,6 +180,14 @@ export class PanelService {
       case `${INTERFACE}.ToggleLike`:
         if (this.state?.trackId) this.deps.command({ type: this.state.liked ? "unlike" : "like" });
         return bus.reply(call);
+      case `${INTERFACE}.PlayUpNext`: {
+        const trackId = args[0];
+        if (typeof trackId !== "string" || trackId.length > 256) {
+          return bus.error(call, "org.freedesktop.DBus.Error.InvalidArgs", "Invalid queue track id");
+        }
+        if (this.state?.upNext.some((item) => item.id === trackId)) this.deps.command({ type: "playEntry", trackId });
+        return bus.reply(call);
+      }
       case `${INTERFACE}.Dislike`:
         if (this.state?.trackId) this.deps.command({ type: "dislike" });
         return bus.reply(call);

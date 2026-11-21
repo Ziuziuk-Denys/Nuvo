@@ -4,6 +4,7 @@ import type { YoutubePort } from "./engine/sources/ports";
 import type { Track } from "./engine/types";
 import { coverUrl } from "./data/covers/coverUrl";
 import { startLibrary } from "./data/library/library";
+import { notifyLibraryChanged } from "./data/library/changes";
 import { trimSpan } from "./data/library/trims";
 import { progressiveSource } from "./youtube/playback/progressive";
 
@@ -11,7 +12,7 @@ const CORE = "nuvo-core://local";
 // Media surfaces draw covers small; the data URL stays far under Chromium's URL limit
 const ARTWORK_PX = 512;
 
-function daemonLibrary() {
+export function createDaemonLibrary() {
   const liked = new Set<string>();
   const listeners = createListeners();
   const changed = listeners.emit;
@@ -36,20 +37,20 @@ function daemonLibrary() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ track: track ?? null }),
-      }).catch(() => undefined);
+      }).then(notifyLibraryChanged, notifyLibraryChanged);
     },
     unlike: (trackId: string) => {
       liked.delete(trackId);
       changed();
-      void fetch(`${CORE}/v1/me/library/tracks/${encodeURIComponent(trackId)}`, { method: "DELETE" }).catch(() => undefined);
+      void fetch(`${CORE}/v1/me/library/tracks/${encodeURIComponent(trackId)}`, { method: "DELETE" }).then(notifyLibraryChanged, notifyLibraryChanged);
     },
     dislike: (track: Track) => void import("./ui/recs/notInterested").then(({ songMenuNotInterested }) => songMenuNotInterested?.(track, "exact")),
   };
 }
 
-let likes: ReturnType<typeof daemonLibrary> | null = null;
+let likes: ReturnType<typeof createDaemonLibrary> | null = null;
 
-export function bootedLibrary(): ReturnType<typeof daemonLibrary> | null {
+export function bootedLibrary(): ReturnType<typeof createDaemonLibrary> | null {
   return likes;
 }
 
@@ -81,7 +82,7 @@ export async function bootPlayer(ports: () => Promise<PlayerBootPorts>): Promise
     import("./features/sound/useSleepTimer"),
   ]);
   const given = await ports();
-  const library = daemonLibrary();
+  const library = createDaemonLibrary();
   likes = library;
   startLibrary();
   const booted = startEngine({
