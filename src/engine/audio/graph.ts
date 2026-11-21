@@ -134,7 +134,9 @@ export class AudioGraph {
     this.analyser.smoothingTimeConstant = 0.8;
     this.moving = new MovingSound(ctx, deps.random);
     this.master.connect(this.moving.input);
-    this.moving.output.connect(ctx.destination);
+    const [limiter, trim] = createLimiter(ctx);
+    this.moving.output.connect(this.own(limiter));
+    this.own(trim).connect(ctx.destination);
     // The analysis stays before the moving stage: its ear filters would make the visuals pulse with the rotation
     this.master.connect(this.analyser);
   }
@@ -271,4 +273,21 @@ export class AudioGraph {
     param.setValueAtTime(param.value, this.now);
     param.linearRampToValueAtTime(down ? 0 : 1, this.now + MASK_RAMP_S);
   }
+}
+
+const LIMIT_DB = -2;
+const LIMIT_RATIO = 20;
+
+// The spec's compressor adds makeup gain of 0.6 times its full-range reduction; the trim takes it back so only peaks change
+export function createLimiter(ctx: BaseAudioContext): [input: DynamicsCompressorNode, output: GainNode] {
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = LIMIT_DB;
+  limiter.knee.value = 0;
+  limiter.ratio.value = LIMIT_RATIO;
+  limiter.attack.value = 0.002;
+  limiter.release.value = 0.1;
+  const trim = ctx.createGain();
+  trim.gain.value = dbToGain(0.6 * (LIMIT_DB - LIMIT_DB / LIMIT_RATIO));
+  limiter.connect(trim);
+  return [limiter, trim];
 }

@@ -7,18 +7,27 @@ import styles from "./controls.module.css";
 export function PanelChip({
   pressed,
   disabled,
+  title,
   onClick,
   className,
   children,
 }: {
   pressed: boolean;
   disabled?: boolean;
+  title?: string;
   onClick?: () => void;
   className?: string;
   children: ReactNode;
 }): JSX.Element {
   return (
-    <button type="button" aria-pressed={pressed} disabled={disabled} className={[styles.chip, className].filter(Boolean).join(" ")} onClick={onClick}>
+    <button
+      type="button"
+      aria-pressed={pressed}
+      disabled={disabled}
+      title={title}
+      className={[styles.chip, className].filter(Boolean).join(" ")}
+      onClick={onClick}
+    >
       {children}
     </button>
   );

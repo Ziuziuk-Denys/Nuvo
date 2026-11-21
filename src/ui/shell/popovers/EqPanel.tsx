@@ -105,7 +105,7 @@ export function EqHeader(): JSX.Element {
   const store = useSoundStore.getState();
   return (
     <div className={styles.header}>
-      <PanelChip pressed={autoGain} onClick={() => store.setAutoGain(!autoGain)}>
+      <PanelChip pressed={autoGain} title={t("sound.auto_gain_hint")} onClick={() => store.setAutoGain(!autoGain)}>
         {t("sound.auto_gain")}
       </PanelChip>
       <PanelChip pressed={bypass} onClick={() => store.setBypass(!bypass)}>

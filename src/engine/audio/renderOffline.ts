@@ -1,7 +1,7 @@
 import type { Random } from "../shuffle";
 import type { Tempo } from "../tempo";
 import { dbToGain } from "./curves";
-import { REVERB_CLOSED_AT, REVERB_HIGHPASS_HZ, REVERB_WET_SCALE, type EqBandSpec, type EqState } from "./graph";
+import { createLimiter, REVERB_CLOSED_AT, REVERB_HIGHPASS_HZ, REVERB_WET_SCALE, type EqBandSpec, type EqState } from "./graph";
 import pitchWorkletUrl from "./pitch.worklet.ts?worker&url";
 import { generateImpulse } from "./reverbIr";
 
@@ -121,7 +121,9 @@ export async function renderWithEffects(
     master.gain.setValueCurveAtTime(fadeCurve(true), 0, fade);
     master.gain.setValueCurveAtTime(fadeCurve(false), outSeconds - fade, fade);
   }
-  master.connect(ctx.destination);
+  const [limiter, trim] = createLimiter(ctx);
+  master.connect(limiter);
+  trim.connect(ctx.destination);
   source.start(0, fromMs / 1000, lenMs / 1000);
   return ctx.startRendering();
 }
