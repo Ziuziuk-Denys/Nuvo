@@ -18,7 +18,7 @@ export function moveSky(bottom: number, height: number): void {
   apply();
 }
 
-export function Sky({ cover, mode, dark }: { cover: string; mode: "live" | "drift" | "still"; dark: boolean }): JSX.Element {
+export function Sky({ cover, mode, dark }: { cover: string; mode: "live" | "breathe" | "still"; dark: boolean }): JSX.Element {
   const uniforms = useMemo(() => ({ dark: [dark ? 1 : 0] }), [dark]);
   return (
     <div
@@ -28,7 +28,7 @@ export function Sky({ cover, mode, dark }: { cover: string; mode: "live" | "drif
       }}
       className={styles.sky}
     >
-      <Backdrop cover={cover} open={mode === "live"} drift={mode === "drift"} overlay={SKY} uniforms={uniforms} />
+      <Backdrop cover={cover} open={mode === "live"} breathe={mode === "breathe"} overlay={SKY} uniforms={uniforms} />
     </div>
   );
 }

@@ -233,7 +233,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   };
 
   const current = tracks[Math.min(centre, tracks.length - 1)];
-  usePageBackdrop(current.coverUrl, { sky: !onScreen || !focused ? "still" : spinning ? "live" : "drift" });
+  usePageBackdrop(current.coverUrl, { sky: !onScreen || !focused ? "still" : spinning ? "live" : "breathe" });
   const title = t("ui.recs.home.discover");
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>

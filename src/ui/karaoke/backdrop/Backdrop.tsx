@@ -8,17 +8,18 @@ import styles from "./Backdrop.module.css";
 
 const COVER_FADE_MS = 800;
 const COVER_PX = 64;
-const KEY_MS = 2000;
+const KEY_MS = 20_000;
+const BREATH_MS = 5000;
 
 interface BackdropProps {
   cover: string;
   open: boolean;
-  drift?: boolean;
+  breathe?: boolean;
   overlay?: string;
   uniforms?: Record<string, readonly number[]>;
 }
 
-export function Backdrop({ cover, open, drift = false, overlay, uniforms }: BackdropProps): JSX.Element {
+export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: BackdropProps): JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const keysRef = useRef<Array<HTMLCanvasElement | null>>([]);
@@ -142,7 +143,6 @@ export function Backdrop({ cover, open, drift = false, overlay, uniforms }: Back
     rendererRef.current?.hold(false);
     const root = rootRef.current!;
     delete root.dataset.keys;
-    root.dataset.moving = "";
     let frame = 0;
     let last = -Infinity;
     const tick = (now: number) => {
@@ -154,22 +154,19 @@ export function Backdrop({ cover, open, drift = false, overlay, uniforms }: Back
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(frame);
-      delete root.dataset.moving;
-    };
+    return () => cancelAnimationFrame(frame);
   }, [animate, showCanvas, fps]);
 
-  const drifting = Boolean(overlay) && drift && showCanvas && !animate && visible && !reduced;
+  const breathing = Boolean(overlay) && breathe && showCanvas && !animate && visible && !reduced;
   useEffect(() => {
-    if (!drifting) return;
+    if (!breathing) return;
     const root = rootRef.current!;
     const canvas = canvasRef.current!;
     const keys = keysRef.current.filter((key): key is HTMLCanvasElement => key !== null);
     rendererRef.current?.hold(false);
     let jump = !("keys" in root.dataset);
     let next = Number(keys[0].style.opacity || 0) > Number(keys[1].style.opacity || 0) ? 1 : 0;
-    // each keyframe is drawn once; the compositor blends the two layers and moves them between keyframes
+    // a keyframe is drawn once and the compositor blends it in, so the sky costs nothing between breaths
     const keyframe = () => {
       const renderer = rendererRef.current;
       if (!renderer) return;
@@ -179,7 +176,7 @@ export function Backdrop({ cover, open, drift = false, overlay, uniforms }: Back
       const pen = key.getContext("2d");
       pen?.clearRect(0, 0, key.width, key.height);
       pen?.drawImage(canvas, 0, 0);
-      for (const each of keys) each.style.transition = jump ? "none" : `opacity ${KEY_MS}ms linear`;
+      for (const each of keys) each.style.transition = jump ? "none" : `opacity ${BREATH_MS}ms ease-in-out`;
       key.style.opacity = "1";
       keys[1 - next].style.opacity = "0";
       root.dataset.keys = "";
@@ -187,17 +184,15 @@ export function Backdrop({ cover, open, drift = false, overlay, uniforms }: Back
       next = 1 - next;
     };
     keyframe();
-    root.dataset.moving = "";
     const timer = window.setInterval(keyframe, KEY_MS);
     return () => {
       window.clearInterval(timer);
-      delete root.dataset.moving;
       for (const each of keys) {
         each.style.opacity = getComputedStyle(each).opacity;
         each.style.transition = "none";
       }
     };
-  }, [drifting]);
+  }, [breathing]);
 
   return (
     <div ref={rootRef} className={styles.root} data-overlay={overlay ? "" : undefined} aria-hidden="true">

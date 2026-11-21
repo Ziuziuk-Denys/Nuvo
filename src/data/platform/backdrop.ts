@@ -4,7 +4,7 @@ import { create } from "zustand";
 export interface BackdropOptions {
   blur?: number;
   dim?: number;
-  sky?: "live" | "drift" | "still";
+  sky?: "live" | "breathe" | "still";
 }
 
 interface BackdropState {

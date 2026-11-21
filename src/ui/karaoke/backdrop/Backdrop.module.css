@@ -37,14 +37,6 @@
   isolation: isolate;
 }
 
-.root[data-overlay] .motion {
-  animation: drift 48s ease-in-out infinite alternate paused;
-}
-
-.root[data-overlay][data-moving] .motion {
-  animation-play-state: running;
-}
-
 .key {
   opacity: 0;
   mix-blend-mode: plus-lighter;
@@ -56,14 +48,4 @@
 
 .root[data-keys] [data-gl] {
   visibility: hidden;
-}
-
-@keyframes drift {
-  from {
-    transform: translate3d(-2%, 0.5%, 0) scale(1.08);
-  }
-
-  to {
-    transform: translate3d(2%, -1%, 0) scale(1.08);
-  }
 }
