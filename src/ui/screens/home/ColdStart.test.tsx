@@ -3,7 +3,6 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { useWarmup } from "../../ports/recs";
-import { useTour } from "../../tour/tourStore";
 import { ColdStart } from "./ColdStart";
 import { HiddenLink } from "./HiddenLink";
 
@@ -11,11 +10,11 @@ import { HiddenLink } from "./HiddenLink";
 
 const mocks = vi.hoisted(() => ({
   suppressions: vi.fn(),
-  coldStart: vi.fn(),
   openSearch: vi.fn(),
   openSettingsSection: vi.fn(),
-  openImportSheet: vi.fn(),
-  startFrom: vi.fn(),
+  openImport: vi.fn(),
+  addMusic: vi.fn(),
+  addFolder: vi.fn(),
   warmHome: vi.fn(),
   changed: new EventTarget(),
 }));
@@ -28,21 +27,12 @@ vi.mock("../../ports/recs", async () => {
     warmHome: mocks.warmHome,
   };
 });
-vi.mock("../../ports/starters", () => ({ coldStartNeeded: mocks.coldStart, startFromPicks: mocks.startFrom }));
-vi.mock("../../ports/network", () => ({ useStreamingReachable: () => true }));
-vi.mock("../../ports/importSources", () => ({ IMPORT_SOURCES: ["spotify", "apple"], openImportSheet: mocks.openImportSheet }));
+vi.mock("../imports/importsUi", () => ({ useImportsUi: { getState: () => ({ openImport: mocks.openImport }) } }));
+vi.mock("../local/addMusic", () => ({ useAddMusic: () => mocks.addMusic, useAddFolder: () => mocks.addFolder }));
 vi.mock("../../ports/navigation", () => ({
   useModalStore: { getState: () => ({ openSearch: mocks.openSearch, openSettingsSection: mocks.openSettingsSection }) },
 }));
 vi.mock("../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock("../../recs/TastePicker", () => ({
-  TastePicker: ({ start }: { start(picks: unknown[]): Promise<boolean> }) => (
-    <button type="button" onClick={() => void start([{ kind: "song", id: "s1", title: "Teardrop" }])}>
-      start-with-picks
-    </button>
-  ),
-}));
-
 let root: Root;
 let host: HTMLDivElement;
 
@@ -51,9 +41,7 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
   vi.clearAllMocks();
-  mocks.coldStart.mockResolvedValue(false);
   mocks.suppressions.mockResolvedValue([{ suppressionId: 1 }]);
-  useTour.setState({ phase: "off" });
   useWarmup.setState({ phase: "idle", seeds: [] });
 });
 afterEach(() => {
@@ -64,17 +52,22 @@ afterEach(() => {
 const button = (text: string) => [...host.querySelectorAll("button")].find((b) => b.textContent === text);
 
 describe("ColdStart", () => {
-  it("asks for a few songs or artists when nothing tells the taste yet, then shows Home being built", async () => {
-    mocks.coldStart.mockResolvedValue(true);
-    mocks.startFrom.mockImplementation(async () => {
-      useWarmup.setState({ phase: "building", seeds: ["s1"] });
-      return true;
-    });
+  it("brings music in without asking for a taste: Import leads, files and a folder follow", async () => {
     await act(async () => root.render(<ColdStart />));
-    await act(async () => button("start-with-picks")!.click());
-    expect(mocks.startFrom).toHaveBeenCalledWith([{ kind: "song", id: "s1", title: "Teardrop" }]);
-    expect(host.textContent).not.toContain("ui.recs.home.empty_title");
-    expect(button("start-with-picks")).toBeUndefined();
+    expect(host.querySelector("[data-bring]")?.textContent).toContain("ui.home.bring.title");
+    expect(host.querySelector(".primary, [class*=primary]")?.textContent).toBe("ui.library.import");
+    act(() => button("ui.library.import")!.click());
+    expect(mocks.openImport).toHaveBeenCalledOnce();
+    act(() => button("ui.local.add_files")!.click());
+    expect(mocks.addMusic).toHaveBeenCalledOnce();
+    act(() => button("ui.local.add_folder")!.click());
+    expect(mocks.addFolder).toHaveBeenCalledOnce();
+  });
+
+  it("shows Home being built after picks from the tour", async () => {
+    useWarmup.setState({ phase: "building", seeds: ["s1"] });
+    await act(async () => root.render(<ColdStart />));
+    expect(host.querySelector("[data-bring]")).toBeNull();
     const status = host.querySelector("[data-building]")!;
     expect(status.getAttribute("role")).toBe("status");
     expect(status.textContent).toBe("ui.recs.home.building");
@@ -86,38 +79,6 @@ describe("ColdStart", () => {
     expect(host.textContent).toContain("ui.recs.home.offline_title");
     act(() => button("ui.recs.home.retry")!.click());
     expect(mocks.warmHome).toHaveBeenCalledWith(["s1", "t2"]);
-    act(() => button("ui.recs.home.search")!.click());
-    expect(mocks.openSearch).toHaveBeenCalled();
-  });
-
-  it("stays on the ask when the picks could not be saved", async () => {
-    mocks.coldStart.mockResolvedValue(true);
-    mocks.startFrom.mockResolvedValue(false);
-    await act(async () => root.render(<ColdStart />));
-    await act(async () => button("start-with-picks")!.click());
-    expect(button("start-with-picks")).toBeDefined();
-  });
-
-  it("leaves the ask to the tour's start card while the tour is up", async () => {
-    mocks.coldStart.mockResolvedValue(true);
-    useTour.setState({ phase: "poster" });
-    await act(async () => root.render(<ColdStart />));
-    expect(button("start-with-picks")).toBeUndefined();
-    expect(host.textContent).toContain("ui.recs.home.empty_title");
-    act(() => useTour.setState({ phase: "off" }));
-    expect(button("start-with-picks")).toBeDefined();
-  });
-
-  it("asks the daemon again when favourites were sent from the tour", async () => {
-    mocks.coldStart.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    await act(async () => root.render(<ColdStart />));
-    expect(button("start-with-picks")).toBeDefined();
-    await act(async () => mocks.changed.dispatchEvent(new Event("change")));
-    expect(button("start-with-picks")).toBeUndefined();
-  });
-
-  it("offers search from the empty state", async () => {
-    await act(async () => root.render(<ColdStart />));
     act(() => button("ui.recs.home.search")!.click());
     expect(mocks.openSearch).toHaveBeenCalled();
   });
@@ -140,35 +101,5 @@ describe("HiddenLink", () => {
     mocks.suppressions.mockResolvedValue([{ suppressionId: 2 }]);
     await act(async () => mocks.changed.dispatchEvent(new Event("change")));
     expect(button("ui.recs.hidden.open")).toBeDefined();
-  });
-});
-
-describe("ColdStart import", () => {
-  it("offers Import beside Search in the empty state when Home passes it", async () => {
-    const onImport = vi.fn();
-    await act(async () => root.render(<ColdStart onImport={onImport} />));
-    act(() => button("ui.library.import")!.click());
-    expect(onImport).toHaveBeenCalledOnce();
-    act(() => root.unmount());
-    root = createRoot(host);
-    await act(async () => root.render(<ColdStart />));
-    expect(button("ui.library.import")).toBeUndefined();
-  });
-
-  it("offers each import source under the taste ask while the library is empty, so a skipped tour still leads to an import", async () => {
-    mocks.coldStart.mockResolvedValue(true);
-    await act(async () => root.render(<ColdStart onImport={vi.fn()} />));
-    const ask = host.querySelector("[data-cold-ask]");
-    expect(ask?.contains(button("start-with-picks")!)).toBe(true);
-    expect([...ask!.querySelectorAll("[data-source]")].map((source) => source.textContent)).toEqual([
-      "ui.tour.start.sources.spotify",
-      "ui.tour.start.sources.apple",
-    ]);
-    act(() => button("ui.tour.start.sources.apple")!.click());
-    expect(mocks.openImportSheet).toHaveBeenCalledWith("apple");
-    act(() => root.unmount());
-    root = createRoot(host);
-    await act(async () => root.render(<ColdStart />));
-    expect(host.querySelector("[data-source]")).toBeNull();
   });
 });

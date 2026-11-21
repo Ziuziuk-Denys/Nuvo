@@ -97,6 +97,15 @@ pub fn add_root(conn: &Connection, path: &str, now: i64) -> Result<LocalRoot, St
     root(conn, id)?.ok_or(StoreError::NotFound("music folder"))
 }
 
+// files skip the folder cap: each is one watch, not a tree
+pub fn add_file_root(conn: &Connection, path: &str, now: i64) -> Result<LocalRoot, StoreError> {
+    if let Some(known) = roots(conn)?.into_iter().find(|r| r.path == path || inside(&r.path, path)) {
+        return Ok(known);
+    }
+    conn.execute("INSERT INTO local_roots (path, added_at, status) VALUES (?1, ?2, 'ok')", params![path, now])?;
+    root(conn, conn.last_insert_rowid())?.ok_or(StoreError::NotFound("music folder"))
+}
+
 // tracks rows stay: likes and playlists point at them
 pub fn remove_root(conn: &Connection, id: i64) -> Result<(), StoreError> {
     match conn.execute("DELETE FROM local_roots WHERE id = ?1", [id])? {

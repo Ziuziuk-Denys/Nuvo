@@ -94,4 +94,16 @@ describe("local import e2e", () => {
     await main.getByText("Long Road").waitFor();
     await main.getByText("Vandal", { exact: true }).waitFor();
   });
+
+  it("one file from elsewhere is added from the file picker and listed beside the folder", async () => {
+    const single = path.join(isolation.work, "elsewhere", "Solo - Lone Song.wav");
+    put(single, silentWav(1));
+    await app.evaluate(({ dialog }, file) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+    }, single);
+    await main.getByRole("button", { name: "Add files" }).click();
+    await main.getByText("Added to On this computer").waitFor();
+    await main.getByText("Lone Song", { exact: true }).waitFor({ timeout: 30_000 });
+    await main.locator(`[title="${single}"]`).waitFor();
+  });
 });

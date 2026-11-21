@@ -78,3 +78,19 @@ export function byOthers(tracks: readonly Track[], name: string): Track[] {
   const key = name.toLocaleLowerCase();
   return tracks.filter((track) => firstArtist(track).toLocaleLowerCase() !== key);
 }
+
+// each shelf is the radio of one well-known artist's top song: search results for a genre are mostly covers
+const GENRES = [
+  { genre: "russian", query: "Звери", locale: "ru" },
+  { genre: "pop", query: "The Weeknd" },
+  { genre: "hiphop", query: "Kendrick Lamar" },
+  { genre: "rock", query: "Queen" },
+  { genre: "electronic", query: "Daft Punk" },
+];
+const STARTER_SHELVES = 4;
+
+export function starterGenres(locale: string): Array<{ genre: string; query: string }> {
+  return GENRES.filter((entry) => !entry.locale || entry.locale === locale)
+    .slice(0, STARTER_SHELVES)
+    .map(({ genre, query }) => ({ genre, query }));
+}

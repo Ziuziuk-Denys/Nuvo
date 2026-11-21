@@ -67,7 +67,7 @@ import { createBackend, parseFeed, releasePageUrl, Updater, updateMode, type Aut
 import { createClipExport, saveFolder } from "./clipExport";
 import { createFileActions } from "./fileActions";
 import { readCoverFile, type CoverRead } from "./coverFile";
-import { writeBufferAtomic } from "./files";
+import { AUDIO_EXTENSIONS, writeBufferAtomic } from "./files";
 import { MainSettingsStore } from "./settings";
 import { GlobalShortcuts, PLAYER_COMMAND_IDS } from "./shortcuts";
 import { exclusive } from "./exclusive";
@@ -681,6 +681,15 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         const picked = await dialog.showOpenDialog(parent(), { title, defaultPath, properties: ["openDirectory", "createDirectory"] });
         return picked.canceled ? null : (picked.filePaths[0] ?? null);
       },
+      pickFiles: async (title, defaultPath) => {
+        const picked = await dialog.showOpenDialog(parent(), {
+          title,
+          defaultPath,
+          properties: ["openFile", "multiSelections"],
+          filters: [{ name: "Audio", extensions: AUDIO_EXTENSIONS }],
+        });
+        return picked.canceled ? [] : picked.filePaths;
+      },
       pickSavePath: async (title, defaultPath) => {
         const picked = await dialog.showSaveDialog(parent(), { title, defaultPath });
         return picked.canceled ? null : (picked.filePath ?? null);
@@ -693,6 +702,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       refuse: (channel, why) => refusals.refuse(channel, why),
     });
     ipc.handle(CHANNELS.localAddFolder, "main", () => oneFileDialog(() => files.addFolder()));
+    ipc.handle(CHANNELS.localAddFiles, "main", (payload) => (payload === undefined ? oneFileDialog(() => files.addFiles(payload)) : files.addFiles(payload)));
     ipc.handle(CHANNELS.localReveal, "main", (payload) => files.reveal(payload));
     ipc.handle(CHANNELS.recognizeFile, "main", (payload) => files.grantRecognizeFile(payload));
     ipc.handle(CHANNELS.exportSaveFiles, "main", (payload) => oneFileDialog(() => files.saveFiles(payload)));

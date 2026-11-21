@@ -112,7 +112,7 @@ async fn scan(state: &AppState, data: &Unlocked, all: bool, wanted: &BTreeSet<i6
 async fn scan_root(state: &AppState, data: &Unlocked, root: &LocalRoot) -> Result<(), ApiError> {
     let root_id = root.id;
     let path = PathBuf::from(&root.path);
-    if !tokio::fs::metadata(&path).await.is_ok_and(|m| m.is_dir()) {
+    if tokio::fs::metadata(&path).await.is_err() {
         // An unplugged drive: every row stays, so likes and playlists still know the files.
         data.db.call(move |c| store::mark_root(c, root_id, "missing", None)).await?;
         return Ok(());

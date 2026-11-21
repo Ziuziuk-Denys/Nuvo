@@ -33,6 +33,7 @@ mod unix {
 
     // Each component opens O_NOFOLLOW relative to its parent, so a swapped link cannot leave root
     pub fn open_inside(path: &Path, root: &Path) -> Result<File> {
+        let root = if path == root { root.parent().ok_or_else(refused)? } else { root };
         let link = fs::symlink_metadata(path)?;
         if !link.file_type().is_file() {
             return Err(refused());
@@ -88,6 +89,7 @@ mod windows {
 
     // shortcut: a parent swapped between check and open is not caught, use NtCreateFile if needed
     pub fn open_inside(path: &Path, root: &Path) -> Result<File> {
+        let root = if path == root { root.parent().ok_or_else(refused)? } else { root };
         let rest = path.strip_prefix(root).map_err(|_| refused())?;
         let mut current = root.to_path_buf();
         for component in rest.components() {

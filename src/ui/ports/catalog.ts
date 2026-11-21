@@ -17,6 +17,19 @@ export {
 const LOOKUPS = 6;
 
 // The cache has no list call, so each id is probed with a one-byte range read
+export async function cachedTrackIds(trackIds: readonly string[], isLive: () => boolean = () => true): Promise<Set<string>> {
+  const pending = [...trackIds];
+  const found = new Set<string>();
+  const worker = async () => {
+    while (isLive() && pending.length > 0) {
+      const id = pending.shift()!;
+      if (await hasCachedAudio(id)) found.add(id);
+    }
+  };
+  await Promise.all(Array.from({ length: LOOKUPS }, worker));
+  return found;
+}
+
 export function useCachedTrackIds(trackIds: readonly string[], enabled = true): Set<string> | null {
   const [cached, setCached] = useState<Set<string> | null>(null);
   const key = enabled ? trackIds.filter(Boolean).join("\n") : null;
@@ -25,15 +38,7 @@ export function useCachedTrackIds(trackIds: readonly string[], enabled = true): 
     setCached(null);
     if (key === null) return;
     let active = true;
-    const pending = key ? key.split("\n") : [];
-    const found = new Set<string>();
-    const worker = async () => {
-      while (active && pending.length > 0) {
-        const id = pending.shift()!;
-        if (await hasCachedAudio(id)) found.add(id);
-      }
-    };
-    void Promise.all(Array.from({ length: LOOKUPS }, worker)).then(() => {
+    void cachedTrackIds(key ? key.split("\n") : [], () => active).then((found) => {
       if (active) setCached(found);
     });
     return () => {

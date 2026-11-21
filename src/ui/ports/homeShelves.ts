@@ -2,16 +2,27 @@ import { catalog, player } from "@/engine";
 import { createContinuation } from "@/engine/adapters";
 import { CORE_BASE_URL } from "@/engine/boot";
 import { fromSnapshot } from "@/engine/snapshot";
-import type { Track } from "@/engine/types";
+import { isLocalId, type Track } from "@/engine/types";
 import { coreRequest } from "@/data/core/request";
 import { libraryClient } from "@/data/library/client";
 import { library } from "@/data/library/library";
+import type { HomeMix } from "@/engine/recsClient";
+import { cachedTrackIds } from "./catalog";
+import { playableLocalTracks } from "./localFiles";
 
 /** Playlists read for one shuffle, picked at random, so a large library stays a few local reads. */
 const SHUFFLE_PLAYLISTS = 10;
 /** Enough ranked songs that some are left after the artist's own are dropped. */
 const LIKE_CANDIDATES = 40;
 const STYLE_SONGS = 40;
+const GENRE_SONGS = 24;
+const GENRE_WAIT_MS = 15_000;
+// radio lists can still hold compilations and hour-long mixes; only single songs belong on a shelf
+const COMPILATION = /\b(hits|mix|vol\.?|volume|nonstop|playlist|compilation)\b|хит|сборник|подборк/i;
+const LONGEST_SONG_MS = 9 * 60_000;
+// a big library stays a few hundred local cache reads
+const OFFLINE_PROBES = 400;
+const OFFLINE_MIX_MIN = 4;
 
 export function shuffled<T>(items: readonly T[]): T[] {
   const out = [...items];
@@ -60,4 +71,32 @@ export async function localStyle(): Promise<{ genre: string; tracks: Track[] } |
 
 export function playSongs(tracks: Track[], startAt: number, context: string): void {
   player().playList(tracks, { startAt, context });
+}
+
+export async function genreSongs(artist: string): Promise<Track[]> {
+  const signal = AbortSignal.timeout(GENRE_WAIT_MS);
+  const single = (track: Track) => !COMPILATION.test(`${track.title} ${track.artists}`) && track.durationMs < LONGEST_SONG_MS;
+  try {
+    const top = (await catalog().searchFiltered(artist, "songs", signal)).filter(single);
+    if (!top[0]) return [];
+    const radio = (await catalog().radio(top[0].id, { limit: GENRE_SONGS }, signal)).filter(single);
+    return radio.length > 0 ? radio : top.slice(0, GENRE_SONGS);
+  } catch {
+    return [];
+  }
+}
+
+export async function offlineSongs(): Promise<Track[]> {
+  const [saved, local] = await Promise.all([librarySongs(), playableLocalTracks()]);
+  const probed = shuffled(saved.filter((track) => !isLocalId(track.id))).slice(0, OFFLINE_PROBES);
+  const cached = await cachedTrackIds(probed.map((track) => track.id));
+  return [...local, ...probed.filter((track) => cached.has(track.id))];
+}
+
+export async function offlineMixes(mixes: readonly HomeMix[]): Promise<HomeMix[]> {
+  const ids = [...new Set(mixes.flatMap((mix) => mix.tracks.map((track) => track.id)))].filter((id) => !isLocalId(id));
+  const cached = await cachedTrackIds(ids.slice(0, OFFLINE_PROBES));
+  return mixes
+    .map((mix) => ({ ...mix, tracks: mix.tracks.filter((track) => isLocalId(track.id) || cached.has(track.id)) }))
+    .filter((mix) => mix.tracks.length >= OFFLINE_MIX_MIN);
 }

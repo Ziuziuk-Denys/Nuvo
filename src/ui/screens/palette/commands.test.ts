@@ -47,6 +47,7 @@ function deps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     actions: {
       home: vi.fn(),
       library: vi.fn(),
+      add_files: vi.fn(),
       search: vi.fn(),
       settings: vi.fn(),
       play_pause: vi.fn(),
@@ -70,6 +71,7 @@ describe("buildCommands", () => {
   it("lists navigation, playback, window and one entry per settings item, with shortcuts from the bindings", () => {
     const commands = buildCommands(deps());
     expect(commands.map((command) => command.group)).toEqual([
+      "go",
       "go",
       "go",
       "go",

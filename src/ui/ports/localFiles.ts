@@ -3,6 +3,7 @@ import { filterTracks } from "@/data/search/trackMatch";
 import { CORE_BASE_URL } from "@/engine/boot";
 import { isLocalId } from "@/engine/types";
 import { createLocalClient, scanLine, skippedSummary, type LocalRootView, type LocalScanView, type LocalTrackView } from "@/local/client";
+import type { AddFilesResult } from "@/shell/nuvoShell";
 import type { Track } from "./player";
 
 export type { LocalRootView, LocalScanView, LocalTrackView };
@@ -10,6 +11,7 @@ export { scanLine, skippedSummary };
 
 const client = createLocalClient(CORE_BASE_URL);
 const SCAN_POLL_MS = 500;
+const LOCAL_WAIT_MS = 10_000;
 const changed = new Set<() => void>();
 
 function notifyLocalChanged(): void {
@@ -123,6 +125,20 @@ export async function addMusicFolder(): Promise<string | null> {
   if (result && "error" in result) return result.error;
   if (result) setTimeout(notifyLocalChanged, SCAN_POLL_MS);
   return null;
+}
+
+export async function playableLocalTracks(): Promise<Track[]> {
+  try {
+    return (await client.allTracks("", AbortSignal.timeout(LOCAL_WAIT_MS))).filter((view) => !view.unsupported).map(toPlayerTrack);
+  } catch {
+    return [];
+  }
+}
+
+export async function addMusicFiles(files?: File[]): Promise<AddFilesResult> {
+  const result = (await window.nuvoShell?.addMusicFiles(files)) ?? null;
+  if (result && "added" in result) setTimeout(notifyLocalChanged, SCAN_POLL_MS);
+  return result;
 }
 
 export async function removeMusicFolder(id: number): Promise<void> {

@@ -11,7 +11,7 @@ use axum::http::{HeaderMap, HeaderValue, header};
 use axum::response::{IntoResponse, Response};
 use axum::{Json, Router};
 use nuvo_contracts::{AddLocalRoot, Items, LocalRelated, LocalRoot, LocalScanStatus, LocalStyle, LocalTracksPage};
-use nuvo_local::walk::path_of;
+use nuvo_local::walk::{is_audio, path_of};
 use nuvo_store::{local, now_ms};
 use nuvo_covers::picture::Processed;
 use serde::Deserialize;
@@ -68,16 +68,18 @@ async fn add_root(State(state): State<AppState>, JsonBody(body): JsonBody<AddLoc
         return Err(ApiError::Invalid("path must be absolute".into()));
     }
     let path = tokio::fs::canonicalize(&raw).await.map_err(|_| ApiError::NotFound("the folder is gone".into()))?;
-    if !tokio::fs::metadata(&path).await.is_ok_and(|m| m.is_dir()) {
-        return Err(ApiError::Invalid("pick a folder, not a file".into()));
-    }
+    let file = match tokio::fs::metadata(&path).await {
+        Ok(meta) if meta.is_dir() => false,
+        Ok(meta) if meta.is_file() && is_audio(&path) => true,
+        _ => return Err(ApiError::Invalid("pick a folder or an audio file".into())),
+    };
     let data_dir = canonical_or_same(state.paths.db.parent()).await;
     let cache_dir = canonical_or_same(state.paths.audio.parent()).await;
     if let Some(why) = refused_folder(&path, &[&data_dir, &cache_dir]) {
         return Err(ApiError::Invalid(why.into()));
     }
     let text = path.to_str().ok_or_else(|| ApiError::Invalid("the folder name is not valid UTF-8".into()))?.to_string();
-    let root = data.db.call(move |c| local::add_root(c, &text, now_ms())).await?;
+    let root = data.db.call(move |c| if file { local::add_file_root(c, &text, now_ms()) } else { local::add_root(c, &text, now_ms()) }).await?;
     poke(&state, Msg::Root(root.id));
     Ok((StatusCode::ACCEPTED, Json(root)))
 }

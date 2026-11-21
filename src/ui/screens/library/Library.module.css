@@ -12,7 +12,7 @@
   margin-top: 14px;
 }
 
-/* At 1100 px the tabs and tools share one row only with New playlist as a square button */
+/* The tools never shrink: the search folds to an icon first, then the tabs scroll */
 @container (max-width: 1059px) {
   .create {
     width: 32px;
@@ -23,8 +23,27 @@
     display: none;
   }
 
-  .tools .filter {
-    min-width: 120px;
+  .filter {
+    width: 180px;
+  }
+}
+
+@container (max-width: 899px) {
+  .filter:not(:focus-within, :has(input:not(:placeholder-shown))) {
+    width: 32px;
+  }
+
+  .filter:not(:focus-within, :has(input:not(:placeholder-shown))) > * {
+    position: relative;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .filter:not(:focus-within, :has(input:not(:placeholder-shown))) input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
   }
 }
 
@@ -89,16 +108,35 @@
   scrollbar-width: none;
 }
 
+@supports (animation-timeline: scroll()) {
+  .tabs {
+    animation: tabs-edges linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
+@keyframes tabs-edges {
+  0% {
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  2%,
+  98% {
+    mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  }
+
+  100% {
+    mask-image: linear-gradient(to right, transparent, #000 28px);
+  }
+}
+
 .tools {
-  flex: 0 100 auto;
+  flex: none;
   flex-wrap: nowrap;
-  justify-content: flex-end;
-  min-width: 0;
 }
 
 .filter {
-  flex: 0 1 240px;
-  min-width: 140px;
+  width: 240px;
   margin-inline-end: 4px;
 }
 

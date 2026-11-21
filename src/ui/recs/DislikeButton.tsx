@@ -23,6 +23,7 @@ export function DislikeButton({ track, size, className, onDisliked }: DislikeBut
     <IconButton
       icon="dislike"
       label={t("ui.recs.dislike")}
+      tooltip={t("ui.recs.dislike_hint")}
       size={size}
       className={className}
       data-dislike=""

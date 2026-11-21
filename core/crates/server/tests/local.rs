@@ -64,12 +64,30 @@ async fn bad_folders_are_refused() {
     assert_eq!(common::call(&core.app, "POST", "/v1/fs/local/roots", Some(serde_json::json!({"path": "relative/dir"}))).await.0, StatusCode::BAD_REQUEST);
     assert_eq!(common::add_folder(&core, std::path::Path::new("/")).await.0, StatusCode::BAD_REQUEST);
     assert_eq!(common::add_folder(&core, std::path::Path::new("/etc")).await.0, StatusCode::BAD_REQUEST);
-    assert_eq!(common::add_folder(&core, &music.path().join("a.wav")).await.0, StatusCode::BAD_REQUEST);
+    fs::write(music.path().join("notes.txt"), b"hi").unwrap();
+    assert_eq!(common::add_folder(&core, &music.path().join("notes.txt")).await.0, StatusCode::BAD_REQUEST);
     assert_eq!(common::add_folder(&core, &music.path().join("gone")).await.0, StatusCode::NOT_FOUND);
     assert_eq!(common::add_folder(&core, &core.dir.path().join("data")).await.0, StatusCode::BAD_REQUEST, "Nuvo's own data");
     assert_eq!(common::add_folder(&core, music.path()).await.0, StatusCode::ACCEPTED);
     fs::create_dir(music.path().join("inner")).unwrap();
     assert_eq!(common::add_folder(&core, &music.path().join("inner")).await.0, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_single_file_can_be_added() {
+    let core = common::local_core();
+    let music = tempfile::tempdir().unwrap();
+    common::write_wav(&music.path().join("Band - One.wav"), 1);
+    common::write_wav(&music.path().join("Band - Two.wav"), 1);
+    let (status, root) = common::add_folder(&core, &music.path().join("Band - One.wav")).await;
+    assert_eq!(status, StatusCode::ACCEPTED);
+    assert!(root["path"].as_str().unwrap().ends_with("Band - One.wav"));
+    let page = common::wait_tracks(&core, |p| p["total"] == 1).await;
+    assert_eq!(titles(&page), ["One"]);
+    let id = id_of(&page, "One");
+    let (status, bytes, _) = common::send(&core.app, common::request("GET", &format!("/v1/local/tracks/{id}/audio"), None)).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bytes, common::wav_bytes(1));
 }
 
 #[tokio::test(flavor = "multi_thread")]

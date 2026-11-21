@@ -14,10 +14,13 @@ const answer = (status: number, body: unknown): CoreAnswer => ({
 });
 const LOCAL = `local:${"b".repeat(32)}`;
 
-function setup(over: { call?: (method: string, route: string, body?: unknown) => Promise<CoreAnswer>; folder?: string | null; save?: string | null } = {}) {
+function setup(
+  over: { call?: (method: string, route: string, body?: unknown) => Promise<CoreAnswer>; folder?: string | null; save?: string | null; picked?: string[] } = {},
+) {
   let last: string | null = null;
   const call = vi.fn(over.call ?? (async () => answer(202, { id: "job1" })));
   const pickFolder = vi.fn(async () => (over.folder === undefined ? "/home/u/Music/out" : over.folder));
+  const pickFiles = vi.fn(async () => over.picked ?? ["/home/u/Music/a.mp3"]);
   const pickSavePath = vi.fn(async () => (over.save === undefined ? "/tmp/x/Mix.m3u8" : over.save));
   const showInFolder = vi.fn();
   const refuse = vi.fn();
@@ -25,6 +28,7 @@ function setup(over: { call?: (method: string, route: string, body?: unknown) =>
   const actions = createFileActions({
     call,
     pickFolder,
+    pickFiles,
     pickSavePath,
     musicDir: () => "/home/u/Music",
     documentsDir: () => "/home/u/Documents",
@@ -33,7 +37,7 @@ function setup(over: { call?: (method: string, route: string, body?: unknown) =>
     writeFile,
     refuse,
   });
-  return { actions, call, pickFolder, pickSavePath, showInFolder, refuse, writeFile };
+  return { actions, call, pickFolder, pickFiles, pickSavePath, showInFolder, refuse, writeFile };
 }
 
 const files = { trackIds: ["dQw4w9WgXcQ"], label: "Mix", format: "original", playlistFile: true };
@@ -104,6 +108,33 @@ describe("add a music folder", () => {
     const closed = setup({ folder: null });
     expect(await closed.actions.addFolder()).toBeNull();
     expect(closed.call).not.toHaveBeenCalled();
+  });
+});
+
+describe("add music files", () => {
+  it("adds picked files and counts the ones nuvo-core took", async () => {
+    const some = setup({
+      picked: ["/home/u/a.mp3", "/home/u/notes.txt"],
+      call: async (_method, _route, body) =>
+        (body as { path: string }).path.endsWith(".mp3") ? answer(202, { id: 1 }) : answer(400, { message: "pick a folder or an audio file" }),
+    });
+    expect(await some.actions.addFiles(undefined)).toEqual({ added: 1 });
+    expect(await setup({ call: async () => answer(400, { message: "pick a folder or an audio file" }) }).actions.addFiles(undefined)).toEqual({
+      error: "pick a folder or an audio file",
+    });
+    const closed = setup({ picked: [] });
+    expect(await closed.actions.addFiles(undefined)).toBeNull();
+    expect(closed.call).not.toHaveBeenCalled();
+  });
+
+  it("takes dropped paths without a dialog and refuses a bad shape", async () => {
+    const dropped = setup({ call: async () => answer(202, { id: 2 }) });
+    expect(await dropped.actions.addFiles({ paths: ["/home/u/b.flac", "/home/u/Album"] })).toEqual({ added: 2 });
+    expect(dropped.pickFiles).not.toHaveBeenCalled();
+    const bad = setup();
+    expect(await bad.actions.addFiles({ paths: ["relative.mp3"] })).toBeNull();
+    expect(bad.refuse).toHaveBeenCalledWith("local:add-files", "shape");
+    expect(bad.call).not.toHaveBeenCalled();
   });
 });
 

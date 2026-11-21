@@ -1,17 +1,13 @@
-import { useEffect, useState, type CSSProperties, type JSX } from "react";
+import type { CSSProperties, JSX } from "react";
+import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { useTranslation } from "../../ports/i18n";
-import { IMPORT_SOURCES, openImportSheet } from "../../ports/importSources";
 import { useModalStore } from "../../ports/navigation";
-import { useStreamingReachable } from "../../ports/network";
-import { recsChanged, useWarmup, warmHome } from "../../ports/recs";
-import { coldStartNeeded, startFromPicks } from "../../ports/starters";
-import { TastePicker } from "../../recs/TastePicker";
-import { ServiceMark } from "../../tour/ServiceMark";
-import { useTour } from "../../tour/tourStore";
+import { useWarmup, warmHome } from "../../ports/recs";
+import { useAddFolder, useAddMusic } from "../local/addMusic";
+import { useImportsUi } from "../imports/importsUi";
 import styles from "./ColdStart.module.css";
 
-const COLD_ROWS = 5;
 const OUTLINE_CARDS = 4;
 
 function Building(): JSX.Element {
@@ -28,28 +24,32 @@ function Building(): JSX.Element {
   );
 }
 
-export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Element | null {
+function BringMusic(): JSX.Element {
   const { t } = useTranslation();
-  const online = useStreamingReachable();
-  const tourOff = useTour((state) => state.phase === "off");
-  const [cold, setCold] = useState<boolean | null>(null);
+  const addMusic = useAddMusic();
+  const addFolder = useAddFolder();
+  return (
+    <section className={styles.bring} aria-labelledby="bring-title" data-bring="">
+      <h2 id="bring-title" className={styles.title}>
+        {t("ui.home.bring.title")}
+      </h2>
+      <p className={styles.message}>{t("ui.home.bring.message")}</p>
+      <div className={styles.actions}>
+        <Button variant="primary" onClick={() => useImportsUi.getState().openImport()}>
+          {t("ui.library.import")}
+        </Button>
+        <Button onClick={() => void addMusic()}>{t("ui.local.add_files")}</Button>
+        <Button variant="text" onClick={() => void addFolder()}>
+          {t("ui.local.add_folder")}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+export function ColdStart(): JSX.Element {
+  const { t } = useTranslation();
   const warmup = useWarmup((state) => state.phase);
-
-  useEffect(() => {
-    let live = true;
-    const check = () =>
-      void coldStartNeeded().then((needed) => {
-        if (live) setCold(needed);
-      });
-    check();
-    // favourites sent from the tour's start card answer the ask before it shows
-    recsChanged.addEventListener("change", check);
-    return () => {
-      live = false;
-      recsChanged.removeEventListener("change", check);
-    };
-  }, []);
-
   if (warmup === "building") return <Building />;
   if (warmup === "failed") {
     return (
@@ -63,46 +63,5 @@ export function ColdStart({ onImport }: { onImport?: () => void } = {}): JSX.Ele
       />
     );
   }
-  if (cold === null) return null;
-  if (cold && online && tourOff) {
-    return (
-      <div className={styles.ask} data-cold-ask="">
-        <section className={styles.taste} aria-labelledby="cold-taste-title">
-          <h2 id="cold-taste-title" className={styles.title}>
-            {t("ui.recs.start.title")}
-          </h2>
-          <p className={styles.message}>{t("ui.recs.start.message")}</p>
-          <TastePicker className={styles.picker} action={t("ui.recs.start.go")} rows={COLD_ROWS} start={startFromPicks} />
-        </section>
-        {onImport ? (
-          <section className={styles.import} aria-labelledby="cold-import-title">
-            <h3 id="cold-import-title" className={styles.importTitle}>
-              {t("ui.recs.home.import_from")}
-            </h3>
-            <ul className={styles.sources}>
-              {IMPORT_SOURCES.map((source) => (
-                <li key={source}>
-                  <button type="button" className={styles.source} data-source={source} onClick={() => void openImportSheet(source)}>
-                    <ServiceMark source={source} size={18} />
-                    {t(`ui.tour.start.sources.${source}`)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-      </div>
-    );
-  }
-  return (
-    <EmptyState
-      title={t("ui.recs.home.empty_title")}
-      message={t("ui.recs.home.empty_message")}
-      tour="home-start"
-      actions={[
-        { label: t("ui.recs.home.search"), primary: true, onClick: () => useModalStore.getState().openSearch() },
-        ...(onImport ? [{ label: t("ui.library.import"), onClick: onImport }] : []),
-      ]}
-    />
-  );
+  return <BringMusic />;
 }

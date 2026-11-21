@@ -103,13 +103,14 @@ describe("first start to Home", () => {
     await homeFills(live.page, started, SLOW_ROWS_MS);
   }, 180_000);
 
-  it("picks from Home's cold-start ask fill Home within seconds", async () => {
+  it("a skipped tour still leaves Home full: the import block, then popular songs by genre that play", async () => {
     const live = await launchNuvo({ profile: "fresh" });
     session = live;
     await passFirstRun(live.page);
     await live.go("#/");
-    await pick(live.page, "[aria-labelledby=cold-taste-title]");
-    await live.page.locator("[aria-labelledby=cold-taste-title]").getByRole("button", { name: "Listen" }).click();
-    await homeFills(live.page, Date.now());
+    await live.page.locator("[data-bring]").waitFor({ timeout: 15_000 });
+    await live.page.locator("[data-shelf=genre]").first().waitFor({ timeout: FIRST_ROWS_MS });
+    expect(await live.page.locator("[data-shelf=genre]").count()).toBeGreaterThanOrEqual(2);
+    expect(await live.page.locator("[data-shelf=genre]").first().getByRole("button").count()).toBeGreaterThanOrEqual(4);
   }, 180_000);
 });

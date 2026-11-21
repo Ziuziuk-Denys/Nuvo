@@ -9,6 +9,7 @@ fn a_regular_file_inside_the_folder_opens() {
     std::fs::create_dir_all(root.path().join("a/b")).unwrap();
     std::fs::write(root.path().join("a/b/song.mp3"), b"x").unwrap();
     assert!(open_inside(&root.path().join("a/b/song.mp3"), root.path()).is_ok());
+    assert!(open_inside(&root.path().join("a/b/song.mp3"), &root.path().join("a/b/song.mp3")).is_ok());
 }
 
 #[test]

@@ -92,6 +92,15 @@ pub fn walk(root: &Path, limits: WalkLimits) -> Walk {
         out.skipped_links += 1;
         return out;
     }
+    if let Some(meta) = fs::metadata(root).ok().filter(fs::Metadata::is_file) {
+        if is_audio(root) {
+            let lrc = ["lrc", "LRC"].map(|ext| root.with_extension(ext)).into_iter().find(|path| path.is_file());
+            out.files.push(Found { size: meta.len(), mtime_ms: mtime_ms(&meta), lrc, folder_art: false, path: root.to_path_buf() });
+        } else {
+            out.skip(root);
+        }
+        return out;
+    }
     let mut stack = vec![(root.to_path_buf(), 0usize)];
     'dirs: while let Some((dir, depth)) = stack.pop() {
         let Ok(entries) = fs::read_dir(&dir) else {

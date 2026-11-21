@@ -218,11 +218,7 @@ describe("Library", () => {
     await live.page.locator("[data-testid=stats-empty] [data-empty-state]").waitFor({ timeout: 15_000 });
     await expectCentred(live.page, "stats");
     await live.go("#/");
-    await live.page.locator("[data-cold-ask]").waitFor({ timeout: 30_000 });
-    for (const size of SIZES) {
-      await live.setSize(size);
-      await expectCentred(live.page, `home ask ${size.width}`, "[data-cold-ask]");
-    }
+    await live.page.locator("[data-bring]").waitFor({ timeout: 30_000 });
 
     await live.core(
       `const res = await fetch(base + "/v1/me/playlists", { method: "POST", headers: json, body: JSON.stringify({ title: "Morning" }) });
