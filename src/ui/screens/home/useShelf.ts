@@ -6,6 +6,7 @@ export interface Shelf {
   round: number;
   arrived: boolean;
   busy: boolean;
+  ready: boolean;
   refresh(): void;
 }
 
@@ -74,5 +75,5 @@ export function useShelf(key: string, load: ShelfLoad, first?: Track[]): Shelf {
     latest.current(songs, () => takenBy(key), round).then(done, () => done([]));
   };
 
-  return { songs, round: current.round, arrived: waits || current.round > 0, busy, refresh };
+  return { songs, round: current.round, arrived: waits || current.round > 0, busy, ready: !waits || current.songs !== null, refresh };
 }

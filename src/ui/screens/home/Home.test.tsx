@@ -213,6 +213,22 @@ describe("Home first run", () => {
     expect(host.querySelector("[data-slot=cold-start]")!.compareDocumentPosition(shelves[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("keeps each genre shelf in its place while its songs load, so a late one never pushes the page", async () => {
+    mocks.homeMixes.mockResolvedValue([]);
+    const pending = new Map<string, (songs: unknown[]) => void>();
+    mocks.genreSongs.mockImplementation((query: string) => new Promise((resolve) => pending.set(query, resolve)));
+    await mount();
+    const order = () =>
+      [...host.querySelectorAll("[data-shelf=genre], [data-shelf-waiting=genre]")].map(
+        (node) => `${node.getAttribute("aria-label")}${node.hasAttribute("data-shelf-waiting") ? " waiting" : ""}`,
+      );
+    expect(order()).toEqual(["ui.home.genre.pop waiting", "ui.home.genre.hiphop waiting", "ui.home.genre.rock waiting", "ui.home.genre.electronic waiting"]);
+    await act(async () => pending.get("Queen")!(tracks("q", 6)));
+    expect(order()).toEqual(["ui.home.genre.pop waiting", "ui.home.genre.hiphop waiting", "ui.home.genre.rock", "ui.home.genre.electronic waiting"]);
+    await act(async () => pending.get("The Weeknd")!([]));
+    expect(order()).toEqual(["ui.home.genre.hiphop waiting", "ui.home.genre.rock", "ui.home.genre.electronic waiting"]);
+  });
+
   it("adds a shelf in the user's language first", () => {
     expect(starterGenres("ru")[0]).toEqual({ genre: "russian", query: "Звери" });
     expect(starterGenres("en").map((entry) => entry.genre)).toEqual(["pop", "hiphop", "rock", "electronic"]);

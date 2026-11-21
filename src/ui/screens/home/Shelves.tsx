@@ -3,7 +3,7 @@ import { useTranslation } from "../../ports/i18n";
 import { genreSongs, librarySongs, localStyle, playSongs, shuffled, songsLike } from "../../ports/homeShelves";
 import { playMix, type HomeMix, type Track } from "../../ports/recs";
 import { byOthers, freshFirst, homeSongs, type LikeArtist } from "./homeModel";
-import { ArtistLead, CoverShelf, ShuffleCard } from "./SongCovers";
+import { ArtistLead, CoverShelf, ShelfPlaceholder, ShuffleCard } from "./SongCovers";
 import { SongsShelf } from "./SongsShelf";
 import { useShelf } from "./useShelf";
 
@@ -105,6 +105,7 @@ export function GenreShelf({ genre, query }: { genre: string; query: string }): 
     return freshFirst((await pool.current).filter(notIn(taken())), shown, SHELF_SIZE);
   });
   const { songs } = shelf;
+  if (!shelf.ready) return <ShelfPlaceholder name="genre" title={t(`ui.home.genre.${genre}`)} icon="album" size={STYLE_COVER} />;
   if (songs.length < MIN_SONGS) return null;
   return (
     <CoverShelf
