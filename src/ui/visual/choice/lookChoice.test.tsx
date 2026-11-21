@@ -16,6 +16,14 @@ let onChosen: ReturnType<typeof vi.fn<(view: "karaoke" | "scene") => void>>;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
+  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(705);
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
@@ -26,6 +34,8 @@ afterEach(() => {
   act(() => root.unmount());
   host.remove();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 const mount = () => act(() => root.render(<LookChoice light={false} onChosen={onChosen} />));
