@@ -41,7 +41,7 @@ jobs:
           cache-on-failure: true
       - run: |
           sudo apt-get update
-          sudo apt-get install -y libsqlcipher-dev libssl-dev pkg-config ffmpeg xvfb gnome-keyring libsecret-tools pipewire pipewire-pulse wireplumber pulseaudio-utils fonts-croscore
+          sudo apt-get install -y libsqlcipher-dev libssl-dev pkg-config ffmpeg xvfb gnome-keyring libsecret-tools pipewire pipewire-pulse wireplumber pulseaudio-utils
           # Ubuntu 24.04 blocks the user namespaces the Chromium sandbox needs
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: pnpm install --frozen-lockfile
@@ -55,8 +55,6 @@ jobs:
             dbus-run-session -- sh -c 'printf ci | gnome-keyring-daemon --unlock --components=secrets >/dev/null; exec xvfb-run -a -s "-screen 0 3840x2160x24" pnpm exec vitest run --config vitest.e2e.config.ts --reporter=verbose --reporter=github-actions "$@"' sh "$@"
           }
           systemctl --user start pipewire.socket pipewire-pulse.socket wireplumber.service || { pipewire & sleep 1; wireplumber & pipewire-pulse & sleep 2; }
-          pactl info | grep -i "server name" || true
-          FONTCONFIG_FILE=$PWD/e2e/fonts.conf fc-match Inter; FONTCONFIG_FILE=$PWD/e2e/fonts.conf fc-match system-ui; FONTCONFIG_FILE=$PWD/e2e/fonts.conf fc-list | grep -ci arimo || true
           status=0
           case "$SET" in
             "smoke 1/2")
@@ -69,7 +67,7 @@ jobs:
               e2e e2e/ui/visual.e2e.ts -t "at 60 fps" || status=1
               ;;
             probe)
-              e2e e2e/ui/shell.e2e.ts e2e/ui/karaoke.e2e.ts e2e/ui/recognize.e2e.ts e2e/lyrics.e2e.ts e2e/audio-output.e2e.ts e2e/notch.e2e.ts e2e/ui/visual.e2e.ts || status=1
+              e2e e2e/ui/shell.e2e.ts e2e/ui/karaoke.e2e.ts e2e/lyrics.e2e.ts e2e/ui/tour-geometry.e2e.ts || status=1
               ;;
             *)
               e2e --shard="$SET" || status=1
@@ -83,5 +81,6 @@ jobs:
           path: |
             e2e/artifacts/failures
             e2e/artifacts/ui/1-karaoke
+            e2e/artifacts/ui/1-shell/panel-sleep*
           if-no-files-found: ignore
           retention-days: 14
