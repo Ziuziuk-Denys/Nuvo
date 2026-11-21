@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["e2e/**/*.e2e.ts"],
+    setupFiles: ["e2e/failures.ts"],
     testTimeout: 120_000,
     hookTimeout: 120_000,
     fileParallelism: false,
