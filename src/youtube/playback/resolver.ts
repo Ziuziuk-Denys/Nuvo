@@ -290,9 +290,9 @@ export class StreamResolver {
 
     const remembered = this.perTrack.get(videoId);
     const order: string[] = [];
-    // A cold worker: VISIONOS needs neither worker nor PO token, so it goes first while the worker warms up.
+    // A cold worker: VISIONOS and ANDROID_VR need neither worker nor PO token, so they go first while it warms up.
     if (cold) {
-      order.push(VISIONOS.clientName);
+      order.push(VISIONOS.clientName, ANDROID_VR.clientName);
     }
     if (remembered) order.push(remembered);
     order.push(WEB_REMIX.clientName);

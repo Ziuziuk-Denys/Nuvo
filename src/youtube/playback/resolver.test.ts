@@ -563,6 +563,30 @@ describe("cold worker", () => {
     return { ...h, worker, state, resolver };
   }
 
+  it("a cold worker whose VISIONOS hangs gets ANDROID_VR beside it, not a client that waits for the worker", async () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const h = harness();
+    streamRoutes(h.fake);
+    const worker = new FakeWorker();
+    worker.isReady = async () => false;
+    h.fake.innertube("player", ok(251), fromClient("ANDROID_VR"), WWW);
+    const tried: string[] = [];
+    const hangingVision: typeof fallbackAttempt = (deps, client, videoId, choice, limited) => {
+      tried.push(client.clientName);
+      if (client.clientName !== "VISIONOS") return fallbackAttempt(deps, client, videoId, choice, limited);
+      return new Promise((_, reject) => limited.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+    };
+    const resolver = new StreamResolver(playbackDeps(h.fake, h.yt, worker), {
+      webRemix: () => Promise.reject(new Error("waits for the worker")),
+      fallback: hangingVision,
+    });
+    const started = resolver.resolve({ id: `yt:${ID}` }, { progressive: true }, signal());
+    await vi.advanceTimersByTimeAsync(HEDGE_MS + 50);
+    expect((await started).servedBy).toBe("ANDROID_VR");
+    expect(tried).toEqual(["VISIONOS", "ANDROID_VR"]);
+  });
+
   it("a cold worker: VISIONOS first, no WEB_REMIX request, and the warm-up starts once it is resolved", async () => {
     const { fake, worker, resolver } = cold();
     const source = await resolver.resolve({ id: ID }, { progressive: true }, signal());
