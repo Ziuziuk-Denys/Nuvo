@@ -1,0 +1,61 @@
+name: e2e
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "40 2 * * *"
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: read
+jobs:
+  e2e:
+    name: e2e ${{ matrix.shard }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(false && github.event_name == 'pull_request' && '["smoke"]' || '["1/4","2/4","3/4","4/4"]') }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: core
+          key: e2e
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlcipher-dev libssl-dev pkg-config ffmpeg xvfb gnome-keyring libsecret-tools
+          # Ubuntu 24.04 blocks the user namespaces the Chromium sandbox needs
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm core:build:dev
+      - run: pnpm build
+      - name: Run
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          if [ "$SHARD" = smoke ]; then set -- e2e/smoke.e2e.ts; else set -- --shard="$SHARD"; fi
+          dbus-run-session -- sh -c 'printf ci | gnome-keyring-daemon --unlock --components=secrets >/dev/null; exec xvfb-run -a -s "-screen 0 2400x1600x24" pnpm exec vitest run --config vitest.e2e.config.ts --reporter=verbose "$@"' sh "$@"
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-failures-${{ strategy.job-index }}
+          path: e2e/artifacts/failures
+          if-no-files-found: ignore
+          retention-days: 14
