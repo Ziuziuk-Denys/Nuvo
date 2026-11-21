@@ -179,9 +179,10 @@ export function Library(): JSX.Element {
   const navigate = useNavigate();
   const { search, key } = useLocation();
   const [tab, setTab] = useState<LibraryTab>(() => tabFromSearch(search));
-  const [linkKey, setLinkKey] = useState(key);
-  if (linkKey !== key) {
-    setLinkKey(key);
+  const link = `${key}${search}`;
+  const [linkKey, setLinkKey] = useState(link);
+  if (linkKey !== link) {
+    setLinkKey(link);
     setTab(tabFromSearch(search));
   }
   const [query, setQuery] = useState("");

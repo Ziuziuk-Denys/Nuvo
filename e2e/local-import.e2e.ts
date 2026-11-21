@@ -107,7 +107,7 @@ describe("local import e2e", () => {
     await main.locator(`[title="${single}"]`).waitFor();
 
     await main.evaluate(() => (location.hash = "#/library?tab=all"));
-    await main.getByText("Songs from this computer").waitFor({ timeout: 15_000 });
-    await main.getByText("On this computer").first().waitFor();
+    await main.locator('[data-kind="local"]').waitFor({ timeout: 15_000 });
+    expect(await main.getByText("Your library is empty").count()).toBe(0);
   });
 });
