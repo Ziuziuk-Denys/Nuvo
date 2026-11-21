@@ -296,11 +296,16 @@ describe("Shell", () => {
       expect(document.activeElement).toBe(links[1]);
       press("ArrowUp");
       expect(document.activeElement).toBe(links[0]);
-      const slide = vi.fn();
-      host.querySelector<HTMLElement>(`.${styles.content}`)!.animate = slide;
+      const animate = vi.fn();
+      HTMLElement.prototype.animate = animate;
       act(() => useCustomizationStore.getState().setNavigation("top"));
-      expect(slide.mock.calls[0][0]).toEqual([{ transform: "translateX(62px)" }, { transform: "none" }]);
+      const moved = (element: Element | null) => animate.mock.contexts.indexOf(element);
+      expect(animate.mock.calls[moved(host.querySelector(`.${styles.content}`))][0]).toEqual([{ transform: "translateX(62px)" }, { transform: "none" }]);
+      expect(animate.mock.calls[moved(host.querySelector("header"))][0]).toEqual([{ opacity: 0 }, { opacity: 1 }]);
+      expect(host.querySelector("aside")).toBeNull();
+      expect(navLinks().every((link) => link.closest("header"))).toBe(true);
     } finally {
+      delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
       mocks.homePins = [];
       act(() => useCustomizationStore.getState().setNavigation("top"));
     }
