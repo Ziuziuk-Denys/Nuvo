@@ -66,9 +66,40 @@ describe("PanelService", () => {
     expect(show).toHaveBeenCalledOnce();
   });
 
+  it("exposes the current track, synced lyrics, and up-next queue", () => {
+    const { service } = setup();
+    service.setLyrics({ trackId: "t1", lines: [{ timeMs: 1200, text: "A lyric" }] });
+    service.update(
+      playing({
+        upNext: [{ id: "t2", title: "Next song", artist: "Next artist", coverUrl: "https://example.test/cover.jpg", durationMs: 90_000 }],
+      }),
+    );
+
+    expect(service.properties).toMatchObject({
+      TrackId: "t1",
+      LyricsJson: JSON.stringify([{ timeMs: 1200, text: "A lyric" }]),
+      UpNextJson: JSON.stringify([{ id: "t2", title: "Next song", artist: "Next artist", coverUrl: "https://example.test/cover.jpg", durationMs: 90_000 }]),
+    });
+  });
+
+  it("plays only an up-next track with a valid id", () => {
+    const { service, command, call, bus } = setup();
+    service.update(playing({ upNext: [{ id: "queued", title: "Next", artist: "Artist", coverUrl: "", durationMs: 1000 }] }));
+
+    call("PlayUpNext", INTERFACE, ["queued"]);
+    call("PlayUpNext", INTERFACE, ["not-queued"]);
+    call("PlayUpNext", INTERFACE, ["x".repeat(257)]);
+
+    expect(command).toHaveBeenCalledOnce();
+    expect(command).toHaveBeenCalledWith({ type: "playEntry", trackId: "queued" });
+    expect(bus.errors).toContain("org.freedesktop.DBus.Error.InvalidArgs");
+  });
+
   it("signals only the properties that changed", () => {
     const { service, bus } = setup();
     service.update(playing());
+    // The first track now also publishes its new TrackId.
+    bus.signals.length = 0;
     expect(bus.signals).toHaveLength(0);
     service.update(playing({ liked: true }));
     service.update(playing({ liked: true, positionMs: 10 }));
@@ -96,7 +127,12 @@ describe("PanelService", () => {
     vi.advanceTimersByTime(2000);
     expect(service.properties.LyricsLine).toBe("second");
     expect(vi.getTimerCount()).toBe(0);
-    expect(bus.signals.map((s) => (s.body as [string, Array<[string, [string, unknown]]>])[1][0][1][1])).toEqual(["first", "second"]);
+    expect(
+      bus.signals
+        .flatMap((s) => (s.body as [string, Array<[string, [string, unknown]]>])[1])
+        .filter(([name]) => name === "LyricsLine")
+        .map(([, [, value]]) => value),
+    ).toEqual(["first", "second"]);
   });
 
   it("drops the line for another track, a paused track keeps its line and arms no timer", () => {
@@ -134,8 +170,11 @@ describe("PanelService", () => {
       body: [
         [
           ["MprisName", ["s", "org.mpris.MediaPlayer2.chromium.instance1"]],
+          ["TrackId", ["s", "t1"]],
           ["Liked", ["b", true]],
           ["LyricsLine", ["s", ""]],
+          ["LyricsJson", ["s", "[]"]],
+          ["UpNextJson", ["s", "[]"]],
         ],
       ],
     });
@@ -197,7 +236,7 @@ describe.skipIf(!has("dbus-daemon") || !has("gdbus"))("quest.nuvo.Nuvo.Player on
     expect(panel).not.toBeNull();
     panel!.service.update(playing({ liked: true }));
     expect(await callMethod("org.freedesktop.DBus.Properties.GetAll", INTERFACE)).toBe(
-      "({'MprisName': <'org.mpris.MediaPlayer2.chromium.instance42'>, 'Liked': <true>, 'LyricsLine': <''>},)",
+      "({'MprisName': <'org.mpris.MediaPlayer2.chromium.instance42'>, 'TrackId': <'t1'>, 'Liked': <true>, 'LyricsLine': <''>, 'LyricsJson': <'[]'>, 'UpNextJson': <'[]'>},)",
     );
     expect(await callMethod("org.freedesktop.DBus.Properties.Get", INTERFACE, "Liked")).toBe("(<true>,)");
     expect(await gdbus("introspect", "--session", "--dest", BUS_NAME, "--object-path", OBJECT_PATH)).toContain("ToggleLike");

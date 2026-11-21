@@ -23,38 +23,36 @@ describe("Notch settings", () => {
     );
     const settings = await freshStore();
     expect(settings).toMatchObject({ mode: "off", expandOn: "click", showLyrics: false, display: "primary" });
-    expect(JSON.parse(localStorage.getItem(KEY)!)).toMatchObject({ version: 2, state: { mode: "off" } });
+    expect(JSON.parse(localStorage.getItem(KEY)!)).toMatchObject({ version: 1, state: { mode: "off" } });
   });
 
-  it("switch an existing Nuvo overlay off so the host shell owns the only notch", async () => {
+  it("keep a Notch the user switched on", async () => {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ state: { mode: "on", expandOn: "hover", showLyrics: true, pulseOnTrackChange: true, display: "follow" }, version: 1 }),
+      JSON.stringify({ state: { mode: "on", expandOn: "hover", showLyrics: true, pulseOnTrackChange: true, display: "follow" }, version: 0 }),
     );
-    expect((await freshStore()).mode).toBe("off");
+    expect((await freshStore()).mode).toBe("on");
   });
 
-  it("turn off a saved automatic overlay as well", async () => {
+  it("keep automatic once it was chosen after the update", async () => {
     localStorage.setItem(
       KEY,
       JSON.stringify({ state: { mode: "auto", expandOn: "hover", showLyrics: true, pulseOnTrackChange: true, display: "follow" }, version: 1 }),
     );
-    expect((await freshStore()).mode).toBe("off");
+    expect((await freshStore()).mode).toBe("auto");
   });
 
   it("give settings saved before placement existed the default placement", async () => {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ state: { mode: "on", expandOn: "hover", showLyrics: true, pulseOnTrackChange: true, display: "primary" }, version: 2 }),
+      JSON.stringify({ state: { mode: "on", expandOn: "hover", showLyrics: true, pulseOnTrackChange: true, display: "primary" }, version: 1 }),
     );
-    expect(await freshStore()).toMatchObject({ mode: "on", display: "primary", position: "center", edge: "auto", offset: 0, stacking: "above" });
+    expect(await freshStore()).toMatchObject({ display: "primary", position: "center", edge: "auto", offset: 0, stacking: "above" });
   });
 
   it("migrate only the mode", () => {
     expect(migrateNotchSettings({ mode: "off" }, 0)).toEqual({ mode: "off" });
     expect(migrateNotchSettings(undefined, 0)).toEqual({});
-    expect(migrateNotchSettings({ mode: "on" }, 1)).toEqual({ mode: "off" });
-    expect(migrateNotchSettings({ mode: "off" }, 1)).toEqual({ mode: "off" });
-    expect(migrateNotchSettings({ mode: "on" }, 2)).toEqual({ mode: "on" });
+    expect(migrateNotchSettings({ mode: "auto" }, 1)).toEqual({ mode: "auto" });
   });
 });
