@@ -376,7 +376,16 @@
       "more_songs_one": "И ещё {count} трек",
       "more_songs_few": "И ещё {count} трека",
       "more_songs_many": "И ещё {count} треков",
-      "more_songs_other": "И ещё {count} трека"
+      "more_songs_other": "И ещё {count} трека",
+      "toast": {
+        "one": "Импорт «{name}»",
+        "many_one": "Импорт {count} плейлиста",
+        "many_few": "Импорт {count} плейлистов",
+        "many_many": "Импорт {count} плейлистов",
+        "many_other": "Импорт {count} плейлиста",
+        "progress": "Песен: {done} из {total}",
+        "done": "Импорт завершён"
+      }
     },
     "island": {
       "add": "Добавить в плейлист",
@@ -513,7 +522,8 @@
         "album": "Альбом",
         "played": "Недавно слушали",
         "plays": "Чаще всего"
-      }
+      },
+      "kind_local": "Песни с этого компьютера"
     },
     "links": {
       "service": {

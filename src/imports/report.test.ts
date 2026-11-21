@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reportRow, summary } from "./fixtures/fakeDaemon";
-import { formatDuration, importsPercent, pickChoices, progressByPlaylist, reasonMessage, rowActions, summaryMessage } from "./report";
+import { formatDuration, pickChoices, progressByPlaylist, reasonMessage, rowActions, summaryMessage } from "./report";
 import type { CatalogTrack } from "./types";
 
 const track = (id: string): CatalogTrack => ({
@@ -178,13 +178,5 @@ describe("progressByPlaylist", () => {
       summary("d", { targetKind: "liked", targetId: undefined }),
     ]);
     expect([...progress]).toEqual([["p1", { done: 15, total: 120 }]]);
-  });
-});
-
-describe("importsPercent", () => {
-  it("is null with nothing running and adds up every running import, Liked songs included", () => {
-    expect(importsPercent([summary("a", { status: "done", done: 3, total: 3 })])).toBeNull();
-    expect(importsPercent([summary("a", { targetId: "p1", done: 10, total: 100 }), summary("b", { targetKind: "liked", done: 5, total: 20 })])).toBe(12);
-    expect(importsPercent([summary("a", { done: 0, total: 0 })])).toBe(0);
   });
 });

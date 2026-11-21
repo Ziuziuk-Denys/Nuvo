@@ -101,3 +101,16 @@ describe("libraryModel", () => {
     expect(sortLocal(tracks, "plays").map((track) => track.title)).toEqual(["a", "b", "c"]);
   });
 });
+
+describe("local songs in All", () => {
+  const t = (key: string) => key;
+  it("adds On this computer right after Liked songs when the computer has songs, and only to All", () => {
+    const entries = buildEntries({ likedCount: 0, localCount: 3, playlists: [], items: [], t });
+    expect(visibleEntries(entries, "all", "").map((entry) => [entry.kind, entry.count, entry.href])).toEqual([
+      ["liked", 0, "/library/playlist?id=likes"],
+      ["local", 3, "/library?tab=local"],
+    ]);
+    expect(visibleEntries(entries, "playlists", "").map((entry) => entry.kind)).toEqual(["liked"]);
+    expect(buildEntries({ likedCount: 0, localCount: 0, playlists: [], items: [], t }).map((entry) => entry.kind)).toEqual(["liked"]);
+  });
+});

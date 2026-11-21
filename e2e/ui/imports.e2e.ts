@@ -120,7 +120,8 @@ describe.each(["en", "ru"] as const)("Import entries (%s)", (locale) => {
     await live.go("#/library");
     await live.page.getByText("Rock Classics", { exact: true }).first().waitFor({ timeout: 10_000 });
     await live.page.getByText(spec.importing).first().waitFor({ timeout: 10_000 });
-    await live.page.locator('header [data-nav="library"] [role="progressbar"]').waitFor({ timeout: 10_000 });
+    await live.page.locator("[data-toast]", { hasText: "Rock Classics" }).waitFor({ timeout: 10_000 });
+    expect(await live.page.locator('header [data-nav="library"] [role="progressbar"]').count()).toBe(0);
     await shot(live, "library-live", locale);
     const [[spotifyId]] = await imported();
     await live.core(`await fetch(base + "/v1/imports/${spotifyId}", { method: "DELETE" });`);

@@ -95,11 +95,3 @@ export function progressByPlaylist(summaries: readonly ImportSummary[]): Map<str
   }
   return progress;
 }
-
-export function importsPercent(summaries: readonly ImportSummary[]): number | null {
-  const running = summaries.filter((summary) => summary.status === "running");
-  if (running.length === 0) return null;
-  const total = running.reduce((sum, summary) => sum + summary.total, 0);
-  const done = running.reduce((sum, summary) => sum + summary.done, 0);
-  return total > 0 ? Math.min(100, Math.floor((done * 100) / total)) : 0;
-}

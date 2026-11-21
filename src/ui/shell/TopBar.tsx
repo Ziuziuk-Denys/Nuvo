@@ -7,8 +7,6 @@ import { Tooltip } from "../components/Tooltip";
 import { Icon } from "../icons/Icon";
 import type { IconName } from "../icons";
 import { useTranslation } from "../ports/i18n";
-import { importsPercent } from "../ports/imports";
-import { useImportSummaries } from "../ports/importsRuntime";
 import { livePins, useHomePinsStore, usePlaylistsList, useRailPinsStore, type HomePin } from "../ports/library";
 import { reducedEffectsNow } from "../effects";
 import { DURATION_MS, EASE } from "../motion";
@@ -46,8 +44,6 @@ export function TopBar(): JSX.Element {
   const settled = playlists.isFetched && !playlists.error && !playlists.isLoading;
   const pins = [...barPins, ...homePins.filter((pin) => !barPins.some((own) => own.kind === pin.kind && own.id === pin.id))].slice(0, MAX_PINS);
   const shown = livePins(pins, settled ? playlists.data.playlists.map((playlist) => playlist.id) : null);
-  const importing = importsPercent(useImportSummaries());
-  const importingText = importing === null ? "" : t("ui.library.importing", { percent: importing });
   const entity = isEntityRoute(pathname);
   const active = activeNav(pathname);
   const side = useCustomizationStore((state) => state.navigation) === "side";
@@ -110,7 +106,7 @@ export function TopBar(): JSX.Element {
     <>
       <nav aria-label={t("ui.nav.label")} className={`${styles.group} ${styles.tray}`} data-no-window-drag onKeyDown={onKeyDown}>
         {sections.map((section) => (
-          <Tooltip key={section.id} side={tip} text={section.id === "library" && importingText ? `${section.label} · ${importingText}` : section.label}>
+          <Tooltip key={section.id} side={tip} text={section.label}>
             <a
               href={`#${section.href}`}
               data-nav={section.id}
@@ -121,11 +117,6 @@ export function TopBar(): JSX.Element {
             >
               {section.id === active ? <Lens group="top-nav" value={section.id} radius={side ? 22 : 18} /> : null}
               <Icon name={section.icon} size={24} />
-              {section.id === "library" && importing !== null ? (
-                <span className={styles.progress} role="progressbar" aria-label={importingText} aria-valuemin={0} aria-valuemax={100} aria-valuenow={importing}>
-                  <span style={{ transform: `scaleX(${importing / 100})` }} />
-                </span>
-              ) : null}
             </a>
           </Tooltip>
         ))}
