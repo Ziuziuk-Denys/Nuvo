@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type JSX } from "react";
+import { Lens } from "../../components/Lens";
 import { useTranslation } from "../../ports/i18n";
 import type { Line } from "../../ports/lyrics";
 import { templateFor, type Selection } from "../../ports/visual";
@@ -8,8 +9,9 @@ import styles from "./LookChoice.module.css";
 
 export type LookView = "scene" | "karaoke";
 
-export const LEAVE_MS = 520;
+export const LEAVE_MS = 420;
 
+const VIEWS: LookView[] = ["scene", "karaoke"];
 const INK: [number, number, number] = [1, 1, 1];
 const NIGHT: [number, number, number] = [0.02, 0.02, 0.03];
 const DEMO_KEYS = ["visual.choice.demo_1", "visual.choice.demo_2", "visual.choice.demo_3"] as const;
@@ -34,53 +36,63 @@ export function LookChoice({ light, onChosen }: LookChoiceProps): JSX.Element {
   const lines = useMemo(() => demoLines(DEMO_KEYS.map((key) => t(key))), [t]);
   const [clock] = useState(() => demoClock(DEMO_KEYS.length));
   const template = useMemo(() => templateFor("own", "", true, exampleScene(light)), [light]);
-  const [hot, setHot] = useState<LookView | null>(null);
-  const [leaving, setLeaving] = useState<LookView | null>(null);
+  const [view, setView] = useState<LookView>("scene");
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (!leaving) return;
-    const timer = setTimeout(() => onChosen(leaving), LEAVE_MS);
+    const timer = setTimeout(() => onChosen(view), LEAVE_MS);
     return () => clearTimeout(timer);
-  }, [leaving, onChosen]);
-
-  const option = (view: LookView, index: number, preview: JSX.Element) => (
-    <button
-      type="button"
-      className={styles.option}
-      style={{ "--i": index } as CSSProperties}
-      disabled={leaving !== null}
-      data-view={view}
-      onPointerOver={() => setHot(view)}
-      onFocus={() => setHot(view)}
-      onBlur={() => setHot(null)}
-      onClick={() => setLeaving(view)}
-    >
-      <span className={styles.preview} aria-hidden="true">
-        {preview}
-      </span>
-      <span className={styles.label}>
-        <b>{t(`visual.choice.${view}`)}</b>
-        <span>{t(`visual.choice.${view}_note`)}</span>
-      </span>
-    </button>
-  );
+  }, [leaving, view, onChosen]);
 
   return (
     <div
       className={styles.root}
       role="group"
       aria-labelledby="look-choice-title"
-      data-hot={hot ?? undefined}
-      data-leaving={leaving ?? undefined}
-      onPointerLeave={() => setHot(null)}
+      data-view={view}
+      data-tone={view === "scene" && light ? "light" : undefined}
+      data-light={light ? "" : undefined}
+      data-leaving={leaving ? "" : undefined}
     >
-      <header className={styles.ask}>
-        <h2 id="look-choice-title">{t("visual.choice.title")}</h2>
-        <p>{t("visual.choice.later")}</p>
-      </header>
-      <div className={styles.options}>
-        {option("scene", 0, <Stage className={styles.stage} template={template} aspect="wide" coverUrl="" lines={lines} clock={clock} />)}
-        {option("karaoke", 1, <KaraokePreview lines={lines} clock={clock} />)}
+      <div className={styles.scene} aria-hidden="true">
+        <Stage className={styles.stage} template={template} aspect="wide" coverUrl="" lines={lines} clock={clock} />
+      </div>
+      <KaraokePreview lines={lines} clock={clock} />
+      <div className={styles.bar}>
+        <p className={styles.ask}>
+          <b id="look-choice-title">{t("visual.choice.title")}</b> {t("visual.choice.later")}
+        </p>
+        <div className={styles.controls}>
+          <div
+            className={styles.tray}
+            role="radiogroup"
+            aria-labelledby="look-choice-title"
+            onKeyDown={(event) => {
+              if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+              event.preventDefault();
+              setView((current) => (current === "scene" ? "karaoke" : "scene"));
+            }}
+          >
+            {VIEWS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="radio"
+                aria-checked={item === view}
+                className={styles.item}
+                disabled={leaving}
+                onClick={() => setView(item)}
+              >
+                {item === view ? <Lens group="look-choice" value={view} radius={999} /> : null}
+                {t(`visual.choice.${item}`)}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={styles.use} disabled={leaving} onClick={() => setLeaving(true)}>
+            {t(`visual.choice.use_${view}`)}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -94,12 +106,12 @@ function KaraokePreview({ lines, clock }: { lines: Line[]; clock: () => { atMs: 
   }, [clock]);
 
   return (
-    <span className={styles.karaoke}>
+    <div className={styles.karaoke} aria-hidden="true">
       {lines.map((line, index) => (
         <span key={index} className={styles.line} data-active={index === active ? "" : undefined} style={{ "--d": index - active } as CSSProperties}>
           {line.text}
         </span>
       ))}
-    </span>
+    </div>
   );
 }

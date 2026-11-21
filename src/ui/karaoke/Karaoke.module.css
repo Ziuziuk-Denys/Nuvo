@@ -198,6 +198,10 @@
   height: 589.2px;
 }
 
+.root[data-choosing] .left > :nth-child(n + 4) {
+  visibility: hidden;
+}
+
 .title,
 .artist {
   position: absolute;
