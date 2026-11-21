@@ -10,7 +10,12 @@
   overflow: hidden;
   background: var(--s-bg);
   color: var(--n-ink);
-  animation: open var(--n-t-base) var(--n-ease-out);
+  animation: open var(--n-t-page) var(--n-ease-out);
+}
+
+.studio[data-state="out"] {
+  pointer-events: none;
+  animation: close var(--n-t-quick) var(--n-ease-in) both;
 }
 
 .work {
@@ -43,11 +48,29 @@
 @keyframes open {
   from {
     opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes close {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes fade {
+  to {
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .studio {
     animation: none;
+  }
+
+  .studio[data-state="out"] {
+    animation: fade var(--n-t-quick) linear both;
   }
 }

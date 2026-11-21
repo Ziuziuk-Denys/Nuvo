@@ -1,4 +1,5 @@
-import { createContext, useContext, type JSX, type ReactNode } from "react";
+import { createContext, useContext, useId, type JSX, type ReactNode } from "react";
+import { Lens } from "../../components/Lens";
 import { Toggle } from "../../components/Toggle";
 import { matchesQuery } from "./sections";
 import styles from "./controls.module.css";
@@ -102,6 +103,7 @@ export function Segmented<T extends string>({
   onChange: (next: T) => void;
   label: string;
 }): JSX.Element {
+  const lensGroup = useId();
   return (
     <div role="group" aria-label={label} className={styles.segmented}>
       {options.map((option) => (
@@ -114,6 +116,7 @@ export function Segmented<T extends string>({
           className={styles.segment}
           onClick={() => onChange(option.value)}
         >
+          {option.value === value ? <Lens group={lensGroup} value={value} radius={8} /> : null}
           {option.label}
         </button>
       ))}

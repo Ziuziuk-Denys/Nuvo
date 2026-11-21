@@ -4,6 +4,7 @@ import { Button } from "../../components/Button";
 import { Cover } from "../../components/Cover";
 import { EmptyState } from "../../components/EmptyState";
 import { Enter } from "../../components/Enter";
+import { Lens } from "../../components/Lens";
 import { useTranslation, type TFunction } from "../../ports/i18n";
 import { playerEngine, usePlayerStore } from "../../ports/player";
 import { listeningHistory, type HistoryEntry, type HistoryFilter } from "../../ports/stats";
@@ -121,7 +122,7 @@ export function History(): JSX.Element {
       <Enter index={0} screen="history">
         <h1 className={styles.title}>{t("ui.history.title")}</h1>
         <div className={styles.bar}>
-          <div className={styles.ranges} role="tablist" aria-label={t("ui.history.filter")}>
+          <div className={`${styles.ranges} ${look.segments}`} role="tablist" aria-label={t("ui.history.filter")}>
             {FILTERS.map((key) => (
               <button
                 key={key}
@@ -135,6 +136,7 @@ export function History(): JSX.Element {
                   setFilter(key);
                 }}
               >
+                {key === filter ? <Lens group="history-filter" value={filter} radius={16} className={look.solidLens} /> : null}
                 {t(`ui.history.filter_${key}`)}
               </button>
             ))}

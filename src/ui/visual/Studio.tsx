@@ -91,7 +91,7 @@ function UseAsPlayer({ selection, mode }: { selection: Selection; mode: "own" | 
   );
 }
 
-export function Studio(): JSX.Element {
+export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
   const { t } = useTranslation();
   const visual = useVisualSettings();
   const track = usePlayerStore((state) => state.currentTrack);
@@ -160,7 +160,7 @@ export function Studio(): JSX.Element {
     .filter((part): part is Part => Boolean(part));
 
   return (
-    <div className={`${theme.dark} ${styles.studio}`} role="dialog" aria-modal="true" aria-label={t("visual.studio.title")}>
+    <div className={`${theme.dark} ${styles.studio}`} data-state={phase} role="dialog" aria-modal="true" aria-label={t("visual.studio.title")}>
       <Glow foot={foot} onMirror={setMirror} />
       <TopBar
         category={category}

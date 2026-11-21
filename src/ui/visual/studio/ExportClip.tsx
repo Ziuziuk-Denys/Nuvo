@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, type CSSProperties, type JSX } from "react";
+import { Lens } from "../../components/Lens";
 import { Popover } from "../../components/Popover";
 import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
@@ -125,6 +126,7 @@ export function ExportClip({
                     disabled={working}
                     onClick={() => setQuality(item.value)}
                   >
+                    {quality === item.value ? <Lens group="export-quality" value={quality} radius={10} className={styles.qualityLens} /> : null}
                     <b>{item.label}</b>
                     <span>
                       {size.width}×{size.height}

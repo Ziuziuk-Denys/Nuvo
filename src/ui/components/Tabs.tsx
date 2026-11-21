@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type MouseEvent, type RefObject } from "react";
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type MouseEvent, type RefObject } from "react";
+import { Lens } from "./Lens";
 import styles from "./Tabs.module.css";
 
 export interface TabsProps<T extends string> {
@@ -10,13 +11,14 @@ export interface TabsProps<T extends string> {
 }
 
 export function Tabs<T extends string>({ items, value, onChange, label, as = "tabs" }: TabsProps<T>): JSX.Element {
+  const lensGroup = useId();
   const listRef = useRef<HTMLElement>(null);
   const tabRefs = useRef(new Map<T, HTMLElement>());
   const [line, setLine] = useState<{ x: number; width: number } | null>(null);
 
   useLayoutEffect(() => {
     const list = listRef.current;
-    if (!list) return;
+    if (!list || as !== "nav") return;
     const measure = () => {
       const tab = value === null ? undefined : tabRefs.current.get(value)?.getBoundingClientRect();
       const box = list.getBoundingClientRect();
@@ -29,7 +31,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, as = "ta
     const observer = new ResizeObserver(measure);
     observer.observe(list);
     return () => observer.disconnect();
-  }, [value, items]);
+  }, [value, items, as]);
 
   const select = (index: number) => {
     const item = items[(index + items.length) % items.length];
@@ -49,7 +51,8 @@ export function Tabs<T extends string>({ items, value, onChange, label, as = "ta
     else tabRefs.current.delete(id);
   };
 
-  const indicator = line ? <span className={styles.line} aria-hidden="true" style={{ "--x": `${line.x}px`, "--w": line.width } as CSSProperties} /> : null;
+  const indicator =
+    line && as === "nav" ? <span className={styles.line} aria-hidden="true" style={{ "--x": `${line.x}px`, "--w": line.width } as CSSProperties} /> : null;
 
   if (as === "nav") {
     const follow = (event: MouseEvent<HTMLAnchorElement>, id: T) => {
@@ -93,11 +96,11 @@ export function Tabs<T extends string>({ items, value, onChange, label, as = "ta
             onClick={() => onChange(item.id)}
             onKeyDown={(event) => onKeyDown(event, index)}
           >
+            {selected ? <Lens group={lensGroup} value={item.id} radius={9} className={styles.lens} /> : null}
             {item.label}
           </button>
         );
       })}
-      {indicator}
     </div>
   );
 }

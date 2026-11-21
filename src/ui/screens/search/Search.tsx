@@ -2,6 +2,7 @@ import { playlistHref } from "../../app/hrefs";
 import { useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Enter } from "../../components/Enter";
+import { Lens } from "../../components/Lens";
 import { Menu, type MenuItem } from "../../components/Menu";
 import { Popover } from "../../components/Popover";
 import { useToastStore } from "../../feedback/toastStore";
@@ -393,9 +394,10 @@ export function Search(): JSX.Element {
         {online || soundCloudActive ? null : <p className={styles.subline}>{t(offlineMode ? "ui.search.offline_mode" : "ui.search.offline")}</p>}
         {trimmed === "" || linkText !== null ? null : (
           <div className={styles.tabs}>
-            <div className={styles.tablist} role="tablist" aria-label={t("ui.search.tabs")}>
+            <div className={`${styles.tablist} ${look.segments}`} role="tablist" aria-label={t("ui.search.tabs")}>
               {SEARCH_FILTERS.filter((id) => !soundCloudOnly || id === "all" || id === "songs").map((id) => (
                 <button key={id} type="button" role="tab" aria-selected={id === filter} className={look.tab} onClick={() => setFilter(id)}>
+                  {id === filter ? <Lens group="search-filter" value={filter} radius={16} className={look.fillLens} /> : null}
                   {t(`ui.search.tab_${id}`)}
                 </button>
               ))}
