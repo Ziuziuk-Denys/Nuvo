@@ -1,5 +1,5 @@
 import type { HomeMix, Track } from "../../../ports/recs";
-import { DISCOVER, FOR_YOU } from "../homeModel";
+import { DISCOVER, homeSongs } from "../homeModel";
 
 export const MIN_TRACKS = 8;
 const MAX_TRACKS = 24;
@@ -33,7 +33,12 @@ export interface Placement {
 
 export function ringTracks(mixes: readonly HomeMix[]): Track[] {
   const fresh = mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? [];
-  const known = (mixes.find((mix) => mix.id === FOR_YOU)?.tracks ?? []).filter((track) => !fresh.some((other) => other.id === track.id));
+  const known = homeSongs(
+    mixes.filter((mix) => mix.id !== DISCOVER),
+    Infinity,
+  )
+    .map((song) => song.track)
+    .filter((track) => !fresh.some((other) => other.id === track.id));
   const tracks: Track[] = [];
   let next = 0;
   for (const track of fresh) {
@@ -41,7 +46,12 @@ export function ringTracks(mixes: readonly HomeMix[]): Track[] {
     if (tracks.length % FAMILIAR_EVERY === FAMILIAR_EVERY - 1 && next < known.length) tracks.push(known[next++]);
     if (tracks.length < MAX_TRACKS) tracks.push(track);
   }
-  return tracks.length >= MIN_TRACKS ? tracks : [];
+  while (tracks.length < MIN_TRACKS && next < known.length) tracks.push(known[next++]);
+  return tracks;
+}
+
+export function ringSlots(count: number): number {
+  return count === 0 ? 0 : Math.ceil(MIN_TRACKS / count) * count;
 }
 
 export function ringOffset(index: number, position: number, count: number): number {

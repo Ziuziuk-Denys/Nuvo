@@ -53,3 +53,18 @@ it("the karaoke view and Scene opened from Home sit over the Discover ring and t
     expect(await topAt(live, x, y), `scene at ${x},${y}`).toMatchObject({ inArc: false });
   }
 }, 300_000);
+
+it("a young profile with For you but no New to you still opens with the ring under a live sky", async () => {
+  const live = await launchNuvo({ profile: "seeded" });
+  session = live;
+  await live.go("#/");
+  await live.page.locator("[data-mix]").first().waitFor({ timeout: 30_000 });
+  await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 15_000 });
+  await live.page.locator("[data-overlay]").waitFor({ state: "attached", timeout: 15_000 });
+  await live.page.waitForTimeout(3_000);
+  const sky = await live.page.evaluate(() => ({
+    strict: document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true }) !== null,
+    still: document.querySelector("[data-overlay] [data-still]") !== null,
+  }));
+  if (sky.strict) expect(sky.still, "a GPU that can draw the sky draws it").toBe(false);
+}, 300_000);

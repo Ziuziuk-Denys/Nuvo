@@ -12,7 +12,6 @@ import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCover
 const mocks = vi.hoisted(() => ({
   homeMixes: vi.fn(),
   playMix: vi.fn(),
-  backdrop: vi.fn(),
   go: vi.fn(),
   library: { liked: 40, playlists: 1 },
   librarySongs: vi.fn(),
@@ -58,8 +57,7 @@ vi.mock("../../ports/network", () => ({
   useStreamingReachable: () => mocks.network.reachable,
 }));
 vi.mock("./HiddenLink", () => ({ HiddenLink: () => <p>hidden-link</p> }));
-vi.mock("./discover/DiscoverArc", () => ({ DiscoverArc: () => null }));
-vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: mocks.backdrop }));
+vi.mock("./discover/DiscoverArc", () => ({ DiscoverArc: ({ tracks }: { tracks: unknown[] }) => <p data-discover-stub="">{tracks.length}</p> }));
 vi.mock("../../shell/navigate", () => ({ navigateWithTransition: (_navigate: unknown, to: string) => mocks.go(to) }));
 vi.mock("../../ports/library", () => ({
   useLikedTrackCount: () => ({ data: mocks.library.liked, isLoading: false }),
@@ -136,10 +134,10 @@ describe("Home mixes", () => {
     expect(mocks.playMix).toHaveBeenCalledWith("daily-mix-for-you", expect.arrayContaining([expect.objectContaining({ id: "f0" })]), 0);
   });
 
-  it("lights the page from the lead mix's first cover", async () => {
+  it("opens with the Discover ring as soon as For you has songs", async () => {
     mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 5) }]);
     await mount();
-    expect(mocks.backdrop).toHaveBeenLastCalledWith("cover-f0");
+    expect(host.querySelector("[data-discover-stub]")?.textContent).toBe("5");
   });
 
   it("draws the For you cover as a 2 x 2 collage", async () => {

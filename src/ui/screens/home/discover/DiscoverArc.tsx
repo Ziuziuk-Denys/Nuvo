@@ -7,7 +7,7 @@ import { playSongs } from "../../../ports/homeShelves";
 import { useTranslation } from "../../../ports/i18n";
 import type { Track } from "../../../ports/recs";
 import { ShelfHeading } from "../ShelfHeading";
-import { PERSPECTIVE, place, ringFor, ringOffset } from "./ring";
+import { PERSPECTIVE, place, ringFor, ringOffset, ringSlots } from "./ring";
 import styles from "./DiscoverArc.module.css";
 
 const HEIGHT = 460;
@@ -79,7 +79,8 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   const rest = useRef(0);
   const onScreen = useOnScreen(rootRef);
   const focused = useWindowFocused();
-  const count = tracks.length;
+  const count = ringSlots(tracks.length);
+  const slots = useMemo(() => Array.from({ length: count }, (_, slot) => tracks[slot % tracks.length]), [count, tracks]);
   const ring = useMemo(() => ringFor(width, HEIGHT, CLEAR_TOP), [width]);
   const wrap = (index: number) => ((index % count) + count) % count;
 
@@ -229,10 +230,10 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
       return;
     }
     if (index !== centre) turnTo(index);
-    playSongs(tracks, index, CONTEXT);
+    playSongs(tracks, index % tracks.length, CONTEXT);
   };
 
-  const current = tracks[Math.min(centre, tracks.length - 1)];
+  const current = slots[Math.min(centre, count - 1)];
   usePageBackdrop(current.coverUrl, { sky: !onScreen || !focused ? "still" : spinning ? "live" : "breathe" });
   const title = t("ui.recs.home.discover");
   return (
@@ -249,9 +250,9 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        {tracks.map((track, index) => (
+        {slots.map((track, index) => (
           <li
-            key={track.id}
+            key={`${track.id}:${index}`}
             ref={(node) => {
               items.current[index] = node;
             }}
