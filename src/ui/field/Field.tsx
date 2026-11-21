@@ -54,7 +54,7 @@ export function Field(): JSX.Element {
       {wallpaper ? (
         <Wallpaper src={wallpaper} />
       ) : cover && sky ? (
-        <Sky cover={cover} live={sky === "live"} dark={dark} />
+        <Sky cover={cover} mode={sky} dark={dark} />
       ) : cover ? (
         <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} />
       ) : null}

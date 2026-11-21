@@ -30,3 +30,40 @@
   opacity: 0.45;
   mask-image: radial-gradient(ellipse 70% 65% at 50% 30%, #000 25%, transparent 75%);
 }
+
+.motion {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+}
+
+.root[data-overlay] .motion {
+  animation: drift 48s ease-in-out infinite alternate paused;
+}
+
+.root[data-overlay][data-moving] .motion {
+  animation-play-state: running;
+}
+
+.key {
+  opacity: 0;
+  mix-blend-mode: plus-lighter;
+}
+
+.root:not([data-keys]) .key {
+  visibility: hidden;
+}
+
+.root[data-keys] [data-gl] {
+  visibility: hidden;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-2%, 0.5%, 0) scale(1.08);
+  }
+
+  to {
+    transform: translate3d(2%, -1%, 0) scale(1.08);
+  }
+}

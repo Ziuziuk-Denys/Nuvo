@@ -101,9 +101,9 @@ describe("DiscoverArc", () => {
     expect(mocks.playSongs).not.toHaveBeenCalled();
   });
 
-  it("keeps the sky live while seen and touched, and lets it rest after a while", async () => {
+  it("drifts the sky while seen, runs it live while the ring turns, and stills it once unseen", async () => {
     vi.useFakeTimers();
-    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    const focus = vi.spyOn(document, "hasFocus").mockReturnValue(true);
     vi.stubGlobal(
       "IntersectionObserver",
       class {
@@ -115,11 +115,14 @@ describe("DiscoverArc", () => {
       },
     );
     await render();
-    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "live" });
-    await act(async () => vi.advanceTimersByTime(30_000));
-    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "still" });
+    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "drift" });
     await act(async () => buttons()[1].click());
     expect(mocks.backdrop.mock.lastCall?.[1]).toEqual({ sky: "live" });
+    await act(async () => vi.advanceTimersByTime(2_000));
+    expect(mocks.backdrop.mock.lastCall?.[1]).toEqual({ sky: "drift" });
+    focus.mockReturnValue(false);
+    await act(async () => window.dispatchEvent(new Event("blur")));
+    expect(mocks.backdrop.mock.lastCall?.[1]).toEqual({ sky: "still" });
     vi.useRealTimers();
   });
 });
