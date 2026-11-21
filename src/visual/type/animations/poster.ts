@@ -7,8 +7,9 @@ import { QUIET, type LyricAnimation } from "./types";
 
 const CAPS: Voice = { family: "condensed", weight: 900, italic: false, upper: true };
 const SOFT: Voice = { family: "serif", weight: 400, italic: true, upper: false };
-const SOFT_MAX_WORDS = 4;
-const SOFT_MIN_WORD_MS = 450;
+const PHRASE_MAX_WORDS = 4;
+const PHRASE_END = /[,.;:!?…—–]["'»”)]*\s*$/u;
+const SOFT_MIN_WORD_MS = 200;
 const PUNCH_MIN_MS = 360;
 const BIG = 0.167;
 const SMALL = 0.104;
@@ -19,6 +20,7 @@ const ROW_EM = 1.4;
 // the narrowest cut of our condensed face is still wider than poster capitals
 const SQUEEZE = 0.72;
 const ECHO_SQUEEZE = 1.25;
+const ECHO_SHARE = 0.7;
 // the echo is drawn in pure red so the background shader can paint it in its own tone
 export const ECHO_INK = "#f00";
 
@@ -41,9 +43,37 @@ interface Frame {
 
 const letters = (text: string) => text.replace(/[^\p{L}]/gu, "").length;
 
-export function posterMode(line: Line): "caps" | "soft" {
-  const count = estimateWords(line).length;
-  return count >= 2 && count <= SOFT_MAX_WORDS && (line.toMs - line.fromMs) / count >= SOFT_MIN_WORD_MS ? "soft" : "caps";
+export interface PosterPhrase {
+  words: TimedWord[];
+  soft: boolean;
+}
+
+function evenly(words: TimedWord[]): TimedWord[][] {
+  const count = Math.ceil(words.length / PHRASE_MAX_WORDS);
+  const base = Math.floor(words.length / count);
+  const extra = words.length % count;
+  let at = 0;
+  return Array.from({ length: count }, (_, i) => {
+    const size = base + (i < extra ? 1 : 0);
+    const chunk = words.slice(at, at + size);
+    at += size;
+    return chunk;
+  });
+}
+
+export function posterPhrases(line: Line, lineIndex: number): PosterPhrase[] {
+  const groups: TimedWord[][] = [[]];
+  for (const word of estimateWords(line)) {
+    groups.at(-1)!.push(word);
+    if (PHRASE_END.test(word.text)) groups.push([]);
+  }
+  return groups
+    .filter((group) => group.length > 0)
+    .flatMap(evenly)
+    .map((words, index) => {
+      const perWord = (words.at(-1)!.toMs - words[0].fromMs) / words.length;
+      return { words, soft: (lineIndex + index) % 2 === 0 && words.length >= 2 && perWord >= SOFT_MIN_WORD_MS };
+    });
 }
 
 function capsMark(line: Line, index: number, word: TimedWord, nowMs: number, box: Box, frame: Frame, measure: Measure): Mark {
@@ -77,8 +107,7 @@ function echoMark(text: string, box: Box, frame: Frame, measure: Measure): Mark 
   return { text, voice: CAPS, size, x: frame.width / 2, y, width: measure(text, size, CAPS) * ECHO_SQUEEZE, squeeze: ECHO_SQUEEZE, stretch: 1, echo: true };
 }
 
-function softMarks(line: Line, shown: number, complete: boolean, box: Box, frame: Frame, measure: Measure): Mark[] {
-  const words = estimateWords(line).map((word) => word.text.trim());
+function softMarks(words: string[], shown: number, complete: boolean, seedMs: number, box: Box, frame: Frame, measure: Measure): Mark[] {
   const cols = words.length === 4 ? 2 : words.length;
   const rowsOf = (items: string[]) => Array.from({ length: Math.ceil(items.length / cols) }, (_, row) => items.slice(row * cols, row * cols + cols));
   const em = (word: string) => measure(word, 100, SOFT) / 100;
@@ -102,22 +131,32 @@ function softMarks(line: Line, shown: number, complete: boolean, box: Box, frame
     });
   });
   const longest = words.reduce((best, word) => (letters(word) >= letters(best) ? word : best), "");
-  if (!complete || letters(longest) < 4 || hash(line.fromMs * 0.013) >= 0.5) return marks;
+  if (!complete || letters(longest) < 4 || hash(seedMs * 0.013 + 1.7) >= ECHO_SHARE) return marks;
   return [echoMark(longest.toUpperCase(), box, frame, measure), ...marks];
 }
 
 export function posterMarks(lines: Line[], nowMs: number, box: Box, frame: Frame, measure: Measure): Mark[] {
   const phrase = phraseAt(lines, nowMs);
   if (!phrase || phrase.shown.length === 0) return [];
-  if (posterMode(phrase.line) === "soft") return softMarks(phrase.line, phrase.shown.length, phrase.complete, box, frame, measure);
   const index = phrase.shown.length - 1;
-  return [capsMark(phrase.line, index, phrase.shown[index], nowMs, box, frame, measure)];
+  let start = 0;
+  for (const part of posterPhrases(phrase.line, lines.indexOf(phrase.line))) {
+    if (index >= start + part.words.length) {
+      start += part.words.length;
+      continue;
+    }
+    if (!part.soft) return [capsMark(phrase.line, index, phrase.shown[index], nowMs, box, frame, measure)];
+    const shown = index - start + 1;
+    const texts = part.words.map((word) => word.text.trim());
+    return softMarks(texts, shown, shown === texts.length, part.words[0].fromMs, box, frame, measure);
+  }
+  return [];
 }
 
 export const poster: LyricAnimation = {
   id: "poster",
   leadMs: 50,
-  weight: 2,
+  weight: 1,
   zone: "centre",
   draw({ ctx, lines, nowMs, width, height, box }) {
     const measure: Measure = (text, size, voice) => {

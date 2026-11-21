@@ -316,7 +316,7 @@ export const PARTS: Part[] = [
     calm: "line",
     layers: [{ shader: "treat", params: { mode: 3 } }],
   },
-  { id: "poster", slot: "lyrics", weight: 2, zone: "centre", animation: "poster", requires: ["print", "print-ascii"], calm: "whisper", layers: [] },
+  { id: "poster", slot: "lyrics", weight: 1, zone: "centre", animation: "poster", requires: ["print", "print-ascii"], calm: "whisper", layers: [] },
   { id: "wipe", slot: "lyrics", weight: 2, zone: "centre", animation: "wipe", style: WIPE, requires: ["glass"], calm: "whisper", layers: [] },
   {
     id: "smoke",
