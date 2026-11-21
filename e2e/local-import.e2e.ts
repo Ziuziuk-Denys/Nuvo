@@ -103,7 +103,7 @@ describe("local import e2e", () => {
     }, single);
     await main.getByRole("button", { name: "Add files" }).click();
     await main.getByText("Added to On this computer").waitFor();
-    await main.getByText("Lone Song").waitFor({ timeout: 30_000 });
+    await main.getByText("Lone Song", { exact: true }).waitFor({ timeout: 30_000 });
     await main.locator(`[title="${single}"]`).waitFor();
   });
 });
