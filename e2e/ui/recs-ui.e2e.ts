@@ -152,7 +152,7 @@ async function setLocale(live: NuvoSession, locale: "en" | "ru"): Promise<void> 
 }
 
 describe("recs UI", () => {
-  it("cold start on Home, the hidden list with Show again, suggestions under a playlist", async () => {
+  it("the first Home, the hidden list with Show again, suggestions under a playlist", async () => {
     const live = await launchNuvo({ profile: "fresh", locale: "en" });
     session = live;
     const page = live.page;
@@ -161,50 +161,16 @@ describe("recs UI", () => {
     await page.reload();
     await passFirstRun(page);
 
-    const needed = await live.core(`return (await (await fetch(base + "/v1/recs/start")).json()).needed;`);
-    expect(needed).toBe(true);
-    const title = page.getByRole("heading", { name: "Start with a few songs or artists" });
-    await title.waitFor({ timeout: 20_000 });
-    console.log(await shoot(live, "home", "cold-empty", [LIGHT, DARK], [W1200], () => title.waitFor({ timeout: 20_000 })));
-
-    const pick = async (...names: string[]) => {
-      for (const name of names) {
-        await page.locator('input[aria-label="Song or artist"], input[aria-label="Песня или артист"]').fill("nova");
-        const suggestion = page.locator('ul[aria-label="Suggestions"] button, ul[aria-label="Предложения"] button', { hasText: name }).first();
-        await suggestion.waitFor({ timeout: 15_000 });
-        await suggestion.click();
-      }
-      await page.mouse.move(30, 400);
-    };
-    const pickTwo = async () => {
-      await page.getByRole("heading", { level: 2 }).first().waitFor({ timeout: 20_000 });
-      await pick("Nova Lights", "Nova Drift");
-    };
-    await pickTwo();
-    expect(await page.locator("[data-seed]").count()).toBe(2);
-    console.log(await shoot(live, "home", "cold-picked", [LIGHT, DARK], [W1200], pickTwo));
+    const bring = page.locator("[data-bring]");
+    await bring.waitFor({ timeout: 20_000 });
+    console.log(await shoot(live, "home", "first-run", [LIGHT, DARK], [W1200], () => bring.waitFor({ timeout: 20_000 })));
     await setLocale(live, "ru");
     console.log(
-      await shoot(live, "home", "cold-picked-ru", [{ ...LIGHT }], [W1100], async () => {
+      await shoot(live, "home", "first-run-ru", [{ ...LIGHT }], [W1100], async () => {
         await page.reload();
-        await page.getByRole("heading", { name: "Начните с любимых песен или исполнителей" }).waitFor({ timeout: 20_000 });
-        await pick("Nova Lights", "Nova Drift", "Novaya Volna");
+        await page.getByRole("heading", { name: "Перенесите свою музыку" }).waitFor({ timeout: 20_000 });
       }),
     );
-    const foot = await page.evaluate(() => {
-      const button = [...document.querySelectorAll("button")].find((b) => b.textContent === "Слушать")!;
-      return { clipped: button.scrollWidth > button.clientWidth, right: button.getBoundingClientRect().right, width: innerWidth };
-    });
-    expect(foot.clipped).toBe(false);
-    expect(foot.right).toBeLessThan(foot.width);
-    await page.getByRole("button", { name: "Слушать" }).click();
-    await page.getByRole("heading", { name: "Начните с любимых песен или исполнителей" }).waitFor({ state: "detached", timeout: 30_000 });
-    const after = await live.core(`return (await (await fetch(base + "/v1/recs/start")).json()).needed;`);
-    expect(after, "the starters answered the ask").toBe(false);
-    await page.locator("[data-mix]").first().waitFor({ timeout: 30_000 });
-    expect(await page.locator("[data-slot=cold-start]").count()).toBe(0);
-    await page.waitForTimeout(1_500);
-    console.log(await shoot(live, "home", "after-start-ru", [LIGHT], [W1100]));
     await setLocale(live, "en");
 
     const seed = await seedLibrary(live);

@@ -17,14 +17,12 @@ fn playlist(conn: &Connection, title: &str, tracks: Vec<Value>) -> String {
 }
 
 #[test]
-fn a_fresh_library_asks_and_starters_become_seeds() {
+fn starters_become_seeds() {
     let (_dir, conn) = common::open();
-    assert!(starters::needed(&conn).unwrap());
     assert!(starters::replace(&conn, &[], NOW).is_err());
     let many: Vec<Value> = (0..16).map(|i| snapshot(&format!("m{i}"), "M", "X")).collect();
     assert!(starters::replace(&conn, &many, NOW).is_err());
     assert_eq!(starters::replace(&conn, &picks(), NOW).unwrap(), 3);
-    assert!(!starters::needed(&conn).unwrap());
     assert_eq!(pool::stale_seeds(&conn, NOW, pool::YT_RADIO).unwrap(), ["st1", "st2", "st3"]);
 
     play(&conn, "own", "Me", "s", NOW - DAY, json!({}));
@@ -37,7 +35,6 @@ fn playlist_tracks_are_seeds_after_starters_unless_the_playlist_is_excluded() {
     playlist(&conn, "Mine", vec![snapshot("p1", "P1", "Pia")]);
     let gym = playlist(&conn, "Gym", vec![snapshot("g1", "G1", "Gus")]);
     rewards::set_excluded(&conn, "playlist", &gym, true).unwrap();
-    assert!(!starters::needed(&conn).unwrap(), "an own or imported playlist already tells the taste");
     starters::replace(&conn, &picks()[..1], NOW).unwrap();
     assert_eq!(pool::stale_seeds(&conn, NOW, pool::YT_RADIO).unwrap(), ["st1", "p1"]);
 }

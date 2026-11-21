@@ -153,12 +153,10 @@ async fn a_re_sent_play_teaches_once() {
 }
 
 #[tokio::test]
-async fn cold_start_asks_until_starters_or_taste_exist() {
+async fn starters_become_seeds() {
     let core = common::core();
-    assert_eq!(common::call(&core.app, "GET", "/v1/recs/start", None).await, (StatusCode::OK, json!({"needed": true})));
     let tracks: Vec<Value> = (0..3).map(|i| snapshot(&format!("st{i}"), &format!("Star {i}"), "Sol")).collect();
     assert_eq!(common::call(&core.app, "PUT", "/v1/recs/starters", Some(json!({"tracks": tracks}))).await.0, StatusCode::NO_CONTENT);
-    assert_eq!(common::call(&core.app, "GET", "/v1/recs/start", None).await.1, json!({"needed": false}));
     let (_, seeds) = common::call(&core.app, "GET", "/v1/recs/seeds", None).await;
     assert_eq!(seeds, json!({"seeds": ["st0", "st1", "st2"]}));
     assert_eq!(common::call(&core.app, "PUT", "/v1/recs/starters", Some(json!({"tracks": []}))).await.0, StatusCode::BAD_REQUEST);

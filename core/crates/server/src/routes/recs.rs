@@ -21,7 +21,6 @@ pub fn routes() -> Router<AppState> {
         .route("/v1/recs/seeds", get(seeds))
         .route("/v1/recs/pool", put(replace_pool))
         .route("/v1/recs/pool/sc-related", post(sc_related))
-        .route("/v1/recs/start", get(start))
         .route("/v1/recs/starters", put(save_starters))
         .route("/v1/recs/not-interested", post(not_interested))
         .route("/v1/recs/suppressions", get(suppressions))
@@ -151,20 +150,9 @@ async fn soundcloud_upload(sc: &SoundCloud, snapshot: &Value) -> Result<Option<S
     }
 }
 
-#[derive(Serialize)]
-struct StartReply {
-    needed: bool,
-}
-
 #[derive(Deserialize)]
 struct StartersBody {
     tracks: Vec<Value>,
-}
-
-async fn start(State(state): State<AppState>) -> Result<Json<StartReply>, ApiError> {
-    let data = state.data()?;
-    let needed = data.db.call(starters::needed).await?;
-    Ok(Json(StartReply { needed }))
 }
 
 async fn save_starters(State(state): State<AppState>, JsonBody(body): JsonBody<StartersBody>) -> Result<StatusCode, ApiError> {
