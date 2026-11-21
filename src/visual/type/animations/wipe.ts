@@ -14,7 +14,7 @@ export const wipe: LyricAnimation = {
   leadMs: 150,
   weight: 2,
   zone: "centre",
-  draw({ ctx, lines, nowMs, width, height, box, style }) {
+  draw({ ctx, lines, nowMs, width, height, box, style, scale = 1 }) {
     if (!style) return QUIET;
     let current = -1;
     for (let i = 0; i < lines.length && lines[i].fromMs <= nowMs; i++) current = i;
@@ -22,7 +22,7 @@ export const wipe: LyricAnimation = {
     const line = lines[current];
     const shown: [Line, number][] = [[line, 1 - easeOutCubic(Math.max(0, nowMs - line.toMs - HOLD_MS) / FOG_MS)]];
     if (current > 0 && nowMs - line.fromMs < SWAP_MS) shown.push([lines[current - 1], 1 - (nowMs - line.fromMs) / SWAP_MS]);
-    const sized = { ...style, size: style.size * Math.min(width, height) };
+    const sized = { ...style, size: style.size * Math.min(width, height) * scale };
     const measure = (text: string, size: number, voice: (typeof style.voices)[number]) => {
       ctx.font = fontFor(voice, size);
       return ctx.measureText(text).width;

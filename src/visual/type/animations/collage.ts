@@ -19,8 +19,8 @@ interface Placed {
   y: number;
 }
 
-function place(ctx: Ctx, texts: string[], stressed: boolean[], width: number, height: number, centreY: number): Placed[] {
-  const unit = Math.min(width, height);
+function place(ctx: Ctx, texts: string[], stressed: boolean[], width: number, height: number, centreY: number, scale: number): Placed[] {
+  const unit = Math.min(width, height) * scale;
   const rows: { items: { text: string; stressed: boolean; size: number; width: number }[]; height: number }[] = [];
   let open: (typeof rows)[number] | null = null;
   texts.forEach((text, i) => {
@@ -62,7 +62,7 @@ export const collage: LyricAnimation = {
   leadMs: 50,
   weight: 3,
   zone: "full",
-  draw({ ctx, lines, nowMs, width, height, box, pulse }) {
+  draw({ ctx, lines, nowMs, width, height, box, pulse, scale = 1 }) {
     const signals = {
       flash: 0,
       strobe: pulse.level > 0.55 ? 1 : 0,
@@ -73,7 +73,7 @@ export const collage: LyricAnimation = {
     const texts = phrase.shown.map((word) => word.text.trim()).slice(-4);
     const offset = phrase.shown.length - texts.length;
     const stressed = texts.map((text, i) => isStressed(text, offset + i === phrase.words.length - 1));
-    const placed = place(ctx, texts, stressed, width, height, box.y + box.height / 2);
+    const placed = place(ctx, texts, stressed, width, height, box.y + box.height / 2, scale);
 
     ctx.fillStyle = "#fff";
     ctx.strokeStyle = "#fff";

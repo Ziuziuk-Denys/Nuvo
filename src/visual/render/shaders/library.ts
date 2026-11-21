@@ -58,7 +58,7 @@ const type: ShaderDef = {
 vec4 layer() {
   float a = textAt(vUv) * u_opacity;
   vec3 ink = mix(uDeep * 0.85, mix(uLight, vec3(1.0), 0.65), u_tone);
-  ink = mix(ink, vec3(u_tone), u_mono);
+  ink = inkOr(mix(ink, vec3(u_tone), u_mono));
   return vec4(ink * a, a);
 }`,
 };
@@ -158,11 +158,11 @@ vec4 layer() {
     float t = float(i) * PI * 0.25;
     grown = max(grown, textAt(vUv + d * vec2(cos(t), sin(t))));
   }
-  vec3 fill = mix(vec3(1.0), uLight, 0.25);
+  vec3 fill = inkOr(mix(vec3(1.0), uLight, 0.25));
   if (k == 0) c = mix(c, fill, a);
   else if (k == 1) c = mix(c, fill, clamp(grown - a, 0.0, 1.0));
-  else if (k == 2) c = mix(c, mix(hi * 0.2, hi * 1.2 + 0.05, posterised(vUv, seed + 17.0, col, steps)), a);
-  else c = mix(c, hi * 1.25 + 0.04, a);
+  else if (k == 2) c = mix(c, inkOr(mix(hi * 0.2, hi * 1.2 + 0.05, posterised(vUv, seed + 17.0, col, steps))), a);
+  else c = mix(c, inkOr(hi * 1.25 + 0.04), a);
   return vec4(c, 1.0);
 }`,
 };
@@ -178,7 +178,7 @@ vec4 layer() {
   vec3 vivid = mix(uKey / max(max(uKey.r, uKey.g), max(uKey.b, 0.001)) * u_bright, uColorA, uCustom);
   vec3 dark = mix(uDeep * 0.8 + 0.002, uColorB, uCustom);
   vec3 bg = vivid * (1.0 + uFlash * u_pulse * 12.0);
-  vec3 fg = dark;
+  vec3 fg = inkOr(dark);
   vec2 uv = vUv;
   uv.x += sin(uv.y * 38.0 + uTime * 5.0) * u_wave;
   uv.y += sin(uv.x * 21.0 - uTime * 3.7) * u_wave * 0.6;
@@ -599,6 +599,7 @@ vec4 layer() {
     vec2 centre = 0.5 + (uv - 0.5) / (1.0 + 0.3 * u_strength);
     vec3 refracted = vec3(back(centre - n * 0.05).r, back(centre - n * 0.065).g, back(centre - n * 0.08).b);
     refracted = refracted * 1.6 + 0.04;
+    refracted = mix(refracted, refracted * uInk, uInkOn);
     float rim = clamp(length(n) * 0.7, 0.0, 1.0);
     float inside = smoothstep(0.2, 0.7, soft);
     vec3 c = mix(base * (1.0 - 0.35 * smoothstep(0.0, 0.3, soft)), refracted + rim * 0.5, inside);
@@ -614,7 +615,7 @@ vec4 layer() {
     float ground = 0.12 + 0.18 * smoothstep(0.55, 1.0, local);
     float chrome = mix(sky, ground, step(0.5, local + n.y * 0.25));
     chrome += pow(clamp(length(g) * 0.5, 0.0, 1.0), 2.0) * 0.9;
-    vec3 tint = mix(vec3(1.0), uLight, 0.2);
+    vec3 tint = inkOr(mix(vec3(1.0), uLight, 0.2));
     vec3 c = mix(base * (1.0 - 0.4 * smoothstep(0.0, 0.4, h)), tint * chrome, a);
     return vec4(c, 1.0);
   }
@@ -633,7 +634,7 @@ vec4 layer() {
     for (int i = 0; i < 8; i++) smear += back(q - vec2(float(i) * 0.012 * (0.4 + kick), 0.0));
     smear /= 8.0;
     vec3 bg = mix(base, back(q), step(0.75, hash(vec2(block, row + uCut))) * kick);
-    vec3 text = vec3(ar, ag, ab) * (0.8 + smear * 0.6);
+    vec3 text = vec3(ar, ag, ab) * inkOr(vec3(1.0)) * (0.8 + smear * 0.6);
     return vec4(mix(bg, text + smear * 0.25 * vec3(ar, ag, ab), max(max(ar, ag), ab)), 1.0);
   }
 
@@ -654,7 +655,7 @@ vec4 layer() {
   vec2 g = maskNormal(uv, 1.0) * 4.0;
   vec3 n = normalize(vec3(-g, 1.0));
   float light = 0.6 + 0.6 * max(dot(n, normalize(vec3(-0.5, 0.6, 0.6))), 0.0);
-  vec3 face = mix(uLight, vec3(1.0), 0.6) * light;
+  vec3 face = inkOr(mix(uLight, vec3(1.0), 0.6)) * light;
   c = mix(c, face, a);
   return vec4(c, 1.0);
 }`,
@@ -919,7 +920,7 @@ vec4 layer() {
   vec4 text = texture(uText, at);
   c = mix(c, dark, textureLod(uText, at, 5.0).a * 0.45);
   c = mix(c, mix(light, dark, tone), text.a * (1.0 - text.g));
-  c = mix(c, vec3(0.9), text.a * text.g);
+  c = mix(c, inkOr(vec3(0.9)), text.a * text.g);
   return vec4(c, 1.0);
 }`,
 };
@@ -939,7 +940,7 @@ vec4 layer() {
   float step_ = uDelta * 60.0;
   vec2 uv = vUv - vec2(curl.x * 0.004 * u_swirl, 0.0016 * u_rise + curl.y * 0.003 * u_swirl) * step_;
   float density = max(texture(uPrev, uv).a * pow(u_keep, step_), textAt(vUv) * 0.85);
-  vec3 colour = mix(uLight, vec3(1.0), 0.5);
+  vec3 colour = inkOr(mix(uLight, vec3(1.0), 0.5));
   return vec4(colour * density, density);
 }`,
 };

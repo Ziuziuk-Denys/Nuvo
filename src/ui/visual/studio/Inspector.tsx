@@ -3,7 +3,8 @@ import { Popover } from "../../components/Popover";
 import { Slider } from "../../components/Slider";
 import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
-import { controlsOf, thumbnailOf, WEIGHT_BUDGET, type Part, type Scene, type Selection } from "../../ports/visual";
+import { controlsOf, TEXT_SIZE, thumbnailOf, WEIGHT_BUDGET, type Part, type Scene, type Selection, type TextLook } from "../../ports/visual";
+import { Segmented } from "../../screens/settings/controls";
 import { ColorPicker } from "../../screens/settings/ColorPicker";
 import { PercentField } from "./PercentField";
 import theme from "./theme.module.css";
@@ -50,6 +51,74 @@ function Swatch({ colour, label, onChange }: { colour: Rgb; label: string; onCha
   );
 }
 
+const INKS: Rgb[] = [
+  [1, 1, 1],
+  [0.96, 0.92, 0.84],
+  [0.86, 0.76, 0.53],
+  [1, 0.62, 0.52],
+  [0.56, 0.8, 1],
+  [0.64, 0.9, 0.76],
+];
+const PLAIN: TextLook = { size: 1, ink: "auto" };
+
+function TextRows({ part, selection, onChange }: { part: Part; selection: Selection; onChange(next: Selection): void }): JSX.Element {
+  const { t } = useTranslation();
+  const look = selection.text ?? PLAIN;
+  const mode = look.ink === "auto" || look.ink === "cover" ? look.ink : "custom";
+  const set = (next: Partial<TextLook>) => onChange({ ...selection, text: { ...look, ...next } });
+  const sizeLabel = t("visual.text.size");
+  return (
+    <>
+      {part.id === "wipe" ? null : (
+        <div className={styles.row}>
+          <span className={styles.label}>{t("visual.text.colour")}</span>
+          <Segmented
+            label={t("visual.text.colour")}
+            options={[
+              { value: "auto", label: t("visual.text.auto") },
+              { value: "cover", label: t("visual.text.cover") },
+              { value: "custom", label: t("visual.text.custom") },
+            ]}
+            value={mode}
+            onChange={(next) => set({ ink: next === "custom" ? INKS[0] : next })}
+          />
+          {typeof look.ink === "object" ? (
+            <div className={styles.inks}>
+              {INKS.map((rgb) => (
+                <button
+                  key={toHex(rgb)}
+                  type="button"
+                  data-ink-swatch=""
+                  className={styles.ink}
+                  style={{ background: toHex(rgb) }}
+                  aria-label={toHex(rgb).toUpperCase()}
+                  aria-pressed={toHex(rgb) === toHex(look.ink as Rgb)}
+                  onClick={() => set({ ink: rgb })}
+                />
+              ))}
+              <Swatch colour={look.ink} label={t("visual.text.own")} onChange={(rgb) => set({ ink: rgb })} />
+            </div>
+          ) : null}
+        </div>
+      )}
+      <div className={styles.row}>
+        <span className={styles.label}>{sizeLabel}</span>
+        <div className={styles.input}>
+          <Slider value={look.size} min={TEXT_SIZE.min} max={TEXT_SIZE.max} step={0.01} label={sizeLabel} hideValue onChange={(size) => set({ size })} />
+          <PercentField
+            value={look.size}
+            min={0}
+            max={1}
+            limits={[TEXT_SIZE.min * 100, TEXT_SIZE.max * 100]}
+            label={sizeLabel}
+            onCommit={(size) => set({ size })}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
 function Thumb({ part, coverUrl }: { part: Part; coverUrl: string }): JSX.Element {
   const src = usePreview(useCallback(() => thumbnailOf(part, coverUrl), [part, coverUrl]));
   return <span className={styles.thumb}>{src ? <img src={src} alt="" /> : null}</span>;
@@ -58,7 +127,7 @@ function Thumb({ part, coverUrl }: { part: Part; coverUrl: string }): JSX.Elemen
 export function Inspector({ scene, parts, coverUrl, onChange }: InspectorProps): JSX.Element {
   const { t } = useTranslation();
   const selection = scene.selection;
-  const editable = parts.filter((part) => controlsOf(part, selection).length > 0 || part.id === "duo");
+  const editable = parts.filter((part) => controlsOf(part, selection).length > 0 || part.id === "duo" || part.slot === "lyrics");
   const [openId, setOpenId] = useState<string | null>(null);
   const open = editable.some((part) => part.id === openId) ? openId : (editable[0]?.id ?? null);
   const colours: [Rgb, Rgb] = selection.colors ? [selection.colors.a, selection.colors.b] : DEFAULT_COLOURS;
@@ -69,9 +138,12 @@ export function Inspector({ scene, parts, coverUrl, onChange }: InspectorProps):
   const reset = (part: Part) => {
     const params = { ...selection.params };
     delete params[part.id];
-    onChange(part.id === "duo" ? { ...selection, params, colors: undefined } : { ...selection, params });
+    if (part.id === "duo") onChange({ ...selection, params, colors: undefined });
+    else if (part.slot === "lyrics") onChange({ ...selection, params, text: undefined });
+    else onChange({ ...selection, params });
   };
-  const changed = (part: Part) => Boolean(selection.params?.[part.id]) || (part.id === "duo" && Boolean(selection.colors));
+  const changed = (part: Part) =>
+    Boolean(selection.params?.[part.id]) || (part.id === "duo" && Boolean(selection.colors)) || (part.slot === "lyrics" && Boolean(selection.text));
   const setColour = (index: 0 | 1, next: Rgb) => {
     const pair: [Rgb, Rgb] = [...colours];
     pair[index] = next;
@@ -101,6 +173,7 @@ export function Inspector({ scene, parts, coverUrl, onChange }: InspectorProps):
               </div>
               <div className={styles.collapse} data-open={expanded ? "" : undefined} inert={!expanded}>
                 <div className={styles.body}>
+                  {part.slot === "lyrics" ? <TextRows part={part} selection={selection} onChange={onChange} /> : null}
                   {controlsOf(part, selection).map((control) => {
                     const label = t(`visual.param.${control.name}`);
                     return (

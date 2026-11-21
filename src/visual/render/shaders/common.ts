@@ -13,6 +13,8 @@ uniform vec3 uLight;
 uniform vec3 uColorA;
 uniform vec3 uColorB;
 uniform float uCustom;
+uniform vec3 uInk;
+uniform float uInkOn;
 uniform float uBass;
 uniform float uMid;
 uniform float uHigh;
@@ -119,6 +121,10 @@ vec2 imageFill(vec2 uv) {
 
 vec3 imageAt(vec2 uv, float lod) {
   return textureLod(uImage, imageFill(uv), lod).rgb;
+}
+
+vec3 inkOr(vec3 own) {
+  return mix(own, uInk, uInkOn);
 }
 
 float textAt(vec2 uv) {

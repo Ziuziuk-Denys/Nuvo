@@ -40,6 +40,17 @@ describe("visual settings", () => {
     expect(visualSettings().scene).toBeNull();
   });
 
+  it("keeps a scene's text look and cleans one it cannot trust", async () => {
+    const scene = { background: "night", atmosphere: [], centrepiece: null, lyrics: "line" };
+    localStorage.setItem("nuvo.visual", JSON.stringify({ scene: { ...scene, text: { size: 1.2, ink: [1, 0.5, 0] } } }));
+    const { visualSettings } = await import("./settings");
+    expect(visualSettings().scene?.text).toEqual({ size: 1.2, ink: [1, 0.5, 0] });
+    vi.resetModules();
+    localStorage.setItem("nuvo.visual", JSON.stringify({ scene: { ...scene, text: { size: 40, ink: "<script>" } } }));
+    const again = await import("./settings");
+    expect(again.visualSettings().scene?.text).toEqual({ size: 1.5, ink: "auto" });
+  });
+
   it("tells subscribers about a change", async () => {
     const { setVisualSettings, subscribeVisualSettings } = await import("./settings");
     const seen = vi.fn();

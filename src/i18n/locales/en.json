@@ -2508,6 +2508,14 @@
       "shade": "Darkness",
       "grain": "Grain"
     },
+    "text": {
+      "colour": "Text colour",
+      "size": "Text size",
+      "auto": "Auto",
+      "cover": "From cover",
+      "custom": "Custom",
+      "own": "Your colour"
+    },
     "studio": {
       "title": "Scene studio",
       "back": "Back",

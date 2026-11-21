@@ -43,7 +43,7 @@ export function paint(
       height: raster.height,
       box: raster.box(template.layouts[aspect].lyricBox),
       style: template.lyrics!.style,
-      scale: template.lyrics!.scale,
+      scale: (template.lyrics!.scale ?? 1) * (template.text?.size ?? 1),
       pulse,
     });
     raster.ctx.restore();
