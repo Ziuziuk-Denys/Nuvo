@@ -3,7 +3,17 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } f
 import { homedir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { enablePanelWidget, GNOME_UUID, installPanelWidget, openExtensionsApp, panelFilesPresent, panelInstallAllowed, panelTarget } from "./panelWidget";
+import {
+  enablePanelWidget,
+  GNOME_UUID,
+  GNOME_VERSION,
+  installPanelWidget,
+  openExtensionsApp,
+  panelFilesPresent,
+  panelInstallAllowed,
+  panelTarget,
+  refreshGnomeExtension,
+} from "./panelWidget";
 
 const REPO_DESKTOP = path.resolve(import.meta.dirname, "..", "..", "desktop");
 const temps: string[] = [];
@@ -155,5 +165,39 @@ describe("openExtensionsApp", () => {
       "gnome-extensions-app",
       "gtk-launch org.gnome.Extensions",
     ]);
+  });
+});
+
+describe("GNOME extension refresh on start", () => {
+  function installed(version: number | null): string {
+    const dataHome = temp();
+    const dir = path.join(dataHome, "gnome-shell", "extensions", GNOME_UUID);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "metadata.json"), JSON.stringify(version === null ? { uuid: GNOME_UUID } : { uuid: GNOME_UUID, version }));
+    return dataHome;
+  }
+
+  it("reinstalls an older or unversioned build and keeps a current one", async () => {
+    for (const [version, expected] of [
+      [null, true],
+      [GNOME_VERSION - 1, true],
+      [GNOME_VERSION, false],
+    ] as const) {
+      const { calls, exec } = recorder();
+      expect(await refreshGnomeExtension({ resources: resources(), exec, dataHome: installed(version), allowed: true })).toBe(expected);
+      expect(calls.length).toBe(expected ? 1 : 0);
+    }
+  });
+
+  it("never installs for a user who has not set the widget up, or in a moved profile", async () => {
+    const { calls, exec } = recorder();
+    expect(await refreshGnomeExtension({ resources: resources(), exec, dataHome: temp(), allowed: true })).toBe(false);
+    expect(await refreshGnomeExtension({ resources: resources(), exec, dataHome: installed(null), allowed: false })).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  it("reports a failed install as not refreshed", async () => {
+    const { exec } = recorder(() => "boom");
+    expect(await refreshGnomeExtension({ resources: resources(), exec, dataHome: installed(null), allowed: true })).toBe(false);
   });
 });

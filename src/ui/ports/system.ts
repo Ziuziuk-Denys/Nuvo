@@ -134,6 +134,10 @@ export async function appFacts(): Promise<{ version: string; platform: string; p
   return (await window.nuvoShell?.getAppInfo().catch(() => null)) ?? null;
 }
 
+export async function panelWidgetRefreshed(): Promise<boolean> {
+  return (await window.nuvoShell?.getPanelStatus().catch(() => null))?.panel?.refreshed === true;
+}
+
 export async function readUpdate(): Promise<UpdateView | null> {
   return (await window.nuvoShell?.getUpdateState().catch(() => null)) ?? null;
 }

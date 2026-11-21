@@ -48,7 +48,16 @@ import { allowCheck, allowRequest, contentSecurityPolicy } from "./policy";
 import { notchActionToCommand, PlayerRelay, toNotchState } from "./relay";
 import { startPanelBus, type PanelBus } from "./panelBus";
 import { entryTarget, retargetDesktopEntry, syncDesktopEntry } from "./desktopEntry";
-import { enablePanelWidget, installPanelWidget, openExtensionsApp, panelFilesPresent, panelInstallAllowed, panelSource, panelTarget } from "./panelWidget";
+import {
+  enablePanelWidget,
+  installPanelWidget,
+  openExtensionsApp,
+  panelFilesPresent,
+  panelInstallAllowed,
+  panelSource,
+  panelTarget,
+  refreshGnomeExtension,
+} from "./panelWidget";
 import { relaxCors, rewriteRequestHeaders } from "./requestRules";
 import { saveFilter, validateSaveText, writeTextAtomic } from "./saveText";
 import { coreCall } from "./coreCall";
@@ -526,7 +535,16 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     };
     const panelPending = path.join(app.getPath("userData"), "panel-enable-pending");
     const panelAllowed = () => panelInstallAllowed(process.env, os.homedir());
-    ipc.handle(CHANNELS.panelGetStatus, "main", () => {
+    const panelRefreshed =
+      panelFor() === "gnome"
+        ? refreshGnomeExtension({
+            resources: panelResources,
+            exec: trackedExec,
+            dataHome: process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share"),
+            allowed: panelAllowed(),
+          })
+        : Promise.resolve(false);
+    ipc.handle(CHANNELS.panelGetStatus, "main", async () => {
       const session = notch?.session ?? "other-wayland";
       const target = panelFor();
       return {
@@ -541,6 +559,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
               manual: !panelAllowed(),
               source: panelSource(target, panelResources),
               pendingEnable: target === "gnome" && fs.existsSync(panelPending),
+              refreshed: await panelRefreshed,
             }
           : null,
       };
