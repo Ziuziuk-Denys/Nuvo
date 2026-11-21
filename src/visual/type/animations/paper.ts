@@ -90,7 +90,7 @@ export const paper: LyricAnimation = {
   leadMs: 50,
   weight: 2,
   zone: "full",
-  draw({ ctx, lines, nowMs, width, height }) {
+  draw({ ctx, lines, nowMs, width, height, scale = 1 }) {
     const phrase = phraseAt(lines, nowMs);
     if (!phrase || phrase.shown.length === 0) return QUIET;
     const texts = phrase.words.map((word) => word.text.trim());
@@ -98,7 +98,7 @@ export const paper: LyricAnimation = {
       ctx.font = fontFor(NEUTRAL, px);
       return ctx.measureText(text).width;
     };
-    const size = paperSize(texts, width, height, measureAt, 0.125 * Math.min(width, height));
+    const size = paperSize(texts, width, height, measureAt, 0.125 * Math.min(width, height) * scale);
     ctx.font = fontFor(NEUTRAL, size);
     const measure = (text: string) => ctx.measureText(text).width;
     const rows = paperRows(texts, width, measure, size);

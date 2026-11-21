@@ -11,14 +11,14 @@ export const flow: LyricAnimation = {
   leadMs: 120,
   weight: 1,
   zone: "lower",
-  draw({ ctx, lines, nowMs, width, height, box, style }) {
+  draw({ ctx, lines, nowMs, width, height, box, style, scale = 1 }) {
     if (!style) return QUIET;
     const words = style.mode === "line" ? lineWords(lines, nowMs) : visibleWords(lines, nowMs);
     const measure = (text: string, size: number, voice: (typeof style.voices)[number]) => {
       ctx.font = fontFor(voice, size);
       return ctx.measureText(text).width;
     };
-    const runs = layoutWords(words, box, measure, { ...style, size: style.size * Math.min(width, height) });
+    const runs = layoutWords(words, box, measure, { ...style, size: style.size * Math.min(width, height) * scale });
     const motionMs = style.motion === "settle" ? SETTLE_MS : style.motion === "rise" ? RISE_MS : 0;
     ctx.fillStyle = "#fff";
     for (const run of runs) {

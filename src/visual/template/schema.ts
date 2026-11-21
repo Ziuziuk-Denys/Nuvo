@@ -1,3 +1,5 @@
+import type { TextLook } from "./text";
+
 export type FeatureName = "bass" | "mid" | "high" | "level" | "flux" | "onset" | "beat";
 
 export interface Binding {
@@ -54,6 +56,7 @@ export interface Template {
   impact?: number;
   colors?: { a: [number, number, number]; b: [number, number, number] };
   lyrics: { animation: string; style?: LyricStyle; scale?: number } | null;
+  text?: TextLook;
   layouts: Record<Aspect, Frame>;
   liveSafe: boolean;
 }

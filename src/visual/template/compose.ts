@@ -1,5 +1,6 @@
 import type { Rgb } from "../render/palette";
 import type { Aspect, Frame, Layer, LyricStyle, Template } from "./schema";
+import type { TextLook } from "./text";
 
 export const WEIGHT_BUDGET = 6;
 
@@ -33,6 +34,7 @@ export interface Selection {
   lyrics: string | null;
   params?: Record<string, Record<string, number>>;
   colors?: { a: Rgb; b: Rgb };
+  text?: TextLook;
 }
 
 function find(parts: Part[], id: string): Part {
@@ -118,6 +120,7 @@ export function compose(id: string, selection: Selection, parts: Part[], layouts
     mono: Math.max(0, ...chosen.map((part) => part.mono ?? 0)),
     impact: Math.max(0, ...chosen.map((part) => part.impact ?? 0)),
     colors: selection.colors,
+    text: selection.text,
     lyrics: lyrics?.animation ? { animation: lyrics.animation, style: lyrics.style, scale: lyrics.scale } : null,
     layouts,
     liveSafe: !lyrics || lyrics.weight === 1,

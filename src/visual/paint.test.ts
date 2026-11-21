@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Line } from "@/lyrics";
 import { DISPLAY_LEAD_MS, lyricsTime, paint } from "./paint";
 import type { Stage } from "./render/stage";
@@ -80,5 +80,38 @@ describe("text state", () => {
     paint(stage, raster, paper, "tall", lines, 1000, features);
     expect(aligns.length).toBeGreaterThan(0);
     expect(new Set(aligns)).toEqual(new Set(["start"]));
+  });
+});
+
+describe("text size", () => {
+  it("hands every style its own scale times the chosen text size", () => {
+    const stage = { step: () => ({ cuts: 0, cutAgeMs: 0, drive: 0, onset: 0, level: 0 }), setText() {}, render() {} } as unknown as Stage;
+    const ctx = { clearRect() {}, save() {}, restore() {} };
+    const raster = {
+      canvas: {},
+      ctx,
+      width: 100,
+      height: 100,
+      measure: () => 0,
+      box: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+    } as unknown as TextRaster;
+    const features = {
+      bands: new Float32Array(BANDS),
+      bass: 0,
+      mid: 0,
+      high: 0,
+      level: 0,
+      flux: 0,
+      onset: 0,
+      beat: 0,
+      beatConfidence: 0,
+      beatMs: 500,
+      wave: new Float32Array(WAVE),
+    };
+    const template = sceneOf({ background: "night", atmosphere: [], centrepiece: null, lyrics: "lens", text: { size: 1.4, ink: "auto" } }).template;
+    const draw = vi.spyOn(ANIMATIONS.kinetic, "draw").mockReturnValue({ flash: 0, strobe: 0, blackout: 0 });
+    paint(stage, raster, template, "wide", [], 0, features);
+    expect(draw.mock.calls[0][0].scale).toBeCloseTo(0.75 * 1.4);
+    draw.mockRestore();
   });
 });

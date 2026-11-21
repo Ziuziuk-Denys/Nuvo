@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Selection } from "../ports/visual";
+import { textLookOf, type Selection } from "../ports/visual";
 
 const KEY = "nuvo.visual";
 
@@ -25,7 +25,10 @@ function readScene(value: unknown): Selection | null {
     scene.atmosphere.every(text) &&
     (scene.centrepiece === null || text(scene.centrepiece)) &&
     (scene.lyrics === null || text(scene.lyrics));
-  return valid ? (scene as unknown as Selection) : null;
+  if (!valid) return null;
+  const { text: stored, ...rest } = scene;
+  const look = textLookOf(stored);
+  return { ...(rest as unknown as Selection), ...(look ? { text: look } : {}) };
 }
 
 function read(): VisualSettings {

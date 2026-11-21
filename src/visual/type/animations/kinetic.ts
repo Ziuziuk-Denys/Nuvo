@@ -38,7 +38,7 @@ function layout(ctx: Ctx, texts: string[], stressed: boolean[], width: number, h
     const text = voice.upper ? raw.toUpperCase() : raw;
     if (stressed[i]) {
       ctx.font = fontFor(voice, 100);
-      const size = Math.min(0.36 * unit, (measure * scale * 100) / ctx.measureText(text).width);
+      const size = Math.min(0.36 * unit, (measure * Math.min(1, scale) * 100) / ctx.measureText(text).width);
       rows.push({ slots: [{ text, voice, size }], height: size * 0.9, used: 0 });
       open = null;
       return;

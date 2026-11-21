@@ -8,12 +8,14 @@ export function PercentField({
   min,
   max,
   label,
+  limits = [0, 100],
   onCommit,
 }: {
   value: number;
   min: number;
   max: number;
   label: string;
+  limits?: [number, number];
   onCommit(next: number): void;
 }): JSX.Element {
   const shown = String(toPercent(value, min, max));
@@ -24,7 +26,7 @@ export function PercentField({
     const parsed = Number.parseInt(draft, 10);
     setDraft(null);
     if (Number.isNaN(parsed)) return;
-    onCommit(min + (Math.min(100, Math.max(0, parsed)) / 100) * (max - min));
+    onCommit(min + (Math.min(limits[1], Math.max(limits[0], parsed)) / 100) * (max - min));
   };
 
   return (

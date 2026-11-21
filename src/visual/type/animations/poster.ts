@@ -76,7 +76,7 @@ export function posterPhrases(line: Line, lineIndex: number): PosterPhrase[] {
     });
 }
 
-function capsMark(line: Line, index: number, word: TimedWord, nowMs: number, box: Box, frame: Frame, measure: Measure): Mark {
+function capsMark(line: Line, index: number, word: TimedWord, nowMs: number, box: Box, frame: Frame, measure: Measure, scale: number): Mark {
   const text = word.text.trim().toUpperCase();
   const seed = hash(line.fromMs * 0.0137 + index * 7.31);
   const length = word.toMs - word.fromMs;
@@ -86,7 +86,7 @@ function capsMark(line: Line, index: number, word: TimedWord, nowMs: number, box
   const squeeze = tall ? SQUEEZE * 0.6 : SQUEEZE;
   const stretch = tall ? 1.25 : 1;
   const unit = Math.min(frame.width, frame.height);
-  const size = Math.min((big ? BIG : SMALL) * unit, (box.width * 100) / (measure(text, 100, CAPS) * squeeze), box.height / stretch);
+  const size = Math.min((big ? BIG : SMALL) * unit * scale, (box.width * 100) / (measure(text, 100, CAPS) * squeeze), box.height / stretch);
   return {
     text,
     voice: CAPS,
@@ -100,21 +100,21 @@ function capsMark(line: Line, index: number, word: TimedWord, nowMs: number, box
   };
 }
 
-function echoMark(text: string, box: Box, frame: Frame, measure: Measure): Mark {
+function echoMark(text: string, box: Box, frame: Frame, measure: Measure, scale: number): Mark {
   const y = box.y + box.height / 2;
   const unit = Math.min(frame.width, frame.height);
-  const size = Math.min(ECHO * unit, (frame.width * 0.92 * 100) / (measure(text, 100, CAPS) * ECHO_SQUEEZE), 2 * Math.min(y, frame.height - y));
+  const size = Math.min(ECHO * unit * scale, (frame.width * 0.92 * 100) / (measure(text, 100, CAPS) * ECHO_SQUEEZE), 2 * Math.min(y, frame.height - y));
   return { text, voice: CAPS, size, x: frame.width / 2, y, width: measure(text, size, CAPS) * ECHO_SQUEEZE, squeeze: ECHO_SQUEEZE, stretch: 1, echo: true };
 }
 
-function softMarks(words: string[], shown: number, complete: boolean, seedMs: number, box: Box, frame: Frame, measure: Measure): Mark[] {
+function softMarks(words: string[], shown: number, complete: boolean, seedMs: number, box: Box, frame: Frame, measure: Measure, scale: number): Mark[] {
   const cols = words.length === 4 ? 2 : words.length;
   const rowsOf = (items: string[]) => Array.from({ length: Math.ceil(items.length / cols) }, (_, row) => items.slice(row * cols, row * cols + cols));
   const em = (word: string) => measure(word, 100, SOFT) / 100;
   const natural = (row: string[]) => row.reduce((sum, word) => sum + em(word), 0) + GAP_EM * (row.length - 1);
   const full = rowsOf(words);
   const unit = Math.min(frame.width, frame.height);
-  const size = Math.min(ITALIC * unit, box.width / Math.max(...full.map(natural)), box.height / ((full.length - 1) * ROW_EM + 1));
+  const size = Math.min(ITALIC * unit * scale, box.width / Math.max(...full.map(natural)), box.height / ((full.length - 1) * ROW_EM + 1));
   const rows = rowsOf(words.slice(0, shown));
   const block = Math.max(...rows.map(natural)) * size;
   const left = box.x + (box.width - block) / 2;
@@ -132,10 +132,10 @@ function softMarks(words: string[], shown: number, complete: boolean, seedMs: nu
   });
   const longest = words.reduce((best, word) => (letters(word) >= letters(best) ? word : best), "");
   if (!complete || letters(longest) < 4 || hash(seedMs * 0.013 + 1.7) >= ECHO_SHARE) return marks;
-  return [echoMark(longest.toUpperCase(), box, frame, measure), ...marks];
+  return [echoMark(longest.toUpperCase(), box, frame, measure, scale), ...marks];
 }
 
-export function posterMarks(lines: Line[], nowMs: number, box: Box, frame: Frame, measure: Measure): Mark[] {
+export function posterMarks(lines: Line[], nowMs: number, box: Box, frame: Frame, measure: Measure, scale = 1): Mark[] {
   const phrase = phraseAt(lines, nowMs);
   if (!phrase || phrase.shown.length === 0) return [];
   const index = phrase.shown.length - 1;
@@ -145,10 +145,10 @@ export function posterMarks(lines: Line[], nowMs: number, box: Box, frame: Frame
       start += part.words.length;
       continue;
     }
-    if (!part.soft) return [capsMark(phrase.line, index, phrase.shown[index], nowMs, box, frame, measure)];
+    if (!part.soft) return [capsMark(phrase.line, index, phrase.shown[index], nowMs, box, frame, measure, scale)];
     const shown = index - start + 1;
     const texts = part.words.map((word) => word.text.trim());
-    return softMarks(texts, shown, shown === texts.length, part.words[0].fromMs, box, frame, measure);
+    return softMarks(texts, shown, shown === texts.length, part.words[0].fromMs, box, frame, measure, scale);
   }
   return [];
 }
@@ -158,13 +158,13 @@ export const poster: LyricAnimation = {
   leadMs: 50,
   weight: 1,
   zone: "centre",
-  draw({ ctx, lines, nowMs, width, height, box }) {
+  draw({ ctx, lines, nowMs, width, height, box, scale = 1 }) {
     const measure: Measure = (text, size, voice) => {
       ctx.font = fontFor(voice, size);
       return ctx.measureText(text).width;
     };
     ctx.textAlign = "center";
-    for (const mark of posterMarks(lines, nowMs, box, { width, height }, measure)) {
+    for (const mark of posterMarks(lines, nowMs, box, { width, height }, measure, scale)) {
       ctx.font = fontFor(mark.voice, mark.size);
       ctx.fillStyle = mark.echo ? ECHO_INK : "#fff";
       ctx.save();

@@ -1,6 +1,7 @@
 import { BANDS, WAVE, type Features } from "../signal/features";
 import { RING_POINTS, createRing } from "../signal/ring";
 import { evaluate } from "../template/bindings";
+import { inkOf } from "../template/text";
 import type { Aspect, Layer, Template } from "../template/schema";
 import { createProgram, createQuad, createTarget, createTexture, deleteTarget, getContext, uploadFloats, type GlCanvas, type Program, type Target } from "./gl";
 import type { Pulse, Signals } from "../type/animations/types";
@@ -279,6 +280,9 @@ export function createStage(canvas: GlCanvas): Stage | null {
       set3("uColorA", linear(custom.a));
       set3("uColorB", linear(custom.b));
     }
+    const ink = palette ? inkOf(template!.text, palette) : null;
+    set1("uInkOn", ink ? 1 : 0);
+    if (ink) set3("uInk", template!.text!.ink === "cover" ? ink : linear(ink));
     if (palette) {
       set3("uDeep", palette.deep);
       set3("uKey", palette.key);

@@ -21,6 +21,7 @@ import { subscribeSpectrum } from "./sound";
 export type { Quality };
 export { LUMA_COLS, LUMA_ROWS } from "@/visual/render/stage";
 export { drawWatermark } from "@/visual/watermark";
+export { TEXT_SIZE, textLookOf, type TextInk, type TextLook } from "@/visual/template/text";
 const AUDIO_BITS = 192_000;
 
 export function clipEstimate(aspect: Aspect, quality: Quality, fps: number, lenMs: number): { width: number; height: number; bytes: number } {
