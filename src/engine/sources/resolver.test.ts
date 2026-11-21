@@ -472,6 +472,24 @@ describe("FallbackBudget and youtubeCause", () => {
     expect(cause({ code: "all-failed", botCheck: false })).toBe("unavailable");
     expect(cause({ code: "all-failed", botCheck: false }, false)).toBe("offline");
   });
+
+  it("calls the connection refused only when no client got an answer, not when one video is refused", () => {
+    const cause = (attempts: unknown[]) => youtubeCause({ code: "all-failed", botCheck: false, attempts }, true).cause;
+    const kino = [
+      { client: "WEB_REMIX", code: "rejected-stream", status: 403 },
+      { client: "TVHTML5", code: "no-formats" },
+      { client: "ANDROID_VR", code: "rejected-stream", status: 403 },
+      { client: "VISIONOS", code: "worker-timeout" },
+    ];
+    expect(cause(kino)).toBe("unavailable");
+    expect(
+      cause([
+        { code: "rejected-stream", status: 403 },
+        { code: "http", status: 403 },
+      ]),
+    ).toBe("blocked");
+    expect(cause([{ code: "unreachable" }, { code: "worker-timeout" }])).toBe("blocked");
+  });
 });
 
 describe("best quality format", () => {

@@ -62,13 +62,22 @@ describe("error mapping through the front door", () => {
     expect(youtubeCause(new YtError("sign-in-required"), true).cause).toBe("sign_in_required");
   });
 
-  it("all clients failing with a 403 is blocked", async () => {
+  it("every client's stream refused with a 403 is blocked", async () => {
+    const { fake, youtube } = setup();
+    const formats = json(playerResponse({ formats: [format({ itag: 251 })] }));
+    fake.innertube("player", formats);
+    fake.innertube("player", formats, undefined, WWW);
+    fake.on("GET", (url) => url.startsWith(STREAM_HOST), text("", 403));
+    const cause = await failure(youtube);
+    expect([cause.cause, cause.detail.httpStatus]).toEqual(["blocked", 403]);
+  });
+
+  it("one client refused while the others answered is that video, not a blocked connection", async () => {
     const { fake, youtube } = setup();
     everyClient(fake, "UNPLAYABLE");
     fake.innertube("player", json(playerResponse({ formats: [format({ itag: 251 })] })), fromClient("WEB_REMIX"));
     fake.on("GET", (url) => url.startsWith(STREAM_HOST), text("", 403));
-    const cause = await failure(youtube);
-    expect([cause.cause, cause.detail.httpStatus]).toEqual(["blocked", 403]);
+    expect((await failure(youtube)).cause).toBe("unavailable");
   });
 
   it("all clients failing with a 429 is rate_limited", async () => {

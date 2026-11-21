@@ -142,13 +142,15 @@ export function youtubeCause(error: unknown, online: boolean): SourceFailure {
       return new SourceFailure("timeout");
     case "all-failed": {
       if (yt.botCheck) return new SourceFailure("sign_in_required", { botCheck: true });
-      const statuses = (Array.isArray(yt.attempts) ? yt.attempts : []).map((attempt) => attempt?.status);
-      if (statuses.includes(403)) return new SourceFailure("blocked", { httpStatus: 403 });
-      if (statuses.includes(429)) return new SourceFailure("rate_limited");
       if (!online) return new SourceFailure("offline");
+      // One client answering means the connection works: a 403 on one stream is that video, not a blocked network
       const attempts = (Array.isArray(yt.attempts) ? yt.attempts : []).filter((attempt) => attempt?.code !== "paused");
-      const silent = attempts.length > 0 && attempts.every((attempt) => attempt?.code === "unreachable" || attempt?.code === "worker-timeout");
-      return new SourceFailure(silent ? "blocked" : "unavailable");
+      const every = (check: (attempt: { code: string; status?: number }) => boolean) => attempts.length > 0 && attempts.every(check);
+      if (every((attempt) => attempt?.status === 403 || attempt?.status === 429) && attempts.some((attempt) => attempt?.status === 403))
+        return new SourceFailure("blocked", { httpStatus: 403 });
+      if (attempts.some((attempt) => attempt?.status === 429)) return new SourceFailure("rate_limited");
+      if (every((attempt) => attempt?.code === "unreachable" || attempt?.code === "worker-timeout")) return new SourceFailure("blocked");
+      return new SourceFailure("unavailable");
     }
     default:
       return new SourceFailure(online ? "unavailable" : "offline");
