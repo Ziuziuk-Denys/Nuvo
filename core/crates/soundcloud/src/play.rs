@@ -221,6 +221,17 @@ impl SoundCloud {
         if let Some(reason) = self.known_unplayable(num) {
             return Err(ScError::Unplayable(reason));
         }
+        let result = self.resolve_fresh(num, sink, live).await;
+        // A DRM verdict comes from the served playlist, which can change; the others come from the track itself
+        if let Err(ScError::Unplayable(reason)) = &result
+            && *reason != Reason::Drm
+        {
+            self.note(num, *reason);
+        }
+        result
+    }
+
+    async fn resolve_fresh(&self, num: u64, sink: &mut impl AudioSink, live: bool) -> Result<Playable, ScError> {
         if let Some(cached) = self.cached_direct(num, live) {
             return Ok(cached);
         }
@@ -300,17 +311,21 @@ impl SoundCloud {
     }
 
     pub(crate) fn note_unplayable(&self, records: &[Value]) {
+        for record in records {
+            if let (Some(num), Some(reason)) = (record.get("id").and_then(Value::as_u64), unplayable(record)) {
+                self.note(num, reason);
+            }
+        }
+    }
+
+    fn note(&self, num: u64, reason: Reason) {
         let now = now_ms();
         let mut known = self.inner.unplayable.lock().unwrap();
         known.retain(|_, (_, at)| now - *at < UNPLAYABLE_KEPT_MS);
-        for record in records {
-            if let (Some(num), Some(reason)) = (record.get("id").and_then(Value::as_u64), unplayable(record)) {
-                if known.len() >= DIRECT_CACHE_LIMIT {
-                    known.clear();
-                }
-                known.insert(num, (reason, now));
-            }
+        if known.len() >= DIRECT_CACHE_LIMIT {
+            known.clear();
         }
+        known.insert(num, (reason, now));
     }
 
     fn known_unplayable(&self, num: u64) -> Option<Reason> {

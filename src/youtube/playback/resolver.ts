@@ -357,7 +357,7 @@ export class StreamResolver {
         } else {
           fail(name, lane.error);
         }
-        if (running.size === 0) launch();
+        if (running.size < MAX_LANES) launch();
       }
     } finally {
       for (const stop of stops) stop.abort();

@@ -520,3 +520,48 @@ describe("SoundCloud live start", () => {
     expect(s.daemon.scLive).not.toHaveBeenCalled();
   });
 });
+
+describe("a slow SoundCloud start", () => {
+  it("looks up its YouTube stand-in meanwhile, and the fallback uses that answer", async () => {
+    const s = setup({
+      sc: () => new Promise((_, reject) => setTimeout(() => reject(new Error("no format")), 1000)),
+      match: async (target) => (target === "youtube" ? { track: track(yid("y")), score: 95 } : null),
+    });
+    const pending = s.resolver.resolve(track("sc:1"), opts({ early: true }));
+    await vi.advanceTimersByTimeAsync(600);
+    expect(s.approvedOn).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(500);
+    const resolved = await pending;
+    expect(resolved.fallback?.usedSource).toBe("youtube");
+    expect(s.approvedOn).toHaveBeenCalledTimes(1);
+  });
+
+  it("a SoundCloud start that answers in time asks for no stand-in, and a late answer stops it", async () => {
+    const fast = setup({
+      sc: async () => ({ kind: "direct", url: "https://sc/x", expiresAt: null, codec: "mp3", mimeType: "audio/mpeg", bitrate: 128_000, contentLength: null }),
+    });
+    await fast.resolver.resolve(track("sc:1"), opts({ early: true }));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fast.approvedOn).not.toHaveBeenCalled();
+
+    let seen: AbortSignal | undefined;
+    const slow = setup({
+      sc: () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({ kind: "direct", url: "https://sc/x", expiresAt: null, codec: "mp3", mimeType: "audio/mpeg", bitrate: 128_000, contentLength: null }),
+            800,
+          ),
+        ),
+    });
+    slow.approvedOn.mockImplementation(async (_t, _track, signal) => {
+      seen = signal;
+      return new Promise(() => undefined);
+    });
+    const pending = slow.resolver.resolve(track("sc:1"), opts({ early: true }));
+    await vi.advanceTimersByTimeAsync(900);
+    expect((await pending).stream.source).toBe("soundcloud");
+    expect(seen?.aborted).toBe(true);
+  });
+});

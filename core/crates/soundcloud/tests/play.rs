@@ -519,3 +519,14 @@ async fn a_track_search_showed_without_a_usable_format_is_refused_without_asking
     assert_eq!(sc.resolve("sc:1", &mut Vec::new()).await, Err(ScError::Unplayable(Reason::NoFormat)));
     assert_eq!(fx.total(), before);
 }
+
+#[tokio::test]
+async fn a_refused_track_is_refused_again_without_asking() {
+    let mut blocked = record(vec![tc("prog", "progressive", "audio/mpeg", "mp3_1_0")]);
+    blocked["policy"] = json!("BLOCK");
+    let (fx, sc) = ready(blocked).await;
+    assert_eq!(sc.resolve("sc:1", &mut Vec::new()).await, Err(ScError::Unplayable(Reason::RegionBlocked)));
+    let before = fx.total();
+    assert_eq!(sc.resolve("sc:1", &mut Vec::new()).await, Err(ScError::Unplayable(Reason::RegionBlocked)));
+    assert_eq!(fx.total(), before);
+}
