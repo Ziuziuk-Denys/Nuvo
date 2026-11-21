@@ -50,6 +50,7 @@ export interface UpdaterDeps {
   backend: UpdateBackend;
   mode: UpdateMode;
   enabled: () => boolean;
+  checks: () => boolean;
   emit: (view: UpdateView) => void;
   log: (message: string, error?: unknown) => void;
 }
@@ -78,7 +79,7 @@ export class Updater {
   }
 
   start(): void {
-    if (this.deps.mode === "off") return;
+    if (this.deps.mode === "off" || !this.deps.checks()) return;
     this.stopTimer();
     this.timer = setTimeout(() => void this.check(this.deps.enabled()), FIRST_CHECK_MS);
     this.timer.unref?.();
@@ -164,9 +165,14 @@ export class Updater {
     return this.phase === "idle" || this.phase === "latest" || this.phase === "error";
   }
 
+  checksChanged(): void {
+    if (this.deps.checks()) this.schedule(FIRST_CHECK_MS);
+    else this.stopTimer();
+  }
+
   private schedule(delayMs: number): void {
     this.stopTimer();
-    if (!this.checkable() || !this.deps.enabled()) return;
+    if (!this.checkable() || !this.deps.enabled() || !this.deps.checks()) return;
     this.timer = setTimeout(() => void this.check(), delayMs);
     this.timer.unref?.();
   }

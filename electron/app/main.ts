@@ -293,6 +293,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       installed: fs.existsSync(path.join(path.dirname(process.execPath), "Uninstall Nuvo.exe")),
     }),
     enabled: () => settings.value.autoUpdate,
+    checks: () => settings.value.updateCheck,
     backend: {
       check: async () => (await backend()).check(),
       download: async (onProgress) => (await backend()).download(onProgress),
@@ -523,6 +524,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       if (result.ok && key === "discord") discord.setEnabled(settings.value.discord.enabled);
       if (result.ok && key === "proxy") void applyProxy();
       if (result.ok && key === "autoUpdate") updater.setEnabled(settings.value.autoUpdate);
+      if (result.ok && key === "updateCheck") updater.checksChanged();
       if (result.ok && key === "menuEntry") void syncMenuEntry();
       if (result.ok && key === "keepInTray") tray?.sync();
       return result;

@@ -7,7 +7,7 @@ import { matchesQuery } from "./sections";
 import styles from "./sections.module.css";
 import { DonateLink } from "./DonateLink";
 import { HelpLinks, ReleaseNotes } from "./HelpSheets";
-import { AutoUpdateRow, UpdateStatus } from "./UpdateRows";
+import { AutoUpdateRow, UpdateCheckRow, UpdateStatus } from "./UpdateRows";
 import { CommunityLinks } from "./CommunityLinks";
 
 // required by the AGPL section 7(b) term in NOTICE; a legal notice, so it is never translated
@@ -56,6 +56,7 @@ export function UpdatesSection(): JSX.Element {
   return (
     <>
       <SettingGroup>
+        <UpdateCheckRow />
         <AutoUpdateRow />
         <UpdateStatus />
       </SettingGroup>

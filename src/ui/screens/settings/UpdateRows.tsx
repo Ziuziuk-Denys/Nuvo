@@ -2,11 +2,19 @@ import { useEffect, useState, type CSSProperties, type JSX } from "react";
 import { Button } from "../../components/Button";
 import { useTranslation } from "../../ports/i18n";
 import { useAppVersion } from "../../ports/settings";
-import { checkForUpdate, installUpdate, openReleasePage, readAutoUpdate, readUpdate, watchUpdate, writeAutoUpdate, type UpdateView } from "../../ports/system";
+import {
+  checkForUpdate,
+  installUpdate,
+  openReleasePage,
+  readUpdate,
+  readUpdateSetting,
+  watchUpdate,
+  writeUpdateSetting,
+  type UpdateSetting,
+  type UpdateView,
+} from "../../ports/system";
 import { SettingBlock, SettingRow, Switch } from "./controls";
 import styles from "./sections.module.css";
-
-const TITLE = "ui.settings.auto_update.title";
 
 function useUpdateView(): UpdateView | null {
   const [view, setView] = useState<UpdateView | null>(null);
@@ -97,13 +105,21 @@ export function UpdateStatus(): JSX.Element | null {
 }
 
 export function AutoUpdateRow(): JSX.Element | null {
+  return <UpdateSwitchRow setting="autoUpdate" base="ui.settings.auto_update" />;
+}
+
+export function UpdateCheckRow(): JSX.Element | null {
+  return <UpdateSwitchRow setting="updateCheck" base="ui.settings.launch_check" />;
+}
+
+function UpdateSwitchRow({ setting, base }: { setting: UpdateSetting; base: string }): JSX.Element | null {
   const { t } = useTranslation();
   const [on, setOn] = useState<boolean | null>(null);
   const [mode, setMode] = useState<UpdateView["mode"]>("off");
 
   useEffect(() => {
     let live = true;
-    void Promise.all([readUpdate(), readAutoUpdate()]).then(([view, value]) => {
+    void Promise.all([readUpdate(), readUpdateSetting(setting)]).then(([view, value]) => {
       if (!live) return;
       setMode(view?.mode ?? "off");
       setOn(value);
@@ -111,26 +127,27 @@ export function AutoUpdateRow(): JSX.Element | null {
     return () => {
       live = false;
     };
-  }, []);
+  }, [setting]);
 
   if (mode === "off" || on === null) return null;
-  const description = mode === "install" ? "ui.settings.auto_update.description" : "ui.settings.auto_update.description_notify";
+  const title = `${base}.title`;
+  const description = mode === "notify" && setting === "autoUpdate" ? `${base}.description_notify` : `${base}.description`;
 
   const change = (next: boolean) => {
     setOn(next);
-    void writeAutoUpdate(next).then((ok) => {
+    void writeUpdateSetting(setting, next).then((ok) => {
       if (!ok) setOn(!next);
     });
   };
 
   return (
     <SettingRow
-      title={t(TITLE)}
+      title={t(title)}
       description={t(description)}
-      titleKey={TITLE}
+      titleKey={title}
       descKey={description}
       explained
-      control={<Switch checked={on} label={t(TITLE)} onChange={change} />}
+      control={<Switch checked={on} label={t(title)} onChange={change} />}
     />
   );
 }

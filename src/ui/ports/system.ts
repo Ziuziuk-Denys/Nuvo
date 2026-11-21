@@ -174,12 +174,14 @@ export async function writeDiscord(enabled: boolean): Promise<boolean> {
   return result?.ok === true;
 }
 
-export async function readAutoUpdate(): Promise<boolean | null> {
+export type UpdateSetting = "autoUpdate" | "updateCheck";
+
+export async function readUpdateSetting(key: UpdateSetting): Promise<boolean | null> {
   const settings = await window.nuvoShell?.getMainSettings().catch(() => null);
-  return settings ? settings.autoUpdate : null;
+  return settings ? settings[key] : null;
 }
 
-export async function writeAutoUpdate(on: boolean): Promise<boolean> {
-  const result = await window.nuvoShell?.setMainSetting("autoUpdate", on).catch(() => null);
+export async function writeUpdateSetting(key: UpdateSetting, on: boolean): Promise<boolean> {
+  const result = await window.nuvoShell?.setMainSetting(key, on).catch(() => null);
   return result?.ok === true;
 }

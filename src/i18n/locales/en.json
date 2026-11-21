@@ -1036,8 +1036,8 @@
         "failed": "The passphrase could not be saved. Try again."
       },
       "auto_update": {
-        "description": "Nuvo checks at every launch and every few hours, downloads new versions in the background and installs them when you quit",
-        "description_notify": "Nuvo checks at every launch and every few hours and offers new versions",
+        "description": "Downloads new versions in the background and installs them when you quit",
+        "description_notify": "Offers new versions as soon as Nuvo finds them",
         "title": "Update automatically"
       },
       "update_available": "Version {version} is available",
@@ -1106,7 +1106,11 @@
         "down": "The problem is on their side. Try again later."
       },
       "update_now": "Update",
-      "update_download_desc": "Downloads in the background, then asks to restart"
+      "update_download_desc": "Downloads in the background, then asks to restart",
+      "launch_check": {
+        "title": "Check for updates at launch",
+        "description": "Nuvo asks github.com for a new version when it starts. When off, it asks only when you press Check now."
+      }
     },
     "status": {
       "failed": "Your library stopped",
