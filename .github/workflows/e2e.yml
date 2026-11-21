@@ -65,6 +65,7 @@ jobs:
             "smoke 2/2")
               e2e e2e/ui/settings.e2e.ts e2e/ui/theme-picker.e2e.ts || status=1
               e2e e2e/ui/visual.e2e.ts -t "at 60 fps" || status=1
+              e2e e2e/ui/home-overlays.e2e.ts || status=1
               ;;
             *)
               # coldstart needs live YouTube radio, which throttles runner addresses; a real break fails both tries
