@@ -31,7 +31,6 @@ import { useCustomizationStore } from "../../ports/settings";
 import { useAbLoopStore, useSleepTimer } from "../../ports/sound";
 import { useDownloadProgress } from "../../ports/exports";
 import { DislikeButton } from "../../recs/DislikeButton";
-import { DislikeHint } from "../../recs/DislikeHint";
 import { NotInterestedMenu } from "../../recs/NotInterestedMenu";
 import { useNotInterestedStore } from "../../recs/notInterested";
 import { reasonText } from "../../recs/reasonText";
@@ -268,7 +267,6 @@ export function Island(): JSX.Element | null {
           {line?.kind === "notice" ? line.text : ""}
         </span>
         <UndoNotice />
-        <DislikeHint />
         {player.outputSilent === "system_muted" ? (
           <Button variant="text" size="s" className={styles.unmute} onClick={() => void playerOutputs.unmute()}>
             {t("ui.island.unmute")}
