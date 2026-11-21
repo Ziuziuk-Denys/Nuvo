@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@braccato/core@1.4.0': 46412e37ecfa50726122cf8a2bd4f49c6bfe8c6094db38fad5e1cf61d9c3c0d5
+
 importers:
 
   .:
@@ -17,7 +20,7 @@ importers:
     devDependencies:
       '@braccato/core':
         specifier: ^1.4.0
-        version: 1.4.0
+        version: 1.4.0(patch_hash=46412e37ecfa50726122cf8a2bd4f49c6bfe8c6094db38fad5e1cf61d9c3c0d5)
       '@braccato/parsers':
         specifier: ^0.2.1
         version: 0.2.1
@@ -2101,7 +2104,7 @@ snapshots:
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.3
 
-  '@braccato/core@1.4.0':
+  '@braccato/core@1.4.0(patch_hash=46412e37ecfa50726122cf8a2bd4f49c6bfe8c6094db38fad5e1cf61d9c3c0d5)':
     dependencies:
       '@braccato/types': 1.0.0
 

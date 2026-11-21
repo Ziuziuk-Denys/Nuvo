@@ -31,7 +31,7 @@ describe("ringAround", () => {
 describe("placeCallout", () => {
   it("goes under a target with room below, centred on it, the line straight down", () => {
     const ring = { x: 500, y: 100, width: 200, height: 40 };
-    const place = placeCallout(ring, size, area);
+    const place = placeCallout(ring, size, area)!;
     expect(place.side).toBe("below");
     expect(place.y).toBeGreaterThan(ring.y + ring.height);
     expect(place.x + size.width / 2).toBe(600);
@@ -41,7 +41,7 @@ describe("placeCallout", () => {
 
   it("flips above a target near the bottom", () => {
     const ring = { x: 500, y: 640, width: 200, height: 40 };
-    const place = placeCallout(ring, size, area);
+    const place = placeCallout(ring, size, area)!;
     expect(place.side).toBe("above");
     expect(place.y + size.height).toBeLessThan(ring.y);
     expect(inside(place, area)).toBe(true);
@@ -49,7 +49,7 @@ describe("placeCallout", () => {
 
   it("takes the asked side when it fits and is level with the target", () => {
     const ring = { x: 6, y: 120, width: 58, height: 52 };
-    const place = placeCallout(ring, size, area, "right");
+    const place = placeCallout(ring, size, area, "right")!;
     expect(place.side).toBe("right");
     expect(place.x).toBeGreaterThan(ring.x + ring.width);
     expect(place.from.y).toBe(place.to.y);
@@ -57,7 +57,7 @@ describe("placeCallout", () => {
 
   it("falls back from a side with no room", () => {
     const ring = { x: 1100, y: 300, width: 80, height: 40 };
-    const place = placeCallout(ring, size, area, "right");
+    const place = placeCallout(ring, size, area, "right")!;
     expect(place.side).not.toBe("right");
     expect(inside(place, area)).toBe(true);
   });
@@ -65,15 +65,24 @@ describe("placeCallout", () => {
   it("goes beside the panel a target sits in, not on top of it", () => {
     const panel = { x: 620, y: 200, width: 560, height: 420 };
     const ring = { x: 626, y: 206, width: 548, height: 408 };
-    const place = placeCallout(ring, size, area, "left", panel);
+    const place = placeCallout(ring, size, area, "left", panel)!;
     expect(place.side).toBe("left");
     expect(place.x + size.width).toBeLessThanOrEqual(panel.x);
+  });
+
+  it("never falls to the side opposite the one a step names, where its next controls are", () => {
+    const panel = { x: 90, y: 32, width: 920, height: 640 };
+    const ring = { x: 370, y: 80, width: 588, height: 365 };
+    expect(placeCallout(ring, size, { top: 0, bottom: 620, width: 1100 }, "above", panel)).toBeNull();
+    const wide = placeCallout(ring, size, { top: 0, bottom: 620, width: 1400 }, "above", panel);
+    expect(wide?.side).toBe("right");
+    expect(wide!.x).toBeGreaterThanOrEqual(panel.x + panel.width);
   });
 
   it("never covers the target, even in a tight window", () => {
     const small = { top: 0, bottom: 400, width: 500 };
     const ring = { x: 20, y: 20, width: 460, height: 300 };
-    const place = placeCallout(ring, size, small);
+    const place = placeCallout(ring, size, small)!;
     const overlaps = place.x < ring.x + ring.width && ring.x < place.x + size.width && place.y < ring.y + ring.height && ring.y < place.y + size.height;
     expect(overlaps).toBe(false);
   });

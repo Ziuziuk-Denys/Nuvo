@@ -1,0 +1,16 @@
+diff --git a/dist/engine.js b/dist/engine.js
+index 69c50748739e6eeb286ee9503aaf42ff25de4072..04d5d7f4061437203516e7013732f1a40fdb61ba 100644
+--- a/dist/engine.js
++++ b/dist/engine.js
+@@ -1514,8 +1514,10 @@ export function tickView(engine, currentTime, options) {
+     }
+     const timeJumped = Math.abs(currentTime - playbackClock.lastTime - (eventCreationTime - playbackClock.lastEventCreationTime) / 1000) >
+         TIME_JUMP_THRESHOLD;
+-    if (timeJumped)
++    if (timeJumped) {
+         dropPendingLineScroll(engine);
++        engine.nextScrollAllowedTime = 0;
++    }
+     playbackClock.lastTime = currentTime;
+     playbackClock.lastPlayState = isPlaying;
+     playbackClock.lastEventCreationTime = eventCreationTime;
