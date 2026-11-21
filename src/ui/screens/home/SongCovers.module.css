@@ -85,3 +85,13 @@
     transition: none;
   }
 }
+
+.waiting {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+}
+
+.blank {
+  background: var(--n-fill);
+}

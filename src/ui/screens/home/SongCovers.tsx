@@ -1,6 +1,7 @@
 import type { CSSProperties, JSX, MouseEvent, ReactNode } from "react";
 import { Button } from "../../components/Button";
 import { Cover } from "../../components/Cover";
+import { coverRadius } from "../../geometry";
 import { Icon } from "../../icons/Icon";
 import type { IconName } from "../../icons";
 import { useTranslation } from "../../ports/i18n";
@@ -38,6 +39,27 @@ function SongCard({ track, size, index, onPlay, onContextMenu }: SongCardProps):
       <span className={shelf.name}>{track.title}</span>
       <span className={shelf.subtitle}>{track.artists}</span>
     </button>
+  );
+}
+
+const WAITING_CARDS = 8;
+
+export function ShelfPlaceholder({ name, title, icon, size }: { name: string; title: string; icon: IconName; size: number }): JSX.Element {
+  return (
+    <section className={shelf.shelf} aria-label={title} aria-busy="true" data-shelf-waiting={name}>
+      <ShelfHeading icon={icon} title={title} />
+      <div className={shelf.row} aria-hidden="true">
+        <div className={styles.covers}>
+          {Array.from({ length: WAITING_CARDS }, (_, index) => (
+            <span key={index} className={styles.waiting} style={{ width: size }}>
+              <span className={styles.blank} style={{ height: size, borderRadius: coverRadius(size) }} />
+              <span className={shelf.name}>&nbsp;</span>
+              <span className={shelf.subtitle}>&nbsp;</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
