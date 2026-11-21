@@ -71,10 +71,10 @@ export function Home(): JSX.Element | null {
   if (mixes === null) return null;
   const open = (href: string) => navigateWithTransition(navigate, href);
 
-  const sections: Array<{ key: string; node: ReactNode }> = [];
+  const sections: Array<{ key: string; node: ReactNode; own?: boolean }> = [];
   const starter = !offline && mixes.length === 0;
   if (starter) {
-    sections.push({ key: "cold-start", node: <ColdStartSlot /> });
+    sections.push({ key: "cold-start", node: <ColdStartSlot />, own: true });
     for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
   }
   if (mixes.length > 0) {
@@ -127,11 +127,15 @@ export function Home(): JSX.Element | null {
 
   return (
     <div className={styles.home} data-offline={offline ? "" : undefined}>
-      {sections.map((section, index) => (
-        <Enter key={section.key} index={index} screen="home">
-          {section.node}
-        </Enter>
-      ))}
+      {sections.map((section, index) =>
+        section.own ? (
+          <div key={section.key}>{section.node}</div>
+        ) : (
+          <Enter key={section.key} index={index} screen="home">
+            {section.node}
+          </Enter>
+        ),
+      )}
       <HiddenLinkSlot />
     </div>
   );

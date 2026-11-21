@@ -14,7 +14,6 @@ const mocks = vi.hoisted(() => ({
   openSettingsSection: vi.fn(),
   openImport: vi.fn(),
   addMusic: vi.fn(),
-  addFolder: vi.fn(),
   warmHome: vi.fn(),
   changed: new EventTarget(),
 }));
@@ -27,8 +26,8 @@ vi.mock("../../ports/recs", async () => {
     warmHome: mocks.warmHome,
   };
 });
-vi.mock("../imports/importsUi", () => ({ useImportsUi: { getState: () => ({ openImport: mocks.openImport }) } }));
-vi.mock("../local/addMusic", () => ({ useAddMusic: () => mocks.addMusic, useAddFolder: () => mocks.addFolder }));
+vi.mock("../../ports/importSources", () => ({ openImportSheet: mocks.openImport }));
+vi.mock("../local/addMusic", () => ({ useAddMusic: () => mocks.addMusic }));
 vi.mock("../../ports/navigation", () => ({
   useModalStore: { getState: () => ({ openSearch: mocks.openSearch, openSettingsSection: mocks.openSettingsSection }) },
 }));
@@ -52,17 +51,26 @@ afterEach(() => {
 const button = (text: string) => [...host.querySelectorAll("button")].find((b) => b.textContent === text);
 
 describe("ColdStart", () => {
-  it("brings music in without asking for a taste: Import leads, files and a folder follow", async () => {
+  it("rises line by line on the first visit only", async () => {
     await act(async () => root.render(<ColdStart />));
-    expect(host.querySelector("[data-bring]")?.textContent).toContain("ui.home.bring.title");
-    expect(host.querySelector("[data-bring]")?.getAttribute("data-tour")).toBe("home-start");
-    expect(host.querySelector(".primary, [class*=primary]")?.textContent).toBe("ui.library.import");
-    act(() => button("ui.library.import")!.click());
-    expect(mocks.openImport).toHaveBeenCalledOnce();
-    act(() => button("ui.local.add_files")!.click());
+    expect([...host.querySelectorAll(".n-enter")].map((node) => (node as HTMLElement).style.getPropertyValue("--n-i"))).toEqual(["0", "1", "2", "3"]);
+    act(() => root.unmount());
+    root = createRoot(host);
+    await act(async () => root.render(<ColdStart />));
+    expect(host.querySelectorAll(".n-enter")).toHaveLength(0);
+  });
+
+  it("reads as one phrase whose parts are the actions: each source opens its import, the dark part adds files", async () => {
+    await act(async () => root.render(<ColdStart />));
+    const bring = host.querySelector("[data-bring]")!;
+    expect(bring.getAttribute("data-tour")).toBe("home-start");
+    expect(bring.textContent).toBe(
+      "ui.home.bring.titleui.home.bring.fromui.tour.start.sources.spotifyui.tour.start.sources.appleui.tour.start.sources.youtubeui.home.bring.orui.home.bring.filesui.home.bring.drop",
+    );
+    act(() => button("ui.tour.start.sources.apple")!.click());
+    expect(mocks.openImport).toHaveBeenCalledWith("apple");
+    act(() => button("ui.home.bring.files")!.click());
     expect(mocks.addMusic).toHaveBeenCalledOnce();
-    act(() => button("ui.local.add_folder")!.click());
-    expect(mocks.addFolder).toHaveBeenCalledOnce();
   });
 
   it("shows Home being built after picks from the tour", async () => {

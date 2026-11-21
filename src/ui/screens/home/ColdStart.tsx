@@ -1,14 +1,17 @@
 import type { CSSProperties, JSX } from "react";
-import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
+import { useFirstVisit } from "../../components/Enter";
+import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
+import { openImportSheet } from "../../ports/importSources";
 import { useModalStore } from "../../ports/navigation";
 import { useWarmup, warmHome } from "../../ports/recs";
-import { useAddFolder, useAddMusic } from "../local/addMusic";
-import { useImportsUi } from "../imports/importsUi";
+import { ServiceMark } from "../../tour/ServiceMark";
+import { useAddMusic } from "../local/addMusic";
 import styles from "./ColdStart.module.css";
 
 const OUTLINE_CARDS = 4;
+const IMPORT_LINKS = ["spotify", "apple", "youtube"] as const;
 
 function Building(): JSX.Element {
   const { t } = useTranslation();
@@ -27,22 +30,35 @@ function Building(): JSX.Element {
 function BringMusic(): JSX.Element {
   const { t } = useTranslation();
   const addMusic = useAddMusic();
-  const addFolder = useAddFolder();
+  const first = useFirstVisit("home-bring");
+  const rise = (className: string, index: number) =>
+    first ? { className: `${className} n-enter`, style: { "--n-i": index } as CSSProperties } : { className };
   return (
     <section className={styles.bring} aria-labelledby="bring-title" data-bring="" data-tour="home-start">
-      <h2 id="bring-title" className={styles.title}>
+      <h2 id="bring-title" {...rise(styles.title, 0)}>
         {t("ui.home.bring.title")}
       </h2>
-      <p className={styles.message}>{t("ui.home.bring.message")}</p>
-      <div className={styles.actions}>
-        <Button variant="primary" onClick={() => useImportsUi.getState().openImport()}>
-          {t("ui.library.import")}
-        </Button>
-        <Button onClick={() => void addMusic()}>{t("ui.local.add_files")}</Button>
-        <Button variant="text" onClick={() => void addFolder()}>
-          {t("ui.local.add_folder")}
-        </Button>
+      <div className={styles.phrase}>
+        <p {...rise(styles.line, 1)}>
+          <span>{t("ui.home.bring.from")}</span>
+          <span className={styles.sources}>
+            {IMPORT_LINKS.map((source) => (
+              <button key={source} type="button" className={styles.chip} data-source={source} onClick={() => void openImportSheet(source)}>
+                <ServiceMark source={source} size={16} />
+                {t(`ui.tour.start.sources.${source}`)}
+              </button>
+            ))}
+          </span>
+        </p>
+        <p {...rise(styles.line, 2)}>
+          <span>{t("ui.home.bring.or")}</span>
+          <button type="button" className={`${styles.chip} ${styles.files}`} onClick={() => void addMusic()}>
+            <Icon name="folder-add" size={16} />
+            {t("ui.home.bring.files")}
+          </button>
+        </p>
       </div>
+      <p {...rise(styles.hint, 3)}>{t("ui.home.bring.drop")}</p>
     </section>
   );
 }

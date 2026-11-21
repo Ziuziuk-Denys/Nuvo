@@ -181,8 +181,11 @@
       "mood_bright": "Bright",
       "mood_late_night": "Late night",
       "bring": {
-        "title": "Bring your music",
-        "message": "Import playlists from Spotify, Apple Music, YouTube and more, or add files from this computer. Until then, here is what people play."
+        "title": "Everything you listen to, in one place",
+        "from": "Bring your playlists from",
+        "or": "or",
+        "files": "add files from this computer",
+        "drop": "You can also drop songs and folders anywhere in the window"
       },
       "genre": {
         "russian": "Russian hits",
