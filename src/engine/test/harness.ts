@@ -377,7 +377,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     now: () => Date.now(),
     random: seededRandom(options.seed ?? 42),
     newId: () => `e${++ids}`,
-    notify: (notice) => notices.push(notice.text),
+    notify: (notice) => notices.push("key" in notice ? notice.key : notice.text),
     askForSignIn: () => {
       harness.signIns += 1;
     },

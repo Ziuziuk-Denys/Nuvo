@@ -379,7 +379,31 @@
       "volume": "Volume",
       "keep_version": "Keep this version",
       "reject_version": "Not this one",
-      "stand_in_hint": "Right-click to keep or refuse this version."
+      "stand_in_hint": "Right-click to keep or refuse this version.",
+      "skipped": {
+        "refused": "{title} skipped. YouTube refuses this connection; try another network or check your proxy.",
+        "offline": "{title} skipped. You are offline.",
+        "offline_mode": "{title} skipped. Offline mode is on.",
+        "timeout": "{title} skipped. No source answered in time; it will be tried again later.",
+        "drm": "{title} skipped. It is protected.",
+        "sign_in_required": "{title} skipped. It needs sign-in.",
+        "blocked": "{title} skipped. It is blocked.",
+        "stall": "{title} skipped. It stalled.",
+        "media_error": "{title} skipped. It could not be decoded.",
+        "unavailable": "{title} skipped. No source could play it."
+      },
+      "fallback_hover": "{source}: {reason}. Matched by title, artist and length (score {score}). May be a different recording.",
+      "fallback_restarted": "Restarted: different length.",
+      "fallback_reason": {
+        "drm": "protected",
+        "sign_in_required": "needs sign-in",
+        "blocked": "blocked",
+        "timeout": "timed out",
+        "stall": "stalled",
+        "http_403": "refused this connection",
+        "media_error": "could not be decoded",
+        "unavailable": "unavailable"
+      }
     },
     "library": {
       "clear_filter": "Clear filter",

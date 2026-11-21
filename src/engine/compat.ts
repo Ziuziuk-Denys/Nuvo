@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { clock, nextRepeat, outputs, player, soundBus } from "./index";
 import { gainFromSlider, sliderFromGain } from "./tempo";
 import type { SpectrumListener } from "./audio/spectrum";
-import { fallbackHover, sourceLabel } from "./stateLine";
+import { fallbackReason, sourceLabel } from "./stateLine";
 import { streamFormat } from "./streamFormat";
 import { isStation, type PlayerView, type RepeatMode, type Track, type TuningState } from "./types";
 
@@ -258,7 +258,7 @@ export const playerRuntime = {
   rejectVersion: (trackId: string) => player().rejectAlternative(trackId),
   currentFallback: () => {
     const fallback = player().getView().fallback;
-    return fallback ? { source: sourceLabel(fallback.usedSource), restarted: fallback.restarted, hover: fallbackHover(fallback) } : null;
+    return fallback ? { source: sourceLabel(fallback.usedSource), restarted: fallback.restarted, reason: fallbackReason(fallback) } : null;
   },
   setSleepFade: (multiplier: number) => soundBus().setSleepLevel(multiplier),
   applyPlaybackRateAndPitch: () => undefined,

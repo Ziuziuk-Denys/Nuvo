@@ -59,7 +59,9 @@ vi.mock("../../ports/karaoke", () => ({
 }));
 const unmuteOutput = vi.hoisted(() => vi.fn(async () => undefined));
 const dislike = vi.hoisted(() => vi.fn(async () => ({ suppressionId: 1, offerHideArtist: false })));
-const standIn = vi.hoisted(() => ({ current: null as { source: string; restarted: boolean; hover: string } | null }));
+const standIn = vi.hoisted(() => ({
+  current: null as { source: string; restarted: boolean; reason: { key: string; vars: Record<string, string | number> } } | null,
+}));
 const keepVersion = vi.hoisted(() => vi.fn(async () => true));
 const rejectVersion = vi.hoisted(() => vi.fn(async (_id: string) => undefined));
 
@@ -254,7 +256,11 @@ describe("Island", () => {
   });
 
   it("says quietly when another source stands in and offers to keep or refuse it", () => {
-    standIn.current = { source: "SoundCloud", restarted: false, hover: "" };
+    standIn.current = {
+      source: "SoundCloud",
+      restarted: false,
+      reason: { key: "ui.island.fallback_hover", vars: { source: "YouTube", reason: "unavailable", score: 90 } },
+    };
     mount();
     expect(document.querySelector("[data-state-line]")?.textContent).toContain("ui.island.state.played_from");
     const open = () =>

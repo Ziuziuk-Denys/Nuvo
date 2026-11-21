@@ -326,7 +326,7 @@ describe("a blocked source", () => {
     h.deck.emit("error", { error: { code: 2, httpStatus: 403 } });
     await flush();
     expect(view(h).notice).toMatchObject({ kind: "skipped", cause: "blocked" });
-    expect(h.notices[0]).toContain("YouTube refuses");
+    expect(h.notices[0]).toBe("ui.island.skipped.refused");
   });
 });
 

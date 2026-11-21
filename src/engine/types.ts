@@ -191,3 +191,5 @@ export function primarySource(id: string): SourceKind {
   const kind = idKind(id);
   return kind === "soundcloud" || kind === "local" ? kind : "youtube";
 }
+
+export type PlayerNotice = { kind: "error" | "info"; detail?: string } & ({ text: string } | { key: string; vars: Record<string, string | number> });

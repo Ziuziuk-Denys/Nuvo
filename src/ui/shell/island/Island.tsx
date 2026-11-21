@@ -195,7 +195,11 @@ export function Island(): JSX.Element | null {
   };
   const format = currentStreamFormat();
   const hint = standIn
-    ? `${standIn.hover} ${t("ui.island.stand_in_hint")}`
+    ? [
+        t(standIn.reason.key, { ...standIn.reason.vars, reason: t(`ui.island.fallback_reason.${standIn.reason.vars.reason}`) }),
+        ...(standIn.restarted ? [t("ui.island.fallback_restarted")] : []),
+        t("ui.island.stand_in_hint"),
+      ].join(" ")
     : cachedIds?.has(track.id)
       ? t("ui.island.cached")
       : format && format.bitrate > 0
