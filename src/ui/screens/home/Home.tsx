@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { Enter } from "../../components/Enter";
-import { usePageBackdrop } from "../../ports/backdrop";
 import { offlineMixes, offlineSongs } from "../../ports/homeShelves";
 import { useTranslation } from "../../ports/i18n";
 import { useLikedTrackCount, usePlaylistsList } from "../../ports/library";
@@ -14,7 +13,7 @@ import { useImportsUi } from "../imports/importsUi";
 import { useAddMusic } from "../local/addMusic";
 import { DiscoverArc } from "./discover/DiscoverArc";
 import { ringTracks } from "./discover/ring";
-import { arrangeMixes, likeArtists, mixText, mosaicCovers, starterGenres } from "./homeModel";
+import { arrangeMixes, likeArtists, mixText, starterGenres } from "./homeModel";
 import { MixCard } from "./MixCard";
 import { GenreShelf, LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
 import { ColdStartSlot, HiddenLinkSlot } from "./slots";
@@ -68,8 +67,7 @@ export function Home(): JSX.Element | null {
   const playlists = usePlaylistsList();
   const libraryEmpty = likedCount === 0 && !playlists.isLoading && playlists.data.playlists.length === 0;
   const mixes = offline ? (kept?.mixes ?? null) : all;
-  const ring = useMemo(() => (offline || !mixes ? [] : ringTracks(mixes)), [offline, mixes]);
-  usePageBackdrop(ring.length === 0 && mixes?.[0] ? mosaicCovers(mixes[0].tracks)[0] : undefined);
+  const ring = useMemo(() => (mixes ? ringTracks(mixes) : []), [mixes]);
 
   if (mixes === null) return null;
   const open = (href: string) => navigateWithTransition(navigate, href);

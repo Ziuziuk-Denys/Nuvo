@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { HomeMix, Track } from "../../../ports/recs";
 import { DISCOVER, FOR_YOU } from "../homeModel";
-import { MIN_TRACKS, place, ringFor, ringOffset, ringTracks } from "./ring";
+import { MIN_TRACKS, place, ringFor, ringOffset, ringSlots, ringTracks } from "./ring";
 
 const track = (id: string) => ({ id, title: id, artists: [], coverUrl: "" }) as unknown as Track;
 const mix = (id: string, ids: string[]) => ({ id, title: id, description: "", tracks: ids.map(track) }) as unknown as HomeMix;
@@ -20,9 +20,20 @@ describe("ringTracks", () => {
     expect(new Set(tracks.map((item) => item.id)).size).toBe(24);
   });
 
-  it("is empty without enough new tracks", () => {
-    expect(ringTracks([mix(FOR_YOU, ids("k", 25)), mix(DISCOVER, ids("n", MIN_TRACKS - 3))])).toEqual([]);
+  it("shows with the first taste: familiar songs fill the ring while new ones are few", () => {
+    const young = ringTracks([mix(FOR_YOU, ids("k", 25))]);
+    expect(young.map((item) => item.id)).toEqual(ids("k", MIN_TRACKS));
+    const some = ringTracks([mix(FOR_YOU, ids("k", 25)), mix(DISCOVER, ids("n", 3))]);
+    expect(some.map((item) => item.id)).toEqual(["n0", "n1", "n2", "k0", "k1", "k2", "k3", "k4"]);
+    expect(ringTracks([mix(FOR_YOU, ["k0", "k1"])])).toHaveLength(2);
     expect(ringTracks([])).toEqual([]);
+  });
+
+  it("repeats a short list so the ring is always full", () => {
+    expect(ringSlots(2)).toBe(MIN_TRACKS);
+    expect(ringSlots(3)).toBe(9);
+    expect(ringSlots(11)).toBe(11);
+    expect(ringSlots(0)).toBe(0);
   });
 });
 
