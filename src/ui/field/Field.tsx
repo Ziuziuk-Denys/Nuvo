@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type JSX } from "react";
 import { usePageBackdropStore } from "../ports/backdrop";
 import { useCoverSrc } from "../ports/covers";
+import { usePlayingCover } from "../ports/player";
 import { useCustomizationStore, wallpaperKind } from "../ports/settings";
 import { isWindowVisible, onWindowVisibilityChange } from "../ports/window";
 import { useLook } from "../ports/theme";
@@ -46,17 +47,19 @@ export function Field(): JSX.Element {
   const reduced = useReducedEffects();
   const pageCover = usePageBackdropStore((s) => s.coverUrl);
   const options = usePageBackdropStore((s) => s.options);
+  const playing = usePlayingCover();
   const sky = options?.sky;
-  const cover = useCoverSrc(coverGlow && !calm && (sky || !reduced) ? (pageCover ?? undefined) : undefined);
+  const cover = useCoverSrc(coverGlow && !calm && (sky || !reduced) ? (pageCover ?? (playing || undefined)) : undefined);
   const dark = look.mode === "dark";
   return (
     <div className={styles.field} aria-hidden="true" data-mode={look.mode}>
       {wallpaper ? (
         <Wallpaper src={wallpaper} />
-      ) : cover && sky ? (
-        <Sky cover={cover} mode={sky} dark={dark} />
       ) : cover ? (
-        <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} />
+        <>
+          {reduced ? null : <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} />}
+          {sky ? <Sky cover={cover} mode={sky} dark={dark} /> : null}
+        </>
       ) : null}
     </div>
   );

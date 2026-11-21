@@ -7,9 +7,12 @@ import { createFlowRenderer, type FlowRenderer } from "./shader";
 import styles from "./Backdrop.module.css";
 
 const COVER_FADE_MS = 800;
+const SKY_FADE_MS = 1800;
 const COVER_PX = 64;
-const KEY_MS = 20_000;
+const BREATH_EVERY_MS = 20_000;
 const BREATH_MS = 5000;
+const BREATH_FPS = 30;
+const BREATH_DRIFT_S = 24;
 
 interface BackdropProps {
   cover: string;
@@ -20,9 +23,7 @@ interface BackdropProps {
 }
 
 export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: BackdropProps): JSX.Element {
-  const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const keysRef = useRef<Array<HTMLCanvasElement | null>>([]);
   const rendererRef = useRef<FlowRenderer | null>(null);
   const [webgl, setWebgl] = useState(true);
   const [coverColors, setCoverColors] = useState({ cover: "", colors: DEFAULT_COVER_COLORS });
@@ -112,7 +113,7 @@ export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: Ba
         const renderer = rendererRef.current;
         if (!live || !renderer) return;
         // a loop that is not running would draw a fade once and leave the old cover on screen
-        const shown = renderer.setCover(image, animateRef.current ? COVER_FADE_MS : 0);
+        const shown = renderer.setCover(image, animateRef.current ? (overlay ? SKY_FADE_MS : COVER_FADE_MS) : 0);
         renderer.draw(performance.now());
         setShownCover(shown === false ? "" : cover);
       },
@@ -123,7 +124,7 @@ export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: Ba
     return () => {
       live = false;
     };
-  }, [cover, webgl]);
+  }, [cover, webgl, overlay]);
 
   const colors = coverColors.cover === cover ? coverColors.colors : DEFAULT_COVER_COLORS;
   // while a new cover loads the old one stays, so a track change never flashes the still field
@@ -141,8 +142,6 @@ export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: Ba
       return;
     }
     rendererRef.current?.hold(false);
-    const root = rootRef.current!;
-    delete root.dataset.keys;
     let frame = 0;
     let last = -Infinity;
     const tick = (now: number) => {
@@ -160,57 +159,38 @@ export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: Ba
   const breathing = Boolean(overlay) && breathe && showCanvas && !animate && visible && !reduced;
   useEffect(() => {
     if (!breathing) return;
-    const root = rootRef.current!;
-    const canvas = canvasRef.current!;
-    const keys = keysRef.current.filter((key): key is HTMLCanvasElement => key !== null);
-    rendererRef.current?.hold(false);
-    let jump = !("keys" in root.dataset);
-    let next = Number(keys[0].style.opacity || 0) > Number(keys[1].style.opacity || 0) ? 1 : 0;
-    // a keyframe is drawn once and the compositor blends it in, so the sky costs nothing between breaths
-    const keyframe = () => {
+    let frame = 0;
+    // the shader clock eases forward for a few seconds and then rests, so the sky moves without a steady frame cost
+    const breath = () => {
       const renderer = rendererRef.current;
       if (!renderer) return;
-      renderer.draw(performance.now());
-      const key = keys[next];
-      if (key.width !== canvas.width || key.height !== canvas.height) Object.assign(key, { width: canvas.width, height: canvas.height });
-      const pen = key.getContext("2d");
-      pen?.clearRect(0, 0, key.width, key.height);
-      pen?.drawImage(canvas, 0, 0);
-      for (const each of keys) each.style.transition = jump ? "none" : `opacity ${BREATH_MS}ms ease-in-out`;
-      key.style.opacity = "1";
-      keys[1 - next].style.opacity = "0";
-      root.dataset.keys = "";
-      jump = false;
-      next = 1 - next;
+      const from = renderer.clock();
+      let start = -1;
+      let last = -Infinity;
+      const tick = (now: number) => {
+        if (start < 0) start = now;
+        const progress = Math.min(1, (now - start) / BREATH_MS);
+        if (progress === 1 || now - last >= 1000 / BREATH_FPS - 2) {
+          last = now;
+          const eased = progress < 0.5 ? 2 * progress * progress : 1 - (2 - 2 * progress) ** 2 / 2;
+          renderer.drawAt(from + BREATH_DRIFT_S * eased);
+        }
+        if (progress < 1) frame = requestAnimationFrame(tick);
+        else renderer.advance(BREATH_DRIFT_S);
+      };
+      frame = requestAnimationFrame(tick);
     };
-    keyframe();
-    const timer = window.setInterval(keyframe, KEY_MS);
+    const timer = window.setInterval(breath, BREATH_EVERY_MS);
     return () => {
       window.clearInterval(timer);
-      for (const each of keys) {
-        each.style.opacity = getComputedStyle(each).opacity;
-        each.style.transition = "none";
-      }
+      cancelAnimationFrame(frame);
     };
   }, [breathing]);
 
   return (
-    <div ref={rootRef} className={styles.root} data-overlay={overlay ? "" : undefined} aria-hidden="true">
+    <div className={styles.root} data-overlay={overlay ? "" : undefined} aria-hidden="true">
       {showCanvas ? null : <div data-still="" className={styles.layer} style={{ background: stillBackground(colors) }} />}
-      <div className={styles.motion}>
-        <canvas ref={canvasRef} className={styles.layer} data-gl="" data-hidden={showCanvas ? undefined : ""} />
-        {overlay
-          ? [0, 1].map((index) => (
-              <canvas
-                key={index}
-                ref={(node) => {
-                  keysRef.current[index] = node;
-                }}
-                className={`${styles.layer} ${styles.key}`}
-              />
-            ))
-          : null}
-      </div>
+      <canvas ref={canvasRef} className={styles.layer} data-hidden={showCanvas ? undefined : ""} />
       {overlay ? null : <div className={styles.shade} />}
     </div>
   );
