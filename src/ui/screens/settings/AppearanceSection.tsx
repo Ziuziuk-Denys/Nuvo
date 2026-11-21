@@ -4,7 +4,7 @@ import { CUSTOM_PREFIX, useAppearanceStore } from "../../ports/appearance";
 import { useTranslation } from "../../ports/i18n";
 import { LOCALE_OPTIONS, PRIMARY_LOCALES, useCustomizationStore, type Locale } from "../../ports/settings";
 import { presetIconSvg, PRESETS, revealThemeChange, useLook, useSetThemeMode, useThemeMode, type ThemeMode } from "../../ports/theme";
-import { SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
+import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
 import { CustomCssBlock, ResetAppearanceRow } from "./CustomCssBlock";
 import { ResetAllRow } from "./CustomizationSection";
 import { ThemeLibrary } from "./ThemeLibrary";
@@ -205,6 +205,8 @@ export function ThemeSection(): JSX.Element {
   const { t } = useTranslation();
   const accentFromCover = useCustomizationStore((state) => state.accentFromCover);
   const setAccentFromCover = useCustomizationStore((state) => state.setAccentFromCover);
+  const navigation = useCustomizationStore((state) => state.navigation);
+  const setNavigation = useCustomizationStore((state) => state.setNavigation);
 
   return (
     <>
@@ -226,6 +228,24 @@ export function ThemeSection(): JSX.Element {
         >
           <ModeCards />
         </SettingBlock>
+        <SettingRow
+          title={t("settings.navigation.title")}
+          description={t("settings.navigation.description")}
+          titleKey="settings.navigation.title"
+          descKey="settings.navigation.description"
+          explained
+          control={
+            <Segmented
+              label={t("settings.navigation.title")}
+              options={[
+                { value: "top", label: t("settings.navigation.top") },
+                { value: "side", label: t("settings.navigation.side") },
+              ]}
+              value={navigation}
+              onChange={setNavigation}
+            />
+          }
+        />
       </SettingGroup>
       <SettingGroup label={t("settings.page.colour")}>
         <SettingRow

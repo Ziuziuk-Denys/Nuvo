@@ -5,6 +5,7 @@ export {
   MAX_WALLPAPER_DIM,
   wallpaperKind,
   WALLPAPER_BASE,
+  type Navigation,
   type PlayerControls,
   type WallpaperFit,
   type WallpaperKind,

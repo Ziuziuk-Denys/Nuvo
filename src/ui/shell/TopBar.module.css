@@ -199,6 +199,96 @@
   transform: translateX(-2px);
 }
 
+.rail {
+  position: absolute;
+  top: 6px;
+  bottom: 76px;
+  left: 6px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 56px;
+  padding: 8px 0;
+  border-radius: 12px;
+  background: var(--n-field);
+  box-shadow: var(--n-tray-edge);
+  user-select: none;
+}
+
+.rail .mark {
+  width: 44px;
+  height: 44px;
+  margin: 0 0 8px;
+}
+
+.rail .group {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rail .tray {
+  height: auto;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.rail .item {
+  width: 44px;
+  height: 44px;
+  color: var(--n-ink);
+  opacity: 0.62;
+  transition:
+    background-color 150ms var(--n-ease-out),
+    opacity 150ms var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
+}
+
+.rail .item:hover,
+.rail .item:focus-visible,
+.rail .item[aria-current="page"],
+.rail .item[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.rail .item > svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* the bar glyphs are drawn as thin filled rects; a stroke of the same colour gives them the rail's weight */
+.rail .item > svg > rect[fill="currentColor"] {
+  stroke: currentColor;
+  stroke-width: 1.4px;
+}
+
+.rail .item > svg > path {
+  stroke-width: 2.6px;
+}
+
+.rail .pins {
+  margin: 8px 0 0;
+}
+
+.rail .pins .item {
+  opacity: 1;
+}
+
+.rail .progress {
+  left: 12px;
+}
+
+.foot {
+  margin-top: auto;
+}
+
+.beside {
+  padding-inline-start: 68px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mark:active,
   .item:active,

@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { hasOpenLayer, usePresence } from "../components/layers";
 import { useScrollActivity } from "../components/useScrollActivity";
 import { Field } from "../field/Field";
+import { reducedEffectsNow } from "../effects";
 import { DURATION_MS, EASE, seconds } from "../motion";
 import { useTranslation } from "../ports/i18n";
 import { bootImports } from "../ports/importsRuntime";
@@ -14,6 +15,7 @@ import { useStudioOpen } from "../visual/studioOpen";
 import { useDisableButtonFocus, useModalStore, useWindowState } from "../ports/navigation";
 import { onShareLink } from "../ports/links";
 import { playerEngine, usePlayerStore } from "../ports/player";
+import { useCustomizationStore } from "../ports/settings";
 import { useAppShortcuts } from "../ports/shortcuts";
 import { useToolDownloadToast } from "./useToolDownloadToast";
 import { useAppIconSync, useLookSync } from "../ports/theme";
@@ -45,6 +47,7 @@ const STAY_IN_PLACE = { replace: true } as const;
 const LEGACY_SCROLLERS = ".overflow-y-auto";
 
 const CHROME = { hidden: { opacity: 0 } };
+const RAIL_SHIFT_PX = 62;
 
 const watchEngine = (notify: () => void) => playerEngine.subscribe(notify);
 const engineHasTrack = () => playerEngine.getSnapshot().currentTrack !== null;
@@ -78,6 +81,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const { fullscreen, setFullscreen } = usePlayerStore(useShallow(({ fullscreen, setFullscreen }) => ({ fullscreen, setFullscreen })));
   const gated = useGateStore((store) => store.locked);
   const trackLoaded = useSyncExternalStore(watchEngine, engineHasTrack, () => false);
+  const navigation = useCustomizationStore((state) => state.navigation);
   const pageLit = usePageLit();
 
   const onKaraokeRoute = pathname === KARAOKE_PATH;
@@ -89,6 +93,19 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   if (!onKaraokeRoute && underlay !== children) setUnderlay(children);
 
   const scroller = useRef<HTMLDivElement>(null);
+
+  useEffect(
+    () =>
+      useCustomizationStore.subscribe((state, previous) => {
+        if (state.navigation === previous.navigation || !scroller.current || reducedEffectsNow()) return;
+        const from = state.navigation === "side" ? -RAIL_SHIFT_PX : RAIL_SHIFT_PX;
+        scroller.current.animate([{ transform: `translateX(${from}px)` }, { transform: "none" }], {
+          duration: DURATION_MS.base,
+          easing: `cubic-bezier(${EASE.out.join(", ")})`,
+        });
+      }),
+    [],
+  );
   useScrollActivity(scroller);
 
   const settingsLink = pathname === "/settings" ? (new URLSearchParams(search).get("section") ?? "") : null;
@@ -168,7 +185,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   );
 
   return (
-    <div className={styles.shell} data-edge={edgeToEdge ? "" : undefined} onScroll={pinWindow}>
+    <div className={styles.shell} data-edge={edgeToEdge ? "" : undefined} data-nav={navigation} onScroll={pinWindow}>
       <Field />
       <AnimatePresence>{chrome}</AnimatePresence>
       <div
