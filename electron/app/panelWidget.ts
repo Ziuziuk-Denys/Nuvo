@@ -2,11 +2,13 @@
 import { existsSync } from "node:fs";
 import { chmod, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import gnomeMetadata from "../../desktop/gnome-shell/nuvo-panel@nuvo.quest/metadata.json";
 import type { NotchSession } from "../notch/session";
 import type { Exec } from "./compositor";
 
 export type PanelTarget = "gnome" | "plasma" | "waybar";
 export const GNOME_UUID = "nuvo-panel@nuvo.quest";
+export const GNOME_VERSION: number = gnomeMetadata.version;
 const GNOME_ZIP = path.join("dist", `${GNOME_UUID}.shell-extension.zip`);
 const PLASMA_DIR = path.join("plasma", "quest.nuvo.panel");
 const WAYBAR_DIR = "waybar";
@@ -69,6 +71,28 @@ export async function enablePanelWidget(deps: Pick<PanelDeps, "exec" | "pendingF
   } catch (error) {
     const missing = (error as NodeJS.ErrnoException).code === "ENOENT";
     return { ok: false, error: missing ? "missing-tool" : String((error as Error).message ?? error).slice(0, 300) };
+  }
+}
+
+async function installedGnomeVersion(dataHome: string): Promise<number | null> {
+  try {
+    const text = await readFile(path.join(dataHome, "gnome-shell", "extensions", GNOME_UUID, "metadata.json"), "utf8");
+    const version = (JSON.parse(text) as { version?: unknown }).version;
+    return typeof version === "number" ? version : 0;
+  } catch {
+    return null;
+  }
+}
+
+export async function refreshGnomeExtension(deps: Pick<PanelDeps, "resources" | "exec"> & { dataHome: string; allowed: boolean }): Promise<boolean> {
+  if (!deps.allowed || !panelFilesPresent("gnome", deps.resources)) return false;
+  const installed = await installedGnomeVersion(deps.dataHome);
+  if (installed === null || installed >= GNOME_VERSION) return false;
+  try {
+    await deps.exec("gnome-extensions", ["install", "--force", panelSource("gnome", deps.resources)], TIMEOUT_MS);
+    return true;
+  } catch {
+    return false;
   }
 }
 

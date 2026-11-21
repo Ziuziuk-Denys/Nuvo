@@ -26,3 +26,24 @@ print(len(names))`;
   assert.ok(Number(count) >= 4);
   assert.deepEqual(fs.readFileSync(file), fs.readFileSync(packGnome(out)));
 });
+
+test("a change to the GNOME extension bumps its version, so installed copies get replaced", (t) => {
+  const root = path.join(import.meta.dirname, "..");
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  const dir = `desktop/gnome-shell/${GNOME_UUID}`;
+  let base;
+  try {
+    base = git("merge-base", "HEAD", process.env.NUVO_BASE_REF ?? "origin/main");
+  } catch {
+    t.skip("no base branch");
+    return;
+  }
+  if (!git("diff", "--name-only", base, "--", dir)) return;
+  const version = (text) => JSON.parse(text).version ?? 0;
+  let before = 0;
+  try {
+    before = version(git("show", `${base}:${dir}/metadata.json`));
+  } catch {}
+  const now = version(fs.readFileSync(path.join(root, dir, "metadata.json"), "utf8"));
+  assert.ok(now > before, `${dir} changed: raise "version" in metadata.json above ${before}`);
+});

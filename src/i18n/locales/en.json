@@ -1862,6 +1862,7 @@
       "panel_missing_files": "This build doesn't include the panel widget.",
       "panel_ready": "Installed and turned on.",
       "panel_relogin": "Installed. Log out and back in, then press Turn on here or switch Nuvo on in the Extensions app.",
+      "panel_refreshed": "The Nuvo widget in the top bar was updated. Log out and back in to see it.",
       "panel_add_widget": "Installed. Right-click the panel, choose Add Widgets and add Nuvo.",
       "panel_add_module": "Copied to {path}. Copy the module, paste it into your Waybar config, add \"group/nuvo\" to a module list and import nuvo/style.css.",
       "panel_missing_tool": "This desktop's install tool wasn't found.",

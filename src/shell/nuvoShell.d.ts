@@ -28,6 +28,7 @@ export interface PanelInfo {
   manual: boolean;
   source: string;
   pendingEnable: boolean;
+  refreshed: boolean;
 }
 export type PanelInstallResult =
   | { ok: true; next: "ready" | "relogin" | "add-widget" | "add-module"; snippet?: string }

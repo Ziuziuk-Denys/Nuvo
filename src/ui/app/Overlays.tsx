@@ -6,6 +6,7 @@ import { SafeModeBanner } from "../screens/settings/SafeModeBanner";
 import { Settings } from "../screens/settings/Settings";
 import { ThemeEditorHost } from "../screens/settings/ThemeEditor";
 import { ConnectionWatch } from "../feedback/ConnectionWatch";
+import { PanelWidgetWatch } from "../feedback/PanelWidgetWatch";
 import { Toaster } from "../feedback/Toaster";
 import { QueuePanel } from "../shell/queue/QueuePanel";
 import { SignInSheet } from "../shell/SignInSheet";
@@ -24,6 +25,7 @@ export function Overlays(): JSX.Element {
       <HelpSheets />
       <Toaster />
       <ConnectionWatch />
+      <PanelWidgetWatch />
     </>
   );
 }
