@@ -21,3 +21,12 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
 }
+
+.root[data-overlay] {
+  background: none;
+}
+
+.root[data-overlay] [data-still] {
+  opacity: 0.5;
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 85%);
+}
