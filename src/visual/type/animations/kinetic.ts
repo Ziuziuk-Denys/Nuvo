@@ -1,4 +1,5 @@
 import type { Voice } from "../../template/schema";
+import type { Box } from "../layout";
 import { fontFor } from "../raster";
 import { easeOutCubic, easeOutExpo, hash, isStressed, lerp, phraseAt, shutterTimes, type Ctx } from "./kit";
 import type { LyricAnimation } from "./types";
@@ -23,11 +24,13 @@ interface Slot {
 
 const MEASURE_WIDTH = 0.86;
 const MEASURE_HEIGHT = 0.86;
+const BOX_FILL = 0.94;
+const DESCENT = 0.1;
 
-function layout(ctx: Ctx, texts: string[], stressed: boolean[], width: number, height: number, centreY: number, scale: number): Slot[] {
+function layout(ctx: Ctx, texts: string[], stressed: boolean[], width: number, height: number, box: Box, scale: number): Slot[] {
   const unit = Math.min(width, height) * scale;
   const small = 0.085 * unit;
-  const measure = MEASURE_WIDTH * width;
+  const measure = Math.min(MEASURE_WIDTH * width, BOX_FILL * box.width);
   const rows: { slots: Omit<Slot, "cx" | "y">[]; height: number; used: number }[] = [];
   let open: (typeof rows)[number] | null = null;
   texts.forEach((raw, i) => {
@@ -52,8 +55,9 @@ function layout(ctx: Ctx, texts: string[], stressed: boolean[], width: number, h
     open.slots.push({ text, voice, size: wordWidth < ctx.measureText(text).width ? (small * measure) / ctx.measureText(text).width : small });
   });
   // a long phrase on a short frame scales down as one block, so the stack never leaves the frame
-  const stacked = rows.reduce((sum, row) => sum + row.height, 0) + 0.22 * small * (rows.length - 1);
-  const fit = Math.min(1, (MEASURE_HEIGHT * height) / stacked);
+  // descenders such as Д and у hang below the last row
+  const stacked = rows.reduce((sum, row) => sum + row.height, 0) + 0.22 * small * (rows.length - 1) + DESCENT * rows.at(-1)!.slots[0].size;
+  const fit = Math.min(1, Math.min(MEASURE_HEIGHT * height, BOX_FILL * box.height) / stacked);
   if (fit < 1) {
     for (const row of rows) {
       row.height *= fit;
@@ -62,7 +66,7 @@ function layout(ctx: Ctx, texts: string[], stressed: boolean[], width: number, h
   }
   const gap = 0.22 * small * fit;
   const total = rows.reduce((sum, row) => sum + row.height, 0) + gap * (rows.length - 1);
-  let top = centreY - total / 2;
+  let top = box.y + (box.height - total) / 2;
   const out: Slot[] = [];
   for (const row of rows) {
     const widths = row.slots.map((slot) => {
@@ -71,7 +75,7 @@ function layout(ctx: Ctx, texts: string[], stressed: boolean[], width: number, h
     });
     const space = row.slots[0].size * 0.28;
     const rowWidth = widths.reduce((sum, w) => sum + w, 0) + space * (row.slots.length - 1);
-    let x = (width - rowWidth) / 2;
+    let x = box.x + (box.width - rowWidth) / 2;
     const baseline = top + row.height * 0.86;
     row.slots.forEach((slot, i) => {
       out.push({ ...slot, cx: x + widths[i] / 2, y: baseline });
@@ -93,10 +97,11 @@ export const kinetic: LyricAnimation = {
     if (!phrase || phrase.shown.length === 0) return signals;
     const texts = phrase.words.map((word) => word.text.trim());
     const stressed = texts.map((text, i) => isStressed(text, i === texts.length - 1));
+    const centreX = box.x + box.width / 2;
     const centreY = box.y + box.height / 2;
     const layouts = new Map<number, Slot[]>();
     const layoutFor = (count: number) => {
-      if (!layouts.has(count)) layouts.set(count, layout(ctx, texts.slice(0, count), stressed, width, height, centreY, scale));
+      if (!layouts.has(count)) layouts.set(count, layout(ctx, texts.slice(0, count), stressed, width, height, box, scale));
       return layouts.get(count)!;
     };
     const lastFrom = phrase.shown.at(-1)!.fromMs;
@@ -104,6 +109,10 @@ export const kinetic: LyricAnimation = {
     const times = moving ? shutterTimes(nowMs, SHUTTER_MS, SAMPLES) : [nowMs];
     const seed = phrase.line.fromMs;
 
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(box.x, box.y, box.width, box.height);
+    ctx.clip();
     ctx.fillStyle = "#fff";
     ctx.globalCompositeOperation = "lighter";
     for (const time of times) {
@@ -133,7 +142,7 @@ export const kinetic: LyricAnimation = {
           if (hash(seed + i) < 0.5) cx += lerp(0.1 * width, 0, p);
           else y += lerp(-0.08 * height, 0, p);
         }
-        cx = width / 2 + (cx - width / 2) * push;
+        cx = centreX + (cx - centreX) * push;
         y = centreY + (y - centreY) * push;
         scale *= Math.sqrt(push) * (1 - 0.08 * exit);
         y -= 0.04 * height * exit;
@@ -149,7 +158,7 @@ export const kinetic: LyricAnimation = {
         ctx.restore();
       }
     }
-    ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
     return signals;
   },
 };
