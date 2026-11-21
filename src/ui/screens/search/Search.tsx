@@ -16,6 +16,7 @@ import { openExternal } from "../../ports/system";
 import { toPlayerTrack, useLocalTracks } from "../../ports/localFiles";
 import { useOfflineMode, useOnline, useStreamingReachable } from "../../ports/network";
 import { playerEngine, type Track } from "../../ports/player";
+import { usePreparedStarts } from "./usePreparedStarts";
 import {
   loadSearchHistory,
   songResult,
@@ -63,7 +64,6 @@ const CACHE_TTL_MS = 60_000;
 const DEBOUNCE_MS = 320;
 const LIMIT = 20;
 const SLOW_MS = 300;
-const PREPARE_AFTER_MS = 150;
 const PLACEHOLDER_ROWS = 5;
 
 const SOURCE_ICONS: Record<SearchSource, IconName> = { all: "filter", youtube: "youtube", soundcloud: "soundcloud" };
@@ -216,13 +216,8 @@ export function Search(): JSX.Element {
   const slow = useAfter(remote && loading && trimmed.length >= 2, SLOW_MS) || (linkText !== null && linkSlow);
   const noResults = isEmpty(groups) && (remote ? allSettled && trimmed.length >= 2 : trimmed !== "");
   const pending = remote && loading && isEmpty(groups);
-  const startable = useMemo(() => [groups.top, ...groups.songs].flatMap((result) => (result?.track ? [result.track] : [])), [groups]);
-  useEffect(() => {
-    if (!settled || startable.length === 0) return;
-    const timer = setTimeout(() => playerEngine.prepareStarts(startable), PREPARE_AFTER_MS);
-    return () => clearTimeout(timer);
-  }, [settled, startable]);
-  useEffect(() => () => playerEngine.prepareStarts([]), []);
+  const startable = useMemo(() => [groups.top, ...groups.songs], [groups]);
+  usePreparedStarts(startable, settled);
   const hasMore = (key: GroupKey) => online || results.filter((result) => result.kind === GROUP_KIND[key]).length > groups[key].length;
 
   const activate = (result: SearchResult) => {

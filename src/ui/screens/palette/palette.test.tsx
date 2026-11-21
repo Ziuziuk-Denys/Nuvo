@@ -53,6 +53,7 @@ const mocks = vi.hoisted(() => {
       setShuffle: vi.fn(),
       setRepeat: vi.fn(),
       primeUserGesture: vi.fn(),
+      prepareStarts: vi.fn(),
       playTrack: vi.fn(() => Promise.resolve()),
       addToQueue: vi.fn(),
       getSnapshot: () => ({ currentTrack: current, shuffle: false, repeat: "off", playbackContext: null }),
