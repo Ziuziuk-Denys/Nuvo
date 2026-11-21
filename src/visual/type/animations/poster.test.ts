@@ -37,6 +37,16 @@ describe("poster mode", () => {
   });
 });
 
+describe("proportions", () => {
+  it("sizes capitals, italics and the echo against the frame like the reference", () => {
+    const unit = 1080;
+    const caps = Array.from({ length: 12 }, (_, i) => marks([line("try", i * 1000, i * 1000 + 300)], i * 1000 + 10)[0].size / unit);
+    expect(Math.min(...caps)).toBeCloseTo(0.104, 2);
+    expect(Math.max(...caps)).toBeCloseTo(0.167, 2);
+    expect(marks([line("your problem", 0, 1600)], 10)[0].size / unit).toBeCloseTo(0.095, 3);
+  });
+});
+
 describe("caps", () => {
   const lines = [line("try to eat sorrow", 1000, 2600)];
 
@@ -64,7 +74,9 @@ describe("caps", () => {
 
   it("stretches short words tall and leaves long words as they are", () => {
     const short = Array.from({ length: 12 }, (_, i) => marks([line("off", i * 1000, i * 1000 + 900)], i * 1000 + 10)[0]);
-    expect(short.some((mark) => mark.stretch > 1)).toBe(true);
+    const tallOnes = short.filter((mark) => mark.stretch > 1);
+    expect(tallOnes.length).toBeGreaterThan(0);
+    expect(tallOnes[0].squeeze).toBeLessThan(short.find((mark) => mark.stretch === 1)?.squeeze ?? 1);
     const long = marks([line("unlikable", 0, 900)], 10)[0];
     expect(long.stretch).toBe(1);
   });
@@ -77,16 +89,21 @@ describe("soft", () => {
     const row = marks(lines, 1790).filter((mark) => !mark.echo);
     expect(row.map((mark) => mark.text)).toEqual(["for", "just", "this"]);
     expect(new Set(row.map((mark) => mark.y)).size).toBe(1);
-    expect((row[0].x + row[2].x) / 2).toBeCloseTo(tall.box.x + tall.box.width / 2);
-    expect(row[1].x - row[0].x).toBeCloseTo(row[2].x - row[1].x);
+    const left = (mark: Mark) => mark.x - mark.width / 2;
+    const right = (mark: Mark) => mark.x + mark.width / 2;
+    expect((left(row[0]) + right(row[2])) / 2).toBeCloseTo(tall.box.x + tall.box.width / 2);
+    expect(left(row[1]) - right(row[0])).toBeCloseTo(left(row[2]) - right(row[1]));
+    expect(left(row[1]) - right(row[0])).toBeCloseTo(row[0].size * 1.25);
   });
 
-  it("wraps a four-word line into two rows of two", () => {
+  it("wraps a four-word line into two justified rows of two", () => {
     const grid = marks([line("how can you be", 0, 2400)], 2390).filter((mark) => !mark.echo);
     expect(grid.map((mark) => mark.text)).toEqual(["how", "can", "you", "be"]);
-    expect(grid[2].x).toBeCloseTo(grid[0].x);
-    expect(grid[3].x).toBeCloseTo(grid[1].x);
-    expect(grid[2].y).toBeGreaterThan(grid[0].y);
+    const left = (mark: Mark) => mark.x - mark.width / 2;
+    const right = (mark: Mark) => mark.x + mark.width / 2;
+    expect(left(grid[2])).toBeCloseTo(left(grid[0]));
+    expect(Math.max(right(grid[1]), right(grid[3]))).toBeCloseTo(Math.min(right(grid[1]), right(grid[3])));
+    expect(grid[2].y - grid[0].y).toBeCloseTo(grid[0].size * 1.4);
   });
 
   it("puts a big echo of the longest word behind some complete lines and none before the line is complete", () => {

@@ -853,9 +853,9 @@ vec4 layer() {
 
 const print: ShaderDef = {
   params: {
-    zoom: { min: 1.1, max: 2, value: 1.3 },
+    zoom: { min: 1.05, max: 2, value: 1.15 },
     drift: { min: 0, max: 1, value: 0.5 },
-    shade: { min: 0.3, max: 0.8, value: 0.6 },
+    shade: { min: 0.3, max: 0.85, value: 0.68 },
     grain: { min: 0, max: 1, value: 0.6 },
     blur: { min: 0, max: 1, value: 0.6 },
     glitch: { min: 0, max: 1, value: 0.5 },
@@ -871,7 +871,7 @@ vec3 printSource(vec2 uv) {
 }
 
 vec2 shotUv(vec2 uv) {
-  float zoom = u_zoom * mix(1.0, 2.2, hash(vec2(uShot, 1.3))) * (1.0 + 0.01 * min(uShotAge, 6.0) * u_drift);
+  float zoom = u_zoom * mix(1.0, 1.8, hash(vec2(uShot, 1.3))) * (1.0 + 0.01 * min(uShotAge, 6.0) * u_drift);
   float room = 0.5 - 0.5 / zoom;
   vec2 centre = 0.5 + (vec2(hash(vec2(uShot, 4.1)), hash(vec2(uShot, 7.7))) * 2.0 - 1.0) * room * 0.85;
   float t = uTime * 0.12 * u_drift;

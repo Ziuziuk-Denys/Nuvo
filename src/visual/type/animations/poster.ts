@@ -5,12 +5,20 @@ import { fontFor } from "../raster";
 import { hash, phraseAt } from "./kit";
 import { QUIET, type LyricAnimation } from "./types";
 
-const CAPS: Voice = { family: "condensed", weight: 800, italic: false, upper: true };
+const CAPS: Voice = { family: "condensed", weight: 900, italic: false, upper: true };
 const SOFT: Voice = { family: "serif", weight: 400, italic: true, upper: false };
 const SOFT_MAX_WORDS = 4;
 const SOFT_MIN_WORD_MS = 450;
 const PUNCH_MIN_MS = 360;
-const STRETCH = 1.35;
+const BIG = 0.167;
+const SMALL = 0.104;
+const ITALIC = 0.095;
+const ECHO = 0.24;
+const GAP_EM = 1.25;
+const ROW_EM = 1.4;
+// the narrowest cut of our condensed face is still wider than poster capitals
+const SQUEEZE = 0.72;
+const ECHO_SQUEEZE = 1.25;
 // the echo is drawn in pure red so the background shader can paint it in its own tone
 export const ECHO_INK = "#f00";
 
@@ -21,6 +29,7 @@ export interface Mark {
   x: number;
   y: number;
   width: number;
+  squeeze: number;
   stretch: number;
   echo: boolean;
 }
@@ -43,40 +52,58 @@ function capsMark(line: Line, index: number, word: TimedWord, nowMs: number, box
   const length = word.toMs - word.fromMs;
   const switched = length >= PUNCH_MIN_MS && nowMs - word.fromMs >= length / 2;
   const big = seed < 0.5 !== switched;
-  const stretch = big && letters(text) <= 4 && hash(seed * 53.1 + 3.1) < 0.5 ? STRETCH : 1;
+  const tall = big && letters(text) <= 4 && hash(seed * 53.1 + 3.1) < 0.5;
+  const squeeze = tall ? SQUEEZE * 0.6 : SQUEEZE;
+  const stretch = tall ? 1.25 : 1;
   const unit = Math.min(frame.width, frame.height);
-  const size = Math.min((big ? 0.16 : 0.075) * unit, (box.width * 100) / measure(text, 100, CAPS), box.height / stretch);
-  return { text, voice: CAPS, size, x: box.x + box.width / 2, y: box.y + box.height / 2, width: measure(text, size, CAPS), stretch, echo: false };
+  const size = Math.min((big ? BIG : SMALL) * unit, (box.width * 100) / (measure(text, 100, CAPS) * squeeze), box.height / stretch);
+  return {
+    text,
+    voice: CAPS,
+    size,
+    x: box.x + box.width / 2,
+    y: box.y + box.height / 2,
+    width: measure(text, size, CAPS) * squeeze,
+    squeeze,
+    stretch,
+    echo: false,
+  };
+}
+
+function echoMark(text: string, box: Box, frame: Frame, measure: Measure): Mark {
+  const y = box.y + box.height / 2;
+  const unit = Math.min(frame.width, frame.height);
+  const size = Math.min(ECHO * unit, (frame.width * 0.92 * 100) / (measure(text, 100, CAPS) * ECHO_SQUEEZE), 2 * Math.min(y, frame.height - y));
+  return { text, voice: CAPS, size, x: frame.width / 2, y, width: measure(text, size, CAPS) * ECHO_SQUEEZE, squeeze: ECHO_SQUEEZE, stretch: 1, echo: true };
 }
 
 function softMarks(line: Line, shown: number, complete: boolean, box: Box, frame: Frame, measure: Measure): Mark[] {
   const words = estimateWords(line).map((word) => word.text.trim());
   const cols = words.length === 4 ? 2 : words.length;
-  const rows = Math.ceil(words.length / cols);
+  const rowsOf = (items: string[]) => Array.from({ length: Math.ceil(items.length / cols) }, (_, row) => items.slice(row * cols, row * cols + cols));
+  const em = (word: string) => measure(word, 100, SOFT) / 100;
+  const natural = (row: string[]) => row.reduce((sum, word) => sum + em(word), 0) + GAP_EM * (row.length - 1);
+  const full = rowsOf(words);
   const unit = Math.min(frame.width, frame.height);
-  const widest = Math.max(...words.map((word) => measure(word, 100, SOFT))) / 100;
-  const size = Math.min(0.07 * unit, box.width / ((cols - 1) * (widest + 1.3) + widest), box.height / ((rows - 1) * 1.4 + 1));
-  const pitch = (widest + 1.3) * size;
-  const shownCols = Math.min(shown, cols);
-  const shownRows = Math.ceil(shown / cols);
-  const left = box.x + box.width / 2 - ((shownCols - 1) * pitch) / 2;
-  const top = box.y + box.height / 2 - ((shownRows - 1) * 1.4 * size) / 2;
-  const marks = words.slice(0, shown).map((text, i) => ({
-    text,
-    voice: SOFT,
-    size,
-    x: left + (i % cols) * pitch,
-    y: top + Math.floor(i / cols) * 1.4 * size,
-    width: measure(text, size, SOFT),
-    stretch: 1,
-    echo: false,
-  }));
+  const size = Math.min(ITALIC * unit, box.width / Math.max(...full.map(natural)), box.height / ((full.length - 1) * ROW_EM + 1));
+  const rows = rowsOf(words.slice(0, shown));
+  const block = Math.max(...rows.map(natural)) * size;
+  const left = box.x + (box.width - block) / 2;
+  const top = box.y + box.height / 2 - ((rows.length - 1) * ROW_EM * size) / 2;
+  const marks = rows.flatMap((row, r) => {
+    const justified = rows.length > 1 && row.length === cols;
+    const gap = justified ? (block - row.reduce((sum, word) => sum + em(word) * size, 0)) / (row.length - 1) : GAP_EM * size;
+    let x = left;
+    return row.map((text) => {
+      const width = measure(text, size, SOFT);
+      const mark: Mark = { text, voice: SOFT, size, x: x + width / 2, y: top + r * ROW_EM * size, width, squeeze: 1, stretch: 1, echo: false };
+      x += width + gap;
+      return mark;
+    });
+  });
   const longest = words.reduce((best, word) => (letters(word) >= letters(best) ? word : best), "");
   if (!complete || letters(longest) < 4 || hash(line.fromMs * 0.013) >= 0.5) return marks;
-  const text = longest.toUpperCase();
-  const y = box.y + box.height / 2;
-  const echoSize = Math.min(0.34 * unit, (frame.width * 0.92 * 100) / measure(text, 100, CAPS), 2 * Math.min(y, frame.height - y));
-  return [{ text, voice: CAPS, size: echoSize, x: frame.width / 2, y, width: measure(text, echoSize, CAPS), stretch: 1, echo: true }, ...marks];
+  return [echoMark(longest.toUpperCase(), box, frame, measure), ...marks];
 }
 
 export function posterMarks(lines: Line[], nowMs: number, box: Box, frame: Frame, measure: Measure): Mark[] {
@@ -103,8 +130,8 @@ export const poster: LyricAnimation = {
       ctx.fillStyle = mark.echo ? ECHO_INK : "#fff";
       ctx.save();
       ctx.translate(mark.x, mark.y);
-      ctx.scale(1, mark.stretch);
-      ctx.fillText(mark.text, 0, mark.size * (mark.voice.italic ? 0.25 : 0.36));
+      ctx.scale(mark.squeeze, mark.stretch);
+      ctx.fillText(mark.text, 0, mark.size * (mark.voice.italic ? 0.25 : 0.345));
       ctx.restore();
     }
     return QUIET;

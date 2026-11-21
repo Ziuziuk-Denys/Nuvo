@@ -25,19 +25,8 @@ afterAll(async () => {
   await session?.close();
 });
 
-it("the visual player draws a lit scene in the karaoke view at 60 fps", async () => {
-  const page = session.page;
-  await page.evaluate(() =>
-    localStorage.setItem("nuvo.visual", JSON.stringify({ enabled: true, stage: true, template: "emblem", toured: true, chosen: true })),
-  );
-  await page.reload();
-  await session.go("#/player");
-  await session.setLook(DARK);
-  const toggle = page.locator('button[aria-label="Show the lyrics"]');
-  await toggle.waitFor({ timeout: 15_000 });
-  await page.waitForTimeout(1_500);
-
-  const fps = await page.evaluate(
+function framesPerSecond(): Promise<number> {
+  return session.page.evaluate(
     () =>
       new Promise<number>((resolve) => {
         let frames = 0;
@@ -50,6 +39,33 @@ it("the visual player draws a lit scene in the karaoke view at 60 fps", async ()
         requestAnimationFrame(tick);
       }),
   );
+}
+
+async function litShare(name: string): Promise<number> {
+  const shot = path.join(import.meta.dirname, "..", "artifacts", "ui", name);
+  fs.mkdirSync(path.dirname(shot), { recursive: true });
+  await session.page.locator("canvas[aria-hidden]").first().screenshot({ path: shot });
+  return session.app.evaluate(({ nativeImage }, file) => {
+    const pixels = nativeImage.createFromPath(file).toBitmap();
+    let bright = 0;
+    for (let i = 0; i < pixels.length; i += 4) if (pixels[i] + pixels[i + 1] + pixels[i + 2] > 120) bright++;
+    return bright / (pixels.length / 4);
+  }, shot);
+}
+
+it("the visual player draws a lit scene in the karaoke view at 60 fps", async () => {
+  const page = session.page;
+  await page.evaluate(() =>
+    localStorage.setItem("nuvo.visual", JSON.stringify({ enabled: true, stage: true, template: "emblem", toured: true, chosen: true })),
+  );
+  await page.reload();
+  await session.go("#/player");
+  await session.setLook(DARK);
+  const toggle = page.locator('button[aria-label="Show the lyrics"]');
+  await toggle.waitFor({ timeout: 15_000 });
+  await page.waitForTimeout(1_500);
+
+  const fps = await framesPerSecond();
   const renderer = await page.evaluate(() => {
     const gl = document.createElement("canvas").getContext("webgl2");
     const info = gl?.getExtension("WEBGL_debug_renderer_info");
@@ -58,19 +74,28 @@ it("the visual player draws a lit scene in the karaoke view at 60 fps", async ()
   console.info(`visual player: ${fps.toFixed(1)} fps on ${renderer}`);
   expect(fps).toBeGreaterThan(55);
 
-  const shot = path.join(import.meta.dirname, "..", "artifacts", "ui", "visual-canvas.png");
-  fs.mkdirSync(path.dirname(shot), { recursive: true });
-  await page.locator("canvas[aria-hidden]").first().screenshot({ path: shot });
-  const lit = await session.app.evaluate(({ nativeImage }, file) => {
-    const pixels = nativeImage.createFromPath(file).toBitmap();
-    let bright = 0;
-    for (let i = 0; i < pixels.length; i += 4) if (pixels[i] + pixels[i + 1] + pixels[i + 2] > 120) bright++;
-    return bright / (pixels.length / 4);
-  }, shot);
-  expect(lit).toBeGreaterThan(0.002);
+  expect(await litShare("visual-canvas.png")).toBeGreaterThan(0.002);
 
   await session.shoot("visual", "stage", "emblem", { looks: [DARK] });
   await toggle.click();
+  await page.locator('button[aria-label="Show the scene"]').waitFor({ timeout: 5_000 });
+});
+
+it("the Poster scene plays in the karaoke view at 60 fps", async () => {
+  const page = session.page;
+  await page.evaluate(() => {
+    const stored = JSON.parse(localStorage.getItem("nuvo.visual") ?? "{}");
+    localStorage.setItem("nuvo.visual", JSON.stringify({ ...stored, stage: true, template: "poster" }));
+  });
+  await page.reload();
+  await session.go("#/player");
+  await page.locator('button[aria-label="Show the lyrics"]').waitFor({ timeout: 15_000 });
+  await page.waitForTimeout(1_500);
+  const fps = await framesPerSecond();
+  console.info(`poster scene: ${fps.toFixed(1)} fps`);
+  expect(fps).toBeGreaterThan(55);
+  expect(await litShare("visual-poster.png")).toBeGreaterThan(0.002);
+  await page.locator('button[aria-label="Show the lyrics"]').click();
   await page.locator('button[aria-label="Show the scene"]').waitFor({ timeout: 5_000 });
 });
 
