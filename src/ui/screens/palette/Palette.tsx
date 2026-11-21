@@ -9,16 +9,26 @@ import { getTranslationsForAllLocales, loadAllLocales, useTranslation } from "..
 import { useLikedTracks, usePlaylistsList } from "../../ports/library";
 import { routeLink } from "../../ports/links";
 import { toggleWindowFullscreen, useModalStore } from "../../ports/navigation";
-import { useOfflineMode, useStreamingReachable } from "../../ports/network";
+import { useOfflineMode, useOnline, useStreamingReachable } from "../../ports/network";
 import { isRadioContext, nextRepeatMode, playerEngine, usePlayerStore, type Track } from "../../ports/player";
-import { loadSearchHistory, toSearchResult, useSearchAll, useSearchHistoryStore, type SearchHistoryItem, type SearchResult } from "../../ports/search";
+import {
+  loadSearchHistory,
+  soundCloudResult,
+  toSearchResult,
+  useRankedSongs,
+  useSearchAll,
+  useSearchHistoryStore,
+  useSoundCloudSearch,
+  type SearchHistoryItem,
+  type SearchResult,
+} from "../../ports/search";
 import { shortcutKeycaps, useRecorderState, useShortcutBindings } from "../../ports/shortcuts";
 import { applyTempo, BUILT_IN_PRESETS, TEMPO_PRESETS, useSoundStore, type TempoPresetKey } from "../../ports/sound";
 import { navigateWithTransition } from "../../shell/navigate";
 import { useTour } from "../../tour/tourStore";
 import { formatDuration } from "../entity/entityModel";
 import { useGateStore } from "../lock/gateState";
-import { historyHref, localResults, subtitleOf } from "../search/searchModel";
+import { historyHref, localResults, songsToRank, subtitleOf, withSoundCloud } from "../search/searchModel";
 import { useAddMusic } from "../local/addMusic";
 import { SETTING_ITEMS } from "../settings/settingItems";
 import { buildCommands, rankCommands, soundCommands } from "./commands";
@@ -276,6 +286,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
   const addHistory = useSearchHistoryStore((state) => state.addItem);
   const offlineMode = useOfflineMode();
   const online = useStreamingReachable() && !offlineMode;
+  const soundCloudOnline = useOnline() && !offlineMode;
   const liked = useLikedTracks();
   const library = usePlaylistsList();
   const [, setLocalesLoaded] = useState(false);
@@ -302,7 +313,11 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
     if (answered.size > CACHED_QUERIES) answered.delete(answered.keys().next().value!);
   }, [search.hasLoaded, fetched, key]);
   const shown = search.hasLoaded ? fetched : (answered.get(key) ?? fetched);
-  const found = useMemo(() => paletteResults(local, shown), [local, shown]);
+  const soundCloud = useSoundCloudSearch(isLink ? "" : query, { enabled: soundCloudOnline, limit: LIMIT, debounceMs: DEBOUNCE_MS });
+  const soundCloudResults = useMemo(() => soundCloud.items.map(soundCloudResult), [soundCloud.items]);
+  const toRank = useMemo(() => songsToRank(shown, soundCloudResults, "all"), [shown, soundCloudResults]);
+  const rankedSongs = useRankedSongs(trimmed, toRank);
+  const found = useMemo(() => paletteResults(local, withSoundCloud(shown, rankedSongs, "all")), [local, shown, rankedSongs]);
 
   const go = (href: string) => navigateWithTransition(navigate, href);
   const withTrack = (action: (track: Track) => void) => () => {
