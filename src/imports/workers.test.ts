@@ -301,11 +301,11 @@ describe("ImportRunner", () => {
     expect(slept.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(70_000);
   });
 
-  it("runs up to eight searches at once and one import at a time", async () => {
+  it("caps the searches in flight at the worker count and runs one import at a time", async () => {
     const daemon = new FakeDaemon();
     daemon.script.set(
       "i1",
-      Array.from({ length: 10 }, (_, i) => search(i + 1)),
+      Array.from({ length: MAX_WORKERS + 2 }, (_, i) => search(i + 1)),
     );
     daemon.script.set("i2", [search(100)]);
     let inFlight = 0;

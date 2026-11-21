@@ -93,6 +93,18 @@ describe("ImportSheet", () => {
     expect(button("ui.imports.open_report")).toBeTruthy();
   });
 
+  it("an import into a playlist opens that playlist at once, while it still matches", async () => {
+    const started = { ...SUMMARY, targetKind: "playlist", targetId: "pl 1" } as ImportSummary;
+    const onClose = vi.fn();
+    await mount({ actions: fakeActions({ post: vi.fn(async () => [started]) }), onClose });
+    await typeInto("https://deezer.com/playlist/1");
+    await click("ui.imports.read");
+    await click("ui.imports.import");
+    await click("ui.imports.open_playlist");
+    expect(onClose).toHaveBeenCalled();
+    expect(location.hash).toBe("#/library/playlist?id=pl%201");
+  });
+
   it("opens the whole song list and folds it back", async () => {
     await mount({ actions: fakeActions(), initialLink: "https://deezer.com/playlist/1" });
     const toggle = () => document.querySelector<HTMLButtonElement>("button[aria-expanded]")!;

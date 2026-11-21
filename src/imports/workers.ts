@@ -16,7 +16,7 @@ export interface RunnerOptions {
   onStopped?(importId: string, reason: StopReason): void;
 }
 
-export const MAX_WORKERS = 8;
+export const MAX_WORKERS = 16;
 /** Candidates kept per search; the daemon accepts up to 100. */
 export const MAX_CANDIDATES = 25;
 export const MAX_WAIT_MS = 60_000;

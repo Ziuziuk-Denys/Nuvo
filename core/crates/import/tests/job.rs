@@ -238,8 +238,10 @@ fn the_report_filters_pages_and_exports_csv() {
     source.extend((0..5).map(|i| exact_row(&format!("e{i}"))));
     let id = job::start(&conn, &parsed(source), &[], None, 1000).unwrap().id;
     let ids = row_ids(&conn, &id);
+    assert_eq!(job::rows(&conn, &id, "pending", None, 100).unwrap().items.iter().map(|r| r.id).collect::<Vec<_>>(), ids[..2]);
     answer(&conn, &id, ids[0], &[]);
     answer(&conn, &id, ids[1], &[]);
+    assert!(job::rows(&conn, &id, "pending", None, 100).unwrap().items.is_empty());
     assert_eq!(job::rows(&conn, &id, "review", None, 100).unwrap().items.len(), 2);
     assert_eq!(job::rows(&conn, &id, "matched", None, 100).unwrap().items.len(), 5);
     let first = job::rows(&conn, &id, "all", None, 3).unwrap();

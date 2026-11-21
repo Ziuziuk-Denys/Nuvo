@@ -462,12 +462,13 @@ pub fn rows(conn: &Connection, id: &str, filter: &str, cursor: Option<&str>, lim
         "review" => "label IN ('check', 'missing') AND decision IS NULL",
         "matched" => "label IN ('exact', 'likely', 'check', 'already')",
         "all" => "1",
+        "pending" => "label IS NULL",
         "exact" => "label = 'exact'",
         "likely" => "label = 'likely'",
         "check" => "label = 'check'",
         "missing" => "label = 'missing'",
         "already" => "label = 'already'",
-        _ => return Err(StoreError::Invalid("label must be review, matched, all, exact, likely, check, missing or already".into())),
+        _ => return Err(StoreError::Invalid("label must be review, matched, all, pending, exact, likely, check, missing or already".into())),
     };
     let after: i64 = match cursor {
         Some(c) => c.parse().map_err(|_| StoreError::Invalid("bad cursor".into()))?,

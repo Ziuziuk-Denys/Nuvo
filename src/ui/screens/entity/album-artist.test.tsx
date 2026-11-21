@@ -48,6 +48,7 @@ vi.mock("../../ports/i18n", () => ({
     t: (key: string, vars?: Record<string, string | number>) => (vars ? `${key}(${Object.values(vars).join(",")})` : key),
   }),
 }));
+vi.mock("../../ports/importsRuntime", () => ({ useImportSummaries: () => [] }));
 vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: vi.fn() }));
 vi.mock("../../ports/network", () => ({ useStreamingReachable: () => mocks.state.online, useOnline: () => mocks.state.online, useOfflineMode: () => false }));

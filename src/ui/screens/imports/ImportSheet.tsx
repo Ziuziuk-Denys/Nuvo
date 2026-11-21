@@ -1,3 +1,4 @@
+import { playlistHref } from "../../app/hrefs";
 import { useEffect, useEffectEvent, useId, useRef, useState, type JSX } from "react";
 import { Button } from "../../components/Button";
 import type { SheetAction } from "../../components/Sheet";
@@ -199,9 +200,15 @@ export function ImportSheet({
       break;
     case "started": {
       const first = phase.summaries[0];
+      const playlistId = phase.summaries.length === 1 && first.targetKind === "playlist" ? first.targetId : undefined;
+      const openPlaylist = (id: string) => {
+        close();
+        location.hash = `#${playlistHref(id)}`;
+      };
       buttons = [
         ...(first ? [{ label: t("ui.imports.open_report"), onClick: () => onOpenReport(first.id) }] : []),
-        { label: t("ui.imports.done"), onClick: close, primary: true },
+        { label: t("ui.imports.done"), onClick: close, primary: !playlistId },
+        ...(playlistId ? [{ label: t("ui.imports.open_playlist"), onClick: () => openPlaylist(playlistId), primary: true }] : []),
       ];
       body = (
         <>

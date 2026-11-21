@@ -24,6 +24,7 @@ import {
   type PlaylistSort,
 } from "../../ports/library";
 import { exportDocument, saveAsFiles } from "../../ports/exports";
+import { useImportSummaries } from "../../ports/importsRuntime";
 import { revealLocalTrack } from "../../ports/localFiles";
 import { playerEngine, usePlayerStore, type Track } from "../../ports/player";
 import {
@@ -48,6 +49,7 @@ import { DuplicatesSheet } from "./DuplicatesSheet";
 import { EntityHead, Facts } from "./EntityHead";
 import { EntityLoading, EntityPage } from "./EntityPage";
 import { entityPlayback, useUnavailable } from "./EntityTracks";
+import { ImportPending } from "./ImportPending";
 import { formatTotal, formatUpdated, matchTracks, moveTarget, orderTracks, totalMs, type TrackOrder } from "./entityModel";
 import { songMenuNotInterested } from "../../recs/notInterested";
 import { PlaylistSuggestions } from "../../recs/PlaylistSuggestions";
@@ -158,6 +160,7 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
   const liked = id === "likes";
   const navigate = useNavigate();
   const { data, loading } = usePlaylistData(id, liked, t);
+  const importing = useImportSummaries().find((s) => s.status === "running" && s.targetKind === "playlist" && s.targetId === id);
   const reorder = useReorderPlaylistTracks();
   const [optimistic, setOptimistic] = useState<Track[] | null>(null);
   const [query, setQuery] = useState("");
@@ -383,7 +386,7 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
   );
 
   let empty: JSX.Element | undefined;
-  if (count === 0) {
+  if (count === 0 && !importing) {
     empty = (
       <div className={pageStyles.state}>
         <Icon name="playlist" size={26} className={pageStyles.stateIcon} />
@@ -465,6 +468,7 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
                 setMenuOpen(true);
               }}
             />
+            {importing && !filtering ? <ImportPending running={importing} /> : null}
             <TrackBulkBar
               count={picked.length}
               onAddToPlaylist={(anchor) => {

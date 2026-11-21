@@ -1,0 +1,44 @@
+.pending {
+  display: flex;
+  flex-direction: column;
+}
+
+.caption {
+  margin: var(--n-s-3) 8px var(--n-s-1);
+  color: var(--n-ink-3);
+  font: var(--n-type-caption);
+}
+
+.row {
+  cursor: default;
+  animation: breathe 2400ms var(--n-ease-out) infinite alternate;
+  animation-delay: calc(var(--wave) * -400ms);
+}
+
+.pending .row:hover:not(:focus-visible) {
+  background: none;
+}
+
+.tile {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+}
+
+@keyframes breathe {
+  from {
+    opacity: 0.45;
+  }
+
+  to {
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    animation: none;
+    opacity: 0.6;
+  }
+}
