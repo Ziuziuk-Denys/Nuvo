@@ -1,5 +1,5 @@
 import type { Part } from "./compose";
-import type { LyricStyle } from "./schema";
+import type { LyricStyle, ParamValue } from "./schema";
 
 const LINE: LyricStyle = {
   mode: "line",
@@ -24,6 +24,12 @@ const WIPE: LyricStyle = {
   leading: 1.02,
   align: "centre",
   motion: "cut",
+};
+
+const PRINT: Record<string, ParamValue> = {
+  drift: { base: 0.2, bind: [{ feature: "level", amount: 0.5 }] },
+  blur: { base: 0.1, bind: [{ feature: "level", amount: 0.7 }] },
+  glitch: { base: 0, bind: [{ feature: "level", amount: 0.8 }] },
 };
 
 export const PARTS: Part[] = [
@@ -103,6 +109,26 @@ export const PARTS: Part[] = [
     ink: "light",
     drawsText: true,
     layers: [{ shader: "columns", params: { video: 1, ascii: 1, flicker: 0.5, tear: 1, split: 0.8, fog: 0.55, scan: 0.6, noise: 0.8 } }],
+  },
+  {
+    id: "print",
+    controls: ["print.shade", "print.grain", "print.zoom", "print.drift"],
+    slot: "background",
+    weight: 2,
+    zone: "full",
+    ink: "light",
+    drawsText: true,
+    layers: [{ shader: "print", params: PRINT }],
+  },
+  {
+    id: "print-ascii",
+    controls: ["print.cell", "print.shade", "print.drift"],
+    slot: "background",
+    weight: 2,
+    zone: "full",
+    ink: "light",
+    drawsText: true,
+    layers: [{ shader: "print", params: { ...PRINT, ascii: 1, cell: 0.02 } }],
   },
   {
     id: "glass",
@@ -290,6 +316,7 @@ export const PARTS: Part[] = [
     calm: "line",
     layers: [{ shader: "treat", params: { mode: 3 } }],
   },
+  { id: "poster", slot: "lyrics", weight: 2, zone: "centre", animation: "poster", requires: ["print", "print-ascii"], calm: "whisper", layers: [] },
   { id: "wipe", slot: "lyrics", weight: 2, zone: "centre", animation: "wipe", style: WIPE, requires: ["glass"], calm: "whisper", layers: [] },
   {
     id: "smoke",

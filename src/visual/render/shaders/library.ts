@@ -851,6 +851,79 @@ vec4 layer() {
 }`,
 };
 
+const print: ShaderDef = {
+  params: {
+    zoom: { min: 1.05, max: 2, value: 1.15 },
+    drift: { min: 0, max: 1, value: 0.5 },
+    shade: { min: 0.3, max: 0.85, value: 0.68 },
+    grain: { min: 0, max: 1, value: 0.6 },
+    blur: { min: 0, max: 1, value: 0.6 },
+    glitch: { min: 0, max: 1, value: 0.5 },
+    ascii: { min: 0, max: 1, value: 0 },
+    cell: { min: 0.006, max: 0.05, value: 0.014 },
+    source: { min: 0, max: 1, value: 0 },
+  },
+  body: `
+vec3 printSource(vec2 uv) {
+  if (u_source > 0.5 && uHasImage > 0.5) return imageAt(uv, 0.0);
+  vec2 a = uResolution / min(uResolution.x, uResolution.y);
+  return cover((uv - 0.5) * a / max(a.x, a.y) + 0.5);
+}
+
+vec2 shotUv(vec2 uv) {
+  float zoom = u_zoom * mix(1.0, 1.8, hash(vec2(uShot, 1.3))) * (1.0 + 0.01 * min(uShotAge, 6.0) * u_drift);
+  float room = 0.5 - 0.5 / zoom;
+  vec2 centre = 0.5 + (vec2(hash(vec2(uShot, 4.1)), hash(vec2(uShot, 7.7))) * 2.0 - 1.0) * room * 0.85;
+  float t = uTime * 0.12 * u_drift;
+  centre += vec2(sin(t + uShot), cos(t * 0.8 + uShot)) * room * 0.2;
+  return centre + (uv - 0.5) / zoom;
+}
+
+float printLevel(vec2 uv) {
+  float mean = pow(luma(u_source > 0.5 && uHasImage > 0.5 ? imageAt(vec2(0.5), 10.0) : textureLod(uCover, vec2(0.5), 10.0).rgb), 0.45);
+  float fresh = (1.0 - smoothstep(0.0, 0.16, uShotAge)) * u_blur;
+  vec2 smear = (vec2(hash(vec2(uShot, 2.9)), hash(vec2(uShot, 5.3))) - 0.5) * 0.05 * fresh;
+  float sum = 0.0;
+  for (int i = 0; i < 4; i++) sum += pow(luma(printSource(shotUv(uv) + smear * float(i))), 0.45);
+  return (sum * 0.25 - mean) * 2.2 + 0.5;
+}
+
+vec4 layer() {
+  vec3 khaki = vec3(0.39, 0.3, 0.11);
+  vec3 key = uKey / max(max(uKey.r, uKey.g), max(uKey.b, 0.001));
+  vec3 muted = mix(vec3(luma(key)), key, 0.45) * vec3(1.05, 1.0, 0.8);
+  vec3 light = mix(mix(muted * 0.3 / max(luma(muted), 0.001), khaki, 0.35), uColorA, uCustom);
+  vec3 dark = mix(mix(vec3(0.012, 0.012, 0.01), uDeep * 0.2, 0.25), uColorB, uCustom);
+
+  vec2 uv = vUv;
+  float row = floor(vUv.y * 26.0);
+  float glitched = step(hash(vec2(uShot, 11.0)), 0.3) * (1.0 - smoothstep(0.0, 0.12, uShotAge));
+  uv.x += glitched * step(0.72, hash(vec2(row, uShot))) * (hash(vec2(row, uShot + 1.0)) - 0.5) * 0.08 * u_glitch;
+
+  float speck = (hash(gl_FragCoord.xy + floor(uTime * 12.0) * 13.7) - 0.5) * 0.05 * u_grain;
+  float edge = (noise(gl_FragCoord.xy * 0.3) - 0.5) * 0.1 * u_grain;
+  float tone;
+  if (u_ascii > 0.5) {
+    vec2 cellSize = vec2(0.6, 1.0) * u_cell * min(uResolution.x, uResolution.y);
+    vec2 frag = uv * uResolution;
+    float level = smoothstep(u_shade - 0.42, u_shade + 0.15, printLevel((floor(frag / cellSize) + 0.5) * cellSize / uResolution));
+    vec2 inside = fract(frag / cellSize);
+    float glyph = floor(level * (uGlyphCount - 1.0) + 0.5);
+    tone = texture(uGlyphs, vec2((glyph + inside.x) / uGlyphCount, 1.0 - inside.y)).a;
+  } else {
+    tone = smoothstep(u_shade - 0.012, u_shade + 0.012, printLevel(uv) + speck + edge);
+  }
+  vec3 c = mix(dark, light, tone);
+
+  vec2 at = vec2(vUv.x, 1.0 - vUv.y);
+  vec4 text = texture(uText, at);
+  c = mix(c, dark, textureLod(uText, at, 5.0).a * 0.45);
+  c = mix(c, mix(light, dark, tone), text.a * (1.0 - text.g));
+  c = mix(c, vec3(0.9), text.a * text.g);
+  return vec4(c, 1.0);
+}`,
+};
+
 const smoke: ShaderDef = {
   feedback: true,
   params: {
@@ -893,4 +966,5 @@ export const SHADERS: Record<string, ShaderDef> = {
   film,
   glass,
   smoke,
+  print,
 };

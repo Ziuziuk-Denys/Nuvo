@@ -22,6 +22,8 @@ uniform float uOnset;
 uniform float uBeat;
 uniform float uCut;
 uniform float uCutAge;
+uniform float uShot;
+uniform float uShotAge;
 uniform vec2 uFocus;
 uniform float uScale;
 uniform float uHistoryHead;
