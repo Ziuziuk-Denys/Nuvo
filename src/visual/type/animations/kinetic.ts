@@ -88,7 +88,7 @@ export const kinetic: LyricAnimation = {
   weight: 3,
   zone: "full",
   draw({ ctx, lines, nowMs, width, height, box, pulse, scale = 1 }) {
-    const signals = { invert: pulse.cuts % 2, flash: 0.05 * pulse.onset, strobe: 0, blackout: 0 };
+    const signals = { flash: 0.05 * pulse.onset, strobe: 0, blackout: 0 };
     const phrase = phraseAt(lines, nowMs);
     if (!phrase || phrase.shown.length === 0) return signals;
     const texts = phrase.words.map((word) => word.text.trim());

@@ -24,11 +24,12 @@ import { isRunning, timeWords, useWordTiming } from "../ports/wordTiming";
 import { AddLyrics, MadeMark, TimeWords } from "./MadeLyrics";
 import { Stage } from "../visual/Stage";
 import { CornerHint } from "../visual/choice/CornerHint";
-import { EXAMPLE_SCENE, LookChoice, type LookView } from "../visual/choice/LookChoice";
+import { exampleScene, LookChoice, type LookView } from "../visual/choice/LookChoice";
 import { playDemo, restorePlayback, type Playback } from "../visual/tour/demoSong";
 import { SceneTour } from "../visual/tour/SceneTour";
 import { chooseScene, setVisualSettings, useVisualSettings } from "../visual/settings";
 import { setStudioOpen, useStudioOpen } from "../visual/studioOpen";
+import { useLook } from "../ports/theme";
 import { templateFor } from "../ports/visual";
 import styles from "./Karaoke.module.css";
 
@@ -388,13 +389,17 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const stageOn = visual.chosen && visual.enabled && visual.stage;
   const [lightScene, setLightScene] = useState(false);
   const [hint, setHint] = useState(false);
+  const lightLook = useLook().mode === "light";
   const beforeDemo = useRef<Playback | null | undefined>(undefined);
-  const choose = useCallback((view: LookView) => {
-    setVisualSettings({ enabled: true, stage: view === "scene", chosen: true });
-    if (view === "karaoke") return setHint(true);
-    chooseScene(EXAMPLE_SCENE);
-    beforeDemo.current = playDemo();
-  }, []);
+  const choose = useCallback(
+    (view: LookView) => {
+      setVisualSettings({ enabled: true, stage: view === "scene", chosen: true });
+      if (view === "karaoke") return setHint(true);
+      chooseScene(exampleScene(lightLook));
+      beforeDemo.current = playDemo();
+    },
+    [lightLook],
+  );
   const finishTour = useCallback(() => {
     setVisualSettings({ toured: true });
     if (beforeDemo.current !== undefined) restorePlayback(beforeDemo.current);
@@ -447,7 +452,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
         <Backdrop cover={track?.coverUrl ?? ""} open />
       )}
 
-      {visual.chosen ? null : <LookChoice trackKey={track?.id ?? ""} coverUrl={track?.coverUrl ?? ""} lines={lines} onChosen={choose} />}
+      {visual.chosen ? null : <LookChoice light={lightLook} onChosen={choose} />}
       <header className={styles.top} data-window-drag data-stage-tools={visual.enabled ? "" : undefined}>
         <GlyphButton icon="chevron-down" label={t("ui.karaoke.close")} className={styles.close} onClick={onClose} />
         {lyricsReady ? <OffsetPill track={track} mode={mode} reveal={stageOn} /> : null}
@@ -533,7 +538,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
         </section>
       </div>
 
-      {stageOn ? <StageLyricsHelp track={track} /> : <LyricsColumn track={track} mode={mode} />}
+      {!visual.chosen ? null : stageOn ? <StageLyricsHelp track={track} /> : <LyricsColumn track={track} mode={mode} />}
       {hint ? <CornerHint onDone={hideHint} /> : null}
       {stageOn && !hint && !visual.toured ? <SceneTour onDone={finishTour} /> : null}
       {lyricsReady && track ? (

@@ -64,7 +64,6 @@ export const collage: LyricAnimation = {
   zone: "full",
   draw({ ctx, lines, nowMs, width, height, box, pulse }) {
     const signals = {
-      invert: 0,
       flash: 0,
       strobe: pulse.level > 0.55 ? 1 : 0,
       blackout: pulse.cutAgeMs < FRAME_MS && hash(pulse.cuts) < 0.15 ? 1 : 0,

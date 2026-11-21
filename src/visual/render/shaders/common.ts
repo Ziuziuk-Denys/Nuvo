@@ -25,7 +25,6 @@ uniform float uCutAge;
 uniform vec2 uFocus;
 uniform float uScale;
 uniform float uHistoryHead;
-uniform float uInvert;
 uniform float uFlash;
 uniform float uStrobe;
 uniform float uBlackout;

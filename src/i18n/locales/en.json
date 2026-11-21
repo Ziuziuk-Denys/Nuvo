@@ -2385,13 +2385,16 @@
       "press": "Press the highlighted button"
     },
     "choice": {
-      "title": "Choose how songs look",
+      "title": "How should songs look?",
       "scene": "Scene",
       "scene_note": "The song draws itself to the beat.",
       "karaoke": "Karaoke",
       "karaoke_note": "Large lyrics, line by line.",
-      "later": "Click Scene or Karaoke. You can switch any time with the button in the top right corner.",
-      "here": "Switch between karaoke and the scene here, any time."
+      "later": "You can switch any time with the button in the top right corner.",
+      "here": "Switch between karaoke and the scene here, any time.",
+      "demo_1": "Turn the music up",
+      "demo_2": "and every word",
+      "demo_3": "lands on the beat"
     },
     "stage": {
       "no_lyrics": "This song has no lyrics yet."

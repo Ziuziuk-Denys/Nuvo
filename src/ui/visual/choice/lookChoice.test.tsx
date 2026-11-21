@@ -28,14 +28,16 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const mount = () => act(() => root.render(<LookChoice trackKey="t1" coverUrl="" lines={[]} onChosen={onChosen} />));
+const mount = () => act(() => root.render(<LookChoice light={false} onChosen={onChosen} />));
 const pick = (name: string) => [...host.querySelectorAll("button")].find((item) => item.textContent?.includes(name))!;
 
-it("splits the view: a live scene of this song on one half, its karaoke on the other", () => {
+it("previews both looks on the built-in demo line, whatever the song", () => {
   mount();
   expect([...host.querySelectorAll("button b")].map((item) => item.textContent)).toEqual(["visual.choice.scene", "visual.choice.karaoke"]);
-  expect(host.querySelector("canvas")?.getAttribute("data-aspect")).toBe("tall");
+  expect(host.querySelector("canvas")?.getAttribute("data-aspect")).toBe("wide");
   expect(host.textContent).toContain("visual.choice.later");
+  expect(host.textContent).toContain("visual.choice.demo_1");
+  expect(host.querySelectorAll("[data-active]")).toHaveLength(1);
 });
 
 it("quiets the other half while one is hovered", () => {
