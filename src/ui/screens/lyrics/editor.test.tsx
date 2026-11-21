@@ -113,6 +113,26 @@ describe("LyricsEditor", () => {
     expect(ports.saveLyrics).toHaveBeenCalledWith(TRACK, { format: "lrc", content: "[00:01.00] studio" });
   });
 
+  it("opened to find, it searches at once and fits a found LRC to a slowed stream", async () => {
+    const slowed = { ...TRACK, title: "Song (slowed)", durationMs: 250_000 };
+    tools.found = {
+      results: [
+        {
+          provider: "lrclib",
+          syncLevel: "line_level",
+          quality: { total: 0.8 },
+          lyrics: { format: "lrc", content: "[01:00.00] hook" },
+          matchedTrack: { title: "Song", artists: ["A"], durationMs: 200_000 },
+        },
+      ],
+      failed: [],
+    };
+    await act(async () => root.render(<LyricsEditor open find track={slowed} onClose={() => undefined} />));
+    expect(ports.searchLyrics).toHaveBeenCalledWith({ title: "Song (slowed)", artist: "A", durationMs: 250_000 }, expect.any(AbortSignal));
+    await act(async () => (document.body.querySelector("ul button") as HTMLButtonElement).click());
+    expect(document.body.querySelector("textarea")!.value).toBe("[01:15.00] hook");
+  });
+
   it("says so when the search finds nothing or fails", async () => {
     tools.found = { results: [], failed: [] };
     await act(async () => root.render(<LyricsEditor open track={TRACK} onClose={() => undefined} />));

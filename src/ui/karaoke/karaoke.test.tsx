@@ -107,6 +107,8 @@ vi.mock("../ports/wordTiming", () => ({
   cancelWordTiming: timing.cancel,
   request: timing.request,
   refresh: vi.fn(async () => undefined),
+  timingModel: () => "whisper-base",
+  writingModel: () => "whisper-small",
   isLocalTiming: (provider: string | null) => provider === "whisper-base" || provider === "whisper-small",
   isRunning: (job: { trackId: string; state: string } | undefined, trackId: string | null) =>
     job?.trackId === trackId && (job?.state === "waiting" || job?.state === "running"),
@@ -208,6 +210,9 @@ describe("karaoke view", () => {
     expect(lyricsCalls.follow).toHaveBeenCalledWith(current);
     expect(empty.host.textContent).toContain("ui.karaoke.no_lyrics");
     expect(empty.host.textContent).not.toContain("lyric lines");
+    const find = [...empty.host.querySelectorAll("button")].find((button) => button.textContent === "ui.lyrics.find")!;
+    act(() => find.click());
+    expect(openLyricsTool).toHaveBeenCalledWith(current, "find");
     const paste = [...empty.host.querySelectorAll("button")].find((button) => button.textContent === "ui.karaoke.make.paste")!;
     act(() => paste.click());
     expect(openLyricsTool).toHaveBeenCalledWith(current, "edit", "");
@@ -234,11 +239,15 @@ describe("karaoke view", () => {
     view.unmount();
   });
 
-  it("the lyrics version menu shows only with two or more versions and switches to the picked one", () => {
+  it("the lyrics menu offers Find lyrics, lists two or more versions and switches to the picked one", () => {
     current = { id: "t", title: "Song", artists: "Ann", coverUrl: "" };
     lyricsStatus = "ready";
     const single = mount(<Karaoke onClose={() => undefined} />);
-    expect(single.host.querySelector('button[aria-label="ui.karaoke.version"]')).toBeNull();
+    act(() => single.host.querySelector<HTMLButtonElement>('header button[aria-label="ui.karaoke.version"]')!.click());
+    const only = [...document.querySelectorAll<HTMLButtonElement>('[role="menu"] [role="menuitem"]')];
+    expect(only.map((item) => item.textContent)).toEqual(["ui.lyrics.find"]);
+    act(() => only[0].click());
+    expect(openLyricsTool).toHaveBeenCalledWith(current, "find");
     single.unmount();
     twoVersions = true;
     const view = mount(<Karaoke onClose={() => undefined} />);
@@ -246,8 +255,8 @@ describe("karaoke view", () => {
     expect(button).not.toBeNull();
     act(() => button.click());
     const items = [...document.querySelectorAll<HTMLButtonElement>('[role="menu"] [role="menuitem"]')];
-    expect(items.map((item) => item.textContent)).toEqual(["version line_level", "version word_level"]);
-    expect(items.map((item) => item.querySelector("svg") !== null)).toEqual([true, false]);
+    expect(items.map((item) => item.textContent)).toEqual(["version line_level", "version word_level", "ui.lyrics.find"]);
+    expect(items.map((item) => item.querySelector("svg") !== null)).toEqual([true, false, false]);
     act(() => items[1].click());
     expect(lyricsCalls.chooseVersion).toHaveBeenCalledWith("amll");
     view.unmount();
@@ -497,7 +506,7 @@ describe("word timing in the lyrics view", () => {
     expect(view.host.textContent).toContain("ui.karaoke.make.download");
     await act(async () => button(view.host, "ui.karaoke.make.write")?.click());
     expect(timing.setWordTiming).not.toHaveBeenCalled();
-    expect(timing.request).toHaveBeenCalledWith("POST", "/v1/tracks/t1/lyrics/made", { source: "transcribed" });
+    expect(timing.request).toHaveBeenCalledWith("POST", "/v1/tracks/t1/lyrics/made", { source: "transcribed", best: true });
     view.unmount();
     timing.made = { models: ["whisper-small"], job: { trackId: "t1", source: "transcribed", model: "whisper-small", state: "running", progress: 0.25 } };
     const working = mount(<Karaoke onClose={() => undefined} />);
@@ -519,7 +528,7 @@ describe("word timing in the lyrics view", () => {
     const plain = mount(<Karaoke onClose={() => undefined} />);
     expect(control(plain.host)?.title).toBe("ui.karaoke.make.time_hint_plain");
     await act(async () => control(plain.host)?.click());
-    expect(timing.request).toHaveBeenCalledWith("POST", "/v1/tracks/t1/lyrics/made", { source: "aligned" });
+    expect(timing.request).toHaveBeenCalledWith("POST", "/v1/tracks/t1/lyrics/made", { source: "aligned", best: false });
     expect(timing.setWordTiming).not.toHaveBeenCalled();
     plain.unmount();
     synced = true;

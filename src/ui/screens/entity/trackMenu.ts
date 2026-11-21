@@ -2,6 +2,7 @@ import type { MenuAction, MenuItem } from "../../components/Menu";
 import type { TFunction } from "../../ports/i18n";
 import type { Track } from "../../ports/player";
 import type { NotInterestedScope } from "../../ports/recs";
+import { openLyricsTool } from "../lyrics/lyricsTools";
 import { notInterestedItems } from "../../recs/notInterestedItems";
 import { shareItemOf, useShareSheet } from "../../sheets/ShareSheet";
 import { useSourceSheet } from "../../sheets/SourceSheet";
@@ -46,7 +47,10 @@ export function trackMenuItems(track: Track, context: { playlistId?: string }, a
 
   const tools: MenuItem[] = [];
   const lyrics: MenuAction[] = [];
-  if (actions.editLyrics) lyrics.push({ label: t("ui.lyrics.edit"), onSelect: () => actions.editLyrics?.(track) });
+  if (actions.editLyrics) {
+    lyrics.push({ label: t("ui.lyrics.find"), onSelect: () => openLyricsTool(track, "find") });
+    lyrics.push({ label: t("ui.lyrics.edit"), onSelect: () => actions.editLyrics?.(track) });
+  }
   if (actions.translateLyrics) lyrics.push({ label: t("ui.lyrics.translate"), onSelect: () => actions.translateLyrics?.(track) });
   if (lyrics.length > 1) tools.push({ label: t("ui.lyrics.edit_title"), icon: "lyrics", items: lyrics });
   else if (lyrics[0]) tools.push({ ...lyrics[0], icon: "lyrics" });

@@ -10,6 +10,8 @@ import {
   type WordTimingJob,
   type WordTimingModel,
   type WordTimingView,
+  timingModel,
+  writingModel,
 } from "./wordTiming";
 
 export type MadeSource = "synced" | "aligned" | "transcribed";
@@ -89,7 +91,7 @@ export function makerOffer(timing: WordTimingView | null, madeView: MadeView | n
   if ((source || switchedOn) && job?.state === "failed") return { kind: "failed", task, code: job.code ?? "failed" };
   // with the switch on, synced lines are timed by themselves
   if (!source && switchedOn) return { kind: "none" };
-  const model = source === "transcribed" ? "whisper-small" : "whisper-base";
+  const model = source === "transcribed" ? writingModel() : timingModel(view.models);
   return { kind: "offer", task, downloadMb: view.models.includes(model) ? null : MODEL_MB[model] };
 }
 
@@ -99,7 +101,8 @@ export async function makeLyrics(timing: WordTimingView | null, trackId: string,
     if (!timing?.enabled) await setWordTiming(true);
     return timeWords(trackId);
   }
-  const response = await request("POST", `/v1/tracks/${encodeURIComponent(trackId)}/lyrics/made`, { source });
+  const model = source === "transcribed" ? writingModel() : timingModel(made?.models ?? []);
+  const response = await request("POST", `/v1/tracks/${encodeURIComponent(trackId)}/lyrics/made`, { source, best: model === "whisper-small" });
   if (response?.ok) await refreshMade();
 }
 

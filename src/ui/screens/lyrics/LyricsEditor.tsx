@@ -26,10 +26,11 @@ interface LyricsEditorProps {
   open: boolean;
   track: LyricsTrack;
   draft?: string | null;
+  find?: boolean;
   onClose(): void;
 }
 
-export function LyricsEditor({ open, track, draft = null, onClose }: LyricsEditorProps): JSX.Element | null {
+export function LyricsEditor({ open, track, draft = null, find = false, onClose }: LyricsEditorProps): JSX.Element | null {
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -43,7 +44,8 @@ export function LyricsEditor({ open, track, draft = null, onClose }: LyricsEdito
   useEffect(() => {
     if (!open) return;
     setSync(null);
-    setFinding(false);
+    setFinding(find);
+    if (find) finder.start();
     if (draft !== null) {
       setText(draft);
       setLoading(false);
@@ -59,7 +61,7 @@ export function LyricsEditor({ open, track, draft = null, onClose }: LyricsEdito
       () => setLoading(false),
     );
     return () => controller.abort();
-  }, [open, track, draft]);
+  }, [open, track, draft, find]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (sync) list.current?.focus();

@@ -11,6 +11,7 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const ELECTRON = createRequire(import.meta.url)("electron") as unknown as string;
 const SHOTS = path.join(os.homedir(), ".cache", "lyrics-shots");
 const SONG = { id: "fixture-song", title: "Morning Light", artists: "Nova", coverUrl: "", durationMs: 30_000 };
+const QUIET = { id: "fixture-quiet", title: "Quiet Room", artists: "Nova", coverUrl: "", durationMs: 30_000 };
 const SYNCED = "[00:01.00]Morning light\n[00:04.00]Over the hill\n[00:07.00]Where the river runs\n[00:10.00]Home again";
 
 let isolation: Isolation;
@@ -50,8 +51,11 @@ beforeAll(async () => {
       syncedLyrics: SYNCED,
     };
     response.setHeader("Content-Type", "application/json");
-    if (request.url?.startsWith("/api/get")) response.end(JSON.stringify(record));
-    else if (request.url?.startsWith("/api/search")) response.end(JSON.stringify([record]));
+    const quiet = decodeURIComponent(request.url ?? "")
+      .replaceAll("+", " ")
+      .includes(QUIET.title);
+    if (request.url?.startsWith("/api/get")) response.writeHead(quiet ? 404 : 200).end(quiet ? "{}" : JSON.stringify(record));
+    else if (request.url?.startsWith("/api/search")) response.end(JSON.stringify(quiet ? [] : [record]));
     else response.writeHead(404).end();
   });
   await new Promise<void>((resolve) => provider.listen(0, "127.0.0.1", resolve));
@@ -171,4 +175,33 @@ it("the karaoke view of a paused, restored song shows its line in full ink, the 
     expect(line.color, `line ${line.line}`).not.toBe(active.color);
   }
   await main.screenshot({ path: path.join(SHOTS, "karaoke-active-line.png") });
+});
+
+it("a song without lyrics offers Find lyrics in the karaoke view, and a corrected title finds them", async () => {
+  const wav = toneWav(30).toString("base64");
+  await main.evaluate(
+    async ({ id, wav }) => {
+      const bytes = Uint8Array.from(atob(wav), (c) => c.charCodeAt(0));
+      await fetch(`nuvo-core://local/v1/cache/audio/${id}`, { method: "PUT", headers: { "Content-Type": "audio/wav", "X-Nuvo-Codec": "pcm" }, body: bytes });
+    },
+    { id: QUIET.id, wav },
+  );
+  await main.evaluate(
+    (song) => (window as unknown as { __nuvoPlayer: { engine: { playList(tracks: unknown[]): void } } }).__nuvoPlayer.engine.playList([song]),
+    QUIET,
+  );
+  await main.evaluate(() => {
+    location.hash = "#/player";
+  });
+  const find = main.getByRole("button", { name: "Find lyrics" });
+  await find.waitFor({ timeout: 30_000 });
+  fs.mkdirSync(SHOTS, { recursive: true });
+  await main.screenshot({ path: path.join(SHOTS, "karaoke-find-lyrics.png") });
+  await find.click();
+  await main.getByText("Nothing found", { exact: false }).waitFor({ timeout: 15_000 });
+  const title = main.getByRole("textbox").first();
+  await title.fill(SONG.title);
+  await title.press("Enter");
+  await main.getByRole("button", { name: /Morning Light/ }).waitFor({ timeout: 15_000 });
+  await main.screenshot({ path: path.join(SHOTS, "karaoke-find-results.png") });
 });

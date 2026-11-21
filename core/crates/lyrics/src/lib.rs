@@ -119,14 +119,26 @@ impl Lrclib {
         })
     }
 
-    /// Every record with lyrics for a search the owner typed, in LRCLIB's order.
-    pub async fn search_all(&self, query: &Query) -> Result<Vec<LyricsCandidate>, LyricsError> {
-        let records = self.search(query).await?;
-        let found = records.iter().filter(|record| has_lyrics(record)).filter_map(|record| match to_lookup(record, 0.8) {
+    pub async fn search_all(&self, guesses: &[Query]) -> Result<Vec<LyricsCandidate>, LyricsError> {
+        let Some(first) = guesses.first() else { return Ok(Vec::new()) };
+        let mut records = Vec::new();
+        for guess in guesses {
+            records = self.search(guess).await?;
+            if records.iter().any(has_lyrics) {
+                break;
+            }
+        }
+        if !records.iter().any(has_lyrics) {
+            records = self.search_text(format!("{} {}", first.title, first.artist).trim()).await?;
+        }
+        let mut found: Vec<LyricsCandidate> = records.iter().filter(|record| has_lyrics(record)).filter_map(|record| match to_lookup(record, 0.8) {
             Lookup::Found(candidate) => Some(*candidate),
             _ => None,
-        });
-        Ok(found.collect())
+        }).collect();
+        if let Some(want) = first.duration_ms {
+            found.sort_by_key(|candidate| candidate.matched_track.as_ref().and_then(|track| track.duration_ms).map_or(i64::MAX, |have| (have - want).abs()));
+        }
+        Ok(found)
     }
 
     async fn send(&self, request: reqwest::RequestBuilder) -> Result<reqwest::Response, LyricsError> {
@@ -158,7 +170,15 @@ impl Lrclib {
     }
 
     async fn search(&self, query: &Query) -> Result<Vec<Record>, LyricsError> {
-        let request = self.client.get(format!("{}/api/search", self.base)).query(&[("track_name", query.title.as_str()), ("artist_name", query.artist.as_str())]);
+        self.search_with(&[("track_name", query.title.as_str()), ("artist_name", query.artist.as_str())]).await
+    }
+
+    async fn search_text(&self, text: &str) -> Result<Vec<Record>, LyricsError> {
+        self.search_with(&[("q", text)]).await
+    }
+
+    async fn search_with(&self, params: &[(&str, &str)]) -> Result<Vec<Record>, LyricsError> {
+        let request = self.client.get(format!("{}/api/search", self.base)).query(params);
         let response = self.send(request).await?;
         match response.status().as_u16() {
             200 => Ok(response.json().await?),

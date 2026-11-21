@@ -5,7 +5,7 @@ import { useTranslation, type TFunction } from "../ports/i18n";
 import { useLyrics } from "../ports/lyrics";
 import { MODEL_MB, cancelMaking, madeBy, makeLyrics, makerOffer, useMadeLyrics, type LyricsHave, type MakerOffer } from "../ports/lyricsMaker";
 import type { LyricsTrack } from "../ports/lyricsTools";
-import { useAutoWordTiming, useWordTiming } from "../ports/wordTiming";
+import { timingModel, useAutoWordTiming, useWordTiming } from "../ports/wordTiming";
 import { openLyricsTool } from "../screens/lyrics/lyricsTools";
 import styles from "./Karaoke.module.css";
 
@@ -35,7 +35,8 @@ function workingText(offer: Extract<MakerOffer, { kind: "working" }>, t: TFuncti
   }
   if (offer.phase === "prepare") return t("ui.karaoke.word_timing.waiting");
   if (offer.task === "write") return t("ui.karaoke.make.writing", { percent: offer.percent });
-  return t(offer.model === "whisper-small" ? "ui.karaoke.word_timing.improving" : "ui.karaoke.word_timing.running", { percent: offer.percent });
+  const improving = offer.model !== timingModel([]);
+  return t(improving ? "ui.karaoke.word_timing.improving" : "ui.karaoke.word_timing.running", { percent: offer.percent });
 }
 
 // a file opens the editor with its text, so nothing is saved unseen
@@ -114,6 +115,9 @@ export function AddLyrics({ track }: { track: LyricsTrack }): JSX.Element {
         </div>
       ) : null}
       <div className={styles.sources}>
+        <button type="button" className={styles.addLyrics} data-add-lyrics="" onClick={() => openLyricsTool(track, "find")}>
+          {t("ui.lyrics.find")}
+        </button>
         <button type="button" className={offer.kind === "none" ? styles.addLyrics : styles.textButton} data-add-lyrics="" onClick={sources.paste}>
           {t("ui.karaoke.make.paste")}
         </button>

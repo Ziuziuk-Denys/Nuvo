@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { TextField } from "../../components/TextField";
 import { useTranslation } from "../../ports/i18n";
-import { editableText, formatDuration, searchLyrics, type FoundVersion, type LyricsTrack } from "../../ports/lyricsTools";
+import { editableText, formatDuration, searchLyrics, stretchedToFit, type FoundVersion, type LyricsTrack } from "../../ports/lyricsTools";
 import styles from "./Lyrics.module.css";
 
 const SAME_LENGTH_MS = 2000;
@@ -31,7 +31,7 @@ export function useLyricsFinder(track: LyricsTrack) {
 
   const run = (query: { title: string; artist: string }) => {
     controller.current?.abort();
-    if (query.title.trim() === "" || query.artist.trim() === "") return;
+    if (query.title.trim() === "") return;
     const current = new AbortController();
     controller.current = current;
     setSearch((last) => ({ status: "loading", results: last?.results ?? [], partial: false }));
@@ -51,7 +51,7 @@ export function useLyricsFinder(track: LyricsTrack) {
     search,
     setTitle,
     setArtist,
-    ready: title.trim() !== "" && artist.trim() !== "" && search?.status !== "loading",
+    ready: title.trim() !== "" && search?.status !== "loading",
     start: () => {
       const query = { title: track.title, artist: firstArtist(track.artists) };
       setTitle(query.title);
@@ -77,6 +77,11 @@ export function LyricsFinder({ finder, track, onPick }: LyricsFinderProps): JSX.
   const sameLength = (version: FoundVersion) => {
     const length = version.matchedTrack?.durationMs ?? 0;
     return length > 0 && track.durationMs > 0 && Math.abs(length - track.durationMs) <= SAME_LENGTH_MS;
+  };
+  const pick = (version: FoundVersion) => {
+    const length = version.matchedTrack?.durationMs ?? 0;
+    const text = editableText(version.lyrics);
+    onPick(length > 0 && track.durationMs > 0 ? stretchedToFit(text, track.title, length, track.durationMs) : text);
   };
   const results = [...(search?.results ?? [])].sort((a, b) => Number(sameLength(b)) - Number(sameLength(a)));
 
@@ -108,7 +113,7 @@ export function LyricsFinder({ finder, track, onPick }: LyricsFinderProps): JSX.
             const meta = [length > 0 ? formatDuration(length) : null, t(KIND[version.syncLevel] ?? "ui.lyrics.version_plain")].filter(Boolean).join(" · ");
             return (
               <li key={at}>
-                <button type="button" className={styles.result} onClick={() => onPick(editableText(version.lyrics))}>
+                <button type="button" className={styles.result} onClick={() => pick(version)}>
                   <span className={styles.resultName}>
                     {version.matchedTrack?.title ?? finder.title}
                     <span className={styles.resultArtist}> · {(version.matchedTrack?.artists ?? [finder.artist]).join(", ")}</span>

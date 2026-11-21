@@ -21,6 +21,61 @@ export interface WordTimingView {
 
 export const POLL_MS = 500;
 
+export const MODEL_CHOICES = ["auto", "light", "full"] as const;
+export type ModelChoice = (typeof MODEL_CHOICES)[number];
+
+const CHOICE_KEY = "nuvo.lyrics.model";
+const STRONG_CORES = 8;
+// Chromium caps its measured bandwidth at 10 Mbps, so only the cap reads as fast: 264 MB in under four minutes
+const FAST_MBPS = 10;
+
+function readChoice(): ModelChoice {
+  try {
+    const stored = localStorage.getItem(CHOICE_KEY);
+    return MODEL_CHOICES.includes(stored as ModelChoice) ? (stored as ModelChoice) : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+let choice = readChoice();
+const choiceListeners = new Set<() => void>();
+
+export function setModelChoice(next: ModelChoice): void {
+  choice = next;
+  try {
+    localStorage.setItem(CHOICE_KEY, next);
+  } catch {
+    // storage blocked: the choice lasts this session
+  }
+  choiceListeners.forEach((listener) => listener());
+}
+
+export function useModelChoice(): ModelChoice {
+  return useSyncExternalStore(
+    (listener) => {
+      choiceListeners.add(listener);
+      return () => choiceListeners.delete(listener);
+    },
+    () => choice,
+  );
+}
+
+export function prefersFullModel(installed: readonly WordTimingModel[]): boolean {
+  if (choice !== "auto") return choice === "full";
+  if ((navigator.hardwareConcurrency ?? 0) < STRONG_CORES) return false;
+  const downlink = (navigator as Navigator & { connection?: { downlink?: number } }).connection?.downlink ?? 0;
+  return installed.includes("whisper-small") || downlink >= FAST_MBPS;
+}
+
+export function timingModel(installed: readonly WordTimingModel[]): WordTimingModel {
+  return prefersFullModel(installed) ? "whisper-small" : "whisper-base";
+}
+
+export function writingModel(): WordTimingModel {
+  return choice === "light" ? "whisper-base" : "whisper-small";
+}
+
 /** Versions the daemon timed on this computer are named after their model. */
 export function isLocalTiming(provider: string | null): boolean {
   return provider === "whisper-base" || provider === "whisper-small";
@@ -72,7 +127,7 @@ export async function setWordTiming(enabled: boolean): Promise<void> {
   await reloadLyrics();
 }
 
-export async function timeWords(trackId: string, best = false): Promise<void> {
+export async function timeWords(trackId: string, best = prefersFullModel(view?.models ?? [])): Promise<void> {
   asked.add(trackId);
   const response = await request("POST", `/v1/tracks/${encodeURIComponent(trackId)}/lyrics/word-timing`, { best });
   if (response?.ok) await refresh();
@@ -106,6 +161,7 @@ export function useAutoWordTiming(trackId: string | null, lineOnly: boolean): vo
 
 export function resetForTests(): void {
   view = null;
+  choice = readChoice();
   asked.clear();
   if (poll) clearTimeout(poll);
   poll = null;
