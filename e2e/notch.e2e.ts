@@ -67,6 +67,7 @@ interface Launched {
   main: Page;
   profile: string;
   isolation?: Isolation;
+  pid?: number;
 }
 
 async function launch(env: Record<string, string>, flags: string[] = []): Promise<Launched> {
@@ -82,16 +83,15 @@ async function launch(env: Record<string, string>, flags: string[] = []): Promis
   });
   const main = await waitForPage(app, (url) => !url.includes("#/notch"));
   await main.waitForFunction(() => Boolean(window.nuvoShell));
-  return { app, main, profile, isolation };
+  return { app, main, profile, isolation, pid: app.process().pid };
 }
 
 async function close(launched: Launched | undefined): Promise<void> {
   if (!launched) return;
-  const pid = launched.app.process().pid;
   await launched.app.close().catch(() => undefined);
-  if (pid) {
+  if (launched.pid) {
     try {
-      process.kill(pid, "SIGKILL");
+      process.kill(launched.pid, "SIGKILL");
     } catch {}
   }
   rmSync(launched.profile, { recursive: true, force: true });
