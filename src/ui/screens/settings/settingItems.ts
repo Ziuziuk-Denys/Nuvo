@@ -67,6 +67,7 @@ export const SETTING_ITEMS: SettingItem[] = [
   titled("Lyrics", "settings.visual_player", "scene"),
   row("Theme", "settings.preset.title", "settings.preset.description", "theme"),
   row("Theme", "settings.page.mode", "settings.theme.description", "dark"),
+  titled("Theme", "settings.navigation", "navigation"),
   row("Theme", "settings.preset.accent_from_cover", "settings.preset.accent_from_cover_description", "accent"),
   row("Theme", "appearance.css.title", "appearance.css.warning", "css"),
   row("Theme", "appearance.safe.reset_title", "appearance.safe.reset_desc"),

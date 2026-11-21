@@ -13,6 +13,7 @@ export const MAX_WALLPAPER_DIM = 80;
 export type ThemeChoice = "light" | "dark" | "system";
 export type WallpaperFit = "cover" | "contain";
 export type PlayerControls = "centre" | "side";
+export type Navigation = "top" | "side";
 export const WALLPAPER_BASE = "nuvo-core://local/wallpaper/";
 
 export interface LookFields {
@@ -25,6 +26,7 @@ export interface LookFields {
   backgroundFit: WallpaperFit;
   themeBeforePreset: ThemeChoice | null;
   playerControls: PlayerControls;
+  navigation: Navigation;
 }
 
 export const LOOK_DEFAULTS: LookFields = {
@@ -37,6 +39,7 @@ export const LOOK_DEFAULTS: LookFields = {
   backgroundFit: "cover",
   themeBeforePreset: null,
   playerControls: "centre",
+  navigation: "top",
 };
 
 export const RETIRED_PRESETS: Record<string, PresetId> = {
@@ -111,6 +114,7 @@ interface LookState extends LookFields {
   setBackgroundFit(fit: WallpaperFit): void;
   setThemeBeforePreset(theme: ThemeChoice | null): void;
   setPlayerControls(controls: PlayerControls): void;
+  setNavigation(navigation: Navigation): void;
   resetAll(): void;
 }
 
@@ -129,6 +133,7 @@ export const useLookStore = create<LookState>()(
       setBackgroundFit: (backgroundFit) => set({ backgroundFit }),
       setThemeBeforePreset: (themeBeforePreset) => set({ themeBeforePreset }),
       setPlayerControls: (playerControls) => set({ playerControls }),
+      setNavigation: (navigation) => set({ navigation }),
       resetAll: () =>
         set({
           backgroundImage: null,
@@ -155,6 +160,7 @@ export const useLookStore = create<LookState>()(
         backgroundFit,
         themeBeforePreset,
         playerControls,
+        navigation,
       }) => ({
         preset,
         coverGlow,
@@ -165,6 +171,7 @@ export const useLookStore = create<LookState>()(
         backgroundFit,
         themeBeforePreset,
         playerControls,
+        navigation,
       }),
       merge: (saved, current) => {
         const stored = (saved ?? {}) as Partial<LookFields>;
@@ -175,6 +182,7 @@ export const useLookStore = create<LookState>()(
           backgroundBlur: isNumber(stored.backgroundBlur) ? clampBlur(stored.backgroundBlur) : current.backgroundBlur,
           backgroundDim: isNumber(stored.backgroundDim) ? clampDim(stored.backgroundDim) : current.backgroundDim,
           playerControls: stored.playerControls === "side" ? "side" : "centre",
+          navigation: stored.navigation === "side" ? "side" : "top",
           backgroundImage: isWallpaper(stored.backgroundImage) ? stored.backgroundImage : null,
           backgroundFit: stored.backgroundFit === "contain" ? "contain" : "cover",
         };

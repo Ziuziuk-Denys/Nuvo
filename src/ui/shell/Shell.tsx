@@ -14,6 +14,7 @@ import { useStudioOpen } from "../visual/studioOpen";
 import { useDisableButtonFocus, useModalStore, useWindowState } from "../ports/navigation";
 import { onShareLink } from "../ports/links";
 import { playerEngine, usePlayerStore } from "../ports/player";
+import { useCustomizationStore } from "../ports/settings";
 import { useAppShortcuts } from "../ports/shortcuts";
 import { useToolDownloadToast } from "./useToolDownloadToast";
 import { useAppIconSync, useLookSync } from "../ports/theme";
@@ -78,6 +79,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const { fullscreen, setFullscreen } = usePlayerStore(useShallow(({ fullscreen, setFullscreen }) => ({ fullscreen, setFullscreen })));
   const gated = useGateStore((store) => store.locked);
   const trackLoaded = useSyncExternalStore(watchEngine, engineHasTrack, () => false);
+  const navigation = useCustomizationStore((state) => state.navigation);
   const pageLit = usePageLit();
 
   const onKaraokeRoute = pathname === KARAOKE_PATH;
@@ -168,7 +170,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   );
 
   return (
-    <div className={styles.shell} data-edge={edgeToEdge ? "" : undefined} onScroll={pinWindow}>
+    <div className={styles.shell} data-edge={edgeToEdge ? "" : undefined} data-nav={navigation} onScroll={pinWindow}>
       <Field />
       <AnimatePresence>{chrome}</AnimatePresence>
       <div

@@ -30,6 +30,10 @@
   scrollbar-gutter: stable;
 }
 
+.shell[data-nav="side"] .content {
+  left: 62px;
+}
+
 .content[data-player-below] {
   bottom: 76px;
 }

@@ -5,6 +5,7 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import { deliverShareLink } from "@/links/inbox";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { pushLayer } from "../components/layers";
+import { useCustomizationStore } from "../ports/settings";
 import { Shell } from "./Shell";
 import styles from "./Shell.module.css";
 
@@ -274,6 +275,31 @@ describe("Shell", () => {
     expect(document.activeElement).toBe(links[3]);
     press("Home");
     expect(document.activeElement).toBe(links[0]);
+  });
+
+  it("moves the mark, sections, pins and settings into a rail on the left when navigation is on the side", () => {
+    act(() => useCustomizationStore.getState().setNavigation("side"));
+    mocks.homePins = [{ kind: "playlist", id: "p9", title: "Road", href: "/collection?type=playlist&id=p9" }];
+    try {
+      mount("/library");
+      const rail = host.querySelector("aside[data-window-drag]")!;
+      expect(rail.querySelector('a[aria-label="Nuvo"]')).not.toBeNull();
+      expect(navLinks().every((link) => rail.contains(link))).toBe(true);
+      expect(rail.querySelector('nav[aria-label="ui.nav.pinned"]')).not.toBeNull();
+      expect(rail.querySelector('button[aria-label="ui.nav.settings"]')).not.toBeNull();
+      expect(host.querySelector("header [data-testid=palette-field]")).not.toBeNull();
+      expect(button("ui.window.close")?.closest("header")).not.toBeNull();
+      expect(host.querySelector<HTMLElement>(`.${styles.shell}`)!.dataset.nav).toBe("side");
+      const links = navLinks();
+      act(() => links[0].focus());
+      press("ArrowDown");
+      expect(document.activeElement).toBe(links[1]);
+      press("ArrowUp");
+      expect(document.activeElement).toBe(links[0]);
+    } finally {
+      mocks.homePins = [];
+      act(() => useCustomizationStore.getState().setNavigation("top"));
+    }
   });
 
   it("scrolls the content in an n-scroll box with the island padding", () => {

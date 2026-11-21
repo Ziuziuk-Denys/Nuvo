@@ -44,6 +44,7 @@ describe("look store migration", () => {
       backgroundFit: "cover",
       themeBeforePreset: "light",
       playerControls: "centre",
+      navigation: "top",
     });
   });
 
@@ -103,6 +104,14 @@ describe("retired presets", () => {
     vi.resetModules();
     localStorage.setItem(LOOK_KEY, JSON.stringify({ state: { ...LOOK_DEFAULTS, playerControls: "top" }, version: 2 }));
     expect((await import("./lookStore")).useLookStore.getState().playerControls).toBe("centre");
+  });
+
+  it("keeps the side navigation and reads anything else as the top bar", async () => {
+    localStorage.setItem(LOOK_KEY, JSON.stringify({ state: { ...LOOK_DEFAULTS, navigation: "side" }, version: 2 }));
+    expect((await import("./lookStore")).useLookStore.getState().navigation).toBe("side");
+    vi.resetModules();
+    localStorage.setItem(LOOK_KEY, JSON.stringify({ state: { ...LOOK_DEFAULTS, navigation: "left" }, version: 2 }));
+    expect((await import("./lookStore")).useLookStore.getState().navigation).toBe("top");
   });
 });
 

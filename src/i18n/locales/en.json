@@ -1806,6 +1806,12 @@
       "description": "A soft glow of the cover colors behind the player",
       "disabled_for_wallpaper": "Off while a wallpaper is set"
     },
+    "navigation": {
+      "title": "Navigation",
+      "description": "Section buttons in the top bar or in a narrow rail on the left",
+      "top": "Top",
+      "side": "Side"
+    },
     "player_controls": {
       "title": "Player controls",
       "description": "Play, previous and next in the middle of the player or at its left edge",
@@ -2220,6 +2226,7 @@
       "fonts": "typeface, text size",
       "wallpaper": "image, photo, gif, video",
       "player": "player bar, buttons, centre, center",
+      "navigation": "sidebar, rail, menu, left, top bar",
       "glow": "cover light, ambient",
       "motion": "animation, blur, fps, battery",
       "notch": "mini player, island, overlay",
