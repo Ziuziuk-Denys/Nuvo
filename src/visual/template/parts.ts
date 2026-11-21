@@ -198,7 +198,7 @@ export const PARTS: Part[] = [
     weight: 1,
     zone: "full",
     mono: 1,
-    layers: [{ shader: "film", params: { letterbox: 0.09 } }],
+    layers: [{ shader: "film", params: {} }],
   },
 
   {
