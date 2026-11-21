@@ -5,6 +5,8 @@ import { probe } from "./player";
 import { raceAbort } from "./worker";
 import { report, validUntilMs, type CodecPreference, type Quality } from "./formats";
 
+type Choice = { quality: Quality; codec?: CodecPreference };
+
 export interface ResolveOptions {
   progressive: boolean;
   early?: boolean;
@@ -46,6 +48,8 @@ export const WEB_REMIX_ATTEMPTS = 2;
 export const COOLDOWN_AFTER = 3;
 export const COOLDOWN_MS = 5 * 60 * 1000;
 export const CLIENT_BUDGET_MS = 3000;
+export const HEDGE_MS = 1000;
+const MAX_LANES = 2;
 const FALLBACKS: ClientContext[] = [TVHTML5, VISIONOS, ANDROID_VR];
 
 const PER_TRACK_LIMIT = 200;
@@ -226,8 +230,55 @@ export class StreamResolver {
     return true;
   }
 
+  private async attempt(name: string, videoId: string, choice: Choice, tries: { left: number }, signal: AbortSignal): Promise<StreamHit> {
+    if (name !== WEB_REMIX.clientName) {
+      const client = FALLBACKS.find((candidate) => candidate.clientName === name)!;
+      try {
+        return await this.withinBudget((limited) => this.attempts.fallback(this.deps, client, videoId, choice, limited), signal);
+      } catch (error) {
+        if (name === ANDROID_VR.clientName && !isAbortError(error) && !signal.aborted) this.markIfRefused(name, error);
+        throw error;
+      }
+    }
+    let lastError: unknown;
+    while (tries.left > 0) {
+      tries.left -= 1;
+      try {
+        return await this.withinBudget((limited) => this.attempts.webRemix(this.deps, videoId, choice, limited), signal);
+      } catch (error) {
+        if (isAbortError(error) || signal.aborted) throw error;
+        lastError = error;
+        if (this.final(name, error)) break;
+      }
+    }
+    this.webRemixFailed(lastError);
+    throw lastError;
+  }
+
+  // A refusal from the player endpoint, a bot check or a server limit will not change on a second ask
+  private final(name: string, error: unknown): boolean {
+    const code = describe(error).code;
+    return code === "unplayable" || code === "bot-check" || this.markIfRefused(name, error);
+  }
+
+  private webRemixFailed(error: unknown): void {
+    this.lastWebRemixError = describe(error).text;
+    this.failures += 1;
+    if (this.failures >= COOLDOWN_AFTER) {
+      this.coolingUntil = Date.now() + COOLDOWN_MS;
+      this.failures = 0;
+    }
+  }
+
+  private succeeded(videoId: string, name: string): void {
+    if (name === WEB_REMIX.clientName) this.failures = 0;
+    else this.lastGood = name;
+    this.remember(videoId, name);
+  }
+
+  // A client silent for a second rarely answers soon; two at most keep the player endpoint from rate-limiting the user
   private async *chain(videoId: string, options: ResolveOptions, signal: AbortSignal, cold: boolean): AsyncGenerator<StreamHit, YtSource, unknown> {
-    const choice = {
+    const choice: Choice = {
       quality: options.quality ?? "normal",
       codec: options.codec,
     };
@@ -239,71 +290,77 @@ export class StreamResolver {
 
     const remembered = this.perTrack.get(videoId);
     const order: string[] = [];
-    // A cold worker: VISIONOS needs neither worker nor PO token, so it goes first while the worker warms up.
+    // A cold worker: VISIONOS and ANDROID_VR need neither worker nor PO token, so they go first while it warms up.
     if (cold) {
-      order.push(VISIONOS.clientName);
+      order.push(VISIONOS.clientName, ANDROID_VR.clientName);
     }
     if (remembered) order.push(remembered);
     order.push(WEB_REMIX.clientName);
     if (this.lastGood) order.push(this.lastGood);
     order.push(...FALLBACKS.map((client) => client.clientName));
 
+    const names: string[] = [];
     for (const name of new Set(order)) {
-      throwIfAborted(signal);
       if (options.avoid?.includes(name)) continue;
-      if (name === WEB_REMIX.clientName) {
-        if (this.down.has(name) || Date.now() < this.coolingUntil) {
-          log.push({
-            client: name,
-            code: "paused",
-            text: this.down.get(name) ?? this.lastWebRemixError,
-          });
+      const paused = name === WEB_REMIX.clientName && Date.now() < this.coolingUntil;
+      if (this.down.has(name) || paused) {
+        log.push({ client: name, code: "paused", text: this.down.get(name) ?? this.lastWebRemixError });
+        continue;
+      }
+      names.push(name);
+    }
+
+    type Lane = { id: number; name: string; hit?: StreamHit; error?: unknown };
+    const running = new Map<number, Promise<Lane>>();
+    const stops: AbortController[] = [];
+    const webRemixTries = { left: WEB_REMIX_ATTEMPTS };
+    let lanes = 0;
+    const launch = (name = names.shift()) => {
+      if (!name) return;
+      const id = lanes++;
+      const stop = new AbortController();
+      stops.push(stop);
+      const lane = this.attempt(name, videoId, choice, webRemixTries, AbortSignal.any([signal, stop.signal])).then(
+        (hit) => ({ id, name, hit }),
+        (error: unknown) => ({ id, name, error }),
+      );
+      running.set(id, lane);
+    };
+    try {
+      launch();
+      while (running.size > 0) {
+        throwIfAborted(signal);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const hedge = names.length > 0 && running.size < MAX_LANES ? new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), HEDGE_MS))) : null;
+        const lane = await Promise.race(hedge ? [...running.values(), hedge] : running.values()).finally(() => clearTimeout(timer));
+        if (!lane) {
+          launch();
           continue;
         }
-        let lastError: unknown;
-        for (let attempt = 0; attempt < WEB_REMIX_ATTEMPTS; attempt += 1) {
-          try {
-            const hit = await this.withinBudget((limited) => this.attempts.webRemix(this.deps, videoId, choice, limited), signal);
-            const probeFailure = yield hit;
-            if (probeFailure) throw probeFailure;
-            this.failures = 0;
-            this.remember(videoId, name);
-            return toSource(hit);
-          } catch (error) {
-            if (isAbortError(error) || signal.aborted) throw error;
-            lastError = error;
-            // A refusal from the player endpoint will not change on a second ask.
-            if (describe(error).code === "unplayable") break;
-            if (describe(error).code === "bot-check") break;
-            // A fresh token cannot lift a server limit either.
-            if (this.markIfRefused(name, error)) break;
+        running.delete(lane.id);
+        const name = lane.name;
+        if (lane.hit) {
+          const probeFailure = yield lane.hit;
+          if (!probeFailure) {
+            this.succeeded(videoId, name);
+            return toSource(lane.hit);
           }
+          if (name === ANDROID_VR.clientName) this.markIfRefused(name, probeFailure);
+          if (name === WEB_REMIX.clientName) {
+            if (!this.final(name, probeFailure) && webRemixTries.left > 0) {
+              launch(name);
+              continue;
+            }
+            this.webRemixFailed(probeFailure);
+          }
+          fail(name, probeFailure);
+        } else {
+          fail(name, lane.error);
         }
-        this.lastWebRemixError = describe(lastError).text;
-        this.failures += 1;
-        if (this.failures >= COOLDOWN_AFTER) {
-          this.coolingUntil = Date.now() + COOLDOWN_MS;
-          this.failures = 0;
-        }
-        fail(name, lastError);
-        continue;
+        if (running.size < MAX_LANES) launch();
       }
-      if (this.down.has(name)) {
-        log.push({ client: name, code: "paused", text: this.down.get(name)! });
-        continue;
-      }
-      const client = FALLBACKS.find((candidate) => candidate.clientName === name)!;
-      try {
-        const hit = await this.withinBudget((limited) => this.attempts.fallback(this.deps, client, videoId, choice, limited), signal);
-        const probeFailure = yield hit;
-        if (probeFailure) throw probeFailure;
-        this.lastGood = name;
-        this.remember(videoId, name);
-        return toSource(hit);
-      } catch (error) {
-        if (name === ANDROID_VR.clientName) this.markIfRefused(name, error);
-        fail(name, error);
-      }
+    } finally {
+      for (const stop of stops) stop.abort();
     }
 
     const real = log.filter((entry) => entry.code !== "paused");

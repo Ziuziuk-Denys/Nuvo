@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CLIENT_BUDGET_MS, StreamResolver } from "./resolver";
+import { CLIENT_BUDGET_MS, HEDGE_MS, StreamResolver } from "./resolver";
 import { fallbackAttempt } from "./attempts";
 import { PlayerScript } from "./player";
 import { ipcWorker } from "./worker";
@@ -60,6 +60,45 @@ describe("a client that failed or hangs", () => {
     const started = resolver.resolve({ id: `yt:${ID}` }, { progressive: true }, signal());
     await vi.advanceTimersByTimeAsync(CLIENT_BUDGET_MS * 2 + 100);
     expect((await started).servedBy).toBe("TVHTML5");
+  });
+});
+
+describe("hedged clients", () => {
+  const hanging =
+    (seen: AbortSignal[]) =>
+    async (...args: unknown[]) => {
+      const limited = args.at(-1) as AbortSignal;
+      seen.push(limited);
+      return new Promise<never>((_, reject) => limited.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+    };
+
+  function hedged(fallback: typeof fallbackAttempt) {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const h = harness();
+    streamRoutes(h.fake);
+    const seen: AbortSignal[] = [];
+    const resolver = new StreamResolver(playbackDeps(h.fake, h.yt, new FakeWorker()), { webRemix: hanging(seen), fallback });
+    return { ...h, resolver, seen };
+  }
+
+  it("a client silent past the hedge delay gets the next one started beside it, and the loser is cancelled", async () => {
+    const { fake, resolver, seen } = hedged(fallbackAttempt);
+    fake.innertube("player", ok(251), undefined, WWW);
+    const started = resolver.resolve({ id: `yt:${ID}` }, { progressive: true }, signal());
+    await vi.advanceTimersByTimeAsync(HEDGE_MS + 50);
+    expect((await started).servedBy).toBe("TVHTML5");
+    expect(seen[0].aborted).toBe(true);
+  });
+
+  it("never runs more than two clients at once", async () => {
+    const seen: AbortSignal[] = [];
+    const { resolver } = hedged(hanging(seen) as unknown as typeof fallbackAttempt);
+    const started = resolver.resolve({ id: `yt:${ID}` }, { progressive: true }, signal()).catch((error: YtError) => error);
+    await vi.advanceTimersByTimeAsync(HEDGE_MS * 2 + 50);
+    expect(seen).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(CLIENT_BUDGET_MS * 6);
+    expect(((await started) as YtError).code).toBe("all-failed");
   });
 });
 
@@ -523,6 +562,30 @@ describe("cold worker", () => {
     const resolver = new StreamResolver(playbackDeps(h.fake, h.yt, worker));
     return { ...h, worker, state, resolver };
   }
+
+  it("a cold worker whose VISIONOS hangs gets ANDROID_VR beside it, not a client that waits for the worker", async () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const h = harness();
+    streamRoutes(h.fake);
+    const worker = new FakeWorker();
+    worker.isReady = async () => false;
+    h.fake.innertube("player", ok(251), fromClient("ANDROID_VR"), WWW);
+    const tried: string[] = [];
+    const hangingVision: typeof fallbackAttempt = (deps, client, videoId, choice, limited) => {
+      tried.push(client.clientName);
+      if (client.clientName !== "VISIONOS") return fallbackAttempt(deps, client, videoId, choice, limited);
+      return new Promise((_, reject) => limited.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+    };
+    const resolver = new StreamResolver(playbackDeps(h.fake, h.yt, worker), {
+      webRemix: () => Promise.reject(new Error("waits for the worker")),
+      fallback: hangingVision,
+    });
+    const started = resolver.resolve({ id: `yt:${ID}` }, { progressive: true }, signal());
+    await vi.advanceTimersByTimeAsync(HEDGE_MS + 50);
+    expect((await started).servedBy).toBe("ANDROID_VR");
+    expect(tried).toEqual(["VISIONOS", "ANDROID_VR"]);
+  });
 
   it("a cold worker: VISIONOS first, no WEB_REMIX request, and the warm-up starts once it is resolved", async () => {
     const { fake, worker, resolver } = cold();

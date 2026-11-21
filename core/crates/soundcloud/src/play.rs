@@ -11,6 +11,7 @@ const PREVIEW_TOLERANCE_MS: i64 = 5_000;
 const UNSIGNED_LIFETIME_MS: i64 = 4 * 60_000;
 const DIRECT_REUSE_MARGIN_MS: i64 = 30_000;
 const DIRECT_CACHE_LIMIT: usize = 500;
+const UNPLAYABLE_KEPT_MS: i64 = 30 * 60_000;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Format {
@@ -102,6 +103,13 @@ pub fn availability(record: &Value) -> Result<(), Reason> {
         return Err(Reason::StreamDisabled);
     }
     Ok(())
+}
+
+pub fn unplayable(record: &Value) -> Option<Reason> {
+    if let Err(reason) = availability(record) {
+        return Some(reason);
+    }
+    (!transcodings(record).is_empty() && candidates(record).is_empty()).then_some(Reason::NoFormat)
 }
 
 pub fn candidates(record: &Value) -> Vec<Transcoding> {
@@ -210,6 +218,20 @@ impl SoundCloud {
 
     async fn resolve_as(&self, id: &str, sink: &mut impl AudioSink, live: bool) -> Result<Playable, ScError> {
         let num = ids::track_num(id).ok_or(ScError::Unplayable(Reason::Gone))?;
+        if let Some(reason) = self.known_unplayable(num) {
+            return Err(ScError::Unplayable(reason));
+        }
+        let result = self.resolve_fresh(num, sink, live).await;
+        // A DRM verdict comes from the served playlist, which can change; the others come from the track itself
+        if let Err(ScError::Unplayable(reason)) = &result
+            && *reason != Reason::Drm
+        {
+            self.note(num, *reason);
+        }
+        result
+    }
+
+    async fn resolve_fresh(&self, num: u64, sink: &mut impl AudioSink, live: bool) -> Result<Playable, ScError> {
         if let Some(cached) = self.cached_direct(num, live) {
             return Ok(cached);
         }
@@ -286,6 +308,29 @@ impl SoundCloud {
             Playable::Live { expires_ms, .. } if live && *expires_ms - DIRECT_REUSE_MARGIN_MS > now_ms() => Some(playable.clone()),
             _ => None,
         }
+    }
+
+    pub(crate) fn note_unplayable(&self, records: &[Value]) {
+        for record in records {
+            if let (Some(num), Some(reason)) = (record.get("id").and_then(Value::as_u64), unplayable(record)) {
+                self.note(num, reason);
+            }
+        }
+    }
+
+    fn note(&self, num: u64, reason: Reason) {
+        let now = now_ms();
+        let mut known = self.inner.unplayable.lock().unwrap();
+        known.retain(|_, (_, at)| now - *at < UNPLAYABLE_KEPT_MS);
+        if known.len() >= DIRECT_CACHE_LIMIT {
+            known.clear();
+        }
+        known.insert(num, (reason, now));
+    }
+
+    fn known_unplayable(&self, num: u64) -> Option<Reason> {
+        let known = self.inner.unplayable.lock().unwrap();
+        known.get(&num).filter(|(_, at)| now_ms() - *at < UNPLAYABLE_KEPT_MS).map(|(reason, _)| *reason)
     }
 
     fn remember_direct(&self, num: u64, playable: &Playable) {

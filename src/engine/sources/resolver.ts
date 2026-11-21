@@ -24,6 +24,7 @@ import {
 } from "./ports";
 
 export const PROBE_HEAD_START_MS = 150;
+export const STAND_IN_AFTER_MS = 500;
 export const SOURCE_DOWN_AFTER = 2;
 export const SOURCE_DOWN_MS = 2 * 60_000;
 
@@ -111,6 +112,7 @@ function childSignal(parent: AbortSignal, timeoutMs?: number): { signal: AbortSi
 export class SourceResolver {
   private readonly cached = new Map<string, CacheProbe>();
   private readonly rejected = new Map<string, Set<string>>();
+  private readonly standIns = new Map<string, Promise<{ track: Track; score: number } | null>>();
   private blockedStarts = 0;
   private youtubeDownUntil = 0;
 
@@ -418,7 +420,10 @@ export class SourceResolver {
   // A live start plays the daemon's stream while it arrives; precache and idle prefetch keep the whole-file answer
   private async soundcloud(track: Track, id: string, signal: AbortSignal, live = false, durationMs = track.durationMs): Promise<Resolved> {
     const scId = id.replace(/^sc:/, "");
-    const descriptor = await this.deps.daemon.scStream(scId, signal, live);
+    const descriptor =
+      live && id === track.id
+        ? await this.withStandIn(track, signal, () => this.deps.daemon.scStream(scId, signal, live))
+        : await this.deps.daemon.scStream(scId, signal, live);
     const kbps = kbpsOf(descriptor.bitrate);
     const stream: StreamInfo = { source: "soundcloud", codec: descriptor.codec, bitrateKbps: kbps, fromCache: false };
     if (descriptor.kind === "live") {
@@ -458,6 +463,25 @@ export class SourceResolver {
           ? { url: descriptor.url, mime: descriptor.mimeType, codec: descriptor.codec, bitrateKbps: kbps, contentLength: descriptor.contentLength ?? undefined }
           : undefined,
     };
+  }
+
+  // A slow SoundCloud answer often ends in a refusal, so its YouTube stand-in is looked up meanwhile
+  private async withStandIn<T>(track: Track, signal: AbortSignal, ask: () => Promise<T>): Promise<T> {
+    const stop = new AbortController();
+    const timer = setTimeout(() => {
+      this.standIns.set(
+        track.id,
+        this.deps.match.approvedOn("youtube", track, AbortSignal.any([signal, stop.signal])).catch(() => null),
+      );
+    }, STAND_IN_AFTER_MS);
+    try {
+      const answer = await ask();
+      stop.abort();
+      this.standIns.delete(track.id);
+      return answer;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   private async bestOf(track: Track, primary: Resolved, remembered: Alternative | null, options: ResolveOptions): Promise<Resolved> {
@@ -555,7 +579,11 @@ export class SourceResolver {
       budget.spend();
       try {
         const exclude = new Set([...tried, ...(this.rejected.get(track.id) ?? [])]);
-        const match = await step((signal) => this.deps.match.approvedOn(other, track, signal, exclude));
+        const ready = other === "youtube" ? this.standIns.get(track.id) : undefined;
+        this.standIns.delete(track.id);
+        const prepared = ready ? await ready : null;
+        const match =
+          prepared && !exclude.has(prepared.track.id) ? prepared : await step((signal) => this.deps.match.approvedOn(other, track, signal, exclude));
         if (!match || exclude.has(match.track.id)) break;
         tried.add(match.track.id);
         const alternative: Alternative = { source: other, altId: match.track.id, score: match.score, reason: cause, durationMs: match.track.durationMs };

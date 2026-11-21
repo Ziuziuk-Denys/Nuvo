@@ -507,3 +507,26 @@ async fn yt_dlp_formats_use_the_same_paths_and_never_previews() {
     let Playable::Direct { url, format, .. } = sc.resolve_external("sc:5", &progressive, &mut Vec::new()).await.unwrap() else { panic!("direct expected") };
     assert_eq!((url.as_str(), format.codec), ("https://cf-media.sndcdn.com/a.128.mp3?Expires=1900000000", "mp3"));
 }
+
+#[tokio::test]
+async fn a_track_search_showed_without_a_usable_format_is_refused_without_asking_again() {
+    let (fx, sc) = setup().await;
+    sc.set_client_id(Some(ID_A.into()));
+    let encrypted = record(vec![json!({"url": api("media/1/enc"), "preset": "aac_160k", "snipped": false, "format": {"protocol": "ctr-encrypted-hls", "mime_type": "audio/mpegurl"}})]);
+    fx.on(&api("search/tracks"), Reply::json(json!({"collection": [encrypted]})));
+    sc.search_tracks("song", 5).await.unwrap();
+    let before = fx.total();
+    assert_eq!(sc.resolve("sc:1", &mut Vec::new()).await, Err(ScError::Unplayable(Reason::NoFormat)));
+    assert_eq!(fx.total(), before);
+}
+
+#[tokio::test]
+async fn a_refused_track_is_refused_again_without_asking() {
+    let mut blocked = record(vec![tc("prog", "progressive", "audio/mpeg", "mp3_1_0")]);
+    blocked["policy"] = json!("BLOCK");
+    let (fx, sc) = ready(blocked).await;
+    assert_eq!(sc.resolve("sc:1", &mut Vec::new()).await, Err(ScError::Unplayable(Reason::RegionBlocked)));
+    let before = fx.total();
+    assert_eq!(sc.resolve("sc:1", &mut Vec::new()).await, Err(ScError::Unplayable(Reason::RegionBlocked)));
+    assert_eq!(fx.total(), before);
+}
