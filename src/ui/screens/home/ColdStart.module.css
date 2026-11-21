@@ -1,30 +1,96 @@
 .bring {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  padding-block: var(--n-s-4) var(--n-s-2);
+  align-items: center;
+  padding-block: 48px 40px;
+  text-align: center;
 }
 
 .title {
   margin: 0;
   color: var(--n-ink);
-  font: var(--n-type-heading);
+  font: 700 calc(44px * var(--n-scale, 1)) / 1.08 var(--n-font);
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
-.message {
-  max-width: 52ch;
-  margin: var(--n-s-2) 0 0;
-  color: var(--n-ink-2);
-  font: var(--n-type-body);
-  text-wrap: pretty;
+.phrase {
+  margin-top: 18px;
 }
 
-.actions {
+/* each line wraps only between whole parts, so a source never drops to a line of its own */
+.line {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--n-s-2);
-  margin-top: var(--n-s-4);
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--n-ink-2);
+  font: 500 calc(20px * var(--n-scale, 1)) / 1.4 var(--n-font);
+}
+
+.line + .line {
+  margin-top: 10px;
+}
+
+.sources {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 15px 0 11px;
+  border: 0;
+  border-radius: var(--n-r-pill);
+  background: var(--n-tray);
+  box-shadow: var(--n-tray-edge);
+  color: var(--n-ink);
+  font: 600 calc(16px * var(--n-scale, 1)) / 1 var(--n-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--n-t-quick) var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
+}
+
+.chip:hover {
+  background: var(--n-tray-hover);
+}
+
+.chip:active {
+  transform: scale(0.96);
+}
+
+.files {
+  background: var(--n-ink);
+  box-shadow: none;
+  color: var(--n-field);
+}
+
+.files:hover {
+  background: color-mix(in srgb, var(--n-ink) 86%, var(--n-field));
+}
+
+.hint {
+  margin: 22px 0 0;
+  color: var(--n-ink-3);
+  font: var(--n-type-caption);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
+
+  .chip:active {
+    transform: none;
+  }
 }
 
 /* Mirrors the mix row: one lead card, then the smaller ones, bottoms aligned */

@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToastStore } from "../../feedback/toastStore";
 import { useTranslation } from "../../ports/i18n";
-import { addMusicFiles, addMusicFolder } from "../../ports/localFiles";
+import { addMusicFiles } from "../../ports/localFiles";
 import { navigateWithTransition } from "../../shell/navigate";
 
 export const LOCAL_TAB = "/library?tab=local";
@@ -29,12 +29,4 @@ export function useAddMusic(): (files?: File[]) => Promise<void> {
     },
     [t, navigate],
   );
-}
-
-export function useAddFolder(): () => Promise<void> {
-  const { t } = useTranslation();
-  return useCallback(async () => {
-    const error = await addMusicFolder();
-    if (error) useToastStore.getState().show({ message: t("ui.local.add_failed"), description: error, variant: "error" });
-  }, [t]);
 }
