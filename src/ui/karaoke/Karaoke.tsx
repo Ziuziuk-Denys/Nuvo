@@ -393,7 +393,8 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const [lightScene, setLightScene] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const columnRef = useRef<HTMLElement>(null);
-  const onLuma = useSceneInk(rootRef, columnRef, stageOn && !editing, `${track?.id ?? ""}:${liked}`);
+  const headerRef = useRef<HTMLElement>(null);
+  const onLuma = useSceneInk(rootRef, columnRef, headerRef, stageOn && !editing, `${track?.id ?? ""}:${liked}`);
   const [hint, setHint] = useState(false);
   const lightLook = useLook().mode === "light";
   const beforeDemo = useRef<Playback | null | undefined>(undefined);
@@ -466,7 +467,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       )}
 
       {visual.chosen ? null : <LookChoice light={lightLook} onChosen={choose} />}
-      <header className={styles.top} data-window-drag data-stage-tools={visual.enabled ? "" : undefined}>
+      <header ref={headerRef} className={styles.top} data-window-drag data-stage-tools={visual.enabled ? "" : undefined}>
         <GlyphButton icon="chevron-down" label={t("ui.karaoke.close")} className={styles.close} onClick={onClose} />
         {lyricsReady ? <OffsetPill track={track} mode={mode} reveal={stageOn} /> : null}
         {visual.enabled ? (

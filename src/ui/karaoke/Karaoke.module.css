@@ -704,7 +704,7 @@
   color: #fff;
 }
 
-.stageZone [data-ink="light"] {
+.root [data-ink="light"] {
   --k-ink: #fff;
   --k-solid: #fff;
   --k-ink-2: rgba(255, 255, 255, 0.72);
@@ -716,7 +716,7 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
-.stageZone [data-ink="dark"] {
+.root [data-ink="dark"] {
   --k-ink: #101320;
   --k-solid: #101320;
   --k-ink-2: rgba(16, 19, 32, 0.72);
@@ -728,7 +728,7 @@
   text-shadow: 0 1px 3px rgba(255, 255, 255, 0.3);
 }
 
-:where(.stageZone [data-ink]) {
+:where(.root [data-ink]) {
   color: var(--k-ink);
 }
 
