@@ -42,6 +42,7 @@ export interface MainSettingsView {
   trayHintShown: boolean;
   trackChangeNotice: boolean;
   autoUpdate: boolean;
+  updateCheck: boolean;
   menuEntry: boolean;
   menuEntryAvailable?: boolean;
   discord: { enabled: boolean };

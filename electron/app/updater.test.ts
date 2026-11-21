@@ -21,11 +21,13 @@ function setup(
   over: {
     mode?: UpdateMode;
     enabled?: boolean;
+    checks?: boolean;
     backend?: Partial<UpdateBackend>;
   } = {},
 ) {
   const views: UpdateView[] = [];
   let enabled = over.enabled ?? true;
+  let checks = over.checks ?? true;
   const backend: UpdateBackend = {
     check: vi.fn(async () => ({ version: "1.2.0" })),
     download: vi.fn(async (onProgress: (percent: number) => void) => {
@@ -40,6 +42,7 @@ function setup(
     backend,
     mode: over.mode ?? "install",
     enabled: () => enabled,
+    checks: () => checks,
     emit: (v) => views.push(v),
     log: vi.fn(),
   });
@@ -48,6 +51,7 @@ function setup(
     backend,
     views,
     setEnabled: (on: boolean) => ((enabled = on), updater.setEnabled(on)),
+    setChecks: (on: boolean) => ((checks = on), updater.checksChanged()),
   };
 }
 
@@ -182,6 +186,24 @@ describe("Updater", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(updater.view()).toEqual({ phase: "ready", mode: "install", version: "1.2.0" });
     expect(backend.quitAndInstall).not.toHaveBeenCalled();
+  });
+
+  it("asks nothing at launch or later with launch checks off, and still checks on request", async () => {
+    const { updater, backend, setChecks } = setup({ checks: false, backend: { check: vi.fn(async () => null) } });
+    updater.start();
+    updater.wake();
+    await vi.advanceTimersByTimeAsync(CHECK_EVERY_MS * 2);
+    expect(backend.check).not.toHaveBeenCalled();
+    await updater.check();
+    expect(backend.check).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(CHECK_EVERY_MS * 2);
+    expect(backend.check).toHaveBeenCalledTimes(1);
+    setChecks(true);
+    await vi.advanceTimersByTimeAsync(FIRST_CHECK_MS);
+    expect(backend.check).toHaveBeenCalledTimes(2);
+    setChecks(false);
+    await vi.advanceTimersByTimeAsync(CHECK_EVERY_MS * 2);
+    expect(backend.check).toHaveBeenCalledTimes(2);
   });
 
   it("downloads an offered update once automatic updates are switched on", async () => {

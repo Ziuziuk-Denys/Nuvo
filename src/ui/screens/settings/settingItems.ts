@@ -45,6 +45,7 @@ export const SETTING_ITEMS: SettingItem[] = [
   titled("Startup", "settings.default_playback_context", "startup"),
   titled("Startup", "ui.settings.close_to_tray", "tray"),
   titled("Startup", "ui.settings.menu_entry", "menu_entry"),
+  titled("Updates", "ui.settings.launch_check", "updates"),
   titled("Updates", "ui.settings.auto_update", "updates"),
   row("Updates", "ui.settings.whats_new.link", undefined, "whats_new"),
   titled("Playback", "settings.track_double_click", "click"),

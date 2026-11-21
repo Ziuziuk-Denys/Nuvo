@@ -18,6 +18,7 @@ export interface MainSettings {
   discord: { enabled: boolean; chosen?: true };
   trackChangeNotice: boolean;
   autoUpdate: boolean;
+  updateCheck: boolean;
   menuEntry: boolean;
   appearance: AppearanceFlags;
   zoomLevel: number;
@@ -40,13 +41,14 @@ export const DEFAULT_MAIN_SETTINGS: MainSettings = {
   discord: { enabled: true },
   trackChangeNotice: false,
   autoUpdate: true,
+  updateCheck: true,
   menuEntry: true,
   appearance: DEFAULT_APPEARANCE,
   zoomLevel: 0,
 };
 
 const MAX_USERNAME = 256;
-const BOOLEAN_KEYS = ["keepInTray", "trayHintShown", "trackChangeNotice", "autoUpdate", "menuEntry"] as const;
+const BOOLEAN_KEYS = ["keepInTray", "trayHintShown", "trackChangeNotice", "autoUpdate", "updateCheck", "menuEntry"] as const;
 
 export function validProxyUrl(url: string): boolean {
   try {

@@ -15,17 +15,17 @@ const open = () => new MainSettingsStore(path.join(dir, "main-settings.json"), s
 beforeEach(() => void (dir = mkdtempSync(path.join(tmpdir(), "nuvo-settings-"))));
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-describe("autoUpdate setting", () => {
+describe.each(["autoUpdate", "updateCheck"] as const)("%s setting", (key) => {
   it("is on by default", async () => {
-    expect((await open().view()).autoUpdate).toBe(true);
+    expect((await open().view())[key]).toBe(true);
   });
 
   it("accepts only a boolean and keeps the choice across restarts", async () => {
     const store = open();
-    expect((await store.set("autoUpdate", "yes")).ok).toBe(false);
-    expect((await store.set("autoUpdate", 1)).ok).toBe(false);
-    expect(await store.set("autoUpdate", false)).toEqual({ ok: true });
-    expect(open().value.autoUpdate).toBe(false);
+    expect((await store.set(key, "yes")).ok).toBe(false);
+    expect((await store.set(key, 1)).ok).toBe(false);
+    expect(await store.set(key, false)).toEqual({ ok: true });
+    expect(open().value[key]).toBe(false);
   });
 });
 
