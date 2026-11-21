@@ -9,6 +9,7 @@ export const PERSPECTIVE = 1000;
 const TURN_DEG = 50;
 const TILT = 0.4;
 const CENTRE_LIFT = 0.12;
+const VANISH = 0.2;
 
 export interface Ring {
   width: number;
@@ -18,6 +19,7 @@ export interface Ring {
   depth: number;
   edge: number;
   centreY: number;
+  vanishY: number;
   rise: number;
 }
 
@@ -55,7 +57,7 @@ export function ringFor(width: number, height: number, clearTop: number): Ring {
   const cover = Math.round(Math.min(172, Math.max(132, width * 0.15)));
   const radius = width * 0.8;
   const depth = radius * 0.7;
-  const centreY = height * 0.6;
+  const centreY = height * 0.62;
   const half = cover / 2;
   let edge = 0;
   while (edge < Math.PI / 2) {
@@ -64,8 +66,9 @@ export function ringFor(width: number, height: number, clearTop: number): Ring {
     edge += 0.01;
   }
   const scale = depthScale({ depth }, edge);
-  const room = (centreY - half * scale - clearTop) / ((1 - Math.cos(edge)) * scale);
-  return { width, cover, radius, step: (cover * 0.95) / radius, depth, edge, centreY, rise: Math.max(0, Math.min(height, room)) };
+  const vanishY = height * VANISH;
+  const room = (vanishY + (centreY - vanishY) * scale - half * scale - clearTop) / ((1 - Math.cos(edge)) * scale);
+  return { width, cover, radius, step: (cover * 0.95) / radius, depth, edge, centreY, vanishY, rise: Math.max(0, Math.min(height * 2, room)) };
 }
 
 export function place(ring: Ring, offset: number): Placement | null {
@@ -75,7 +78,7 @@ export function place(ring: Ring, offset: number): Placement | null {
   const x = ring.width / 2 + ring.radius * Math.sin(angle) * scale;
   return {
     x,
-    y: ring.centreY - ring.rise * (1 - Math.cos(angle)) * scale,
+    y: ring.vanishY + (ring.centreY - ring.rise * (1 - Math.cos(angle)) - ring.vanishY) * scale,
     scale: scale * (1 + CENTRE_LIFT * Math.max(0, 1 - Math.abs(offset))),
     turn: -angle * TURN_DEG,
     tilt: -Math.atan2(ring.rise * Math.sin(angle), ring.radius * Math.cos(angle)) * TILT,
