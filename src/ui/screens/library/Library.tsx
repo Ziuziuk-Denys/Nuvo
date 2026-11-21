@@ -237,7 +237,6 @@ export function Library(): JSX.Element {
   };
 
   const activate = (entry: LibraryEntry) => {
-    if (entry.importing !== undefined) return;
     navigateWithTransition(navigate, entry.href);
   };
 

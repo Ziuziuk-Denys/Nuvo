@@ -194,7 +194,3 @@
   left: 0;
   width: 100%;
 }
-
-.entry[data-importing] {
-  cursor: progress;
-}
