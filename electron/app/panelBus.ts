@@ -119,17 +119,21 @@ export class PanelService {
       if (wait !== null) this.lineTimer = setTimeout(() => this.refresh(), wait);
     }
     const currentLyrics = state && this.lyrics?.trackId === state.trackId ? this.lyrics.lines : [];
-    const lyricsJson = JSON.stringify(currentLyrics.slice(0, PANEL_LYRIC_LINES_MAX).map((item) => ({
-      timeMs: item.timeMs,
-      text: item.text.slice(0, PANEL_LYRIC_TEXT_MAX),
-    })));
-    const upNextJson = JSON.stringify((state?.upNext ?? []).slice(0, 3).map((item) => ({
-      id: item.id.slice(0, 256),
-      title: item.title.slice(0, 256),
-      artist: item.artist.slice(0, 256),
-      coverUrl: item.coverUrl.slice(0, 2048),
-      durationMs: item.durationMs,
-    })));
+    const lyricsJson = JSON.stringify(
+      currentLyrics.slice(0, PANEL_LYRIC_LINES_MAX).map((item) => ({
+        timeMs: item.timeMs,
+        text: item.text.slice(0, PANEL_LYRIC_TEXT_MAX),
+      })),
+    );
+    const upNextJson = JSON.stringify(
+      (state?.upNext ?? []).slice(0, 3).map((item) => ({
+        id: item.id.slice(0, 256),
+        title: item.title.slice(0, 256),
+        artist: item.artist.slice(0, 256),
+        coverUrl: item.coverUrl.slice(0, 2048),
+        durationMs: item.durationMs,
+      })),
+    );
     this.publish({
       MprisName: this.deps.mprisName,
       TrackId: hasTrack ? state!.trackId! : "",
