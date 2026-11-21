@@ -17,7 +17,7 @@ const LIKE_CANDIDATES = 40;
 const STYLE_SONGS = 40;
 const GENRE_SONGS = 24;
 const GENRE_WAIT_MS = 15_000;
-// a genre search also finds whole compilations and hour-long mixes; only single songs belong on the shelf
+// radio lists can still hold compilations and hour-long mixes; only single songs belong on a shelf
 const COMPILATION = /\b(hits|mix|vol\.?|volume|nonstop|playlist|compilation)\b|хит|сборник|подборк/i;
 const LONGEST_SONG_MS = 9 * 60_000;
 // a big library stays a few hundred local cache reads
@@ -73,10 +73,14 @@ export function playSongs(tracks: Track[], startAt: number, context: string): vo
   player().playList(tracks, { startAt, context });
 }
 
-export async function genreSongs(query: string): Promise<Track[]> {
+export async function genreSongs(artist: string): Promise<Track[]> {
+  const signal = AbortSignal.timeout(GENRE_WAIT_MS);
+  const single = (track: Track) => !COMPILATION.test(`${track.title} ${track.artists}`) && track.durationMs < LONGEST_SONG_MS;
   try {
-    const found = await catalog().searchFiltered(query, "songs", AbortSignal.timeout(GENRE_WAIT_MS));
-    return found.filter((track) => !COMPILATION.test(`${track.title} ${track.artists}`) && track.durationMs < LONGEST_SONG_MS).slice(0, GENRE_SONGS);
+    const top = (await catalog().searchFiltered(artist, "songs", signal)).filter(single);
+    if (!top[0]) return [];
+    const radio = (await catalog().radio(top[0].id, { limit: GENRE_SONGS }, signal)).filter(single);
+    return radio.length > 0 ? radio : top.slice(0, GENRE_SONGS);
   } catch {
     return [];
   }

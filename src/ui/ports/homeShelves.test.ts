@@ -12,7 +12,10 @@ const mocks = vi.hoisted(() => ({
   cached: new Set(["c1", "c2", "c3", "s2"]),
   local: [{ id: `local:${"a".repeat(32)}`, title: "Mine" }],
 }));
-vi.mock("@/engine", () => ({ catalog: () => ({ searchFiltered: async () => mocks.found }), player: () => ({}) }));
+vi.mock("@/engine", () => ({
+  catalog: () => ({ searchFiltered: async () => mocks.found, radio: async (id: string) => (id === "b" ? mocks.found : []) }),
+  player: () => ({}),
+}));
 vi.mock("@/engine/adapters", () => ({ createContinuation: vi.fn() }));
 vi.mock("@/engine/boot", () => ({ CORE_BASE_URL: "http://core" }));
 vi.mock("@/data/core/request", () => ({ coreRequest: vi.fn() }));
@@ -36,7 +39,7 @@ describe("offline Home material", () => {
     expect((await offlineSongs()).map((track) => track.id)).toEqual([mocks.local[0].id, "s2"]);
   });
 
-  it("leaves compilations and long mixes off a genre shelf", async () => {
-    expect((await genreSongs("pop hits")).map((track) => track.id)).toEqual(["b", "e"]);
+  it("fills a genre shelf from the radio of the artist's top song, without compilations or long mixes", async () => {
+    expect((await genreSongs("Adele")).map((track) => track.id)).toEqual(["b", "e"]);
   });
 });

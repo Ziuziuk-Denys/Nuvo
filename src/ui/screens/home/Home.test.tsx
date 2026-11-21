@@ -202,7 +202,7 @@ describe("Home first run", () => {
     mocks.homeMixes.mockResolvedValue([]);
     mocks.genreSongs.mockImplementation(async (query: string) => tracks(query.split(" ")[0], 6));
     await mount();
-    expect(mocks.genreSongs.mock.calls.map(([query]) => query)).toEqual(["pop hits", "hip hop hits", "rock classics", "electronic hits"]);
+    expect(mocks.genreSongs.mock.calls.map(([query]) => query)).toEqual(["The Weeknd", "Kendrick Lamar", "Queen", "Daft Punk"]);
     const shelves = [...host.querySelectorAll("[data-shelf=genre]")];
     expect(shelves.map((shelf) => shelf.getAttribute("aria-label"))).toEqual([
       "ui.home.genre.pop",
@@ -214,7 +214,7 @@ describe("Home first run", () => {
   });
 
   it("adds a shelf in the user's language first", () => {
-    expect(starterGenres("ru")[0]).toEqual({ genre: "russian", query: "русские хиты" });
+    expect(starterGenres("ru")[0]).toEqual({ genre: "russian", query: "Звери" });
     expect(starterGenres("en").map((entry) => entry.genre)).toEqual(["pop", "hiphop", "rock", "electronic"]);
   });
 });
