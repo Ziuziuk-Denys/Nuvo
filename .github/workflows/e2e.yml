@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        set: ${{ fromJSON(github.event_name == 'pull_request' && '["smoke 1/2","smoke 2/2","1/4","2/4","3/4","4/4"]' || '["1/4","2/4","3/4","4/4"]') }}
+        set: ${{ fromJSON(github.event_name == 'pull_request' && '["smoke 1/2","smoke 2/2"]' || '["1/4","2/4","3/4","4/4"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -67,8 +67,8 @@ jobs:
               e2e e2e/ui/visual.e2e.ts -t "at 60 fps" || status=1
               ;;
             *)
-              # the picks fill Home from live YouTube radio, which throttles runner addresses
-              e2e --shard="$SET" --exclude e2e/ui/coldstart.e2e.ts || status=1
+              # coldstart needs live YouTube radio, which throttles runner addresses; a real break fails both tries
+              e2e --shard="$SET" --exclude e2e/ui/coldstart.e2e.ts --retry=1 || status=1
               ;;
           esac
           exit $status

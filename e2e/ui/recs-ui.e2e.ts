@@ -168,7 +168,7 @@ describe("recs UI", () => {
     console.log(
       await shoot(live, "home", "first-run-ru", [{ ...LIGHT }], [W1100], async () => {
         await page.reload();
-        await page.getByRole("heading", { name: "Перенесите свою музыку" }).waitFor({ timeout: 20_000 });
+        await page.getByRole("heading", { name: "Вся ваша музыка в одном месте" }).waitFor({ timeout: 20_000 });
       }),
     );
     await setLocale(live, "en");
