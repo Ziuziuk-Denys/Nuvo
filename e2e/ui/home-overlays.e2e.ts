@@ -89,3 +89,24 @@ it("turning offline mode on and off over Home with the ring keeps Home up", asyn
   await live.page.keyboard.press("Escape");
   await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 15_000 });
 }, 300_000);
+
+it("the cover background runs under the sky on Home and follows the playing song on Liked", async () => {
+  const live = await launchNuvo({ profile: "seeded" });
+  session = live;
+  await seedPools(live);
+  await live.page.reload();
+  await live.go("#/");
+  await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
+  const field = () =>
+    live.page.evaluate(() => {
+      const root = document.querySelector("[data-mode]")!;
+      return { covers: [...root.querySelectorAll("img")].map((img) => img.getAttribute("src") ?? ""), sky: root.querySelector("[data-overlay]") !== null };
+    });
+  await expect.poll(async () => (await field()).covers.length, { timeout: 15_000 }).toBeGreaterThan(0);
+  expect((await field()).sky).toBe(true);
+  await live.go("#/library/playlist?id=likes");
+  const playing = (await live.page.locator("[data-island] img").first().getAttribute("src")) ?? "";
+  expect(playing, "the seeded profile has a playing song").not.toBe("");
+  await expect.poll(async () => (await field()).covers.at(-1) ?? "", { timeout: 15_000 }).toBe(playing);
+  expect((await field()).sky).toBe(false);
+}, 300_000);

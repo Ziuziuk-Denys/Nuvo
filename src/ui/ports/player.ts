@@ -1,6 +1,6 @@
 import { coreRequest } from "@/data/core/request";
 import { playerRuntime } from "@/engine/compat";
-import { chooseSource as choose } from "@/engine/index";
+import { chooseSource as choose, usePlayerView } from "@/engine/index";
 
 export {
   usePlayerState,
@@ -41,4 +41,8 @@ export async function chosenSource(trackId: string): Promise<{ source: string; a
 
 export function chooseSource(trackId: string, version: { id: string; durationMs: number } | null): Promise<void> {
   return choose(trackId, version ? { source: "youtube", altId: version.id, score: 100, durationMs: version.durationMs || undefined } : null);
+}
+
+export function usePlayingCover(): string {
+  return usePlayerView((view) => view.current?.track.coverUrl ?? "");
 }

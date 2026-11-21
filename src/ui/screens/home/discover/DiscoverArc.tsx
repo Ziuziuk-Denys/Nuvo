@@ -75,6 +75,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   const swallowClick = useRef(false);
   const [width, setWidth] = useState(0);
   const [centre, setCentre] = useState(0);
+  const [settled, setSettled] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const rest = useRef(0);
   const onScreen = useOnScreen(rootRef);
@@ -117,7 +118,9 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
       last = now;
       paintRef.current();
       setCentre(wrap(Math.round(position.current)));
-      frame.current = position.current === target.current && !drag.current?.moved ? 0 : requestAnimationFrame(tick);
+      const resting = position.current === target.current && !drag.current?.moved;
+      if (resting) setSettled(wrap(target.current));
+      frame.current = resting ? 0 : requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
   };
@@ -195,6 +198,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
     if (!now.moved && Math.abs(dx) < DRAG_SLOP) return;
     if (!now.moved) {
       now.moved = true;
+      rootRef.current?.setAttribute("data-dragging", "");
       event.currentTarget.setPointerCapture(event.pointerId);
     }
     const perTrack = ring.radius * ring.step;
@@ -209,6 +213,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   const onPointerUp = () => {
     const now = drag.current;
     drag.current = null;
+    rootRef.current?.removeAttribute("data-dragging");
     if (!now?.moved) return;
     swallowClick.current = true;
     target.current = Math.round(position.current + now.velocity * INERTIA_MS);
@@ -234,7 +239,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   };
 
   const current = slots[Math.min(centre, count - 1)];
-  usePageBackdrop(current.coverUrl, { sky: !onScreen || !focused ? "still" : spinning ? "live" : "breathe" });
+  usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { sky: !onScreen || !focused ? "still" : spinning ? "live" : "breathe" });
   const title = t("ui.recs.home.discover");
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>

@@ -17,7 +17,18 @@ vi.mock("@/data/covers/colors", () => ({
 }));
 
 function fakeRenderer() {
-  return { setCover: vi.fn(), settle: vi.fn(), draw: vi.fn(), resize: vi.fn(), uniform: vi.fn(), hold: vi.fn(), dispose: vi.fn() };
+  return {
+    setCover: vi.fn(),
+    settle: vi.fn(),
+    draw: vi.fn(),
+    resize: vi.fn(),
+    uniform: vi.fn(),
+    hold: vi.fn(),
+    drawAt: vi.fn(),
+    clock: vi.fn(() => 10),
+    advance: vi.fn(),
+    dispose: vi.fn(),
+  };
 }
 
 function fakeFrames() {
@@ -81,22 +92,22 @@ describe("backdrop rules", () => {
 });
 
 describe("Backdrop", () => {
-  it("breathes between keyframes without a frame loop, and draws live only while open", async () => {
+  it("rests between breaths, eases the shader clock through a breath, and draws live only while open", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "setTimeout", "clearTimeout"] });
     const renderer = fakeRenderer();
     gpu.renderer = renderer;
     const frames = fakeFrames();
     await act(async () => root.render(<Backdrop cover="c.jpg" open={false} breathe overlay="sky" />));
-    const backdrop = host.firstElementChild as HTMLElement;
-    const keys = [...host.querySelectorAll("canvas")].slice(1);
-    expect(backdrop.dataset.keys).toBe("");
     expect(frames.pending()).toBe(0);
-    const before = renderer.draw.mock.calls.length;
-    act(() => vi.advanceTimersByTime(40_000));
-    expect(renderer.draw.mock.calls.length).toBe(before + 2);
-    expect(keys.map((key) => key.style.opacity).sort()).toEqual(["0", "1"]);
+    act(() => vi.advanceTimersByTime(20_000));
+    expect(frames.pending()).toBe(1);
+    for (let step = 0; step < 200 && frames.pending() > 0; step += 1) act(() => frames.step(40));
+    const times = renderer.drawAt.mock.calls.map(([seconds]) => seconds as number);
+    expect(times[0]).toBeGreaterThanOrEqual(10);
+    expect(times.at(-1)).toBeCloseTo(34);
+    expect(times.every((time, index) => index === 0 || time >= times[index - 1])).toBe(true);
+    expect(renderer.advance).toHaveBeenCalledWith(24);
     await act(async () => root.render(<Backdrop cover="c.jpg" open breathe={false} overlay="sky" />));
-    expect(backdrop.dataset.keys).toBeUndefined();
     expect(frames.pending()).toBe(1);
     vi.useRealTimers();
   });

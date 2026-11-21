@@ -30,22 +30,3 @@
   opacity: 0.45;
   mask-image: radial-gradient(ellipse 70% 65% at 50% 30%, #000 25%, transparent 75%);
 }
-
-.motion {
-  position: absolute;
-  inset: 0;
-  isolation: isolate;
-}
-
-.key {
-  opacity: 0;
-  mix-blend-mode: plus-lighter;
-}
-
-.root:not([data-keys]) .key {
-  visibility: hidden;
-}
-
-.root[data-keys] [data-gl] {
-  visibility: hidden;
-}

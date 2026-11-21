@@ -193,7 +193,7 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
   const own = !liked && id !== null;
   const context = liked ? "playlist:likes" : `playlist:${id}`;
   const cover = data?.cover ?? "";
-  usePageBackdrop(cover || undefined);
+  usePageBackdrop(liked ? undefined : cover || undefined);
 
   const source = optimistic ?? data?.tracks ?? [];
   const sortMode = own ? (data?.sortMode ?? "manual") : null;

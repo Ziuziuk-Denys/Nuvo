@@ -15,6 +15,7 @@
 
 .ring {
   position: absolute;
+  cursor: grab;
   inset: 0;
   margin: 0;
   padding: 0;
@@ -72,4 +73,9 @@
   font: var(--n-type-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.arc[data-dragging],
+.arc[data-dragging] * {
+  cursor: grabbing;
 }

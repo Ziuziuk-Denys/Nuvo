@@ -43,7 +43,7 @@ vec3 cover(vec2 p) {
 float ribbon(vec2 p, float t, float seed, float base, float tilt, out float d, out vec2 warp) {
   warp = vec2(fbm(p * 0.8 + vec2(t, seed)), fbm(p * 0.8 + vec2(seed, -t)));
   vec2 q = p + (warp - 0.5) * 0.55;
-  float path = base + tilt * q.x + 0.14 * sin(q.x * 1.5 + seed + t * 2.0) + 0.06 * sin(q.x * 3.6 - t * 1.4 + seed * 2.0);
+  float path = base + tilt * q.x + 0.18 * sin(q.x * 1.5 + seed + t * 2.0) + 0.08 * sin(q.x * 3.6 - t * 1.4 + seed * 2.0);
   d = q.y - path;
   float body = d > 0.0 ? exp(-d * mix(7.0, 5.0, dark)) : exp(-d * d * mix(380.0, 520.0, dark));
   float rays = 0.45 + 0.55 * fbm(vec2(q.x * 17.0 + warp.x * 5.0, seed + t * 0.6));
@@ -53,7 +53,7 @@ float ribbon(vec2 p, float t, float seed, float base, float tilt, out float d, o
 
 void main() {
   vec2 p = vec2((uv.x - 0.5) * aspect.x / aspect.y, uv.y);
-  float t = time * 0.035;
+  float t = time * 0.06;
   vec3 sky = vec3(0.0);
   float glow = 0.0;
   float d;

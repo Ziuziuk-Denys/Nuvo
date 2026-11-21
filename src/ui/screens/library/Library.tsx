@@ -17,14 +17,12 @@ import {
   useRailPinsStore,
   type HomePin,
   type HomePinKind,
-  useLikesCover,
   useModalStore,
   usePlaylistsList,
   useYoutubeLibraryItems,
   type LibraryViewMode,
 } from "../../ports/library";
 import { useLocalRoots } from "../../ports/localFiles";
-import { usePageBackdrop } from "../../ports/backdrop";
 import { cancelSaves, exportDocument, saveAsFiles, useDownloadProgress } from "../../ports/exports";
 import { usePlayerStore } from "../../ports/player";
 import { Swap } from "../../flip";
@@ -206,7 +204,6 @@ export function Library(): JSX.Element {
   const { entries, loading, failed } = useLibraryEntries(t);
   const addMusic = useAddMusic();
   const contentKey = `${tab}:${view}:${loading}`;
-  usePageBackdrop(useLikesCover(), { blur: 56, dim: 0.22 });
   const sort = sortOf(sorts, tab);
   const byPlays = sort === "played" || sort === "plays";
   useEffect(() => {

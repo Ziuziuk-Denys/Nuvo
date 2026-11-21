@@ -16,6 +16,8 @@ const look = vi.hoisted(() => ({ current: { preset: "nuvo" as PresetId, mode: "d
 
 vi.mock("../ports/covers", () => ({ useCoverSrc: (url: string | undefined) => url }));
 vi.mock("../ports/theme", () => ({ useLook: () => look.current }));
+const playing = vi.hoisted(() => ({ cover: "" }));
+vi.mock("../ports/player", () => ({ usePlayingCover: () => playing.cover }));
 vi.mock("../karaoke/backdrop/Backdrop", () => ({ Backdrop: ({ overlay }: { overlay?: string }) => <div data-overlay={overlay ? "" : undefined} /> }));
 
 function Calm() {
@@ -50,12 +52,23 @@ afterEach(() => {
 });
 
 describe("Field", () => {
-  it("paints the page's sky instead of the blurred cover, still under reduced motion", () => {
-    useEffectsStore.setState({ reduce: true });
+  it("paints the page's sky over the blurred cover, and only the sky under reduced motion", () => {
     mount(<Field />);
     act(() => usePageBackdropStore.setState({ coverUrl: "c1.jpg", options: { sky: "live" } }));
+    expect(covers()).toEqual(["c1.jpg"]);
+    expect(host.querySelector("[data-overlay]")).not.toBeNull();
+    act(() => useEffectsStore.setState({ reduce: true }));
     expect(covers()).toEqual([]);
     expect(host.querySelector("[data-overlay]")).not.toBeNull();
+  });
+
+  it("falls back to the playing song's cover on a page without its own picture", () => {
+    playing.cover = "now.jpg";
+    mount(<Field />);
+    expect(covers()).toEqual(["now.jpg"]);
+    act(() => usePageBackdropStore.setState({ coverUrl: "album.jpg" }));
+    expect(covers().at(-1)).toBe("album.jpg");
+    playing.cover = "";
   });
 
   it("is a plain canvas without a page cover and hides from assistive tech", () => {
