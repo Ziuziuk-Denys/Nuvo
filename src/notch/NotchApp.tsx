@@ -2,7 +2,16 @@ import { useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
 import { CompactFace } from "./CompactFace";
 import { ExpandedFace, VIEWS, type ExpandedView } from "./ExpandedFace";
 import { Island, MORPH } from "./Island";
-import { DEFAULT_NOTCH_SETTINGS, type Cutout, type NotchAction, type NotchLyrics, type NotchSettings, type NotchState, type NotchTrack } from "./contracts";
+import {
+  DEFAULT_NOTCH_SETTINGS,
+  type Cutout,
+  type NotchAction,
+  type NotchLyrics,
+  type NotchPresence,
+  type NotchSettings,
+  type NotchState,
+  type NotchTrack,
+} from "./contracts";
 import { capturesPointer, grownRect, islandRect, islandSizes, notchWindow, type IslandMode, type IslandSize, type Point, type Rect } from "./lib/geometry";
 import { IslandMachine } from "./lib/machine";
 import { MORPH_SPRING, simulateSpring } from "./lib/spring";
@@ -25,6 +34,7 @@ export default function NotchApp() {
   const [lyrics, setLyrics] = useState<NotchLyrics | null>(null);
   const [settings, setSettings] = useState<NotchSettings>(DEFAULT_NOTCH_SETTINGS);
   const [cutout, setCutout] = useState<Cutout | null>(null);
+  const [presence, setPresence] = useState<NotchPresence>("out");
   const sizes = useMemo(() => islandSizes(cutout), [cutout]);
   const [machine, setMachine] = useState<IslandMachine | null>(null);
   const [mode, setMode] = useState<IslandMode>("idle");
@@ -52,6 +62,7 @@ export default function NotchApp() {
     let gotLyrics = false;
     let gotSettings = false;
     let gotCutout = false;
+    let gotPresence = false;
     const unsubscribe = [
       api.onNotchState((next) => {
         gotState = true;
@@ -69,6 +80,10 @@ export default function NotchApp() {
         gotCutout = true;
         setCutout(next);
       }),
+      api.onNotchPresence((next) => {
+        gotPresence = true;
+        setPresence(next);
+      }),
     ];
     api
       .notchHello()
@@ -79,6 +94,7 @@ export default function NotchApp() {
         if (!gotLyrics && hello.lyrics) setLyrics(hello.lyrics);
         if (!gotSettings) setSettings(hello.settings);
         if (!gotCutout) setCutout(hello.cutout);
+        if (!gotPresence) setPresence(hello.presence);
       })
       .catch((error) => console.warn("[notch] hello failed:", error));
     return () => {
@@ -239,7 +255,7 @@ export default function NotchApp() {
   const onAccent = (color: string) => setAccent({ url: track?.coverUrl ?? null, color });
 
   return (
-    <div className="notch-stage">
+    <div className="notch-stage" data-presence={presence}>
       <Island
         ref={islandRef}
         mode={mode}

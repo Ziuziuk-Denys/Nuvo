@@ -17,7 +17,7 @@ const NOTCH_TITLE = "Nuvo Notch";
 const X11_FLAGS = ["--ozone-platform=x11"];
 
 const SETTINGS: NotchSettings = {
-  mode: "auto",
+  mode: "on",
   expandOn: "hover",
   showLyrics: true,
   pulseOnTrackChange: true,
@@ -308,23 +308,32 @@ describe.skipIf(!process.env.DISPLAY)("Notch and tray defaults", () => {
         .map((w) => ({ focusable: w.isFocusable(), visible: w.isVisible(), bounds: w.getBounds() })),
     );
 
-  it("shows no Notch on a fresh profile and turns it on and off from Settings", async () => {
+  it("is automatic on a fresh profile: away while the window shows, there while it hides", async () => {
+    const visible = async () => (await notchWindows()).filter((w) => w.visible);
+    const mainWindow = (action: "hide" | "show") =>
+      launched.app.evaluate(({ BrowserWindow }, act) => {
+        BrowserWindow.getAllWindows()
+          .find((w) => w.getTitle() === "Nuvo")
+          ?.[act]();
+      }, action);
     await launched.main.waitForTimeout(1_500);
-    expect(await notchWindows()).toEqual([]);
+    expect(await visible()).toEqual([]);
 
     await launched.main.evaluate(() => (location.hash = "#/settings?section=Notch"));
     const mode = launched.main.getByRole("group", { name: "Notch" });
     await mode.waitFor();
     await launched.main.getByText("A small player at the top of the screen.", { exact: false }).first().waitFor();
-    expect(await mode.getByRole("button", { name: "Off" }).getAttribute("aria-pressed")).toBe("true");
+    expect(await mode.getByRole("button", { name: "Automatic" }).getAttribute("aria-pressed")).toBe("true");
 
-    await mode.getByRole("button", { name: "Automatic" }).click();
-    await expect.poll(notchWindows).toEqual([{ focusable: false, visible: true, bounds: expect.objectContaining({ y: 0, ...NOTCH_WINDOW }) }]);
-    const stored = await launched.main.evaluate(() => JSON.parse(localStorage.getItem("nuvo_notch_settings_v1") ?? "null"));
-    expect(stored).toMatchObject({ version: 1, state: { mode: "auto" } });
+    await mainWindow("hide");
+    await expect.poll(visible).toEqual([{ focusable: false, visible: true, bounds: expect.objectContaining({ y: 0, ...NOTCH_WINDOW }) }]);
+    await mainWindow("show");
+    await expect.poll(visible).toEqual([]);
 
     await mode.getByRole("button", { name: "Off" }).click();
     await expect.poll(notchWindows).toEqual([]);
+    const stored = await launched.main.evaluate(() => JSON.parse(localStorage.getItem("nuvo_notch_settings_v1") ?? "null"));
+    expect(stored).toMatchObject({ version: 1, state: { mode: "off" } });
   });
 
   it("does not keep Nuvo in the tray unless asked, so closing the window quits", async () => {
