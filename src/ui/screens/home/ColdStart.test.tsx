@@ -55,6 +55,7 @@ describe("ColdStart", () => {
   it("brings music in without asking for a taste: Import leads, files and a folder follow", async () => {
     await act(async () => root.render(<ColdStart />));
     expect(host.querySelector("[data-bring]")?.textContent).toContain("ui.home.bring.title");
+    expect(host.querySelector("[data-bring]")?.getAttribute("data-tour")).toBe("home-start");
     expect(host.querySelector(".primary, [class*=primary]")?.textContent).toBe("ui.library.import");
     act(() => button("ui.library.import")!.click());
     expect(mocks.openImport).toHaveBeenCalledOnce();
