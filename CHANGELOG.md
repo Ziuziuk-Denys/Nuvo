@@ -1,5 +1,79 @@
 # Changelog
 
+## {{VERSION}}
+
+A ring of new songs on Home. Spin it with the wheel, a drag or the arrow keys, and the sky behind it takes the colours of the cover in the middle. This release also brings a Poster scene, Settings you can search, imports that open at once and every fix since 0.4.0.
+
+- **A ring of new songs on Home.** About three in four come from New to you, the rest from For you. Click a side cover and it plays at once.
+- **Scene gets a Poster look.** The cover printed in two flat tones with lyrics set like a poster, plus a second background drawn in characters. That makes 13 ready scenes.
+- **Settings in 23 plain sections.** Search finds a setting by other words in English and Russian, such as EQ, tray or VPN, and Ctrl+K jumps straight to it.
+- **Imports open at once.** The playlist opens while songs still match. Nuvo remembers earlier matches, so a second import of a 153-song playlist placed 147 songs within a second.
+- **Find lyrics from the karaoke view.** The search forgives swapped fields and titles full of tags like "slowed" or "fyp", and a slowed or sped-up cut gets its timing stretched to fit.
+- **Try a look before you keep it.** The first time you open lyrics, the whole view plays Scene or Karaoke. One switch tries the other, one button keeps it.
+- **Your own files, dropped anywhere.** Drop songs or folders on the window, or add single files. The first Home is never empty: four genre shelves play at once.
+- **Controls where you want them.** Settings, Theme, Navigation puts the sections in a rail on the left. Settings, Player moves play, previous and next to the left edge of the player.
+- **An update offer at every launch.** Nuvo checks each time it starts, also with automatic updates off, and offers the new version in one small message. Later hides it until the next start.
+
+**Updating from 0.4.** Your settings stay as they are. New installs start with the Notch on Automatic and Auto gain off.
+
+Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on [Discord](https://discord.gg/rHz3dg9S9T) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
+### По-русски
+
+Кольцо новых песен на главной. Крутите его колесом, мышью или стрелками, а небо за ним берёт цвета обложки в центре. Ещё в релизе сцена «Постер», настройки с поиском, импорт, который открывается сразу, и все исправления с 0.4.0.
+
+- **Кольцо новых песен на главной.** Примерно три из четырёх из подборки «Новое для вас», остальные из «Для вас». Клик по боковой обложке сразу включает песню.
+- **Сцена «Постер».** Обложка, напечатанная в два плоских тона, текст свёрстан как афиша, а второй фон нарисован символами. Готовых сцен теперь 13.
+- **Настройки в 23 понятных разделах.** Поиск находит настройку и по другим словам, на русском и английском: эквалайзер, трей, VPN. Ctrl+K сразу открывает нужную.
+- **Импорт открывается сразу.** Плейлист открывается, пока песни ещё ищутся. Nuvo помнит прошлые совпадения: повторный импорт плейлиста на 153 песни расставил 147 из них за секунду.
+- **«Найти текст» прямо из караоке.** Поиск прощает перепутанные поля и названия с хвостами вроде «slowed» или «fyp», а у замедленной или ускоренной версии тайминг растягивается под неё.
+- **Сначала попробуйте вид.** При первом открытии текста весь экран показывает сцену или караоке. Один переключатель пробует другой вид, одна кнопка оставляет выбранный.
+- **Свои файлы - просто перетащите.** Бросьте песни или папки в окно или добавьте отдельные файлы. Первая главная никогда не пустая: четыре жанровые полки играют сразу.
+- **Кнопки там, где удобно.** Настройки, Тема, Навигация ставит разделы в колонку слева. Настройки, Плеер переносит воспроизведение и переключение песен к левому краю плеера.
+- **Обновление при каждом запуске.** Nuvo проверяет его при каждом старте, даже с выключенным автообновлением, и предлагает новую версию одним небольшим сообщением. «Позже» скрывает его до следующего запуска.
+
+**Обновление с 0.4.** Ваши настройки не меняются. В новых установках нотч включён в режиме «Автоматически», а автоусиление выключено.
+
+### All changes
+
+#### New
+
+- Discover ring on Home: new songs under a sky from the cover
+- Poster scene with a print background and poster lyrics; Print in characters
+- Look choice previews Scene and Karaoke across the whole view
+- Settings: 23 sections, search by other words in English and Russian, Ctrl+K jumps to a setting
+- Navigation in a side rail: Settings, Theme, Navigation
+- Player controls at the side: Settings, Player
+- Update check on every launch, with an offer you can put off until the next start
+- Find lyrics in the karaoke view and the track menu
+- Lyrics model setting: Auto, Light (82 MB) or Full (264 MB)
+- Add single music files, drop songs and folders anywhere on the window
+- Spotify song links play, including spotify.link
+- Host shells can read the current track, synced lyrics and up next over D-Bus, and play from up next (thanks @doctorsalamii)
+
+#### Better
+
+- Imports open the playlist at once and show the songs still matching
+- Imports remember earlier matches and run twice as many searches at once
+- The first Home shows one import line and four genre shelves that play at once
+- Quick search finds SoundCloud songs and ranks like the search page
+- Lyrics search forgives swapped fields and tagged upload titles
+- Slowed and sped-up cuts get stretched lyric timing
+- The next song starts caching after 3 s of play instead of 10 s
+- Notch on Automatic by default: it shows while the window is hidden or minimized
+- Auto gain off by default, and a limiter keeps EQ boosts from clipping in playback and clip export
+- Tabs, filters, panels and the Scene editor share one motion
+- The GNOME panel widget updates itself when Nuvo brings a newer one
+- What's new shows the short notes in your language
+
+#### Fixed
+
+- The Scene background no longer flashes between black and white
+- A failed start says "No source could play it" instead of blaming your region
+- The Library toolbar no longer covers its tabs in a narrow window
+- Genre shelves on the first Home hold their place while they load
+- Windows animates maximize, restore and minimize again
+
 ## 0.4.0
 
 Songs you can watch now. Scene, Nuvo's own visual engine, draws each song to the beat while the words land as they are sung, and its clip studio turns any moment into a short video. This release also brings two editions, moving sound, lyrics that follow the version that plays, and every fix since 0.3.0.
