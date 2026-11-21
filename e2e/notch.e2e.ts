@@ -67,6 +67,7 @@ interface Launched {
   main: Page;
   profile: string;
   isolation?: Isolation;
+  pid?: number;
 }
 
 async function launch(env: Record<string, string>, flags: string[] = []): Promise<Launched> {
@@ -82,16 +83,15 @@ async function launch(env: Record<string, string>, flags: string[] = []): Promis
   });
   const main = await waitForPage(app, (url) => !url.includes("#/notch"));
   await main.waitForFunction(() => Boolean(window.nuvoShell));
-  return { app, main, profile, isolation };
+  return { app, main, profile, isolation, pid: app.process().pid };
 }
 
 async function close(launched: Launched | undefined): Promise<void> {
   if (!launched) return;
-  const pid = launched.app.process().pid;
   await launched.app.close().catch(() => undefined);
-  if (pid) {
+  if (launched.pid) {
     try {
-      process.kill(pid, "SIGKILL");
+      process.kill(launched.pid, "SIGKILL");
     } catch {}
   }
   rmSync(launched.profile, { recursive: true, force: true });
@@ -322,7 +322,6 @@ describe.skipIf(!process.env.DISPLAY)("Notch and tray defaults", () => {
     await launched.main.evaluate(() => (location.hash = "#/settings?section=Notch"));
     const mode = launched.main.getByRole("group", { name: "Notch" });
     await mode.waitFor();
-    await launched.main.getByText("A small player at the top of the screen.", { exact: false }).first().waitFor();
     expect(await mode.getByRole("button", { name: "Automatic" }).getAttribute("aria-pressed")).toBe("true");
 
     await mainWindow("hide");

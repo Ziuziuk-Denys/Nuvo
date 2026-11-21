@@ -93,15 +93,15 @@ const NUVO_LOOKS: Look[] = [
   { preset: "nuvo", mode: "dark" },
 ];
 
-const SOUND_TAB_INDEX = { speed: 1, sleep: 2 } as const;
+const SOUND_TABS = { speed: /^(Speed|Скорость)$/, sleep: /^(Sleep|Сон)$/ } as const;
 
-async function shootSoundTab(live: NuvoSession, tab: keyof typeof SOUND_TAB_INDEX, looks: Look[], size: Size, open: () => Promise<void>, state: string = tab) {
+async function shootSoundTab(live: NuvoSession, tab: keyof typeof SOUND_TABS, looks: Look[], size: Size, open: () => Promise<void>, state: string = tab) {
   await live.shoot(STEP, "panel", state, {
     looks,
     sizes: [size],
     prepare: async () => {
       await open();
-      await live.page.locator('[role="dialog"] [role="tab"]').nth(SOUND_TAB_INDEX[tab]).click();
+      await live.page.locator('[role="dialog"]').getByRole("tab", { name: SOUND_TABS[tab] }).click();
     },
   });
 }

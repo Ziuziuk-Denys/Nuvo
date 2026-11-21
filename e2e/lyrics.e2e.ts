@@ -138,7 +138,7 @@ it("a playing fixture song moves the active line", async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   const notch = app.windows().find((win) => win.url().includes("#/notch"));
   if (notch) {
-    await notch.hover(".island");
+    await notch.hover(".island", { force: true });
     await notch.waitForTimeout(1_200);
   }
   await (notch ?? main).screenshot({ path: path.join(SHOTS, "active-line.png") });

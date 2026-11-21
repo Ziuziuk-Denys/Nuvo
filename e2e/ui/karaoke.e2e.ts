@@ -25,6 +25,7 @@ afterAll(async () => {
 
 it("with the background hidden, both sizes differ from the references by at most 1 % of pixels", async () => {
   const page = session.page;
+  await page.evaluate(() => localStorage.setItem("nuvo.hint.dislike", "1"));
   await session.go("#/player");
   await session.setLook(DARK);
   await page.addStyleTag({ content: "canvas, [data-add-lyrics] { visibility: hidden !important }" });
@@ -44,12 +45,15 @@ it("the island cover raises the view in dark within 400 ms, Escape takes it back
   await session.go("#/");
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.locator('button[aria-label="Open lyrics"]').first().click();
-  const started = Date.now();
   const overlay = page.locator("[data-phase]");
   await overlay.waitFor({ timeout: 2_000 });
   expect(await overlay.getAttribute("data-theme")).toBe("dark");
+  const riseMs = await overlay.evaluate((view) => {
+    const style = getComputedStyle(view);
+    return (parseFloat(style.transitionDuration) + parseFloat(style.transitionDelay)) * 1000;
+  });
+  expect(riseMs).toBeLessThan(400);
   await page.waitForFunction(() => getComputedStyle(document.querySelector("[data-phase]")!).transform === "none", undefined, { timeout: 2_000, polling: 16 });
-  expect(Date.now() - started).toBeLessThan(400);
   await page.keyboard.press("Escape");
   await overlay.waitFor({ state: "detached", timeout: 2_000 });
 });

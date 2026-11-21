@@ -168,7 +168,7 @@ describe("recs UI", () => {
     console.log(
       await shoot(live, "home", "first-run-ru", [{ ...LIGHT }], [W1100], async () => {
         await page.reload();
-        await page.getByRole("heading", { name: "Перенесите свою музыку" }).waitFor({ timeout: 20_000 });
+        await page.getByRole("heading", { name: "Вся ваша музыка в одном месте" }).waitFor({ timeout: 20_000 });
       }),
     );
     await setLocale(live, "en");
@@ -188,8 +188,8 @@ describe("recs UI", () => {
       await live.go("#/");
       await page.getByRole("button", { name: /^(Hidden from recommendations|Скрыто из рекомендаций)$/ }).click({ timeout: 20_000 });
       await page
-        .locator("[role=dialog] h2")
-        .filter({ hasText: /Hidden music|Скрытая музыка/ })
+        .locator("[role=dialog]")
+        .getByText(/^(Hidden music|Скрытая музыка)$/)
         .waitFor();
       await page
         .getByText(/Roygbiv/)

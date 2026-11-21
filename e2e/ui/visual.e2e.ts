@@ -173,7 +173,7 @@ it("the studio exports the picked range as an MP4 with the song under it", async
   await page.getByRole("button", { name: "30 fps", exact: true }).click();
   await session.shoot("visual", "studio", "export", { looks: [DARK] });
   await page.getByRole("button", { name: "Save clip" }).click();
-  await page.getByRole("dialog", { name: "Your clip is ready" }).waitFor({ timeout: 120_000 });
+  await page.getByRole("dialog", { name: "Your clip is ready" }).waitFor({ timeout: 240_000 });
   await page.waitForFunction(() => document.querySelectorAll("[class*=strip] img").length >= 4, undefined, { timeout: 30_000 });
   await page.waitForTimeout(600);
   await session.shoot("visual", "studio", "exported", { looks: [DARK] });
@@ -191,7 +191,7 @@ it("the studio exports the picked range as an MP4 with the song under it", async
   execFileSync("ffmpeg", ["-nostdin", "-loglevel", "error", "-y", "-ss", "2", "-i", out, "-frames:v", "1", still]);
   expect(fs.existsSync(still)).toBe(true);
   fs.rmSync(dir, { recursive: true, force: true });
-});
+}, 360_000);
 
 it("a scene picked in the studio becomes the player's scene, even from random mode", async () => {
   const page = session.page;

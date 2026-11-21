@@ -67,15 +67,19 @@ it("rendered offline, each preset is clearly different, turns at the set rate, h
     const rate = 48_000;
     const db = (ratio: number) => 10 * Math.log10(ratio);
 
-    // Pink noise with the channel correlation of a typical mix, about 0.8
-    const pinkNoise = (ctx: BaseAudioContext, seconds: number) => {
-      const buffer = ctx.createBuffer(2, rate * seconds, rate);
-      // Seeded, so every render hears the same input and a level change belongs to the effect
+    // Seeded, so every render hears the same input and room and a level change belongs to the effect
+    const seeded = () => {
       let seed = 1;
-      const random = () => {
+      return () => {
         seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648;
         return seed / 2_147_483_648;
       };
+    };
+
+    // Pink noise with the channel correlation of a typical mix, about 0.8
+    const pinkNoise = (ctx: BaseAudioContext, seconds: number) => {
+      const buffer = ctx.createBuffer(2, rate * seconds, rate);
+      const random = seeded();
       const pink = () => {
         const state = [0, 0, 0];
         return () => {
@@ -102,7 +106,7 @@ it("rendered offline, each preset is clearly different, turns at the set rate, h
       if (source === "tone") input = new OscillatorNode(ctx, { frequency: 220 });
       else if (source === "burst") input = new AudioBufferSourceNode(ctx, { buffer: pinkNoise(ctx, 0.5) });
       else input = new AudioBufferSourceNode(ctx, { buffer: pinkNoise(ctx, 4), loop: true });
-      const stage = new Stage(ctx, Math.random);
+      const stage = new Stage(ctx, seeded());
       input.connect(stage.input);
       stage.output.connect(ctx.destination);
       for (const [time, state] of schedule) {
