@@ -231,6 +231,16 @@ export class FakeContext {
   createChannelMerger() {
     return new FakeNode(this, "merger");
   }
+  createDynamicsCompressor() {
+    const node = new FakeNode(this, "limiter");
+    return Object.assign(node, {
+      threshold: new FakeParam(this, -24),
+      knee: new FakeParam(this, 30),
+      ratio: new FakeParam(this, 12),
+      attack: new FakeParam(this, 0.003),
+      release: new FakeParam(this, 0.25),
+    });
+  }
   createOscillator() {
     return new FakeOscillator(this);
   }

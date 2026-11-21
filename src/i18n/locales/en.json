@@ -26,6 +26,7 @@
   },
   "sound": {
     "auto_gain": "Auto gain",
+    "auto_gain_hint": "Turns the volume down by the equalizer's biggest boost, so the sound keeps all its headroom. Off, a limiter still keeps it from distorting.",
     "compare": "Compare",
     "custom": "Custom",
     "delete_preset": "Delete {name}",

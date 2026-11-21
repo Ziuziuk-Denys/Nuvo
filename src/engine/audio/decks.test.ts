@@ -107,7 +107,9 @@ describe("graph", () => {
     const master = gains(ctx).find((g) => g.outputs.includes(analyser))!;
     const stageInput = master.outputs.find((node) => node !== analyser)!;
     const merger = ctx.ofType("merger")[0];
-    expect(merger.outputs[0].outputs).toEqual([ctx.destination]);
+    const limiter = ctx.ofType("limiter")[0];
+    expect(merger.outputs[0].outputs).toEqual([limiter]);
+    expect(limiter.outputs[0].outputs).toEqual([ctx.destination]);
     expect(stageInput.outputs).toHaveLength(2);
     expect(master.outputs).not.toContain(ctx.destination);
     s.decks.rebuildGraph();

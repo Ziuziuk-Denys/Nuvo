@@ -96,12 +96,15 @@ describe("useSoundSync", () => {
     expect(vi.mocked(scheduleLoudness).mock.calls.map(([id]) => id)).not.toContain("t2");
   });
 
-  it("applies the auto preamp only when autoGain is on", () => {
+  it("applies the auto preamp only when autoGain is on, which is off by default", () => {
     useSoundStore.setState({ eqEnabled: true, gains: [...BUILT_IN_PRESETS.bass_boost] });
     mount();
-    expect((setEq.mock.calls.at(-1)![0] as { preampDb: number }).preampDb).toBe(autoPreamp(BUILT_IN_PRESETS.bass_boost));
-    expect((setEq.mock.calls.at(-1)![0] as { preampDb: number }).preampDb).toBeLessThan(-5);
+    const preamp = () => (setEq.mock.calls.at(-1)![0] as { preampDb: number }).preampDb;
+    expect(preamp()).toBe(0);
+    act(() => useSoundStore.getState().setAutoGain(true));
+    expect(preamp()).toBe(autoPreamp(BUILT_IN_PRESETS.bass_boost));
+    expect(preamp()).toBeLessThan(-5);
     act(() => useSoundStore.getState().setAutoGain(false));
-    expect((setEq.mock.calls.at(-1)![0] as { preampDb: number }).preampDb).toBe(0);
+    expect(preamp()).toBe(0);
   });
 });

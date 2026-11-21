@@ -97,7 +97,7 @@ export const useSoundStore = create<SoundState>()(
       gains: [...FLAT],
       presetName: "flat",
       customPresets: {},
-      autoGain: true,
+      autoGain: false,
       bypass: false,
       normalization: "track",
       byTrack: {},
