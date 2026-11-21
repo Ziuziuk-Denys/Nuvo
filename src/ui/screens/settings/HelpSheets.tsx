@@ -52,8 +52,8 @@ function WhatsNewSheet({ open, version, onClose }: { open: boolean; version: str
 }
 
 export function ReleaseNotes({ version, className }: { version: string; className?: string }): JSX.Element {
-  const { t } = useTranslation();
-  const notes = notesFor(version).join("\n");
+  const { t, locale } = useTranslation();
+  const notes = notesFor(version, locale).join("\n");
   return notes.trim() ? <Markdown text={notes} className={className} tracks /> : <p className={styles.line}>{t("ui.settings.whats_new.none")}</p>;
 }
 
