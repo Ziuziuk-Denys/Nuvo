@@ -115,7 +115,12 @@ export function AddLyrics({ track }: { track: LyricsTrack }): JSX.Element {
         </div>
       ) : null}
       <div className={styles.sources}>
-        <button type="button" className={styles.addLyrics} data-add-lyrics="" onClick={() => openLyricsTool(track, "find")}>
+        <button
+          type="button"
+          className={offer.kind === "none" ? styles.addLyrics : styles.textButton}
+          data-add-lyrics=""
+          onClick={() => openLyricsTool(track, "find")}
+        >
           {t("ui.lyrics.find")}
         </button>
         <button type="button" className={offer.kind === "none" ? styles.addLyrics : styles.textButton} data-add-lyrics="" onClick={sources.paste}>
