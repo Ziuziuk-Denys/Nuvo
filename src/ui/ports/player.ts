@@ -20,7 +20,7 @@ export function currentStreamFormat(): { codec: string; bitrate: number } | null
   return playerRuntime?.currentStreamFormat() ?? null;
 }
 
-export function currentFallback(): { source: string; restarted: boolean; hover: string } | null {
+export function currentFallback(): { source: string; restarted: boolean; reason: { key: string; vars: Record<string, string | number> } } | null {
   return playerRuntime?.currentFallback() ?? null;
 }
 

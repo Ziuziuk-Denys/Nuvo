@@ -14,7 +14,7 @@ import { PrecacheScheduler } from "./sources/precache";
 import { offlineMode } from "./offlineMode";
 import { SourceResolver } from "./sources/resolver";
 import { SurfaceSender, toSurfaceState } from "./surface";
-import { isLocalId, type Cause, type RemoteCommand, type SurfaceState, type Track } from "./types";
+import { isLocalId, type Cause, type PlayerNotice, type RemoteCommand, type SurfaceState, type Track } from "./types";
 
 /** Late enough that the daemon has opened the library. */
 const REPORTS_FLUSH_DELAY_MS = 3000;
@@ -34,7 +34,7 @@ export interface BootDeps {
   library: LibraryPort & { isLiked(trackId: string): boolean; onLikedChange(listener: () => void): () => void };
   lyrics: { follow(track: Track | null): void; prefetch(track: Track): void };
   covers: { warm(url: string): void; drawn(url: string): string };
-  notify(notice: { kind: "error" | "info"; text: string; detail?: string }): void;
+  notify(notice: PlayerNotice): void;
   askForSignIn(): void;
   offerSignIn(): boolean;
   network: { checkSoon(cause: Cause | "http_403"): void };

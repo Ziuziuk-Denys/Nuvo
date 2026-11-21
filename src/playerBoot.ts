@@ -1,7 +1,7 @@
 import { createListeners } from "./engine/listeners";
 import type { CatalogPort } from "./engine/adapters";
 import type { YoutubePort } from "./engine/sources/ports";
-import type { Track } from "./engine/types";
+import type { PlayerNotice, Track } from "./engine/types";
 import { coverUrl } from "./data/covers/coverUrl";
 import { startLibrary } from "./data/library/library";
 import { notifyLibraryChanged } from "./data/library/changes";
@@ -57,7 +57,7 @@ export function bootedLibrary(): ReturnType<typeof createDaemonLibrary> | null {
 export interface PlayerBootPorts {
   youtube: YoutubePort;
   catalog: CatalogPort;
-  notify(notice: { kind: "error" | "info"; text: string; detail?: string }): void;
+  notify(notice: PlayerNotice): void;
   askForSignIn(): void;
   offerSignIn(): boolean;
   lyrics: { follow(track: Track | null): void; prefetch(track: Track): void };

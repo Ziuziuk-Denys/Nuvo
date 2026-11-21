@@ -52,26 +52,23 @@ export function streamHover(stream: StreamInfo): string {
   return `${codecLabel(stream.codec)} · ${stream.bitrateKbps} kbps · ${where}`;
 }
 
-const CAUSE_TEXT: Record<string, string> = {
-  drm: "protected",
-  sign_in_required: "needs sign-in",
-  blocked: "blocked",
-  timeout: "timed out",
-  stall: "stalled",
-  http_403: "refused this connection",
-  media_error: "could not be decoded",
-};
+const SKIP_CAUSES = new Set(["drm", "sign_in_required", "blocked", "stall", "media_error"]);
+const FALLBACK_CAUSES = new Set(["drm", "sign_in_required", "blocked", "timeout", "stall", "http_403", "media_error"]);
 
-export function skipText(title: string, cause: string, original: string = cause): string {
-  if (original === "http_403" || (cause === "blocked" && original === cause))
-    return `${title} skipped. YouTube refuses this connection; try another network or check your proxy.`;
-  if (cause === "offline") return `${title} skipped. ${offlineMode.isOn() ? "Offline mode is on" : "You are offline"}.`;
-  if (cause === "timeout") return `${title} skipped. No source answered in time; it will be tried again later.`;
-  return `${title} skipped. ${CAUSE_TEXT[cause] ?? "No source could play it"}.`.replace(/\. ([a-z])/, (_, letter: string) => `. ${letter.toUpperCase()}`);
+export interface Translatable {
+  key: string;
+  vars: Record<string, string | number>;
 }
 
-export function fallbackHover(fallback: FallbackInfo): string {
-  const cause = CAUSE_TEXT[fallback.cause] ?? fallback.cause;
-  const head = `${SOURCE_LABEL[fallback.primarySource]}: ${cause}. Matched by title, artist and length (score ${fallback.score}). May be a different recording.`;
-  return fallback.restarted ? `${head} Restarted: different length` : head;
+export function skipNotice(title: string, cause: string, original: string = cause): Translatable {
+  const vars = { title };
+  if (original === "http_403" || (cause === "blocked" && original === cause)) return { key: "ui.island.skipped.refused", vars };
+  if (cause === "offline") return { key: offlineMode.isOn() ? "ui.island.skipped.offline_mode" : "ui.island.skipped.offline", vars };
+  if (cause === "timeout") return { key: "ui.island.skipped.timeout", vars };
+  return { key: `ui.island.skipped.${SKIP_CAUSES.has(cause) ? cause : "unavailable"}`, vars };
+}
+
+export function fallbackReason(fallback: FallbackInfo): Translatable {
+  const cause = FALLBACK_CAUSES.has(fallback.cause) ? fallback.cause : "unavailable";
+  return { key: "ui.island.fallback_hover", vars: { source: SOURCE_LABEL[fallback.primarySource], reason: cause, score: fallback.score } };
 }

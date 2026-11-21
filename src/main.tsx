@@ -25,9 +25,11 @@ async function mainWindow(): Promise<React.ReactElement> {
   const lyrics = bootLyrics();
   await bootPlayer(async () => {
     const notify: PlayerBootPorts["notify"] = (notice) =>
-      useToastStore
-        .getState()
-        .show({ message: notice.text, variant: notice.kind === "error" ? "error" : "info", ...(notice.detail ? { description: notice.detail } : {}) });
+      useToastStore.getState().show({
+        message: "key" in notice ? translate(notice.key, notice.vars) : notice.text,
+        variant: notice.kind === "error" ? "error" : "info",
+        ...(notice.detail ? { description: notice.detail } : {}),
+      });
     const youtube = bootYoutube((text) => notify({ kind: "info", text }));
     return { ...youtube.ports, notify, lyrics };
   });

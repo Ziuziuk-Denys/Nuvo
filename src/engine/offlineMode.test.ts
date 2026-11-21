@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createOfflineMode, offlineMode } from "./offlineMode";
-import { skipText } from "./stateLine";
+import { skipNotice } from "./stateLine";
 import { MemoryStorage } from "./test/harness";
 
 describe("offline mode", () => {
@@ -26,9 +26,9 @@ describe("offline mode", () => {
   });
 
   it("names offline mode, not the network, when it stopped a track", () => {
-    expect(skipText("Song", "offline")).toBe("Song skipped. You are offline.");
+    expect(skipNotice("Song", "offline").key).toBe("ui.island.skipped.offline");
     offlineMode.set(true);
-    expect(skipText("Song", "offline")).toBe("Song skipped. Offline mode is on.");
+    expect(skipNotice("Song", "offline").key).toBe("ui.island.skipped.offline_mode");
     offlineMode.set(false);
   });
 });

@@ -3,7 +3,7 @@ import { validateSurfaceState } from "../../electron/app/validate";
 import { runCommand } from "./commands";
 import { PlayTracker } from "./playReport";
 import { SurfaceSender, toSurfaceState } from "./surface";
-import { fallbackHover, skipText, stateLine, streamHover } from "./stateLine";
+import { fallbackReason, skipNotice, stateLine, streamHover } from "./stateLine";
 import { advance, createHarness, flush, track, y, type Harness } from "./test/harness";
 import type { PlayerView, QueueEntry, SurfaceState } from "./types";
 
@@ -504,8 +504,10 @@ describe("state line", () => {
   });
 
   it("an unavailable or undecodable track never claims a region block", () => {
-    expect(skipText("Song", "unavailable")).toBe("Song skipped. No source could play it.");
-    expect(skipText("Song", "unavailable", "media_error")).toBe("Song skipped. No source could play it.");
+    expect(skipNotice("Song", "unavailable")).toEqual({ key: "ui.island.skipped.unavailable", vars: { title: "Song" } });
+    expect(skipNotice("Song", "unavailable", "media_error").key).toBe("ui.island.skipped.unavailable");
+    expect(skipNotice("Song", "rate_limited").key).toBe("ui.island.skipped.unavailable");
+    expect(skipNotice("Song", "http_403").key).toBe("ui.island.skipped.refused");
   });
 
   it("streamHover formats codec, bitrate, and source", () => {
@@ -514,15 +516,10 @@ describe("state line", () => {
     expect(streamHover({ source: "youtube", codec: "mp3", bitrateKbps: 192, fromCache: true })).toBe("MP3 · 192 kbps · from cache");
   });
 
-  it("fallbackHover formats primary source, cause, and score", () => {
+  it("the fallback reason names the primary source, a known cause, and the score", () => {
     const fallback = { primarySource: "youtube" as const, usedSource: "cache" as const, cause: "unavailable" as const, score: 0.95, restarted: false };
-    const text = fallbackHover(fallback);
-    expect(text).toContain("YouTube: unavailable.");
-    expect(text).not.toContain("region");
-    expect(text).toContain("score 0.95");
-    expect(text).not.toContain("Restarted");
-
-    const restarted = { ...fallback, restarted: true };
-    expect(fallbackHover(restarted)).toContain("Restarted: different length");
+    expect(fallbackReason(fallback)).toEqual({ key: "ui.island.fallback_hover", vars: { source: "YouTube", reason: "unavailable", score: 0.95 } });
+    expect(fallbackReason({ ...fallback, cause: "rate_limited" }).vars.reason).toBe("unavailable");
+    expect(fallbackReason({ ...fallback, cause: "drm" }).vars.reason).toBe("drm");
   });
 });

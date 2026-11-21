@@ -17,7 +17,7 @@ import { PlayTracker, ReportOutbox, type PlaybackEventBody } from "./playReport"
 import * as Q from "./queue";
 import type { Random } from "./shuffle";
 import { displayCause, type TriggerCause } from "./sources/fallbackPlan";
-import { skipText } from "./stateLine";
+import { skipNotice } from "./stateLine";
 import { isAbort, SourceFailure } from "./sources/ports";
 import type { AttachedSource, Resolved, ResolveOptions } from "./sources/resolver";
 import { CROSSFADE_MAX_S } from "./audio/transitionPolicy";
@@ -32,6 +32,7 @@ import {
   type Notice,
   type OutputView,
   type PauseReason,
+  type PlayerNotice,
   type PlayerView,
   type QueueEntry,
   type RepeatMode,
@@ -79,7 +80,7 @@ export interface EngineDeps {
   now(): number;
   random: Random;
   newId(): string;
-  notify(notice: { kind: "error" | "info"; text: string; detail?: string }): void;
+  notify(notice: PlayerNotice): void;
   askForSignIn(): void;
   network: { checkSoon(cause: Cause | "http_403"): void };
   online(): boolean;
@@ -930,7 +931,7 @@ export class Engine {
     this.notice = { kind: "skipped", title: entry.track.title, cause };
     if (!this.retried.has(entry.entryId)) {
       this.retryOwed.set(entry.entryId, this.deps.now());
-      this.deps.notify({ kind: "info", text: skipText(entry.track.title, cause, reportReason) });
+      this.deps.notify({ kind: "info", ...skipNotice(entry.track.title, cause, reportReason) });
     }
     this.tracker.setSource(this.stream?.source ?? primarySource(entry.track.id), reportReason);
     this.endPlay("error");

@@ -60,7 +60,7 @@ export function nextRepeat(mode: RepeatMode, station: boolean): RepeatMode {
   return order[(order.indexOf(mode) + 1) % order.length];
 }
 
-export { stateLine, streamHover, fallbackHover, STATE_LINE_EN, STATE_LINE_RU } from "./stateLine";
+export { stateLine, streamHover, fallbackReason, STATE_LINE_EN, STATE_LINE_RU } from "./stateLine";
 export { gainFromSlider, sliderFromGain } from "./tempo";
 export { isStation } from "./types";
 export type { PlayerView, QueueEntry, RepeatMode, Track, SurfaceState, RemoteCommand } from "./types";
