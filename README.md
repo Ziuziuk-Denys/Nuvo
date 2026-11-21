@@ -158,7 +158,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 - HTTP and SOCKS5 proxies with a login, and a connection check for each service
 - Last.fm scrobbling with your own API key, off until you turn it on
 - A Discord status with the song cover. On by default; turn it off in Settings, Discord
-- Nuvo asks github.com for a new version at every launch. With automatic updates off in Settings, Updates, it only offers the update
+- Nuvo asks github.com for a new version at every launch. Turn off Update automatically in Settings, Updates, and it only offers the update
 
 ## Why Nuvo
 
