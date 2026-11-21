@@ -14,9 +14,13 @@ import { DislikeButton } from "../../recs/DislikeButton";
 import { formatDuration } from "../../screens/entity/entityModel";
 import { useShellStore } from "../shellStore";
 import { QUEUE_PANEL } from "../../geometry";
+import { DURATION_MS, STAGGER_MS } from "../../motion";
 import styles from "./QueuePanel.module.css";
 
 const ROW_HEIGHT = 52;
+const STAGGERED_ROWS = 16;
+const ROW_STAGGER_MS = STAGGER_MS / 2;
+const ROWS_SETTLED_MS = DURATION_MS.base + STAGGERED_ROWS * ROW_STAGGER_MS + DURATION_MS.entrance;
 
 export function radioSeed(queue: readonly { title: string }[], context: string | null, autoplayFrom: number | null): string | null {
   if (context?.startsWith("radio:")) return queue[0]?.title ?? null;
@@ -61,7 +65,7 @@ export function QueuePanel(): JSX.Element | null {
 
   useEffect(() => {
     if (!open) return;
-    const settle = window.setTimeout(() => setFresh(false), 600);
+    const settle = window.setTimeout(() => setFresh(false), ROWS_SETTLED_MS);
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
@@ -126,7 +130,7 @@ export function QueuePanel(): JSX.Element | null {
               <div
                 key={`${track.id}:${index}`}
                 className={styles.item}
-                style={{ "--i": Math.min(step, 5), transform: shift ? `translateY(${shift}px)` : undefined } as CSSProperties}
+                style={{ "--i": Math.min(step, STAGGERED_ROWS), transform: shift ? `translateY(${shift}px)` : undefined } as CSSProperties}
                 data-played={index < currentIndex ? "" : undefined}
                 data-current={index === currentIndex ? "" : undefined}
                 data-dragging={reorder.dragIndex === step ? "" : undefined}

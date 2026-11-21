@@ -151,7 +151,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .panel[data-fresh] .item {
     animation: rise var(--n-t-entrance) var(--n-ease-out) both;
-    animation-delay: calc(200ms + var(--i) * 45ms);
+    animation-delay: calc(var(--n-t-base) + var(--i) * var(--n-stagger) / 2);
   }
 }
 
