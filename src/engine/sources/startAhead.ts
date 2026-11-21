@@ -6,6 +6,7 @@ export const HEAD_SECONDS = 6;
 export const HEAD_MAX_BYTES = 256 * 1024;
 export const REST_CHUNK_BYTES = 1 << 20;
 export const AHEAD_TTL_MS = 5 * 60_000;
+export const TAKE_WAIT_MS = 3_000;
 const URL_MARGIN_MS = 60_000;
 
 export interface StartAheadDeps {
@@ -88,7 +89,9 @@ export class StartAhead {
     const stop = () => entry.controller.abort();
     signal.addEventListener("abort", stop, { once: true });
     try {
-      const prepared = await entry.ready;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const late = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), TAKE_WAIT_MS)));
+      const prepared = await Promise.race([entry.ready, late]).finally(() => clearTimeout(timer));
       if (!prepared || signal.aborted) {
         entry.controller.abort();
         return null;

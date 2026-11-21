@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DaemonPort, PlayableSource, YoutubePort } from "./ports";
-import { AHEAD_LIMIT, HEAD_MAX_BYTES, REST_CHUNK_BYTES, StartAhead } from "./startAhead";
+import { AHEAD_LIMIT, HEAD_MAX_BYTES, REST_CHUNK_BYTES, StartAhead, TAKE_WAIT_MS } from "./startAhead";
 import type { Track } from "../types";
 
 const track = (letter: string): Track => ({ id: letter.repeat(11), title: letter, artists: "A", coverUrl: "", durationMs: 200_000 });
@@ -164,6 +164,26 @@ describe("StartAhead", () => {
     ahead.prepare([sc]);
     expect(await ahead.take(sc.id, signal())).toBe("failed");
     expect(played(await ahead.take(track("y").id, signal())).progressive?.url).toBe("blob:ahead");
+  });
+
+  it("a click waits at most a few seconds for a head still loading, then stops it", async () => {
+    vi.useFakeTimers();
+    try {
+      let stuck: AbortSignal | null = null;
+      const { ahead } = setup({
+        resolve: (_t, _o, s) => {
+          stuck = s;
+          return new Promise(() => undefined);
+        },
+      });
+      ahead.prepare([track("a")]);
+      const taken = ahead.take(track("a").id, signal());
+      await vi.advanceTimersByTimeAsync(TAKE_WAIT_MS);
+      expect(await taken).toBeNull();
+      expect(stuck!.aborted).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does nothing while playback cannot start from a head", async () => {
