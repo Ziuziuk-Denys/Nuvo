@@ -516,29 +516,29 @@ describe("pre-cache", () => {
     await flush();
   }
 
-  it("the job starts at 10 s of steady play", async () => {
+  it("the job starts at 3 s of steady play", async () => {
     const h = createHarness({ precache: true });
     h.daemon.cached(y("t"));
     await start(h);
-    await steady(h, 9750);
+    await steady(h, 2750);
     expect(h.daemon.callsTo("POST", "/v1/cache/fetch")).toEqual([]);
     await steady(h, 250);
-    h.deck.emit("timeupdate", { positionMs: 10_000 });
+    h.deck.emit("timeupdate", { positionMs: 3000 });
     await flush();
     expect(JSON.parse(h.daemon.callsTo("POST", "/v1/cache/fetch")[0].body!).trackId).toBe(y("n"));
   });
 
-  it("a seek restarts the 10 s count", async () => {
+  it("a seek restarts the 3 s count", async () => {
     const h = createHarness({ precache: true });
     h.daemon.cached(y("t"));
     await start(h);
-    await steady(h, 6000);
+    await steady(h, 2000);
     h.engine.seekTo(100_000);
     h.deck.emit("timeupdate", { positionMs: 100_000 });
-    h.deck.emit("timeupdate", { positionMs: 105_000 });
+    h.deck.emit("timeupdate", { positionMs: 102_000 });
     await flush();
     expect(h.daemon.callsTo("POST", "/v1/cache/fetch")).toEqual([]);
-    h.deck.emit("timeupdate", { positionMs: 110_000 });
+    h.deck.emit("timeupdate", { positionMs: 103_000 });
     await flush();
     expect(h.daemon.callsTo("POST", "/v1/cache/fetch")).toHaveLength(1);
   });

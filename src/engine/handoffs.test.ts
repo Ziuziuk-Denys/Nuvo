@@ -3,7 +3,7 @@ import { validateSurfaceState } from "../../electron/app/validate";
 import { runCommand } from "./commands";
 import { PlayTracker } from "./playReport";
 import { SurfaceSender, toSurfaceState } from "./surface";
-import { fallbackHover, stateLine, streamHover } from "./stateLine";
+import { fallbackHover, skipText, stateLine, streamHover } from "./stateLine";
 import { advance, createHarness, flush, track, y, type Harness } from "./test/harness";
 import type { PlayerView, QueueEntry, SurfaceState } from "./types";
 
@@ -503,6 +503,11 @@ describe("state line", () => {
     });
   });
 
+  it("an unavailable or undecodable track never claims a region block", () => {
+    expect(skipText("Song", "unavailable")).toBe("Song skipped. No source could play it.");
+    expect(skipText("Song", "unavailable", "media_error")).toBe("Song skipped. No source could play it.");
+  });
+
   it("streamHover formats codec, bitrate, and source", () => {
     expect(streamHover({ source: "youtube", codec: "opus", bitrateKbps: 160, fromCache: false })).toBe("Opus · 160 kbps · YouTube");
     expect(streamHover({ source: "soundcloud", codec: "aac", bitrateKbps: 128, fromCache: false })).toBe("AAC · 128 kbps · SoundCloud");
@@ -512,7 +517,8 @@ describe("state line", () => {
   it("fallbackHover formats primary source, cause, and score", () => {
     const fallback = { primarySource: "youtube" as const, usedSource: "cache" as const, cause: "unavailable" as const, score: 0.95, restarted: false };
     const text = fallbackHover(fallback);
-    expect(text).toContain("YouTube: unavailable in your region");
+    expect(text).toContain("YouTube: unavailable.");
+    expect(text).not.toContain("region");
     expect(text).toContain("score 0.95");
     expect(text).not.toContain("Restarted");
 
