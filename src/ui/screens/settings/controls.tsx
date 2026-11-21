@@ -1,14 +1,21 @@
 import { createContext, useContext, useId, type JSX, type ReactNode } from "react";
 import { Lens } from "../../components/Lens";
 import { Toggle } from "../../components/Toggle";
-import { matchesQuery } from "./sections";
+import type { TFunction } from "../../ports/i18n";
+import { findKeyFor, matchesQuery } from "./sections";
 import styles from "./controls.module.css";
 
 export const SearchQuery = createContext("");
 
+export function rowText(t: TFunction, base: string) {
+  const titleKey = base + ".title";
+  const descKey = base + ".description";
+  return { titleKey, descKey, title: t(titleKey), description: t(descKey) };
+}
+
 function useHidden(title: string, description: string | undefined, keys: (string | undefined)[]): boolean {
   const query = useContext(SearchQuery);
-  return !matchesQuery(query, keys, [title, description ?? ""]);
+  return !matchesQuery(query, [...keys, findKeyFor(keys[0])], [title, description ?? ""]);
 }
 
 interface RowProps {
@@ -24,7 +31,7 @@ interface RowProps {
 export function SettingRow({ title, description, explained, control, icon, titleKey, descKey }: RowProps): JSX.Element | null {
   if (useHidden(title, description, [titleKey, descKey])) return null;
   return (
-    <div className={styles.row}>
+    <div className={styles.row} data-setting={titleKey}>
       {icon ? <span className={styles.rowIcon}>{icon}</span> : null}
       <div className={styles.text}>
         <span className={styles.title}>{title}</span>
@@ -45,7 +52,7 @@ export function SettingBlock({
 }: Omit<RowProps, "control" | "explained" | "icon"> & { headless?: boolean; children: ReactNode }): JSX.Element | null {
   if (useHidden(title, description, [titleKey, descKey])) return null;
   return (
-    <div className={styles.block}>
+    <div className={styles.block} data-setting={titleKey}>
       {headless ? (
         description ? (
           <span className={styles.blockDescription}>{description}</span>

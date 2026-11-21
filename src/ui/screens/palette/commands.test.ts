@@ -42,7 +42,7 @@ function deps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     shortcuts: (id) => BINDINGS[id] ?? null,
     settingItems: [
       { tabId: "Playback", titleKey: "settings.autoplay_similar.title" },
-      { tabId: "Appearance", titleKey: "settings.cover_glow.title" },
+      { tabId: "Player", titleKey: "settings.cover_glow.title" },
     ],
     actions: {
       home: vi.fn(),
@@ -113,7 +113,7 @@ describe("buildCommands", () => {
     buildCommands(d)
       .find((command) => command.title === "Settings: Cover glow")!
       .run();
-    expect(d.openSettings).toHaveBeenCalledWith("Appearance");
+    expect(d.openSettings).toHaveBeenCalledWith("Player", "settings.cover_glow.title");
   });
 });
 

@@ -7,7 +7,6 @@ import { presetIconSvg, PRESETS, revealThemeChange, useLook, useSetThemeMode, us
 import { SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
 import { CustomCssBlock, ResetAppearanceRow } from "./CustomCssBlock";
 import { ResetAllRow } from "./CustomizationSection";
-import { FontsGroup } from "./FontsGroup";
 import { ThemeLibrary } from "./ThemeLibrary";
 import styles from "./sections.module.css";
 
@@ -175,13 +174,7 @@ function LanguageBlock(): JSX.Element {
   );
 
   return (
-    <SettingBlock
-      title={t("settings.language.label")}
-      description={t("settings.language.description")}
-      titleKey="settings.language.label"
-      descKey="settings.language.description"
-      headless
-    >
+    <SettingBlock title={t("settings.language.label")} titleKey="settings.language.label" descKey="settings.language.description" headless>
       <div className={styles.languages}>
         {LOCALE_OPTIONS.filter((option) => PRIMARY_LOCALES.includes(option.value)).map(row)}
         {secondary.length > 0 ? (
@@ -200,14 +193,22 @@ function LanguageBlock(): JSX.Element {
   );
 }
 
-export function AppearanceSection(): JSX.Element {
+export function LanguageSection(): JSX.Element {
+  return (
+    <SettingGroup>
+      <LanguageBlock />
+    </SettingGroup>
+  );
+}
+
+export function ThemeSection(): JSX.Element {
   const { t } = useTranslation();
   const accentFromCover = useCustomizationStore((state) => state.accentFromCover);
   const setAccentFromCover = useCustomizationStore((state) => state.setAccentFromCover);
 
   return (
     <>
-      <SettingGroup label={t("settings.page.theme")}>
+      <SettingGroup>
         <SettingBlock
           title={t("settings.preset.title")}
           description={t("settings.preset.description")}
@@ -235,10 +236,6 @@ export function AppearanceSection(): JSX.Element {
           explained
           control={<Switch label={t("settings.preset.accent_from_cover")} checked={accentFromCover} onChange={setAccentFromCover} />}
         />
-      </SettingGroup>
-      <FontsGroup />
-      <SettingGroup label={t("settings.language.label")}>
-        <LanguageBlock />
       </SettingGroup>
       <SettingGroup label={t("settings.page.advanced")}>
         <CustomCssBlock />

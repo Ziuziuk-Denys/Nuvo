@@ -41,7 +41,6 @@ describe("Settings tools", () => {
   it("shows every tool with its version, and the download on the row it belongs to", async () => {
     system.readTools.mockResolvedValue(VIEW);
     await act(async () => root.render(<ToolsGroup />));
-    expect(host.textContent).toContain("ui.settings.tools.title");
     expect(host.textContent).toContain('ui.settings.tools.status_ok {"version":"2026.10.26"}');
     expect(host.textContent).toContain('ui.settings.tools.status_ok {"version":"9.0.2"}');
     expect(host.textContent).toContain('ui.settings.tools.progress {"tool":"Deno","percent":50}');

@@ -51,7 +51,7 @@ export function SafeModeBanner(): JSX.Element | null {
       <button type="button" style={PRIMARY} onClick={() => void useAppearanceStore.getState().setSafe(false)}>
         {t("appearance.safe.turn_on")}
       </button>
-      <button type="button" style={BUTTON} onClick={() => useModalStore.getState().openSettingsSection("customization")}>
+      <button type="button" style={BUTTON} onClick={() => useModalStore.getState().openSettingsSection("theme", "appearance.css.title")}>
         {t("appearance.safe.edit")}
       </button>
     </div>

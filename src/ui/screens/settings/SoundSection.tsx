@@ -11,10 +11,8 @@ import {
   type MovingSpeed,
   type TempoPresetKey,
 } from "../../ports/sound";
-import { CrossfadeBlock } from "./CrossfadeBlock";
 import { OutputRow } from "./OutputRow";
-import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
-import { rowText } from "./PlaybackSection";
+import { rowText, Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
 
 const SPEED_LABELS: Record<TempoPresetKey, string> = {
   normal: "sound.tempo.normal",
@@ -31,14 +29,10 @@ const MOVING_SPEEDS = Object.keys(TURN_SECONDS) as MovingSpeed[];
 export function SoundSection(): JSX.Element {
   const { t } = useTranslation();
   const sound = useSoundStore();
-  const keepSpeed = usePlayerStore((state) => state.keepSpeedAcrossTracks);
   const bestQuality = usePlayerStore((state) => state.bestQuality);
   const devicePause = usePlayerStore((state) => state.pauseOnDeviceChange);
   const setDevicePause = usePlayerStore((state) => state.setPauseOnDeviceChange);
   const devicePauseText = rowText(t, "settings.audio.pause_on_device_change");
-  const setKeepSpeed = playerEngine.setKeepSpeedAcrossTracks;
-  const speed = presetOf(sound.globalTempo) ?? "normal";
-  const speeds = Object.keys(TEMPO_PRESETS) as TempoPresetKey[];
 
   return (
     <>
@@ -86,63 +80,77 @@ export function SoundSection(): JSX.Element {
           }
         />
       </SettingGroup>
-      <SettingGroup label={t("settings.page.between")}>
-        <CrossfadeBlock />
-      </SettingGroup>
-      <SettingGroup label={t("settings.page.speed")}>
-        <SettingRow
-          title={t("ui.settings.keep_speed")}
-          description={t("player.keep_speed_hint")}
-          titleKey="ui.settings.keep_speed"
-          descKey="player.keep_speed_hint"
-          explained
-          control={<Switch label={t("ui.settings.keep_speed")} checked={keepSpeed} onChange={setKeepSpeed} />}
-        />
-        <SettingBlock
-          title={t("ui.settings.default_speed")}
-          description={t("ui.settings.default_speed_desc")}
-          titleKey="ui.settings.default_speed"
-          descKey="ui.settings.default_speed_desc"
-        >
-          <Segmented
-            label={t("ui.settings.default_speed")}
-            value={speed}
-            onChange={(key) => sound.setGlobalTempo(TEMPO_PRESETS[key])}
-            options={speeds.map((key) => ({ value: key, label: t(SPEED_LABELS[key]) }))}
-          />
-        </SettingBlock>
-      </SettingGroup>
-      <SettingGroup label={t("settings.page.moving")}>
-        <SettingRow
-          title={t("sound.moving.title")}
-          description={t("sound.moving.hint")}
-          titleKey="sound.moving.title"
-          descKey="sound.moving.hint"
-          explained
-          control={<Switch label={t("sound.moving.title")} checked={sound.moving.on} onChange={(on) => sound.setMoving({ on })} />}
-        />
-        <SettingBlock title={t("sound.moving.path")} description={t("sound.moving.path_desc")} titleKey="sound.moving.path" descKey="sound.moving.path_desc">
-          <Segmented
-            label={t("sound.moving.path")}
-            value={sound.moving.preset}
-            onChange={(preset) => sound.setMoving({ preset })}
-            options={MOVING_PATHS.map((key) => ({ value: key, label: key.toUpperCase() }))}
-          />
-        </SettingBlock>
-        <SettingBlock
-          title={t("sound.moving.speed")}
-          description={t("sound.moving.speed_desc")}
-          titleKey="sound.moving.speed"
-          descKey="sound.moving.speed_desc"
-        >
-          <Segmented
-            label={t("sound.moving.speed")}
-            value={sound.moving.speed}
-            onChange={(speed) => sound.setMoving({ speed })}
-            options={MOVING_SPEEDS.map((key) => ({ value: key, label: t(`sound.moving.speeds.${key}`) }))}
-          />
-        </SettingBlock>
-      </SettingGroup>
     </>
+  );
+}
+
+export function SpatialSection(): JSX.Element {
+  const { t } = useTranslation();
+  const sound = useSoundStore();
+
+  return (
+    <SettingGroup>
+      <SettingRow
+        title={t("sound.moving.title")}
+        description={t("sound.moving.hint")}
+        titleKey="sound.moving.title"
+        descKey="sound.moving.hint"
+        explained
+        control={<Switch label={t("sound.moving.title")} checked={sound.moving.on} onChange={(on) => sound.setMoving({ on })} />}
+      />
+      <SettingBlock title={t("sound.moving.path")} description={t("sound.moving.path_desc")} titleKey="sound.moving.path" descKey="sound.moving.path_desc">
+        <Segmented
+          label={t("sound.moving.path")}
+          value={sound.moving.preset}
+          onChange={(preset) => sound.setMoving({ preset })}
+          options={MOVING_PATHS.map((key) => ({ value: key, label: key.toUpperCase() }))}
+        />
+      </SettingBlock>
+      <SettingBlock title={t("sound.moving.speed")} description={t("sound.moving.speed_desc")} titleKey="sound.moving.speed" descKey="sound.moving.speed_desc">
+        <Segmented
+          label={t("sound.moving.speed")}
+          value={sound.moving.speed}
+          onChange={(speed) => sound.setMoving({ speed })}
+          options={MOVING_SPEEDS.map((key) => ({ value: key, label: t(`sound.moving.speeds.${key}`) }))}
+        />
+      </SettingBlock>
+    </SettingGroup>
+  );
+}
+
+export function KeepSpeedRow(): JSX.Element {
+  const { t } = useTranslation();
+  const keepSpeed = usePlayerStore((state) => state.keepSpeedAcrossTracks);
+  return (
+    <SettingRow
+      title={t("ui.settings.keep_speed")}
+      description={t("player.keep_speed_hint")}
+      titleKey="ui.settings.keep_speed"
+      descKey="player.keep_speed_hint"
+      explained
+      control={<Switch label={t("ui.settings.keep_speed")} checked={keepSpeed} onChange={playerEngine.setKeepSpeedAcrossTracks} />}
+    />
+  );
+}
+
+export function DefaultSpeedBlock(): JSX.Element {
+  const { t } = useTranslation();
+  const tempo = useSoundStore((state) => state.globalTempo);
+  const setGlobalTempo = useSoundStore((state) => state.setGlobalTempo);
+  const speeds = Object.keys(TEMPO_PRESETS) as TempoPresetKey[];
+  return (
+    <SettingBlock
+      title={t("ui.settings.default_speed")}
+      description={t("ui.settings.default_speed_desc")}
+      titleKey="ui.settings.default_speed"
+      descKey="ui.settings.default_speed_desc"
+    >
+      <Segmented
+        label={t("ui.settings.default_speed")}
+        value={presetOf(tempo) ?? "normal"}
+        onChange={(key) => setGlobalTempo(TEMPO_PRESETS[key])}
+        options={speeds.map((key) => ({ value: key, label: t(SPEED_LABELS[key]) }))}
+      />
+    </SettingBlock>
   );
 }

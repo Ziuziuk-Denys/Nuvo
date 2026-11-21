@@ -104,7 +104,7 @@ vi.mock("../../ports/search", () => ({
   songResult: () => null,
 }));
 vi.mock("../settings/settingItems", () => ({
-  SETTING_ITEMS: [{ tabId: "Appearance", titleKey: "settings.cover_glow.title" }],
+  SETTING_ITEMS: [{ tabId: "Player", titleKey: "settings.cover_glow.title" }],
 }));
 vi.mock("../../ports/shortcuts", () => {
   const bindings: Record<string, string> = {
@@ -220,7 +220,7 @@ describe("PaletteField", () => {
     type("cover");
     expect(options()[0]).toBe("Settings: Cover glow");
     press("Enter");
-    expect(mocks.settings.openSettingsSection).toHaveBeenCalledWith("Appearance");
+    expect(mocks.settings.openSettingsSection).toHaveBeenCalledWith("Player", "settings.cover_glow.title");
   });
 
   it("shows the top result, songs and albums, plays a song on Enter and queues it on Shift Enter", () => {

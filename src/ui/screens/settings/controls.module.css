@@ -15,6 +15,19 @@
   letter-spacing: var(--n-track-caption);
 }
 
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.groupNote {
+  margin: -14px 0 0;
+  padding: 0 4px;
+  color: var(--n-ink-3);
+  font: 400 12.5px/1.45 var(--n-font);
+}
+
 .panel {
   display: flex;
   flex-direction: column;
@@ -71,15 +84,9 @@
 }
 
 .title {
-  overflow: hidden;
   color: var(--n-ink);
   font: 500 14px/1.375 var(--n-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.blockHead .title {
-  white-space: normal;
+  text-wrap: pretty;
 }
 
 .description,
@@ -149,5 +156,37 @@
 @media (prefers-reduced-motion: reduce) {
   .segment {
     transition: none;
+  }
+}
+
+.row,
+.block,
+.stack {
+  position: relative;
+  isolation: isolate;
+}
+
+.row[data-found]::after,
+.block[data-found]::after,
+.stack[data-found]::after {
+  position: absolute;
+  z-index: -1;
+  border-radius: 12px;
+  background: var(--n-select);
+  content: "";
+  inset: 2px -10px;
+  pointer-events: none;
+  animation: found 1600ms var(--n-ease-out) both;
+}
+
+@keyframes found {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  15%,
+  70% {
+    opacity: 1;
   }
 }

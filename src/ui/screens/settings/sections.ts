@@ -1,37 +1,66 @@
 import { getTranslationsForAllLocales } from "../../ports/i18n";
 import { SETTING_ITEMS, type SettingsTabId } from "./settingItems";
 
-export type SectionId = SettingsTabId | "Hidden";
+export type SectionId = SettingsTabId;
 
-export const SECTIONS: Record<SectionId, { labelKey: string; descKey: string }> = {
-  Playback: { labelKey: "settings.tabs.playback", descKey: "settings.playback.description" },
-  Sound: { labelKey: "ui.settings.section_sound", descKey: "ui.settings.sound_desc" },
-  Hidden: { labelKey: "ui.recs.hidden.section", descKey: "ui.recs.hidden.description" },
-  Shortcuts: { labelKey: "settings.tabs.shortcuts", descKey: "settings.shortcuts.description" },
-  Appearance: { labelKey: "settings.tabs.appearance", descKey: "settings.page.appearance" },
-  Customization: { labelKey: "settings.page.background", descKey: "settings.page.background_desc" },
-  Notch: { labelKey: "settings.tabs.notch", descKey: "settings.notch.description" },
-  Youtube: { labelKey: "settings.tabs.youtube", descKey: "settings.youtube.description" },
-  Lastfm: { labelKey: "settings.tabs.lastfm", descKey: "settings.lastfm.description" },
-  Discord: { labelKey: "settings.tabs.discord", descKey: "settings.discord.description" },
-  Storage: { labelKey: "settings.tabs.storage", descKey: "settings.storage.description" },
-  Network: { labelKey: "ui.settings.section_network", descKey: "ui.settings.network_desc" },
-  About: { labelKey: "settings.tabs.about", descKey: "settings.about.tagline" },
+const section = (key: string) => ({
+  labelKey: `settings.sections.${key}.title`,
+  descKey: `settings.sections.${key}.description`,
+  findKey: `settings.sections.${key}.find`,
+});
+
+export const SECTIONS: Record<SectionId, { labelKey: string; descKey: string; findKey: string }> = {
+  Language: section("language"),
+  Startup: section("startup"),
+  Updates: section("updates"),
+  Playback: section("playback"),
+  BetweenSongs: section("between_songs"),
+  Sound: section("sound"),
+  Spatial: section("spatial"),
+  Lyrics: section("lyrics"),
+  Theme: section("theme"),
+  Fonts: section("fonts"),
+  Background: section("background"),
+  Player: section("player"),
+  Motion: section("motion"),
+  Notch: section("notch"),
+  Shortcuts: section("shortcuts"),
+  Youtube: section("youtube"),
+  Lastfm: section("lastfm"),
+  Discord: section("discord"),
+  Privacy: section("privacy"),
+  Storage: section("storage"),
+  Network: section("network"),
+  Tools: section("tools"),
+  About: section("about"),
 };
 
-export const SECTION_GROUPS: { labelKey: string; ids: SectionId[] }[] = [
-  { labelKey: "settings.groups.player", ids: ["Playback", "Sound", "Hidden", "Shortcuts"] },
-  { labelKey: "settings.groups.interface", ids: ["Appearance", "Customization", "Notch"] },
-  { labelKey: "settings.groups.integrations", ids: ["Youtube", "Lastfm", "Discord"] },
-  { labelKey: "settings.groups.application", ids: ["Storage", "Network", "About"] },
+export const SECTION_GROUPS: { labelKey?: string; ids: SectionId[] }[] = [
+  { ids: ["Language", "Startup", "Updates"] },
+  { labelKey: "settings.groups.music", ids: ["Playback", "BetweenSongs", "Sound", "Spatial", "Lyrics"] },
+  { labelKey: "settings.groups.look", ids: ["Theme", "Fonts", "Background", "Player", "Motion", "Notch", "Shortcuts"] },
+  { labelKey: "settings.groups.services", ids: ["Youtube", "Lastfm", "Discord"] },
+  { labelKey: "settings.groups.application", ids: ["Privacy", "Storage", "Network", "Tools", "About"] },
 ];
 
 export const SECTION_ORDER: SectionId[] = SECTION_GROUPS.flatMap((group) => group.ids);
 
+const RENAMED: Record<string, SectionId> = {
+  hidden: "Privacy",
+  appearance: "Theme",
+  customization: "Background",
+};
+
 export function sectionFromParam(value: string | null | undefined): SectionId | null {
   if (!value) return null;
-  const wanted = value.toLowerCase();
-  return SECTION_ORDER.find((id) => id.toLowerCase() === wanted) ?? null;
+  const wanted = value.toLowerCase().replace(/[-_ ]/g, "");
+  return RENAMED[wanted] ?? SECTION_ORDER.find((id) => id.toLowerCase() === wanted) ?? null;
+}
+
+const FIND_KEYS = new Map(SETTING_ITEMS.flatMap((item) => (item.findKey ? [[item.titleKey, item.findKey] as const] : [])));
+
+export function findKeyFor(titleKey: string | undefined): string | undefined {
+  return titleKey ? FIND_KEYS.get(titleKey) : undefined;
 }
 
 export function matchesQuery(query: string, keys: (string | undefined)[], texts: string[] = []): boolean {
@@ -44,10 +73,11 @@ export function matchesQuery(query: string, keys: (string | undefined)[], texts:
 export function matchingSections(query: string): Set<SectionId> {
   const found = new Set<SectionId>();
   for (const id of SECTION_ORDER) {
-    if (matchesQuery(query, [SECTIONS[id].labelKey, SECTIONS[id].descKey])) found.add(id);
+    const { labelKey, descKey, findKey } = SECTIONS[id];
+    if (matchesQuery(query, [labelKey, descKey, findKey])) found.add(id);
   }
   for (const item of SETTING_ITEMS) {
-    if (matchesQuery(query, [item.titleKey, item.descKey])) found.add(item.tabId);
+    if (matchesQuery(query, [item.titleKey, item.descKey, item.findKey])) found.add(item.tabId);
   }
   return found;
 }

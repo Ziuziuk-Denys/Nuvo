@@ -14,7 +14,6 @@ import {
   type StorageAnalytics,
   type StorageCategoryId,
 } from "../../ports/storage";
-import { KeyProtectionRow } from "./KeyProtectionRow";
 import { SaveFormatRow } from "./SaveFormatRow";
 import { SettingBlock, SettingGroup } from "./controls";
 import sections from "./sections.module.css";
@@ -254,10 +253,6 @@ export function StorageSection(): JSX.Element {
 
       <SettingGroup label={t("settings.page.saving")}>
         <SaveFormatRow />
-      </SettingGroup>
-
-      <SettingGroup>
-        <KeyProtectionRow />
       </SettingGroup>
 
       <Sheet

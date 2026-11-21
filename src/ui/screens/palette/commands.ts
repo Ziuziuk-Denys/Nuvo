@@ -33,7 +33,7 @@ export interface CommandDeps {
   shortcuts: (commandId: string) => string | null;
   settingItems: readonly { tabId: string; titleKey: string }[];
   actions: Record<ActionId, () => void>;
-  openSettings: (section: string) => void;
+  openSettings: (section: string, focus: string) => void;
 }
 
 const ACTIONS: { id: ActionId; group: CommandGroup; shortcut?: string }[] = [
@@ -72,7 +72,7 @@ export function buildCommands({ t, translations, shortcuts, settingItems, action
     group: "settings",
     title: t("ui.palette.setting", { title: t(titleKey) }),
     keywords: translations(titleKey),
-    run: () => openSettings(tabId),
+    run: () => openSettings(tabId, titleKey),
   }));
   return [...base, ...settings];
 }
