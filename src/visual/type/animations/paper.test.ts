@@ -85,3 +85,54 @@ describe("paper drawing", () => {
     for (const [text, x] of middle) expect(late.get(text)).toBeCloseTo(x);
   });
 });
+
+describe("paper frame", () => {
+  const sizes: [number, number][] = [
+    [1100, 705],
+    [1650, 1058],
+    [1920, 1080],
+    [2560, 1440],
+    [720, 1280],
+    [1080, 1920],
+    [1080, 1080],
+  ];
+  const lyrics: Line[] = [
+    { text: "Говорит, как нужна, и без меня", fromMs: 0, toMs: 3000, companion: false, instrumental: false },
+    { text: "достопримечательности невероятно", fromMs: 3000, toMs: 6000, companion: false, instrumental: false },
+  ];
+
+  it("keeps every Russian word inside the frame at every window size and export shape", () => {
+    for (const [width, height] of sizes) {
+      for (const nowMs of [2900, 5900]) {
+        const spans: { text: string; left: number; right: number }[] = [];
+        let px = 0;
+        const ctx = {
+          set font(value: string) {
+            px = Number(/([\d.]+)px/.exec(value)![1]);
+          },
+          get font() {
+            return `${px}px`;
+          },
+          fillStyle: "",
+          globalAlpha: 1,
+          measureText: (text: string) => ({ width: text.length * px * 0.58 }),
+          fillText: (text: string, x: number) => spans.push({ text, left: x, right: x + text.length * px * 0.58 }),
+        } as unknown as Ctx;
+        paper.draw({
+          ctx,
+          lines: lyrics,
+          nowMs,
+          width,
+          height,
+          box: { x: 0, y: 0, width, height },
+          pulse: { cuts: 0, cutAgeMs: 0, drive: 0, onset: 0, level: 0 },
+        });
+        expect(spans.length).toBeGreaterThan(0);
+        for (const span of spans) {
+          expect(span.left, `${span.text} in ${width}x${height}`).toBeGreaterThanOrEqual(0);
+          expect(span.right, `${span.text} in ${width}x${height}`).toBeLessThanOrEqual(width);
+        }
+      }
+    }
+  });
+});
