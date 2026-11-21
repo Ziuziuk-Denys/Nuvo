@@ -15,22 +15,24 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 
 ## Scene
 
-<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/scene-dark.svg"><img src=".github/readme/scene-light.svg" width="100%" alt="Songs you can watch. Each song draws itself to the beat, and the words land as they are sung. Pick a moment and Nuvo turns it into a clip. 12 ready scenes, or build your own; 4K MP4 export at up to 60 fps; 9:16 or 1:1 and 16:9."></picture>
+<picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/scene-dark.svg"><img src=".github/readme/scene-light.svg" width="100%" alt="Songs you can watch. Each song draws itself to the beat, and the words land as they are sung. Pick a moment and Nuvo turns it into a clip. 13 ready scenes, or build your own; 4K MP4 export at up to 60 fps; 9:16 or 1:1 and 16:9."></picture>
 
-<img src=".github/readme/motion/scene.gif" width="100%" alt="Nuvo Scene: the words of the song land as they are sung">
+<img src=".github/readme/motion/scene.webp" width="100%" alt="Nuvo Scene: the words of the song land as they are sung">
 
 ## New in 0.4.0
 
-- Scene, Nuvo's own visual engine: each song draws itself to the beat and the words land as they are sung, with twelve ready scenes and a clip studio that exports MP4 up to 4K at 60 fps
-- Two editions with the same features: Standard by default, and Encrypted as a second download. Install the other one and your library converts on the next start
-- Moving sound: 4D, 8D and 16D circle the music around your head, in the new Space tab of the Sound panel
-- Lyrics follow the version that plays, and Find lyrics searches by title and artist in the lyrics editor
-- Notch placement: the screen, the side, the top edge, a gap and the stacking. On Hyprland and Sway it sits below your bar
-- Back always goes to the previous track, and a right click on a song on Home opens its menu
-- Home fills within seconds after your first picks, and the picker takes up to 15 songs and artists
-- Updates install when you quit, with a check every 4 hours and a Check for updates button
-- macOS gets the native window frame, the Notch over the menu bar and Discord status
-- Fixes for lyrics timing, imports, file names in old encodings, kaomoji on Linux and HDR on Hyprland
+
+
+- Discover on Home: a ring of songs you have not heard yet, under a sky drawn from the cover in the middle. Spin it with the wheel, a drag or the arrow keys
+- Poster, the 13th ready scene: the cover printed in two flat tones, or in characters, with the lyrics set like a poster
+- Try a look before you keep it. The whole karaoke view plays Scene or Karaoke, one switch tries the other, and the Scene background holds steady
+- Settings in 23 plain sections. Search knows other words for a setting in English and Russian, and Ctrl K opens the setting itself
+- Imports open the playlist at once and fill it while songs match. A song an earlier import matched lands with no search
+- Find lyrics one click from the karaoke view. It forgives swapped fields and titles like "sped up", and a Lyrics model setting picks Light or Full
+- Drop songs or folders on the window to add them. The first Home is never empty: one line imports your playlists or adds files
+- Navigation can sit in a rail on the left, and the play buttons at the side of the player
+- Spotify song links play. The Notch shows while the window is hidden, and Nuvo looks for an update on every launch
+- Auto gain starts off and a limiter keeps equalizer boosts from clipping. Host shells can show the lyrics and the queue over D-Bus, thanks to @doctorsalamii
 
 The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.4.0).
 
@@ -42,7 +44,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 </div>
 
-<img src=".github/readme/motion/search.gif" width="100%" alt="The search palette opening over Home and finding Lorde as the name is typed">
+<img src=".github/readme/motion/search.webp" width="100%" alt="The search palette opening over Home and finding Lorde as the name is typed">
 
 <br>
 
@@ -52,7 +54,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 </div>
 
-<img src=".github/readme/motion/karaoke.gif" width="100%" alt="The karaoke view lighting up an invented demo song word by word">
+<img src=".github/readme/motion/karaoke.webp" width="100%" alt="The karaoke view lighting up an invented demo song word by word">
 
 <br>
 
@@ -62,7 +64,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 </div>
 
-<img src=".github/readme/motion/wallpaper.gif" width="100%" alt="Home scrolling over a video wallpaper">
+<img src=".github/readme/motion/wallpaper.webp" width="100%" alt="Home scrolling over a video wallpaper">
 
 <br>
 
@@ -72,7 +74,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 </div>
 
-<img src=".github/readme/motion/queue.gif" width="100%" alt="The queue panel sliding open beside Home while a song plays">
+<img src=".github/readme/motion/queue.webp" width="100%" alt="The queue panel sliding open beside Home while a song plays">
 
 ## Features
 
@@ -80,7 +82,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-scene-dark.svg"><img src=".github/readme/feature-scene-light.svg" width="100%" alt="A clip studio in the player. The clip studio: scenes on the left, a 9:16 preview of Blinding Lights in the middle, the timeline with a clip range below."></picture>
 
-- Twelve ready scenes, or your own from a background, up to three effects, a centrepiece and a text style
+- Thirteen ready scenes, or your own from a background, up to three effects, a centrepiece and a text style
 - The stage runs on its own thread and its own clock, so a busy app never makes a lyric late
 - A clip studio with a timeline, a waveform and live frames: pick the moment, tune each part and see it at once
 - MP4 export in 9:16, 1:1 or 16:9, from 720p to 4K at 30 or 60 fps, the whole song or a cut, with fades. Your EQ, reverb and speed stay in the sound
@@ -92,25 +94,26 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 - One field for songs, artists and links, opened with Ctrl K
 - YouTube and SoundCloud results in one ranked list
-- Paste links from Apple Music, Deezer, Yandex Music, Shazam or TikTok, and share songs and playlists as compact links
+- Paste links from Spotify, Apple Music, Deezer, Yandex Music, Shazam or TikTok, and share songs and playlists as compact links
 - Recognize a song from a video link, a file, the microphone or the sound your computer plays. The last two work on Linux
 
 ### Library and mixes
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-mixes-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-mixes-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-mixes-dark.svg"><img src=".github/readme/feature-mixes-light.svg" width="100%" alt="Mixes made on your computer. Three mixes on Home: For you, Something new and Recently liked."></picture>
 
+- Discover on Home: a ring of songs new to you, under a sky that takes the cover's colours
 - Likes, saved albums and artists, playlists with custom covers, a duplicate finder
 - Playlists you can merge, sort six ways, keep offline, restore after a delete and pin
 - Mixes and radio from your plays and likes, "Not interested" with undo, a dislike button on every song
 - Statistics with a listening history that you can pause, export or delete
-- Tags, covers and `.lrc` files read from your folders
+- Your own files: drop songs or folders on the window. Nuvo reads their tags, covers and `.lrc` files
 
 ### Sound
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-sound-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-sound-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-sound-dark.svg"><img src=".github/readme/feature-sound-light.svg" width="100%" alt="Ten bands over a live spectrum. The equalizer panel with ten bands over a spectrum and twelve presets."></picture>
 
 - Gapless playback, crossfade of 1 to 12 seconds, queue, shuffle, repeat
-- Loudness normalization, speed and pitch with presets, reverb
+- Loudness normalization, a limiter against clipping, speed and pitch with presets, reverb
 - Moving sound: 4D, 8D and 16D circle the music around your head, best on headphones
 - Sleep timer, A-B loop, moments to jump back to, trims for a song's start and end
 - Media keys, and MPRIS on Linux
@@ -120,8 +123,8 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-lyrics-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-lyrics-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-lyrics-dark.svg"><img src=".github/readme/feature-lyrics-light.svg" width="100%" alt="Lyrics for songs that have none. Lyric lines that Nuvo wrote for a song, marked as written by Nuvo."></picture>
 
 - Synced lyrics and karaoke by line, word, fill or step
-- Lyrics follow the version that plays, and Find lyrics searches by title and artist
-- Every word timed on your computer, and lyrics written for songs that have none. The models download once: 82 MB for timing, 264 MB for writing
+- Lyrics follow the version that plays. Find lyrics opens from the karaoke view and forgives swapped fields and upload tags
+- Every word timed on your computer, and lyrics written for songs that have none. The model downloads once: Light is 82 MB, Full is 264 MB, and Auto picks by your hardware
 - Paste LRC or plain text and tap to sync, with a timing offset per track
 - Romanized lyrics for Korean, Chinese and Japanese kana, and translation through a local model
 
@@ -130,6 +133,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-import-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-import-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-import-dark.svg"><img src=".github/readme/feature-import-light.svg" width="100%" alt="Bring your playlists. An import preview of a 100-song playlist with its first matches."></picture>
 
 - Playlist links from YouTube, SoundCloud, Apple Music, Deezer, Spotify and Yandex Music
+- The playlist opens at once and fills while songs match, and songs matched before land with no search
 - Files: Spotify, Soundiiz, TuneMyMusic and Google Takeout exports, M3U, XSPF, CSV, TXT and Nuvo playlists
 - Save streamed tracks as files, original or MP3, and export playlists and the whole library
 
@@ -139,9 +143,11 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 - Nine themes, a colour editor with contrast checks, theme files, system or custom fonts
 - Custom CSS with a strict checker and a safe mode
-- The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. Off until you turn it on
+- The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. It shows while the Nuvo window is hidden; switch it to Always on or Off in Settings, Notch
+- Navigation at the top or in a rail on the left, play buttons in the middle or at the side
 - A panel widget for the GNOME top bar, the Plasma panel and Waybar
 - Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian
+- Settings in 23 sections, with search in English and Russian
 
 ### Private by design
 
@@ -151,8 +157,8 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 - A local API on a private socket with a token per launch
 - HTTP and SOCKS5 proxies with a login, and a connection check for each service
 - Last.fm scrobbling with your own API key, off until you turn it on
-- A Discord status with the song cover. On by default; turn it off in Settings, Integrations, Discord
-- The update check contacts github.com. On by default; turn it off in Settings, Application, About
+- A Discord status with the song cover. On by default; turn it off in Settings, Discord
+- Nuvo asks github.com for a new version at every launch. With automatic updates off in Settings, Updates, it only offers the update
 
 ## Why Nuvo
 
@@ -383,7 +389,7 @@ Checked 2026-11-14. Sources: [Riff](https://github.com/rootscripts/riff), [Liner
 
 Get the files from [the latest release](https://github.com/Ziuziuk-Denys/Nuvo/releases/latest).
 
-- **Linux:** AppImage, `.deb` or `.rpm`, for x64 and arm64. The Encrypted edition keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file that you can seal with a passphrase in Settings, Application, Storage. On a Chromebook, turn on Linux in the ChromeOS settings and install the `.deb`.
+- **Linux:** AppImage, `.deb` or `.rpm`, for x64 and arm64. The Encrypted edition keeps its key in a Secret Service keyring such as GNOME Keyring or KWallet. Without one, the key stays in a file that you can seal with a passphrase in Settings, Privacy. On a Chromebook, turn on Linux in the ChromeOS settings and install the `.deb`.
 - **Windows:** The installer (`.exe`) or the portable `.zip`, for x64 and arm64.
 - **macOS:** The `.dmg` for Apple silicon or Intel.
 

@@ -29,7 +29,7 @@ body:
     id: version
     attributes:
       label: Nuvo version
-      description: Settings, Application, About.
+      description: Settings, About Nuvo.
       placeholder: 0.4.0
     validations:
       required: true

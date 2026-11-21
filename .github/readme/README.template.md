@@ -19,6 +19,8 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 
 ## New in {{version}}
 
+{{new-media}}
+
 {{new}}
 
 The full list is in [the release notes]({{repo}}/releases/tag/v{{version}}).

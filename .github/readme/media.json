@@ -108,32 +108,33 @@
       "title": "Search.",
       "caption": "Ctrl K opens one field for songs, artists and links, with YouTube and SoundCloud in one ranked list.",
       "alt": "",
-      "video": "<img src=\".github/readme/motion/search.gif\" width=\"100%\" alt=\"The search palette opening over Home and finding Lorde as the name is typed\">"
+      "video": "<img src=\".github/readme/motion/search.webp\" width=\"100%\" alt=\"The search palette opening over Home and finding Lorde as the name is typed\">"
     },
     {
       "shot": "lyrics",
       "title": "Karaoke.",
       "caption": "Lyrics light up word by word, in full screen or beside the player.",
       "alt": "",
-      "video": "<img src=\".github/readme/motion/karaoke.gif\" width=\"100%\" alt=\"The karaoke view lighting up an invented demo song word by word\">"
+      "video": "<img src=\".github/readme/motion/karaoke.webp\" width=\"100%\" alt=\"The karaoke view lighting up an invented demo song word by word\">"
     },
     {
       "shot": "background",
       "title": "Wallpaper.",
       "caption": "A photo, a GIF or a video behind every screen, with the blur and fade you choose.",
       "alt": "",
-      "video": "<img src=\".github/readme/motion/wallpaper.gif\" width=\"100%\" alt=\"Home scrolling over a video wallpaper\">"
+      "video": "<img src=\".github/readme/motion/wallpaper.webp\" width=\"100%\" alt=\"Home scrolling over a video wallpaper\">"
     },
     {
       "shot": "queue",
       "title": "Queue.",
       "caption": "It opens beside whatever you are doing, with the history above.",
       "alt": "",
-      "video": "<img src=\".github/readme/motion/queue.gif\" width=\"100%\" alt=\"The queue panel sliding open beside Home while a song plays\">"
+      "video": "<img src=\".github/readme/motion/queue.webp\" width=\"100%\" alt=\"The queue panel sliding open beside Home while a song plays\">"
     }
   ],
   "scene": {
     "shot": "scene",
-    "video": "<img src=\".github/readme/motion/scene.gif\" width=\"100%\" alt=\"Nuvo Scene: the words of the song land as they are sung\">"
-  }
+    "video": "<img src=\".github/readme/motion/scene.webp\" width=\"100%\" alt=\"Nuvo Scene: the words of the song land as they are sung\">"
+  },
+  "new": []
 }
