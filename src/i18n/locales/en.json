@@ -1764,7 +1764,7 @@
     },
     "word_timing": {
       "title": "Word timing",
-      "description": "Times every word of synced lyrics on this computer, for any song. The first time downloads an 82 MB model; results are kept."
+      "description": "Times every word of synced lyrics on this computer, for any song. The first time downloads the lyrics model; results are kept."
     },
     "track_double_click": {
       "title": "Click on a song",
@@ -2068,6 +2068,13 @@
     "visual_player": {
       "title": "Scene",
       "description": "Experimental. In the karaoke view the song draws a scene that moves with the music and carries the lyrics."
+    },
+    "lyrics_model": {
+      "title": "Lyrics model",
+      "description": "The model that times words and writes lyrics on this computer. Auto takes Full on a fast connection and a processor with 8 or more threads.",
+      "auto": "Auto",
+      "light": "Light, 82 MB",
+      "full": "Full, 264 MB"
     }
   },
   "visual": {

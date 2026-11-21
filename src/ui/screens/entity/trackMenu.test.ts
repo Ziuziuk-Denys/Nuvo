@@ -36,9 +36,9 @@ describe("track menu", () => {
     expect(items.at(-1)).not.toBe("separator");
   });
 
-  it("puts a lone lyrics action in place and folds two under Lyrics", () => {
-    const one = trackMenuItems(track("dQw4w9WgXcQ"), {}, actions({ editLyrics: vi.fn() }));
-    expect(labels(one)).toContain("ui.lyrics.edit");
+  it("folds the lyrics actions under Lyrics", () => {
+    const one = trackMenuItems(track("dQw4w9WgXcQ"), {}, actions({ translateLyrics: vi.fn() }));
+    expect(labels(one)).toContain("ui.lyrics.translate");
     const two = trackMenuItems(track("dQw4w9WgXcQ"), {}, actions({ editLyrics: vi.fn(), translateLyrics: vi.fn() }));
     expect(labels(two)).toContain("ui.lyrics.edit_title");
     expect(labels(two)).not.toContain("ui.lyrics.edit");

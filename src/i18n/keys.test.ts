@@ -43,6 +43,7 @@ const DYNAMIC: Record<string, string[]> = {
   "visual.studio.rail_": ["scenes", "background", "atmosphere", "centrepiece", "lyrics", "media"],
   "visual.editor.": ["background", "atmosphere", "centrepiece", "lyrics", "calm", "full", "busy", "busy_note", "weather_note", "heavy_note"],
   "settings.about.edition_": ["plain", "encrypted"],
+  "settings.lyrics_model.": ["auto", "light", "full"],
   "library.search_": LIBRARY_TABS,
   "player.repeat_": ["off", "all", "one"],
   "settings.notch.panel_": ["gnome", "plasma", "waybar", "ready", "relogin", "add_widget"],

@@ -161,7 +161,30 @@ async fn a_typed_search_lists_every_version_with_lyrics() {
         record(22, 200.0, None, None, true),
     ]);
     let (base, _) = mock(search).await;
-    let found = Lrclib::new(base).search_all(&query("Other", None)).await.unwrap();
+    let found = Lrclib::new(base).search_all(&[query("Other", None)]).await.unwrap();
     let seen: Vec<_> = found.iter().map(|c| (c.lyrics.format.as_str(), c.matched_track.as_ref().unwrap().duration_ms)).collect();
     assert_eq!(seen, [("lrc", Some(150_000)), ("plain", Some(240_000))]);
+}
+
+#[tokio::test]
+async fn a_typed_search_tries_each_guess_then_free_text_and_ranks_by_length() {
+    let app = Router::new().route("/api/search", get(|AxumQuery(q): AxumQuery<HashMap<String, String>>| async move {
+        let crazy = |id, duration| json!({"id": id, "trackName": "CRAZY", "artistName": "LE SSERAFIM", "duration": duration, "instrumental": false, "plainLyrics": "line", "syncedLyrics": "[00:01.00] line"});
+        let field = |name: &str| q.get(name).map(|value| value.to_lowercase());
+        let hits = match (field("track_name").as_deref(), field("artist_name").as_deref(), field("q").as_deref()) {
+            (Some("crazy"), Some("le sserafim"), _) => vec![crazy(1, 240.0), crazy(2, 165.0)],
+            (_, _, Some("lost song")) => vec![crazy(3, 170.0)],
+            _ => vec![],
+        };
+        Json(hits)
+    }));
+    let lrclib = Lrclib::new(serve(app).await);
+    let guess = |title: &str, artist: &str| Query { title: title.into(), artist: artist.into(), duration_ms: Some(170_000) };
+
+    let found = lrclib.search_all(&[guess("Le sserafim", "crazy"), guess("crazy", "Le sserafim")]).await.unwrap();
+    let lengths: Vec<_> = found.iter().map(|c| c.matched_track.as_ref().unwrap().duration_ms.unwrap()).collect();
+    assert_eq!(lengths, [165_000, 240_000]);
+
+    let found = lrclib.search_all(&[guess("lost", "song")]).await.unwrap();
+    assert_eq!(found.len(), 1, "nothing for the fields, so the free-text search answers");
 }

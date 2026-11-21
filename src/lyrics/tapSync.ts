@@ -76,3 +76,14 @@ export function editableText(lyrics: RawLyrics): string {
     })
     .join("\n");
 }
+
+const SPEED_TAG = /\b(sped|speed)\s?up\b|\bspedup\b|\bslowed\b|\bnightcore\b|ускорен|замедлен|спид\s?ап/i;
+
+export function stretchedToFit(text: string, title: string, fromMs: number, toMs: number): string {
+  const factor = toMs / fromMs;
+  if (!SPEED_TAG.test(title) || !Number.isFinite(factor) || factor <= 0 || Math.abs(toMs - fromMs) <= 2000) return text;
+  return text.replace(/([[<])(\d+):(\d{2}(?:\.\d+)?)([\]>])/g, (_, open: string, minutes: string, seconds: string, close: string) => {
+    const stamp = formatStamp((Number(minutes) * 60 + Number(seconds)) * 1000 * factor).slice(1, -1);
+    return `${open}${stamp}${close}`;
+  });
+}

@@ -50,19 +50,18 @@ struct Search {
 
 /// Versions from every source for a title and artist the owner typed; one source down still answers.
 async fn search(State(state): State<AppState>, Query(search): Query<Search>) -> Result<Json<Value>, ApiError> {
-    let (title, artist) = (search.title.trim().to_string(), search.artist.trim().to_string());
-    let fits = |text: &str| !text.is_empty() && text.chars().count() <= MAX_SEARCH_CHARS;
-    if !fits(&title) || !fits(&artist) {
-        return Err(ApiError::Invalid(format!("title and artist must be 1 to {MAX_SEARCH_CHARS} characters")));
+    let (title, artist) = (search.title.trim(), search.artist.trim());
+    if title.is_empty() || title.chars().count() > MAX_SEARCH_CHARS || artist.chars().count() > MAX_SEARCH_CHARS {
+        return Err(ApiError::Invalid(format!("title must be 1 to {MAX_SEARCH_CHARS} characters, artist at most {MAX_SEARCH_CHARS}")));
     }
-    let query = nuvo_lyrics::Query { title, artist, duration_ms: search.duration_ms.filter(|ms| *ms > 0) };
+    let guesses = typed_guesses(title, artist, search.duration_ms.filter(|ms| *ms > 0));
     let words = async {
         match state.amll.as_ref() {
-            Some(amll) => amll.search_all(&query).await,
+            Some(amll) => amll.search_all(&guesses[0]).await,
             None => Ok(Vec::new()),
         }
     };
-    let (lines, words) = tokio::join!(state.lrclib.search_all(&query), words);
+    let (lines, words) = tokio::join!(state.lrclib.search_all(&guesses), words);
     if let (Err(err), Err(_)) = (&lines, &words) {
         return Err(ApiError::Upstream(err.to_string()));
     }
@@ -284,7 +283,10 @@ async fn produce(state: AppState, data: Unlocked, id: String, hint: Hint, tx: mp
     }
 }
 
-const UPLOAD_TAGS: [&str; 12] = ["slowed", "reverb", "sped up", "speed up", "nightcore", "free", "prod", "bass boost", "bassboost", "8d", "original version", "original mix"];
+const UPLOAD_TAGS: [&str; 18] = [
+    "slowed", "reverb", "sped up", "speed up", "nightcore", "free", "prod", "bass boost", "bassboost", "bassed", "8d", "original version", "original mix", "remix", "edit",
+    "fyp", "tiktok", "viral",
+];
 
 fn without_upload_tags(raw: &str) -> String {
     let mut out = String::new();
@@ -298,10 +300,15 @@ fn without_upload_tags(raw: &str) -> String {
         let Some(end) = rest[open..].find(close).map(|i| open + i) else { break };
         let inside = rest[open + 1..end].to_lowercase();
         out.push_str(&rest[..open]);
-        if !UPLOAD_TAGS.iter().any(|tag| inside.contains(tag)) {
+        let tagged = UPLOAD_TAGS.iter().any(|tag| inside.contains(tag));
+        if !tagged {
             out.push_str(&rest[open..=end]);
         }
         rest = &rest[end + 1..];
+        // what follows the tags of an upload is promo: "(slowed) songs viral fyp"
+        if tagged && !rest.trim_start().starts_with(['-', '–', '—']) {
+            rest = "";
+        }
     }
     out.push_str(rest);
     let kept: Vec<&str> = out.split_whitespace().filter(|word| !word.starts_with('#')).collect();
@@ -336,6 +343,26 @@ fn soundcloud_queries(title: &str, uploader: &str, duration_ms: Option<i64>) -> 
         seen.push(key);
         fresh
     });
+    guesses.into_iter().map(|(artist, title)| nuvo_lyrics::Query { title, artist, duration_ms }).collect()
+}
+
+fn typed_guesses(title: &str, artist: &str, duration_ms: Option<i64>) -> Vec<nuvo_lyrics::Query> {
+    let song = nuvo_match::text::clean_title(&without_upload_tags(title));
+    let artist = without_featuring(&without_upload_tags(artist));
+    let mut guesses = vec![(artist.clone(), song.clone()), (song.clone(), artist)];
+    if let (Some(left), right) = nuvo_match::text::artist_and_title(&song) {
+        guesses.extend([(left.clone(), right.clone()), (right, left)]);
+    }
+    let mut seen = Vec::new();
+    guesses.retain(|(artist, song)| {
+        let key = (artist.to_lowercase(), song.to_lowercase());
+        let fresh = !song.trim().is_empty() && !seen.contains(&key);
+        seen.push(key);
+        fresh
+    });
+    if guesses.is_empty() {
+        guesses.push((String::new(), title.to_string()));
+    }
     guesses.into_iter().map(|(artist, title)| nuvo_lyrics::Query { title, artist, duration_ms }).collect()
 }
 
@@ -516,7 +543,11 @@ pub fn sidecar_candidate(text: String) -> LyricsCandidate {
 
 #[cfg(test)]
 mod tests {
-    use super::soundcloud_queries;
+    use super::{soundcloud_queries, typed_guesses};
+
+    fn typed(title: &str, artist: &str) -> Vec<(String, String)> {
+        typed_guesses(title, artist, None).into_iter().map(|q| (q.artist, q.title)).collect()
+    }
 
     fn guesses(title: &str, uploader: &str) -> Vec<(String, String)> {
         soundcloud_queries(title, uploader, None).into_iter().map(|q| (q.artist, q.title)).collect()
@@ -536,5 +567,18 @@ mod tests {
         assert_eq!(tried[0], ("Get Lucky".into(), "Daft Punk".into()));
         assert_eq!(tried[1], ("Daft Punk".into(), "Get Lucky".into()));
         assert_eq!(tried[2], ("DJ KB".into(), "Get Lucky - Daft Punk".into()));
+    }
+
+    #[test]
+    fn a_typed_search_also_tries_the_fields_swapped() {
+        assert_eq!(typed("Le sserafim", "crazy"), [("crazy".into(), "Le sserafim".into()), ("Le sserafim".into(), "crazy".into())]);
+    }
+
+    #[test]
+    fn a_pasted_upload_title_loses_its_tags_and_splits_at_the_dash() {
+        let tried = typed("crazy - Le sserafim (bassed + slowed) songs viral fyp", "user8812");
+        assert_eq!(tried[0], ("user8812".into(), "crazy - Le sserafim".into()));
+        assert!(tried.contains(&("Le sserafim".into(), "crazy".into())), "{tried:?}");
+        assert_eq!(typed("Song (sped up)", ""), [("".into(), "Song".into())]);
     }
 }

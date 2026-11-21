@@ -4,7 +4,7 @@ vi.mock("@/lyrics", () => ({ lyrics: () => ({ reload: async () => undefined }) }
 vi.mock("./player", () => ({ usePlayerStore: { getState: () => ({ currentTrack: null }) } }));
 
 import { cancelMaking, madeBy, makeLyrics, makerOffer, resetMadeForTests, type MadeSource, type MadeView } from "./lyricsMaker";
-import type { WordTimingJob, WordTimingModel, WordTimingView } from "./wordTiming";
+import { setModelChoice, type WordTimingJob, type WordTimingModel, type WordTimingView } from "./wordTiming";
 
 const job = (state: WordTimingJob["state"], progress = 0, extra: Partial<WordTimingJob> = {}): WordTimingJob => ({
   trackId: "t1",
@@ -20,10 +20,12 @@ const made = (models: WordTimingModel[] = [], source?: MadeSource, state?: WordT
 describe("lyrics Nuvo makes", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    setModelChoice("auto");
     resetMadeForTests();
   });
 
   it("offers to write, time plain text and time synced lines, each with its own model", () => {
+    vi.stubGlobal("navigator", { hardwareConcurrency: 4 });
     expect(makerOffer(timing(), made(), "t1", "none")).toEqual({ kind: "offer", task: "write", downloadMb: 264 });
     expect(makerOffer(timing(), made(), "t1", "plain")).toEqual({ kind: "offer", task: "time", downloadMb: 82 });
     expect(makerOffer(timing(), made(), "t1", "lines")).toEqual({ kind: "offer", task: "time", downloadMb: 82 });
@@ -86,17 +88,33 @@ describe("lyrics Nuvo makes", () => {
         return new Response(JSON.stringify({ models: [] }));
       }),
     );
+    vi.stubGlobal("navigator", { hardwareConcurrency: 4 });
     await makeLyrics(timing(), "t 1", "none");
     await makeLyrics(timing(), "t1", "plain");
     await cancelMaking("t1", "plain");
     expect(calls).toEqual([
-      'POST /v1/tracks/t%201/lyrics/made {"source":"transcribed"}',
+      'POST /v1/tracks/t%201/lyrics/made {"source":"transcribed","best":true}',
       "GET /v1/lyrics/made",
-      'POST /v1/tracks/t1/lyrics/made {"source":"aligned"}',
+      'POST /v1/tracks/t1/lyrics/made {"source":"aligned","best":false}',
       "GET /v1/lyrics/made",
       "DELETE /v1/tracks/t1/lyrics/made/job",
       "GET /v1/lyrics/made",
     ]);
+  });
+
+  it("times with the full model on a strong computer with fast measured bandwidth, unless Settings say otherwise", () => {
+    const plain = () => makerOffer(timing(), made(), "t1", "plain");
+    vi.stubGlobal("navigator", { hardwareConcurrency: 8, connection: { downlink: 10 } });
+    expect(plain()).toMatchObject({ downloadMb: 264 });
+    vi.stubGlobal("navigator", { hardwareConcurrency: 8, connection: { downlink: 1.5 } });
+    expect(plain()).toMatchObject({ downloadMb: 82 });
+    expect(makerOffer(timing(), made(["whisper-small"]), "t1", "plain")).toMatchObject({ downloadMb: null });
+    vi.stubGlobal("navigator", { hardwareConcurrency: 4, connection: { downlink: 10 } });
+    expect(plain()).toMatchObject({ downloadMb: 82 });
+    setModelChoice("full");
+    expect(plain()).toMatchObject({ downloadMb: 264 });
+    setModelChoice("light");
+    expect(makerOffer(timing(), made(), "t1", "none")).toMatchObject({ downloadMb: 82 });
   });
 
   it("credits written and timed versions and nothing else", () => {

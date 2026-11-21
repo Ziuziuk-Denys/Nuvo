@@ -4,7 +4,20 @@ import { lyrics } from "@/lyrics";
 import { deleteUserLyrics, editableLyrics, ensureTranslator, findLyrics, putUserLyrics, translateLines, type FoundLyrics } from "@/lyrics/stream";
 import { targetLanguage, textLines } from "@/lyrics/translation";
 
-export { clearStamp, detectFormat, editableText, formatStamp, isComplete, markEnd, nudge, stamp, startSync, toLrc, type SyncLine } from "@/lyrics/tapSync";
+export {
+  clearStamp,
+  detectFormat,
+  editableText,
+  formatStamp,
+  isComplete,
+  markEnd,
+  nudge,
+  stamp,
+  startSync,
+  stretchedToFit,
+  toLrc,
+  type SyncLine,
+} from "@/lyrics/tapSync";
 export type { Candidate as FoundVersion } from "@/lyrics/types";
 export { formatDuration } from "@/imports/report";
 

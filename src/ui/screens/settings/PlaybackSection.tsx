@@ -7,7 +7,7 @@ import { CloseToTrayRow, MenuEntryRow } from "./CloseToTrayRow";
 import { Segmented, SettingGroup, SettingRow, Switch } from "./controls";
 import { setVisualSettings, useVisualSettings } from "../../visual/settings";
 import { StatsPauseRow } from "./StatsPauseRow";
-import { WordTimingRow } from "./WordTimingRow";
+import { LyricsModelRow, WordTimingRow } from "./WordTimingRow";
 
 export function rowText(t: TFunction, base: string) {
   const titleKey = base + ".title";
@@ -90,6 +90,7 @@ export function PlaybackSection(): JSX.Element {
           }
         />
         <WordTimingRow />
+        <LyricsModelRow />
         <SettingRow
           {...visualPlayer}
           explained

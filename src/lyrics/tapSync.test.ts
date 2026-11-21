@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clearStamp, detectFormat, editableText, formatStamp, isComplete, markEnd, nudge, stamp, startSync, toLrc } from "./tapSync";
+import { clearStamp, detectFormat, editableText, formatStamp, isComplete, markEnd, nudge, stamp, startSync, stretchedToFit, toLrc } from "./tapSync";
 
 describe("tap to sync", () => {
   it("starts from the non-empty lines of plain text", () => {
@@ -68,5 +68,19 @@ describe("a found version in the editor", () => {
     const ttml =
       '<tt><body><div><p begin="00:01.000" end="00:02.500"><span begin="00:01.000" end="00:01.600">Hi </span><span begin="00:01.600" end="00:02.500">there</span></p></div></body></tt>';
     expect(editableText({ format: "ttml", content: ttml })).toBe("[00:01.00]<00:01.00>Hi <00:01.60>there<00:02.50>");
+  });
+});
+
+describe("a found version of another speed", () => {
+  const lrc = "[ar:LE SSERAFIM]\n[00:10.00]<00:10.00>Crazy <00:11.00>crazy\n[01:00.00]End";
+
+  it("stretches every stamp to the length of a slowed or sped-up stream", () => {
+    expect(stretchedToFit(lrc, "crazy (slowed + reverb)", 100_000, 125_000)).toBe("[ar:LE SSERAFIM]\n[00:12.50]<00:12.50>Crazy <00:13.75>crazy\n[01:15.00]End");
+    expect(stretchedToFit("[01:00.00]End", "Song (sped up)", 120_000, 96_000)).toBe("[00:48.00]End");
+  });
+
+  it("leaves another cut or a near length alone", () => {
+    expect(stretchedToFit(lrc, "Crazy (Live)", 100_000, 125_000)).toBe(lrc);
+    expect(stretchedToFit(lrc, "Crazy slowed", 100_000, 101_500)).toBe(lrc);
   });
 });

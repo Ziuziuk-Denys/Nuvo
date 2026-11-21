@@ -18,6 +18,7 @@ import { layoutFor } from "./layout";
 import { LyricsPane } from "./LyricsPane";
 import { useRomanization } from "./romanization";
 import type { LyricsTrack } from "../ports/lyricsTools";
+import { openLyricsTool } from "../screens/lyrics/lyricsTools";
 import { HIGHLIGHT_MODES, setHighlightMode, useHighlightMode, type HighlightMode } from "./highlightMode";
 import { isRunning, timeWords, useWordTiming } from "../ports/wordTiming";
 import { AddLyrics, MadeMark, TimeWords } from "./MadeLyrics";
@@ -144,7 +145,7 @@ function Bar({ label, value, valueNow, valueMax, valueText, className, onChange,
   );
 }
 
-function VersionButton(): JSX.Element | null {
+function VersionButton({ track }: { track: LyricsTrack | null }): JSX.Element | null {
   const { t } = useTranslation();
   const versions = useLyrics((state) => state.versions);
   const active = useLyrics((state) => state.activeVersion);
@@ -152,7 +153,8 @@ function VersionButton(): JSX.Element | null {
   const timing = useWordTiming();
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
-  if (versions.length < 2) return null;
+  if (versions.length === 0 || !track) return null;
+  const choices = versions.length < 2 ? [] : versions;
   const improve =
     timing?.enabled &&
     trackId &&
@@ -181,19 +183,21 @@ function VersionButton(): JSX.Element | null {
         onClose={() => setOpen(false)}
         className={styles.versionMenu}
         items={[
-          ...versions.map((version) => ({
+          ...choices.map((version) => ({
             label: versionLabel(version, t),
             icon: version.provider === active ? ("check" as const) : undefined,
             onSelect: () => lyricsCommands.chooseVersion(version.provider),
           })),
           ...improve,
-        ]}
+          "separator" as const,
+          { label: t("ui.lyrics.find"), onSelect: () => openLyricsTool(track, "find") },
+        ].filter((item, at) => at > 0 || item !== "separator")}
       />
     </>
   );
 }
 
-function OffsetPill({ mode, reveal = false }: { mode: HighlightMode; reveal?: boolean }): JSX.Element {
+function OffsetPill({ track, mode, reveal = false }: { track: LyricsTrack | null; mode: HighlightMode; reveal?: boolean }): JSX.Element {
   const { t } = useTranslation();
   const offsetMs = useLyrics((state) => state.offsetMs);
   const { available, kanaOnly, on, toggle } = useRomanization();
@@ -209,7 +213,7 @@ function OffsetPill({ mode, reveal = false }: { mode: HighlightMode; reveal?: bo
           {`${(offsetMs / 1000).toFixed(1)}s`}
         </button>
         <GlyphButton icon="add" size={18} label={t("ui.karaoke.later")} className={styles.small} onClick={() => lyricsCommands.nudgeOffset(100)} />
-        <VersionButton />
+        <VersionButton track={track} />
         {available ? (
           <button
             type="button"
@@ -239,6 +243,11 @@ function OffsetPill({ mode, reveal = false }: { mode: HighlightMode; reveal?: bo
               </button>
             ))}
           </div>
+        ) : null}
+        {!synced && track ? (
+          <button type="button" className={styles.words} onClick={() => openLyricsTool(track, "find")}>
+            {t("ui.lyrics.find")}
+          </button>
         ) : null}
         <TimeWords trackId={trackId} have={wordTimed ? "words" : synced ? "lines" : "plain"} />
       </div>
@@ -441,7 +450,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       {visual.chosen ? null : <LookChoice trackKey={track?.id ?? ""} coverUrl={track?.coverUrl ?? ""} lines={lines} onChosen={choose} />}
       <header className={styles.top} data-window-drag data-stage-tools={visual.enabled ? "" : undefined}>
         <GlyphButton icon="chevron-down" label={t("ui.karaoke.close")} className={styles.close} onClick={onClose} />
-        {lyricsReady ? <OffsetPill mode={mode} reveal={stageOn} /> : null}
+        {lyricsReady ? <OffsetPill track={track} mode={mode} reveal={stageOn} /> : null}
         {visual.enabled ? (
           <GlyphButton
             icon="gallery"
