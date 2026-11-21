@@ -5,7 +5,7 @@ export type LibraryTab = "all" | "playlists" | "albums" | "artists" | "local";
 export const LIBRARY_TABS: LibraryTab[] = ["all", "playlists", "albums", "artists", "local"];
 
 export interface LibraryEntry {
-  kind: "liked" | "playlist" | "album" | "artist";
+  kind: "liked" | "local" | "playlist" | "album" | "artist";
   id: string;
   title: string;
   subtitle: string;
@@ -23,6 +23,7 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export interface BuildInput {
   likedCount: number;
+  localCount?: number;
   playlists: LibraryPlaylistSummary[];
   items: LibraryItemViewModel[];
   importing?: ReadonlyMap<string, { done: number; total: number }>;
@@ -34,7 +35,7 @@ function importPercent(progress: { done: number; total: number } | undefined): n
   return progress.total > 0 ? Math.min(100, Math.floor((progress.done * 100) / progress.total)) : 0;
 }
 
-export function buildEntries({ likedCount, playlists, items, importing, t }: BuildInput): LibraryEntry[] {
+export function buildEntries({ likedCount, localCount = 0, playlists, items, importing, t }: BuildInput): LibraryEntry[] {
   const you = t("ui.library.you");
   const entries: LibraryEntry[] = [
     {
@@ -48,6 +49,18 @@ export function buildEntries({ likedCount, playlists, items, importing, t }: Bui
       addedAt: "",
     },
   ];
+  if (localCount > 0) {
+    entries.push({
+      kind: "local",
+      id: "local",
+      title: t("ui.library.tab_local"),
+      subtitle: t("ui.library.kind_local"),
+      cover: null,
+      count: localCount,
+      href: "/library?tab=local",
+      addedAt: "",
+    });
+  }
 
   for (const playlist of playlists) {
     entries.push({
@@ -102,7 +115,7 @@ export function foldForFilter(text: string): string {
 }
 
 const TAB_KINDS: Record<LibraryTab, LibraryEntry["kind"][]> = {
-  all: ["liked", "playlist", "album", "artist"],
+  all: ["liked", "local", "playlist", "album", "artist"],
   playlists: ["liked", "playlist"],
   albums: ["album"],
   artists: ["artist"],
@@ -115,8 +128,9 @@ export function visibleEntries(entries: LibraryEntry[], tab: LibraryTab, query: 
   const kinds = TAB_KINDS[tab];
   const needle = foldForFilter(query.trim());
   const shown = entries.filter((entry) => kinds.includes(entry.kind) && (!needle || foldForFilter(`${entry.title} ${entry.subtitle}`).includes(needle)));
-  const liked = shown.filter((entry) => entry.kind === "liked");
-  const rest = shown.filter((entry) => entry.kind !== "liked").sort(newestFirst);
+  const pinned = (entry: LibraryEntry) => entry.kind === "liked" || entry.kind === "local";
+  const liked = shown.filter(pinned);
+  const rest = shown.filter((entry) => !pinned(entry)).sort(newestFirst);
   return [...liked, ...rest];
 }
 
@@ -152,6 +166,7 @@ export function sortLocal<T extends { title: string; artists: string; album?: { 
 
 export function entryContext(entry: LibraryEntry): string {
   if (entry.kind === "liked") return "playlist:likes";
+  if (entry.kind === "local") return "local:library";
   return `${entry.kind}:${entry.id}`;
 }
 

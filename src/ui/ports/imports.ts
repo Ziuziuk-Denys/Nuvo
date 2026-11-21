@@ -6,7 +6,6 @@ export {
   REPORT_CHIPS,
   doneCounts,
   formatDuration,
-  importsPercent,
   pickChoices,
   progressByPlaylist,
   reasonMessage,

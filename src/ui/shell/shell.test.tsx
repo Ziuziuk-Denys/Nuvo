@@ -22,12 +22,13 @@ const shortcuts = vi.hoisted(() => ({ onEscapeFallback: (() => false) as (() => 
 const mocks = vi.hoisted(() => ({
   railPins: [] as { kind: string; id: string; title: string; href: string; imageUrl?: string }[],
   homePins: [] as { kind: string; id: string; title: string; href: string; imageUrl?: string }[],
-  imports: [] as { status: string; done: number; total: number }[],
+  imports: [] as { status: string; label?: string; done: number; total: number }[],
   toggleWindowFullscreen: vi.fn(),
 }));
 
 const frame = vi.hoisted(() => ({ mac: false }));
 
+import { useToastStore } from "../feedback/toastStore";
 vi.mock("../ports/navigation", () => ({
   get nativeFrame() {
     return frame.mac;
@@ -173,20 +174,20 @@ describe("Shell", () => {
     mocks.homePins = [];
   });
 
-  it("draws a progress line under Library while imports run, and none once they are done", () => {
+  it("tells a running import's progress in the shared toast, not under Library, and says when it is done", () => {
+    const toast = () => useToastStore.getState().queue.find((item) => item.id === "import-progress");
     mocks.imports = [
-      { status: "running", done: 30, total: 100 },
-      { status: "done", done: 5, total: 5 },
+      { status: "running", label: "Road trip", done: 30, total: 100 },
+      { status: "done", label: "Old", done: 5, total: 5 },
     ];
     mount("/");
-    const library = navLinks()[1];
-    const bar = library.querySelector('[role="progressbar"]')!;
-    expect(bar.getAttribute("aria-valuenow")).toBe("30");
-    expect((bar.firstElementChild as HTMLElement).style.transform).toBe("scaleX(0.3)");
-    mocks.imports = [{ status: "done", done: 100, total: 100 }];
-    mount("/");
     expect(host.querySelector('[role="progressbar"]')).toBeNull();
+    expect(toast()).toMatchObject({ message: "ui.imports.toast.one", description: "ui.imports.toast.progress", variant: "loading", progress: 0.3 });
+    mocks.imports = [{ status: "done", label: "Road trip", done: 100, total: 100 }];
+    mount("/");
+    expect(toast()).toMatchObject({ message: "ui.imports.toast.done", variant: "success" });
     mocks.imports = [];
+    act(() => useToastStore.setState({ queue: [] }));
   });
 
   it("shows the Back chip on entity routes only", () => {

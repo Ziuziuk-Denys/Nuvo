@@ -22,6 +22,7 @@ import { useAppIconSync, useLookSync } from "../ports/theme";
 import { ImportsHost } from "../screens/imports/ImportsHost";
 import { LyricsToolsHost } from "../screens/lyrics/LyricsToolsHost";
 import { useGateStore } from "../screens/lock/gateState";
+import { useImportToast } from "../screens/imports/importToast";
 import { useAddMusic } from "../screens/local/addMusic";
 import { useWindowDrop } from "../screens/recognize/recognizeDrop";
 import { useUndoToast } from "../recs/UndoNotice";
@@ -174,6 +175,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     openRecognize: unlocked(openRecognize, undefined),
   });
   const addMusic = useAddMusic();
+  useImportToast();
   useWindowDrop(unlocked(openRecognize, undefined), (files) => {
     if (!useGateStore.getState().locked) void addMusic(files);
   });

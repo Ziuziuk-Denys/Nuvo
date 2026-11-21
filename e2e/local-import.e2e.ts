@@ -105,5 +105,9 @@ describe("local import e2e", () => {
     await main.getByText("Added to On this computer").waitFor();
     await main.getByText("Lone Song", { exact: true }).waitFor({ timeout: 30_000 });
     await main.locator(`[title="${single}"]`).waitFor();
+
+    await main.evaluate(() => (location.hash = "#/library?tab=all"));
+    await main.getByText("Songs from this computer").waitFor({ timeout: 15_000 });
+    await main.getByText("On this computer").first().waitFor();
   });
 });

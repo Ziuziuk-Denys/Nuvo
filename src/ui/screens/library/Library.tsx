@@ -23,6 +23,7 @@ import {
   useYoutubeLibraryItems,
   type LibraryViewMode,
 } from "../../ports/library";
+import { useLocalRoots } from "../../ports/localFiles";
 import { usePageBackdrop } from "../../ports/backdrop";
 import { cancelSaves, exportDocument, saveAsFiles, useDownloadProgress } from "../../ports/exports";
 import { usePlayerStore } from "../../ports/player";
@@ -103,6 +104,8 @@ function useLibraryEntries(t: TFunction) {
   const { data: savedPlaylists, loaded: savedLoaded, error: savedError } = useExternalItems("playlist");
   const youtube = useYoutubeLibraryItems();
   const { data: likedCount } = useLikedTrackCount();
+  const { roots } = useLocalRoots();
+  const localCount = roots.reduce((sum, root) => sum + root.files, 0);
   const summaries = useImportSummaries();
   const importing = useMemo(() => progressByPlaylist(summaries), [summaries]);
 
@@ -110,12 +113,13 @@ function useLibraryEntries(t: TFunction) {
     () =>
       buildEntries({
         likedCount: likedCount ?? 0,
+        localCount,
         playlists: playlists.data.playlists,
         items: [...savedPlaylists, ...albums, ...artists, ...youtube],
         importing,
         t,
       }),
-    [likedCount, playlists.data, savedPlaylists, albums, artists, youtube, importing, t],
+    [likedCount, localCount, playlists.data, savedPlaylists, albums, artists, youtube, importing, t],
   );
   // every source first, so a cold visit never flashes "empty" or reshuffles as kinds arrive
   const loading = playlists.isLoading || !albumsLoaded || !artistsLoaded || !savedLoaded;
@@ -136,6 +140,7 @@ function menuItems(entry: LibraryEntry, pinned: boolean, t: TFunction, open: () 
     { label: t("ui.library.open"), onSelect: open },
     { label: t("ui.library.play"), onSelect: () => void playLibraryEntry(entry, entryContext(entry)) },
   ];
+  if (entry.kind === "local") return items;
   if (entry.kind === "liked") {
     const share = async () => {
       // shortcut: a failed load leaves the menu without a sheet, the Liked page itself shows the error

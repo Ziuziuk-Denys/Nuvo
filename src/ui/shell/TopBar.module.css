@@ -135,25 +135,6 @@
   opacity: 1;
 }
 
-.progress {
-  position: absolute;
-  bottom: 3px;
-  left: 8px;
-  width: 20px;
-  height: 2px;
-  overflow: hidden;
-  border-radius: 1px;
-  background: color-mix(in srgb, var(--n-ink) 12%, transparent);
-}
-
-.progress > span {
-  display: block;
-  height: 100%;
-  background: var(--n-accent);
-  transform-origin: left;
-  transition: transform var(--n-t-base) var(--n-ease-out);
-}
-
 .rule {
   flex: none;
   width: 1px;
@@ -277,10 +258,6 @@
   opacity: 1;
 }
 
-.rail .progress {
-  left: 12px;
-}
-
 .foot {
   margin-top: auto;
 }
@@ -295,9 +272,5 @@
   .back:active,
   .back:hover > svg {
     transform: none;
-  }
-
-  .progress > span {
-    transition: none;
   }
 }

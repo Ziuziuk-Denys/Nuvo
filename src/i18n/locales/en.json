@@ -346,7 +346,14 @@
       "show_all_other": "Show all {count} songs",
       "show_less": "Show less",
       "more_songs_one": "And {count} more song",
-      "more_songs_other": "And {count} more songs"
+      "more_songs_other": "And {count} more songs",
+      "toast": {
+        "one": "Importing “{name}”",
+        "many_one": "Importing {count} playlist",
+        "many_other": "Importing {count} playlists",
+        "progress": "{done} of {total} songs",
+        "done": "Import finished"
+      }
     },
     "island": {
       "add": "Add to playlist",
@@ -483,7 +490,8 @@
         "album": "Album",
         "played": "Recently played",
         "plays": "Most played"
-      }
+      },
+      "kind_local": "Songs from this computer"
     },
     "links": {
       "service": {

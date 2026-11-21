@@ -6,6 +6,7 @@ import { useScrollMargin } from "../../components/useScrollMargin";
 import { Flip } from "../../flip";
 import { useShellScroller } from "../../shell/scroller";
 import { LikedTile } from "../home/LikedTile";
+import { LocalTile } from "./LocalTile";
 import { MediaRow } from "../MediaRow";
 import { entryKey, type LibraryEntry } from "./libraryModel";
 import styles from "./Library.module.css";
@@ -25,11 +26,12 @@ export interface EntryViewProps {
 export function entryMeta(entry: LibraryEntry, t: TFunction): string | undefined {
   if (entry.importing !== undefined) return t("ui.library.importing", { percent: entry.importing });
   if (entry.count === undefined) return undefined;
-  return t(entry.kind === "liked" ? "common.songs" : "common.tracks", { count: entry.count });
+  return t(entry.kind === "liked" || entry.kind === "local" ? "common.songs" : "common.tracks", { count: entry.count });
 }
 
 export function EntryArt({ entry, size }: { entry: LibraryEntry; size?: number }): JSX.Element {
   if (entry.kind === "liked") return <LikedTile size={size} />;
+  if (entry.kind === "local") return <LocalTile size={size} />;
   return <Cover src={entry.cover ?? ""} size={size ?? 200} radius={8} shape={entry.kind === "artist" ? "circle" : "square"} />;
 }
 

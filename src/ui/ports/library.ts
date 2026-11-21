@@ -6,6 +6,7 @@ import { entityTracks } from "@/data/catalog/pages";
 import { libraryClient, type PlaylistSort } from "@/data/library/client";
 import { library } from "@/data/library/library";
 import { notifyLibraryChanged } from "@/data/library/changes";
+import { playableLocalTracks } from "./localFiles";
 
 export {
   usePlaylistsList,
@@ -91,7 +92,7 @@ export async function addTrackToPlaylist(playlistId: string, track: Track): Prom
 }
 
 export interface PlayableEntry {
-  kind: "liked" | "playlist" | "album" | "artist";
+  kind: "liked" | "local" | "playlist" | "album" | "artist";
   id: string;
   title: string;
   cover: string | null;
@@ -102,6 +103,7 @@ export const likedTracks = (): Promise<Track[]> => library().liked.allTracks();
 
 async function entryTracks(entry: PlayableEntry): Promise<Track[]> {
   if (entry.kind === "liked") return likedTracks();
+  if (entry.kind === "local") return playableLocalTracks();
   if (entry.kind === "playlist" && entry.own) return (await libraryClient.playlist(entry.id)).tracks;
   return entityTracks(entry.kind as "playlist" | "album" | "artist", entry.id);
 }
