@@ -308,9 +308,10 @@ describe("onScreenBounds", () => {
 });
 
 describe("window controls", () => {
-  it("macOS keeps the system frame and corners; Linux and Windows draw their own frame", () => {
+  it("macOS keeps the system frame, Windows keeps the thick frame, Linux draws its own", () => {
     expect(frameOptions("darwin")).toEqual({ titleBarStyle: "hidden" });
-    for (const platform of ["linux", "win32"] as const) expect(frameOptions(platform)).toEqual({ frame: false, transparent: true, hasShadow: false });
+    expect(frameOptions("win32")).toEqual({ frame: false });
+    expect(frameOptions("linux")).toEqual({ frame: false, transparent: true, hasShadow: false });
   });
 
   it("minimise is ignored in fullscreen and on tiling compositors", () => {

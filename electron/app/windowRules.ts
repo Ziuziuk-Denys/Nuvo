@@ -95,5 +95,7 @@ export function relaunchArgs(argv: readonly string[]): string[] {
 
 export function frameOptions(platform: NodeJS.Platform): Electron.BrowserWindowConstructorOptions {
   if (platform === "darwin") return { titleBarStyle: "hidden" };
+  // a transparent window loses the thick frame, and with it the system maximize, restore and minimize animations
+  if (platform === "win32") return { frame: false };
   return { frame: false, transparent: true, hasShadow: false };
 }
