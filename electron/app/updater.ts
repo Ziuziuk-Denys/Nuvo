@@ -78,7 +78,10 @@ export class Updater {
   }
 
   start(): void {
-    this.schedule(FIRST_CHECK_MS);
+    if (this.deps.mode === "off") return;
+    this.stopTimer();
+    this.timer = setTimeout(() => void this.check(this.deps.enabled()), FIRST_CHECK_MS);
+    this.timer.unref?.();
   }
 
   wake(): void {
@@ -87,6 +90,7 @@ export class Updater {
 
   setEnabled(on: boolean): void {
     if (this.deps.mode === "off") return;
+    if (on && this.phase === "available" && this.deps.mode === "install") return void this.download(this.epoch);
     if (on) return this.schedule(FIRST_CHECK_MS);
     this.stopTimer();
     if (this.phase === "checking" || this.phase === "downloading" || this.phase === "ready" || this.phase === "available") {
@@ -98,12 +102,17 @@ export class Updater {
   }
 
   install(): boolean {
-    if (this.phase !== "ready" || this.deps.mode !== "install") return false;
+    if (this.deps.mode !== "install") return false;
+    if (this.phase === "available") {
+      void this.download(this.epoch);
+      return true;
+    }
+    if (this.phase !== "ready") return false;
     this.deps.backend.quitAndInstall();
     return true;
   }
 
-  async check(): Promise<void> {
+  async check(download = true): Promise<void> {
     if (!this.checkable()) return;
     this.stopTimer();
     this.lastCheck = Date.now();
@@ -119,7 +128,15 @@ export class Updater {
       }
       if (!validVersion(found.version)) throw new Error("the feed names no plain version");
       this.version = found.version;
-      if (this.deps.mode === "notify") return this.set("available");
+      if (this.deps.mode === "notify" || !download) return this.set("available");
+    } catch (error) {
+      return this.fail(epoch, error);
+    }
+    await this.download(epoch);
+  }
+
+  private async download(epoch: number): Promise<void> {
+    try {
       this.percent = 0;
       this.set("downloading");
       await this.deps.backend.download((percent) => {
@@ -131,12 +148,16 @@ export class Updater {
       this.failures = 0;
       this.set("ready");
     } catch (error) {
-      if (epoch !== this.epoch) return;
-      this.deps.log("[update] check failed", error);
-      this.version = this.percent = undefined;
-      this.set("error");
-      this.schedule(Math.min(RETRY_FIRST_MS * 2 ** this.failures++, RETRY_MAX_MS));
+      this.fail(epoch, error);
     }
+  }
+
+  private fail(epoch: number, error: unknown): void {
+    if (epoch !== this.epoch) return;
+    this.deps.log("[update] check failed", error);
+    this.version = this.percent = undefined;
+    this.set("error");
+    this.schedule(Math.min(RETRY_FIRST_MS * 2 ** this.failures++, RETRY_MAX_MS));
   }
 
   private checkable(): boolean {

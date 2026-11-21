@@ -161,15 +161,37 @@ describe("Updater", () => {
     expect(updater.view().phase).toBe("off");
   });
 
-  it("checks on request even with background checks switched off", async () => {
+  it("checks once at launch and on request even with background checks switched off", async () => {
     const { updater, backend } = setup({ enabled: false, backend: { check: vi.fn(async () => null) } });
     updater.start();
     await vi.advanceTimersByTimeAsync(CHECK_EVERY_MS);
-    expect(backend.check).not.toHaveBeenCalled();
-    await updater.check();
-    expect(updater.view().phase).toBe("latest");
-    await vi.advanceTimersByTimeAsync(CHECK_EVERY_MS * 2);
     expect(backend.check).toHaveBeenCalledTimes(1);
+    expect(updater.view().phase).toBe("latest");
+    await updater.check();
+    await vi.advanceTimersByTimeAsync(CHECK_EVERY_MS * 2);
+    expect(backend.check).toHaveBeenCalledTimes(2);
+  });
+
+  it("offers an update found at launch with automatic updates off and downloads it on request", async () => {
+    const { updater, backend } = setup({ enabled: false });
+    updater.start();
+    await vi.advanceTimersByTimeAsync(FIRST_CHECK_MS);
+    expect(updater.view()).toEqual({ phase: "available", mode: "install", version: "1.2.0" });
+    expect(backend.download).not.toHaveBeenCalled();
+    expect(updater.install()).toBe(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(updater.view()).toEqual({ phase: "ready", mode: "install", version: "1.2.0" });
+    expect(backend.quitAndInstall).not.toHaveBeenCalled();
+  });
+
+  it("downloads an offered update once automatic updates are switched on", async () => {
+    const { updater, backend, setEnabled } = setup({ enabled: false });
+    updater.start();
+    await vi.advanceTimersByTimeAsync(FIRST_CHECK_MS);
+    setEnabled(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(backend.download).toHaveBeenCalledTimes(1);
+    expect(updater.view().phase).toBe("ready");
   });
 
   it("checks soon after being switched on and stops when switched off", async () => {

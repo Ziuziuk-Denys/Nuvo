@@ -16,6 +16,7 @@ export interface Toast {
   /** 0 to 1 for work with a known end, drawn as a line under the words */
   progress?: number;
   action?: ToastAction;
+  later?: ToastAction;
   onDismiss?: () => void;
 }
 
