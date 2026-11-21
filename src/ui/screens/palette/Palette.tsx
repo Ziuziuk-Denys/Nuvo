@@ -398,8 +398,8 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
 
   const list: Entry[] = [
     ...recent.map((item) => ({ key: `recent:${item.id}`, section: "recent" as const, run: openRecent(item) })),
-    ...(found.top && trimmed ? [{ key: "top", section: "top" as const, run: openResult(found.top), queue: queueResult(found.top) }] : []),
     ...actions.map((command) => ({ key: `action:${command.id}`, section: "actions" as const, run: close(command.run) })),
+    ...(found.top && trimmed ? [{ key: "top", section: "top" as const, run: openResult(found.top), queue: queueResult(found.top) }] : []),
     ...(trimmed ? found.songs : []).map((song) => ({ key: `song:${song.id}`, section: "songs" as const, run: openResult(song), queue: queueResult(song) })),
     ...(trimmed ? found.collections : []).map((entry) => ({ key: `entry:${entry.kind}:${entry.id}`, section: "collections" as const, run: openResult(entry) })),
     ...(trimmed && online ? [{ key: "more", section: "more" as const, run: close(() => go(`/search?q=${encodeURIComponent(trimmed)}`)) }] : []),
@@ -461,6 +461,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
     body = (
       <div className={styles.split}>
         <div className={styles.column}>
+          {actions.length > 0 ? actionRows : null}
           {found.top ? (
             <Group label={t("ui.search.top")}>
               <div role="option" aria-selected={indexOf("top") === active} className={styles.top} data-top="" {...rowProps("top")}>
@@ -470,7 +471,6 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
               </div>
             </Group>
           ) : null}
-          {actions.length > 0 ? actionRows : null}
         </div>
         <div className={styles.column}>
           {searching ? <p className={styles.line}>{t("ui.search.searching")}</p> : null}

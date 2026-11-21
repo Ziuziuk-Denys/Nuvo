@@ -92,7 +92,12 @@ vi.mock("../../ports/library", () => ({
 }));
 vi.mock("../../ports/network", () => ({ useOfflineMode: () => false, useOnline: () => true, useStreamingReachable: () => true }));
 vi.mock("../../ports/search", () => ({
-  useSearchAll: (query: string) => ({ items: query.trim() === "lorde" ? mocks.catalog : [], loading: false, hasLoaded: true, runNow: () => undefined }),
+  useSearchAll: (query: string) => ({
+    items: ["lorde", "cover"].includes(query.trim()) ? mocks.catalog : [],
+    loading: false,
+    hasLoaded: true,
+    runNow: () => undefined,
+  }),
   toSearchResult: (item: unknown) => item,
   useSoundCloudSearch: (query: string) => ({ items: query.trim() === "lorde" ? mocks.soundCloud : [], loading: false, hasLoaded: true }),
   soundCloudResult: (hit: unknown) => hit,
@@ -215,12 +220,14 @@ describe("PaletteField", () => {
     expect(dialog()).toBeNull();
   });
 
-  it("finds a settings entry among the actions and opens its section", () => {
+  it("puts a matching setting above the songs, so Enter opens it instead of playing", () => {
     ctrlK();
     type("cover");
+    expect(groups()).toContain("Top result");
     expect(options()[0]).toBe("Settings: Cover glow");
     press("Enter");
     expect(mocks.settings.openSettingsSection).toHaveBeenCalledWith("Player", "settings.cover_glow.title");
+    expect(mocks.engine.playTrack).not.toHaveBeenCalled();
   });
 
   it("shows the top result, songs and albums, plays a song on Enter and queues it on Shift Enter", () => {
