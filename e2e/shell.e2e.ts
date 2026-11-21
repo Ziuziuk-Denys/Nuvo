@@ -266,12 +266,18 @@ describe("shell e2e", () => {
       "appearanceApplying",
       "setThumbarLabels",
       "addMusicFolder",
+      "addMusicFiles",
       "revealLocalTrack",
       "saveAsFiles",
       "saveDocument",
       "pickCoverImage",
       "recognizeFile",
       "notify",
+      "clipBegin",
+      "clipWrite",
+      "clipAudio",
+      "clipFinish",
+      "clipCancel",
     ];
     const shape = await main.evaluate((names) => {
       const shell = window.nuvoShell as unknown as Record<string, unknown>;
