@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { hasOpenLayer, usePresence } from "../components/layers";
 import { useScrollActivity } from "../components/useScrollActivity";
 import { Field } from "../field/Field";
+import { reducedEffectsNow } from "../effects";
 import { DURATION_MS, EASE, seconds } from "../motion";
 import { useTranslation } from "../ports/i18n";
 import { bootImports } from "../ports/importsRuntime";
@@ -46,6 +47,7 @@ const STAY_IN_PLACE = { replace: true } as const;
 const LEGACY_SCROLLERS = ".overflow-y-auto";
 
 const CHROME = { hidden: { opacity: 0 } };
+const RAIL_SHIFT_PX = 62;
 
 const watchEngine = (notify: () => void) => playerEngine.subscribe(notify);
 const engineHasTrack = () => playerEngine.getSnapshot().currentTrack !== null;
@@ -91,6 +93,19 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   if (!onKaraokeRoute && underlay !== children) setUnderlay(children);
 
   const scroller = useRef<HTMLDivElement>(null);
+
+  useEffect(
+    () =>
+      useCustomizationStore.subscribe((state, previous) => {
+        if (state.navigation === previous.navigation || !scroller.current || reducedEffectsNow()) return;
+        const from = state.navigation === "side" ? -RAIL_SHIFT_PX : RAIL_SHIFT_PX;
+        scroller.current.animate([{ transform: `translateX(${from}px)` }, { transform: "none" }], {
+          duration: DURATION_MS.base,
+          easing: `cubic-bezier(${EASE.out.join(", ")})`,
+        });
+      }),
+    [],
+  );
   useScrollActivity(scroller);
 
   const settingsLink = pathname === "/settings" ? (new URLSearchParams(search).get("section") ?? "") : null;

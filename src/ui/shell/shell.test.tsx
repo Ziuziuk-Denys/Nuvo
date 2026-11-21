@@ -296,6 +296,10 @@ describe("Shell", () => {
       expect(document.activeElement).toBe(links[1]);
       press("ArrowUp");
       expect(document.activeElement).toBe(links[0]);
+      const slide = vi.fn();
+      host.querySelector<HTMLElement>(`.${styles.content}`)!.animate = slide;
+      act(() => useCustomizationStore.getState().setNavigation("top"));
+      expect(slide.mock.calls[0][0]).toEqual([{ transform: "translateX(62px)" }, { transform: "none" }]);
     } finally {
       mocks.homePins = [];
       act(() => useCustomizationStore.getState().setNavigation("top"));

@@ -1,4 +1,5 @@
 import type { JSX, KeyboardEvent, MouseEvent } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Cover } from "../components/Cover";
 import { Lens } from "../components/Lens";
@@ -10,6 +11,7 @@ import { useTranslation } from "../ports/i18n";
 import { importsPercent } from "../ports/imports";
 import { useImportSummaries } from "../ports/importsRuntime";
 import { livePins, useHomePinsStore, usePlaylistsList, useRailPinsStore, type HomePin } from "../ports/library";
+import { DURATION_MS, EASE, seconds } from "../motion";
 import { useModalStore } from "../ports/navigation";
 import { useCustomizationStore } from "../ports/settings";
 import { unpinEverywhere } from "../screens/entity/entityActions";
@@ -26,6 +28,9 @@ interface Section {
 }
 
 const MAX_PINS = 6;
+const SWAP = { duration: seconds(DURATION_MS.base), ease: [...EASE.out] as [number, number, number, number] };
+const FADE = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: SWAP };
+const SLIDE = { initial: { opacity: 0, x: -12 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -12 }, transition: SWAP };
 
 const plainClick = (event: MouseEvent) => event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
@@ -99,7 +104,7 @@ export function TopBar(): JSX.Element {
               className={styles.item}
               onClick={(event) => go(event, section.href)}
             >
-              {section.id === active ? <Lens group="top-nav" value={section.id} radius={side ? 20 : 18} /> : null}
+              {section.id === active ? <Lens group="top-nav" value={section.id} radius={side ? 22 : 18} /> : null}
               <Icon name={section.icon} size={24} />
               {section.id === "library" && importing !== null ? (
                 <span className={styles.progress} role="progressbar" aria-label={importingText} aria-valuemin={0} aria-valuemax={100} aria-valuenow={importing}>
@@ -123,7 +128,7 @@ export function TopBar(): JSX.Element {
                 onContextMenu={(event) => pinMenu.open(event, [{ label: t("ui.library.unpin"), onSelect: () => unpinEverywhere(pin.kind, pin.id) }])}
               >
                 {pin.imageUrl ? (
-                  <Cover src={pin.imageUrl} size={26} radius={6} shape={pin.kind === "artist" ? "circle" : "square"} />
+                  <Cover src={pin.imageUrl} size={side ? 30 : 26} radius={side ? 8 : 6} shape={pin.kind === "artist" ? "circle" : "square"} />
                 ) : (
                   <Icon name={pin.kind === "artist" ? "artist" : pin.kind === "album" ? "album" : "playlist"} size={20} />
                 )}
@@ -158,16 +163,20 @@ export function TopBar(): JSX.Element {
     </button>
   ) : null;
 
-  if (side) {
-    return (
-      <>
-        <aside className={styles.rail} data-window-drag>
-          {mark}
+  return (
+    <AnimatePresence initial={false}>
+      {side ? (
+        <motion.aside key="rail" className={styles.rail} data-window-drag {...SLIDE}>
+          <Tooltip side="right" text="Nuvo">
+            {mark}
+          </Tooltip>
           {links}
           {pinMenu.element}
           <div className={styles.foot}>{settingsButton}</div>
-        </aside>
-        <header className={`${styles.bar} ${styles.beside}`} data-window-drag>
+        </motion.aside>
+      ) : null}
+      {side ? (
+        <motion.header key="beside" className={`${styles.bar} ${styles.beside}`} data-window-drag {...FADE}>
           <div className={styles.start}>{backButton}</div>
           <div className={styles.middle}>
             <PaletteField />
@@ -177,29 +186,27 @@ export function TopBar(): JSX.Element {
               <WindowButtons />
             </div>
           </div>
-        </header>
-      </>
-    );
-  }
-
-  return (
-    <header className={styles.bar} data-window-drag>
-      <div className={styles.start}>
-        {mark}
-        {links}
-        {pinMenu.element}
-        {backButton}
-      </div>
-      <div className={styles.middle}>
-        <PaletteField />
-      </div>
-      <div className={styles.end}>
-        <div className={`${styles.group} ${styles.tray}`}>
-          {settingsButton}
-          <span className={styles.rule} aria-hidden="true" />
-          <WindowButtons />
-        </div>
-      </div>
-    </header>
+        </motion.header>
+      ) : (
+        <motion.header key="top" className={styles.bar} data-window-drag {...FADE}>
+          <div className={styles.start}>
+            {mark}
+            {links}
+            {pinMenu.element}
+            {backButton}
+          </div>
+          <div className={styles.middle}>
+            <PaletteField />
+          </div>
+          <div className={styles.end}>
+            <div className={`${styles.group} ${styles.tray}`}>
+              {settingsButton}
+              <span className={styles.rule} aria-hidden="true" />
+              <WindowButtons />
+            </div>
+          </div>
+        </motion.header>
+      )}
+    </AnimatePresence>
   );
 }
