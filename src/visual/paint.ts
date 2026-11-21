@@ -33,6 +33,8 @@ export function paint(
   const animation = template.lyrics ? ANIMATIONS[template.lyrics.animation] : undefined;
   if (animation && raster) {
     raster.ctx.clearRect(0, 0, raster.width, raster.height);
+    // the raster outlives a style change, so no alignment or transform may carry over to the next style
+    raster.ctx.save();
     signals = animation.draw({
       ctx: raster.ctx,
       lines,
@@ -44,6 +46,7 @@ export function paint(
       scale: template.lyrics!.scale,
       pulse,
     });
+    raster.ctx.restore();
     stage.setText(raster.canvas);
   } else stage.setText(null);
   stage.render(signals, options.reduced ?? false);

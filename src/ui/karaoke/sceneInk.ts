@@ -30,7 +30,7 @@ export function inkOver(cells: Uint8Array, area: Area, current: Ink | undefined)
   return mean > (DARK_ABOVE + LIGHT_BELOW) / 2 ? "dark" : "light";
 }
 
-function probesOf(column: Element): HTMLElement[] {
+function probesOf(column: Element, header: Element | null): HTMLElement[] {
   const found: HTMLElement[] = [];
   const visit = (element: Element) => {
     if (!(element instanceof HTMLElement)) return;
@@ -38,6 +38,7 @@ function probesOf(column: Element): HTMLElement[] {
     else for (const child of element.children) visit(child);
   };
   for (const child of [...column.children].slice(1)) visit(child);
+  if (header) found.push(...header.querySelectorAll<HTMLElement>(":scope > button, [data-window-controls] button"));
   return found;
 }
 
@@ -45,6 +46,7 @@ function probesOf(column: Element): HTMLElement[] {
 export function useSceneInk(
   root: RefObject<HTMLElement | null>,
   column: RefObject<HTMLElement | null>,
+  header: RefObject<HTMLElement | null>,
   active: boolean,
   key: string,
 ): (cells: Uint8Array) => void {
@@ -56,13 +58,14 @@ export function useSceneInk(
     const forget = () => (probes.current = null);
     const observer = new ResizeObserver(forget);
     observer.observe(element);
-    for (const probe of probesOf(element)) observer.observe(probe);
+    for (const probe of probesOf(element, header.current)) observer.observe(probe);
+    const scope = root.current;
     return () => {
       observer.disconnect();
       probes.current = null;
-      for (const marked of element.querySelectorAll("[data-ink]")) marked.removeAttribute("data-ink");
+      for (const marked of scope?.querySelectorAll("[data-ink]") ?? []) marked.removeAttribute("data-ink");
     };
-  }, [column, active, key]);
+  }, [root, column, header, active, key]);
 
   return useCallback(
     (cells: Uint8Array) => {
@@ -71,7 +74,7 @@ export function useSceneInk(
       if (!element || !canvas) return;
       if (!probes.current) {
         const frame = canvas.getBoundingClientRect();
-        probes.current = probesOf(element).map((probe) => {
+        probes.current = probesOf(element, header.current).map((probe) => {
           const rect = probe.getBoundingClientRect();
           return {
             element: probe,
@@ -90,6 +93,6 @@ export function useSceneInk(
         if (next !== current) probe.dataset.ink = next;
       }
     },
-    [root, column],
+    [root, column, header],
   );
 }
