@@ -1,5 +1,6 @@
 .arc {
   position: relative;
+  isolation: isolate;
   margin: 0 calc(-1 * var(--n-gutter, 12px));
   overflow: hidden;
   touch-action: pan-y;
