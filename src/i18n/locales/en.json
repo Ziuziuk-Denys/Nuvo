@@ -1109,7 +1109,7 @@
       "update_download_desc": "Downloads in the background, then asks to restart",
       "launch_check": {
         "title": "Check for updates at launch",
-        "description": "Nuvo asks github.com for a new version when it starts and every few hours. When off, it asks only when you press Check now."
+        "description": "Nuvo asks github.com for a new version when it starts. When off, it asks only when you press Check now."
       }
     },
     "status": {
