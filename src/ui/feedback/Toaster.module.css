@@ -124,6 +124,29 @@
     transform 150ms var(--n-ease-out);
 }
 
+.later {
+  height: 28px;
+  flex-shrink: 0;
+  margin-left: 4px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-ink-2);
+  font: 500 13px/1 var(--n-font);
+  cursor: pointer;
+}
+
+.later:hover {
+  background: var(--n-fill);
+  color: var(--n-ink);
+}
+
+.later:focus-visible {
+  outline: none;
+  background: var(--n-focus-fill);
+}
+
 .action:hover {
   background: var(--n-fill-hover);
 }

@@ -55,16 +55,17 @@ export function UpdateStatus(): JSX.Element | null {
       />
     );
   }
-  if (view.phase === "available" && view.mode === "notify") {
+  if (view.phase === "available") {
+    const notify = view.mode === "notify";
     return (
       <SettingRow
         title={t("ui.settings.update_available", version)}
-        description={t("ui.settings.update_available_desc")}
+        description={t(notify ? "ui.settings.update_available_desc" : "ui.settings.update_download_desc")}
         titleKey="ui.settings.update_available"
         explained
         control={
-          <Button size="s" variant="primary" onClick={() => void openReleasePage()}>
-            {t("ui.settings.update_open")}
+          <Button size="s" variant="primary" onClick={() => void (notify ? openReleasePage() : installUpdate())}>
+            {t(notify ? "ui.settings.update_open" : "ui.settings.update_now")}
           </Button>
         }
       />

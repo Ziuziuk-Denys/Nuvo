@@ -1081,7 +1081,9 @@
         "blocked_proxied": "Blocked even through the proxy: try another proxy or VPN server.",
         "proxy_error": "The proxy didn't let Nuvo through: check its address, username and password above.",
         "down": "The problem is on their side. Try again later."
-      }
+      },
+      "update_now": "Update",
+      "update_download_desc": "Downloads in the background, then asks to restart"
     },
     "status": {
       "failed": "Your library stopped",
@@ -1504,6 +1506,14 @@
       "original_back": "The song plays from its own source again",
       "failed": "Couldn't change the source",
       "others": "Other versions"
+    },
+    "update_offer": {
+      "ready": "Nuvo {version} is ready",
+      "available": "Nuvo {version} is out",
+      "downloading": "Downloading Nuvo {version}",
+      "later": "Later",
+      "restart": "Restart",
+      "update": "Update"
     }
   },
   "appearance": {

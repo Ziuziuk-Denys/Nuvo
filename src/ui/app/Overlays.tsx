@@ -8,6 +8,7 @@ import { ThemeEditorHost } from "../screens/settings/ThemeEditor";
 import { ConnectionWatch } from "../feedback/ConnectionWatch";
 import { PanelWidgetWatch } from "../feedback/PanelWidgetWatch";
 import { Toaster } from "../feedback/Toaster";
+import { UpdateOffer } from "../feedback/UpdateOffer";
 import { QueuePanel } from "../shell/queue/QueuePanel";
 import { SignInSheet } from "../shell/SignInSheet";
 
@@ -26,6 +27,7 @@ export function Overlays(): JSX.Element {
       <Toaster />
       <ConnectionWatch />
       <PanelWidgetWatch />
+      <UpdateOffer />
     </>
   );
 }

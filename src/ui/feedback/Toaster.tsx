@@ -76,6 +76,18 @@ export function Toaster(): JSX.Element {
                 </>
               ) : null}
             </span>
+            {toast.later ? (
+              <button
+                type="button"
+                className={styles.later}
+                onClick={() => {
+                  toast.later?.onClick();
+                  useToastStore.getState().dismiss(toast.id);
+                }}
+              >
+                {toast.later.label}
+              </button>
+            ) : null}
             {toast.action ? (
               <button
                 type="button"
