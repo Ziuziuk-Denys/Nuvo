@@ -234,7 +234,7 @@ it("the karaoke view asks once how songs should look, and the first scene plays 
     },
     { id: track.id, content: lrc },
   );
-  const choice = page.getByRole("group", { name: "Choose how songs look" });
+  const choice = page.getByRole("group", { name: "How should songs look?" });
   await choice.waitFor({ timeout: 10_000 });
   await page.waitForTimeout(2_500);
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "choice.png") });

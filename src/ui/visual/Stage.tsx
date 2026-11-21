@@ -11,10 +11,11 @@ interface StageProps {
   mirror?: HTMLCanvasElement | null;
   onFoot?: (rgb: [number, number, number]) => void;
   onTone?: (light: boolean) => void;
+  clock?: () => { atMs: number; playing: boolean };
   className?: string;
 }
 
-export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, onTone, className }: StageProps): JSX.Element {
+export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, onTone, clock, className }: StageProps): JSX.Element {
   const host = useRef<HTMLDivElement>(null);
   const liveRef = useRef<Live | null>(null);
   const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot, onTone });
@@ -29,7 +30,7 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
     const canvas = Object.assign(document.createElement("canvas"), { className: className ?? "" });
     canvas.setAttribute("aria-hidden", "true");
     element.append(canvas);
-    const live = createLiveStage(canvas);
+    const live = createLiveStage(canvas, clock);
     liveRef.current = live;
     const now = latest.current;
     live?.setTemplate(now.template, now.aspect);
@@ -49,7 +50,7 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
       liveRef.current = null;
       canvas.remove();
     };
-  }, [className]);
+  }, [className, clock]);
 
   useEffect(() => liveRef.current?.setTemplate(template, aspect), [template, aspect]);
   useEffect(() => liveRef.current?.setCover(coverUrl), [coverUrl]);

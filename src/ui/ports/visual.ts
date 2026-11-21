@@ -41,7 +41,8 @@ export function templateFor(choice: string, trackKey: string, hasWordTiming: boo
 
 const DECODE_RETRY_MS = 3_000;
 
-export function createLiveStage(canvas: HTMLCanvasElement): Live | null {
+export function createLiveStage(canvas: HTMLCanvasElement, clock?: () => { atMs: number; playing: boolean }): Live | null {
+  if (clock) return createLive(canvas, { subscribe: subscribeSpectrum, clock });
   let wanted = "";
   let song: { pcm: Float32Array; sampleRate: number } | null = null;
   let retry: number | undefined;

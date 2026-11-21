@@ -177,8 +177,8 @@ const duo: ShaderDef = {
 vec4 layer() {
   vec3 vivid = mix(uKey / max(max(uKey.r, uKey.g), max(uKey.b, 0.001)) * u_bright, uColorA, uCustom);
   vec3 dark = mix(uDeep * 0.8 + 0.002, uColorB, uCustom);
-  vec3 bg = mix(vivid, dark, uInvert) * (1.0 + uFlash * u_pulse * 12.0);
-  vec3 fg = mix(dark, vivid, uInvert);
+  vec3 bg = vivid * (1.0 + uFlash * u_pulse * 12.0);
+  vec3 fg = dark;
   vec2 uv = vUv;
   uv.x += sin(uv.y * 38.0 + uTime * 5.0) * u_wave;
   uv.y += sin(uv.x * 21.0 - uTime * 3.7) * u_wave * 0.6;

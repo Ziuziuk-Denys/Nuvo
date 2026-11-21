@@ -24,13 +24,12 @@ export interface LyricInput {
 }
 
 export interface Signals {
-  invert: number;
   flash: number;
   strobe: number;
   blackout: number;
 }
 
-export const QUIET: Signals = { invert: 0, flash: 0, strobe: 0, blackout: 0 };
+export const QUIET: Signals = { flash: 0, strobe: 0, blackout: 0 };
 
 export interface LyricAnimation {
   id: string;

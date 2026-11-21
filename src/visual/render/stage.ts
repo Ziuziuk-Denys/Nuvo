@@ -130,7 +130,7 @@ export function createStage(canvas: GlCanvas): Stage | null {
   let frameMs = 0;
   let frameDelta = 0;
   let frameFeatures: Features | null = null;
-  let signals: Signals = { invert: 0, flash: 0, strobe: 0, blackout: 0 };
+  let signals: Signals = { flash: 0, strobe: 0, blackout: 0 };
 
   function program(id: string): Program {
     let found = programs.get(id);
@@ -226,7 +226,6 @@ export function createStage(canvas: GlCanvas): Stage | null {
     set1("uImageAspect", imageAspect);
     set1("uHasImage", hasImage);
     set1("uGlyphCount", GLYPHS.length);
-    set1("uInvert", signals.invert);
     set1("uFlash", signals.flash);
     set1("uStrobe", signals.strobe);
     set1("uBlackout", signals.blackout);
