@@ -77,7 +77,7 @@ async function prepare(live: NuvoSession, look: Look, size: Size, locale: Locale
   };
 }
 
-async function openSection(live: NuvoSession, section: "appearance" | "customization"): Promise<void> {
+async function openSection(live: NuvoSession, section: "appearance" | "customization" | "fonts"): Promise<void> {
   await live.go(`#/`);
   await live.go(`#/settings?section=${section}`);
   await live.page.locator("[role=dialog] h2").first().waitFor({ timeout: 10_000 });
@@ -168,6 +168,7 @@ describe("look", () => {
 
     const fixture = fontFixture();
     await stubDialogs(live, fixture, null);
+    await openSection(live, "fonts");
     await page
       .getByRole("button", { name: t("appearance.fonts.load_file") })
       .first()
@@ -256,6 +257,7 @@ describe("look", () => {
       await editor.waitFor({ state: "detached" });
       await page.getByRole("button", { name: t("appearance.theme.discard") }).click();
 
+      await openSection(live, "fonts");
       await page.locator(`button[aria-haspopup=listbox][aria-label^="${t("appearance.fonts.ui")}: "]`).click();
       await page.getByRole("listbox").waitFor();
       await shoot("font-list");

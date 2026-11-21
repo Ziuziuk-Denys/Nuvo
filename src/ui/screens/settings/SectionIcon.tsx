@@ -4,18 +4,28 @@ import type { IconName } from "../../icons";
 import type { SectionId } from "./sections";
 
 const GLYPHS: Record<SectionId, IconName> = {
+  Language: "globe",
+  Startup: "window-restore",
+  Updates: "refresh",
   Playback: "play",
+  BetweenSongs: "queue",
   Sound: "equalizer",
-  Hidden: "not-interested",
-  Shortcuts: "keyboard",
-  Appearance: "palette",
-  Customization: "gallery",
+  Spatial: "reverb",
+  Lyrics: "lyrics",
+  Theme: "palette",
+  Fonts: "studio-text",
+  Background: "gallery",
+  Player: "now-playing",
+  Motion: "studio-effects",
   Notch: "widget",
+  Shortcuts: "keyboard",
   Youtube: "youtube",
   Lastfm: "lastfm",
   Discord: "discord",
+  Privacy: "lock",
   Storage: "database",
   Network: "link",
+  Tools: "tools",
   About: "nuvo-mark",
 };
 

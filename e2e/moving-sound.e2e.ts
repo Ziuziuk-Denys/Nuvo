@@ -48,7 +48,7 @@ function stageGains(page: Page) {
 }
 
 it("the switch in Sound settings reaches the audio graph and crossfades both ways", async () => {
-  await main.evaluate(() => (location.hash = "#/settings?section=sound"));
+  await main.evaluate(() => (location.hash = "#/settings?section=spatial"));
   await main.locator(SWITCH).click();
   await expect.poll(async () => (await stageGains(main)).dry).toBeLessThan(0.01);
   expect((await stageGains(main)).wet).toBeGreaterThan(1);

@@ -1,19 +1,13 @@
 import type { JSX } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { HIGHLIGHT_MODES, setHighlightMode, useHighlightMode } from "../../karaoke/highlightMode";
 import { useTranslation, type TFunction } from "../../ports/i18n";
 import { usePlayerStore } from "../../ports/player";
-import { CloseToTrayRow, MenuEntryRow } from "./CloseToTrayRow";
-import { Segmented, SettingGroup, SettingRow, Switch } from "./controls";
 import { setVisualSettings, useVisualSettings } from "../../visual/settings";
-import { StatsPauseRow } from "./StatsPauseRow";
+import { CloseToTrayRow, MenuEntryRow } from "./CloseToTrayRow";
+import { rowText, Segmented, SettingGroup, SettingRow, Switch } from "./controls";
+import { CrossfadeBlock } from "./CrossfadeBlock";
+import { DefaultSpeedBlock, KeepSpeedRow } from "./SoundSection";
 import { LyricsModelRow, WordTimingRow } from "./WordTimingRow";
-
-export function rowText(t: TFunction, base: string) {
-  const titleKey = base + ".title";
-  const descKey = base + ".description";
-  return { titleKey, descKey, title: t(titleKey), description: t(descKey) };
-}
 
 function choices<T extends string>(t: TFunction, base: string, values: readonly T[]) {
   return values.map((value) => ({ value, label: t(base + "." + value) }));
@@ -25,22 +19,66 @@ const AUTOPLAY = "settings.autoplay_similar";
 const LYRICS_HIGHLIGHT = "settings.lyrics_highlight";
 const VISUAL_PLAYER = "settings.visual_player";
 
+export function StartupSection(): JSX.Element {
+  const { t } = useTranslation();
+  const startWith = usePlayerStore((store) => store.defaultPlaybackContext);
+  const onStartWith = usePlayerStore((store) => store.setDefaultPlaybackContext);
+  const startContext = rowText(t, START_CONTEXT);
+
+  return (
+    <>
+      <SettingGroup>
+        <SettingRow
+          {...startContext}
+          explained
+          control={
+            <Segmented label={startContext.title} options={choices(t, START_CONTEXT, ["resume", "empty"] as const)} value={startWith} onChange={onStartWith} />
+          }
+        />
+      </SettingGroup>
+      <SettingGroup label={t("settings.page.window")}>
+        <CloseToTrayRow />
+        <MenuEntryRow />
+      </SettingGroup>
+    </>
+  );
+}
+
 export function PlaybackSection(): JSX.Element {
   const { t } = useTranslation();
-  // a shallow pick re-renders only on these settings, not on the store's fast playback fields
-  const prefs = usePlayerStore(
-    useShallow((store) => ({
-      similar: store.autoplaySimilar,
-      onSimilar: store.setAutoplaySimilar,
-      doubleClick: store.trackDoubleClickBehavior,
-      onDoubleClick: store.setTrackDoubleClickBehavior,
-      startWith: store.defaultPlaybackContext,
-      onStartWith: store.setDefaultPlaybackContext,
-    })),
-  );
-  const autoplay = rowText(t, AUTOPLAY);
   const doubleClick = rowText(t, DOUBLE_CLICK);
-  const startContext = rowText(t, START_CONTEXT);
+  const value = usePlayerStore((store) => store.trackDoubleClickBehavior);
+  const onChange = usePlayerStore((store) => store.setTrackDoubleClickBehavior);
+
+  return (
+    <SettingGroup>
+      <SettingRow
+        {...doubleClick}
+        explained
+        control={<Segmented label={doubleClick.title} options={choices(t, DOUBLE_CLICK, ["play", "queue"] as const)} value={value} onChange={onChange} />}
+      />
+      <DefaultSpeedBlock />
+    </SettingGroup>
+  );
+}
+
+export function BetweenSongsSection(): JSX.Element {
+  const { t } = useTranslation();
+  const autoplay = rowText(t, AUTOPLAY);
+  const similar = usePlayerStore((store) => store.autoplaySimilar);
+  const onSimilar = usePlayerStore((store) => store.setAutoplaySimilar);
+
+  return (
+    <SettingGroup>
+      <SettingRow {...autoplay} explained control={<Switch checked={similar} label={autoplay.title} onChange={onSimilar} />} />
+      <CrossfadeBlock />
+      <KeepSpeedRow />
+    </SettingGroup>
+  );
+}
+
+export function LyricsSection(): JSX.Element {
+  const { t } = useTranslation();
   const lyricsHighlight = rowText(t, LYRICS_HIGHLIGHT);
   const visualPlayer = rowText(t, VISUAL_PLAYER);
   const visual = useVisualSettings();
@@ -48,35 +86,7 @@ export function PlaybackSection(): JSX.Element {
 
   return (
     <>
-      <SettingGroup label={t("settings.page.starts")}>
-        <SettingRow
-          {...startContext}
-          explained
-          control={
-            <Segmented
-              label={startContext.title}
-              options={choices(t, START_CONTEXT, ["resume", "empty"] as const)}
-              value={prefs.startWith}
-              onChange={prefs.onStartWith}
-            />
-          }
-        />
-      </SettingGroup>
-      <SettingGroup label={t("settings.page.listening")}>
-        <SettingRow
-          {...doubleClick}
-          control={
-            <Segmented
-              label={doubleClick.title}
-              options={choices(t, DOUBLE_CLICK, ["play", "queue"] as const)}
-              value={prefs.doubleClick}
-              onChange={prefs.onDoubleClick}
-            />
-          }
-        />
-        <SettingRow {...autoplay} explained control={<Switch checked={prefs.similar} label={autoplay.title} onChange={prefs.onSimilar} />} />
-      </SettingGroup>
-      <SettingGroup label={t("settings.page.lyrics")}>
+      <SettingGroup label={t("settings.page.karaoke")}>
         <SettingRow
           {...lyricsHighlight}
           explained
@@ -91,16 +101,13 @@ export function PlaybackSection(): JSX.Element {
         />
         <WordTimingRow />
         <LyricsModelRow />
+      </SettingGroup>
+      <SettingGroup label={t("settings.page.scene")}>
         <SettingRow
           {...visualPlayer}
           explained
           control={<Switch checked={visual.enabled} label={visualPlayer.title} onChange={(enabled) => setVisualSettings({ enabled })} />}
         />
-      </SettingGroup>
-      <SettingGroup label={t("settings.page.computer")}>
-        <CloseToTrayRow />
-        <MenuEntryRow />
-        <StatsPauseRow />
       </SettingGroup>
     </>
   );

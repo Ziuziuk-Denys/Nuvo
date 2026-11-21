@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import en from "../../../i18n/locales/en.json";
-import { SECTIONS } from "./sections";
+import { SECTION_ORDER, SECTIONS } from "./sections";
 import { SETTING_ITEMS } from "./settingItems";
 
 function has(key: string): boolean {
@@ -14,13 +14,12 @@ function has(key: string): boolean {
 
 describe("settings index", () => {
   it("lists rows of every searchable section, each under a real tab with texts that exist", () => {
-    expect(new Set(SETTING_ITEMS.map((item) => item.tabId))).toEqual(
-      new Set(["Playback", "Sound", "Appearance", "Customization", "Notch", "Youtube", "Lastfm", "Discord", "Network", "Storage", "About"]),
-    );
+    expect(new Set(SETTING_ITEMS.map((item) => item.tabId))).toEqual(new Set(SECTION_ORDER.filter((id) => id !== "Shortcuts")));
     for (const item of SETTING_ITEMS) {
       expect(SECTIONS[item.tabId], item.titleKey).toBeDefined();
       expect(has(item.titleKey), item.titleKey).toBe(true);
       if (item.descKey) expect(has(item.descKey), item.descKey).toBe(true);
+      if (item.findKey) expect(has(item.findKey), item.findKey).toBe(true);
     }
   });
 

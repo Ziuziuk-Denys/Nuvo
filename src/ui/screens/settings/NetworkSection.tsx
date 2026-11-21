@@ -19,7 +19,6 @@ import { formatReport } from "./report";
 import { serviceLines, serviceName } from "./serviceLines";
 import { Segmented, SettingBlock, SettingGroup, SettingRow } from "./controls";
 import styles from "./sections.module.css";
-import { ToolsGroup } from "./ToolsGroup";
 
 const MODES: readonly ProxyMode[] = ["system", "none", "manual"];
 
@@ -199,7 +198,6 @@ export function NetworkSection(): JSX.Element {
           }
         />
       </SettingGroup>
-      <ToolsGroup />
     </>
   );
 }

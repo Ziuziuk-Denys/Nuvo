@@ -53,7 +53,7 @@ export function ToolsGroup(): JSX.Element | null {
   };
 
   return (
-    <SettingGroup label={t(TITLE)}>
+    <SettingGroup>
       {TOOL_ROWS.map((name) => (
         <SettingRow
           key={name}

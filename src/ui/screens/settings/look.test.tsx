@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { DEFAULT_APPEARANCE, useAppearanceStore, type Appearance, type AppearancePatch } from "../../ports/appearance";
 import { useCustomizationStore } from "../../ports/settings";
 import { CustomCssBlock, ResetAppearanceRow } from "./CustomCssBlock";
-import { CustomizationSection, resetCustomization } from "./CustomizationSection";
+import { BackgroundSection, resetCustomization } from "./CustomizationSection";
 import { FontsGroup } from "./FontsGroup";
 import { SafeModeBanner } from "./SafeModeBanner";
 import { ThemeEditorHost } from "./ThemeEditor";
@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   mode: "light" as "light" | "dark",
   patches: [] as unknown[],
   closeSettings: () => undefined as void,
-  openSettingsSection: (_section: string) => undefined as void,
+  openSettingsSection: (_section: string, _focus?: string) => undefined as void,
   settingsOpen: false,
 }));
 
@@ -36,7 +36,7 @@ vi.mock("../../ports/navigation", () => {
       return mocks.settingsOpen;
     },
     closeSettings: () => mocks.closeSettings(),
-    openSettingsSection: (section: string) => mocks.openSettingsSection(section),
+    openSettingsSection: (section: string, focus?: string) => mocks.openSettingsSection(section, focus),
   };
   return { useModalStore: Object.assign((select: (s: typeof state) => unknown) => select(state), { getState: () => state }) };
 });
@@ -106,7 +106,7 @@ describe("theme editor", () => {
     expect(patch.active?.presetId).toBe(`custom:${patch.themes![0].id}`);
     expect(useAppearanceStore.getState().draft).toBeNull();
     expect(document.querySelector("aside[aria-label='appearance.editor.label']")).toBeNull();
-    expect(mocks.openSettingsSection).toHaveBeenCalledWith("appearance");
+    expect(mocks.openSettingsSection).toHaveBeenCalledWith("theme", undefined);
   });
 
   it("Escape closes the sheet, keeps the draft and Settings offers it again", async () => {
@@ -261,7 +261,7 @@ describe("custom CSS and safe mode", () => {
     act(() => useAppearanceStore.setState({ saved: { ...DEFAULT_APPEARANCE, customCss: { enabled: true, text: "a{}" } } }));
     expect(document.querySelector("[role=status][data-nuvo-guard]")).not.toBeNull();
     await click("appearance.safe.edit");
-    expect(mocks.openSettingsSection).toHaveBeenCalledWith("customization");
+    expect(mocks.openSettingsSection).toHaveBeenCalledWith("theme", "appearance.css.title");
     await click("appearance.safe.turn_on");
     expect(shell.setMainSetting).toHaveBeenCalledWith("appearance", { safe: false });
     expect(useAppearanceStore.getState().safe).toBe(false);
@@ -345,7 +345,7 @@ describe("wallpaper", () => {
   it("hands the picked file to main and shows the stored copy with its fit, blur and fade", async () => {
     useCustomizationStore.setState({ backgroundImage: null });
     shell.importWallpaper.mockResolvedValueOnce({ ok: true, name: "0b7c63c8-1d0a-4c3e-9f55-2a8e7d1b4c11.webm" });
-    render(<CustomizationSection />);
+    render(<BackgroundSection />);
     const clip = new File(["x"], "clip.webm", { type: "video/webm" });
     await pick(clip);
     expect(shell.importWallpaper).toHaveBeenCalledWith(clip);
@@ -361,7 +361,7 @@ describe("wallpaper", () => {
   it("says why a file was refused and keeps the current wallpaper", async () => {
     useCustomizationStore.setState({ backgroundImage: "data:image/png;base64,AA==" });
     shell.importWallpaper.mockResolvedValueOnce({ ok: false, error: "too_large" });
-    render(<CustomizationSection />);
+    render(<BackgroundSection />);
     await pick(new File(["x"], "huge.mp4", { type: "video/mp4" }));
     expect(document.body.textContent).toContain("settings.customization.file_too_large");
     expect(useCustomizationStore.getState().backgroundImage).toBe("data:image/png;base64,AA==");

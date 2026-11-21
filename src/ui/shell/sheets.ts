@@ -24,6 +24,7 @@ interface Sheets {
   searchOpen: boolean;
   settingsOpen: boolean;
   settingsSection: string | null;
+  settingsFocus: string | null;
   createPlaylistOpen: boolean;
   createPlaylistPendingTrack: Track | null;
   removeFromLibrary: RemoveFromLibraryTarget | null;
@@ -31,7 +32,7 @@ interface Sheets {
   openSearch(): void;
   closeSearch(): void;
   openSettings(): void;
-  openSettingsSection(section: string): void;
+  openSettingsSection(section: string, focus?: string): void;
   closeSettings(): void;
   openCreatePlaylist(initialUrl?: string, track?: Track | null): void;
   closeCreatePlaylist(): void;
@@ -45,15 +46,16 @@ export const useModalStore = create<Sheets>((set) => ({
   searchOpen: false,
   settingsOpen: false,
   settingsSection: null,
+  settingsFocus: null,
   createPlaylistOpen: false,
   createPlaylistPendingTrack: null,
   removeFromLibrary: null,
   removeFromPlaylist: null,
   openSearch: () => set({ searchOpen: true }),
   closeSearch: () => set({ searchOpen: false }),
-  openSettings: () => set({ settingsOpen: true, settingsSection: null, searchOpen: false }),
-  openSettingsSection: (settingsSection) => set({ settingsOpen: true, settingsSection, searchOpen: false }),
-  closeSettings: () => set({ settingsOpen: false, settingsSection: null }),
+  openSettings: () => set({ settingsOpen: true, settingsSection: null, settingsFocus: null, searchOpen: false }),
+  openSettingsSection: (settingsSection, focus) => set({ settingsOpen: true, settingsSection, settingsFocus: focus ?? null, searchOpen: false }),
+  closeSettings: () => set({ settingsOpen: false, settingsSection: null, settingsFocus: null }),
   openCreatePlaylist: (_initialUrl, track = null) => set({ createPlaylistOpen: true, createPlaylistPendingTrack: track }),
   closeCreatePlaylist: () => set({ createPlaylistOpen: false, createPlaylistPendingTrack: null }),
   openRemoveFromLibrary: (removeFromLibrary) => set({ removeFromLibrary }),

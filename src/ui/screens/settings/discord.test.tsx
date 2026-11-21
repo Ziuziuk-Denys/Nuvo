@@ -31,8 +31,8 @@ afterEach(() => {
 const toggle = () => host.querySelector<HTMLButtonElement>('[role="switch"]')!;
 
 describe("DiscordSection", () => {
-  it("is a section under Integrations", () => {
-    expect(SECTION_GROUPS.find((group) => group.labelKey === "settings.groups.integrations")?.ids).toContain("Discord");
+  it("is a section under Services", () => {
+    expect(SECTION_GROUPS.find((group) => group.labelKey === "settings.groups.services")?.ids).toContain("Discord");
   });
 
   it("shows the switch off by default and writes the choice", async () => {

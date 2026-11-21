@@ -68,6 +68,8 @@ export const ICON_NAMES = [
   "trash",
   "copy",
   "link",
+  "globe",
+  "tools",
   "pin",
   "unpin",
   "download",

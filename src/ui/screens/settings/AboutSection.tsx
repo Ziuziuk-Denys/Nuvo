@@ -41,18 +41,28 @@ export function AboutSection(): JSX.Element {
         </div>
       ) : null}
       <CommunityLinks />
-      <SettingGroup label={t("settings.page.updates")}>
-        <UpdateStatus />
+      <SettingGroup label={t("settings.page.help")}>
+        <HelpLinks />
+        <DonateLink />
+      </SettingGroup>
+    </>
+  );
+}
+
+export function UpdatesSection(): JSX.Element {
+  const { t } = useTranslation();
+  const version = useAppVersion();
+
+  return (
+    <>
+      <SettingGroup>
         <AutoUpdateRow />
+        <UpdateStatus />
       </SettingGroup>
       <SettingGroup label={t("ui.settings.whats_new.title", { version })}>
         <SettingBlock title={t("ui.settings.whats_new.link")} titleKey="ui.settings.whats_new.link" headless>
           <ReleaseNotes version={version} />
         </SettingBlock>
-      </SettingGroup>
-      <SettingGroup label={t("settings.page.help")}>
-        <HelpLinks />
-        <DonateLink />
       </SettingGroup>
     </>
   );

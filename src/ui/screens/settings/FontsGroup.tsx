@@ -148,7 +148,7 @@ export function FontsGroup(): JSX.Element {
   };
 
   return (
-    <SettingGroup label={t("appearance.fonts.title")}>
+    <SettingGroup>
       {slotRow("ui")}
       {slotRow("lyrics")}
       <SettingBlock title={t("appearance.fonts.ui_size")} titleKey="appearance.fonts.ui_size" descKey="appearance.fonts.title">

@@ -3,39 +3,51 @@ import { createPortal } from "react-dom";
 import { LAYER_ATTRIBUTE, pushLayer, trapTab, usePresence } from "../../components/layers";
 import { Lens } from "../../components/Lens";
 import { Icon } from "../../icons/Icon";
-import { HiddenList } from "../../recs/HiddenList";
 import { loadAllLocales, useTranslation } from "../../ports/i18n";
 import { useModalStore } from "../../ports/navigation";
-import { AboutSection } from "./AboutSection";
-import { AppearanceSection } from "./AppearanceSection";
+import { AboutSection, UpdatesSection } from "./AboutSection";
+import { LanguageSection, ThemeSection } from "./AppearanceSection";
 import { SearchQuery } from "./controls";
-import { CustomizationSection } from "./CustomizationSection";
+import { BackgroundSection, MotionSection, PlayerSection } from "./CustomizationSection";
 import { DiscordSection } from "./DiscordSection";
+import { FontsGroup } from "./FontsGroup";
 import { LastfmSection } from "./LastfmSection";
 import { NetworkSection } from "./NetworkSection";
 import { NotchSection } from "./NotchSection";
-import { PlaybackSection } from "./PlaybackSection";
+import { BetweenSongsSection, LyricsSection, PlaybackSection, StartupSection } from "./PlaybackSection";
+import { PrivacySection } from "./PrivacySection";
 import { ClearGlyph, SectionIcon } from "./SectionIcon";
 import { matchesQuery, matchingSections, sectionFromParam, SECTION_GROUPS, SECTION_ORDER, SECTIONS, type SectionId } from "./sections";
 import { ShortcutsSection } from "./ShortcutsSection";
-import { SoundSection } from "./SoundSection";
+import { SoundSection, SpatialSection } from "./SoundSection";
 import { StorageSection } from "./StorageSection";
+import { ToolsGroup } from "./ToolsGroup";
 import { YoutubeSection } from "./YoutubeSection";
 import styles from "./Settings.module.css";
 
 const CONTENT: Record<SectionId, () => JSX.Element | null> = {
+  Language: LanguageSection,
+  Startup: StartupSection,
+  Updates: UpdatesSection,
   Playback: PlaybackSection,
+  BetweenSongs: BetweenSongsSection,
   Sound: SoundSection,
-  Hidden: HiddenList,
-  Shortcuts: ShortcutsSection,
-  Appearance: AppearanceSection,
-  Customization: CustomizationSection,
+  Spatial: SpatialSection,
+  Lyrics: LyricsSection,
+  Theme: ThemeSection,
+  Fonts: FontsGroup,
+  Background: BackgroundSection,
+  Player: PlayerSection,
+  Motion: MotionSection,
   Notch: NotchSection,
+  Shortcuts: ShortcutsSection,
   Youtube: YoutubeSection,
   Lastfm: LastfmSection,
   Discord: DiscordSection,
+  Privacy: PrivacySection,
   Storage: StorageSection,
   Network: NetworkSection,
+  Tools: ToolsGroup,
   About: AboutSection,
 };
 
@@ -43,19 +55,23 @@ export function Settings(): JSX.Element | null {
   const { t } = useTranslation();
   const open = useModalStore((state) => state.settingsOpen);
   const requested = useModalStore((state) => state.settingsSection);
+  const focus = useModalStore((state) => state.settingsFocus);
   const closeSettings = useModalStore((state) => state.closeSettings);
   const phase = usePresence(open);
   const panelRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
-  const [chosen, setChosen] = useState<SectionId>("Playback");
+  const [chosen, setChosen] = useState<SectionId>("Language");
   const [query, setQuery] = useState("");
 
   const [adopted, setAdopted] = useState<string | null>(null);
-  const wanted = open ? requested : null;
+  const wanted = open ? `${requested ?? ""}|${focus ?? ""}` : null;
   if (wanted !== adopted) {
     setAdopted(wanted);
-    const id = sectionFromParam(wanted);
-    if (id) setChosen(id);
+    const id = sectionFromParam(open ? requested : null);
+    if (id) {
+      setChosen(id);
+      setQuery("");
+    }
   }
 
   const close = () => {
@@ -84,6 +100,19 @@ export function Settings(): JSX.Element | null {
     if (open) void loadAllLocales();
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !focus) return;
+    const row = panelRef.current?.querySelector<HTMLElement>(`[data-setting="${CSS.escape(focus)}"]`);
+    if (!row) return;
+    row.scrollIntoView({ block: "center" });
+    row.dataset.found = "";
+    const timer = setTimeout(() => delete row.dataset.found, 1600);
+    return () => {
+      clearTimeout(timer);
+      delete row.dataset.found;
+    };
+  }, [open, adopted, focus]);
+
   const searching = query.trim() !== "";
   const matches = useMemo(() => (searching ? matchingSections(query) : null), [searching, query]);
   const groups = SECTION_GROUPS.map((group) => ({ ...group, ids: matches ? group.ids.filter((id) => matches.has(id)) : group.ids })).filter(
@@ -91,7 +120,7 @@ export function Settings(): JSX.Element | null {
   );
   const active = matches && !matches.has(chosen) ? (SECTION_ORDER.find((id) => matches.has(id)) ?? chosen) : chosen;
   const visible = groups.flatMap((group) => group.ids);
-  const rowQuery = matchesQuery(query, [SECTIONS[active].labelKey, SECTIONS[active].descKey]) ? "" : query;
+  const rowQuery = matchesQuery(query, [SECTIONS[active].labelKey, SECTIONS[active].descKey, SECTIONS[active].findKey]) ? "" : query;
 
   const onNavKey = (event: KeyboardEvent<HTMLElement>) => {
     const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
@@ -147,8 +176,8 @@ export function Settings(): JSX.Element | null {
               <p className={styles.noMatch}>{t("ui.settings.no_match", { query: query.trim() })}</p>
             ) : (
               groups.map((group) => (
-                <div key={group.labelKey} className={styles.group}>
-                  <p className={styles.groupLabel}>{t(group.labelKey)}</p>
+                <div key={group.ids[0]} className={styles.group}>
+                  {group.labelKey ? <p className={styles.groupLabel}>{t(group.labelKey)}</p> : null}
                   <div className={styles.groupItems}>
                     {group.ids.map((id) => (
                       <button

@@ -67,7 +67,11 @@ export function KeyProtectionRow(): JSX.Element | null {
 
   const sealed = protection === "passphrase";
   return (
-    <SettingBlock title={t("ui.settings.key.title")} description={t(sealed ? "ui.settings.key.sealed" : "ui.settings.key.file")}>
+    <SettingBlock
+      title={t("ui.settings.key.title")}
+      titleKey="ui.settings.key.title"
+      description={t(sealed ? "ui.settings.key.sealed" : "ui.settings.key.file")}
+    >
       {first && !sealed ? (
         <p className={styles.note} role="alert">
           {t("ui.settings.key.warning")}

@@ -14,16 +14,22 @@ const mocks = vi.hoisted(() => {
     return Object.assign(hook, { getState: () => state });
   }
   const EN: Record<string, string> = {
-    "settings.tabs.playback": "Playback",
-    "settings.tabs.shortcuts": "Shortcuts",
-    "settings.tabs.appearance": "Appearance",
-    "settings.page.background": "Background and motion",
-    "settings.tabs.notch": "Notch",
-    "settings.tabs.youtube": "YouTube",
-    "settings.tabs.storage": "Cache & Storage",
-    "settings.tabs.about": "About",
-    "ui.settings.section_sound": "Sound",
+    "settings.sections.language.title": "Language",
+    "settings.sections.playback.title": "Playback",
+    "settings.sections.between_songs.title": "Between songs",
+    "settings.sections.sound.title": "Sound",
+    "settings.sections.spatial.title": "Spatial sound",
+    "settings.sections.lyrics.title": "Lyrics",
+    "settings.sections.theme.title": "Theme",
+    "settings.sections.fonts.title": "Fonts",
+    "settings.sections.shortcuts.title": "Shortcuts",
+    "settings.sections.notch.title": "Notch",
+    "settings.sections.youtube.title": "YouTube",
+    "settings.sections.privacy.title": "Privacy",
+    "settings.sections.storage.title": "Storage",
+    "settings.sections.about.title": "About Nuvo",
     "ui.recs.hidden.section": "Hidden music",
+    "settings.find.equalizer": "eq, bass, treble",
     "ui.recs.hidden.undo": "Show again",
     "settings.theme.description": "Choose the overall appearance of the app.",
     "settings.about.tagline": "Modern desktop music streaming player",
@@ -62,7 +68,7 @@ const mocks = vi.hoisted(() => {
     EN,
     tempo,
     hidden,
-    modal: store({ settingsOpen: true, settingsSection: null as string | null, closeSettings: vi.fn() }),
+    modal: store({ settingsOpen: true, settingsSection: null as string | null, settingsFocus: null as string | null, closeSettings: vi.fn() }),
     player: store({
       autoplaySimilar: false,
       setAutoplaySimilar: vi.fn(),
@@ -311,6 +317,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.modal.getState().settingsOpen = true;
   mocks.modal.getState().settingsSection = null;
+  mocks.modal.getState().settingsFocus = null;
   mocks.custom.getState().preset = "nuvo";
   mocks.youtube.signedIn = false;
   mocks.youtube.account = null;
@@ -324,26 +331,40 @@ afterEach(() => {
 });
 
 describe("settings frame", () => {
-  it("opens on Playback, and on the section the palette or the route asks for", () => {
+  it("opens on Language, and on the section the palette or the route asks for", () => {
     render();
-    expect(heading()).toBe("Playback");
+    expect(heading()).toBe("Language");
     act(() => root.unmount());
     root = createRoot(host);
     mocks.modal.getState().settingsSection = "about";
     render();
-    expect(heading()).toBe("About");
+    expect(heading()).toBe("About Nuvo");
   });
 
   it("switches sections from the list, and with the arrow keys", () => {
     render();
-    openSection("Appearance");
-    expect(heading()).toBe("Appearance");
+    openSection("Theme");
+    expect(heading()).toBe("Theme");
     expect(document.querySelector("[aria-pressed][data-preset=amber]")).not.toBeNull();
     key(document.activeElement!, { key: "ArrowDown" });
-    expect(heading()).toBe("Background and motion");
+    expect(heading()).toBe("Fonts");
     key(document.activeElement!, { key: "ArrowUp" });
     key(document.activeElement!, { key: "ArrowUp" });
-    expect(heading()).toBe("Shortcuts");
+    expect(heading()).toBe("Lyrics");
+  });
+
+  it("keeps old links working and marks the setting the palette asked for", () => {
+    mocks.modal.getState().settingsSection = "customization";
+    render();
+    expect(heading()).toBe("settings.sections.background.title");
+    act(() => root.unmount());
+    root = createRoot(host);
+    mocks.modal.getState().settingsSection = "Sound";
+    mocks.modal.getState().settingsFocus = "ui.settings.normalize";
+    Element.prototype.scrollIntoView = vi.fn();
+    render();
+    expect(document.querySelector("[data-found]")?.getAttribute("data-setting")).toBe("ui.settings.normalize");
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ block: "center" });
   });
 
   it("closes on Escape and with the close button", () => {
@@ -369,10 +390,18 @@ describe("settings search", () => {
     render();
     type(document.querySelector<HTMLInputElement>("input[type=text]")!, "accent");
     const tabs = [...document.querySelectorAll("[role=tab]")].map((tab) => tab.textContent?.trim());
-    expect(tabs).toEqual(["Appearance"]);
-    expect(heading()).toBe("Appearance");
+    expect(tabs).toEqual(["Theme"]);
+    expect(heading()).toBe("Theme");
     expect(switchNamed("Accent from the cover")).not.toBeNull();
     expect(document.querySelector("[data-preset]")).toBeNull();
+  });
+
+  it("finds a setting by another word for it", () => {
+    render();
+    type(document.querySelector<HTMLInputElement>("input[type=text]")!, "bass");
+    expect([...document.querySelectorAll("[role=tab]")].map((tab) => tab.textContent?.trim())).toEqual(["Sound"]);
+    expect(switchNamed("Equalizer")).not.toBeNull();
+    expect(switchNamed("Even out loudness")).toBeNull();
   });
 
   it("says so when nothing matches", () => {
@@ -391,7 +420,7 @@ describe("each setting writes through its port", () => {
     mocks.hidden.undo.mockResolvedValue(true);
     mocks.modal.getState().settingsSection = "hidden";
     await act(async () => root.render(<Settings />));
-    expect(heading()).toBe("Hidden music");
+    expect(heading()).toBe("Privacy");
     expect(document.body.textContent).toContain("Roygbiv");
     await act(async () => byText("Show again").click());
     expect(mocks.hidden.undo).toHaveBeenCalledWith(7);
@@ -400,8 +429,14 @@ describe("each setting writes through its port", () => {
 
   it("playback", () => {
     render();
+    openSection("Between songs");
     click(switchNamed("Autoplay similar tracks"));
     expect(mocks.player.getState().setAutoplaySimilar).toHaveBeenCalledWith(true);
+    click(switchNamed("Keep speed for next tracks"));
+    expect(mocks.player.getState().setKeepSpeedAcrossTracks).toHaveBeenCalledWith(false);
+    openSection("Playback");
+    click(byText("Slowed"));
+    expect(mocks.sound.getState().setGlobalTempo).toHaveBeenCalledWith(mocks.tempo.slowed);
     click(byText("Add to queue"));
     expect(mocks.player.getState().setTrackDoubleClickBehavior).toHaveBeenCalledWith("queue");
   });
@@ -413,10 +448,7 @@ describe("each setting writes through its port", () => {
     expect(mocks.sound.getState().setEnabled).toHaveBeenCalledWith(true);
     click(switchNamed("Even out loudness"));
     expect(mocks.sound.getState().setNormalization).toHaveBeenCalledWith("track");
-    click(switchNamed("Keep speed for next tracks"));
-    expect(mocks.player.getState().setKeepSpeedAcrossTracks).toHaveBeenCalledWith(false);
-    click(byText("Slowed"));
-    expect(mocks.sound.getState().setGlobalTempo).toHaveBeenCalledWith(mocks.tempo.slowed);
+    openSection("Spatial sound");
     expect(document.body.textContent).toContain("sound.moving.hint");
     click(switchNamed("sound.moving.title"));
     expect(mocks.sound.getState().setMoving).toHaveBeenCalledWith({ on: true });
@@ -426,8 +458,8 @@ describe("each setting writes through its port", () => {
     expect(mocks.sound.getState().setMoving).toHaveBeenCalledWith({ speed: "fast" });
   });
 
-  it("appearance: preset, mode, accent and language", () => {
-    mocks.modal.getState().settingsSection = "Appearance";
+  it("theme and language: preset, mode, accent and language", () => {
+    mocks.modal.getState().settingsSection = "Theme";
     render();
     click(document.querySelector("[data-preset=amber]")!);
     expect(mocks.custom.getState().setPreset).toHaveBeenCalledWith("amber");
@@ -435,6 +467,7 @@ describe("each setting writes through its port", () => {
     expect(mocks.custom.getState().setAccentFromCover).toHaveBeenCalledWith(true);
     click(byText("Dark"));
     expect(mocks.setThemeMode).toHaveBeenCalledWith("dark");
+    openSection("Language");
     click(document.querySelector("button[lang=ru]")!);
     expect(mocks.setLocale).toHaveBeenCalledWith("ru");
   });

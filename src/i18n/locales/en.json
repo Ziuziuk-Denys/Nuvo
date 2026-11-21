@@ -942,7 +942,6 @@
       "default_speed_desc": "The speed every song starts at",
       "eq_desc": "Presets and bands for the whole sound",
       "keep_speed": "Keep speed between songs",
-      "network_desc": "Proxy and connection checks",
       "no_match": "Nothing matches “{query}”",
       "normalize": "Even out volume",
       "normalize_desc": "Brings loud and quiet songs to a similar level",
@@ -971,9 +970,6 @@
       "reset": "Reset",
       "reset_shortcuts_text": "Every shortcut returns to its default key.",
       "reset_shortcuts_title": "Reset shortcuts",
-      "section_network": "Network",
-      "section_sound": "Sound",
-      "sound_desc": "Quality, volume, speed and equalizer",
       "storage_audio": "Saved audio",
       "storage_covers": "Covers",
       "storage_web": "Web data",
@@ -1013,8 +1009,8 @@
         "failed": "The passphrase could not be saved. Try again."
       },
       "auto_update": {
-        "description": "Nuvo looks for new versions every few hours, downloads them in the background and installs them when you quit",
-        "description_notify": "Nuvo looks for new versions every few hours and shows them here",
+        "description": "Nuvo checks at every launch and every few hours, downloads new versions in the background and installs them when you quit",
+        "description_notify": "Nuvo checks at every launch and every few hours and offers new versions",
         "title": "Update automatically"
       },
       "update_available": "Version {version} is available",
@@ -1635,7 +1631,7 @@
       }
     },
     "css": {
-      "title": "Advanced: custom CSS",
+      "title": "Custom CSS",
       "warning": "For people who write CSS. It can break how Nuvo looks. Hold Shift while starting Nuvo to switch it off.",
       "show": "Show",
       "hide": "Hide",
@@ -1682,7 +1678,9 @@
       "banner": "Appearance is in safe mode. Your custom theme, fonts and CSS are saved but switched off",
       "turn_on": "Turn them back on",
       "edit": "Edit...",
-      "reset": "Reset appearance"
+      "reset": "Turn on",
+      "reset_title": "Plain look for now",
+      "reset_desc": "Switches off your theme, fonts and custom CSS until you turn them back on. Nothing is deleted."
     }
   },
   "artist": {
@@ -1754,29 +1752,15 @@
     "search_placeholder": "Search settings",
     "groups": {
       "application": "Application",
-      "integrations": "Integrations",
-      "interface": "Interface",
-      "player": "Player"
-    },
-    "tabs": {
-      "about": "About",
-      "appearance": "Appearance",
-      "notch": "Notch",
-      "playback": "Playback",
-      "shortcuts": "Shortcuts",
-      "storage": "Storage",
-      "youtube": "YouTube",
-      "lastfm": "Last.fm",
-      "discord": "Discord"
+      "music": "Music",
+      "look": "Look",
+      "services": "Services"
     },
     "about": {
       "nuvo": "Nuvo",
       "tagline": "A music player for the songs you love",
       "edition_plain": "Standard edition",
       "edition_encrypted": "Encrypted edition"
-    },
-    "playback": {
-      "description": "How songs start and what happens next"
     },
     "autoplay_similar": {
       "title": "Keep playing similar songs",
@@ -1851,7 +1835,7 @@
       "invalid_file_type": "Nuvo can't use this file. Choose a PNG, JPEG, WebP, AVIF, GIF, MP4 or WebM",
       "save_error": "Nuvo couldn't save its copy. Free some disk space and try again",
       "media_error": "This file doesn't play here. Save it as MP4 (H.264) or WebM and choose it again",
-      "reset_all": "Reset customization",
+      "reset_all": "Reset the whole look",
       "reset_all_desc": "Returns the wallpaper, theme, fonts and custom CSS to their defaults. Your saved themes and CSS stay for later"
     },
     "language": {
@@ -1950,7 +1934,6 @@
       "dark": "Dark"
     },
     "shortcuts": {
-      "description": "Keys for playback and the app",
       "tab_main_app": "In the app",
       "tab_global": "Everywhere",
       "scope_main_app": "Works while Nuvo is focused",
@@ -1981,7 +1964,6 @@
       "recognize": "Recognize a song"
     },
     "storage": {
-      "description": "What Nuvo keeps on this device",
       "usage_title": "Used",
       "cache_limit": "Cache limit",
       "cache_limit_desc": "Old saved audio is removed when the cache grows past this size",
@@ -1996,7 +1978,6 @@
       "open_folder": "Open folder"
     },
     "youtube": {
-      "description": "Your YouTube Music account",
       "signed_out_title": "Not signed in",
       "signed_out_description": "Sign in to play with your account and see your playlists",
       "sign_in": "Sign in",
@@ -2016,7 +1997,6 @@
       }
     },
     "lastfm": {
-      "description": "Send what you play to your Last.fm profile",
       "signed_out_title": "Not connected",
       "signed_out_description": "Save your API key, then connect your account",
       "approve_hint": "Approve Nuvo on the Last.fm page, then press Done",
@@ -2045,7 +2025,6 @@
       "unreachable": "Couldn't reach Last.fm. Check the connection and try again."
     },
     "discord": {
-      "description": "Show the song you play on your Discord profile",
       "enabled": {
         "title": "Show what I'm listening to in Discord",
         "description": "On by default. The Discord desktop app must be running, and only your Discord friends see it. For a song with no web cover, Nuvo asks Apple Music and Deezer for one by artist and title."
@@ -2068,23 +2047,11 @@
       "fps": "{fps} fps"
     },
     "page": {
-      "appearance": "Theme, colours, fonts and language",
-      "background": "Background and motion",
-      "background_desc": "What sits behind the app and how it moves",
-      "starts": "When Nuvo starts",
-      "listening": "While you listen",
-      "lyrics": "Lyrics",
-      "computer": "On this computer",
       "output": "Output",
       "level": "Volume and tone",
-      "between": "Between songs",
-      "speed": "Speed",
-      "theme": "Theme",
       "mode": "Light and dark",
       "colour": "Colour",
       "advanced": "Advanced",
-      "wallpaper": "Background",
-      "motion": "Motion",
       "notch_when": "When it shows",
       "notch_behaviour": "Behaviour",
       "notch_screen": "Placement",
@@ -2095,9 +2062,10 @@
       "saving": "Saving songs",
       "connection": "Connection",
       "trouble": "When something doesn't load",
-      "updates": "Updates",
       "help": "Help",
-      "moving": "Space"
+      "window": "Window",
+      "karaoke": "Karaoke",
+      "scene": "Scene"
     },
     "visual_player": {
       "title": "Scene",
@@ -2109,6 +2077,164 @@
       "auto": "Auto",
       "light": "Light, 82 MB",
       "full": "Full, 264 MB"
+    },
+    "sections": {
+      "language": {
+        "title": "Language",
+        "description": "Menus, buttons and messages",
+        "find": "locale, translation, english, russian, interface"
+      },
+      "startup": {
+        "title": "Startup and window",
+        "description": "What Nuvo opens with and what closing the window does",
+        "find": "launch, start, tray, autostart, close, quit, background"
+      },
+      "updates": {
+        "title": "Updates",
+        "description": "New versions of Nuvo and what changed",
+        "find": "update, version, upgrade, release, changelog"
+      },
+      "playback": {
+        "title": "Playback",
+        "description": "Clicks on songs and the starting speed",
+        "find": "play, click, double click, tempo, speed"
+      },
+      "between_songs": {
+        "title": "Between songs",
+        "description": "What happens when a song ends",
+        "find": "autoplay, radio, similar, crossfade, fade, gapless, queue end"
+      },
+      "sound": {
+        "title": "Sound",
+        "description": "Output, quality, equalizer and volume",
+        "find": "audio, output, device, headphones, eq, equalizer, bass, loudness, normalize"
+      },
+      "spatial": {
+        "title": "Spatial sound",
+        "description": "Music that moves around your head",
+        "find": "8d, 4d, 16d, surround, 3d, headphones"
+      },
+      "lyrics": {
+        "title": "Lyrics",
+        "description": "The karaoke view and Scene",
+        "find": "karaoke, words, text, highlight, whisper, scene, visualizer"
+      },
+      "theme": {
+        "title": "Theme",
+        "description": "Colours of the app, light or dark, and custom CSS",
+        "find": "color, colour, dark mode, light mode, preset, css"
+      },
+      "fonts": {
+        "title": "Fonts",
+        "description": "Typefaces and text size",
+        "find": "font, typeface, text size, zoom, scale"
+      },
+      "background": {
+        "title": "Background",
+        "description": "A picture or video behind every screen",
+        "find": "wallpaper, image, photo, gif, video, backdrop"
+      },
+      "player": {
+        "title": "Player",
+        "description": "How the player bar looks",
+        "find": "player bar, controls, buttons, glow"
+      },
+      "motion": {
+        "title": "Motion",
+        "description": "Animation, glow and blur",
+        "find": "animation, effects, blur, fps, battery, performance, reduce motion"
+      },
+      "notch": {
+        "title": "Notch",
+        "description": "A small player at the top of the screen",
+        "find": "mini player, island, overlay, top bar, panel, waybar, gnome"
+      },
+      "shortcuts": {
+        "title": "Shortcuts",
+        "description": "Keys for every action",
+        "find": "hotkeys, keyboard, keybindings, keys"
+      },
+      "youtube": {
+        "title": "YouTube",
+        "description": "Your YouTube account in Nuvo",
+        "find": "google, account, sign in, playlists"
+      },
+      "lastfm": {
+        "title": "Last.fm",
+        "description": "Send what you play to Last.fm",
+        "find": "scrobble, scrobbling, lastfm, history"
+      },
+      "discord": {
+        "title": "Discord",
+        "description": "Show what you play in Discord",
+        "find": "rich presence, status, activity"
+      },
+      "privacy": {
+        "title": "Privacy",
+        "description": "Listening history, hidden music and the library key",
+        "find": "statistics, history, hidden, not interested, passphrase, password, encryption"
+      },
+      "storage": {
+        "title": "Storage",
+        "description": "Space on disk and how songs are saved",
+        "find": "cache, disk, space, clear, download, mp3, saved"
+      },
+      "network": {
+        "title": "Network",
+        "description": "Offline mode, proxy and connection checks",
+        "find": "internet, offline, proxy, vpn, socks, connection"
+      },
+      "tools": {
+        "title": "Tools",
+        "description": "Helper programs Nuvo downloads by itself",
+        "find": "yt-dlp, ffmpeg, deno, downloader"
+      },
+      "about": {
+        "title": "About Nuvo",
+        "description": "Version, community and help",
+        "find": "version, help, support, donate, bug, community"
+      }
+    },
+    "find": {
+      "language": "locale, translation",
+      "startup": "launch, open",
+      "tray": "tray, background, close, quit, minimize",
+      "menu_entry": "app menu, launcher, desktop entry, shortcut",
+      "updates": "auto update, upgrade",
+      "whats_new": "changelog, release notes",
+      "click": "double click, single click",
+      "speed": "tempo, slowed, nightcore",
+      "autoplay": "radio, similar, queue end",
+      "crossfade": "fade, gapless, transition",
+      "output": "device, headphones, speakers",
+      "quality": "bitrate, lossless, hq",
+      "equalizer": "eq, bass, treble",
+      "volume": "loudness, normalize, clipping",
+      "spatial": "8d, surround, 3d",
+      "karaoke": "words, sync, timing",
+      "scene": "visualizer, animation",
+      "theme": "color, colour, preset",
+      "dark": "dark mode, light mode, night",
+      "accent": "color from cover",
+      "css": "style, stylesheet",
+      "fonts": "typeface, text size",
+      "wallpaper": "image, photo, gif, video",
+      "player": "player bar, buttons, centre, center",
+      "glow": "cover light, ambient",
+      "motion": "animation, blur, fps, battery",
+      "notch": "mini player, island, overlay",
+      "monitor": "display, screen",
+      "panel": "gnome, waybar, top bar",
+      "scrobble": "scrobbling, lastfm",
+      "discord": "rich presence, status, activity",
+      "history": "statistics, stats, incognito",
+      "hidden": "not interested, blocked, disliked",
+      "cache": "disk, space, clear",
+      "save_format": "download, mp3, saved songs",
+      "offline": "no internet, airplane",
+      "proxy": "vpn, socks, http",
+      "tools": "yt-dlp, ffmpeg, deno",
+      "help": "bug, issue, support, feedback"
     }
   },
   "visual": {

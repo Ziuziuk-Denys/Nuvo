@@ -100,9 +100,9 @@ export function ResetAppearanceRow(): JSX.Element {
   const safe = useAppearanceStore((s) => s.safe);
   return (
     <SettingRow
-      title={t("appearance.safe.reset")}
-      titleKey="appearance.safe.reset"
-      description={safe ? t("appearance.safe.banner") : undefined}
+      title={t("appearance.safe.reset_title")}
+      titleKey="appearance.safe.reset_title"
+      description={t(safe ? "appearance.safe.banner" : "appearance.safe.reset_desc")}
       explained
       control={
         <button

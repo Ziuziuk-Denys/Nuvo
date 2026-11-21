@@ -166,21 +166,12 @@ function DropTarget({ t, busy, onPick, onFile }: { t: TFunction; busy: boolean; 
   );
 }
 
-export function CustomizationSection(): JSX.Element {
+export function BackgroundSection(): JSX.Element {
   const { t } = useTranslation();
   const [note, setNote] = useState<string | null>(null);
   const { wallpaper, setWallpaper } = useCustomizationStore(
     useShallow((store) => ({ wallpaper: store.backgroundImage, setWallpaper: store.setBackgroundImage })),
   );
-  const coverGlow = useCustomizationStore((state) => state.coverGlow);
-  const setCoverGlow = useCustomizationStore((state) => state.setCoverGlow);
-  const playerControls = useCustomizationStore((state) => state.playerControls);
-  const setPlayerControls = useCustomizationStore((state) => state.setPlayerControls);
-  const reduceEffects = useEffectsStore((state) => state.reduce);
-  const setReduceEffects = useEffectsStore((state) => state.setReduce);
-  const fps = useEffectsStore((state) => state.fps);
-  const setFps = useEffectsStore((state) => state.setFps);
-  const hasWallpaper = wallpaper !== null;
   const [busy, setBusy] = useState(false);
   const picker = useRef<HTMLInputElement | null>(null);
   const openPicker = () => picker.current?.click();
@@ -210,97 +201,121 @@ export function CustomizationSection(): JSX.Element {
   };
 
   return (
-    <>
-      <SettingGroup label={t("settings.page.wallpaper")}>
-        <input
-          ref={picker}
-          type="file"
-          accept={ACCEPTED}
-          hidden
-          onChange={(event) => {
-            const input = event.currentTarget;
-            accept(input.files?.[0]);
-            input.value = "";
-          }}
-        />
-        <SettingBlock
-          titleKey={KEYS + "wallpaper_title"}
-          descKey={KEYS + "wallpaper_description"}
-          title={t(KEYS + "wallpaper_title")}
-          description={t(KEYS + "wallpaper_description")}
-        >
-          {wallpaper ? (
-            <CurrentWallpaper
-              t={t}
-              image={wallpaper}
-              busy={busy}
-              onPick={openPicker}
-              onFile={accept}
-              onRemove={remove}
-              onBroken={() => setNote(t(KEYS + "media_error"))}
-            />
-          ) : (
-            <DropTarget t={t} busy={busy} onPick={openPicker} onFile={accept} />
-          )}
-          {note ? (
-            <p className={styles.note} role="status">
-              {note}
-            </p>
-          ) : null}
-        </SettingBlock>
-        {wallpaper ? <WallpaperRows t={t} /> : null}
-        <SettingRow
-          title={t("settings.cover_glow.title")}
-          description={t(hasWallpaper ? "settings.cover_glow.disabled_for_wallpaper" : "settings.cover_glow.description")}
-          titleKey="settings.cover_glow.title"
-          descKey="settings.cover_glow.description"
-          explained
-          control={<Switch label={t("settings.cover_glow.title")} checked={coverGlow && !hasWallpaper} disabled={hasWallpaper} onChange={setCoverGlow} />}
-        />
-        <SettingRow
-          title={t("settings.player_controls.title")}
-          description={t("settings.player_controls.description")}
-          titleKey="settings.player_controls.title"
-          descKey="settings.player_controls.description"
-          control={
-            <Segmented
-              label={t("settings.player_controls.title")}
-              options={[
-                { value: "centre", label: t("settings.player_controls.centre") },
-                { value: "side", label: t("settings.player_controls.side") },
-              ]}
-              value={playerControls}
-              onChange={setPlayerControls}
-            />
-          }
-        />
-      </SettingGroup>
-      <SettingGroup label={t("settings.page.motion")}>
-        <SettingRow
-          title={t("settings.reduce_effects.title")}
-          description={t("settings.reduce_effects.description")}
-          titleKey="settings.reduce_effects.title"
-          descKey="settings.reduce_effects.description"
-          explained
-          control={<Switch label={t("settings.reduce_effects.title")} checked={reduceEffects} onChange={setReduceEffects} />}
-        />
-        <SettingRow
-          title={t("settings.frame_rate.title")}
-          description={t("settings.frame_rate.description")}
-          titleKey="settings.frame_rate.title"
-          descKey="settings.frame_rate.description"
-          explained
-          control={
-            <Segmented
-              label={t("settings.frame_rate.title")}
-              options={FRAME_CAPS.map((fps) => ({ value: String(fps), label: t("settings.frame_rate.fps", { fps }) }))}
-              value={String(fps)}
-              onChange={(value) => setFps(Number(value) as FrameCap)}
-            />
-          }
-        />
-      </SettingGroup>
-    </>
+    <SettingGroup>
+      <input
+        ref={picker}
+        type="file"
+        accept={ACCEPTED}
+        hidden
+        onChange={(event) => {
+          const input = event.currentTarget;
+          accept(input.files?.[0]);
+          input.value = "";
+        }}
+      />
+      <SettingBlock
+        titleKey={KEYS + "wallpaper_title"}
+        descKey={KEYS + "wallpaper_description"}
+        title={t(KEYS + "wallpaper_title")}
+        description={t(KEYS + "wallpaper_description")}
+      >
+        {wallpaper ? (
+          <CurrentWallpaper
+            t={t}
+            image={wallpaper}
+            busy={busy}
+            onPick={openPicker}
+            onFile={accept}
+            onRemove={remove}
+            onBroken={() => setNote(t(KEYS + "media_error"))}
+          />
+        ) : (
+          <DropTarget t={t} busy={busy} onPick={openPicker} onFile={accept} />
+        )}
+        {note ? (
+          <p className={styles.note} role="status">
+            {note}
+          </p>
+        ) : null}
+      </SettingBlock>
+      {wallpaper ? <WallpaperRows t={t} /> : null}
+    </SettingGroup>
+  );
+}
+
+export function PlayerSection(): JSX.Element {
+  const { t } = useTranslation();
+  const hasWallpaper = useCustomizationStore((state) => state.backgroundImage !== null);
+  const coverGlow = useCustomizationStore((state) => state.coverGlow);
+  const setCoverGlow = useCustomizationStore((state) => state.setCoverGlow);
+  const playerControls = useCustomizationStore((state) => state.playerControls);
+  const setPlayerControls = useCustomizationStore((state) => state.setPlayerControls);
+
+  return (
+    <SettingGroup>
+      <SettingRow
+        title={t("settings.cover_glow.title")}
+        description={t(hasWallpaper ? "settings.cover_glow.disabled_for_wallpaper" : "settings.cover_glow.description")}
+        titleKey="settings.cover_glow.title"
+        descKey="settings.cover_glow.description"
+        explained
+        control={<Switch label={t("settings.cover_glow.title")} checked={coverGlow && !hasWallpaper} disabled={hasWallpaper} onChange={setCoverGlow} />}
+      />
+      <SettingRow
+        title={t("settings.player_controls.title")}
+        description={t("settings.player_controls.description")}
+        titleKey="settings.player_controls.title"
+        descKey="settings.player_controls.description"
+        explained
+        control={
+          <Segmented
+            label={t("settings.player_controls.title")}
+            options={[
+              { value: "centre", label: t("settings.player_controls.centre") },
+              { value: "side", label: t("settings.player_controls.side") },
+            ]}
+            value={playerControls}
+            onChange={setPlayerControls}
+          />
+        }
+      />
+    </SettingGroup>
+  );
+}
+
+export function MotionSection(): JSX.Element {
+  const { t } = useTranslation();
+  const reduceEffects = useEffectsStore((state) => state.reduce);
+  const setReduceEffects = useEffectsStore((state) => state.setReduce);
+  const fps = useEffectsStore((state) => state.fps);
+  const setFps = useEffectsStore((state) => state.setFps);
+
+  return (
+    <SettingGroup>
+      <SettingRow
+        title={t("settings.reduce_effects.title")}
+        description={t("settings.reduce_effects.description")}
+        titleKey="settings.reduce_effects.title"
+        descKey="settings.reduce_effects.description"
+        explained
+        control={<Switch label={t("settings.reduce_effects.title")} checked={reduceEffects} onChange={setReduceEffects} />}
+      />
+      <SettingRow
+        title={t("settings.frame_rate.title")}
+        description={t("settings.frame_rate.description")}
+        titleKey="settings.frame_rate.title"
+        descKey="settings.frame_rate.description"
+        explained
+        control={
+          <Segmented
+            label={t("settings.frame_rate.title")}
+            options={FRAME_CAPS.map((fps) => ({ value: String(fps), label: t("settings.frame_rate.fps", { fps }) }))}
+            value={String(fps)}
+            onChange={(value) => setFps(Number(value) as FrameCap)}
+          />
+        }
+      />
+    </SettingGroup>
   );
 }
 

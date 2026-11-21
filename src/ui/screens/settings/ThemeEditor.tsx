@@ -62,7 +62,7 @@ export function ThemeEditorHost(): JSX.Element | null {
 
 function closeEditor(): void {
   useThemeEditor.getState().hide();
-  useModalStore.getState().openSettingsSection("appearance");
+  useModalStore.getState().openSettingsSection("theme");
 }
 
 function ThemeEditor(): JSX.Element | null {

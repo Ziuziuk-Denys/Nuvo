@@ -57,8 +57,8 @@ function type(input: HTMLInputElement, value: string): void {
 }
 
 describe("LastfmSection", () => {
-  it("is a section of its own under Integrations", () => {
-    expect(SECTION_GROUPS.find((group) => group.labelKey === "settings.groups.integrations")?.ids).toContain("Lastfm");
+  it("is a section of its own under Services", () => {
+    expect(SECTION_GROUPS.find((group) => group.labelKey === "settings.groups.services")?.ids).toContain("Lastfm");
   });
 
   it("asks for the key first, then saves it and allows Connect", async () => {

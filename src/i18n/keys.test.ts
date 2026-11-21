@@ -9,6 +9,8 @@ import en from "./locales/en.json";
 import ru from "./locales/ru.json";
 import { ENTRY_SORTS, LIBRARY_TABS, LOCAL_SORTS } from "../ui/screens/library/libraryModel";
 import { flattenTexts } from "./text";
+import { SECTIONS } from "../ui/screens/settings/sections";
+import { SETTING_ITEMS } from "../ui/screens/settings/settingItems";
 
 const SRC = path.resolve(__dirname, "..");
 const ROOTS = [
@@ -44,6 +46,10 @@ const DYNAMIC: Record<string, string[]> = {
   "visual.studio.rail_": ["scenes", "background", "atmosphere", "centrepiece", "lyrics", "media"],
   "visual.editor.": ["background", "atmosphere", "centrepiece", "lyrics", "calm", "full", "busy", "busy_note", "weather_note", "heavy_note"],
   "settings.about.edition_": ["plain", "encrypted"],
+  "settings.find.": [...new Set(SETTING_ITEMS.flatMap((item) => (item.findKey ? [item.findKey.slice("settings.find.".length)] : [])))],
+  "settings.sections.": Object.values(SECTIONS).flatMap((section) =>
+    [section.labelKey, section.descKey, section.findKey].map((key) => key.slice("settings.sections.".length)),
+  ),
   "settings.lyrics_model.": ["auto", "light", "full"],
   "library.search_": LIBRARY_TABS,
   "player.repeat_": ["off", "all", "one"],
