@@ -880,3 +880,26 @@ describe("early start", () => {
     expect(h.youtube.early).toEqual([false]);
   });
 });
+
+describe("prepared starts", () => {
+  it("a click on a prepared search result plays its head with no second resolve", async () => {
+    const h = createHarness();
+    const results = [track(y("a")), track(y("b"))];
+    for (const result of results) h.youtube.script.set(result.id, async () => urlSource(`https://rr1.googlevideo.com/${result.id}`, { sizeBytes: 3_000_000 }));
+    h.engine.prepareStarts(results);
+    await flush();
+    expect(h.youtube.resolves).toEqual([y("a"), y("b")]);
+    h.engine.playList([results[1]]);
+    await flush();
+    expect(h.deck.loads.at(-1)?.source.kind).toBe("progressive");
+    expect(h.youtube.resolves).toEqual([y("a"), y("b")]);
+  });
+
+  it("best quality prepares nothing", async () => {
+    const h = createHarness();
+    h.engine.setBestQuality(true);
+    h.engine.prepareStarts([track(y("a"))]);
+    await flush();
+    expect(h.youtube.resolves).toEqual([]);
+  });
+});

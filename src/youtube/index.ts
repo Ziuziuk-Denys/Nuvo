@@ -30,6 +30,8 @@ export function createYoutube(deps: RuntimeDeps): Youtube {
     playback: {
       resolve: async (track, options, signal) => (await runtime.loadPlayback()).resolve(track, options, signal),
       fetchWhole: async (source, signal) => (await runtime.loadPlayback()).fetchWhole(source, signal),
+      range: async (url, from, to, signal) => (await runtime.loadPlayback()).range(url, from, to, signal),
+      canPrefetch: () => !(runtime.account.status() && runtime.account.preferences.get().playThroughAccount),
       warmUp: () =>
         void runtime.loadPlayback().then(
           (loaded) => loaded.warmUp(),

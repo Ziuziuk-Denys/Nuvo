@@ -18,10 +18,12 @@ import {
   type CacheProbe,
   type DaemonPort,
   type FeedLive,
+  type LiveFeed,
   type MatchPort,
   type PlayableSource,
   type YoutubePort,
 } from "./ports";
+import { StartAhead } from "./startAhead";
 
 export const PROBE_HEAD_START_MS = 150;
 export const SOURCE_DOWN_AFTER = 2;
@@ -113,8 +115,15 @@ export class SourceResolver {
   private readonly rejected = new Map<string, Set<string>>();
   private blockedStarts = 0;
   private youtubeDownUntil = 0;
+  private readonly ahead: StartAhead;
 
-  constructor(private readonly deps: ResolverDeps) {}
+  constructor(private readonly deps: ResolverDeps) {
+    this.ahead = new StartAhead(deps);
+  }
+
+  prepare(tracks: readonly Track[]): void {
+    this.ahead.prepare(tracks);
+  }
 
   markCached(trackId: string, probe: CacheProbe = { codec: null, bitrateKbps: null }): void {
     this.cached.set(trackId, probe);
@@ -337,7 +346,8 @@ export class SourceResolver {
   private async youtube(track: Track, target: Track, signal: AbortSignal, early = false, quality: "normal" | "hifi" = "normal"): Promise<Resolved> {
     let playable: PlayableSource;
     try {
-      playable = await this.deps.youtube.resolve(target, { progressive: true, early, quality }, signal);
+      const prepared = quality === "normal" ? await this.ahead.take(target.id, signal) : null;
+      playable = prepared && prepared !== "failed" ? prepared : await this.deps.youtube.resolve(target, { progressive: true, early, quality }, signal);
     } catch (error) {
       if (isAbort(error)) throw error;
       throw youtubeCause(error, this.deps.online());
@@ -417,6 +427,12 @@ export class SourceResolver {
 
   // A live start plays the daemon's stream while it arrives; precache and idle prefetch keep the whole-file answer
   private async soundcloud(track: Track, id: string, signal: AbortSignal, live = false, durationMs = track.durationMs): Promise<Resolved> {
+    const prepared = live && id === track.id ? await this.ahead.take(track.id, signal) : null;
+    if (prepared === "failed") throw new SourceFailure("unavailable");
+    if (prepared?.progressive) {
+      const stream: StreamInfo = { source: "soundcloud", codec: prepared.codec, bitrateKbps: kbpsOf(prepared.bitrate), fromCache: false };
+      return this.live(track, prepared.progressive, prepared.mimeType, stream);
+    }
     const scId = id.replace(/^sc:/, "");
     const descriptor = await this.deps.daemon.scStream(scId, signal, live);
     const kbps = kbpsOf(descriptor.bitrate);
@@ -424,22 +440,12 @@ export class SourceResolver {
     if (descriptor.kind === "live") {
       const stop = new AbortController();
       const body = await this.deps.daemon.scLive(scId, AbortSignal.any([signal, stop.signal]));
-      const feed = this.deps.feedLive(body, descriptor.mimeType, durationMs, () => stop.abort());
-      return {
-        source: {
-          trackId: track.id,
-          kind: "progressive",
-          url: feed.url,
-          mime: descriptor.mimeType,
-          whole: feed.whole,
-          overflowed: feed.overflowed,
-          release: feed.release,
-        },
+      return this.live(
+        track,
+        this.deps.feedLive(body, descriptor.mimeType, durationMs, () => stop.abort()),
+        descriptor.mimeType,
         stream,
-        fallback: null,
-        startAtMs: 0,
-        daemonCaches: true,
-      };
+      );
     }
     return {
       source: {
@@ -457,6 +463,16 @@ export class SourceResolver {
         descriptor.kind === "direct"
           ? { url: descriptor.url, mime: descriptor.mimeType, codec: descriptor.codec, bitrateKbps: kbps, contentLength: descriptor.contentLength ?? undefined }
           : undefined,
+    };
+  }
+
+  private live(track: Track, feed: LiveFeed, mime: string, stream: StreamInfo): Resolved {
+    return {
+      source: { trackId: track.id, kind: "progressive", url: feed.url, mime, whole: feed.whole, overflowed: feed.overflowed, release: feed.release },
+      stream,
+      fallback: null,
+      startAtMs: 0,
+      daemonCaches: true,
     };
   }
 

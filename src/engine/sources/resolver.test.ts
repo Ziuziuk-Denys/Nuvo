@@ -15,7 +15,7 @@ import type { Track } from "../types";
 
 const yid = (letter: string) => letter.repeat(11);
 const track = (id: string, durationMs = 200_000): Track => ({ id, title: id, artists: "A", coverUrl: "", durationMs });
-const playable = (bitrate: number, codec = "opus"): PlayableSource => ({ url: "https://yt/x", mimeType: "audio/webm", codec, bitrate });
+const playable = (bitrate: number, codec = "opus"): PlayableSource => ({ url: "https://yt/x", mimeType: "audio/webm", codec, bitrate, sizeBytes: 4_000_000 });
 
 interface Fakes {
   probe: (signal?: AbortSignal) => Promise<CacheProbe | null>;
@@ -47,7 +47,8 @@ function setup(over: Partial<Fakes> = {}) {
     deleteCache: vi.fn(async () => undefined),
   } as unknown as DaemonPort;
   const ytResolve = vi.fn(async (target: Track, _o: unknown, signal: AbortSignal) => fakes.yt(target, signal));
-  const youtube = { resolve: ytResolve, fetchWhole: vi.fn(), warmUp: vi.fn() } as unknown as YoutubePort;
+  const range = vi.fn(async (_url: string, from: number, to: number) => new Uint8Array(to - from + 1));
+  const youtube = { resolve: ytResolve, fetchWhole: vi.fn(), warmUp: vi.fn(), range, canPrefetch: () => true } as unknown as YoutubePort;
   const approvedOn = vi.fn(async (target: "youtube" | "soundcloud", _t: Track, _s: AbortSignal, exclude?: ReadonlySet<string>) => fakes.match(target, exclude));
   const match: MatchPort = { approvedOn };
   const feedLive = vi.fn((_stream: ReadableStream<Uint8Array>, _mime: string, _durationMs: number | undefined, stop: () => void) => ({
@@ -66,7 +67,7 @@ function setup(over: Partial<Fakes> = {}) {
     objectUrls: { create: () => "blob:x", revoke: () => undefined },
     feedLive,
   });
-  return { resolver, daemon, probeCache, putAlternative, ytResolve, approvedOn, fakes, feedLive };
+  return { resolver, daemon, probeCache, putAlternative, ytResolve, approvedOn, fakes, feedLive, range };
 }
 
 const opts = (over: Partial<ResolveOptions> = {}): ResolveOptions => ({
@@ -518,5 +519,57 @@ describe("SoundCloud live start", () => {
     await s.resolver.resolve(track("sc:1"), opts());
     expect(s.daemon.scStream).toHaveBeenCalledWith("1", expect.any(AbortSignal), false);
     expect(s.daemon.scLive).not.toHaveBeenCalled();
+  });
+});
+
+describe("prepared starts", () => {
+  it("a prepared song starts from its head in memory with no second resolve", async () => {
+    const s = setup();
+    s.resolver.prepare([track(yid("a"))]);
+    const resolved = await s.resolver.resolve(track(yid("a")), opts({ early: true }));
+    expect(resolved.source.kind).toBe("progressive");
+    expect(resolved.verify).toBeUndefined();
+    expect(s.ytResolve).toHaveBeenCalledTimes(1);
+  });
+
+  it("a prepared SoundCloud song plays its held live stream with no second stream request", async () => {
+    const s = setup({
+      sc: async () => ({ kind: "live", url: "", expiresAt: null, codec: "mp3", mimeType: "audio/mpeg", bitrate: 128_000, contentLength: null }),
+    });
+    vi.mocked(s.daemon.scLive).mockImplementation(
+      async () =>
+        new ReadableStream<Uint8Array>({
+          start: (controller) => {
+            controller.enqueue(new Uint8Array(300_000));
+            controller.close();
+          },
+        }),
+    );
+    s.resolver.prepare([track("sc:1", 150_000)]);
+    const resolved = await s.resolver.resolve(track("sc:1", 150_000), opts({ early: true }));
+    expect(resolved.source.kind).toBe("progressive");
+    expect(resolved.daemonCaches).toBe(true);
+    expect(s.daemon.scStream).toHaveBeenCalledTimes(1);
+  });
+
+  it("a SoundCloud song that failed ahead goes straight to its prepared YouTube stand-in", async () => {
+    const s = setup({
+      sc: () => Promise.reject(new Error("snippet only")),
+      match: async (target) => (target === "youtube" ? { track: track(yid("y")), score: 95 } : null),
+    });
+    s.resolver.prepare([track("sc:1")]);
+    await vi.waitFor(() => expect(s.ytResolve).toHaveBeenCalledTimes(1));
+    const resolved = await s.resolver.resolve(track("sc:1"), opts({ early: true }));
+    expect(resolved.source.kind).toBe("progressive");
+    expect(resolved.fallback?.usedSource).toBe("youtube");
+    expect(s.daemon.scStream).toHaveBeenCalledTimes(1);
+    expect(s.ytResolve).toHaveBeenCalledTimes(1);
+  });
+
+  it("best quality and songs without a prepared head resolve as before", async () => {
+    const s = setup();
+    s.resolver.prepare([track(yid("a"))]);
+    expect((await s.resolver.resolve(track(yid("b")), opts({ early: true }))).source.kind).toBe("url");
+    expect((await s.resolver.resolve(track(yid("a")), opts({ early: true, bestQuality: true }))).source.kind).toBe("url");
   });
 });

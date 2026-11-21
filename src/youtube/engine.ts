@@ -38,6 +38,8 @@ export function engineYoutube(youtube: Pick<Youtube, "playback">): YoutubePort {
         signal,
       ),
     fetchWhole: (source, signal) => youtube.playback.fetchWhole(source, signal),
+    range: (url, from, to, signal) => youtube.playback.range(url, from, to, signal),
+    canPrefetch: () => youtube.playback.canPrefetch(),
     warmUp: () => youtube.playback.warmUp(),
   };
 }

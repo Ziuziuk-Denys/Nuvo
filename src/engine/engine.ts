@@ -20,9 +20,11 @@ import { displayCause, type TriggerCause } from "./sources/fallbackPlan";
 import { skipText } from "./stateLine";
 import { isAbort, SourceFailure } from "./sources/ports";
 import type { AttachedSource, Resolved, ResolveOptions } from "./sources/resolver";
+import { AHEAD_LIMIT } from "./sources/startAhead";
 import { CROSSFADE_MAX_S } from "./audio/transitionPolicy";
 import { clampVolume, nextTempo, type Tempo } from "./tempo";
 import {
+  idKind,
   primarySource,
   isStation,
   NETWORK_CAUSES,
@@ -60,6 +62,8 @@ export interface ResolverLike {
   networkChanged(): void;
   pin(track: Track, resolved: Resolved): Promise<boolean>;
   dropCached(trackId: string): Promise<void>;
+  prepare(tracks: readonly Track[]): void;
+  isKnownCached(trackId: string): boolean;
 }
 
 export interface PrecacheLike {
@@ -352,6 +356,21 @@ export class Engine {
     this.lyricsPending = true;
     this.startEntry(0);
     void this.refill.now();
+  }
+
+  prepareStarts(tracks: readonly Track[]): void {
+    if (this.disposed) return;
+    const playing = Q.current(this.queue)?.track.id;
+    const wanted =
+      this.prefs.bestQuality || !this.deps.online()
+        ? []
+        : tracks
+            .slice(0, AHEAD_LIMIT)
+            .filter(
+              (track) =>
+                (idKind(track.id) === "youtube" || idKind(track.id) === "soundcloud") && track.id !== playing && !this.deps.resolver.isKnownCached(track.id),
+            );
+    this.deps.resolver.prepare(wanted);
   }
 
   toggle(): void {

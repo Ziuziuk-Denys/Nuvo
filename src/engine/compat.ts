@@ -200,6 +200,7 @@ export const playerEngine = {
   setShuffle: (on: boolean) => player().setShuffle(on),
   setRepeat: (mode: RepeatMode) => player().setRepeat(mode),
   startRadioStation: (track: Track) => player().startRadio(fromLegacy(track)),
+  prepareStarts: (tracks: Track[]) => player().prepareStarts(tracks.map(fromLegacy)),
   addToQueue: (track: Track) => player().append(fromLegacy(track)),
   playNext: (track: Track) => player().insertNext(fromLegacy(track)),
   playShuffled: (tracks: Track[], context?: string | null, cover?: string | null) =>
