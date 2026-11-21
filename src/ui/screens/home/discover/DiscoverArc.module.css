@@ -1,0 +1,74 @@
+.arc {
+  position: relative;
+  margin: 0 calc(-1 * var(--n-gutter, 12px));
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.heading {
+  position: absolute;
+  inset: 16px var(--n-gutter, 12px) auto;
+  z-index: 200;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.cover {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+}
+
+.cover:focus-visible {
+  outline: 2px solid var(--n-ring, var(--n-accent));
+  outline-offset: 3px;
+}
+
+.caption {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0 var(--n-gutter, 12px);
+  text-align: center;
+  pointer-events: none;
+}
+
+.title {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--n-ink);
+  font: var(--n-type-heading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artist {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

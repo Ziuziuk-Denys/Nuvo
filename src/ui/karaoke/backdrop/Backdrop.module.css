@@ -21,3 +21,12 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
 }
+
+.root[data-overlay] {
+  background: none;
+}
+
+.root[data-overlay] [data-still] {
+  opacity: 0.45;
+  mask-image: radial-gradient(ellipse 70% 65% at 50% 30%, #000 25%, transparent 75%);
+}
