@@ -1868,6 +1868,12 @@
       "description": "Мягкое свечение цветов обложки за плеером",
       "disabled_for_wallpaper": "Выключено, пока задан фон"
     },
+    "player_controls": {
+      "title": "Кнопки плеера",
+      "description": "Воспроизведение, назад и вперёд посередине плеера или у его левого края",
+      "centre": "Посередине",
+      "side": "Сбоку"
+    },
     "customization": {
       "wallpaper_title": "Фон",
       "wallpaper_description": "Фото, GIF или видео за всеми экранами",

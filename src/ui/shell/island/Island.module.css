@@ -19,6 +19,31 @@
   grid-template-columns: 430px minmax(0, 1fr) 260px;
 }
 
+.bar[data-controls="side"] {
+  grid-template-columns: auto 312px minmax(0, 1fr) 260px;
+  grid-template-areas: "controls now . actions";
+}
+
+.bar[data-controls="side"][data-notice] {
+  grid-template-columns: auto 430px minmax(0, 1fr) 260px;
+}
+
+.bar[data-controls="side"] .centre {
+  position: relative;
+  inset: auto;
+  grid-area: controls;
+  padding-left: 12px;
+}
+
+.bar[data-controls="side"] .now {
+  grid-area: now;
+  padding-left: 14px;
+}
+
+.bar[data-controls="side"] .actions {
+  grid-area: actions;
+}
+
 .bar[data-lit] {
   background: var(--n-glass);
   -webkit-backdrop-filter: var(--n-glass-thick);

@@ -46,6 +46,7 @@ export const SETTING_ITEMS: SettingItem[] = [
   row("Appearance", "settings.customization.reset_all", "settings.customization.reset_all_desc"),
   row("Customization", "settings.customization.wallpaper_title", "settings.customization.wallpaper_description"),
   row("Customization", "settings.cover_glow.title", "settings.cover_glow.description"),
+  row("Customization", "settings.player_controls.title", "settings.player_controls.description"),
   row("Customization", "settings.reduce_effects.title", "settings.reduce_effects.description"),
   row("Customization", "settings.frame_rate.title", "settings.frame_rate.description"),
   row("Notch", "settings.notch.mode", "settings.notch.description"),

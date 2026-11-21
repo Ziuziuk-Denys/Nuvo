@@ -5,6 +5,7 @@ export {
   MAX_WALLPAPER_DIM,
   wallpaperKind,
   WALLPAPER_BASE,
+  type PlayerControls,
   type WallpaperFit,
   type WallpaperKind,
 } from "@/data/look/lookStore";

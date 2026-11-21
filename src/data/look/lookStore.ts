@@ -12,6 +12,7 @@ export const MAX_WALLPAPER_DIM = 80;
 
 export type ThemeChoice = "light" | "dark" | "system";
 export type WallpaperFit = "cover" | "contain";
+export type PlayerControls = "centre" | "side";
 export const WALLPAPER_BASE = "nuvo-core://local/wallpaper/";
 
 export interface LookFields {
@@ -23,6 +24,7 @@ export interface LookFields {
   backgroundDim: number;
   backgroundFit: WallpaperFit;
   themeBeforePreset: ThemeChoice | null;
+  playerControls: PlayerControls;
 }
 
 export const LOOK_DEFAULTS: LookFields = {
@@ -34,6 +36,7 @@ export const LOOK_DEFAULTS: LookFields = {
   backgroundDim: 25,
   backgroundFit: "cover",
   themeBeforePreset: null,
+  playerControls: "centre",
 };
 
 export const RETIRED_PRESETS: Record<string, PresetId> = {
@@ -107,6 +110,7 @@ interface LookState extends LookFields {
   setBackgroundDim(dim: number): void;
   setBackgroundFit(fit: WallpaperFit): void;
   setThemeBeforePreset(theme: ThemeChoice | null): void;
+  setPlayerControls(controls: PlayerControls): void;
   resetAll(): void;
 }
 
@@ -124,6 +128,7 @@ export const useLookStore = create<LookState>()(
       setBackgroundDim: (dim) => set({ backgroundDim: clampDim(dim) }),
       setBackgroundFit: (backgroundFit) => set({ backgroundFit }),
       setThemeBeforePreset: (themeBeforePreset) => set({ themeBeforePreset }),
+      setPlayerControls: (playerControls) => set({ playerControls }),
       resetAll: () =>
         set({
           backgroundImage: null,
@@ -140,7 +145,7 @@ export const useLookStore = create<LookState>()(
         return { ...state, preset: migratePresetId(state.preset) ?? LOOK_DEFAULTS.preset } as LookFields;
       },
       storage: createJSONStorage(() => debouncedStorage),
-      partialize: ({ preset, coverGlow, accentFromCover, backgroundImage, backgroundBlur, backgroundDim, backgroundFit, themeBeforePreset }) => ({
+      partialize: ({
         preset,
         coverGlow,
         accentFromCover,
@@ -149,6 +154,17 @@ export const useLookStore = create<LookState>()(
         backgroundDim,
         backgroundFit,
         themeBeforePreset,
+        playerControls,
+      }) => ({
+        preset,
+        coverGlow,
+        accentFromCover,
+        backgroundImage,
+        backgroundBlur,
+        backgroundDim,
+        backgroundFit,
+        themeBeforePreset,
+        playerControls,
       }),
       merge: (saved, current) => {
         const stored = (saved ?? {}) as Partial<LookFields>;
@@ -158,6 +174,7 @@ export const useLookStore = create<LookState>()(
           preset: migratePresetId(stored.preset) ?? current.preset,
           backgroundBlur: isNumber(stored.backgroundBlur) ? clampBlur(stored.backgroundBlur) : current.backgroundBlur,
           backgroundDim: isNumber(stored.backgroundDim) ? clampDim(stored.backgroundDim) : current.backgroundDim,
+          playerControls: stored.playerControls === "side" ? "side" : "centre",
           backgroundImage: isWallpaper(stored.backgroundImage) ? stored.backgroundImage : null,
           backgroundFit: stored.backgroundFit === "contain" ? "contain" : "cover",
         };
