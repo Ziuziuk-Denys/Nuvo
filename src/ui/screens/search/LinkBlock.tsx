@@ -62,6 +62,7 @@ const SERVICE_OF_KIND: Partial<Record<LinkRoute["kind"], Service>> = {
   soundcloud: "soundcloud",
   "apple-song": "apple-music",
   "deezer-track": "deezer",
+  "spotify-track": "spotify",
   "yandex-track": "yandex",
   shazam: "shazam",
 };

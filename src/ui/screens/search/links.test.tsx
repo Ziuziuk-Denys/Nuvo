@@ -56,6 +56,7 @@ function ports(overrides: Partial<LinkPorts> = {}): LinkPorts {
     youtubeTrack: vi.fn(async () => RICK),
     soundcloudLookup: vi.fn(async () => null),
     soundcloudTrack: vi.fn(async () => null),
+    spotifyTrack: vi.fn(async () => ({ kind: "error" as const, code: "unavailable" as const })),
     fetchJson: vi.fn(async () => ({ status: 404, body: null })),
     ...overrides,
   };
@@ -183,7 +184,7 @@ describe("the link block", () => {
   });
 
   it("a Spotify link explains the file import and offers it", async () => {
-    const p = props("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC", ports());
+    const p = props("https://open.spotify.com/collection/tracks", ports());
     act(() => root.render(<LinkBlock {...p} />));
     await settle();
     expect(host.textContent).toContain("Nuvo reads public Spotify playlists and albums by link.");

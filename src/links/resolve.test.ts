@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 import { CoreError, type Heard, type InspectAnswer } from "./core";
+import type { SongLookup } from "./lookup";
 import { listenAgain, resolveLink, type LinkPorts, type Stage } from "./resolve";
 import { routeLink, type LinkRoute } from "./router";
 import { encodeShare } from "./shareCodec";
@@ -27,6 +28,7 @@ function fakePorts(
     outcomes?: Record<string, Outcome>;
     youtube?: CatalogTrack | null;
     fetched?: Record<string, unknown>;
+    spotify?: SongLookup;
   } = {},
 ) {
   const sources: MatchSource[] = [];
@@ -69,6 +71,7 @@ function fakePorts(
     youtubeTrack: vi.fn(async () => (options.youtube === undefined ? track("dQw4w9WgXcQ", "Never Gonna Give You Up", "Rick Astley") : options.youtube)),
     soundcloudLookup: vi.fn(async () => null),
     soundcloudTrack: vi.fn(async () => null),
+    spotifyTrack: vi.fn(async () => options.spotify ?? { kind: "error" as const, code: "unavailable" as const }),
     fetchJson: vi.fn(async (url: string) => ({
       status: options.fetched?.[url] ? 200 : 404,
       body: options.fetched?.[url] ?? null,
@@ -317,6 +320,20 @@ describe("other links", () => {
       code: "unsupported",
       service: "deezer",
     });
+  });
+
+  it("a shared Spotify song is read without its tracking parameters and matched by name", async () => {
+    const { ports, sources } = fakePorts({
+      outcomes: { "Ты моя...": "approved" },
+      spotify: { kind: "song", source: { title: "Ты моя...", artists: ["DJ NARODNII"], durationMs: 132_000 } },
+    });
+    const result = await run(
+      "https://open.spotify.com/track/3gv2SbEStfiVU2A6p5FocL?si=4f1c2b&utm_source=copy-link&context=spotify%3Aplaylist%3A37i9dQZF1DWXRqgorJj26U&rowId=12",
+      ports,
+    );
+    expect(ports.spotifyTrack).toHaveBeenCalledWith("https://open.spotify.com/track/3gv2SbEStfiVU2A6p5FocL", expect.any(AbortSignal));
+    expect(sources[0]).toEqual({ title: "Ты моя...", artists: ["DJ NARODNII"], durationMs: 132_000 });
+    expect(result).toMatchObject({ kind: "track", via: "by_name", sure: true });
   });
 
   it("a Spotify short link lands on the playlist import", async () => {

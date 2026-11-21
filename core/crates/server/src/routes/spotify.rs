@@ -37,7 +37,7 @@ const BACKOFF: [Duration; 3] = [Duration::from_secs(1), Duration::from_secs(2), 
 const MAX_RETRY_WAIT: Duration = Duration::from_secs(10);
 
 pub fn routes() -> Router<AppState> {
-    Router::new().route("/v1/spotify/import", get(import))
+    Router::new().route("/v1/spotify/import", get(import)).route("/v1/spotify/track", get(track))
 }
 
 #[derive(Deserialize)]
@@ -73,6 +73,16 @@ async fn resolve(state: &AppState, input: &str) -> Result<SpotifyLink, ApiError>
     let short = Url::parse(input).ok().filter(|url| url.host_str() == Some("spotify.link")).ok_or_else(invalid)?;
     let landed = page(state, short.as_str()).await?;
     spotify::parse_link(landed.url.as_str()).ok_or_else(invalid)
+}
+
+async fn track(State(state): State<AppState>, Query(q): Query<ImportQuery>) -> Result<Json<SourceRow>, ApiError> {
+    let input = q.url.as_deref().map(str::trim).filter(|u| !u.is_empty() && u.len() <= 2048).ok_or_else(|| ApiError::Invalid("url is required".into()))?;
+    let embed_url = spotify::track_embed_url(input).ok_or_else(|| ApiError::Invalid("not a Spotify track link".into()))?;
+    let embed = page(&state, &embed_url).await?;
+    spotify::parse_track_embed(&String::from_utf8_lossy(&embed.body)).map(Json).map_err(|err| match err {
+        EmbedError::Gone => ApiError::NotFound("the song is gone".into()),
+        EmbedError::Changed => ApiError::SourceChanged,
+    })
 }
 
 async fn import(State(state): State<AppState>, Query(q): Query<ImportQuery>) -> Result<Json<Value>, ApiError> {

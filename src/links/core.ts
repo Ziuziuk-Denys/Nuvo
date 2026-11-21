@@ -1,5 +1,6 @@
 import { CORE_BASE_URL } from "@/data/core/request";
 import type { CatalogTrack, ImportRow, ImportTarget, MatchAnswer, MatchSource, MatchStep } from "./types";
+import type { SongLookup } from "./lookup";
 
 const MAX_EVENT_BYTES = 256 * 1024;
 
@@ -123,6 +124,21 @@ export function startImport(
 export async function soundcloudLookup(url: string, signal: AbortSignal): Promise<SoundCloudItem | null> {
   const answer = await call<{ items: SoundCloudItem[] }>("GET", `/v1/sc/lookup?url=${encodeURIComponent(url)}&type=all`, undefined, signal);
   return answer.items[0] ?? null;
+}
+
+export async function spotifyTrack(url: string, signal: AbortSignal): Promise<SongLookup> {
+  try {
+    const row = await call<{ title: string; artists: string[]; durationMs?: number }>(
+      "GET",
+      `/v1/spotify/track?url=${encodeURIComponent(url)}`,
+      undefined,
+      signal,
+    );
+    return { kind: "song", source: { title: row.title, artists: row.artists, durationMs: row.durationMs } };
+  } catch (error) {
+    if (error instanceof CoreError && error.status === 404) return { kind: "error", code: "unavailable" };
+    throw error;
+  }
 }
 
 export async function soundcloudTrack(id: string, signal: AbortSignal): Promise<CatalogTrack | null> {

@@ -533,6 +533,19 @@ describe("shell", () => {
     const page = live.page;
     // the catalogue never answers here, so every row the checks read comes from the library and the commands
     await page.route(/youtubei\/v1\/search/, (route) => route.abort());
+    // the look shots reload the page, so the stub has to come back with every load
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem("e2e.no-soundcloud")) return;
+      const real = window.fetch.bind(window);
+      window.fetch = async (input, init) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        if (url.startsWith("nuvo-core://local/v1/sc/search"))
+          return new Response(JSON.stringify({ items: [] }), { headers: { "content-type": "application/json" } });
+        return real(input, init);
+      };
+    });
+    await page.evaluate(() => sessionStorage.setItem("e2e.no-soundcloud", "1"));
+    await page.reload();
     const palette = page.locator('[role="dialog"][data-state="in"]');
     const field = page.locator("header input[role=combobox]");
     const option = (text: string) => palette.locator('[role="option"]', { hasText: text }).first();
@@ -603,6 +616,7 @@ describe("shell", () => {
     await option("Сменить режим повтора").waitFor({ timeout: 5_000 });
     await page.keyboard.press("Escape");
     await page.unroute(/youtubei\/v1\/search/);
+    await page.evaluate(() => sessionStorage.removeItem("e2e.no-soundcloud"));
     await page.evaluate(() => localStorage.setItem("nuvo_locale", "en"));
     await page.reload();
     await page.waitForLoadState("domcontentloaded");

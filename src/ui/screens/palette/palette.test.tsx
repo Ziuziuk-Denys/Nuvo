@@ -42,6 +42,8 @@ const mocks = vi.hoisted(() => {
       song("s2", "Supercut"),
       { kind: "album", id: "m", title: "Melodrama", subtitle: "Lorde", cover: "", href: "/collection?type=album&id=m" },
     ],
+    soundCloud: [{ ...song("sc:1", "Royals"), subtitle: "lorde" }],
+    rank: vi.fn((_query: string, songs: unknown[]) => songs),
     player: { setFullscreen: vi.fn() },
     engine: {
       togglePlayPause: vi.fn(),
@@ -88,10 +90,13 @@ vi.mock("../../ports/library", () => ({
   useLikedTracks: () => ({ data: { tracks: [] } }),
   usePlaylistsList: () => ({ data: { playlists: [] } }),
 }));
-vi.mock("../../ports/network", () => ({ useOfflineMode: () => false, useStreamingReachable: () => true }));
+vi.mock("../../ports/network", () => ({ useOfflineMode: () => false, useOnline: () => true, useStreamingReachable: () => true }));
 vi.mock("../../ports/search", () => ({
   useSearchAll: (query: string) => ({ items: query.trim() === "lorde" ? mocks.catalog : [], loading: false, hasLoaded: true, runNow: () => undefined }),
   toSearchResult: (item: unknown) => item,
+  useSoundCloudSearch: (query: string) => ({ items: query.trim() === "lorde" ? mocks.soundCloud : [], loading: false, hasLoaded: true }),
+  soundCloudResult: (hit: unknown) => hit,
+  useRankedSongs: (query: string, songs: unknown[]) => mocks.rank(query, songs),
   useSearchHistoryStore: (select: (state: typeof mocks.history) => unknown) => select(mocks.history),
   loadSearchHistory: () => Promise.resolve(),
   normalizeForSearch: (text: string) => text.toLowerCase(),
@@ -232,6 +237,18 @@ describe("PaletteField", () => {
     press("Enter");
     expect(mocks.engine.playTrack).toHaveBeenCalledWith(expect.objectContaining({ id: "s1" }), [expect.objectContaining({ id: "s1" })], "search");
     expect(mocks.history.addItem).toHaveBeenCalledWith(expect.objectContaining({ id: "s1", type: "track" }));
+  });
+
+  it("ranks SoundCloud songs with the catalog's, as the search page does", () => {
+    ctrlK();
+    type("lorde");
+    expect(mocks.rank).toHaveBeenLastCalledWith("lorde", [
+      expect.objectContaining({ id: "s1" }),
+      expect.objectContaining({ id: "s2" }),
+      expect.objectContaining({ id: "sc:1" }),
+    ]);
+    expect(options()).toEqual(expect.arrayContaining([expect.stringContaining("Royals")]));
+    press("Escape");
   });
 
   it("points the field at the selected row for assistive tech", () => {

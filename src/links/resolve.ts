@@ -11,6 +11,7 @@ export interface LinkPorts extends MatchPorts {
   youtubeTrack(id: string, signal: AbortSignal): Promise<CatalogTrack | null>;
   soundcloudLookup(url: string, signal: AbortSignal): Promise<SoundCloudItem | null>;
   soundcloudTrack(id: string, signal: AbortSignal): Promise<CatalogTrack | null>;
+  spotifyTrack(url: string, signal: AbortSignal): Promise<SongLookup>;
   fetchJson: FetchJson;
 }
 
@@ -153,6 +154,9 @@ async function resolveRoute(route: LinkRoute, ports: LinkPorts, report: Report, 
       return bySongLookup(await lookupApple(route.id, route.storefront, ports.fetchJson, signal), "apple-music", ports, report, signal);
     case "deezer-track":
       return bySongLookup(await lookupDeezer(route.id, ports.fetchJson, signal), "deezer", ports, report, signal);
+    case "spotify-track":
+      report({ stage: "reading_link" });
+      return bySongLookup(await ports.spotifyTrack(route.url, signal), "spotify", ports, report, signal);
     case "yandex-track":
       return bySongLookup(await lookupYandex(route.id, ports.fetchJson, signal), "yandex", ports, report, signal);
     case "shazam":

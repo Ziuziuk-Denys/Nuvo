@@ -98,3 +98,33 @@ fn the_better_match_leads_whatever_its_source() {
     let songs = [song("yt1", "Harbor Lights (Karaoke Version)", "Sing Along", 200_000), song("sc:1", "Harbor Lights", "Nova", 200_000)];
     assert_eq!(ranked("nova harbor lights", &songs), ["sc:1", "yt1"]);
 }
+
+#[test]
+fn the_credited_original_leads_its_covers_and_reuploads() {
+    let release = |id: &str, title: &str, artists: &[&str], ms: i64| {
+        let artists: Vec<Value> = artists.iter().map(|name| json!({"name": name})).collect();
+        Song::from_track(&json!({"id": id, "title": title, "artists": artists, "durationMs": ms, "album": {"id": "MPRE1"}})).unwrap()
+    };
+    let upload = |id: &str, title: &str, artist: &str, ms: i64, plays: u64| {
+        Song::from_track(&json!({"id": id, "title": title, "artists": [{"name": artist}], "durationMs": ms, "plays": plays})).unwrap()
+    };
+    let songs = [
+        upload("sc:1", "DJ NARODNII - Ты моя... (speed up)", "smxxthness", 112_000, 240_000),
+        upload("sc:2", "Ты моя... (cover)", "vasya_music", 131_000, 90_000),
+        upload("sc:3", "DJ NARODNII # Ты моя...", "JKS", 132_000, 15_000),
+        upload("sc:4", "Ты моя... - DJ NARODNII (Slowed + Reverb)", "RED LYRICS", 156_000, 60_000),
+        release("COX6kiuRvFc", "Ты моя...", &["DJ NARODNII"], 132_000),
+        release("n1uDvyWNY58", "ТЫ МОЯ МРАЗОТА", &["DJ NARODNII", "DJ LINUSIK"], 129_000),
+        release("NXmwsSgP0bE", "Ты моя", &["DJ NARODNII"], 133_000),
+        release("HHWBHH0Ndso", "Ты моя...", &["Тимур TIMBIGFAMILY", "DJ NARODNII"], 169_000),
+        release("-LOYw380oEg", "Ты моя", &["Стас Михайлов"], 262_000),
+    ];
+    for query in ["Ты моя... DJ NARODNII", "ты моя dj narodnii", "dj narodnii ты моя", "ты моя народный"] {
+        assert_eq!(ranked(query, &songs)[0], "COX6kiuRvFc", "{query}");
+    }
+    let at = |list: &[String], id: &str| list.iter().position(|x| x == id);
+    let ranked = ranked("ты моя dj narodnii", &songs);
+    for cover in ["sc:1", "sc:2", "sc:4"] {
+        assert!(at(&ranked, cover).is_none_or(|place| place > 2), "{cover}");
+    }
+}
