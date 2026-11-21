@@ -94,6 +94,7 @@ export function Island(): JSX.Element | null {
   const setFullscreen = usePlayerStore((state) => state.setFullscreen);
   const queueOpen = useShellStore((state) => state.queueOpen);
   const toggleQueue = useShellStore((state) => state.toggleQueue);
+  const setQueueOpen = useShellStore((state) => state.setQueueOpen);
   const demo = useTourDemo();
   const track = player.currentTrack ?? demo;
   const liked = useIsTrackLiked(track?.id);
@@ -115,6 +116,7 @@ export function Island(): JSX.Element | null {
 
   const [panel, setPanel] = useState<Panel>("volume");
   const [open, setOpen] = useState(false);
+  if (open && queueOpen) setOpen(false);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const shared = useRef<"sound" | "add">("sound");
   if (panel !== "volume") shared.current = panel;
@@ -142,6 +144,7 @@ export function Island(): JSX.Element | null {
     }
     setAnchor(event.currentTarget);
     setPanel(next);
+    setQueueOpen(false);
     setOpen(true);
   };
 
