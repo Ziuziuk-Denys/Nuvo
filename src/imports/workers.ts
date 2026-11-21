@@ -19,7 +19,7 @@ export interface RunnerOptions {
 export const MAX_WORKERS = 16;
 /** Candidates kept per search; the daemon accepts up to 100. */
 export const MAX_CANDIDATES = 25;
-export const MAX_WAIT_MS = 60_000;
+export const MAX_WAIT_MS = 1_000;
 export const RETRY_MS = 2_000;
 export const MAX_FAILURES = 5;
 export const MAX_STARTING_MS = 60_000;
