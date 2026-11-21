@@ -27,6 +27,7 @@ export interface Live {
   setMirror(target: HTMLCanvasElement | null): void;
   onFoot(listener: ((rgb: [number, number, number]) => void) | null): void;
   onTone(listener: ((light: boolean) => void) | null): void;
+  onLuma(listener: ((cells: Uint8Array) => void) | null): void;
   resize(width: number, height: number): void;
   dispose(): void;
 }
@@ -46,10 +47,12 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
 
   let footListener: ((rgb: [number, number, number]) => void) | null = null;
   let toneListener: ((light: boolean) => void) | null = null;
+  let lumaListener: ((cells: Uint8Array) => void) | null = null;
   worker.onerror = (event) => console.error("[visual] the stage worker failed:", event.message);
   worker.onmessage = (event: MessageEvent<FromStage>) => {
     if (event.data.type === "foot") footListener?.(event.data.rgb);
-    else toneListener?.(event.data.light);
+    else if (event.data.type === "tone") toneListener?.(event.data.light);
+    else lumaListener?.(event.data.cells);
   };
   const onMotion = () => post({ type: "motion", reduced: motion.matches });
   motion.addEventListener("change", onMotion);
@@ -151,6 +154,9 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
     },
     onTone(listener) {
       toneListener = listener;
+    },
+    onLuma(listener) {
+      lumaListener = listener;
     },
     resize(width, height) {
       post({ type: "size", width, height });

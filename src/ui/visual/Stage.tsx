@@ -11,16 +11,17 @@ interface StageProps {
   mirror?: HTMLCanvasElement | null;
   onFoot?: (rgb: [number, number, number]) => void;
   onTone?: (light: boolean) => void;
+  onLuma?: (cells: Uint8Array) => void;
   clock?: () => { atMs: number; playing: boolean };
   className?: string;
 }
 
-export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, onTone, clock, className }: StageProps): JSX.Element {
+export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, onTone, onLuma, clock, className }: StageProps): JSX.Element {
   const host = useRef<HTMLDivElement>(null);
   const liveRef = useRef<Live | null>(null);
-  const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot, onTone });
+  const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma });
   useEffect(() => {
-    latest.current = { template, aspect, coverUrl, lines, media, mirror, onFoot, onTone };
+    latest.current = { template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma };
   });
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
     live?.setMirror(now.mirror);
     live?.onFoot(now.onFoot ?? null);
     live?.onTone(now.onTone ?? null);
+    live?.onLuma(now.onLuma ?? null);
     const size = () => live?.resize(canvas.clientWidth * devicePixelRatio, canvas.clientHeight * devicePixelRatio);
     size();
     const observer = new ResizeObserver(size);
@@ -59,6 +61,7 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
   useEffect(() => liveRef.current?.setMirror(mirror), [mirror]);
   useEffect(() => liveRef.current?.onFoot(onFoot ?? null), [onFoot]);
   useEffect(() => liveRef.current?.onTone(onTone ?? null), [onTone]);
+  useEffect(() => liveRef.current?.onLuma(onLuma ?? null), [onLuma]);
 
   return <div ref={host} style={{ display: "contents" }} />;
 }
