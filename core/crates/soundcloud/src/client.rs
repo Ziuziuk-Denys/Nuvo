@@ -6,7 +6,7 @@ use nuvo_net::{Fetch, Fetched, Net, NetError, Url};
 use serde_json::Value;
 use tokio::sync::Semaphore;
 
-use crate::ScError;
+use crate::{Reason, ScError};
 use crate::play::Playable;
 
 pub const WEB_URL: &str = "https://soundcloud.com/";
@@ -96,6 +96,7 @@ pub(crate) struct Inner {
     records: Mutex<Records>,
     persist: Mutex<Option<Persist>>,
     pub(crate) direct: Mutex<HashMap<u64, Playable>>,
+    pub(crate) unplayable: Mutex<HashMap<u64, (Reason, i64)>>,
 }
 
 #[derive(Clone)]
@@ -117,6 +118,7 @@ impl SoundCloud {
                 records: Mutex::new(Records { entries: HashMap::new(), clock: 0 }),
                 persist: Mutex::new(None),
                 direct: Mutex::new(HashMap::new()),
+                unplayable: Mutex::new(HashMap::new()),
             }),
         }
     }

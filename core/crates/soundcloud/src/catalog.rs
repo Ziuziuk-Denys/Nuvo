@@ -85,7 +85,9 @@ impl SoundCloud {
 
     pub async fn search_tracks(&self, query: &str, limit: usize) -> Result<Vec<Value>, ScError> {
         let listing = self.record("search/tracks", &[("q", query.to_string()), ("limit", limit.to_string())]).await?;
-        Ok(collection(&listing).0)
+        let records = collection(&listing).0;
+        self.note_unplayable(&records);
+        Ok(records)
     }
 
     pub async fn related(&self, id: &str, limit: usize) -> Result<Vec<Track>, ScError> {
