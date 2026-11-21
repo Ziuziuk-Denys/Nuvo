@@ -8,9 +8,16 @@ describe("release notes", () => {
   beforeEach(() => localStorage.clear());
 
   it("reads one version's section, and nothing for a version without one", () => {
-    expect(notesFor("0.3.0", CHANGELOG)).toEqual(["Faster start.", "", "- Sort the library.", "- Zoom keys."]);
-    expect(notesFor("0.2.10", CHANGELOG)).toEqual(["- First release."]);
-    expect(notesFor("0.2.1", CHANGELOG)).toEqual([]);
+    expect(notesFor("0.3.0", "en", CHANGELOG)).toEqual(["Faster start.", "", "- Sort the library.", "- Zoom keys."]);
+    expect(notesFor("0.2.10", "en", CHANGELOG)).toEqual(["- First release."]);
+    expect(notesFor("0.2.1", "en", CHANGELOG)).toEqual([]);
+  });
+
+  it("shows the human part or the reader's language, never the full list", () => {
+    const text = "## 0.4.0\n\nScene.\n\n- **Beat.** Drawn.\n\n### По-русски\n\nСцена.\n\n### All changes\n\n#### New\n\n- Scene\n\n## 0.3.0\n\n- Old.\n";
+    expect(notesFor("0.4.0", "en", text)).toEqual(["Scene.", "", "- **Beat.** Drawn."]);
+    expect(notesFor("0.4.0", "ru", text)).toEqual(["Сцена."]);
+    expect(notesFor("0.3.0", "ru", text)).toEqual(["- Old."]);
   });
 
   it("the bundled changelog has a section for the version in package.json", async () => {
