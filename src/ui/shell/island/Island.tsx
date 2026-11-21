@@ -27,6 +27,7 @@ import {
   usePlayerStore,
 } from "../../ports/player";
 import { recsEnabled, useCurrentPick } from "../../ports/recs";
+import { useCustomizationStore } from "../../ports/settings";
 import { useAbLoopStore, useSleepTimer } from "../../ports/sound";
 import { useDownloadProgress } from "../../ports/exports";
 import { DislikeButton } from "../../recs/DislikeButton";
@@ -107,6 +108,7 @@ export function Island(): JSX.Element | null {
   const saving = useDownloadProgress();
   const look = useLook();
   const lit = usePageLit();
+  const controls = useCustomizationStore((state) => state.playerControls);
   const tint = useCoverTint(track?.coverUrl || undefined, look.mode === "light");
   // shortcut: probed once per track, so a stream that finishes caching mid-play says so from the next play
   const cachedIds = useCachedTrackIds(player.currentTrack ? [player.currentTrack.id] : [], Boolean(player.currentTrack));
@@ -211,6 +213,7 @@ export function Island(): JSX.Element | null {
       className={styles.bar}
       data-island=""
       data-lit={lit ? "" : undefined}
+      data-controls={controls}
       data-notice={notice || player.outputSilent ? "" : undefined}
       {...{ [LAYER_ATTRIBUTE]: "" }}
     >

@@ -1794,6 +1794,12 @@
       "description": "A soft glow of the cover colors behind the player",
       "disabled_for_wallpaper": "Off while a wallpaper is set"
     },
+    "player_controls": {
+      "title": "Player controls",
+      "description": "Play, previous and next in the middle of the player or at its left edge",
+      "centre": "Middle",
+      "side": "Side"
+    },
     "customization": {
       "wallpaper_title": "Wallpaper",
       "wallpaper_description": "A photo, GIF or video behind every screen",

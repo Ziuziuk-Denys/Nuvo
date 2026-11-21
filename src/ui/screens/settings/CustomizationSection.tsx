@@ -174,6 +174,8 @@ export function CustomizationSection(): JSX.Element {
   );
   const coverGlow = useCustomizationStore((state) => state.coverGlow);
   const setCoverGlow = useCustomizationStore((state) => state.setCoverGlow);
+  const playerControls = useCustomizationStore((state) => state.playerControls);
+  const setPlayerControls = useCustomizationStore((state) => state.setPlayerControls);
   const reduceEffects = useEffectsStore((state) => state.reduce);
   const setReduceEffects = useEffectsStore((state) => state.setReduce);
   const fps = useEffectsStore((state) => state.fps);
@@ -254,6 +256,23 @@ export function CustomizationSection(): JSX.Element {
           descKey="settings.cover_glow.description"
           explained
           control={<Switch label={t("settings.cover_glow.title")} checked={coverGlow && !hasWallpaper} disabled={hasWallpaper} onChange={setCoverGlow} />}
+        />
+        <SettingRow
+          title={t("settings.player_controls.title")}
+          description={t("settings.player_controls.description")}
+          titleKey="settings.player_controls.title"
+          descKey="settings.player_controls.description"
+          control={
+            <Segmented
+              label={t("settings.player_controls.title")}
+              options={[
+                { value: "centre", label: t("settings.player_controls.centre") },
+                { value: "side", label: t("settings.player_controls.side") },
+              ]}
+              value={playerControls}
+              onChange={setPlayerControls}
+            />
+          }
         />
       </SettingGroup>
       <SettingGroup label={t("settings.page.motion")}>

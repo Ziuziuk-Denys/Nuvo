@@ -43,6 +43,7 @@ describe("look store migration", () => {
       backgroundBlur: 20,
       backgroundFit: "cover",
       themeBeforePreset: "light",
+      playerControls: "centre",
     });
   });
 
@@ -94,6 +95,14 @@ describe("retired presets", () => {
     localStorage.setItem(LOOK_KEY, JSON.stringify({ state: { ...LOOK_DEFAULTS, preset: "marshmallow", backgroundDim: 20 }, version: 2 }));
     const { useLookStore } = await import("./lookStore");
     expect(useLookStore.getState()).toMatchObject({ preset: "blossom", backgroundDim: 20 });
+  });
+
+  it("keeps the side player controls and reads anything else as the middle", async () => {
+    localStorage.setItem(LOOK_KEY, JSON.stringify({ state: { ...LOOK_DEFAULTS, playerControls: "side" }, version: 2 }));
+    expect((await import("./lookStore")).useLookStore.getState().playerControls).toBe("side");
+    vi.resetModules();
+    localStorage.setItem(LOOK_KEY, JSON.stringify({ state: { ...LOOK_DEFAULTS, playerControls: "top" }, version: 2 }));
+    expect((await import("./lookStore")).useLookStore.getState().playerControls).toBe("centre");
   });
 });
 

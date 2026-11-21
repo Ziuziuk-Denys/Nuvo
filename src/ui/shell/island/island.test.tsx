@@ -2,6 +2,7 @@
 import { act } from "react";
 import { type Root, createRoot } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { useCustomizationStore } from "../../ports/settings";
 import { useNotInterestedStore } from "../../recs/notInterested";
 import { useTour } from "../../tour/tourStore";
 import { useShellStore } from "../shellStore";
@@ -425,6 +426,15 @@ describe("Island", () => {
     mocks.look.preset = "vinyl";
     mount();
     expect(button("ui.island.open_lyrics")!.firstElementChild!.className).not.toContain("vinyl");
+  });
+
+  it("moves the transport to the side when the player controls setting says so", () => {
+    mount();
+    const bar = document.querySelector<HTMLElement>("[data-island]")!;
+    expect(bar.dataset.controls).toBe("centre");
+    act(() => useCustomizationStore.getState().setPlayerControls("side"));
+    expect(bar.dataset.controls).toBe("side");
+    act(() => useCustomizationStore.getState().setPlayerControls("centre"));
   });
 
   it("lays the bar out as cover and title, the transport in the middle, then the tools", () => {
