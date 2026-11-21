@@ -12,6 +12,7 @@ export const HISTORY_ROWS = 128;
 export const HISTORY_RATE = 30;
 export const GLYPHS = " .·:-=+*xo%#@";
 const GLYPH_PX = 64;
+const SHOT_MIN_MS = 450;
 
 const FINISH = `#version 300 es
 precision highp float;
@@ -124,6 +125,8 @@ export function createStage(canvas: GlCanvas): Stage | null {
   let lastMs: number | null = null;
   let cuts = 0;
   let cutAtMs = -Infinity;
+  let shots = 0;
+  let shotAtMs = -Infinity;
   let drive = 0;
   let historyHead = 0;
   let historyDue = 0;
@@ -157,6 +160,8 @@ export function createStage(canvas: GlCanvas): Stage | null {
     lastMs = null;
     cuts = 0;
     cutAtMs = -Infinity;
+    shots = 0;
+    shotAtMs = -Infinity;
     drive = 0;
     historyHead = 0;
     historyDue = 0;
@@ -179,6 +184,10 @@ export function createStage(canvas: GlCanvas): Stage | null {
     if (features.onset === 1 && delta > 0) {
       cuts += 1;
       cutAtMs = timeMs;
+      if (timeMs - shotAtMs >= SHOT_MIN_MS) {
+        shots += 1;
+        shotAtMs = timeMs;
+      }
     }
     drive += (delta / 1000) * (0.25 + features.level + 1.5 * features.onset);
     historyDue += delta;
@@ -222,6 +231,8 @@ export function createStage(canvas: GlCanvas): Stage | null {
     set1("uBeat", features.beat);
     set1("uCut", cuts);
     set1("uCutAge", (timeMs - cutAtMs) / 1000);
+    set1("uShot", shots);
+    set1("uShotAge", (timeMs - shotAtMs) / 1000);
     set1("uHistoryHead", (historyHead + 0.5) / HISTORY_ROWS);
     set1("uImageAspect", imageAspect);
     set1("uHasImage", hasImage);

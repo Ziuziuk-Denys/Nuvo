@@ -19,6 +19,7 @@ export const SCENES: { id: string; selection: Selection }[] = [
   },
   { id: "emblem", selection: { background: "dusk", atmosphere: ["dust", "streak"], centrepiece: "emblem", lyrics: null } },
   { id: "ascii", selection: { background: "ascii", atmosphere: [], centrepiece: null, lyrics: "collage" } },
+  { id: "poster", selection: { background: "print", atmosphere: [], centrepiece: null, lyrics: "poster" } },
   { id: "glass", selection: { background: "glass", atmosphere: [], centrepiece: null, lyrics: "wipe" } },
   { id: "film", selection: { background: "still", atmosphere: ["film"], centrepiece: null, lyrics: "whisper" } },
   { id: "kinetic-lens", selection: { background: "still", atmosphere: [], centrepiece: null, lyrics: "lens", params: { still: { "still.dim": 0.8 } } } },

@@ -2172,6 +2172,14 @@
         "title": "Fogged glass",
         "description": "Rain drops on a fogged window"
       },
+      "print": {
+        "title": "Print",
+        "description": "The cover in two flat tones, cut on the beat"
+      },
+      "print-ascii": {
+        "title": "Print in characters",
+        "description": "The cover in two tones, drawn in characters"
+      },
       "dusk": {
         "title": "Dusk",
         "description": "Dark, monochrome, flashes on drops"
@@ -2268,6 +2276,10 @@
         "title": "Wiped glass",
         "description": "The line is wiped clear in the fog"
       },
+      "poster": {
+        "title": "Poster",
+        "description": "Loud words in capitals, soft lines in italics"
+      },
       "smoke": {
         "title": "Smoke",
         "description": "Lines dissolve like smoke"
@@ -2320,7 +2332,9 @@
       "strength": "Strength",
       "depth": "Depth",
       "rise": "Rise",
-      "swirl": "Swirl"
+      "swirl": "Swirl",
+      "shade": "Darkness",
+      "grain": "Grain"
     },
     "studio": {
       "title": "Scene studio",
@@ -2355,6 +2369,7 @@
       "kinetic-ice": "Ice",
       "emblem": "Emblem",
       "ascii": "Signal",
+      "poster": "Poster",
       "glass": "Glass",
       "film": "Film",
       "kinetic-lens": "Lens",
