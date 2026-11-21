@@ -58,9 +58,7 @@ function BringMusic(): JSX.Element {
           </button>
         </p>
       </div>
-      <p {...rise(styles.hint, 3)}>
-        {t("ui.home.bring.drop")}
-      </p>
+      <p {...rise(styles.hint, 3)}>{t("ui.home.bring.drop")}</p>
     </section>
   );
 }

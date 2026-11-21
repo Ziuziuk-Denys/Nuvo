@@ -200,7 +200,7 @@ describe("home", () => {
     expect(state.glow).toBe(false);
     const bring = live.page.locator("[data-bring][data-tour=home-start]");
     await bring.getByRole("heading").waitFor();
-    expect(await bring.getByRole("button").count(), "import, add files, add a folder").toBe(3);
+    expect(await bring.getByRole("button").count(), "three sources and add files").toBe(4);
     expect(await live.shoot(STEP, "home", "fresh", { looks: MATRIX, sizes: [W1200] })).toHaveLength(MATRIX.length);
     await shootRussian(live, "fresh-ru");
   }, 900_000);
