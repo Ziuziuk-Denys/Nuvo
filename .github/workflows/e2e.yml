@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        set: ${{ fromJSON(github.event_name == 'pull_request' && '["smoke 1/2","smoke 2/2","probe"]' || '["1/4","2/4","3/4","4/4"]') }}
+        set: ${{ fromJSON(github.event_name == 'pull_request' && '["smoke 1/2","smoke 2/2","1/4","2/4","3/4","4/4"]' || '["1/4","2/4","3/4","4/4"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -54,7 +54,7 @@ jobs:
           e2e() {
             dbus-run-session -- sh -c 'printf ci | gnome-keyring-daemon --unlock --components=secrets >/dev/null; exec xvfb-run -a -s "-screen 0 3840x2160x24" pnpm exec vitest run --config vitest.e2e.config.ts --reporter=verbose --reporter=github-actions "$@"' sh "$@"
           }
-          systemctl --user start pipewire.socket pipewire-pulse.socket wireplumber.service || { pipewire & sleep 1; wireplumber & pipewire-pulse & sleep 2; }
+          systemctl --user start pipewire.socket pipewire-pulse.socket wireplumber.service
           status=0
           case "$SET" in
             "smoke 1/2")
@@ -66,11 +66,9 @@ jobs:
               e2e e2e/ui/settings.e2e.ts e2e/ui/theme-picker.e2e.ts || status=1
               e2e e2e/ui/visual.e2e.ts -t "at 60 fps" || status=1
               ;;
-            probe)
-              e2e e2e/ui/shell.e2e.ts e2e/ui/karaoke.e2e.ts e2e/lyrics.e2e.ts e2e/ui/tour-geometry.e2e.ts || status=1
-              ;;
             *)
-              e2e --shard="$SET" || status=1
+              # the picks fill Home from live YouTube radio, which throttles runner addresses
+              e2e --shard="$SET" --exclude e2e/ui/coldstart.e2e.ts || status=1
               ;;
           esac
           exit $status
@@ -78,9 +76,6 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-failures-${{ strategy.job-index }}
-          path: |
-            e2e/artifacts/failures
-            e2e/artifacts/ui/1-karaoke
-            e2e/artifacts/ui/1-shell/panel-sleep*
+          path: e2e/artifacts
           if-no-files-found: ignore
           retention-days: 14

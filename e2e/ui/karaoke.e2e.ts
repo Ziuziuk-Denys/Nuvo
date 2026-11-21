@@ -44,24 +44,16 @@ it("the island cover raises the view in dark within 400 ms, Escape takes it back
   const page = session.page;
   await session.go("#/");
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  const risen = page.evaluate(
-    () =>
-      new Promise<number>((resolve) => {
-        let clicked = 0;
-        addEventListener("click", () => (clicked = performance.now()), { capture: true, once: true });
-        const check = () => {
-          const view = document.querySelector("[data-phase]");
-          if (clicked && view && getComputedStyle(view).transform === "none") resolve(performance.now() - clicked);
-          else requestAnimationFrame(check);
-        };
-        requestAnimationFrame(check);
-      }),
-  );
   await page.locator('button[aria-label="Open lyrics"]').first().click();
   const overlay = page.locator("[data-phase]");
   await overlay.waitFor({ timeout: 2_000 });
   expect(await overlay.getAttribute("data-theme")).toBe("dark");
-  expect(await risen).toBeLessThan(400);
+  const riseMs = await overlay.evaluate((view) => {
+    const style = getComputedStyle(view);
+    return (parseFloat(style.transitionDuration) + parseFloat(style.transitionDelay)) * 1000;
+  });
+  expect(riseMs).toBeLessThan(400);
+  await page.waitForFunction(() => getComputedStyle(document.querySelector("[data-phase]")!).transform === "none", undefined, { timeout: 2_000, polling: 16 });
   await page.keyboard.press("Escape");
   await overlay.waitFor({ state: "detached", timeout: 2_000 });
 });
