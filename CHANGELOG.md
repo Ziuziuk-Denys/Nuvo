@@ -71,6 +71,9 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - Slow starts fall through sooner: clients that need no warm-up go first, a silent YouTube client gets the next one started beside it, and SoundCloud refusals are known early
 - Ctrl+K puts matching commands and settings above songs, so Enter runs them
 - Queue rows rise one by one when the queue opens
+- Poster takes turns between narrow capitals and light italics phrase by phrase, with a large echo word behind most italic phrases
+- Random per song can pick Poster for any song, also without word timing, and Poster is the second tile in the Scene studio
+- Over a Scene, each karaoke control turns light or dark to read over the picture behind it
 
 #### Fixed
 
@@ -87,6 +90,8 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - The lyrics bar reads on light scenes
 - The tour tip no longer covers New theme from this
 - The Recognize sources fit one row in Russian
+- Word by word no longer slides sideways when a line ends
+- The Film effect adds black bars only when you raise its Letterbox slider
 
 ## 0.4.0
 
