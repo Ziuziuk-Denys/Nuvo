@@ -53,7 +53,6 @@ export function streamHover(stream: StreamInfo): string {
 }
 
 const CAUSE_TEXT: Record<string, string> = {
-  unavailable: "unavailable in your region",
   drm: "protected",
   sign_in_required: "needs sign-in",
   blocked: "blocked",

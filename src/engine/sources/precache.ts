@@ -4,7 +4,7 @@ import type { DaemonPort } from "./ports";
 import type { Resolved, ResolveOptions } from "./resolver";
 import { checkCacheWrite } from "./sniff";
 
-export const PRECACHE_ARM_MS = 10_000;
+export const PRECACHE_ARM_MS = 3000;
 export const FETCH_POLL_MS = 2000;
 export const IDLE_PREFETCH_AFTER_MS = 30_000;
 export const FETCH_TRANSIENT_LIMIT = 3;
