@@ -1,6 +1,6 @@
 {
-  "hero": "home",
-  "heroAlt": "The Home window: three mixes made from your plays, songs for you and the player bar.",
+  "hero": "discover",
+  "heroAlt": "Home with a ring of new songs under a sky drawn from the cover in the middle.",
   "sources": {
     "home": "stills/player-{theme}.png",
     "search": "stills/palette-{theme}.png",
@@ -9,8 +9,9 @@
     "import": "stills/import-{theme}.png",
     "background": "stills/wallpaper-settings-{theme}.png",
     "lock": "stills/lock-{theme}.png",
-    "scene": "scene-weeknd-snowfall-{theme}.png",
-    "studio": "studio-weeknd-dark.png"
+    "scene": "stills/scene-{theme}.png",
+    "studio": "stills/studio-dark.png",
+    "discover": "stills/discover-{theme}.png"
   },
   "widgets": {
     "scene": {
@@ -115,7 +116,7 @@
       "title": "Karaoke.",
       "caption": "Lyrics light up word by word, in full screen or beside the player.",
       "alt": "",
-      "video": "<img src=\".github/readme/motion/karaoke.webp\" width=\"100%\" alt=\"The karaoke view lighting up an invented demo song word by word\">"
+      "video": "<img src=\".github/readme/motion/karaoke.webp\" width=\"100%\" alt=\"The karaoke view lighting up a song word by word\">"
     },
     {
       "shot": "background",
@@ -134,7 +135,29 @@
   ],
   "scene": {
     "shot": "scene",
-    "video": "<img src=\".github/readme/motion/scene.webp\" width=\"100%\" alt=\"Nuvo Scene: the words of the song land as they are sung\">"
+    "video": ""
   },
-  "new": []
+  "new": [
+    {
+      "shot": "home",
+      "title": "Discover.",
+      "caption": "A ring of songs you have not heard yet. Spin it, and the sky behind it takes the colours of the cover in the middle.",
+      "alt": "",
+      "video": "<img src=\".github/readme/motion/discover.webp\" width=\"100%\" alt=\"Home with a ring of covers under a sky in their colours, turned by a drag\">"
+    },
+    {
+      "shot": "scene",
+      "title": "Poster.",
+      "caption": "The 13th scene prints the cover in two tones and sets the lyrics like a poster.",
+      "alt": "",
+      "video": "<img src=\".github/readme/motion/poster.webp\" width=\"100%\" alt=\"Scene Poster: the lyrics in heavy capitals over a two-tone print of the song cover\">"
+    },
+    {
+      "shot": "search",
+      "title": "Settings search.",
+      "caption": "Type a word, even one the setting does not use, and Nuvo opens the setting and marks it.",
+      "alt": "",
+      "video": "<img src=\".github/readme/motion/settings-search.webp\" width=\"100%\" alt=\"Settings search: a typed word opens the section and marks the setting\">"
+    }
+  ]
 }
