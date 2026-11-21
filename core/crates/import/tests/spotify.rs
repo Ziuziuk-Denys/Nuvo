@@ -1,8 +1,9 @@
-use nuvo_import::spotify::{EmbedError, Kind, PAGE_SIZE, SpotifyLink, page_query, parse_embed, parse_link, parse_page, song_count};
+use nuvo_import::spotify::{EmbedError, Kind, PAGE_SIZE, SpotifyLink, page_query, parse_embed, parse_link, parse_page, parse_track_embed, song_count, track_embed_url};
 use serde_json::{Value, json};
 
 const PLAYLIST: &str = include_str!("fixtures/spotify-embed-playlist.html");
 const ALBUM: &str = include_str!("fixtures/spotify-embed-album.html");
+const TRACK: &str = include_str!("fixtures/spotify-embed-track.html");
 const MISSING: &str = include_str!("fixtures/spotify-embed-missing.html");
 const META: &str = include_str!("fixtures/spotify-playlist-meta.html");
 const QUERY_PLAYLIST: &str = include_str!("fixtures/spotify-query-playlist.json");
@@ -24,6 +25,25 @@ fn playlist_and_album_links_parse_in_every_form() {
     assert_eq!(album.kind, Kind::Album);
     assert_eq!(album.embed_url(), "https://open.spotify.com/embed/album/4LH4d3cOWNNsVw41Gqt2kv");
     assert_eq!(playlist.page_url(), "https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U");
+}
+
+#[test]
+fn a_track_link_with_tracking_parameters_gives_its_embed() {
+    let url = "https://open.spotify.com/track/3gv2SbEStfiVU2A6p5FocL?si=abc&utm_source=copy-link&context=spotify%3Aplaylist%3A37i9dQZF1DWXRqgorJj26U&rowId=1";
+    assert_eq!(track_embed_url(url).as_deref(), Some("https://open.spotify.com/embed/track/3gv2SbEStfiVU2A6p5FocL"));
+    assert_eq!(parse_link(url), None);
+    assert_eq!(track_embed_url("https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U"), None);
+    assert_eq!(track_embed_url("https://open.spotify.com/track/short"), None);
+}
+
+#[test]
+fn a_track_embed_becomes_a_row() {
+    let row = parse_track_embed(TRACK).unwrap();
+    assert_eq!(row.title, "Ты моя...");
+    assert_eq!(row.artists, ["DJ NARODNII"]);
+    assert_eq!(row.duration_ms, Some(132_000));
+    assert_eq!(parse_track_embed(PLAYLIST), Err(EmbedError::Changed));
+    assert_eq!(parse_track_embed(MISSING), Err(EmbedError::Gone));
 }
 
 #[test]

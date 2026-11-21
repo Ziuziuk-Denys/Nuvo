@@ -8,6 +8,7 @@ use serde_json::{Value, json};
 
 const PLAYLIST: &str = include_str!("../../import/tests/fixtures/spotify-embed-playlist.html");
 const ALBUM: &str = include_str!("../../import/tests/fixtures/spotify-embed-album.html");
+const TRACK: &str = include_str!("../../import/tests/fixtures/spotify-embed-track.html");
 const MISSING: &str = include_str!("../../import/tests/fixtures/spotify-embed-missing.html");
 const META: &str = include_str!("../../import/tests/fixtures/spotify-playlist-meta.html");
 const QUERY_PLAYLIST: &str = include_str!("../../import/tests/fixtures/spotify-query-playlist.json");
@@ -158,6 +159,37 @@ async fn short_links_are_followed_only_while_they_stay_on_spotify() {
     assert!(!fx.hosts().contains(&"evil.example".to_string()));
     let (status, _) = list(&core, "https://spotify.link/home").await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+async fn track(core: &common::TestCore, url: &str) -> (StatusCode, Value) {
+    let route = Url::parse_with_params("http://core/v1/spotify/track", &[("url", url)]).unwrap();
+    common::call(&core.app, "GET", &format!("{}?{}", route.path(), route.query().unwrap()), None).await
+}
+
+#[tokio::test]
+async fn a_shared_track_link_gives_its_song() {
+    let fx = Fixture::start().await;
+    fx.on(&embed("track", "3gv2SbEStfiVU2A6p5FocL"), Reply::bytes("text/html", TRACK));
+    let core = core(&fx);
+    let shared = "https://open.spotify.com/track/3gv2SbEStfiVU2A6p5FocL?si=4f1c2b&utm_source=copy-link&context=spotify%3Aplaylist%3A37i9dQZF1DWXRqgorJj26U&rowId=12";
+    let (status, body) = track(&core, shared).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body, json!({"title": "Ты моя...", "artists": ["DJ NARODNII"], "durationMs": 132000}));
+    assert_eq!(fx.log(), ["open.spotify.com/embed/track/3gv2SbEStfiVU2A6p5FocL"]);
+}
+
+#[tokio::test]
+async fn a_gone_track_is_not_found_and_other_links_are_refused() {
+    let fx = Fixture::start().await;
+    fx.on(&embed("track", "3zOYmiNOuyDL0ClxJcEJ0T"), Reply::bytes("text/html", MISSING));
+    let core = core(&fx);
+    let (status, _) = track(&core, "https://open.spotify.com/track/3zOYmiNOuyDL0ClxJcEJ0T").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    for url in ["", &format!("https://open.spotify.com/playlist/{ID}"), "https://evil.example/track/3zOYmiNOuyDL0ClxJcEJ0T"] {
+        let (status, _) = track(&core, url).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{url}");
+    }
+    assert_eq!(fx.total(), 1);
 }
 
 #[tokio::test]

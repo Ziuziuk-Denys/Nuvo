@@ -15,6 +15,7 @@ export type LinkRoute =
   | { kind: "soundcloud"; url: string }
   | { kind: "apple-song"; id: string; storefront: string; url: string }
   | { kind: "deezer-track"; id: string; url: string }
+  | { kind: "spotify-track"; url: string }
   | { kind: "yandex-track"; id: string; url: string }
   | { kind: "shazam"; slug: string; id?: string; url: string }
   | { kind: "import"; service: ImportService; url: string }
@@ -33,7 +34,7 @@ const NAV_RULES = {
   track: /^[A-Za-z0-9_-]{11}$/,
 } as const;
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
-const TRACKING = /^(si|utm_.*|_r|_t|is_from_webapp|sender_device|feature|igsh|fbclid)$/i;
+const TRACKING = /^(si|utm_.*|_r|_t|is_from_webapp|sender_device|feature|igsh|fbclid|context|rowid|nd|dl_branch)$/i;
 const DANGEROUS_SCHEME = /^(javascript|data|file|vbscript|blob|about|chrome|ftp|ws|wss):/i;
 
 const KNOWN_HOSTS: [string, Service][] = [
@@ -218,6 +219,7 @@ function routeSpotify(host: string, path: string[], url: string): LinkRoute {
   const parts = path[0]?.startsWith("intl-") ? path.slice(1) : path;
   if ((parts[0] === "playlist" || parts[0] === "album") && /^[A-Za-z0-9]{22}$/.test(parts[1] ?? "") && parts.length === 2)
     return { kind: "import", service: "spotify", url };
+  if (parts[0] === "track" && /^[A-Za-z0-9]{22}$/.test(parts[1] ?? "") && parts.length === 2) return { kind: "spotify-track", url };
   return { kind: "error", code: "spotify_file_only", service: "spotify" };
 }
 

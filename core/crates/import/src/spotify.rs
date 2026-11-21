@@ -37,7 +37,7 @@ impl SpotifyLink {
     }
 }
 
-pub fn parse_link(url: &str) -> Option<SpotifyLink> {
+fn link_parts(url: &str) -> Option<(&str, &str)> {
     let rest = url.trim().strip_prefix("https://")?;
     let (host, path) = rest.split_once('/')?;
     if !matches!(host.to_ascii_lowercase().as_str(), "open.spotify.com" | "play.spotify.com") {
@@ -52,13 +52,23 @@ pub fn parse_link(url: &str) -> Option<SpotifyLink> {
         parts.remove(0);
     }
     let [kind, id] = parts[..] else { return None };
+    // Spotify ids are 22 base-62 characters
+    (id.len() == 22 && id.bytes().all(|b| b.is_ascii_alphanumeric())).then_some((kind, id))
+}
+
+pub fn parse_link(url: &str) -> Option<SpotifyLink> {
+    let (kind, id) = link_parts(url)?;
     let kind = match kind {
         "playlist" => Kind::Playlist,
         "album" => Kind::Album,
         _ => return None,
     };
-    // Spotify ids are 22 base-62 characters
-    (id.len() == 22 && id.bytes().all(|b| b.is_ascii_alphanumeric())).then(|| SpotifyLink { kind, id: id.to_string() })
+    Some(SpotifyLink { kind, id: id.to_string() })
+}
+
+pub fn track_embed_url(url: &str) -> Option<String> {
+    let (kind, id) = link_parts(url)?;
+    (kind == "track").then(|| format!("https://open.spotify.com/embed/track/{id}"))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -117,6 +127,26 @@ pub fn parse_embed(html: &str, kind: Kind) -> Result<EmbedListing, EmbedError> {
         .collect();
     let token = props.pointer("/state/settings/session/accessToken").and_then(Value::as_str).filter(|t| !t.is_empty()).map(str::to_string);
     Ok(EmbedListing { label, rows, listed: tracks.len(), token })
+}
+
+pub fn parse_track_embed(html: &str) -> Result<SourceRow, EmbedError> {
+    let data = page_data(html).ok_or(EmbedError::Changed)?;
+    let props = data.pointer("/props/pageProps").ok_or(EmbedError::Changed)?;
+    if props.get("status").and_then(Value::as_u64).is_some_and(|status| status == 404 || status == 410) {
+        return Err(EmbedError::Gone);
+    }
+    let track = props.pointer("/state/data/entity").filter(|e| e.get("type").and_then(Value::as_str) == Some("track")).ok_or(EmbedError::Changed)?;
+    let title = text(track, "name");
+    if title.is_empty() {
+        return Err(EmbedError::Changed);
+    }
+    let artists = track
+        .get("artists")
+        .and_then(Value::as_array)
+        .map(|list| list.iter().map(|artist| text(artist, "name")).filter(|name| !name.is_empty()).collect())
+        .unwrap_or_default();
+    let duration_ms = track.get("duration").and_then(Value::as_i64).filter(|ms| *ms > 0);
+    Ok(SourceRow { title, artists, duration_ms, ..SourceRow::default() })
 }
 
 pub fn song_count(html: &str) -> Option<usize> {

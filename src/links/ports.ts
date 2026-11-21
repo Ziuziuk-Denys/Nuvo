@@ -1,4 +1,4 @@
-import { inspectLink, matchNext, recognizeLink, soundcloudLookup, soundcloudTrack, startImport } from "./core";
+import { inspectLink, matchNext, recognizeLink, soundcloudLookup, soundcloudTrack, spotifyTrack, startImport } from "./core";
 import { fetchJson } from "./lookup";
 import type { ImportPorts } from "./receive";
 import type { LinkPorts } from "./resolve";
@@ -17,6 +17,7 @@ export function createLinkPorts(catalog: YoutubeCatalog): LinkPorts & ImportPort
     search: (query, filter, signal) => catalog.searchTracks(query, filter, signal),
     youtubeTrack: (id, signal) => catalog.track(id, signal),
     soundcloudLookup,
+    spotifyTrack,
     soundcloudTrack,
     fetchJson,
     startImport,

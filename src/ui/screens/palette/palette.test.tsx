@@ -242,7 +242,11 @@ describe("PaletteField", () => {
   it("ranks SoundCloud songs with the catalog's, as the search page does", () => {
     ctrlK();
     type("lorde");
-    expect(mocks.rank).toHaveBeenLastCalledWith("lorde", [expect.objectContaining({ id: "s1" }), expect.objectContaining({ id: "s2" }), expect.objectContaining({ id: "sc:1" })]);
+    expect(mocks.rank).toHaveBeenLastCalledWith("lorde", [
+      expect.objectContaining({ id: "s1" }),
+      expect.objectContaining({ id: "s2" }),
+      expect.objectContaining({ id: "sc:1" }),
+    ]);
     expect(options()).toEqual(expect.arrayContaining([expect.stringContaining("Royals")]));
     press("Escape");
   });
