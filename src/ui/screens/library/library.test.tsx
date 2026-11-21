@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { type Root, createRoot } from "react-dom/client";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { notifyLibraryChanged } from "../../ports/library";
 import { Library } from "./Library";
@@ -124,7 +124,10 @@ function render() {
   act(() =>
     root!.render(
       <MemoryRouter initialEntries={["/library"]}>
-        <Library />
+        <Routes>
+          <Route path="/library" element={<Library />} />
+          <Route path="/library/playlist" element={<p data-at-playlist="" />} />
+        </Routes>
       </MemoryRouter>,
     ),
   );
@@ -252,11 +255,12 @@ describe("Library imports", () => {
     expect(mocks.dismiss).toHaveBeenCalledWith("i1");
   });
 
-  it("opening a running row does not navigate away", () => {
+  it("a playlist whose import runs opens at once, so its matched songs can play", () => {
     mocks.summaries = [running];
     render();
     const row = [...host.querySelectorAll<HTMLElement>('[role="button"]')].find((node) => node.textContent?.includes("Late night drive"))!;
-    expect(row.hasAttribute("data-importing")).toBe(true);
+    act(() => row.click());
+    expect(host.querySelector("[data-at-playlist]")).not.toBeNull();
   });
 });
 

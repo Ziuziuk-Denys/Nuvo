@@ -53,13 +53,11 @@ export function LibraryList({ entries, selected, playing, onActivate, onMenu, t 
         {virtualizer.getVirtualItems().map((item) => {
           const entry = entries[item.index];
           const key = entryKey(entry);
-          const importing = entry.importing !== undefined;
           return (
             <div key={key} className={styles.slot} data-flip={key} style={{ transform: `translateY(${item.start - scrollMargin}px)` }}>
               <MediaRow
                 className={styles.entry}
                 data-selected={selected === key ? "" : undefined}
-                data-importing={importing ? "" : undefined}
                 leading={<EntryArt entry={entry} size={48} />}
                 title={entry.title}
                 subtitle={entry.subtitle}
