@@ -692,6 +692,14 @@
   --k-halo: rgba(16, 19, 32, 0.22);
 }
 
+.root[data-scene-tone="light"] .pill {
+  --k-ink-3: rgba(16, 19, 32, 0.62);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    inset 0 0 0 1px rgba(16, 19, 32, 0.08),
+    0 6px 18px -10px rgba(16, 19, 32, 0.35);
+}
+
 .root[data-scene-tone="light"] .play {
   color: #fff;
 }
