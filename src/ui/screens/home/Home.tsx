@@ -60,7 +60,9 @@ export function Home(): JSX.Element | null {
   const { t, locale } = useTranslation();
   const navigate = useNavigate();
   const all = useHomeMixes();
-  const offline = useOfflineMode() || !useStreamingReachable();
+  const offlineMode = useOfflineMode();
+  const reachable = useStreamingReachable();
+  const offline = offlineMode || !reachable;
   const kept = useOfflineHome(offline ? all : null);
   const addMusic = useAddMusic();
   const { data: likedCount } = useLikedTrackCount();

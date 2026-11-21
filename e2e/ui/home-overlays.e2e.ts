@@ -68,3 +68,24 @@ it("a young profile with For you but no New to you still opens with the ring und
   }));
   if (sky.strict) expect(sky.still, "a GPU that can draw the sky draws it").toBe(false);
 }, 300_000);
+
+it("turning offline mode on and off over Home with the ring keeps Home up", async () => {
+  const live = await launchNuvo({ profile: "seeded" });
+  session = live;
+  await seedPools(live);
+  await live.page.reload();
+  await live.go("#/");
+  await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
+  await live.page.keyboard.press("Control+KeyK");
+  await live.page.locator("header input[role=combobox]").fill("Offline mode");
+  await live.page.locator('[role="dialog"][data-state="in"] [role="option"]', { hasText: "Offline mode" }).first().click();
+  const offline = live.page.getByLabel("Offline mode", { exact: true });
+  await offline.waitFor({ timeout: 15_000 });
+  for (const turn of ["on", "off"]) {
+    await offline.click();
+    await live.page.waitForTimeout(2_000);
+    expect(await live.page.locator('[role="alertdialog"]').count(), `offline mode ${turn}`).toBe(0);
+  }
+  await live.page.keyboard.press("Escape");
+  await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 15_000 });
+}, 300_000);
