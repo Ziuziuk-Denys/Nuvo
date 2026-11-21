@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use nuvo_contracts::{ImportNext, ImportRow};
 use nuvo_import::job::{self, Target};
 use nuvo_import::{Parsed, SourceRow};
-use nuvo_store::{Connection, Db, StoreError, library, open_connection, playlists};
+use nuvo_store::{Connection, Db, StoreError, alternatives, library, open_connection, playlists};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
@@ -358,4 +358,53 @@ fn a_liked_import_skips_a_second_copy_of_a_song_already_liked() {
     assert_eq!((summary.counts.exact, summary.counts.already), (2, 1));
     let again = job::start(&conn, &parsed(vec![copy("albumcopy02", "Skyline", 200_500)]), &[], Some(Target::Liked), 2000).unwrap();
     assert_eq!((again.counts.exact, again.counts.already), (0, 1));
+}
+
+fn sure_teardrop(conn: &Connection, id: &str) {
+    let ImportNext::Search { row_id, .. } = job::next(conn, id, 2000).unwrap() else { panic!("a search was expected") };
+    let mut official = track("sc:1", "Teardrop", "Massive Attack", 330_000);
+    official["verified"] = json!(true);
+    job::post_candidates(conn, id, row_id, 1, vec![official], false, 2000).unwrap();
+}
+
+fn teardrop(conn: &Connection, at: i64) -> nuvo_contracts::ImportSummary {
+    job::start(conn, &parsed(vec![meta_row("Teardrop", "Massive Attack", Some(330_000))]), &[], None, at).unwrap()
+}
+
+#[test]
+fn a_song_matched_before_lands_at_once_in_the_next_import() {
+    let (_dir, conn) = open();
+    sure_teardrop(&conn, &teardrop(&conn, 1000).id);
+    let again = teardrop(&conn, 3000);
+    assert!(matches!(job::next(&conn, &again.id, 3001).unwrap(), ImportNext::Done { .. }), "no search for a remembered song");
+    let row = &job::rows(&conn, &again.id, "all", None, 10).unwrap().items[0];
+    assert_eq!(row.label.as_deref(), Some("likely"));
+    assert_eq!(playlist_tracks(&conn, &again.target_id.unwrap()), ["sc:1"]);
+}
+
+#[test]
+fn a_picked_song_is_remembered_and_a_removed_one_searched_again() {
+    let (_dir, conn) = open();
+    let first = teardrop(&conn, 1000).id;
+    sure_teardrop(&conn, &first);
+    let row = row_ids(&conn, &first)[0];
+    job::decide(&conn, &first, row, "pick", Some(&track("td2", "Teardrop", "Massive Attack", 331_000)), 2001).unwrap();
+    let second = teardrop(&conn, 3000);
+    assert_eq!(playlist_tracks(&conn, &second.target_id.unwrap()), ["td2"]);
+    job::decide(&conn, &second.id, row_ids(&conn, &second.id)[0], "remove", None, 3001).unwrap();
+    let third = teardrop(&conn, 4000).id;
+    assert!(matches!(job::next(&conn, &third, 4001).unwrap(), ImportNext::Search { .. }));
+}
+
+#[test]
+fn a_remembered_track_that_stopped_playing_is_searched_again_but_a_better_bitrate_keeps_it() {
+    let (_dir, conn) = open();
+    sure_teardrop(&conn, &teardrop(&conn, 1000).id);
+    let fallback = alternatives::Alternative { source: "youtube".into(), alt_id: "td3".into(), score: 90, reason: "unavailable".into(), duration_ms: None };
+    let better = alternatives::Alternative { reason: "bitrate".into(), ..fallback.clone() };
+    alternatives::put(&conn, "sc:1", &better, 2400).unwrap();
+    assert!(matches!(job::next(&conn, &teardrop(&conn, 2450).id, 2451).unwrap(), ImportNext::Done { .. }));
+    alternatives::put(&conn, "sc:1", &fallback, 2500).unwrap();
+    let again = teardrop(&conn, 3000).id;
+    assert!(matches!(job::next(&conn, &again, 3001).unwrap(), ImportNext::Search { .. }));
 }

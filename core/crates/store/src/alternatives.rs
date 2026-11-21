@@ -20,12 +20,18 @@ pub fn get(conn: &Connection, track_id: &str) -> Result<Option<Alternative>, Sto
 }
 
 pub fn put(conn: &Connection, track_id: &str, alt: &Alternative, now: i64) -> Result<(), StoreError> {
-    conn.execute(
+    let tx = conn.unchecked_transaction()?;
+    // Only a better bitrate keeps the track good; any other reason means imports must stop handing it out
+    if alt.reason != "bitrate" {
+        tx.execute("DELETE FROM match_memo WHERE track_id = ?1", [track_id])?;
+    }
+    tx.execute(
         "INSERT INTO track_alternatives (track_id, source, alt_id, score, reason, duration_ms, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
          ON CONFLICT(track_id) DO UPDATE SET source = excluded.source, alt_id = excluded.alt_id, score = excluded.score,
            reason = excluded.reason, duration_ms = excluded.duration_ms, created_at = excluded.created_at",
         (track_id, &alt.source, &alt.alt_id, alt.score, &alt.reason, alt.duration_ms, now),
     )?;
+    tx.commit()?;
     Ok(())
 }
 
