@@ -238,10 +238,11 @@ it("the karaoke view asks once how songs should look, and the first scene plays 
   await choice.waitFor({ timeout: 10_000 });
   await page.waitForTimeout(2_500);
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "choice.png") });
-  await choice.getByRole("button", { name: /^Karaoke/ }).hover();
+  await choice.getByRole("radio", { name: "Karaoke" }).click();
   await page.waitForTimeout(700);
-  await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "choice-hover.png") });
-  await choice.getByRole("button", { name: /^Scene/ }).click();
+  await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "choice-karaoke.png") });
+  await choice.getByRole("radio", { name: "Scene" }).click();
+  await choice.getByRole("button", { name: "Use Scene" }).click();
   await choice.waitFor({ state: "detached", timeout: 5_000 });
   const playing = () => page.evaluate(() => (window as unknown as { __nuvoPlayer: Player }).__nuvoPlayer.engine.getView().current?.track.id);
   expect(await playing()).toBe("fHI8X4OXluQ");

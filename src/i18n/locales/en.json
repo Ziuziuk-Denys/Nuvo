@@ -2412,10 +2412,10 @@
     "choice": {
       "title": "How should songs look?",
       "scene": "Scene",
-      "scene_note": "The song draws itself to the beat.",
       "karaoke": "Karaoke",
-      "karaoke_note": "Large lyrics, line by line.",
-      "later": "You can switch any time with the button in the top right corner.",
+      "later": "Try both, keep one.",
+      "use_scene": "Use Scene",
+      "use_karaoke": "Use Karaoke",
       "here": "Switch between karaoke and the scene here, any time.",
       "demo_1": "Turn the music up",
       "demo_2": "and every word",

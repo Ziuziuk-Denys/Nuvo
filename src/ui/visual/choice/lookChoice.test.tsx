@@ -29,30 +29,37 @@ afterEach(() => {
 });
 
 const mount = () => act(() => root.render(<LookChoice light={false} onChosen={onChosen} />));
-const pick = (name: string) => [...host.querySelectorAll("button")].find((item) => item.textContent?.includes(name))!;
+const radio = (view: string) => host.querySelector<HTMLButtonElement>(`[role=radio]:nth-child(${view === "scene" ? 1 : 2})`)!;
+const use = () => [...host.querySelectorAll("button")].find((item) => item.textContent?.startsWith("visual.choice.use_"))!;
+const view = () => host.firstElementChild?.getAttribute("data-view");
 
-it("previews both looks on the built-in demo line, whatever the song", () => {
+it("opens on a live scene of the built-in demo line, whatever the song", () => {
   mount();
-  expect([...host.querySelectorAll("button b")].map((item) => item.textContent)).toEqual(["visual.choice.scene", "visual.choice.karaoke"]);
+  expect(view()).toBe("scene");
+  expect(radio("scene").getAttribute("aria-checked")).toBe("true");
   expect(host.querySelector("canvas")?.getAttribute("data-aspect")).toBe("wide");
-  expect(host.textContent).toContain("visual.choice.later");
   expect(host.textContent).toContain("visual.choice.demo_1");
-  expect(host.querySelectorAll("[data-active]")).toHaveLength(1);
+  expect(use().textContent).toBe("visual.choice.use_scene");
 });
 
-it("quiets the other half while one is hovered", () => {
+it("tries karaoke from the switch or the arrow keys without choosing it", () => {
   mount();
-  act(() => pick("visual.choice.karaoke").dispatchEvent(new MouseEvent("pointerover", { bubbles: true })));
-  expect(host.firstElementChild?.getAttribute("data-hot")).toBe("karaoke");
+  act(() => radio("karaoke").click());
+  expect(view()).toBe("karaoke");
+  expect(use().textContent).toBe("visual.choice.use_karaoke");
+  act(() => radio("karaoke").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })));
+  expect(view()).toBe("scene");
+  expect(onChosen).not.toHaveBeenCalled();
 });
 
-it.each(["scene", "karaoke"] as const)("picking %s lets the other half go, then hands over the choice", (view) => {
+it.each(["scene", "karaoke"] as const)("keeping %s steps aside, then hands over the choice", (choice) => {
   mount();
-  act(() => pick(`visual.choice.${view}`).click());
-  expect(host.firstElementChild?.getAttribute("data-leaving")).toBe(view);
+  act(() => radio(choice).click());
+  act(() => use().click());
+  expect(host.firstElementChild?.hasAttribute("data-leaving")).toBe(true);
   expect(onChosen).not.toHaveBeenCalled();
   act(() => vi.advanceTimersByTime(LEAVE_MS));
-  expect(onChosen).toHaveBeenCalledWith(view);
+  expect(onChosen).toHaveBeenCalledWith(choice);
 });
 
 it("points at the switch in the corner and steps aside on a press or after a while", () => {

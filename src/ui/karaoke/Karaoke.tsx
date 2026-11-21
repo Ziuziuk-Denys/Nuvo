@@ -447,7 +447,13 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   );
 
   return (
-    <div className={styles.root} style={vars} data-theme="dark" data-scene-tone={stageOn && lightScene ? "light" : undefined}>
+    <div
+      className={styles.root}
+      style={vars}
+      data-theme="dark"
+      data-scene-tone={stageOn && lightScene ? "light" : undefined}
+      data-choosing={visual.chosen ? undefined : ""}
+    >
       {stageOn && !editing ? (
         <Stage className={styles.stage} template={scene} aspect="wide" coverUrl={track?.coverUrl ?? ""} lines={lines} onTone={setLightScene} />
       ) : (
