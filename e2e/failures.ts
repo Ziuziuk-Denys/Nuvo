@@ -5,13 +5,13 @@ import { beforeEach, type RunnerTestCase } from "vitest";
 
 const DIR = path.resolve(import.meta.dirname, "artifacts", "failures");
 let current: RunnerTestCase | undefined;
-let fileFailed = false;
+let failures = 0;
 let saved = 0;
 
 beforeEach(({ task, onTestFailed }) => {
   current = task;
   onTestFailed(() => {
-    fileFailed = true;
+    failures += 1;
   });
 });
 
@@ -27,10 +27,11 @@ async function keep(app: ElectronApplication): Promise<void> {
 const launch = _electron.launch.bind(_electron);
 _electron.launch = async (options) => {
   const app = await launch(options);
+  const failuresAtLaunch = failures;
   await app.context().tracing.start({ screenshots: true, snapshots: true });
   const close = app.close.bind(app);
   app.close = async () => {
-    const failed = fileFailed || current?.result?.state === "fail";
+    const failed = failures > failuresAtLaunch || current?.result?.state === "fail";
     await (failed ? keep(app) : app.context().tracing.stop()).catch(() => undefined);
     return close();
   };
