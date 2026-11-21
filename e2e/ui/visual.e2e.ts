@@ -167,6 +167,7 @@ it("the studio exports the picked range as an MP4 with the song under it", async
     dialog.showSaveDialog = (async () => ({ canceled: false, filePath: file })) as typeof dialog.showSaveDialog;
   }, out);
 
+  await page.getByRole("option", { name: "Poster" }).click();
   await page.getByRole("button", { name: "Export", exact: true }).click();
   await page.getByRole("button", { name: "720p", exact: true }).click();
   await page.getByRole("button", { name: "30 fps", exact: true }).click();

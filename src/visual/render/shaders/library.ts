@@ -900,7 +900,7 @@ vec4 layer() {
   float glitched = step(hash(vec2(uShot, 11.0)), 0.3) * (1.0 - smoothstep(0.0, 0.12, uShotAge));
   uv.x += glitched * step(0.72, hash(vec2(row, uShot))) * (hash(vec2(row, uShot + 1.0)) - 0.5) * 0.08 * u_glitch;
 
-  float speck = (hash(gl_FragCoord.xy + floor(uTime * 12.0) * 13.7) - 0.5) * 0.14 * u_grain;
+  float speck = (hash(gl_FragCoord.xy + floor(uTime * 12.0) * 13.7) - 0.5) * 0.05 * u_grain;
   float edge = (noise(gl_FragCoord.xy * 0.3) - 0.5) * 0.1 * u_grain;
   float tone;
   if (u_ascii > 0.5) {
