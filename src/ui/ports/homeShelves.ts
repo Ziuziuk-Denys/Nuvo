@@ -76,9 +76,7 @@ export function playSongs(tracks: Track[], startAt: number, context: string): vo
 export async function genreSongs(query: string): Promise<Track[]> {
   try {
     const found = await catalog().searchFiltered(query, "songs", AbortSignal.timeout(GENRE_WAIT_MS));
-    return found
-      .filter((track) => !COMPILATION.test(`${track.title} ${track.artists}`) && track.durationMs < LONGEST_SONG_MS)
-      .slice(0, GENRE_SONGS);
+    return found.filter((track) => !COMPILATION.test(`${track.title} ${track.artists}`) && track.durationMs < LONGEST_SONG_MS).slice(0, GENRE_SONGS);
   } catch {
     return [];
   }

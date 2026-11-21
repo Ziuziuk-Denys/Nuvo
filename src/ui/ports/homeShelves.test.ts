@@ -9,7 +9,9 @@ const mocks = vi.hoisted(() => ({
     { id: "e", title: "Rush", artists: "Ayra Starr", durationMs: 185_000 },
     { id: "f", title: "Live Set", artists: "Band", durationMs: 3_600_000 },
   ],
-  cached: new Set(["c1", "c2", "c3", "s2"]), local: [{ id: `local:${"a".repeat(32)}`, title: "Mine" }] }));
+  cached: new Set(["c1", "c2", "c3", "s2"]),
+  local: [{ id: `local:${"a".repeat(32)}`, title: "Mine" }],
+}));
 vi.mock("@/engine", () => ({ catalog: () => ({ searchFiltered: async () => mocks.found }), player: () => ({}) }));
 vi.mock("@/engine/adapters", () => ({ createContinuation: vi.fn() }));
 vi.mock("@/engine/boot", () => ({ CORE_BASE_URL: "http://core" }));
