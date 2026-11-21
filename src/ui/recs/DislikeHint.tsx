@@ -1,6 +1,7 @@
 import { useEffect, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "../ports/i18n";
+import { usePlayerStore } from "../ports/player";
 import { Callout } from "../tour/Callout";
 import { ringAround, type Box } from "../tour/placement";
 import { radiusOf, seenBox } from "../tour/targets";
@@ -23,17 +24,19 @@ function takeFirstTime(): boolean {
 export function DislikeHint(): JSX.Element | null {
   const { t } = useTranslation();
   const tourOff = useTour((state) => state.phase === "off");
+  const karaoke = usePlayerStore((state) => state.fullscreen);
+  const free = tourOff && !karaoke;
   const [box, setBox] = useState<(Box & { radius: number }) | null>(null);
 
   useEffect(() => {
-    if (!tourOff) return;
+    if (!free) return;
     const timer = setTimeout(() => {
       const target = document.querySelector("[data-island] [data-dislike]");
       const seen = target ? seenBox(target) : null;
       if (target && seen && takeFirstTime()) setBox({ ...seen, radius: radiusOf(target) });
     }, AFTER_MS);
     return () => clearTimeout(timer);
-  }, [tourOff]);
+  }, [free]);
 
   useEffect(() => {
     if (!box) return;
@@ -46,7 +49,7 @@ export function DislikeHint(): JSX.Element | null {
     };
   }, [box]);
 
-  if (!box) return null;
+  if (!box || !free) return null;
   const view = { width: innerWidth, height: innerHeight };
   return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 2000, pointerEvents: "none" }} aria-live="polite">

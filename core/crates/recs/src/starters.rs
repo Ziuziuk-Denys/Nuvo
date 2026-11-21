@@ -31,18 +31,6 @@ fn check_pick(pick: &Value) -> Result<(), StoreError> {
     Ok(())
 }
 
-pub fn needed(conn: &Connection) -> Result<bool, StoreError> {
-    let known: bool = conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM liked_tracks)
-             OR EXISTS(SELECT 1 FROM play_events WHERE end_reason = 'complete' OR played_ms >= 30000)
-             OR EXISTS(SELECT 1 FROM rec_starters)
-             OR EXISTS(SELECT 1 FROM playlist_items)",
-        [],
-        |r| r.get(0),
-    )?;
-    Ok(!known)
-}
-
 pub fn replace(conn: &Connection, picks: &[Value], now: i64) -> Result<usize, StoreError> {
     if picks.is_empty() || picks.len() > MAX_STARTERS {
         return Err(StoreError::Invalid(format!("1-{MAX_STARTERS} tracks")));
