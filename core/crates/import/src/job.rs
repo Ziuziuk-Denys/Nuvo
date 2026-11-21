@@ -4,12 +4,13 @@ use nuvo_contracts::{
 use nuvo_store::{Connection, StoreError, library, new_id, playlists, tracks};
 use std::cell::RefCell;
 
-use nuvo_match::LikedIndex;
+use nuvo_match::{Answer, LikedIndex, memo};
 use nuvo_match::relevance::Song;
 use rusqlite::{OptionalExtension, Row, params};
 use serde_json::Value;
 
-use crate::cascade::{self, Cascade};
+use crate::cascade::{self, Cascade, SURE};
+use crate::matcher;
 use crate::{MAX_ROWS, Parsed, SourceRow};
 
 /// A crashed worker loses its row for this long, then another worker gets it.
@@ -187,6 +188,18 @@ fn insert_rows(tx: &Connection, id: &str, first: i64, parsed: &Parsed, legacy: &
                 "INSERT INTO import_rows (import_id, position, source_json, label, reason, chosen_track_json, item_ref) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                 params![id, position, source_json, label, reason, track.to_string(), item_ref],
             )?;
+        } else if let (None, Some(Answer::Approved { track, score })) = (&reason, memo::get(tx, &matcher::source(row), now)?) {
+            let item_ref = add_to_target(tx, &meta, position, &track, now)?;
+            added_any |= item_ref.is_some();
+            let (label, reason) = match item_ref {
+                None => ("already", "already_there"),
+                Some(_) if score >= i64::from(SURE) => ("likely", "matched"),
+                Some(_) => ("check", "matched"),
+            };
+            tx.execute(
+                "INSERT INTO import_rows (import_id, position, source_json, label, score, reason, chosen_track_json, item_ref) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![id, position, source_json, label, score, reason, track.to_string(), item_ref],
+            )?;
         } else if let Some(reason) = reason {
             tx.execute(
                 "INSERT INTO import_rows (import_id, position, source_json, label, reason, chosen_track_json) VALUES (?1, ?2, ?3, 'missing', ?4, ?5)",
@@ -311,6 +324,9 @@ fn to_pending((id, source, cascade): (i64, String, String)) -> Result<Pending, S
 
 fn finalize(conn: &Connection, meta: &Meta, row: &Pending, position: i64, now: i64) -> Result<(), StoreError> {
     let outcome = cascade::outcome(&row.source, &row.cascade);
+    if let (Some(track), Some(score), "likely") = (&outcome.track, outcome.score, outcome.label) {
+        memo::put(conn, &matcher::source(&row.source), &Answer::Approved { track: track.clone(), score: i64::from(score) }, now)?;
+    }
     let mut label = outcome.label;
     let mut item_ref = None;
     if let (Some(track), "likely" | "check") = (&outcome.track, label) {
@@ -487,11 +503,11 @@ pub fn decide(conn: &Connection, id: &str, row_id: i64, decision: &str, track: O
     let tx = conn.unchecked_transaction()?;
     let meta = meta(&tx, id)?;
     require_target(&tx, &meta)?;
-    let (label, position, chosen, item_ref): (Option<String>, i64, Option<String>, Option<String>) = tx
+    let (label, position, chosen, item_ref, source_json): (Option<String>, i64, Option<String>, Option<String>, String) = tx
         .query_row(
-            "SELECT label, position, chosen_track_json, item_ref FROM import_rows WHERE id = ?1 AND import_id = ?2",
+            "SELECT label, position, chosen_track_json, item_ref, source_json FROM import_rows WHERE id = ?1 AND import_id = ?2",
             params![row_id, id],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
         )
         .optional()?
         .ok_or(StoreError::NotFound("import row"))?;
@@ -510,12 +526,14 @@ pub fn decide(conn: &Connection, id: &str, row_id: i64, decision: &str, track: O
                 remove_from_target(&tx, &meta, old)?;
             }
             let added = add_to_target(&tx, &meta, position, track, now)?;
+            memo::put(&tx, &matcher::source(&serde_json::from_str(&source_json)?), &Answer::Approved { track: track.clone(), score: 100 }, now)?;
             (Some(track.clone()), added)
         }
         "remove" => {
             if let Some(old) = &item_ref {
                 remove_from_target(&tx, &meta, old)?;
             }
+            memo::forget(&tx, &matcher::source(&serde_json::from_str(&source_json)?))?;
             (chosen.as_deref().map(serde_json::from_str).transpose()?, None)
         }
         "keep" => (chosen.as_deref().map(serde_json::from_str).transpose()?, item_ref.clone()),

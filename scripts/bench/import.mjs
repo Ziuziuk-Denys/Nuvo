@@ -7,7 +7,7 @@ const exe = option("--exe");
 const runs = Number(option("--runs", 3));
 const url = option("--url", "https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO");
 
-const results = { readMs: [], matchMs: [], totals: [], failures: [] };
+const results = { readMs: [], matchMs: [], againMs: [], totals: [], failures: [] };
 
 async function importOnce(page) {
   await page.evaluate(() => (location.hash = "#/library"));
@@ -26,7 +26,12 @@ async function importOnce(page) {
   await start.click();
   for (;;) {
     const item = await core(page, `return (await (await fetch(base + "/v1/imports")).json()).items.find((item) => !arg.includes(item.id)) ?? null;`, before);
-    if (item?.status === "done") return { readMs, matchMs: Date.now() - matchAt, total: item.total, counts: item.counts };
+    if (item?.status === "done") {
+      const matchMs = Date.now() - matchAt;
+      await page.keyboard.press("Escape");
+      await page.locator('[role="dialog"]').waitFor({ state: "detached", timeout: 10_000 });
+      return { readMs, matchMs, total: item.total, counts: item.counts };
+    }
     if (Date.now() - matchAt > 600_000) throw new Error("import did not finish in 10 min");
     await sleep(100);
   }
@@ -44,6 +49,9 @@ for (let run = 0; run < runs; run++) {
       results.matchMs.push(sample.matchMs);
       results.totals.push(sample.total);
       console.log(`run ${run + 1}: read ${sample.readMs} ms, match ${sample.matchMs} ms, ${sample.total} rows ${JSON.stringify(sample.counts)}`);
+      const again = await importOnce(page);
+      results.againMs.push(again.matchMs);
+      console.log(`run ${run + 1} again: match ${again.matchMs} ms ${JSON.stringify(again.counts)}`);
     } catch (error) {
       results.failures.push({ run, error: String(error).split("\n")[0] });
       console.log(`run ${run + 1} failed: ${String(error).split("\n")[0]}`);
@@ -61,6 +69,7 @@ const summary = {
   runs,
   readMs: summarize(results.readMs, 0),
   matchMs: summarize(results.matchMs, 0),
+  againMs: summarize(results.againMs, 0),
   totals: results.totals,
   failures: results.failures,
 };

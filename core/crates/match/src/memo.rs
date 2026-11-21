@@ -65,6 +65,11 @@ pub fn put(conn: &Connection, source: &Source, answer: &Answer, now: i64) -> Res
     Ok(())
 }
 
+pub fn forget(conn: &Connection, source: &Source) -> Result<(), StoreError> {
+    conn.execute("DELETE FROM match_memo WHERE key = ?1", [key(source)])?;
+    Ok(())
+}
+
 pub fn standin(conn: &Connection, nuvo_track_id: &str) -> Result<Option<Answer>, StoreError> {
     let row: Option<(String, i64)> = conn.query_row("SELECT track_json, score FROM match_standins WHERE track_id = ?1", [nuvo_track_id], |r| Ok((r.get(0)?, r.get(1)?))).optional()?;
     Ok(row.and_then(|(json, score)| serde_json::from_str(&json).ok().map(|track| Answer::Approved { track, score })))

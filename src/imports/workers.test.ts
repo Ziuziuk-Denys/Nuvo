@@ -149,13 +149,13 @@ describe("ImportRunner", () => {
     });
   });
 
-  it("sleeps for a wait answer, capped at a minute", async () => {
+  it("asks again within a second of a wait answer, so a finished import never holds the next one", async () => {
     const daemon = new FakeDaemon();
-    daemon.script.set("i1", [{ wait: 250 }, { wait: 600_000 }]);
+    daemon.script.set("i1", [{ wait: 250 }, { wait: 59_000 }]);
     const { runner: r, done, slept } = runner(daemon, {}, 1);
     r.add(["i1"]);
     await done;
-    expect(slept).toEqual([250, 60_000]);
+    expect(slept).toEqual([250, 1_000]);
   });
 
   it("stops on 404 (the target playlist was deleted) and on a locked daemon", async () => {
