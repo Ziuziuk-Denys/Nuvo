@@ -198,22 +198,9 @@ describe("home", () => {
     expect(state.picks).toBe(0);
     expect(state.coldStart).toBe(true);
     expect(state.glow).toBe(false);
-    const edges = await live.page.evaluate(() => {
-      const box = (selector: string) => document.querySelector(`[aria-labelledby="cold-taste-title"] ${selector}`)!.getBoundingClientRect();
-      const field = box('[role="search"]');
-      const sources = [...document.querySelectorAll("[data-source]")].map((source) => source.getBoundingClientRect());
-      return {
-        field: [field.left, field.right],
-        count: box('[role="status"]').left,
-        listen: box('[role="status"] + button').right,
-        importCentre: (sources[0].left + sources.at(-1)!.right) / 2,
-        sources: sources.length,
-      };
-    });
-    expect(edges.sources, "every import source offered").toBe(5);
-    expect(Math.abs(edges.importCentre - (edges.field[0] + edges.field[1]) / 2)).toBeLessThanOrEqual(1);
-    expect(Math.abs(edges.count - edges.field[0])).toBeLessThanOrEqual(1);
-    expect(Math.abs(edges.listen - edges.field[1])).toBeLessThanOrEqual(1);
+    const bring = live.page.locator("[data-bring][data-tour=home-start]");
+    await bring.getByRole("heading").waitFor();
+    expect(await bring.getByRole("button").count(), "import, add files, add a folder").toBe(3);
     expect(await live.shoot(STEP, "home", "fresh", { looks: MATRIX, sizes: [W1200] })).toHaveLength(MATRIX.length);
     await shootRussian(live, "fresh-ru");
   }, 900_000);

@@ -29,7 +29,7 @@ function BringMusic(): JSX.Element {
   const addMusic = useAddMusic();
   const addFolder = useAddFolder();
   return (
-    <section className={styles.bring} aria-labelledby="bring-title" data-bring="">
+    <section className={styles.bring} aria-labelledby="bring-title" data-bring="" data-tour="home-start">
       <h2 id="bring-title" className={styles.title}>
         {t("ui.home.bring.title")}
       </h2>
