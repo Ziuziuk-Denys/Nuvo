@@ -35,7 +35,7 @@ float fbm(vec2 p) {
 
 vec3 cover(vec2 p) {
   vec3 c = mix(texture(previous, p).rgb, texture(current, p).rgb, blend);
-  c = clamp(mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.6), 0.0, 1.0);
+  c = clamp(mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.25), 0.0, 1.0);
   c /= max(max(c.r, max(c.g, c.b)), 0.3);
   return dark > 0.5 ? c * 0.95 : mix(c, vec3(1.0), 0.08);
 }
@@ -75,7 +75,7 @@ void main() {
 
   vec3 tone = cover(vec2(0.5 + (fbm(p * 1.3) - 0.5) * 0.6, 0.5));
   float high = smoothstep(0.42, 0.82, fbm(p * vec2(1.1, 2.6) + vec2(t * 1.2, 1.3))) * smoothstep(0.45, 1.0, uv.y);
-  float low = smoothstep(0.4, 0.78, fbm(p * vec2(1.4, 4.0) + vec2(-t * 2.6, 7.7))) * smoothstep(0.5, 0.3, uv.y) * smoothstep(0.16, 0.3, uv.y);
+  float low = smoothstep(0.4, 0.78, fbm(p * vec2(1.4, 4.0) + vec2(-t * 2.6, 7.7))) * smoothstep(0.55, 0.3, uv.y) * smoothstep(0.02, 0.34, uv.y);
   float cloud = high * 0.7 + low * 0.9;
 
   vec2 cell = p * 7.0 + vec2(0.0, t * 6.0);
@@ -89,7 +89,7 @@ void main() {
   float edge = 0.14 + 0.025 * sin(p.x * 2.1 + t * 5.0) + 0.012 * sin(p.x * 5.3 - t * 4.0);
   float fade = smoothstep(edge - 0.12, edge + 0.12, uv.y);
   float light = clamp(glow * 0.85, 0.0, 1.0) * fade;
-  float mist = cloud * fade * mix(0.3, 0.5, dark);
+  float mist = cloud * fade * mix(0.3, 0.38, dark);
   vec3 tint = dark > 0.5 ? tone : mix(vec3(1.0), tone, 0.15);
   float alpha = clamp(light + mist, 0.0, 1.0);
   vec3 c = mix(tint, sky / max(glow, 1e-3), light / max(light + mist, 1e-3));
