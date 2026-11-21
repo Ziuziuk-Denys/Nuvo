@@ -73,7 +73,7 @@ export interface ReportRow {
   durationDiffMs?: number;
 }
 
-export type RowsFilter = "review" | "matched" | "all" | ReportLabel;
+export type RowsFilter = "review" | "matched" | "all" | "pending" | ReportLabel;
 
 export interface RowsPage {
   items: ReportRow[];

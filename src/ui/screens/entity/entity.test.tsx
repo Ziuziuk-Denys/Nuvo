@@ -55,6 +55,8 @@ const mocks = vi.hoisted(() => {
     useModalStore: store({ openRemoveFromPlaylist: vi.fn(), openRemoveFromLibrary: vi.fn(), openCreatePlaylist: vi.fn(), openSearch: vi.fn() }),
     useHomePinsStore: store({ pins: [], pin: vi.fn(), unpin: vi.fn() }),
     usePlayerStore: (select: (state: typeof player) => unknown) => select(player),
+    imports: [] as Array<{ id: string; status: string; targetKind: string; targetId: string; total: number; done: number }>,
+    importRows: vi.fn(),
   };
 });
 
@@ -63,6 +65,10 @@ vi.mock("../../ports/i18n", () => ({
     t: (key: string, vars?: Record<string, string | number>) => (vars ? `${key}(${Object.values(vars).join(",")})` : key),
     locale: "en",
   }),
+}));
+vi.mock("../../ports/importsRuntime", () => ({
+  useImportSummaries: () => mocks.imports,
+  getImports: () => ({ daemon: { rows: mocks.importRows } }),
 }));
 vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: vi.fn() }));
@@ -131,6 +137,7 @@ let root: Root | null = null;
 let host: HTMLDivElement;
 
 beforeEach(() => {
+  mocks.imports = [];
   globalThis.ResizeObserver ??= class {
     observe() {}
     unobserve() {}
@@ -181,6 +188,18 @@ describe("Playlist", () => {
     render();
     const head = host.querySelector("h1")!.closest("header") ?? host;
     expect(head.textContent).toContain("ui.entity.updated(today)");
+  });
+
+  it("an import into the playlist lists the songs still matching under the playable ones", async () => {
+    mocks.imports = [{ id: "imp", status: "running", targetKind: "playlist", targetId: "p1", total: 5, done: 3 }];
+    const pending = (id: number, title: string) => ({ id, position: id, source: { title, artists: ["Someone"] }, candidates: [] });
+    mocks.importRows.mockResolvedValue({ items: [pending(4, "Still Looking"), pending(5, "Not Yet")] });
+    render();
+    await act(async () => {});
+    expect(mocks.importRows).toHaveBeenCalledWith("imp", "pending", undefined, expect.any(AbortSignal));
+    expect(host.textContent).toContain("ui.imports.pending(2)");
+    expect(host.textContent).toContain("Still Looking");
+    expect(rows()).toHaveLength(3);
   });
 
   it("Play plays the first track with the playlist as the queue", () => {
