@@ -483,6 +483,37 @@ async function setSize(width: number, height: number) {
   await main.waitForTimeout(500);
 }
 
+async function barProblems(): Promise<string[]> {
+  return main.evaluate(() => {
+    const pill = document.querySelector('[role="group"] button[aria-pressed]')?.closest<HTMLElement>("[data-no-window-drag]");
+    if (!pill) return ["no lyrics bar"];
+    const frame = pill.getBoundingClientRect();
+    const problems: string[] = [];
+    if (pill.scrollWidth > pill.clientWidth) problems.push(`content ${pill.scrollWidth} wider than the bar ${pill.clientWidth}`);
+    for (const child of pill.querySelectorAll<HTMLElement>(":scope > *, [role='group'] > button")) {
+      const box = child.getBoundingClientRect();
+      if (box.left < frame.left + 2 || box.right > frame.right - 2) problems.push(`${child.textContent || child.getAttribute("aria-label")} touches the edge`);
+    }
+    for (const other of document.querySelectorAll<HTMLElement>("header button")) {
+      if (pill.contains(other)) continue;
+      const box = other.getBoundingClientRect();
+      if (box.width && box.left < frame.right && box.right > frame.left && box.top < frame.bottom && box.bottom > frame.top) problems.push(`overlaps ${other.getAttribute("aria-label")}`);
+    }
+    return problems;
+  });
+}
+
+async function barFitsAt(widths: number[]) {
+  for (const width of widths) {
+    await setSize(width, Math.round(width * 0.65));
+    expect(await barProblems(), `at ${width}`).toEqual([]);
+  }
+}
+
+it("the lyrics bar keeps every label inside its frame at every width", async () => {
+  await barFitsAt([1100, 1200, 1600]);
+});
+
 it("shots: dark at 1200 and Russian at 1100", async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   await setSize(1200, 780);
@@ -526,6 +557,7 @@ it("shots: dark at 1200 and Russian at 1100", async () => {
     path: path.join(SHOTS, "karaoke-words-ru-1100.png"),
   });
   expect(await main.locator("button[aria-pressed]", { hasText: "Слово" }).count()).toBe(1);
+  await barFitsAt([1100, 1200, 1600]);
 });
 
 it("line mode marks the line, no word, and the choice survives a reload", async () => {
