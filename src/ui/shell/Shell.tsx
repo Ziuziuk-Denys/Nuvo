@@ -20,6 +20,7 @@ import { useAppShortcuts } from "../ports/shortcuts";
 import { useToolDownloadToast } from "./useToolDownloadToast";
 import { useAppIconSync, useLookSync } from "../ports/theme";
 import { ImportsHost } from "../screens/imports/ImportsHost";
+import { LookPreview } from "../screens/home/LookPreview";
 import { LyricsToolsHost } from "../screens/lyrics/LyricsToolsHost";
 import { useGateStore } from "../screens/lock/gateState";
 import { useImportToast } from "../screens/imports/importToast";
@@ -210,6 +211,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
         </ShellScrollContext.Provider>
       </div>
       {gated ? null : <Island />}
+      {gated || karaokeShown || studioPhase ? null : <LookPreview />}
       {overlays}
       <ImportsHost />
       <ShareSheetHost />

@@ -1,0 +1,175 @@
+.root {
+  position: absolute;
+  z-index: 55;
+  bottom: 90px;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 48px);
+  padding: 18px 20px 12px;
+  border-radius: 24px;
+  background: var(--n-pop);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  box-shadow:
+    var(--n-panel-rim),
+    0 18px 40px -18px rgba(8, 10, 20, 0.45);
+  color: var(--n-ink);
+  text-align: center;
+  transform: translateX(-50%);
+  animation: rise var(--n-t-entrance) var(--n-ease-out) both;
+  transition:
+    opacity var(--n-t-quick) var(--n-ease-in),
+    transform var(--n-t-quick) var(--n-ease-in);
+}
+
+.root[data-leaving] {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+}
+
+.ask {
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: balance;
+}
+
+.ask b {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--n-ink);
+  font: 600 17px/22px var(--n-font);
+  letter-spacing: -0.01em;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.tray {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--n-ink) 7%, transparent);
+}
+
+.tray .item,
+.controls .keep,
+.foot .later {
+  border: 0;
+  box-shadow: none;
+}
+
+.tray .item {
+  position: relative;
+  display: block;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: none;
+  color: var(--n-ink-2);
+  font: 600 14px/36px var(--n-font);
+  white-space: nowrap;
+  transition: color var(--n-t-quick) var(--n-ease-out);
+}
+
+.tray .item:hover,
+.tray .item[aria-checked="true"] {
+  background: none;
+  color: var(--n-ink);
+}
+
+.tray .item:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  color: var(--n-ink);
+}
+
+.tray .item:active,
+.controls .keep:active {
+  transform: none;
+}
+
+.controls .keep {
+  display: block;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--n-accent);
+  color: #fff;
+  font: 600 14px/44px var(--n-font);
+  white-space: nowrap;
+  transition:
+    opacity var(--n-t-quick) var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
+}
+
+.controls .keep:hover,
+.controls .keep:focus-visible {
+  background: var(--n-accent);
+  color: #fff;
+  opacity: 0.9;
+}
+
+:global(:root[data-theme="dark"]) .controls .keep {
+  color: #04182c;
+}
+
+.controls .keep:focus-visible {
+  outline: none;
+  box-shadow: var(--n-focus-glow);
+}
+
+.controls .keep:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 12px;
+  margin: 0;
+  color: var(--n-ink-2);
+  font: 500 12.5px/18px var(--n-font);
+}
+
+.foot .later {
+  height: auto;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: none;
+  color: var(--n-ink-2);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--n-ink) 25%, transparent);
+  text-underline-offset: 3px;
+}
+
+.foot .later:hover,
+.foot .later:focus-visible {
+  background: none;
+  color: var(--n-ink);
+}
+
+.foot .later:focus-visible {
+  outline: none;
+  box-shadow: var(--n-focus-glow);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+}

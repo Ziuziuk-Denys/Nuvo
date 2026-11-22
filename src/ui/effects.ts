@@ -21,6 +21,7 @@ interface EffectsState extends Stored {
   setReduce(reduce: boolean): void;
   setFps(fps: FrameCap): void;
   setLook(look: Look): void;
+  previewLook(look: Look): void;
   skipLook(): void;
 }
 
@@ -55,6 +56,7 @@ export const useEffectsStore = create<EffectsState>((set, get) => {
     setReduce: (reduce) => save({ reduce }),
     setFps: (fps) => save({ fps }),
     setLook: (look) => save({ look, lookAsked: true }),
+    previewLook: (look) => set({ look }),
     skipLook: () => save({ lookAsked: true }),
   };
 });
