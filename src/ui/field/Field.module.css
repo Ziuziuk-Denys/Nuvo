@@ -33,6 +33,10 @@
 }
 
 /* The blur fades the picture's own edges, so the picture overhangs the clip by three blur radii */
+.cover[data-tall] {
+  inset: 0 0 12%;
+}
+
 .cover > img {
   position: absolute;
   inset: calc(-3 * var(--blur));

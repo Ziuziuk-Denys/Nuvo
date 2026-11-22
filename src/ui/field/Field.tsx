@@ -57,7 +57,7 @@ export function Field(): JSX.Element {
         <Wallpaper src={wallpaper} />
       ) : cover ? (
         <>
-          {reduced ? null : <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} />}
+          {reduced ? null : <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} tall={sky !== undefined} />}
           {sky ? <Sky cover={cover} mode={sky} dark={dark} /> : null}
         </>
       ) : null}
@@ -70,7 +70,7 @@ type CoverLayer = { generation: number; src: string };
 
 const COVER_IMG = { alt: "", crossOrigin: "anonymous", draggable: false, decoding: "async" } as const;
 
-function Backdrop({ src, dark, blur, dim }: { src: string; dark: boolean; blur: number; dim: number }) {
+function Backdrop({ src, dark, blur, dim, tall }: { src: string; dark: boolean; blur: number; dim: number; tall: boolean }) {
   const [stack, setStack] = useState<CoverLayer[]>([{ generation: 0, src }]);
   const [visible, setVisible] = useState(-1);
   const [foot, setFoot] = useState<Rgb | null>(null);
@@ -92,7 +92,7 @@ function Backdrop({ src, dark, blur, dim }: { src: string; dark: boolean; blur: 
 
   return (
     <div className={styles.backdrop} style={{ backgroundColor: tint }}>
-      <div className={styles.cover} style={{ "--blur": `${blur}px` } as CSSProperties}>
+      <div className={styles.cover} data-tall={tall ? "" : undefined} style={{ "--blur": `${blur}px` } as CSSProperties}>
         {stack.map((layer) => (
           <img
             {...COVER_IMG}
