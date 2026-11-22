@@ -21,7 +21,7 @@ export function moveSky(bottom: number, height: number): void {
 
 export function Sky({ cover, mode, dark }: { cover: string; mode: "live" | "still"; dark: boolean }): JSX.Element {
   const uniforms = useMemo(() => ({ dark: [dark ? 1 : 0] }), [dark]);
-  const fps = useVisualQuality() === "visuals" ? 30 : 20;
+  const fps = useVisualQuality() === "visuals" ? 30 : 10;
   return (
     <div
       ref={(node) => {
@@ -29,6 +29,7 @@ export function Sky({ cover, mode, dark }: { cover: string; mode: "live" | "stil
         apply();
       }}
       className={styles.sky}
+      data-fps={fps}
     >
       <Backdrop cover={cover} open={mode === "live"} fps={fps} overlay={SKY} uniforms={uniforms} />
     </div>

@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
-import { useTour } from "../../tour/tourStore";
+import { TOUR_KEY, useTour } from "../../tour/tourStore";
 import { DONE_KEY } from "./firstRunModel";
 import { FirstRun } from "./FirstRun";
 
@@ -98,6 +98,7 @@ describe("FirstRun", () => {
     await settle();
     expect(mocks.confirm).toHaveBeenCalledOnce();
     expect(localStorage.getItem(DONE_KEY)).toBe("1");
+    expect(JSON.parse(localStorage.getItem(TOUR_KEY)!).state.status).toBe("on");
     expect(onDone).toHaveBeenCalledOnce();
     expect(useTour.getState()).toMatchObject({ phase: "poster", poster: "start" });
   });

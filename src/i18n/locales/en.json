@@ -200,9 +200,9 @@
       },
       "look": {
         "visuals": "Best visuals",
-        "visuals_note": "The sky moves. A bit more load.",
+        "visuals_note": "The sky moves smoothly. A bit more load.",
         "performance": "Best performance",
-        "performance_note": "The sky rests. Lighter on this computer.",
+        "performance_note": "The sky moves, less smoothly. Lighter on this computer.",
         "later": "Decide later",
         "title": "What suits this computer?",
         "hint": "Switch and watch the sky.",
@@ -2295,7 +2295,7 @@
     },
     "look_quality": {
       "title": "Look on this computer",
-      "description": "Auto picks by this computer's hardware. Best visuals keeps the Home sky moving and the glass blurred. Best performance keeps the sky still and the glass plain.",
+      "description": "Auto picks by this computer's hardware. Best visuals plays the Home sky and the karaoke scene as smoothly as it can. Best performance plays them less smoothly. Everything else looks the same.",
       "auto": "Auto",
       "visuals": "Best visuals",
       "performance": "Best performance"
