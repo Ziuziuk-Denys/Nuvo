@@ -19,6 +19,8 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 
 ## New in {{version}}
 
+{{new-media}}
+
 {{new}}
 
 The full list is in [the release notes]({{repo}}/releases/tag/v{{version}}).
@@ -122,6 +124,6 @@ Nuvo is licensed under the [GNU AGPL-3.0-or-later](LICENSE), with one added term
 
 <br>
 
-<sub>The pictures are drawn by [.github/readme/build.py](.github/readme/build.py) from real captures of the app. Album art belongs to its owners and is shown only to present the interface. Type is Figtree, under the SIL Open Font License. The Linux, Apple and Telegram marks are from Simple Icons (CC0).</sub>
+<sub>The pictures are drawn by [.github/readme/build.py](.github/readme/build.py) from real captures of the app. Album art belongs to its owners and is shown only to present the interface. The song in the Scene and karaoke pictures is "Already There" by Josh Woodward, from Ashes (2010), with its cover, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [Song page](https://www.joshwoodward.com/song/AlreadyThere). Type is Figtree, under the SIL Open Font License. The Linux, Apple and Telegram marks are from Simple Icons (CC0).</sub>
 
 </div>

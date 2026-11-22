@@ -518,9 +518,9 @@ def scene_section():
     return card + (f"\n\n{video}" if video else "")
 
 
-def showcase():
+def showcase(items):
     parts = []
-    for item in MEDIA["showcase"]:
+    for item in items:
         caption = f"**{item['title']}** {item['caption']}"
         media = item["video"] if item.get("video") else shot(item["shot"], item["alt"])
         parts.append(f'<div align="center">\n\n{caption}\n\n</div>\n\n{media}')
@@ -606,7 +606,8 @@ def build_readme():
         "new": "\n".join(f"- {line}" for line in DATA["new"]),
         "why": "\n".join(why_line(item) for item in DATA["why"]),
         "speed-summary": speed_summary(),
-        "showcase": showcase(),
+        "showcase": showcase(MEDIA["showcase"]),
+        "new-media": showcase(MEDIA["new"]),
         "features": features(),
         "speed": picture("speed", speed_alt()),
         "speed-table": speed_table(),

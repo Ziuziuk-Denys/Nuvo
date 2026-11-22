@@ -6,7 +6,7 @@
 
 Email hello@nuvo.quest with "Nuvo security" in the subject. Do not open a public issue or pull request for a vulnerability.
 
-Include the version (Settings, Application, About), your system and its version, the steps to reproduce, and what an attacker gains. I reply within a week. I will tell you when a fix ships and credit you if you want.
+Include the version (Settings, About Nuvo), your system and its version, the steps to reproduce, and what an attacker gains. I reply within a week. I will tell you when a fix ships and credit you if you want.
 
 ## In scope
 
