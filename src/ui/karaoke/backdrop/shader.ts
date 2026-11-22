@@ -52,9 +52,6 @@ export interface FlowRenderer {
   settle(): void;
   hold(held: boolean): void;
   draw(timeMs: number): void;
-  drawAt(seconds: number): void;
-  clock(): number;
-  advance(seconds: number): void;
   resize(width: number, height: number): void;
   uniform(name: string, values: readonly number[]): void;
   dispose(): void;
@@ -126,12 +123,6 @@ export function createFlowRenderer(canvas: HTMLCanvasElement, overlay?: string):
   let fadeFrom = 0;
   let fadeMs = 0;
 
-  const paint = (timeMs: number, seconds: number) => {
-    gl.uniform1f(blendAt, fadeMs > 0 ? Math.min(1, Math.max(0, (timeMs - fadeFrom) / fadeMs)) : 1);
-    gl.uniform1f(timeAt, seconds);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  };
-
   return {
     setCover(image, fade = 0) {
       if (!smallContext) return false;
@@ -169,16 +160,10 @@ export function createFlowRenderer(canvas: HTMLCanvasElement, overlay?: string):
       fadeMs = 0;
     },
     draw(timeMs) {
-      paint(timeMs, ((heldAt ?? timeMs) - origin) / 1000);
-    },
-    drawAt(seconds) {
-      paint(performance.now(), seconds);
-    },
-    clock() {
-      return ((heldAt ?? performance.now()) - origin) / 1000;
-    },
-    advance(seconds) {
-      origin -= seconds * 1000;
+      const progress = fadeMs > 0 ? Math.min(1, Math.max(0, (timeMs - fadeFrom) / fadeMs)) : 1;
+      gl.uniform1f(blendAt, progress * progress * (3 - 2 * progress));
+      gl.uniform1f(timeAt, ((heldAt ?? timeMs) - origin) / 1000);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
     resize(width, height) {
       canvas.width = Math.max(1, Math.round(width));

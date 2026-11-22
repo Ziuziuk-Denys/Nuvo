@@ -7,22 +7,18 @@ import { createFlowRenderer, type FlowRenderer } from "./shader";
 import styles from "./Backdrop.module.css";
 
 const COVER_FADE_MS = 800;
-const SKY_FADE_MS = 1800;
+const SKY_FADE_MS = 2000;
 const COVER_PX = 64;
-const BREATH_EVERY_MS = 20_000;
-const BREATH_MS = 5000;
-const BREATH_FPS = 30;
-const BREATH_DRIFT_S = 24;
 
 interface BackdropProps {
   cover: string;
   open: boolean;
-  breathe?: boolean;
+  fps?: number;
   overlay?: string;
   uniforms?: Record<string, readonly number[]>;
 }
 
-export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: BackdropProps): JSX.Element {
+export function Backdrop({ cover, open, fps: ownFps, overlay, uniforms }: BackdropProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<FlowRenderer | null>(null);
   const [webgl, setWebgl] = useState(true);
@@ -30,7 +26,8 @@ export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: Ba
   const [visible, setVisible] = useState(isWindowVisible);
   const [shownCover, setShownCover] = useState("");
   const reduced = useReducedEffects();
-  const fps = useEffectsStore((state) => state.fps);
+  const chosenFps = useEffectsStore((state) => state.fps);
+  const fps = ownFps ?? chosenFps;
   const animateRef = useRef(false);
 
   useEffect(() => onWindowVisibilityChange(setVisible), []);
@@ -155,37 +152,6 @@ export function Backdrop({ cover, open, breathe = false, overlay, uniforms }: Ba
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [animate, showCanvas, fps]);
-
-  const breathing = Boolean(overlay) && breathe && showCanvas && !animate && visible && !reduced;
-  useEffect(() => {
-    if (!breathing) return;
-    let frame = 0;
-    // the shader clock eases forward for a few seconds and then rests, so the sky moves without a steady frame cost
-    const breath = () => {
-      const renderer = rendererRef.current;
-      if (!renderer) return;
-      const from = renderer.clock();
-      let start = -1;
-      let last = -Infinity;
-      const tick = (now: number) => {
-        if (start < 0) start = now;
-        const progress = Math.min(1, (now - start) / BREATH_MS);
-        if (progress === 1 || now - last >= 1000 / BREATH_FPS - 2) {
-          last = now;
-          const eased = progress < 0.5 ? 2 * progress * progress : 1 - (2 - 2 * progress) ** 2 / 2;
-          renderer.drawAt(from + BREATH_DRIFT_S * eased);
-        }
-        if (progress < 1) frame = requestAnimationFrame(tick);
-        else renderer.advance(BREATH_DRIFT_S);
-      };
-      frame = requestAnimationFrame(tick);
-    };
-    const timer = window.setInterval(breath, BREATH_EVERY_MS);
-    return () => {
-      window.clearInterval(timer);
-      cancelAnimationFrame(frame);
-    };
-  }, [breathing]);
 
   return (
     <div className={styles.root} data-overlay={overlay ? "" : undefined} aria-hidden="true">
