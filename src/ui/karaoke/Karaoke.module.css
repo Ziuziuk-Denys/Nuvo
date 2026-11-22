@@ -98,7 +98,7 @@
   left: var(--k-lyrics);
   right: 136px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   opacity: 0;
   transition: opacity 200ms var(--n-ease-out);
 }
@@ -120,8 +120,10 @@
   align-items: center;
   gap: 2px;
   box-sizing: border-box;
-  max-width: 100%;
+  /* centred over the lyrics while it fits; past that it grows left toward the close button, never over its own edge */
+  max-width: calc(100% + var(--k-lyrics) - 64px);
   height: 36px;
+  margin-inline: auto;
   padding: 0 4px;
   border-radius: var(--n-r-pill);
   background: rgba(14, 15, 20, 0.72);
