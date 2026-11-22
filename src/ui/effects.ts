@@ -98,12 +98,8 @@ export function reducedEffectsNow(): boolean {
 
 export function useEffectsMark(): boolean {
   const reduced = useEffectsStore((state) => state.reduce);
-  const performance = useVisualQuality() === "performance";
   useEffect(() => {
     document.documentElement.toggleAttribute("data-reduce-effects", reduced);
   }, [reduced]);
-  useEffect(() => {
-    document.documentElement.toggleAttribute("data-performance", performance);
-  }, [performance]);
   return useReducedEffects();
 }

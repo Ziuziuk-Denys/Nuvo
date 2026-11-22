@@ -121,7 +121,13 @@ it("an upgraded profile is asked once on Home, previews both looks on the live s
   await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
   const choice = live.page.locator("[data-look-preview]");
   await choice.waitFor({ timeout: 15_000 });
-  const performance = () => live.page.evaluate(() => document.documentElement.hasAttribute("data-performance"));
+  const look = () =>
+    live.page.evaluate(() => ({
+      skyFps: document.querySelector("[data-fps]")?.getAttribute("data-fps"),
+      glass: getComputedStyle(document.documentElement).getPropertyValue("--n-pop-blur").trim(),
+    }));
+  const glass = (await look()).glass;
+  expect(glass).not.toBe("none");
   const shots = process.env.LOOK_SHOTS;
   const frames: { at: number; data: string }[] = [];
   const cdp = shots ? await live.page.context().newCDPSession(live.page) : null;
@@ -140,10 +146,10 @@ it("an upgraded profile is asked once on Home, previews both looks on the live s
   await cdp?.send("Page.startScreencast", { format: "jpeg", quality: 85, everyNthFrame: 1 });
   await film(3_000);
   await choice.getByRole("radio", { name: "Best performance" }).click();
-  expect(await performance()).toBe(true);
+  expect(await look()).toEqual({ skyFps: "10", glass });
   await film(3_000);
   await choice.getByRole("radio", { name: "Best visuals" }).click();
-  expect(await performance()).toBe(false);
+  expect(await look()).toEqual({ skyFps: "30", glass });
   await film(2_500);
   await choice.getByRole("radio", { name: "Best performance" }).click();
   await film(1_500);
@@ -156,11 +162,11 @@ it("an upgraded profile is asked once on Home, previews both looks on the live s
       fs.writeFileSync(`${shots}/clip-${String(index).padStart(4, "0")}-${item.at.toFixed(3)}.jpg`, Buffer.from(item.data, "base64")),
     );
   }
-  expect(await performance()).toBe(true);
+  expect((await look()).skyFps).toBe("10");
   await live.page.reload();
   await live.go("#/");
   await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
   await live.page.waitForTimeout(1_500);
   expect(await live.page.locator("[data-look-preview]").count()).toBe(0);
-  expect(await performance()).toBe(true);
+  expect(await look()).toEqual({ skyFps: "10", glass });
 }, 300_000);
