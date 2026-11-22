@@ -89,7 +89,7 @@ void main() {
   float edge = 0.14 + 0.025 * sin(p.x * 2.1 + t * 5.0) + 0.012 * sin(p.x * 5.3 - t * 4.0);
   float fade = smoothstep(edge - 0.12, edge + 0.12, uv.y);
   float light = clamp(glow * mix(1.0, 0.85, dark), 0.0, 1.0) * fade;
-  float mist = cloud * fade * mix(0.16, 0.38, dark);
+  float mist = cloud * fade * mix(0.1, 0.25, dark);
   vec3 tint = dark > 0.5 ? tone : mix(vec3(1.0), tone, 0.15);
   float alpha = clamp(light + mist, 0.0, 1.0);
   vec3 c = mix(tint, sky / max(glow, 1e-3), light / max(light + mist, 1e-3));

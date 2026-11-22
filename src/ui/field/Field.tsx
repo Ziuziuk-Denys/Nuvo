@@ -88,7 +88,7 @@ function Backdrop({ src, dark, blur, dim, tall }: { src: string; dark: boolean; 
 
   // the cover's colour is mixed into the theme's own field, so every preset still shows under the glow
   const tint = foot ? `color-mix(in oklab, rgb(${foot.join(" ")}) ${dark ? 40 : 30}%, var(--n-deep))` : undefined;
-  const filter = `blur(${blur}px) saturate(130%)`;
+  const filter = `blur(${blur}px) saturate(${dark ? 130 : 170}%)`;
 
   return (
     <div className={styles.backdrop} style={{ backgroundColor: tint }}>
