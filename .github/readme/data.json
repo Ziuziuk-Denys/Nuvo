@@ -57,6 +57,7 @@
     "Find lyrics one click from the karaoke view. It forgives swapped fields and titles like \"sped up\", and a Lyrics model setting picks Light or Full",
     "Drop songs or folders on the window to add them. The first Home is never empty: one line imports your playlists or adds files",
     "Navigation can sit in a rail on the left, and the play buttons at the side of the player",
+    "Home asks once whether this computer should get Best visuals or Best performance, on the live sky. Best performance keeps the glass and every animation",
     "Spotify song links play. The Notch shows while the window is hidden, and Nuvo looks for an update on every launch",
     "Auto gain starts off and a limiter keeps equalizer boosts from clipping. Host shells can show the lyrics and the queue over D-Bus, thanks to @doctorsalamii"
   ],
@@ -368,7 +369,7 @@
         "HTTP and SOCKS5 proxies with a login, and a connection check for each service",
         "Last.fm scrobbling with your own API key, off until you turn it on",
         "A Discord status with the song cover. On by default; turn it off in Settings, Discord",
-        "Nuvo asks github.com for a new version at every launch. Turn off Update automatically in Settings, Updates, and it only offers the update"
+        "Nuvo asks github.com for a new version at launch, and every 4 hours while Update automatically is on. Turn off Check for updates at launch in Settings, Updates, and it asks only when you press Check now"
       ]
     }
   ],
