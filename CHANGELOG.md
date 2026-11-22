@@ -1,6 +1,6 @@
 # Changelog
 
-## {{VERSION}}
+## 0.5.0
 
 A ring of new songs on Home. Spin it with the wheel, a drag or the arrow keys, and the sky behind it takes the colours of the cover in the middle. This release also brings a Poster scene, Settings you can search, imports that open at once and every fix since 0.4.0.
 
