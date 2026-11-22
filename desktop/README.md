@@ -15,6 +15,9 @@ gnome-extensions install --force desktop/dist/nuvo-panel@nuvo.quest.shell-extens
 
 Log out and back in (Wayland loads new extensions at login), then turn on **Nuvo** in Extensions. It sits right of the clock.
 
+Once the widget is installed in your own extensions folder, Nuvo keeps it current: when the app brings a newer widget,
+it reinstalls it on start and says so once. Log out and back in to see the new one.
+
 ## KDE Plasma 6.4 and newer
 
 ```sh
@@ -92,16 +95,20 @@ can't carry, Nuvo publishes on the **session bus only** while it runs:
 | Object    | `/quest/nuvo/Nuvo/Player` |
 | Interface | `quest.nuvo.Nuvo.Player`  |
 
-| Member         | Type         |                                                                            |
-| -------------- | ------------ | -------------------------------------------------------------------------- |
-| `MprisName`    | property `s` | Nuvo's MPRIS bus name, so a widget finds the right player without guessing |
-| `Liked`        | property `b` | the playing song is in Liked songs                                         |
-| `LyricsLine`   | property `s` | the line being sung, empty without timed lyrics                            |
-| `ToggleLike()` | method       | like or unlike the playing song                                            |
-| `Dislike()`    | method       | "Not interested" in the playing song; it skips to the next one             |
-| `Show()`       | method       | brings the Nuvo window up                                                  |
+| Member             | Type         |                                                                                                                     |
+| ------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `MprisName`        | property `s` | Nuvo's MPRIS bus name, so a widget finds the right player without guessing                                          |
+| `TrackId`          | property `s` | Nuvo's ID of the playing song, empty when nothing plays                                                             |
+| `Liked`            | property `b` | the playing song is in Liked songs                                                                                  |
+| `LyricsLine`       | property `s` | the line being sung, empty without timed lyrics                                                                     |
+| `LyricsJson`       | property `s` | the playing song's timed lyrics as a JSON array of `{ timeMs, text }`, at most 500 lines, `[]` without timed lyrics |
+| `UpNextJson`       | property `s` | the next songs in the queue as a JSON array of `{ id, title, artist, coverUrl, durationMs }`, at most 3             |
+| `ToggleLike()`     | method       | like or unlike the playing song                                                                                     |
+| `PlayUpNext(s id)` | method       | plays the song with this `id` from `UpNextJson`; any other ID is ignored                                            |
+| `Dislike()`        | method       | "Not interested" in the playing song; it skips to the next one                                                      |
+| `Show()`           | method       | brings the Nuvo window up                                                                                           |
 
-Properties are read-only and announced with `org.freedesktop.DBus.Properties.PropertiesChanged`. The methods do
+Properties are read-only and announced with `org.freedesktop.DBus.Properties.PropertiesChanged`. `ToggleLike` and `Dislike` do
 nothing when no song is playing. MPRIS doesn't announce the position, so widgets read `Position` while their card
 is open.
 
