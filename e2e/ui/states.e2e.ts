@@ -138,8 +138,6 @@ async function run(l: Locale): Promise<void> {
   const words = await page.locator("[data-testid=recovery-word] > span:nth-child(2)").allTextContents();
   expect(words).toHaveLength(24);
   await page.getByRole("button", { name: l.text.confirm }).click();
-  // a reload while the core confirms the phrase opens Home without ever starting the tour
-  await page.locator("#tour-start-title").waitFor({ timeout: 30_000 });
   await shoot("firstrun", "start", async () => {
     await page.locator("#tour-start-title").waitFor({ timeout: 30_000 });
   });

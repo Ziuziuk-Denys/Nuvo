@@ -4,6 +4,7 @@ import { Icon } from "../../icons/Icon";
 import { coreApi } from "../../ports/core";
 import { useTranslation } from "../../ports/i18n";
 import { saveTextFile } from "../../ports/system";
+import { settingsStorage } from "../../ports/tour";
 import { useTour } from "../../tour/tourStore";
 import { markDone, phraseText } from "./firstRunModel";
 import styles from "./FirstRun.module.css";
@@ -20,6 +21,8 @@ export function FirstRun({ words, onDone }: FirstRunProps): JSX.Element | null {
     finished.current = true;
     markDone();
     useTour.getState().start();
+    // saved now like markDone, or a quit right after confirming leaves the pages open without the tour
+    settingsStorage.flush();
     onDone();
   });
 
