@@ -19,7 +19,7 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 
 <img src=".github/readme/motion/scene.webp" width="100%" alt="Nuvo Scene: the words of the song land as they are sung">
 
-## New in 0.4.0
+## New in 0.5.0
 
 <div align="center">
 
@@ -61,7 +61,7 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 - Spotify song links play. The Notch shows while the window is hidden, and Nuvo looks for an update on every launch
 - Auto gain starts off and a limiter keeps equalizer boosts from clipping. Host shells can show the lyrics and the queue over D-Bus, thanks to @doctorsalamii
 
-The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.4.0).
+The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.5.0).
 
 ## See it
 
