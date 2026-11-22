@@ -107,6 +107,7 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - The top bar stays visible after switching navigation back from the side
 - Word by word stays inside the frame, also in Russian
 - The lyrics bar keeps every label inside its frame, also in Russian at 1100 px
+- A fresh install always starts the tour, even if Nuvo is closed right after confirming the recovery phrase
 
 ## 0.4.0
 
