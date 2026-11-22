@@ -199,12 +199,14 @@
         "message": "Songs you save or add from this computer play here without a connection."
       },
       "look": {
-        "label": "How Nuvo looks on this computer",
         "visuals": "Best visuals",
         "visuals_note": "The sky moves. A bit more load.",
         "performance": "Best performance",
         "performance_note": "The sky rests. Lighter on this computer.",
-        "later": "Decide later"
+        "later": "Decide later",
+        "title": "What suits this computer?",
+        "hint": "Switch and watch the sky.",
+        "keep": "Keep this"
       }
     },
     "imports": {

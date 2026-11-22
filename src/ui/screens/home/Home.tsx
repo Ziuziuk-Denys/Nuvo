@@ -12,7 +12,6 @@ import { navigateWithTransition } from "../../shell/navigate";
 import { useImportsUi } from "../imports/importsUi";
 import { useAddMusic } from "../local/addMusic";
 import { DiscoverArc } from "./discover/DiscoverArc";
-import { LookChoice } from "./discover/LookChoice";
 import { ringTracks } from "./discover/ring";
 import { arrangeMixes, likeArtists, mixText, starterGenres } from "./homeModel";
 import { MixCard } from "./MixCard";
@@ -81,10 +80,7 @@ export function Home(): JSX.Element | null {
     sections.push({ key: "cold-start", node: <ColdStartSlot />, own: true });
     for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
   }
-  if (ring.length > 0) {
-    sections.push({ key: "discover", node: <DiscoverArc tracks={ring} /> });
-    sections.push({ key: "look", node: <LookChoice /> });
-  }
+  if (ring.length > 0) sections.push({ key: "discover", node: <DiscoverArc tracks={ring} /> });
   if (mixes.length > 0) {
     sections.push({
       key: "mixes",

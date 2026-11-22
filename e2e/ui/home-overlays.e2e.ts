@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { afterEach, expect, it } from "vitest";
 import { launchNuvo, type NuvoSession } from "./harness";
 import { seedPools } from "./seed";
@@ -109,29 +110,57 @@ it("the cover background runs under the sky on Home and glows on Liked songs", a
   expect((await field()).sky).toBe(false);
 }, 300_000);
 
-it("asks once on Home how Nuvo should look, and keeps the answer", async () => {
+it("an upgraded profile is asked once on Home, previews both looks on the live sky and keeps one", async () => {
   const live = await launchNuvo({ profile: "seeded" });
   session = live;
   await seedPools(live);
+  // a profile from before the choice existed keeps only these two effect settings
+  await live.page.evaluate(() => localStorage.setItem("nuvo.effects", JSON.stringify({ reduce: false, fps: 30 })));
   await live.page.reload();
   await live.go("#/");
   await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
-  const choice = live.page.locator("[data-look-choice]");
+  const choice = live.page.locator("[data-look-preview]");
   await choice.waitFor({ timeout: 15_000 });
-  if (process.env.LOOK_SHOTS) {
+  const performance = () => live.page.evaluate(() => document.documentElement.hasAttribute("data-performance"));
+  const shots = process.env.LOOK_SHOTS;
+  const frames: { at: number; data: string }[] = [];
+  const cdp = shots ? await live.page.context().newCDPSession(live.page) : null;
+  cdp?.on("Page.screencastFrame", (event) => {
+    frames.push({ at: event.metadata.timestamp ?? Date.now() / 1000, data: event.data });
+    void cdp.send("Page.screencastFrameAck", { sessionId: event.sessionId });
+  });
+  const film = (ms: number) => live.page.waitForTimeout(shots ? ms : 300);
+  if (shots) {
     for (const mode of ["light", "dark"] as const) {
       await live.setLook({ preset: "nuvo", mode });
-      await live.page.waitForTimeout(1_500);
-      await live.page.screenshot({ path: `${process.env.LOOK_SHOTS}/strip-${mode}.png`, clip: { x: 0, y: 0, width: 1200, height: 700 } });
+      await live.page.waitForTimeout(2_000);
+      await live.page.screenshot({ path: `${shots}/chooser-${mode}.png` });
     }
   }
-  await choice.getByRole("button", { name: /Best performance/ }).click();
+  await cdp?.send("Page.startScreencast", { format: "jpeg", quality: 85, everyNthFrame: 1 });
+  await film(3_000);
+  await choice.getByRole("radio", { name: "Best performance" }).click();
+  expect(await performance()).toBe(true);
+  await film(3_000);
+  await choice.getByRole("radio", { name: "Best visuals" }).click();
+  expect(await performance()).toBe(false);
+  await film(2_500);
+  await choice.getByRole("radio", { name: "Best performance" }).click();
+  await film(1_500);
+  await choice.getByRole("button", { name: "Keep this" }).click();
   await choice.waitFor({ state: "detached", timeout: 5_000 });
-  expect(await live.page.evaluate(() => document.documentElement.hasAttribute("data-performance"))).toBe(true);
-  if (process.env.LOOK_SHOTS) await live.page.screenshot({ path: `${process.env.LOOK_SHOTS}/performance-dark.png` });
+  await film(1_500);
+  if (cdp) {
+    await cdp.send("Page.stopScreencast");
+    frames.forEach((item, index) =>
+      fs.writeFileSync(`${shots}/clip-${String(index).padStart(4, "0")}-${item.at.toFixed(3)}.jpg`, Buffer.from(item.data, "base64")),
+    );
+  }
+  expect(await performance()).toBe(true);
   await live.page.reload();
   await live.go("#/");
   await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
   await live.page.waitForTimeout(1_500);
-  expect(await live.page.locator("[data-look-choice]").count()).toBe(0);
+  expect(await live.page.locator("[data-look-preview]").count()).toBe(0);
+  expect(await performance()).toBe(true);
 }, 300_000);
