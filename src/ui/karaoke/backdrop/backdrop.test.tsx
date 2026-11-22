@@ -92,24 +92,15 @@ describe("backdrop rules", () => {
 });
 
 describe("Backdrop", () => {
-  it("rests between breaths, eases the shader clock through a breath, and draws live only while open", async () => {
-    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "setTimeout", "clearTimeout"] });
+  it("an overlay draws at its own frame rate, not the effects setting", async () => {
     const renderer = fakeRenderer();
     gpu.renderer = renderer;
     const frames = fakeFrames();
-    await act(async () => root.render(<Backdrop cover="c.jpg" open={false} breathe overlay="sky" />));
-    expect(frames.pending()).toBe(0);
-    act(() => vi.advanceTimersByTime(20_000));
-    expect(frames.pending()).toBe(1);
-    for (let step = 0; step < 200 && frames.pending() > 0; step += 1) act(() => frames.step(40));
-    const times = renderer.drawAt.mock.calls.map(([seconds]) => seconds as number);
-    expect(times[0]).toBeGreaterThanOrEqual(10);
-    expect(times.at(-1)).toBeCloseTo(34);
-    expect(times.every((time, index) => index === 0 || time >= times[index - 1])).toBe(true);
-    expect(renderer.advance).toHaveBeenCalledWith(24);
-    await act(async () => root.render(<Backdrop cover="c.jpg" open breathe={false} overlay="sky" />));
-    expect(frames.pending()).toBe(1);
-    vi.useRealTimers();
+    await act(async () => root.render(<Backdrop cover="c.jpg" open fps={30} overlay="sky" />));
+    const before = renderer.draw.mock.calls.length;
+    for (let step = 0; step < 100; step += 1) act(() => frames.step(10));
+    expect(renderer.draw.mock.calls.length - before).toBeGreaterThanOrEqual(20);
+    expect(renderer.draw.mock.calls.length - before).toBeLessThanOrEqual(31);
   });
 
   it("shows the still field when WebGL2 is missing", async () => {

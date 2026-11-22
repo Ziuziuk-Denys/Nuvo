@@ -53,7 +53,7 @@ float ribbon(vec2 p, float t, float seed, float base, float tilt, out float d, o
 
 void main() {
   vec2 p = vec2((uv.x - 0.5) * aspect.x / aspect.y, uv.y);
-  float t = time * 0.06;
+  float t = time * 0.1;
   vec3 sky = vec3(0.0);
   float glow = 0.0;
   float d;
