@@ -80,6 +80,7 @@ export const SETTING_ITEMS: SettingItem[] = [
   row("Background", "settings.customization.wallpaper_title", "settings.customization.wallpaper_description", "wallpaper"),
   titled("Player", "settings.player_controls", "player"),
   titled("Player", "settings.cover_glow", "glow"),
+  titled("Motion", "settings.look_quality", "look_quality"),
   titled("Motion", "settings.reduce_effects", "motion"),
   titled("Motion", "settings.frame_rate", "motion"),
   row("Notch", "settings.notch.mode", "settings.notch.description", "notch"),

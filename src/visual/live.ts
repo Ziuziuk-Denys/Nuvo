@@ -29,6 +29,7 @@ export interface Live {
   onTone(listener: ((light: boolean) => void) | null): void;
   onLuma(listener: ((cells: Uint8Array) => void) | null): void;
   resize(width: number, height: number): void;
+  setLight(light: boolean): void;
   dispose(): void;
 }
 
@@ -104,6 +105,9 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
   return {
     setTemplate(template, aspect) {
       post({ type: "template", template, aspect });
+    },
+    setLight(light) {
+      post({ type: "quality", light });
     },
     setCover(url) {
       if (!url || url === coverUrl) return;

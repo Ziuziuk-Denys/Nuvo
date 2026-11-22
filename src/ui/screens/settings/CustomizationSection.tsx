@@ -14,7 +14,7 @@ import {
   type WallpaperFit,
 } from "../../ports/settings";
 import { WallpaperMedia } from "../../field/Field";
-import { FRAME_CAPS, useEffectsStore, type FrameCap } from "../../effects";
+import { FRAME_CAPS, LOOKS, useEffectsStore, type FrameCap } from "../../effects";
 import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
 import styles from "./sections.module.css";
 
@@ -289,9 +289,31 @@ export function MotionSection(): JSX.Element {
   const setReduceEffects = useEffectsStore((state) => state.setReduce);
   const fps = useEffectsStore((state) => state.fps);
   const setFps = useEffectsStore((state) => state.setFps);
+  const look = useEffectsStore((state) => state.look);
+  const setLook = useEffectsStore((state) => state.setLook);
+  const lookLabels = {
+    auto: t("settings.look_quality.auto"),
+    visuals: t("settings.look_quality.visuals"),
+    performance: t("settings.look_quality.performance"),
+  };
 
   return (
     <SettingGroup>
+      <SettingRow
+        title={t("settings.look_quality.title")}
+        description={t("settings.look_quality.description")}
+        titleKey="settings.look_quality.title"
+        descKey="settings.look_quality.description"
+        explained
+        control={
+          <Segmented
+            label={t("settings.look_quality.title")}
+            options={LOOKS.map((value) => ({ value, label: lookLabels[value] }))}
+            value={look}
+            onChange={setLook}
+          />
+        }
+      />
       <SettingRow
         title={t("settings.reduce_effects.title")}
         description={t("settings.reduce_effects.description")}

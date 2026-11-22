@@ -57,7 +57,8 @@
   }
 }
 
-:root[data-reduce-effects] {
+:root[data-reduce-effects],
+:root[data-performance] {
   --n-glass: var(--n-raised) !important;
   --n-glass-blur: none !important;
   --n-glass-thick: none !important;

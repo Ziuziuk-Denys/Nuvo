@@ -31,6 +31,8 @@ let template: Template | null = null;
 let aspect: Aspect = "wide";
 let lines: Line[] = [];
 let reduced = false;
+let lightLoad = false;
+let drewAt = -Infinity;
 let features: SongFeatures | null = null;
 let rate = 0;
 let song: { pcm: Float32Array; sampleRate: number } | null = null;
@@ -48,13 +50,16 @@ let frames = 0;
 let frameId: number | null = null;
 const clock = createStageClock();
 const governor = createGovernor();
+const LIGHT_SCALE = 0.75;
+const LIGHT_FRAME_MS = 1000 / 30;
 const songWindow = new Float32Array(WINDOW);
 const unprepared = Object.keys(SHADERS);
 
 function applySize(): void {
   if (!stage) return;
-  const width = Math.max(1, Math.round(size.width * governor.scale));
-  const height = Math.max(1, Math.round(size.height * governor.scale));
+  const scale = Math.min(governor.scale, lightLoad ? LIGHT_SCALE : 1);
+  const width = Math.max(1, Math.round(size.width * scale));
+  const height = Math.max(1, Math.round(size.height * scale));
   stage.resize(width, height);
   raster = createTextRaster(width, height);
   dirty = true;
@@ -122,6 +127,9 @@ function loop(now: number): void {
     prepareOne();
     return;
   }
+  // two ms of slack, so a 60 Hz display does not fall to 20 frames a second
+  if (lightLoad && now - drewAt < LIGHT_FRAME_MS - 2) return;
+  drewAt = now;
   dirty = false;
   drawnAtMs = atMs;
   draw(atMs);
@@ -201,6 +209,10 @@ self.onmessage = (event: MessageEvent<ToStage>) => {
     case "motion":
       reduced = message.reduced;
       dirty = true;
+      break;
+    case "quality":
+      lightLoad = message.light;
+      applySize();
       break;
     case "dispose":
       if (frameId !== null) self.cancelAnimationFrame(frameId);

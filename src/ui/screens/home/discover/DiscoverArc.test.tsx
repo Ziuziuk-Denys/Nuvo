@@ -14,7 +14,7 @@ vi.mock("../../../ports/homeShelves", () => ({ playSongs: mocks.playSongs }));
 vi.mock("../../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock("../../../ports/backdrop", () => ({ usePageBackdrop: mocks.backdrop }));
 vi.mock("../../../field/Sky", () => ({ moveSky: mocks.moveSky }));
-vi.mock("../../../effects", () => ({ useReducedEffects: () => true }));
+vi.mock("../../../effects", () => ({ useReducedEffects: () => true, useVisualQuality: () => "visuals" }));
 vi.mock("../../../components/Cover", () => ({ Cover: () => null }));
 vi.mock("../ShelfHeading", () => ({ ShelfHeading: ({ title }: { title: string }) => <h2>{title}</h2> }));
 

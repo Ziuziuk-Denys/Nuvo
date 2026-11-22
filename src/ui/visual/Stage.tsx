@@ -1,5 +1,6 @@
 import { useEffect, useRef, type JSX } from "react";
 import type { Line } from "../ports/lyrics";
+import { useVisualQuality } from "../effects";
 import { createLiveStage, type Aspect, type Live, type Media, type Template } from "../ports/visual";
 
 interface StageProps {
@@ -19,9 +20,10 @@ interface StageProps {
 export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, onTone, onLuma, clock, className }: StageProps): JSX.Element {
   const host = useRef<HTMLDivElement>(null);
   const liveRef = useRef<Live | null>(null);
-  const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma });
+  const light = useVisualQuality() === "performance";
+  const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma, light });
   useEffect(() => {
-    latest.current = { template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma };
+    latest.current = { template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma, light };
   });
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
     live?.onFoot(now.onFoot ?? null);
     live?.onTone(now.onTone ?? null);
     live?.onLuma(now.onLuma ?? null);
+    live?.setLight(now.light);
     const size = () => live?.resize(canvas.clientWidth * devicePixelRatio, canvas.clientHeight * devicePixelRatio);
     size();
     const observer = new ResizeObserver(size);
@@ -62,6 +65,7 @@ export function Stage({ template, aspect, coverUrl, lines, media = null, mirror 
   useEffect(() => liveRef.current?.onFoot(onFoot ?? null), [onFoot]);
   useEffect(() => liveRef.current?.onTone(onTone ?? null), [onTone]);
   useEffect(() => liveRef.current?.onLuma(onLuma ?? null), [onLuma]);
+  useEffect(() => liveRef.current?.setLight(light), [light]);
 
   return <div ref={host} style={{ display: "contents" }} />;
 }

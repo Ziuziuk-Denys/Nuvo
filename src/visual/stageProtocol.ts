@@ -14,6 +14,7 @@ export type ToStage =
   | { type: "clock"; atMs: number; playing: boolean; stamp: number }
   | { type: "size"; width: number; height: number }
   | { type: "motion"; reduced: boolean }
+  | { type: "quality"; light: boolean }
   | { type: "dispose" };
 
 export type FromStage = { type: "foot"; rgb: [number, number, number] } | { type: "tone"; light: boolean } | { type: "luma"; cells: Uint8Array };
