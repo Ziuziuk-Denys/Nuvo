@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
 import { Cover } from "../../../components/Cover";
-import { useReducedEffects } from "../../../effects";
+import { useReducedEffects, useVisualQuality } from "../../../effects";
 import { moveSky } from "../../../field/Sky";
 import { usePageBackdrop } from "../../../ports/backdrop";
 import { playSongs } from "../../../ports/homeShelves";
@@ -18,6 +18,7 @@ const WHEEL_SETTLE_MS = 140;
 const DRAG_SLOP = 4;
 const INERTIA_MS = 220;
 const CONTEXT = "home:discover";
+const SPIN_REST_MS = 1500;
 
 interface Drag {
   x: number;
@@ -75,6 +76,9 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   const [width, setWidth] = useState(0);
   const [centre, setCentre] = useState(0);
   const [settled, setSettled] = useState(0);
+  const [spinning, setSpinning] = useState(false);
+  const rest = useRef(0);
+  const visuals = useVisualQuality() === "visuals";
   const onScreen = useOnScreen(rootRef);
   const focused = useWindowFocused();
   const count = ringSlots(tracks.length);
@@ -100,6 +104,9 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   });
 
   const run = () => {
+    setSpinning(true);
+    clearTimeout(rest.current);
+    rest.current = window.setTimeout(() => setSpinning(false), SPIN_REST_MS);
     if (frame.current) return;
     let last = performance.now();
     const tick = (now: number) => {
@@ -119,7 +126,13 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
     runRef.current = run;
   });
 
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(frame.current);
+      clearTimeout(rest.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const root = rootRef.current!;
@@ -223,7 +236,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   };
 
   const current = slots[Math.min(centre, count - 1)];
-  usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { sky: onScreen && focused ? "live" : "still" });
+  usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { sky: onScreen && focused && (visuals || spinning) ? "live" : "still" });
   const title = t("ui.recs.home.discover");
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>

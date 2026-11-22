@@ -197,6 +197,14 @@
       "offline": {
         "title": "You’re offline",
         "message": "Songs you save or add from this computer play here without a connection."
+      },
+      "look": {
+        "label": "How Nuvo looks on this computer",
+        "visuals": "Best visuals",
+        "visuals_note": "The sky moves. A bit more load.",
+        "performance": "Best performance",
+        "performance_note": "The sky rests. Lighter on this computer.",
+        "later": "Decide later"
       }
     },
     "imports": {
@@ -2280,7 +2288,15 @@
       "offline": "no internet, airplane",
       "proxy": "vpn, socks, http",
       "tools": "yt-dlp, ffmpeg, deno",
-      "help": "bug, issue, support, feedback"
+      "help": "bug, issue, support, feedback",
+      "look_quality": "performance, visuals, quality, battery, smooth, cpu, slow, lag"
+    },
+    "look_quality": {
+      "title": "Look on this computer",
+      "description": "Auto picks by this computer's hardware. Best visuals keeps the Home sky moving and the glass blurred. Best performance keeps the sky still and the glass plain.",
+      "auto": "Auto",
+      "visuals": "Best visuals",
+      "performance": "Best performance"
     }
   },
   "visual": {

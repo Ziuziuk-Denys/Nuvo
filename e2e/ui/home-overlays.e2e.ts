@@ -108,3 +108,30 @@ it("the cover background runs under the sky on Home and glows on Liked songs", a
   await expect.poll(async () => (await field()).covers.length, { timeout: 15_000 }).toBeGreaterThan(0);
   expect((await field()).sky).toBe(false);
 }, 300_000);
+
+it("asks once on Home how Nuvo should look, and keeps the answer", async () => {
+  const live = await launchNuvo({ profile: "seeded" });
+  session = live;
+  await seedPools(live);
+  await live.page.reload();
+  await live.go("#/");
+  await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
+  const choice = live.page.locator("[data-look-choice]");
+  await choice.waitFor({ timeout: 15_000 });
+  if (process.env.LOOK_SHOTS) {
+    for (const mode of ["light", "dark"] as const) {
+      await live.setLook({ preset: "nuvo", mode });
+      await live.page.waitForTimeout(1_500);
+      await live.page.screenshot({ path: `${process.env.LOOK_SHOTS}/strip-${mode}.png`, clip: { x: 0, y: 0, width: 1200, height: 700 } });
+    }
+  }
+  await choice.getByRole("button", { name: /Best performance/ }).click();
+  await choice.waitFor({ state: "detached", timeout: 5_000 });
+  expect(await live.page.evaluate(() => document.documentElement.hasAttribute("data-performance"))).toBe(true);
+  if (process.env.LOOK_SHOTS) await live.page.screenshot({ path: `${process.env.LOOK_SHOTS}/performance-dark.png` });
+  await live.page.reload();
+  await live.go("#/");
+  await live.page.locator("[data-arc] li button").first().waitFor({ timeout: 30_000 });
+  await live.page.waitForTimeout(1_500);
+  expect(await live.page.locator("[data-look-choice]").count()).toBe(0);
+}, 300_000);
