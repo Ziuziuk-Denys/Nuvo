@@ -13,6 +13,7 @@ A ring of new songs on Home. Spin it with the wheel, a drag or the arrow keys, a
 - **Try a look before you keep it.** The first time you open lyrics, the whole view plays Scene or Karaoke. One switch tries the other, one button keeps it.
 - **Your own files, dropped anywhere.** Drop songs or folders on the window, or add single files. The first Home is never empty: four genre shelves play at once.
 - **Controls where you want them.** Settings, Theme, Navigation puts the sections in a rail on the left. Settings, Player moves play, previous and next to the left edge of the player.
+- **Best visuals or best performance.** Home asks once, and Settings, Motion keeps the choice. Auto picks by your computer's hardware.
 - **An update offer at every launch.** Nuvo asks github.com for a new version at launch, and every 4 hours while Update automatically is on, and offers it in one small message. Later hides it until the next start. Turn off Check for updates at launch in Settings, Updates, and it asks only when you press Check now.
 
 **Updating from 0.4.** Your settings stay as they are. New installs start with the Notch on Automatic and Auto gain off.
@@ -32,6 +33,7 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - **Сначала попробуйте вид.** При первом открытии текста весь экран показывает сцену или караоке. Один переключатель пробует другой вид, одна кнопка оставляет выбранный.
 - **Свои файлы - просто перетащите.** Бросьте песни или папки в окно или добавьте отдельные файлы. Первая главная никогда не пустая: четыре жанровые полки играют сразу.
 - **Кнопки там, где удобно.** Настройки, Тема, Навигация ставит разделы в колонку слева. Настройки, Плеер переносит воспроизведение и переключение песен к левому краю плеера.
+- **Лучшая картинка или производительность.** Главная спрашивает один раз, выбор хранится в Настройках, раздел «Анимация». «Авто» выбирает по железу компьютера.
 - **Обновление при каждом запуске.** Nuvo спрашивает github.com о новой версии при запуске и раз в 4 часа, пока включено «Обновляться автоматически», и предлагает её одним небольшим сообщением. «Позже» скрывает его до следующего запуска. Выключите «Проверять обновления при запуске» в Настройках, раздел «Обновления», и Nuvo будет спрашивать только по кнопке «Проверить».
 
 **Обновление с 0.4.** Ваши настройки не меняются. В новых установках нотч включён в режиме «Автоматически», а автоусиление выключено.
@@ -51,6 +53,8 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - Lyrics model setting: Auto, Light (82 MB) or Full (264 MB)
 - Add single music files, drop songs and folders anywhere on the window
 - Spotify song links play, including spotify.link
+- Look on this computer: Best visuals or Best performance, asked once on Home and kept in Settings, Motion
+- Scene text colour (Auto, From cover or Custom) and text size (70 to 150 %) for every text style
 - Host shells can read the current track, synced lyrics and up next over D-Bus, and play from up next (thanks @doctorsalamii)
 
 #### Better
@@ -71,6 +75,12 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - Slow starts fall through sooner: clients that need no warm-up go first, a silent YouTube client gets the next one started beside it, and SoundCloud refusals are known early
 - Ctrl+K puts matching commands and settings above songs, so Enter runs them
 - Queue rows rise one by one when the queue opens
+- The Home sky moves all the time and eases into each song's colours, over the cover glow as in 0.4.0
+- Covers glow clearly in light themes
+- Library All shows songs from this computer
+- Import progress shows in the toast at the bottom of the window
+- Player panels open one at a time
+- The karaoke switch, the edit pencil and the window buttons read over a Scene too
 - Poster takes turns between narrow capitals and light italics phrase by phrase, with a large echo word behind most italic phrases
 - Random per song can pick Poster for any song, also without word timing, and Poster is the second tile in the Scene studio
 - Over a Scene, each karaoke control turns light or dark to read over the picture behind it
@@ -92,6 +102,9 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - The Recognize sources fit one row in Russian
 - Word by word no longer slides sideways when a line ends
 - The Film effect adds black bars only when you raise its Letterbox slider
+- Turning on offline mode over Home no longer shows the error screen
+- The top bar stays visible after switching navigation back from the side
+- Word by word stays inside the frame, also in Russian
 
 ## 0.4.0
 
