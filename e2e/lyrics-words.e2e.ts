@@ -497,7 +497,8 @@ async function barProblems(): Promise<string[]> {
     for (const other of document.querySelectorAll<HTMLElement>("header button")) {
       if (pill.contains(other)) continue;
       const box = other.getBoundingClientRect();
-      if (box.width && box.left < frame.right && box.right > frame.left && box.top < frame.bottom && box.bottom > frame.top) problems.push(`overlaps ${other.getAttribute("aria-label")}`);
+      if (box.width && box.left < frame.right && box.right > frame.left && box.top < frame.bottom && box.bottom > frame.top)
+        problems.push(`overlaps ${other.getAttribute("aria-label")}`);
     }
     return problems;
   });
