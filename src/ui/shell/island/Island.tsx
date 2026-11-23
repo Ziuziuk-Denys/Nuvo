@@ -230,6 +230,7 @@ export function Island(): JSX.Element | null {
       <div className={styles.now}>
         <div
           className={styles.open}
+          data-tour="lyrics"
           onClick={openPlayer}
           onContextMenu={
             standIn || (recsEnabled && pick.track)

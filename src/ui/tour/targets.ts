@@ -15,7 +15,7 @@ const TARGETS: Record<TargetId, () => Element | null> = {
   "recognize-sources": () => tour("recognize-sources"),
   scrubber: () => document.querySelector('[data-island] [role="slider"]'),
   rate: () => document.querySelector("[data-island] span:has([data-like]):has([data-dislike])"),
-  lyrics: () => document.querySelector("[data-island] button:has([data-island-title])"),
+  lyrics: () => tour("lyrics"),
   queue: () => tour("queue"),
   "sound-button": () => tour("sound"),
   "sound-panel": soundPanel,

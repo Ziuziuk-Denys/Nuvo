@@ -371,6 +371,11 @@ describe("Island", () => {
     expect(mocks.player.setFullscreen).toHaveBeenCalledWith(true);
   });
 
+  it("keeps the tour's lyrics target on the cover and title", () => {
+    mount();
+    expect(document.querySelector("[data-tour=lyrics] [data-island-title]")).not.toBeNull();
+  });
+
   it("opens the artist from the artist's name, not the karaoke view", () => {
     const go = vi.fn();
     bindNavigate(go);

@@ -57,7 +57,7 @@ const SCREENS: Screen[] = [
   { name: "queue", open: press("#/", '[data-tour="queue"]') },
   { name: "sound", open: press("#/", '[data-tour="sound"]') },
   { name: "add", open: press("#/", '[data-tour="add"]') },
-  { name: "lyrics", open: press("#/", "[data-island] button:has([data-island-title])") },
+  { name: "lyrics", open: press("#/", "[data-tour=lyrics]") },
   { name: "import", open: press("#/library", 'button[data-tour="library-import"]') },
 ];
 
