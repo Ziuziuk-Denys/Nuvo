@@ -287,6 +287,18 @@ describe("resolution chain", () => {
     });
   });
 
+  it("a TV script stamp with a build number reaches the TV client whole and the web client as the day alone", async () => {
+    const { fake, worker, resolver } = setup();
+    allUnplayable(fake);
+    worker.signatureTimestamp = 20775001;
+    await resolver.resolve({ id: ID }, { progressive: true }, signal()).catch(() => undefined);
+    const stampOf = (client: string) =>
+      fake.calls
+        .find((call) => call.url.includes("/player") && fromClient(client)(call.json()))!
+        .json<{ playbackContext: { contentPlaybackContext: { signatureTimestamp: number } } }>().playbackContext.contentPlaybackContext.signatureTimestamp;
+    expect([stampOf("WEB_REMIX"), stampOf("TVHTML5")]).toEqual([20775, 20775001]);
+  });
+
   it("VISIONOS with only ciphered formats is no-formats and the chain continues", async () => {
     const { fake, resolver } = setup();
     allUnplayable(fake);

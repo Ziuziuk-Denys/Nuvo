@@ -46,6 +46,9 @@ const playerBody = (videoId: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
+// The TV script numbers its build after the day (20775001); the web client answers it with signatures base.js cannot solve
+const dayStamp = (stamp: number) => Number(String(stamp).slice(0, 5));
+
 export async function webRemixAttempt(deps: PlaybackDeps, videoId: string, choice: FormatChoice, signal: AbortSignal): Promise<StreamHit> {
   const [token, , script] = await Promise.all([
     raceAbort(deps.worker.contentToken(videoId), signal),
@@ -57,7 +60,7 @@ export async function webRemixAttempt(deps: PlaybackDeps, videoId: string, choic
     playerBody(videoId, {
       playbackContext: {
         contentPlaybackContext: {
-          signatureTimestamp: script.signatureTimestamp,
+          signatureTimestamp: dayStamp(script.signatureTimestamp),
         },
       },
       serviceIntegrityDimensions: { poToken: token },

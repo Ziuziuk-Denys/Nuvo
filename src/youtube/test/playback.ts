@@ -20,6 +20,8 @@ export class FakeWorker implements WorkerBridge {
     signatureTimestamp: 20000,
   });
 
+  signatureTimestamp = 20000;
+
   isReady?: () => Promise<boolean>;
 
   contentToken(videoId: string): Promise<string> {
@@ -35,7 +37,7 @@ export class FakeWorker implements WorkerBridge {
   async playerTransform(playerId: string, n: string[], sig: string[]): Promise<Transform> {
     this.transforms.push({ playerId, n, sig });
     return {
-      signatureTimestamp: 20000,
+      signatureTimestamp: this.signatureTimestamp,
       n: n.map((value) => `${value}_t`),
       sig: sig.map((value) => `S${value}`),
     };
