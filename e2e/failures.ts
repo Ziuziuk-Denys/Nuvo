@@ -34,8 +34,17 @@ function discordOff(args: string[] = []): void {
   fs.writeFileSync(settings, JSON.stringify({ discord: { enabled: false, chosen: true } }));
 }
 
+// without WAYLAND_DISPLAY a Wayland client falls back to wayland-0, so the runtime dir counts too
+function refuseDesktop(env: Record<string, string | undefined> = process.env): void {
+  if (process.platform !== "linux" || process.env.CI) return;
+  const x11 = /^(unix)?:0(\.\d+)?$/.test(env.DISPLAY ?? "");
+  const wayland = path.basename(env.WAYLAND_DISPLAY ?? "") === "wayland-0" || fs.existsSync(path.join(env.XDG_RUNTIME_DIR ?? "", "wayland-0"));
+  if (x11 || wayland) throw new Error("these tests would open on your desktop: run them on a private display with its own XDG_RUNTIME_DIR");
+}
+
 const launch = _electron.launch.bind(_electron);
 _electron.launch = async (options) => {
+  refuseDesktop(options?.env);
   discordOff(options?.args);
   const app = await launch(options);
   const failuresAtLaunch = failures;
