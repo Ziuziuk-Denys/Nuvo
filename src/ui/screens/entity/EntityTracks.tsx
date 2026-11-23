@@ -14,7 +14,7 @@ import { AddToPlaylistPopover } from "../../shell/popovers/AddToPlaylistPopover"
 import type { TrackMatch } from "./entityModel";
 import { songMenuNotInterested } from "../../recs/notInterested";
 import { trackMenuItems, type TrackMenuActions } from "./trackMenu";
-import { TrackList, trackKey } from "./TrackList";
+import { TrackList, trackKey, type TrackListProps } from "./TrackList";
 import { TrackBulkBar } from "./TrackBulkBar";
 import { useTrackSelection } from "./trackSelection";
 import { openLyricsTool } from "../lyrics/lyricsTools";
@@ -69,9 +69,11 @@ export interface EntityTracksProps {
   onPlay: (track: Track) => void;
   numbered?: boolean;
   hideArtists?: boolean;
+  subtitle?: TrackListProps["subtitle"];
+  marks?: boolean;
 }
 
-export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hideArtists }: EntityTracksProps): JSX.Element {
+export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hideArtists, subtitle, marks }: EntityTracksProps): JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const currentTrack = usePlayerStore((state) => state.currentTrack);
@@ -111,6 +113,8 @@ export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hid
         tracks={shown}
         numbered={numbered}
         hideArtists={hideArtists}
+        subtitle={subtitle}
+        marks={marks}
         currentId={currentTrack?.id ?? null}
         playing={status === "playing" || status === "loading"}
         onPlay={(index) => {

@@ -1,6 +1,6 @@
 use nuvo_net::Url;
 
-pub const BUCKETS: [u32; 5] = [64, 128, 256, 512, 1024];
+pub const BUCKETS: [u32; 6] = [64, 128, 256, 512, 1024, 2048];
 pub const DEFAULT_BUCKET: u32 = 512;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,7 +44,7 @@ pub fn bucket(size: Option<&str>) -> Option<u32> {
     if size == 0.0 {
         return Some(DEFAULT_BUCKET);
     }
-    Some(BUCKETS.into_iter().find(|b| f64::from(*b) >= size).unwrap_or(1024))
+    Some(BUCKETS.into_iter().find(|b| f64::from(*b) >= size).unwrap_or(2048))
 }
 
 #[derive(Debug, Clone, PartialEq)]

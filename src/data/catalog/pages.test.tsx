@@ -51,7 +51,7 @@ beforeEach(() => {
 afterEach(() => act(() => root.unmount()));
 
 describe("useArtist", () => {
-  const page = (id: string, name = "Nova") => ({ id, name, verified: false, tracks: [track("t1")], albums: [], singles: [] });
+  const page = (id: string, name = "Nova") => ({ id, name, tracks: [track("t1")], albums: [], singles: [], similar: [] });
   const ids = () => (seen?.data as { tracks: { id: string }[] } | null)?.tracks.map((item) => item.id);
 
   it("shows the page before the whole list of songs", async () => {
@@ -90,6 +90,17 @@ describe("useArtist", () => {
     expect(seen?.data).toMatchObject({ id: "ar-kino" });
   });
 
+  it.each([
+    ["Godspeed You! Black Emperor", "Godspeed You Black Emperor"],
+    ["!!!", "!!!"],
+  ])("finds %s past its punctuation", async (name, credited) => {
+    catalog.search.mockResolvedValue([{ kind: "artist", id: `ar-${name}`, name: credited }]);
+    catalog.artist.mockResolvedValue(page(`ar-${name}`, credited));
+    render(() => useArtist(null, name));
+    await flush();
+    expect(seen?.data).toMatchObject({ id: `ar-${name}` });
+  });
+
   it("reports a name nobody has instead of opening someone else", async () => {
     catalog.search.mockResolvedValue([{ kind: "artist", id: "ar-other", name: "Other" }]);
     render(() => useArtist(null, "Nobody"));
@@ -114,12 +125,12 @@ describe("useArtist", () => {
     catalog.artist.mockResolvedValue({
       id: "ar1",
       name: "Nova",
-      verified: true,
       cover: cover("https://lh3.googleusercontent.com/nova"),
       listenersText: "1.2M monthly audience",
       tracks: [track("t1")],
       albums: [{ id: "al1", title: "First", year: 2020, cover: cover("https://lh3.googleusercontent.com/al1"), explicit: false }],
       singles: [{ id: "s1", title: "One", explicit: false, releaseKind: "single" }],
+      similar: [{ id: "ar2", name: "Lyra", cover: cover("https://lh3.googleusercontent.com/lyra") }],
     });
     render(() => useArtist("ar1"));
     expect(seen).toMatchObject({ data: null, loading: true, error: false });
@@ -131,7 +142,6 @@ describe("useArtist", () => {
         id: "ar1",
         title: "Nova",
         coverUrl: "https://lh3.googleusercontent.com/nova",
-        verified: true,
         monthlyListeners: "1.2M monthly audience",
         tracks: [
           expect.objectContaining({
@@ -143,8 +153,9 @@ describe("useArtist", () => {
             coverUrl: "https://i.ytimg.com/vi/t1/hqdefault.jpg",
           }),
         ],
-        albums: [{ id: "al1", title: "First", releaseDate: "2020", coverUrl: "https://lh3.googleusercontent.com/al1" }],
-        singles: [{ id: "s1", title: "One", releaseDate: undefined, coverUrl: "" }],
+        albums: [{ id: "al1", kind: "album", title: "First", releaseDate: "2020", coverUrl: "https://lh3.googleusercontent.com/al1" }],
+        singles: [{ id: "s1", kind: "single", title: "One", releaseDate: undefined, coverUrl: "" }],
+        similar: [{ id: "ar2", name: "Lyra", coverUrl: "https://lh3.googleusercontent.com/lyra" }],
       },
     });
     expect(catalog.artist).toHaveBeenCalledWith("ar1", expect.any(AbortSignal));
@@ -155,7 +166,7 @@ describe("useArtist", () => {
     render(() => useArtist("ar-missing"));
     await flush();
     expect(seen).toMatchObject({ data: null, loading: false, error: true });
-    catalog.artist.mockResolvedValue({ id: "ar-missing", name: "Back", verified: false, tracks: [], albums: [], singles: [] });
+    catalog.artist.mockResolvedValue({ id: "ar-missing", name: "Back", tracks: [], albums: [], singles: [], similar: [] });
     act(() => seen!.retry());
     expect(seen).toMatchObject({ loading: true, error: false });
     await flush();
@@ -184,14 +195,14 @@ describe("useArtist", () => {
   it("ignores a late answer for the previous artist (Review Focus 4)", async () => {
     const slow = deferred<unknown>();
     catalog.artist.mockImplementation((id: string) =>
-      id === "ar-a" ? slow.promise : Promise.resolve({ id: "ar-b", name: "B", verified: false, tracks: [], albums: [], singles: [] }),
+      id === "ar-a" ? slow.promise : Promise.resolve({ id: "ar-b", name: "B", tracks: [], albums: [], singles: [], similar: [] }),
     );
     let id = "ar-a";
     render(() => useArtist(id));
     id = "ar-b";
     render(() => useArtist(id));
     await flush();
-    slow.resolve({ id: "ar-a", name: "A", verified: false, tracks: [], albums: [], singles: [] });
+    slow.resolve({ id: "ar-a", name: "A", tracks: [], albums: [], singles: [], similar: [] });
     await flush();
     expect((seen?.data as { id: string }).id).toBe("ar-b");
     expect((catalog.artist.mock.calls[0][1] as AbortSignal).aborted).toBe(true);
@@ -249,7 +260,7 @@ describe("artistTopTrack", () => {
     catalog.artist.mockResolvedValueOnce({
       id: "ar9",
       name: "N",
-      verified: false,
+
       tracks: [track("top"), track("second")],
       albums: [],
       singles: [],

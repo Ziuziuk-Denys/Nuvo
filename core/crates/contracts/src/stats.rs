@@ -166,6 +166,7 @@ pub struct StatsDetail {
     pub by_weekday: Vec<i64>,
     pub sources: Vec<StatsShare>,
     pub top_tracks: Vec<StatsRow>,
+    pub track_ids: Vec<String>,
 }
 
 #[derive(Serialize, Debug, PartialEq)]

@@ -80,7 +80,7 @@ async function measure(page: Page): Promise<HeadLayout> {
 
 function expectSharedLayout(layout: HeadLayout, where: string): void {
   expect(layout.coverLeft, `${where}: cover 4 px in from the gutter`).toBe(contentLeft(1200) + ENTITY_OFFSET.x);
-  expect(layout.coverSize, `${where}: 168 px cover, 144 for an artist`).toBe(where.startsWith("artist") ? COVER.heroCircle : COVER.hero);
+  expect(layout.coverSize, `${where}: 168 px cover`).toBe(COVER.hero);
   expect(layout.glass, `${where}: no glass in the head`).toEqual([]);
   expect(layout.titleLines, `${where}: title in two lines at most`).toBeLessThanOrEqual(2);
   expect(layout.rowHeights.length, `${where}: rows render`).toBeGreaterThan(0);
@@ -219,6 +219,29 @@ async function headBox(page: Page): Promise<HeadBox> {
   });
 }
 
+async function artistBox(page: Page) {
+  return page.evaluate(async () => {
+    const entity = document.querySelector<HTMLElement>("[data-entity=artist]")!;
+    const title = entity.querySelector("h1")!;
+    const range = document.createRange();
+    range.selectNodeContents(title);
+    const scroller = entity.closest<HTMLElement>(".n-scroll")!;
+    const strip = scroller.querySelector<HTMLElement>("[data-slim-bar]")!;
+    const bar = [getComputedStyle(strip).visibility];
+    scroller.scrollTop = 600;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    bar.push(getComputedStyle(strip).visibility);
+    scroller.scrollTop = 0;
+    return {
+      bar,
+      rows: entity.querySelectorAll("[data-track-row]").length,
+      titleLines: new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size,
+      spill: scroller.scrollWidth > scroller.clientWidth,
+      playLeft: entity.querySelector("[data-primary]")!.getBoundingClientRect().left,
+    };
+  });
+}
+
 describe("Album and artist pages", () => {
   it("the Queen artist page and its first album in every look and size", { timeout: 1_500_000 }, async () => {
     if (!(await online())) {
@@ -255,16 +278,17 @@ describe("Album and artist pages", () => {
     for (const size of SIZES) {
       await live.setSize(size);
       await openArtist();
-      const artist = await headBox(live.page);
-      expectSharedLayout(await measure(live.page), `artist ${size.width}`);
-      expect(await live.page.locator("[data-track-row]").count(), `artist ${size.width}: five top songs`).toBe(5);
+      const artist = await artistBox(live.page);
+      expect(artist.rows, `artist ${size.width}: six top songs`).toBe(6);
+      expect(artist.titleLines, `artist ${size.width}: name in two lines at most`).toBeLessThanOrEqual(2);
+      expect(artist.spill, `artist ${size.width}: nothing scrolls sideways`).toBe(false);
+      expect(artist.bar, `artist ${size.width}: the slim bar waits for the scroll`).toEqual(["hidden", "visible"]);
       await openAlbum();
       const album = await headBox(live.page);
       expectSharedLayout(await measure(live.page), `album ${size.width}`);
       const where = `${size.width}`;
-      expect(artist.coverRadius, `${where}: the artist is a circle`).toBe("50%");
       expect(album.coverRadius, `${where}: the album is a square`).not.toBe("50%");
-      expect(artist.coverLeft, `${where}: circle and square start on one edge`).toBe(album.coverLeft);
+      expect(artist.playLeft, `${where}: the artist's Play and the album cover start on one edge`).toBe(album.coverLeft);
     }
     await live.shoot(STEP, "artist-queen", "rest", { prepare: openArtist });
     await live.shoot(STEP, "album-first", "rest", { prepare: openAlbum });

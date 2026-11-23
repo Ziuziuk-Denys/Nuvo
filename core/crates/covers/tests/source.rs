@@ -14,7 +14,8 @@ fn tries(src: &str, alt: Option<&str>, size: u32) -> Vec<String> {
 fn sizes_round_up_to_buckets() {
     assert_eq!(bucket(Some("40")), Some(64));
     assert_eq!(bucket(Some("300")), Some(512));
-    assert_eq!(bucket(Some("5000")), Some(1024));
+    assert_eq!(bucket(Some("1440")), Some(2048));
+    assert_eq!(bucket(Some("5000")), Some(2048));
     assert_eq!(bucket(None), Some(512));
     assert_eq!(bucket(Some("0")), Some(512));
     assert_eq!(bucket(Some("128")), Some(128));

@@ -88,6 +88,7 @@ export interface StatsDetail {
   byWeekday: number[];
   sources: StatsShare[];
   topTracks: StatsRow[];
+  trackIds: string[];
 }
 
 export interface StatsDays {

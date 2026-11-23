@@ -1,6 +1,8 @@
 /* --n-gutter mirrors contentGutter() in geometry.ts: keep them in step */
 .shell {
   --n-gutter: 12px;
+  --n-hero: clamp(390px, 35vw, 640px);
+  timeline-scope: --page-scroll;
   position: relative;
   width: 100%;
   height: 100%;
@@ -28,6 +30,7 @@
   border-radius: 12px;
   container-type: size;
   scrollbar-gutter: stable;
+  scroll-timeline: --page-scroll;
 }
 
 .shell[data-nav="side"] .content {

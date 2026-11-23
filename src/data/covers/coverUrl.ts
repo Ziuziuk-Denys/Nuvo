@@ -1,9 +1,9 @@
-export const COVER_BUCKETS = [64, 128, 256, 512, 1024] as const;
+export const COVER_BUCKETS = [64, 128, 256, 512, 1024, 2048] as const;
 const DEFAULT_BUCKET = 512;
 
 export function coverBucket(devicePx: number): number {
   if (!Number.isFinite(devicePx) || devicePx <= 0) return DEFAULT_BUCKET;
-  return COVER_BUCKETS.find((bucket) => bucket >= devicePx) ?? 1024;
+  return COVER_BUCKETS.find((bucket) => bucket >= devicePx) ?? 2048;
 }
 
 export function coverUrl(base: string, src: string, cssPx: number, dpr: number): string {

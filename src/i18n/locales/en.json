@@ -104,6 +104,18 @@
       "no_match": "No playlist with that name",
       "title": "Add to playlist"
     },
+    "artist": {
+      "heard": "{heard} of their {total} top songs heard",
+      "latest_album": "Latest album",
+      "latest_ep": "Latest EP",
+      "latest_single": "Latest single",
+      "liked_mark": "Liked",
+      "liked_one": "{count} liked",
+      "liked_other": "{count} liked",
+      "play_release": "Play {title}",
+      "similar": "Similar artists",
+      "since": "since {date}"
+    },
     "clear": "Clear",
     "entity": {
       "add_to_playlist": "Add to playlist",
@@ -137,7 +149,6 @@
       "unavailable": "Not available",
       "unavailable_offline": "Not saved for offline listening",
       "untitled": "Untitled playlist",
-      "verified": "Verified artist",
       "unavailable_offline_mode": "Not saved for offline mode",
       "sort_added": "Recently added",
       "sort_artist": "Artist",
@@ -162,8 +173,6 @@
       "clip": "The signal is clipping"
     },
     "home": {
-      "songs_one": "{count} song",
-      "songs_other": "{count} songs",
       "artist_mix": "{name} mix",
       "artist_mix_subtitle": "{name} and artists close to them",
       "discover_subtitle": "Songs and artists outside your usual circle",

@@ -5,6 +5,7 @@ import { usePlayingCover } from "../ports/player";
 import { useCustomizationStore, wallpaperKind } from "../ports/settings";
 import { isWindowVisible, onWindowVisibilityChange } from "../ports/window";
 import { useLook } from "../ports/theme";
+import { Banner } from "./Banner";
 import { useCalmStore } from "./calm";
 import { Sky } from "./Sky";
 import { useReducedEffects } from "../effects";
@@ -61,6 +62,8 @@ export function Field(): JSX.Element {
           {sky ? <Sky cover={cover} mode={sky} dark={dark} /> : null}
         </>
       ) : null}
+      {options?.banner ? <Banner key={options.banner} src={options.banner} portrait={false} /> : null}
+      {options?.portrait ? <Banner key={options.portrait} src={options.portrait} portrait /> : null}
     </div>
   );
 }

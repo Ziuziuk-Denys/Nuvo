@@ -98,6 +98,7 @@ async fn stats_routes_answer_from_real_events() {
     assert_eq!(track["plays"], 2);
     let (_, artist) = common::call(&core.app, "GET", &format!("/v1/stats/artists/{key}"), None).await;
     assert_eq!(artist["plays"], 3);
+    assert_eq!(artist["trackIds"], json!(["a", "b"]));
     assert_eq!(common::call(&core.app, "GET", "/v1/stats/tracks/nope", None).await.0, StatusCode::NOT_FOUND);
 
     assert_eq!(common::call(&core.app, "POST", "/v1/me/playback/events", Some(play("c", "s9", now + 1000))).await.0, StatusCode::NO_CONTENT);

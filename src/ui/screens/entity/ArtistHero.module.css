@@ -1,0 +1,93 @@
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 18px;
+  box-sizing: border-box;
+  min-height: calc(var(--n-hero) - 106px);
+}
+
+.hero .name {
+  margin-left: -0.05em;
+  font-size: clamp(44px, min(10.3cqw, 94cqw / var(--name)), 176px);
+  font-weight: 660;
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  user-select: text;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 32px;
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  color: var(--n-ink-2);
+  font: 400 14px/1.45 var(--n-font);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.aside b {
+  color: var(--n-ink);
+  font-weight: 500;
+}
+
+.slim {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  height: 0;
+  margin: 0 -4px;
+}
+
+.strip {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 8px 0 20px;
+  border-radius: 24px;
+  background: var(--n-pop);
+  -webkit-backdrop-filter: var(--n-pop-blur);
+  backdrop-filter: var(--n-pop-blur);
+  box-shadow: var(--n-panel-rim);
+  animation: arrive linear both;
+  animation-timeline: --page-scroll;
+  animation-range: calc(var(--n-hero) - 200px) calc(var(--n-hero) - 140px);
+}
+
+.slimName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font:
+    564 20px/1.2 system-ui,
+    var(--n-font-fallback),
+    sans-serif;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@keyframes arrive {
+  from {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+}

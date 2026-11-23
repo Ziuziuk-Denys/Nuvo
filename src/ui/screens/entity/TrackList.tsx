@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties, type JSX, type KeyboardEvent, type MouseEvent, type SyntheticEvent } from "react";
+import { useRef, type CSSProperties, type JSX, type KeyboardEvent, type MouseEvent, type ReactNode, type SyntheticEvent } from "react";
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import { Cover } from "../../components/Cover";
 import { Explicit } from "../../components/Explicit";
@@ -7,7 +7,7 @@ import { Flip } from "../../flip";
 import { Icon } from "../../icons/Icon";
 import { DislikeButton } from "../../recs/DislikeButton";
 import { useTranslation, type TFunction } from "../../ports/i18n";
-import { useListReorder } from "../../ports/library";
+import { useIsTrackLiked, useListReorder } from "../../ports/library";
 import type { Track } from "../../ports/player";
 import { ArtistLinks } from "../../shell/ArtistLinks";
 import { useShellScroller } from "../../shell/scroller";
@@ -23,6 +23,8 @@ export interface TrackListProps {
   tracks: TrackMatch<Track>[];
   numbered?: boolean;
   hideArtists?: boolean;
+  subtitle?: (track: Track) => ReactNode;
+  marks?: boolean;
   currentId: string | null;
   playing?: boolean;
   onPlay: (index: number) => void;
@@ -64,10 +66,31 @@ function IndexCell({ number, current, playing, onToggle, t }: { number: number; 
   );
 }
 
+function PlayingMark({ playing }: { playing: boolean }) {
+  return (
+    <span className={styles.playing} data-playing={playing ? "" : undefined} aria-hidden="true">
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
+function LikedMark({ id }: { id: string }) {
+  const { t } = useTranslation();
+  return useIsTrackLiked(id) ? (
+    <span role="img" className={styles.liked} aria-label={t("ui.artist.liked_mark")}>
+      <Icon name="liked" size={14} />
+    </span>
+  ) : null;
+}
+
 export function TrackList({
   tracks,
   numbered = false,
   hideArtists = false,
+  subtitle,
+  marks = false,
   currentId,
   playing = false,
   onPlay,
@@ -193,14 +216,22 @@ export function TrackList({
                   numbered ? (
                     <IndexCell number={index + 1} current={current} playing={playing} onToggle={onTogglePlay} t={t} />
                   ) : (
-                    <Cover src={track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />
+                    <span className={styles.art}>
+                      <Cover src={track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />
+                      {marks && current ? <PlayingMark playing={playing} /> : null}
+                    </span>
                   )
                 }
                 title={track.title}
                 badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
-                subtitle={hideArtists ? undefined : <ArtistLinks track={track} />}
+                subtitle={hideArtists ? undefined : subtitle ? subtitle(track) : <ArtistLinks track={track} />}
                 meta={formatDuration(track.durationMs)}
-                extra={<DislikeButton track={track} />}
+                extra={
+                  <>
+                    <DislikeButton track={track} />
+                    {marks ? <LikedMark id={track.id} /> : null}
+                  </>
+                }
                 active={current}
                 unavailableReason={reason ?? undefined}
                 onActivate={() => onPlay(index)}

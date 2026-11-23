@@ -21,6 +21,61 @@
   cursor: grabbing;
 }
 
+.art {
+  position: relative;
+  display: grid;
+}
+
+.playing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.playing > i {
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: #fff;
+  transform: scaleY(0.35);
+}
+
+.playing[data-playing] > i {
+  animation: beat 900ms ease-in-out infinite alternate;
+}
+
+.playing > i:nth-child(2) {
+  transform: scaleY(0.7);
+}
+
+.playing[data-playing] > i:nth-child(2) {
+  animation-delay: -400ms;
+}
+
+.playing[data-playing] > i:nth-child(3) {
+  animation-delay: -700ms;
+}
+
+@keyframes beat {
+  from {
+    transform: scaleY(0.3);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.liked {
+  display: inline-flex;
+  margin-inline-end: 4px;
+  color: var(--n-ink-3);
+}
+
 .index {
   position: absolute;
   inset: 0;
@@ -55,6 +110,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .playing[data-playing] > i {
+    animation: none;
+  }
+
   .list[data-dragging] .slot:not([data-lifted]) {
     transition: none;
   }

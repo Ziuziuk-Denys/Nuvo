@@ -1,23 +1,27 @@
-import { useEffect, useMemo, useState, type JSX } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type JSX, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Cover } from "../../components/Cover";
 import { Icon } from "../../icons/Icon";
 import { EmptyState } from "../../components/EmptyState";
 import type { MenuItem } from "../../components/Menu";
-import { usePageBackdrop } from "../../ports/backdrop";
 import { startArtistRadio, useArtist, type ArtistAlbumViewModel } from "../../ports/catalog";
 import { useTranslation, type TFunction } from "../../ports/i18n";
 import { usePlayerStore, type Track } from "../../ports/player";
+import { playLibraryEntry } from "../../ports/library";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import { navigateWithTransition } from "../../shell/navigate";
+import { openArtist } from "../../shell/openArtist";
 import look from "../look.module.css";
 import { MediaRowPlaceholder } from "../MediaRow";
 import styles from "./Artist.module.css";
 import { usePinItems, useSaved } from "./entityActions";
-import { EntityHead } from "./EntityHead";
+import { ArtistHero, PersonalLine, SlimBar } from "./ArtistHero";
+import { latestRelease } from "./artistModel";
+import { EntityButtons } from "./EntityHead";
 import { EntityLoading, EntityPage } from "./EntityPage";
 import { EntityTracks, entityPlayback, useUnavailable } from "./EntityTracks";
 
-const TOP = 5;
+const TOP = 6;
 const NO_TRACKS: Track[] = [];
 
 export function Artist(): JSX.Element {
@@ -31,30 +35,64 @@ function byArtist(track: Track, id: string): boolean {
   return track.artistId === id || (track.artistList ?? []).some((artist) => artist.id === id);
 }
 
-function audience(monthly: string | undefined, count: number, t: TFunction): string | undefined {
-  const listeners = monthly?.match(/^[\d.,]+\s?[KMBkmb]?/)?.[0];
-  if (listeners) return t("artist.monthly_audience", { count: listeners.trim() });
-  return count > 0 ? t("ui.home.songs", { count }) : undefined;
+function listeners(monthly: string | undefined, t: TFunction): string | null {
+  const count = monthly?.match(/^[\d.,]+\s?[KMBkmb]?/)?.[0];
+  return count ? t("artist.monthly_audience", { count: count.trim() }) : null;
 }
 
-function Shelf({ title, items, onOpen }: { title: string; items: ArtistAlbumViewModel[]; onOpen: (id: string) => void }): JSX.Element {
+const LATEST_LABEL = { album: "ui.artist.latest_album", ep: "ui.artist.latest_ep", single: "ui.artist.latest_single" } as const;
+const WIDE_PAGE_PX = 1700;
+
+function onResize(change: () => void): () => void {
+  window.addEventListener("resize", change);
+  return () => window.removeEventListener("resize", change);
+}
+
+function useWidePage(): boolean {
+  return useSyncExternalStore(onResize, () => window.innerWidth >= WIDE_PAGE_PX);
+}
+
+function Shelf({ title, children }: { title: string; children: ReactNode }): JSX.Element {
   return (
     <section className={styles.section}>
       <h2 className={`${look.sectionTitle} ${styles.shelfTitle}`}>{title}</h2>
-      <div className={styles.shelf}>
-        {items.map((item) => (
-          <button key={item.id} type="button" className={styles.card} onClick={() => onOpen(item.id)}>
-            <span className={styles.art}>
-              <Cover src={item.coverUrl} size={180} radius={8} />
-            </span>
-            <span className={styles.cardText}>
-              <span className={styles.cardTitle}>{item.title}</span>
-              {item.releaseDate ? <span className={styles.cardSubtitle}>{item.releaseDate}</span> : null}
-            </span>
-          </button>
-        ))}
-      </div>
+      <div className={styles.shelf}>{children}</div>
     </section>
+  );
+}
+
+function ReleaseCard({ release, onOpen }: { release: ArtistAlbumViewModel; onOpen: (id: string) => void }): JSX.Element {
+  return (
+    <button type="button" className={styles.card} onClick={() => onOpen(release.id)}>
+      <span className={styles.art}>
+        <Cover src={release.coverUrl} size={180} radius={10} />
+      </span>
+      <span className={styles.cardText}>
+        <span className={styles.cardTitle}>{release.title}</span>
+        {release.releaseDate ? <span className={styles.cardSubtitle}>{release.releaseDate}</span> : null}
+      </span>
+    </button>
+  );
+}
+
+function Latest({ release, onOpen }: { release: ArtistAlbumViewModel; onOpen: (id: string) => void }): JSX.Element {
+  const { t } = useTranslation();
+  const play = () => void playLibraryEntry({ kind: "album", id: release.id, title: release.title, cover: release.coverUrl }, `album:${release.id}`);
+  return (
+    <div className={styles.latest}>
+      <button type="button" className={styles.latestCover} aria-label={release.title} onClick={() => onOpen(release.id)}>
+        <Cover src={release.coverUrl} size={320} radius={14} />
+      </button>
+      <div className={styles.latestLine}>
+        <button type="button" className={styles.latestText} tabIndex={-1} onClick={() => onOpen(release.id)}>
+          <span className={styles.latestTitle}>{release.title}</span>
+          <span className={styles.cardSubtitle}>{[t(LATEST_LABEL[release.kind]), release.releaseDate].filter(Boolean).join(", ")}</span>
+        </button>
+        <button type="button" className={look.icon} aria-label={t("ui.artist.play_release", { title: release.title })} onClick={play}>
+          <Icon name="play" size={16} />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -75,7 +113,6 @@ function ArtistPage({ pageId, givenName }: { pageId: string; givenName: string }
   }));
   const name = data?.title ?? item?.title ?? localSeed?.artistList?.find((artist) => artist.id === id)?.name ?? givenName;
   const cover = data?.coverUrl || item?.imageUrl || "";
-  usePageBackdrop(cover || undefined);
 
   const unavailable = useUnavailable(tracks);
   // the library plays an artist under its name, so the two agree on what is playing
@@ -88,7 +125,10 @@ function ArtistPage({ pageId, givenName }: { pageId: string; givenName: string }
     if (pressed === "play") playAll();
     else shuffle();
   }, [pressed, partial, playAll, shuffle]);
-  const shown = useMemo(() => (all ? tracks : tracks.slice(0, TOP)).map((track, index) => ({ track, index })), [all, tracks]);
+  const wide = useWidePage();
+  const columns = wide && !all ? 2 : 1;
+  const limit = TOP * columns;
+  const shown = useMemo(() => (all ? tracks : tracks.slice(0, limit)).map((track, index) => ({ track, index })), [all, limit, tracks]);
   const albums = data?.albums ?? [];
   const singles = data?.singles ?? [];
   const openAlbum = (albumId: string) => navigateWithTransition(navigate, `/collection?type=album&id=${encodeURIComponent(albumId)}`);
@@ -107,26 +147,30 @@ function ArtistPage({ pageId, givenName }: { pageId: string; givenName: string }
       onSelect: () => navigateWithTransition(navigate, `/stats/artist?key=${encodeURIComponent(`name:${name.toLowerCase()}`)}`),
     },
   ];
+  const onPlay = () => setPressed("play");
+  const onShuffle = () => setPressed("shuffle");
+  const idle = playable.length === 0;
+  const personal = <PersonalLine name={name} tracks={tracks} byArtist={(track) => byArtist(track, id)} audience={listeners(data?.monthlyListeners, t)} />;
   const head = (actions?: JSX.Element) => (
-    <EntityHead
-      cover={cover ? <Cover src={cover} size={144} shape="circle" alt="" /> : <span className={styles.initial}>{name.charAt(0)}</span>}
-      shape="circle"
-      title={name}
-      badge={
-        data?.verified ? (
-          <span role="img" className={styles.verified} aria-label={t("ui.entity.verified")}>
-            <Icon name="verified-badge" size={20} />
-          </span>
-        ) : undefined
+    <ArtistHero
+      name={name}
+      banner={data?.bannerUrl}
+      cover={cover}
+      actions={
+        actions ?? (
+          <EntityButtons
+            playLabel={t("ui.entity.play")}
+            shuffleLabel={t("ui.entity.shuffle")}
+            onPlay={onPlay}
+            onShuffle={onShuffle}
+            saved={saved}
+            onSave={toggle}
+            menu={menu}
+            idle={idle}
+          />
+        )
       }
-      subtitle={data ? audience(data.monthlyListeners, tracks.length, t) : undefined}
-      onPlay={() => setPressed("play")}
-      onShuffle={() => setPressed("shuffle")}
-      saved={saved}
-      onSave={toggle}
-      menu={menu}
-      idle={playable.length === 0}
-      actions={actions}
+      aside={personal}
     />
   );
 
@@ -167,31 +211,76 @@ function ArtistPage({ pageId, givenName }: { pageId: string; givenName: string }
     return <EntityPage kind="artist" head={head(radio)} tracks={null} />;
   }
 
-  return (
-    <EntityPage
-      kind="artist"
-      head={head()}
-      tracks={
-        <div className={styles.sections}>
-          {tracks.length > 0 ? (
-            <section className={styles.section}>
-              <div className={look.sectionHead}>
-                <h2 className={look.sectionTitle}>{t("artist.popular_songs")}</h2>
-                {!all && tracks.length > TOP ? (
-                  <button type="button" className={look.sectionLink} onClick={() => setAll(true)}>
-                    {t("ui.entity.show_all")}
-                  </button>
-                ) : null}
-              </div>
-              <div className={styles.songs}>
-                <EntityTracks shown={shown} tracks={tracks} unavailable={unavailable} onPlay={play} />
-              </div>
-            </section>
-          ) : null}
-          {albums.length > 0 ? <Shelf title={t("ui.entity.albums")} items={albums} onOpen={openAlbum} /> : null}
-          {singles.length > 0 ? <Shelf title={t("ui.entity.singles")} items={singles} onOpen={openAlbum} /> : null}
-        </div>
-      }
-    />
+  const latest = latestRelease(albums, singles);
+  const songList = (from: number, to?: number) => (
+    <EntityTracks shown={shown.slice(from, to)} tracks={tracks} unavailable={unavailable} onPlay={play} subtitle={songSubtitle} marks />
   );
+  return (
+    <>
+      <SlimBar name={name} idle={idle} onPlay={onPlay} onShuffle={onShuffle} />
+      <EntityPage
+        kind="artist"
+        head={head()}
+        tracks={
+          <div className={styles.sections}>
+            {tracks.length > 0 ? (
+              <div className={styles.lead}>
+                {latest ? <Latest release={latest} onOpen={openAlbum} /> : null}
+                <section className={styles.section}>
+                  <div className={`${look.sectionHead} ${styles.songsHead}`}>
+                    <h2 className={look.sectionTitle}>{t("artist.popular_songs")}</h2>
+                    {!all && tracks.length > limit ? (
+                      <button type="button" className={look.sectionLink} onClick={() => setAll(true)}>
+                        {t("ui.entity.show_all")}
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className={styles.songs} data-columns={columns}>
+                    {columns === 2 ? (
+                      <>
+                        <div>{songList(0, TOP)}</div>
+                        <div>{songList(TOP)}</div>
+                      </>
+                    ) : (
+                      songList(0)
+                    )}
+                  </div>
+                </section>
+              </div>
+            ) : null}
+            {albums.length > 0 ? (
+              <Shelf title={t("ui.entity.albums")}>
+                {albums.map((release) => (
+                  <ReleaseCard key={release.id} release={release} onOpen={openAlbum} />
+                ))}
+              </Shelf>
+            ) : null}
+            {singles.length > 0 ? (
+              <Shelf title={t("ui.entity.singles")}>
+                {singles.map((release) => (
+                  <ReleaseCard key={release.id} release={release} onOpen={openAlbum} />
+                ))}
+              </Shelf>
+            ) : null}
+            {data.similar.length > 0 ? (
+              <Shelf title={t("ui.artist.similar")}>
+                {data.similar.map((artist) => (
+                  <button key={artist.id} type="button" className={styles.face} onClick={() => openArtist(artist)}>
+                    <span className={styles.art}>
+                      <Cover src={artist.coverUrl} size={120} shape="circle" />
+                    </span>
+                    <span className={styles.cardTitle}>{artist.name}</span>
+                  </button>
+                ))}
+              </Shelf>
+            ) : null}
+          </div>
+        }
+      />
+    </>
+  );
+}
+
+function songSubtitle(track: Track): ReactNode {
+  return (track.artistList?.length ?? 0) > 1 ? <ArtistLinks track={track} /> : track.album?.title;
 }

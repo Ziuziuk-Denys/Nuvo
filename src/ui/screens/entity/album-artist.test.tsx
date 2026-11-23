@@ -3,6 +3,7 @@ import { act, type JSX } from "react";
 import { type Root, createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
+import { bindNavigate } from "../../shell/navigate";
 import { Album } from "./Album";
 import { Artist } from "./Artist";
 import { Playlist } from "./Playlist";
@@ -34,11 +35,13 @@ const mocks = vi.hoisted(() => {
       playlistCover: "",
       savedArtists: [] as { id: string; title: string }[],
       mix: undefined as unknown,
+      stats: null as unknown,
     },
     useCollection: vi.fn(),
     engine: { playTrack: vi.fn(() => Promise.resolve()), playShuffled: vi.fn(), clearQueue: vi.fn(), togglePlayPause: vi.fn(), startRadioStation: vi.fn() },
+    playEntry: vi.fn(),
     radio: vi.fn(() => Promise.resolve()),
-    useModalStore: store({ openRemoveFromPlaylist: vi.fn(), openRemoveFromLibrary: vi.fn(), openSearch: vi.fn() }),
+    useModalStore: store({ openRemoveFromPlaylist: vi.fn(), openRemoveFromLibrary: vi.fn(), openSearch: vi.fn(), closeSearch: vi.fn() }),
     useHomePinsStore: store({ pins: [], pin: vi.fn(), unpin: vi.fn() }),
   };
 });
@@ -51,9 +54,12 @@ vi.mock("../../ports/i18n", () => ({
 vi.mock("../../ports/importsRuntime", () => ({ useImportSummaries: () => [] }));
 vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: vi.fn() }));
+vi.mock("../../ports/stats", () => ({ useStatsDetail: () => ({ data: mocks.state.stats, failed: false }) }));
 vi.mock("../../ports/network", () => ({ useStreamingReachable: () => mocks.state.online, useOnline: () => mocks.state.online, useOfflineMode: () => false }));
 vi.mock("../../ports/player", () => ({
-  usePlayerStore: (select: (state: typeof mocks.player) => unknown) => select(mocks.player),
+  usePlayerStore: Object.assign((select: (state: typeof mocks.player) => unknown) => select(mocks.player), {
+    getState: () => ({ setFullscreen: () => undefined }),
+  }),
   playerEngine: mocks.engine,
   isSoundCloudId: (id: string) => id.startsWith("sc:"),
 }));
@@ -71,6 +77,7 @@ vi.mock("../../ports/recs", async (load) => ({
   useHomeMix: (id: string | null) => (id === null ? null : mocks.state.mix),
 }));
 vi.mock("../../ports/library", () => ({
+  playLibraryEntry: mocks.playEntry,
   useOfflineProgress: () => null,
   usePlaylist: () => ({
     data: {
@@ -114,6 +121,13 @@ let root: Root | null = null;
 let host: HTMLDivElement;
 
 beforeEach(() => {
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
   host = document.createElement("div");
   document.body.append(host);
 });
@@ -128,6 +142,7 @@ afterEach(() => {
     collection: { data: null, loading: false },
     artist: { data: null, loading: false },
     online: true,
+    stats: null,
     cached: null,
     playlistTracks: [],
     playlistCover: "",
@@ -200,13 +215,57 @@ describe("Home mix", () => {
 });
 
 describe("Artist", () => {
-  it("Show all expands the top songs from 5 to all", () => {
+  const release = (id: string, kind: string, releaseDate: string) => ({ id, kind, title: id, releaseDate, coverUrl: "" });
+  const queen = (over: object) => ({
+    id: "q",
+    title: "Queen",
+    coverUrl: "q.jpg",
+    tracks: [1, 2].map(mocks.track),
+    albums: [],
+    singles: [],
+    similar: [],
+    ...over,
+  });
+
+  it("says what the listener played of them, and the audience only without plays", () => {
+    mocks.state.artist = { data: queen({ monthlyListeners: "1.2M monthly audience" }), loading: false };
+    mocks.state.stats = { plays: 5, firstPlayedAt: null, trackIds: ["t2", "gone"] };
+    render("/artist?id=q", <Artist />);
+    expect(host.textContent).toContain("ui.stats.plays(5)");
+    expect(host.textContent).toContain("ui.artist.heard(1,2)");
+    expect(host.textContent).not.toContain("artist.monthly_audience");
+    act(() => root!.unmount());
+    mocks.state.stats = null;
+    render("/artist?id=q", <Artist />);
+    expect(host.textContent).toContain("artist.monthly_audience(1.2M)");
+  });
+
+  it("leads with the latest release, plays it and opens a similar artist", () => {
+    const go = vi.fn();
+    bindNavigate(go);
     mocks.state.artist = {
-      data: { title: "Queen", coverUrl: "q.jpg", tracks: [1, 2, 3, 4, 5, 6, 7, 8].map(mocks.track), albums: [], singles: [] },
+      data: queen({
+        albums: [release("Innuendo", "album", "1991")],
+        singles: [release("Face It Alone", "single", "2022")],
+        similar: [{ id: "b", name: "Bowie", coverUrl: "" }],
+      }),
       loading: false,
     };
     render("/artist?id=q", <Artist />);
-    expect(rows()).toHaveLength(5);
+    expect(host.textContent).toContain("ui.artist.latest_single, 2022");
+    act(() => button("ui.artist.play_release(Face It Alone)")!.click());
+    expect(mocks.playEntry).toHaveBeenCalledWith(expect.objectContaining({ kind: "album", id: "Face It Alone" }), "album:Face It Alone");
+    act(() => button("Bowie")!.click());
+    expect(go).toHaveBeenCalledWith("/artist?id=b&name=Bowie");
+  });
+
+  it("Show all expands the top songs from 6 to all", () => {
+    mocks.state.artist = {
+      data: { title: "Queen", coverUrl: "q.jpg", tracks: [1, 2, 3, 4, 5, 6, 7, 8].map(mocks.track), albums: [], singles: [], similar: [] },
+      loading: false,
+    };
+    render("/artist?id=q", <Artist />);
+    expect(rows()).toHaveLength(6);
     act(() => button("ui.entity.show_all")!.click());
     expect(rows()).toHaveLength(8);
     expect(button("ui.entity.show_all")).toBeUndefined();
@@ -226,7 +285,7 @@ describe("Artist", () => {
   });
 
   it("plays the whole list even when Play came before it", () => {
-    const page = { title: "Queen", coverUrl: "q.jpg", albums: [], singles: [] };
+    const page = { title: "Queen", coverUrl: "q.jpg", albums: [], singles: [], similar: [] };
     mocks.state.artist = { data: { ...page, tracks: [1].map(mocks.track) }, loading: true };
     render("/artist?id=q", <Artist />);
     act(() => button("ui.entity.play")!.click());
