@@ -3,6 +3,7 @@ import { MotionConfig } from "framer-motion";
 import { HashRouter } from "react-router-dom";
 import { ThemeProvider, useAbLoop, useNotchFeeds, useSoundSync, useTempoSync } from "../ports/app";
 import { usePlayerStore } from "../ports/player";
+import { usePlaylistsList } from "../ports/library";
 import { useLyrics } from "../ports/lyrics";
 import { Gate } from "../screens/lock/Gate";
 import { Shell } from "../shell/Shell";
@@ -27,7 +28,8 @@ function Root(): JSX.Element {
   const lyricsTrackId = useLyrics((state) => state.trackId);
   const timed = useLyrics((state) => state.lines);
   const lines = useMemo(() => timed.map((line) => ({ timeMs: line.fromMs, text: line.text })), [timed]);
-  useNotchFeeds({ trackId, lyricsTrackId, lines });
+  const { playlists } = usePlaylistsList().data;
+  useNotchFeeds({ trackId, lyricsTrackId, lines }, playlists);
   return (
     <Shell overlays={<Overlays />}>
       <Gate>

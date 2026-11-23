@@ -128,6 +128,7 @@ export type RemoteCommand =
   | { type: "toggle" | "play" | "pause" | "next" | "previous" | "like" | "unlike" | "dislike" }
   | { type: "seek"; positionMs: number }
   | { type: "playEntry"; trackId: string }
+  | { type: "addToPlaylist"; trackId: string; playlistId: string }
   | { type: "volumeDelta"; delta: number };
 
 export interface SurfaceUpNext {

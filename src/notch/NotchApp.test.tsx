@@ -2,8 +2,17 @@ import { act } from "react";
 import { type Root, createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import NotchApp from "./NotchApp";
-import { DEFAULT_NOTCH_SETTINGS, type Cutout, type NotchHello, type NotchLyrics, type NotchPresence, type NotchSettings, type NotchState } from "./contracts";
-import { ISLAND_SIZES, grownRect, islandPath, islandRect, islandSizes } from "./lib/geometry";
+import {
+  DEFAULT_NOTCH_SETTINGS,
+  type Cutout,
+  type NotchHello,
+  type NotchLyrics,
+  type NotchPlaylists,
+  type NotchPresence,
+  type NotchSettings,
+  type NotchState,
+} from "./contracts";
+import { ISLAND_SIZES, grownRect, islandPath, islandRect, islandSizes, pageSize } from "./lib/geometry";
 import { MORPH_SPRING, simulateSpring, springEasing } from "./lib/spring";
 
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
@@ -38,13 +47,15 @@ interface Harness {
   };
   pushState: (state: NotchState) => void;
   pushLyrics: (lyrics: NotchLyrics) => void;
+  pushPlaylists: (playlists: NotchPlaylists) => void;
   pushSettings: (settings: NotchSettings) => void;
   pushCutout: (cutout: Cutout | null) => void;
   pushPresence: (presence: NotchPresence) => void;
 }
 
-function installApi(partial: Omit<NotchHello, "cutout" | "presence"> & { cutout?: Cutout | null; presence?: NotchPresence }): Harness {
-  const hello: NotchHello = { cutout: null, presence: "in", ...partial };
+function installApi(partial: Omit<NotchHello, "cutout" | "presence" | "playlists"> & { cutout?: Cutout | null; presence?: NotchPresence }): Harness {
+  const hello: NotchHello = { cutout: null, presence: "in", playlists: null, ...partial };
+  const playlistListeners: Array<(playlists: NotchPlaylists) => void> = [];
   const presenceListeners: Array<(presence: NotchPresence) => void> = [];
   const cutoutListeners: Array<(cutout: Cutout | null) => void> = [];
   const stateListeners: Array<(state: NotchState) => void> = [];
@@ -60,6 +71,7 @@ function installApi(partial: Omit<NotchHello, "cutout" | "presence"> & { cutout?
     notchHello: vi.fn(async () => hello),
     onNotchState: subscribe(stateListeners),
     onNotchLyrics: subscribe(lyricsListeners),
+    onNotchPlaylists: subscribe(playlistListeners),
     onNotchSettings: subscribe(settingsListeners),
     onNotchCutout: subscribe(cutoutListeners),
     onNotchPresence: subscribe(presenceListeners),
@@ -72,6 +84,7 @@ function installApi(partial: Omit<NotchHello, "cutout" | "presence"> & { cutout?
     api,
     pushState: (state) => act(() => stateListeners.forEach((cb) => cb(state))),
     pushLyrics: (lyrics) => act(() => lyricsListeners.forEach((cb) => cb(lyrics))),
+    pushPlaylists: (playlists) => act(() => playlistListeners.forEach((cb) => cb(playlists))),
     pushSettings: (settings) => act(() => settingsListeners.forEach((cb) => cb(settings))),
     pushCutout: (cutout) => act(() => cutoutListeners.forEach((cb) => cb(cutout))),
     pushPresence: (presence) => act(() => presenceListeners.forEach((cb) => cb(presence))),
@@ -195,18 +208,33 @@ describe("NotchApp", () => {
     await mount();
     await expand(harness);
     click(button("Pause"));
-    click(button("Next track"));
-    click(button("Previous track"));
+    click(button("Next"));
+    click(button("Previous"));
     click(button("Like"));
+    click(button("Dislike"));
     click(host.querySelector(".expanded .now-title")!);
     expect(harness.api.notchAction.mock.calls.map(([action]) => action)).toEqual([
       { type: "togglePlay" },
       { type: "next" },
       { type: "prev" },
       { type: "like" },
+      { type: "dislike" },
       { type: "focusApp" },
     ]);
     expect(mode()).toBe("expanded");
+  });
+
+  it("shows a like and a pause at once, and the app has the last word", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    await expand(harness);
+    click(button("Like"));
+    expect(button("Like").getAttribute("aria-pressed")).toBe("true");
+    click(button("Pause"));
+    expect(button("Play")).not.toBeNull();
+    harness.pushState(makeState());
+    expect(button("Like").getAttribute("aria-pressed")).toBe("false");
+    expect(button("Pause")).not.toBeNull();
   });
 
   it("shows Play while paused", async () => {
@@ -228,7 +256,7 @@ describe("NotchApp", () => {
     click(island());
     const padded = grownRect(ISLAND_SIZES.live, ISLAND_SIZES.expanded, OVERSHOOT);
     expect(shape).toHaveBeenLastCalledWith(padded);
-    expect(padded.height).toBeGreaterThan(islandRect(ISLAND_SIZES.expanded).height + 9);
+    expect(padded.height).toBeGreaterThan(islandRect(ISLAND_SIZES.expanded).height + 5);
     advance(MORPH_MS);
     expect(shape).toHaveBeenLastCalledWith(islandRect(ISLAND_SIZES.expanded));
     enter();
@@ -262,11 +290,11 @@ describe("NotchApp", () => {
     click(island());
     expect(mode()).toBe("expanded");
     const expanded = islandRect(ISLAND_SIZES.expanded);
-    move(expanded.x + 10, 150);
+    move(expanded.x + 10, 120);
     expect(capture).toHaveBeenLastCalledWith(true);
     act(() => document.documentElement.dispatchEvent(new MouseEvent("mouseleave")));
     expect(capture).toHaveBeenLastCalledWith(false);
-    move(expanded.x + 10, 150);
+    move(expanded.x + 10, 120);
     expect(capture).toHaveBeenLastCalledWith(true);
     enter();
     leave();
@@ -295,33 +323,165 @@ describe("NotchApp", () => {
     expect(shape).toHaveBeenLastCalledWith(islandRect(ISLAND_SIZES.expanded));
   });
 
+  const view = () => host.querySelector<HTMLElement>(".expanded")!.dataset.view;
+  const cover = () => host.querySelector<HTMLButtonElement>(".deck-cover")!;
+  const sheets = () => host.querySelectorAll('.sheet[data-on="true"]').length;
+  const flip = (deltaX: number) => {
+    act(() => island().dispatchEvent(new WheelEvent("wheel", { deltaX, bubbles: true })));
+    advance(300);
+  };
+  const LYRICS: NotchLyrics = {
+    trackId: "t1",
+    lines: [
+      { timeMs: 0, text: "a" },
+      { timeMs: 1000, text: "b" },
+    ],
+  };
+  const UP_NEXT = [{ id: "u1", title: "Wait", artist: "M83", coverUrl: null, durationMs: 1 }];
+
   it("switches the lyric line on time with one timer", async () => {
     const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
     await mount();
-    harness.pushLyrics({
-      trackId: "t1",
-      lines: [
-        { timeMs: 0, text: "a" },
-        { timeMs: 1000, text: "b" },
-      ],
-    });
+    harness.pushLyrics(LYRICS);
     await expand(harness, makeState({ positionMs: 900, sampledAt: Date.now() }));
-    const current = () => host.querySelector(".lyric-strip .lyric-current")?.textContent;
+    click(cover());
+    const current = () => host.querySelector('.lyrics-line[data-current="true"]')?.textContent;
     expect(current()).toBe("a");
     advance(100);
     expect(current()).toBe("b");
   });
 
-  it("ignores lyrics for another track and hides the strip when disabled", async () => {
+  it("the cover opens the next page, then leads back, and names both", async () => {
     const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
     await mount();
-    harness.pushLyrics({ trackId: "other", lines: [{ timeMs: 0, text: "x" }] });
+    harness.pushLyrics(LYRICS);
+    await expand(harness, makeState({ upNext: UP_NEXT }));
+    expect(sheets()).toBe(2);
+    expect(cover().getAttribute("aria-label")).toBe("Show Lyrics");
+    click(cover());
+    expect(view()).toBe("lyrics");
+    expect(sheets()).toBe(1);
+    expect(cover().getAttribute("aria-label")).toBe("Back to the song");
+    click(host.querySelector(".deck-next")!);
+    expect(view()).toBe("upNext");
+    expect(sheets()).toBe(0);
+    expect(host.querySelector(".deck-next")).toBeNull();
+    click(cover());
+    expect(view()).toBe("now");
+    expect(harness.api.notchAction).not.toHaveBeenCalled();
+  });
+
+  it("skips pages with nothing behind them", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    harness.pushLyrics({ ...LYRICS, trackId: "other" });
     await expand(harness);
-    expect(host.querySelector(".lyric-strip")).toBeNull();
-    harness.pushLyrics({ trackId: "t1", lines: [{ timeMs: 0, text: "x" }] });
-    expect(host.querySelector(".lyric-strip")).not.toBeNull();
+    expect(sheets()).toBe(0);
+    flip(60);
+    expect(view()).toBe("now");
+    click(cover());
+    expect(harness.api.notchAction).toHaveBeenLastCalledWith({ type: "focusApp" });
+
+    harness.pushState(makeState({ upNext: UP_NEXT }));
+    expect(sheets()).toBe(1);
+    flip(60);
+    expect(view()).toBe("upNext");
+
+    flip(-60);
+    harness.pushLyrics(LYRICS);
+    flip(60);
+    expect(view()).toBe("lyrics");
     harness.pushSettings({ ...DEFAULT_NOTCH_SETTINGS, showLyrics: false });
-    expect(host.querySelector(".lyric-strip")).toBeNull();
+    expect(view()).toBe("now");
+  });
+
+  it("each page has its own height and the input shape follows it", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    harness.pushLyrics(LYRICS);
+    await expand(harness);
+    advance(MORPH_MS);
+    const path = () => host.querySelector("svg path")!.getAttribute("d");
+    click(cover());
+    const lyrics = pageSize(ISLAND_SIZES.expanded, "lyrics");
+    expect(path()).toBe(islandPath(lyrics));
+    expect(harness.api.notchSetShape).toHaveBeenLastCalledWith(grownRect(ISLAND_SIZES.expanded, lyrics, OVERSHOOT));
+    advance(MORPH_MS);
+    expect(harness.api.notchSetShape).toHaveBeenLastCalledWith(islandRect(lyrics));
+  });
+
+  it("waits for a pointer that a shrinking page left outside", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    harness.pushLyrics(LYRICS);
+    await expand(harness);
+    enter();
+    click(cover());
+    click(cover());
+    leave();
+    advance(1500);
+    expect(mode()).toBe("expanded");
+    enter();
+    leave();
+    advance(200);
+    expect(mode()).toBe("live");
+  });
+
+  it("adds the song to a playlist, shows the answer and returns", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    const items = [
+      { id: "p1", title: "Late Drive", coverUrl: null, trackCount: 42 },
+      { id: "p2", title: "Focus", coverUrl: null, trackCount: 1 },
+    ];
+    harness.pushPlaylists({ items, outcome: null });
+    await expand(harness);
+    click(button("Add to playlist"));
+    expect(view()).toBe("add");
+    const rows = () => [...host.querySelectorAll<HTMLElement>(".add-rows .row")];
+    expect(rows().map((row) => row.querySelector(".row-meta")!.textContent)).toEqual(["42 songs", "1 song"]);
+    click(rows()[1]);
+    expect(harness.api.notchAction).toHaveBeenLastCalledWith({ type: "addToPlaylist", trackId: "t1", playlistId: "p2" });
+    harness.pushPlaylists({ items, outcome: { trackId: "t1", playlistId: "p2", kind: "failed" } });
+    expect(rows()[1].querySelector(".row-meta")!.textContent).toBe("Couldn't add the song");
+    advance(2000);
+    expect(view()).toBe("add");
+    click(rows()[1]);
+    harness.pushPlaylists({ items: [...items].reverse(), outcome: { trackId: "t1", playlistId: "p2", kind: "added" } });
+    expect(rows()[1].querySelector(".row-meta")!.textContent).toBe("Added");
+    advance(1200);
+    expect(view()).toBe("now");
+    click(button("Add to playlist"));
+    harness.pushState(makeState({ track: { ...makeState().track!, id: "t2" } }));
+    expect(view()).toBe("now");
+  });
+
+  it("says so when there is no playlist yet", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    await expand(harness);
+    click(button("Add to playlist"));
+    expect(host.querySelector(".empty")!.textContent).toBe("No playlists yet.");
+    click(button("Back to the song"));
+    expect(view()).toBe("now");
+  });
+
+  it("nudges the sheets once in a lifetime, the first time pages exist", async () => {
+    localStorage.removeItem("nuvo_notch_nudged");
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    const nudging = () => host.querySelector(".deck")!.hasAttribute("data-nudge");
+    await expand(harness);
+    expect(nudging()).toBe(false);
+    harness.pushLyrics(LYRICS);
+    expect(nudging()).toBe(true);
+    advance(1500);
+    expect(nudging()).toBe(false);
+    enter();
+    leave();
+    advance(200);
+    click(island());
+    expect(nudging()).toBe(false);
   });
 
   it("runs requestAnimationFrame only while expanded and playing", async () => {
@@ -368,30 +528,47 @@ describe("NotchApp", () => {
     expect(host.querySelector(".cover-placeholder")).not.toBeNull();
   });
 
-  it("vertical wheel changes the volume, horizontal wheel switches views", async () => {
+  it("vertical wheel changes the volume, horizontal wheel flips pages both ways", async () => {
     const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
     await mount();
-    await expand(harness);
+    harness.pushLyrics(LYRICS);
+    await expand(harness, makeState({ upNext: UP_NEXT }));
     act(() => island().dispatchEvent(new WheelEvent("wheel", { deltaY: -100, bubbles: true })));
     expect(harness.api.notchAction).toHaveBeenLastCalledWith({ type: "volumeDelta", delta: 0.05 });
     expect(host.querySelector(".volume")).not.toBeNull();
     advance(1500);
     expect(host.querySelector(".volume")).toBeNull();
-    const view = () => host.querySelector<HTMLElement>(".expanded")!.dataset.view;
     expect(view()).toBe("now");
-    act(() => island().dispatchEvent(new WheelEvent("wheel", { deltaX: 60, bubbles: true })));
+    flip(60);
     expect(view()).toBe("lyrics");
-    click(button("Up next"));
+    flip(60);
+    flip(60);
     expect(view()).toBe("upNext");
+    flip(-60);
+    expect(view()).toBe("lyrics");
+  });
+
+  it("a touch swipe flips pages", async () => {
+    const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
+    await mount();
+    harness.pushLyrics(LYRICS);
+    await expand(harness);
+    const pointer = (type: string, clientX: number) =>
+      act(() => host.querySelector(".expanded")!.dispatchEvent(Object.assign(new MouseEvent(type, { bubbles: true, clientX }), { pointerType: "touch" })));
+    pointer("pointerdown", 200);
+    pointer("pointerup", 120);
+    expect(view()).toBe("lyrics");
+    pointer("pointerdown", 120);
+    pointer("pointerup", 200);
+    expect(view()).toBe("now");
   });
 
   it("an up-next row plays that track", async () => {
     const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
     await mount();
-    const upNext = [{ id: "u1", title: "Wait", artist: "M83", coverUrl: null, durationMs: 1 }];
-    await expand(harness, makeState({ upNext }));
-    click(button("Up next"));
-    click(host.querySelector(".up-next-row")!);
+    await expand(harness, makeState({ upNext: UP_NEXT }));
+    click(cover());
+    click(host.querySelector(".upNext .row")!);
     expect(harness.api.notchAction).toHaveBeenLastCalledWith({ type: "playUpNext", trackId: "u1" });
   });
 

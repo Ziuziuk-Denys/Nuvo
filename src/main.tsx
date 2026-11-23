@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { configureI18n, onLocaleChange, prepareLocale, translate } from "@/i18n";
+import { LOCALE_BOOT_KEY, configureI18n, onLocaleChange, prepareLocale, setLocale, translate } from "@/i18n";
 import { installErrorHandlers } from "./data/platform/errors";
 import { bootPlayer, type PlayerBootPorts } from "./playerBoot";
 
@@ -54,7 +54,10 @@ async function mainWindow(): Promise<React.ReactElement> {
 }
 
 async function notchWindow(): Promise<React.ReactElement> {
-  const { default: NotchApp } = await import("./notch/NotchApp");
+  const [{ default: NotchApp }] = await Promise.all([import("./notch/NotchApp"), prepareLocale()]);
+  window.addEventListener("storage", (event) => {
+    if (event.key === LOCALE_BOOT_KEY && event.newValue) void setLocale(event.newValue);
+  });
   return <NotchApp />;
 }
 

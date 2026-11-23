@@ -2,6 +2,7 @@ import type { IslandMode } from "./geometry";
 
 export const HOVER_EXIT_MS = 200;
 export const EXPAND_DWELL_MS = 350;
+export const LINGER_MS = 1600;
 export const PULSE_MS = 2400;
 
 export type ExpandTrigger = "hover" | "click";
@@ -22,6 +23,7 @@ export class IslandMachine {
   private expanded = false;
   private pulsing = false;
   private holding = false;
+  private lingering = false;
   private disposed = false;
   private dwell: unknown = null;
   private exit: unknown = null;
@@ -67,6 +69,7 @@ export class IslandMachine {
     if (this.disposed) return;
     this.update(() => {
       this.inside = true;
+      this.lingering = false;
       this.cancel("exit");
       if (this.trigger === "hover" && this.hasTrack && !this.expanded) {
         this.restart("dwell", EXPAND_DWELL_MS, () => this.update(() => (this.expanded = true)));
@@ -78,7 +81,7 @@ export class IslandMachine {
     if (this.disposed) return;
     this.update(() => {
       this.cancel("dwell");
-      this.restart("exit", HOVER_EXIT_MS, () =>
+      this.restart("exit", this.lingering ? LINGER_MS : HOVER_EXIT_MS, () =>
         this.update(() => {
           this.inside = false;
           if (!this.holding) this.expanded = false;
@@ -92,6 +95,11 @@ export class IslandMachine {
     this.update(() => {
       if (this.hasTrack) this.expanded = true;
     });
+  }
+
+  // A page that shrinks leaves a still pointer outside; the island waits for it.
+  linger() {
+    this.lingering = true;
   }
 
   hold(active: boolean) {

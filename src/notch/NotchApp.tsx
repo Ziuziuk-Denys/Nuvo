@@ -1,21 +1,35 @@
-import { useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
 import { CompactFace } from "./CompactFace";
-import { ExpandedFace, VIEWS, type ExpandedView } from "./ExpandedFace";
+import { ExpandedFace } from "./ExpandedFace";
 import { Island, MORPH } from "./Island";
 import {
   DEFAULT_NOTCH_SETTINGS,
   type Cutout,
   type NotchAction,
   type NotchLyrics,
+  type NotchPlaylists,
   type NotchPresence,
   type NotchSettings,
   type NotchState,
   type NotchTrack,
 } from "./contracts";
-import { capturesPointer, grownRect, islandRect, islandSizes, notchWindow, type IslandMode, type IslandSize, type Point, type Rect } from "./lib/geometry";
+import {
+  capturesPointer,
+  grownRect,
+  islandRect,
+  islandSizes,
+  PAGE_HEIGHTS,
+  notchWindow,
+  pageSize,
+  type IslandMode,
+  type IslandSize,
+  type NotchPage,
+  type Point,
+  type Rect,
+} from "./lib/geometry";
 import { IslandMachine } from "./lib/machine";
 import { MORPH_SPRING, simulateSpring } from "./lib/spring";
-import { activeLineIndex, msUntilNextLine, positionAt, type LyricLine, type PositionSample } from "./lib/playback";
+import { activeLineIndex, msUntilNextLine, positionAt, predicted, type LyricLine, type PositionSample } from "./lib/playback";
 import type { NotchBridge } from "../../electron/app/preload-notch";
 import "./notch.css";
 
@@ -27,18 +41,22 @@ const VOLUME_VISIBLE_MS = 1500;
 const WHEEL_THRESHOLD = 40;
 const WHEEL_IDLE_MS = 280;
 const NO_LINES: LyricLine[] = [];
+const NUDGE_MS = 1500;
+const NUDGED_KEY = "nuvo_notch_nudged";
 const MORPH_OVERSHOOT = Math.max(0, Math.max(...simulateSpring(MORPH_SPRING).values) - 1);
 
 export default function NotchApp() {
   const [state, setState] = useState<NotchState | null>(null);
   const [lyrics, setLyrics] = useState<NotchLyrics | null>(null);
+  const [playlists, setPlaylists] = useState<NotchPlaylists | null>(null);
   const [settings, setSettings] = useState<NotchSettings>(DEFAULT_NOTCH_SETTINGS);
   const [cutout, setCutout] = useState<Cutout | null>(null);
   const [presence, setPresence] = useState<NotchPresence>("out");
   const sizes = useMemo(() => islandSizes(cutout), [cutout]);
   const [machine, setMachine] = useState<IslandMachine | null>(null);
   const [mode, setMode] = useState<IslandMode>("idle");
-  const [view, setView] = useState<ExpandedView>("now");
+  const [view, setView] = useState<NotchPage>("now");
+  const [nudge, setNudge] = useState(false);
   const [accent, setAccent] = useState<{ url: string | null; color: string }>({ url: null, color: "#ffffff" });
   const [volume, setVolume] = useState<{ louder: boolean; step: number } | null>(null);
   const [lineIndex, setLineIndex] = useState(-1);
@@ -47,9 +65,13 @@ export default function NotchApp() {
   const track = state?.track ?? null;
   const trackId = track?.id ?? null;
   const playing = state?.status === "playing";
+  const upNextCount = state?.upNext.length ?? 0;
 
   useEffect(() => {
-    const created = new IslandMachine(setMode);
+    const created = new IslandMachine((next) => {
+      setMode(next);
+      if (next !== "expanded") setView((current) => (current === "add" ? "now" : current));
+    });
     setMachine(created);
     return () => created.dispose();
   }, []);
@@ -60,6 +82,7 @@ export default function NotchApp() {
     let alive = true;
     let gotState = false;
     let gotLyrics = false;
+    let gotPlaylists = false;
     let gotSettings = false;
     let gotCutout = false;
     let gotPresence = false;
@@ -71,6 +94,10 @@ export default function NotchApp() {
       api.onNotchLyrics((next) => {
         gotLyrics = true;
         setLyrics(next);
+      }),
+      api.onNotchPlaylists((next) => {
+        gotPlaylists = true;
+        setPlaylists(next);
       }),
       api.onNotchSettings((next) => {
         gotSettings = true;
@@ -92,6 +119,7 @@ export default function NotchApp() {
         // A live update that raced the hello reply is newer; keep it.
         if (!gotState && hello.state) setState(hello.state);
         if (!gotLyrics && hello.lyrics) setLyrics(hello.lyrics);
+        if (!gotPlaylists && hello.playlists) setPlaylists(hello.playlists);
         if (!gotSettings) setSettings(hello.settings);
         if (!gotCutout) setCutout(hello.cutout);
         if (!gotPresence) setPresence(hello.presence);
@@ -113,11 +141,37 @@ export default function NotchApp() {
     if (!machine) return;
     const previous = lastTrackId.current;
     lastTrackId.current = trackId;
+    if (previous !== trackId) setView((current) => (current === "add" ? "now" : current));
     const changed = previous !== null && trackId !== null && previous !== trackId;
     machine.setTrack(trackId !== null, changed && pulseOnTrackChange);
     // setTrack(false) forgets the pointer; a track arriving under the pointer must hover again.
     if (previous === null && trackId !== null && islandRef.current?.matches(":hover")) machine.pointerEnter();
   }, [machine, trackId, pulseOnTrackChange]);
+
+  const lines = lyrics && lyrics.trackId === trackId ? lyrics.lines : NO_LINES;
+  const pages = useMemo<NotchPage[]>(
+    () => ["now", ...(settings.showLyrics && lines.length > 0 ? (["lyrics"] as const) : []), ...(upNextCount > 0 ? (["upNext"] as const) : [])],
+    [settings.showLyrics, lines.length, upNextCount],
+  );
+  const page = view === "add" || pages.includes(view) ? view : "now";
+  const expanded = mode === "expanded";
+  const size = useMemo(() => (expanded ? pageSize(sizes.expanded, page) : sizes[mode]), [expanded, sizes, mode, page]);
+
+  useEffect(() => {
+    if (!expanded || pages.length < 2) return;
+    try {
+      if (localStorage.getItem(NUDGED_KEY)) return;
+      localStorage.setItem(NUDGED_KEY, "1");
+    } catch {
+      return;
+    }
+    setNudge(true);
+    const timer = setTimeout(() => setNudge(false), NUDGE_MS);
+    return () => {
+      clearTimeout(timer);
+      setNudge(false);
+    };
+  }, [expanded, pages.length]);
 
   const shapeRect = useRef<Rect>(islandRect(sizes.idle));
   const pointer = useRef({ at: null as Point | null, buttons: 0, capturing: false });
@@ -154,7 +208,7 @@ export default function NotchApp() {
   const shapeSize = useRef<IslandSize>(sizes.idle);
   const shapePadded = useRef(false);
   useEffect(() => {
-    const next = sizes[mode];
+    const next = size;
     const previous = shapeSize.current;
     const setShape = (rect: Rect) => {
       shapeRect.current = rect;
@@ -170,6 +224,7 @@ export default function NotchApp() {
     };
     // An interrupted grow (or a StrictMode re-run) can return here with the padding still applied.
     if (next === previous) return shapePadded.current ? armTighten() : undefined;
+    if (expanded && next.height < previous.height) machine?.linger();
     if (next.width * next.height >= previous.width * previous.height) {
       shapeSize.current = next;
       shapePadded.current = true;
@@ -182,7 +237,7 @@ export default function NotchApp() {
       setShape(islandRect(next));
     }, MORPH.durationMs);
     return () => clearTimeout(shrink);
-  }, [mode, sizes, cutout]);
+  }, [machine, expanded, size, cutout]);
 
   const sample = useMemo<PositionSample | null>(
     () =>
@@ -196,8 +251,7 @@ export default function NotchApp() {
         : null,
     [state],
   );
-  const lines = lyrics && lyrics.trackId === trackId ? lyrics.lines : NO_LINES;
-  const lyricsActive = mode === "expanded" && lines.length > 0;
+  const lyricsActive = expanded && page === "lyrics";
 
   useEffect(() => {
     if (!lyricsActive || !sample) return;
@@ -213,7 +267,16 @@ export default function NotchApp() {
     return () => clearTimeout(timer);
   }, [lyricsActive, sample, lines]);
 
-  const send = (action: NotchAction) => notchBridge()?.notchAction(action);
+  const flip = (direction: number) => {
+    const target = pages[pages.indexOf(page) + direction];
+    if (page !== "add" && target) setView(target);
+  };
+  const toNow = useCallback(() => setView("now"), []);
+
+  const send = (action: NotchAction) => {
+    notchBridge()?.notchAction(action);
+    setState((current) => current && predicted(current, action, Date.now()));
+  };
 
   useEffect(() => {
     if (!volume) return;
@@ -234,15 +297,14 @@ export default function NotchApp() {
       acc.switched = false;
     }, WHEEL_IDLE_MS);
     if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-      if (mode !== "expanded" || acc.switched) return;
+      if (!expanded || acc.switched) return;
       acc.x += event.deltaX;
       if (Math.abs(acc.x) < WHEEL_THRESHOLD) return;
       acc.switched = true;
-      const index = VIEWS.findIndex((item) => item.id === view);
-      const nextIndex = Math.min(VIEWS.length - 1, Math.max(0, index + Math.sign(acc.x)));
-      setView(VIEWS[nextIndex].id);
+      flip(Math.sign(acc.x));
       return;
     }
+    if (page === "add") return;
     acc.y += event.deltaY;
     if (Math.abs(acc.y) < WHEEL_THRESHOLD) return;
     const louder = acc.y < 0;
@@ -259,7 +321,7 @@ export default function NotchApp() {
       <Island
         ref={islandRef}
         mode={mode}
-        size={sizes[mode]}
+        size={size}
         cutout={cutout}
         onMouseEnter={() => machine?.pointerEnter()}
         onMouseLeave={() => machine?.pointerLeave()}
@@ -282,13 +344,18 @@ export default function NotchApp() {
           <ExpandedFace
             state={state as NotchState & { track: NotchTrack }}
             sample={sample}
-            view={view}
-            live={mode === "expanded" && playing}
+            page={page}
+            pages={pages}
+            height={PAGE_HEIGHTS[page]}
+            live={expanded && page === "now" && playing}
             lines={lines}
             lineIndex={lineIndex}
-            showLyrics={settings.showLyrics}
+            playlists={playlists}
             accent={accentColor}
-            onView={setView}
+            nudge={nudge}
+            onPage={setView}
+            onFlip={flip}
+            onAdded={toNow}
             onAction={send}
             onHold={(holding) => machine?.hold(holding)}
           />

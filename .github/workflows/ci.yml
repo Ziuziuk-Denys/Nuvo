@@ -68,6 +68,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm vitest run electron/notch/window.test.ts electron/app/thumbar.test.ts
+      - run: pnpm exec vite build
       - shell: bash
         run: pnpm exec vite build --config e2e/windows/vite.config.ts --outDir "$RUNNER_TEMP/probe"
       - name: The Notch stays above a borderless fullscreen window from another process
@@ -78,7 +79,7 @@ jobs:
       - name: The Notch takes presses each time it comes back
         shell: bash
         env:
-          NUVO_PRESS_SCRIPT: ${{ github.workspace }}\e2e\windows\press.ps1
+          NUVO_ROOT: ${{ github.workspace }}
         run: pnpm exec electron "$RUNNER_TEMP/probe/notch-press.mjs"
       - name: The taskbar takes the thumbnail buttons and every icon loads at its size
         shell: bash

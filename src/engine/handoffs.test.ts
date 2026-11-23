@@ -362,6 +362,17 @@ describe("commands from main", () => {
     expect(h.engine.getView().index).toBe(1);
   });
 
+  it("adds a queued track to a playlist and ignores one that is not queued", async () => {
+    const h = createHarness();
+    await start(h, [track(y("a")), track(y("b"))]);
+    const library = { like: vi.fn(), unlike: vi.fn(), addToPlaylist: vi.fn() };
+    runCommand(h.engine, library, { type: "addToPlaylist", trackId: y("z"), playlistId: "p" });
+    runCommand(h.engine, library, { type: "addToPlaylist", trackId: y("a") });
+    expect(library.addToPlaylist).not.toHaveBeenCalled();
+    runCommand(h.engine, library, { type: "addToPlaylist", trackId: y("a"), playlistId: "p" });
+    expect(library.addToPlaylist).toHaveBeenCalledWith(expect.objectContaining({ id: y("a") }), "p");
+  });
+
   it("volume deltas clamp and round", async () => {
     const h = createHarness();
     const library = { like: vi.fn(), unlike: vi.fn() };

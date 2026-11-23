@@ -259,7 +259,7 @@ describe.skipIf(!process.env.DISPLAY)("Notch on X11", () => {
     });
     await notch.hover(".island");
     await expectMode(notch, "expanded");
-    await notch.click('button[aria-label="Next track"]');
+    await notch.click('button[aria-label="Next"]');
     await expect
       .poll(() => launched.main.evaluate(() => (window as unknown as { __notchActions: NotchAction[] }).__notchActions))
       .toContainEqual({ type: "next" });

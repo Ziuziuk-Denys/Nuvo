@@ -2,6 +2,8 @@ import type { Cutout } from "../contracts";
 
 export type IslandMode = "idle" | "live" | "hover" | "expanded";
 
+export type NotchPage = "now" | "lyrics" | "upNext" | "add";
+
 export interface IslandSize {
   width: number;
   height: number;
@@ -12,12 +14,18 @@ export const ISLAND_SIZES: Record<IslandMode, IslandSize> = {
   idle: { width: 200, height: 32, radius: 14 },
   live: { width: 272, height: 34, radius: 14 },
   hover: { width: 288, height: 44, radius: 16 },
-  expanded: { width: 440, height: 184, radius: 32 },
+  expanded: { width: 412, height: 136, radius: 32 },
 };
 
+export const PAGE_HEIGHTS: Record<NotchPage, number> = { now: ISLAND_SIZES.expanded.height, lyrics: 236, upNext: 236, add: 202 };
+
+export function pageSize(expanded: IslandSize, page: NotchPage): IslandSize {
+  return { ...expanded, height: expanded.height - PAGE_HEIGHTS.now + PAGE_HEIGHTS[page] };
+}
+
 export const WING = 14;
-// The expanded island plus the largest spring overshoot (geometry.test.ts checks it)
-export const NOTCH_WINDOW = { width: 496, height: 200 };
+// The tallest page plus the largest spring overshoot (geometry.test.ts checks it)
+export const NOTCH_WINDOW = { width: 460, height: 254 };
 
 // Room beside the camera for the cover on the left and the bars on the right
 const CUTOUT_SIDE = 44;

@@ -156,6 +156,7 @@ export class RefusalLog {
 }
 
 const TRACK_ID = /^[A-Za-z0-9_:.-]{1,64}$/;
+const isId = (value: unknown): value is string => typeof value === "string" && TRACK_ID.test(value);
 
 /** Notch actions come from a window we do not fully trust: bounded numbers, patterned ids, unknown types refused. */
 export function validateNotchAction(raw: unknown): NotchAction | null {
@@ -165,8 +166,11 @@ export function validateNotchAction(raw: unknown): NotchAction | null {
     case "next":
     case "prev":
     case "like":
+    case "dislike":
     case "focusApp":
       return { type: raw.type };
+    case "addToPlaylist":
+      return isId(raw.trackId) && isId(raw.playlistId) ? { type: "addToPlaylist", trackId: raw.trackId, playlistId: raw.playlistId } : null;
     case "seek":
       return ms(raw.positionMs) ? { type: "seek", positionMs: raw.positionMs } : null;
     case "volumeDelta":
@@ -174,7 +178,7 @@ export function validateNotchAction(raw: unknown): NotchAction | null {
         ? { type: "volumeDelta", delta: raw.delta }
         : null;
     case "playUpNext":
-      return typeof raw.trackId === "string" && TRACK_ID.test(raw.trackId) ? { type: "playUpNext", trackId: raw.trackId } : null;
+      return isId(raw.trackId) ? { type: "playUpNext", trackId: raw.trackId } : null;
     default:
       return null;
   }

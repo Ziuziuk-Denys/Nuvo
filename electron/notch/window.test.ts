@@ -178,8 +178,8 @@ describe("NotchWindow", () => {
     createNotch({ session: "x11" });
     const win = lastWindow();
     expect(win.options).toMatchObject({
-      width: 496,
-      height: 200,
+      width: 460,
+      height: 254,
       frame: false,
       transparent: true,
       hasShadow: false,
@@ -202,7 +202,7 @@ describe("NotchWindow", () => {
     const win = lastWindow();
     const order = names(win);
     expect(order.indexOf("showInactive")).toBeLessThan(order.indexOf("setAlwaysOnTop"));
-    expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 712, y: 0, width: 496, height: 200 });
+    expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 730, y: 0, width: 460, height: 254 });
     expect(win.calls.find((c) => c[0] === "setAlwaysOnTop")!.slice(1)).toEqual([true, "screen-saver"]);
     expect(win.calls.find((c) => c[0] === "setVisibleOnAllWorkspaces")!.slice(1)).toEqual([
       true,
@@ -216,8 +216,8 @@ describe("NotchWindow", () => {
     await notch.ready;
     expect(bridge.placeOverlay).toHaveBeenCalledWith({
       title: "Nuvo Notch",
-      width: 496,
-      height: 200,
+      width: 460,
+      height: 254,
       anchor: "top-center",
       pinned: true,
       margin: 0,
@@ -241,10 +241,10 @@ describe("NotchWindow", () => {
     await notch.ready;
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, position: "right", edge: "bar", offset: 8 });
     await notch.ready;
-    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 1416, y: 40, width: 496, height: 200 }]);
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 1452, y: 40, width: 460, height: 254 }]);
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, position: "left", offset: 16 });
     await notch.ready;
-    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 16, y: 16, width: 496, height: 200 }]);
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 16, y: 16, width: 460, height: 254 }]);
   });
 
   it("places on a display chosen by id and falls back to the primary when it is gone", async () => {
@@ -252,10 +252,10 @@ describe("NotchWindow", () => {
     await notch.ready;
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, display: "2" });
     await notch.ready;
-    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 2632, y: 0, width: 496, height: 200 }]);
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 2650, y: 0, width: 460, height: 254 }]);
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, display: "7" });
     await notch.ready;
-    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 712, y: 0, width: 496, height: 200 }]);
+    expect(lastCall(lastWindow(), "setBounds")).toEqual([{ x: 730, y: 0, width: 460, height: 254 }]);
   });
 
   it("stacks like other windows when asked, and stops raising itself on Windows", async () => {
@@ -291,7 +291,7 @@ describe("NotchWindow", () => {
     expect(loadKwin).toHaveBeenCalledTimes(1);
     const script = (loadKwin.mock.calls[0] as unknown as [string])[0];
     expect(script).toContain('"Nuvo Notch"');
-    expect(script).toContain('"x":712');
+    expect(script).toContain('"x":730');
   });
 
   it("loads the KWin script before showing, so the window never maps unplaced", async () => {
@@ -369,7 +369,7 @@ describe("NotchWindow", () => {
     vi.advanceTimersByTime(1);
     vi.useRealTimers();
     await vi.waitFor(() => expect(count()).toBe(5));
-    expect(win.calls.filter((c) => c[0] === "setBounds").at(-1)![1]).toEqual({ x: 2632, y: 0, width: 496, height: 200 });
+    expect(win.calls.filter((c) => c[0] === "setBounds").at(-1)![1]).toEqual({ x: 2650, y: 0, width: 460, height: 254 });
   });
 
   it("does not place a window that stays hidden, and places it when shown", async () => {
@@ -403,7 +403,7 @@ describe("NotchWindow", () => {
     notch.setShape({ x: 0, y: 0, width: 500, height: 200 });
     lastWindow().webContents.emit("render-process-gone", {}, { reason: "crashed" });
     expect(deps.loadPage).toHaveBeenCalledTimes(2);
-    expect(notch.lastShape).toEqual({ x: 132, y: 0, width: 232, height: 34 });
+    expect(notch.lastShape).toEqual({ x: 114, y: 0, width: 232, height: 34 });
     warn.mockRestore();
   });
 
@@ -434,12 +434,12 @@ describe("NotchWindow", () => {
       const { notch } = createNotch({ session });
       await notch.ready;
       const win = lastWindow();
-      expect(win.options).toMatchObject({ type, focusable: false, skipTaskbar: true, width: 496, height: 200 });
+      expect(win.options).toMatchObject({ type, focusable: false, skipTaskbar: true, width: 460, height: 254 });
       const ignores = () => win.calls.filter((c) => c[0] === "setIgnoreMouseEvents").map((c) => c.slice(1));
       expect(ignores()).toEqual([[true, { forward: true }]]);
       expect(names(win)).not.toContain("setShape");
       expect(names(win)).toContain("showInactive");
-      expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 712, y: 0, width: 496, height: 200 });
+      expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 730, y: 0, width: 460, height: 254 });
       notch.setCapture(true);
       expect(notch.capturesMouse).toBe(true);
       notch.setShape({ x: 0, y: 0, width: 50, height: 20 });
@@ -462,14 +462,14 @@ describe("NotchWindow", () => {
     const win = lastWindow();
     expect(win.options).toMatchObject({ type: "panel", enableLargerThanScreen: true });
     expect(readCutout).toHaveBeenCalledWith(electron.display.bounds);
-    expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 712, y: 0, width: 496, height: 242 });
+    expect(win.calls.find((c) => c[0] === "setBounds")![1]).toEqual({ x: 730, y: 0, width: 460, height: 296 });
     expect(win.calls.find((c) => c[0] === "setAlwaysOnTop")!.slice(1)).toEqual([true, "screen-saver"]);
     expect(names(win).lastIndexOf("setBounds")).toBeGreaterThan(names(win).indexOf("setAlwaysOnTop"));
     expect(win.webContents.send).toHaveBeenCalledWith("notch:cutout", { width: 200, height: 38 });
     expect(notch.hello().cutout).toEqual({ width: 200, height: 38 });
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, edge: "bar" });
     await notch.ready;
-    expect(lastCall(win, "setBounds")).toEqual([{ x: 712, y: 32, width: 496, height: 200 }]);
+    expect(lastCall(win, "setBounds")).toEqual([{ x: 730, y: 32, width: 460, height: 254 }]);
     expect(win.webContents.send).toHaveBeenCalledWith("notch:cutout", null);
     expect(notch.hello().cutout).toBeNull();
     notch.destroy();
@@ -481,9 +481,9 @@ describe("NotchWindow", () => {
     await vi.advanceTimersByTimeAsync(200);
     await notch.ready;
     const win = lastWindow();
-    win.getBounds = () => ({ x: 712, y: 0, width: 496, height: 200 });
+    win.getBounds = () => ({ x: 730, y: 0, width: 460, height: 254 });
     const pill = islandRect(ISLAND_SIZES.idle);
-    const onPill = { x: 712 + pill.x + pill.width / 2, y: pill.y + pill.height / 2 };
+    const onPill = { x: 730 + pill.x + pill.width / 2, y: pill.y + pill.height / 2 };
     const ignores = () => win.calls.filter((c) => c[0] === "setIgnoreMouseEvents").map((c) => c[1]);
 
     electron.module.screen.getCursorScreenPoint.mockImplementation(() => onPill);
@@ -574,12 +574,12 @@ describe("NotchWindow", () => {
       lastWindow()
         .calls.filter((c) => c[0] === "setShape")
         .map((c) => c[1]);
-    expect(shapes()[0]).toEqual([{ x: 132, y: 0, width: 232, height: 34 }]);
+    expect(shapes()[0]).toEqual([{ x: 114, y: 0, width: 232, height: 34 }]);
     notch.setShape({ x: -10, y: 0, width: 900, height: 34.6 });
     notch.setShape({ x: Number.NaN, y: 0, width: 10, height: 10 });
-    expect(shapes().at(-1)).toEqual([{ x: 0, y: 0, width: 496, height: 35 }]);
+    expect(shapes().at(-1)).toEqual([{ x: 0, y: 0, width: 460, height: 35 }]);
     expect(shapes()).toHaveLength(2);
-    expect(notch.lastShape).toEqual({ x: 0, y: 0, width: 496, height: 35 });
+    expect(notch.lastShape).toEqual({ x: 0, y: 0, width: 460, height: 35 });
   });
 
   it("hides while the main window is fullscreen and shows again after", async () => {
@@ -662,11 +662,14 @@ describe("NotchWindow", () => {
     const lyrics = { trackId: "a", lines: [] };
     notch.setState(state);
     notch.setLyrics(lyrics);
+    const playlists = { items: [], outcome: null };
+    notch.setPlaylists(playlists);
     notch.applySettings({ ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
     expect(win.webContents.send).toHaveBeenCalledWith("notch:state", state);
     expect(win.webContents.send).toHaveBeenCalledWith("notch:lyrics", lyrics);
+    expect(win.webContents.send).toHaveBeenCalledWith("notch:playlists", playlists);
     expect(win.webContents.send).toHaveBeenCalledWith("notch:settings", { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" });
-    expect(notch.hello()).toEqual({ state, lyrics, settings: { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" }, cutout: null, presence: "in" });
+    expect(notch.hello()).toEqual({ state, lyrics, playlists, settings: { ...DEFAULT_NOTCH_SETTINGS, expandOn: "click" }, cutout: null, presence: "in" });
   });
 
   it("focusApp restores, shows and focuses the main window", () => {
@@ -753,6 +756,30 @@ describe("registerNotchIpc", () => {
     expect(notch.hello().lyrics).toEqual(lyrics);
   });
 
+  it("accepts well-formed playlists, only from the main window", async () => {
+    const { notch, main } = createNotch({ session: "x11" });
+    await notch.ready;
+    registerNotchIpc(notch, { onAction: vi.fn() });
+    const send = electron.ipcOn.get("notch:playlists")!;
+    const item = { id: "p", title: "Focus", coverUrl: "https://c.test/1.jpg", trackCount: 3 };
+    const playlists = { items: [item], outcome: { trackId: "t", playlistId: "p", kind: "added" } };
+    send({ sender: lastWindow().webContents }, playlists);
+    for (const bad of [
+      null,
+      { items: "x", outcome: null },
+      { items: [{ ...item, coverUrl: "file:///etc/passwd" }], outcome: null },
+      { items: [{ ...item, trackCount: "3" }], outcome: null },
+      { items: Array(101).fill(item), outcome: null },
+      { items: [], outcome: { trackId: "t", playlistId: "p", kind: "maybe" } },
+      { items: [] },
+    ]) {
+      send({ sender: main.webContents }, bad);
+    }
+    expect(notch.hello().playlists).toBeNull();
+    send({ sender: main.webContents }, playlists);
+    expect(notch.hello().playlists).toEqual(playlists);
+  });
+
   it("ignores malformed actions and settings", async () => {
     const { notch, main } = createNotch({ session: "x11" });
     await notch.ready;
@@ -760,7 +787,15 @@ describe("registerNotchIpc", () => {
     registerNotchIpc(notch, { onAction });
     const sender = lastWindow().webContents;
     const action = electron.ipcOn.get("notch:action")!;
-    for (const bad of [null, "x", {}, { type: "nope" }, { type: "seek", positionMs: Number.NaN }, { type: "volumeDelta", delta: "1" }]) {
+    for (const bad of [
+      null,
+      "x",
+      {},
+      { type: "nope" },
+      { type: "seek", positionMs: Number.NaN },
+      { type: "volumeDelta", delta: "1" },
+      { type: "addToPlaylist", trackId: "t" },
+    ]) {
       action({ sender }, bad);
     }
     expect(onAction).not.toHaveBeenCalled();

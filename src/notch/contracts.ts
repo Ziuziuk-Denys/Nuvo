@@ -22,6 +22,24 @@ export interface NotchLyrics {
   lines: Array<{ timeMs: number; text: string }>;
 }
 
+export interface NotchPlaylist {
+  id: string;
+  title: string;
+  coverUrl: string | null;
+  trackCount: number;
+}
+
+export interface NotchAddOutcome {
+  trackId: string;
+  playlistId: string;
+  kind: "added" | "already" | "failed";
+}
+
+export interface NotchPlaylists {
+  items: NotchPlaylist[];
+  outcome: NotchAddOutcome | null;
+}
+
 export type NotchExpandOn = "hover" | "click";
 
 export type NotchPosition = "center" | "left" | "right";
@@ -57,6 +75,8 @@ export type NotchAction =
   | { type: "prev" }
   | { type: "seek"; positionMs: number }
   | { type: "like" }
+  | { type: "dislike" }
+  | { type: "addToPlaylist"; trackId: string; playlistId: string }
   | { type: "volumeDelta"; delta: number }
   | { type: "playUpNext"; trackId: string }
   | { type: "focusApp" };
@@ -72,6 +92,7 @@ export type NotchPresence = "in" | "out";
 export interface NotchHello {
   state: NotchState | null;
   lyrics: NotchLyrics | null;
+  playlists: NotchPlaylists | null;
   settings: NotchSettings;
   cutout: Cutout | null;
   presence: NotchPresence;

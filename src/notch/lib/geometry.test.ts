@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { HIT_SLOP, ISLAND_SIZES, NOTCH_WINDOW, WING, capturesPointer, grownRect, islandPath, islandRect, islandSizes, notchWindow } from "./geometry";
+import { HIT_SLOP, ISLAND_SIZES, NOTCH_WINDOW, WING, capturesPointer, grownRect, islandPath, islandRect, islandSizes, notchWindow, pageSize } from "./geometry";
 import { MORPH_SPRING, simulateSpring } from "./spring";
+
+const everySize = (sizes: typeof ISLAND_SIZES) => [
+  ...Object.values(sizes),
+  ...(["now", "lyrics", "upNext", "add"] as const).map((page) => pageSize(sizes.expanded, page)),
+];
 
 describe("island geometry", () => {
   it("every state fits the fixed window", () => {
-    for (const size of Object.values(ISLAND_SIZES)) {
+    for (const size of everySize(ISLAND_SIZES)) {
       expect(size.width + WING * 2).toBeLessThanOrEqual(NOTCH_WINDOW.width);
       expect(size.height).toBeLessThanOrEqual(NOTCH_WINDOW.height);
     }
@@ -41,12 +46,11 @@ describe("island geometry", () => {
     const { live, expanded } = ISLAND_SIZES;
     const exact = islandRect(expanded);
     const rect = grownRect(live, expanded, 0.067);
-    // 0.067 x 150 px of height and 0.067 x 168 px of width (half per side).
     expect(rect.y).toBe(0);
-    expect(rect.height).toBeGreaterThanOrEqual(exact.height + 10);
-    expect(rect.width).toBeGreaterThanOrEqual(exact.width + 11);
+    expect(rect.height).toBeGreaterThanOrEqual(exact.height + 6);
+    expect(rect.width).toBeGreaterThanOrEqual(exact.width + 9);
     expect(rect.x * 2 + rect.width).toBe(NOTCH_WINDOW.width);
-    expect(rect.x).toBeLessThanOrEqual(exact.x - 5);
+    expect(rect.x).toBeLessThanOrEqual(exact.x - 4);
   });
 
   it("a growing rect never leaves the window and needs no padding without overshoot", () => {
@@ -59,7 +63,7 @@ describe("island geometry", () => {
   it("the window holds every grow with the real overshoot and is no bigger than that", () => {
     const overshoot = Math.max(...simulateSpring(MORPH_SPRING).values) - 1;
     const roomy = { width: 4000, height: 4000 };
-    const sizes = Object.values(ISLAND_SIZES);
+    const sizes = everySize(ISLAND_SIZES);
     const grows = sizes.flatMap((from) => sizes.map((to) => grownRect(from, to, overshoot, roomy)));
     const widest = Math.max(...grows.map((rect) => rect.width));
     const tallest = Math.max(...grows.map((rect) => rect.height));
@@ -128,7 +132,7 @@ describe("pointer capture", () => {
     const overshoot = Math.max(...simulateSpring(MORPH_SPRING).values) - 1;
     const cutout = { width: 200, height: 38 };
     const window = notchWindow(cutout);
-    const sizes = Object.values(islandSizes(cutout));
+    const sizes = everySize(islandSizes(cutout));
     const roomy = { width: 4000, height: 4000 };
     for (const from of sizes) {
       for (const to of sizes) {

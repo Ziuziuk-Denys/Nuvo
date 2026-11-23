@@ -45,6 +45,8 @@ export function createDaemonLibrary() {
       void fetch(`${CORE}/v1/me/library/tracks/${encodeURIComponent(trackId)}`, { method: "DELETE" }).then(notifyLibraryChanged, notifyLibraryChanged);
     },
     dislike: (track: Track) => void import("./ui/recs/notInterested").then(({ songMenuNotInterested }) => songMenuNotInterested?.(track, "exact")),
+    addToPlaylist: (track: Track, playlistId: string) =>
+      void import("./features/notch/playlistAdds").then(({ addToPlaylist }) => addToPlaylist(track, playlistId)),
   };
 }
 

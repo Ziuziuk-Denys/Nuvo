@@ -16,6 +16,7 @@ vi.mock("../ports/app", async (original) => ({
 }));
 
 vi.mock("../ports/player", () => ({ usePlayerStore: (select: (state: unknown) => unknown) => select({ currentTrack: null }) }));
+vi.mock("../ports/library", () => ({ usePlaylistsList: () => ({ data: { playlists: [] } }) }));
 vi.mock("../ports/lyrics", () => ({ useLyrics: (select: (state: unknown) => unknown) => select({ trackId: null, lines: [] }) }));
 vi.mock("./routes", async () => {
   const { useLocation } = await import("react-router-dom");
