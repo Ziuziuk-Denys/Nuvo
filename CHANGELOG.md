@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.5.1
+
+Artist pages and quicker search. Click any artist's name and land on a new artist page, see search answers while you type, and let the karaoke buttons step aside while a song plays. The Notch, the side navigation and your own Scene backgrounds are fixed and better too.
+
+- **Artist names open the artist.** In search, song rows, the queue, the player and karaoke. The new artist page has an edge-to-edge photo, the latest release, popular songs, similar artists and what you played.
+- **Search answers while you type.** Suggestions show up first and keep their place. Filter by songs, artists, albums or playlists right above the list. Tab switches in Ctrl+K.
+- **Karaoke rests while a song plays.** The cover, the title and a short line stay; the pointer or any key brings the controls back. Settings, Lyrics, Karaoke controls: Fade or Always visible.
+- **A new Notch.** Lyrics and up next are pages behind the cover, with dislike and add to playlist at hand. On Windows its buttons work again after it was hidden and shown.
+- **Your own photo or video in Scene.** It plays in the live Scene now, not only in the studio, and stays after a restart.
+- **A new side navigation.** A rail beside the page with search and your pins, Back and Forward, and names when you want them. Turn it on in Settings, Theme, Navigation, Side. The top bar looks as before.
+- **Poster keeps its cover whole.** A seek back or the next song no longer turns it into a mosaic.
+
+**Updating from 0.5.** Your settings stay as they are. Karaoke controls start on Fade.
+
+Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on [Discord](https://discord.gg/rHz3dg9S9T) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
+### По-русски
+
+Страницы исполнителей и быстрый поиск. Нажмите на имя исполнителя и попадёте на его новую страницу, поиск отвечает, пока вы печатаете, а кнопки караоке уходят, пока играет песня. Нотч, боковая навигация и свои фоны сцены тоже исправлены и стали лучше.
+
+- **Имя открывает исполнителя.** В поиске, списках песен, очереди, плеере и караоке. На новой странице фото во всю ширину, последний релиз, популярные песни, похожие исполнители и то, что вы слушали.
+- **Поиск отвечает, пока вы печатаете.** Сначала появляются подсказки, и они остаются на своих местах. Фильтр по трекам, исполнителям, альбомам и плейлистам стоит прямо над списком. В Ctrl+K его переключает Tab.
+- **Караоке отдыхает, пока играет песня.** Остаются обложка, название и короткая линия, а мышь или любая клавиша возвращает кнопки. Настройки, Текст песен, «Кнопки в караоке»: «Исчезают» или «Всегда видны».
+- **Новый нотч.** Текст и «Далее» лежат страницами за обложкой, под рукой дизлайк и добавление в плейлист. На Windows кнопки снова работают после того, как нотч скрылся и появился.
+- **Своё фото или видео в сцене.** Теперь оно играет и в самой сцене, а не только в студии, и остаётся после перезапуска.
+- **Новая боковая навигация.** Панель рядом со страницей с поиском и закреплёнными, «Назад» и «Вперёд», названия по желанию. Включается в Настройках: Тема, Навигация, «Слева». Верхняя панель выглядит как раньше.
+- **Обложка в «Постере» остаётся целой.** Перемотка назад или следующая песня больше не превращают её в мозаику.
+
+**Обновление с 0.5.** Ваши настройки не меняются. Кнопки в караоке начинают с режима «Исчезают».
+
+### All changes
+
+#### New
+
+- Artist page: an edge-to-edge photo, the latest release with Play, popular songs, albums, singles and similar artists, with a line about what you played
+- Every credited artist is its own link in search, song rows, the queue, the player, karaoke, the Discover ring, Home, albums, Recognize, history and playlist suggestions
+- Search filter: All, Songs, Artists, Albums, Playlists, in Ctrl+K and on the search page
+- Artists among the results in Ctrl+K
+- Karaoke controls: Fade or Always visible (Settings, Lyrics)
+- In karaoke, click the cover to pause and scroll over it for volume
+- Notch: lyrics and up next as pages behind the cover, Add to playlist, dislike; it follows the app language
+- Side navigation: a rail with search, Forward next to Back, names on request
+- Alt+Left and Alt+Right go back and forward
+
+#### Better
+
+- Search suggestions answer while you type and keep their place when the full results arrive
+- The top result plays a song, and plays or opens an artist, an album or a playlist
+- The artist page shows the name on the click and its songs after the first response
+- The scroll position comes back both ways, also on a page that is still loading
+- Karaoke: a calmer player and a larger cover; lyrics timing, the Scene switch and its editor sit at the bottom right
+- White lyrics hold over any cover in karaoke
+- Like and pause answer at once in the Notch
+- Large photos behind a Scene are scaled to 4096 px
+
+#### Fixed
+
+- Notch buttons on Windows did nothing after the Notch was hidden and shown again
+- Your own photo or video showed only in the Scene studio and was lost when the studio closed
+- A Scene file that does not play, or is too big, says so and keeps the current background
+- The Poster cover turned into a mosaic after a seek back or a song change
+- A recommended song's player line leads to its artist too
+
 ## 0.5.0
 
 A ring of new songs on Home. Spin it with the wheel, a drag or the arrow keys, and the sky behind it takes the colours of the cover in the middle. This release also brings a Poster scene, Settings you can search, imports that open at once and every fix since 0.4.0.
