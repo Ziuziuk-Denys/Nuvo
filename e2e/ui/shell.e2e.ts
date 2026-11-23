@@ -550,7 +550,7 @@ describe("shell", () => {
   it("opens the search palette under the field on Ctrl+K: suggestions, a match, nothing, a settings entry and full screen", async () => {
     const live = session ?? (session = await launchNuvo({ profile: "seeded" }));
     const page = live.page;
-    await page.route(/youtubei\/v1\/search/, (route) => route.abort());
+    await page.route(/youtubei\/v1\/(search|music)/, (route) => route.abort());
     await page.addInitScript(() => {
       if (!sessionStorage.getItem("e2e.sc-echo")) return;
       const real = window.fetch.bind(window);

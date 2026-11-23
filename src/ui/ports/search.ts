@@ -6,9 +6,10 @@ import type { CatalogSearchItem } from "@/data/search/catalogSearch";
 import type { SoundCloudHit } from "@/data/search/soundcloudSearch";
 import { createSearchHistory } from "@/data/search/history";
 import { rankSongIds } from "@/data/search/rankSongs";
+import { artistHref } from "../app/hrefs";
 
 export { filterTracks, normalizeForSearch, type SearchableTrack, type TrackMatch } from "@/data/search/trackMatch";
-export { useSearchAll, useSearchTracks, useSearchAlbums, useSearchArtists, useSearchPlaylists } from "@/data/search/catalogSearch";
+export { useSearchAll, useSuggestions, useSearchTracks, useSearchAlbums, useSearchArtists, useSearchPlaylists } from "@/data/search/catalogSearch";
 export { useSoundCloudSearch } from "@/data/search/soundcloudSearch";
 export type { SearchHistoryItem } from "@/data/search/history";
 
@@ -32,6 +33,7 @@ export interface SearchResult {
   preview?: boolean;
   plays?: number;
   verified?: boolean;
+  year?: number;
 }
 
 export function songResult(track: Track): SearchResult {
@@ -51,7 +53,7 @@ export function toSearchResult(item: CatalogSearchItem): SearchResult {
   const cover = item.cover?.url ?? "";
   if (item.kind === "track") return songResult(toUiTrack(item));
   if (item.kind === "artist") {
-    return { kind: "artist", id: item.id, title: item.name, subtitle: "", cover, href: `/artist?id=${encodeURIComponent(item.id)}` };
+    return { kind: "artist", id: item.id, title: item.name, subtitle: "", cover, href: artistHref(item) };
   }
   if (item.kind === "album") {
     return {
@@ -60,6 +62,7 @@ export function toSearchResult(item: CatalogSearchItem): SearchResult {
       title: item.title,
       subtitle: item.artists.map((artist) => artist.name).join(", "),
       cover,
+      ...(item.year ? { year: item.year } : {}),
       href: `/collection?type=album&id=${encodeURIComponent(item.id)}`,
     };
   }

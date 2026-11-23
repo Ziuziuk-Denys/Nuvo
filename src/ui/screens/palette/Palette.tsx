@@ -1,12 +1,25 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type JSX,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Cover } from "../../components/Cover";
 import { clamp, LAYER_ATTRIBUTE, pushLayer, usePresence } from "../../components/layers";
+import { Lens } from "../../components/Lens";
 import { Icon } from "../../icons/Icon";
 import type { IconName } from "../../icons";
 import { getTranslationsForAllLocales, loadAllLocales, useTranslation } from "../../ports/i18n";
-import { useLikedTracks, usePlaylistsList } from "../../ports/library";
+import { playLibraryEntry, useLikedTracks, usePlaylistsList } from "../../ports/library";
 import { routeLink } from "../../ports/links";
 import { toggleWindowFullscreen, useModalStore } from "../../ports/navigation";
 import { useOfflineMode, useOnline, useStreamingReachable } from "../../ports/network";
@@ -16,7 +29,12 @@ import {
   soundCloudResult,
   toSearchResult,
   useRankedSongs,
+  useSearchAlbums,
   useSearchAll,
+  useSearchArtists,
+  useSearchPlaylists,
+  useSearchTracks,
+  useSuggestions,
   useSearchHistoryStore,
   useSoundCloudSearch,
   type SearchHistoryItem,
@@ -24,15 +42,17 @@ import {
 } from "../../ports/search";
 import { shortcutKeycaps, useRecorderState, useShortcutBindings } from "../../ports/shortcuts";
 import { applyTempo, BUILT_IN_PRESETS, TEMPO_PRESETS, useSoundStore, type TempoPresetKey } from "../../ports/sound";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import { navigateWithTransition } from "../../shell/navigate";
 import { useTour } from "../../tour/tourStore";
 import { formatDuration } from "../entity/entityModel";
 import { useGateStore } from "../lock/gateState";
-import { historyHref, localResults, songsToRank, subtitleOf, withSoundCloud } from "../search/searchModel";
+import { historyHref, localResults, SEARCH_FILTERS, songsToRank, subtitleOf, uniqueResults, withSoundCloud, type SearchFilter } from "../search/searchModel";
 import { useAddMusic } from "../local/addMusic";
 import { SETTING_ITEMS } from "../settings/settingItems";
 import { buildCommands, rankCommands, soundCommands } from "./commands";
-import { paletteResults } from "./paletteModel";
+import { filteredResults, paletteResults } from "./paletteModel";
+import look from "../look.module.css";
 import styles from "./Palette.module.css";
 
 const PANEL_WIDTH = 640;
@@ -44,6 +64,8 @@ const RECENT = 5;
 const DEBOUNCE_MS = 150;
 const CACHED_QUERIES = 30;
 const LIMIT = 12;
+const ENOUGH = 5;
+const FILTERED_ROWS = 4;
 const PALETTE_KEY = typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent) ? "Super+K" : "Control+K";
 
 const TEMPO_LABELS: Record<TempoPresetKey, string> = {
@@ -56,7 +78,7 @@ const TEMPO_LABELS: Record<TempoPresetKey, string> = {
 };
 const TEMPO_KEYS = (Object.keys(TEMPO_PRESETS) as TempoPresetKey[]).map((key) => ({ key, labelKey: TEMPO_LABELS[key] }));
 
-type Section = "recent" | "top" | "actions" | "songs" | "collections" | "more";
+type Section = "recent" | "top" | "actions" | "songs" | "others" | "more";
 
 interface Entry {
   key: string;
@@ -67,6 +89,12 @@ interface Entry {
 
 // shortcut: lives as long as the window, enough to make typing back over a query instant
 const answered = new Map<string, SearchResult[]>();
+
+function keepAnswer(key: string, results: SearchResult[]): void {
+  answered.delete(key);
+  answered.set(key, results);
+  if (answered.size > CACHED_QUERIES) answered.delete(answered.keys().next().value!);
+}
 
 function applyEq(name: string): void {
   const store = useSoundStore.getState();
@@ -93,12 +121,14 @@ export function PaletteField(): JSX.Element {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const [count, setCount] = useState(0);
+  const [filter, setFilter] = useState<SearchFilter>("all");
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
     if (!open) {
       setQuery("");
       setSelected(0);
+      setFilter("all");
     }
   }
   const entries = useRef<Entry[]>([]);
@@ -150,6 +180,11 @@ export function PaletteField(): JSX.Element {
     setSelected(0);
   };
 
+  const chooseFilter = (next: SearchFilter) => {
+    setFilter(next);
+    setSelected(0);
+  };
+
   const openLink = (text: string): boolean => {
     if (!routeLink(text)) return false;
     closeSearch();
@@ -163,6 +198,10 @@ export function PaletteField(): JSX.Element {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       if (list.length > 0) setSelected((at + (event.key === "ArrowDown" ? 1 : -1) + list.length) % list.length);
+    } else if (event.key === "Tab" && query.trim() !== "") {
+      event.preventDefault();
+      const step = event.shiftKey ? -1 : 1;
+      chooseFilter(SEARCH_FILTERS[(SEARCH_FILTERS.indexOf(filter) + step + SEARCH_FILTERS.length) % SEARCH_FILTERS.length]);
     } else if (event.key === "Tab" && list.length > 0) {
       event.preventDefault();
       const order = [...new Set(list.map((entry) => entry.section))];
@@ -223,6 +262,8 @@ export function PaletteField(): JSX.Element {
               fieldRef={fieldRef}
               phase={phase}
               query={query}
+              filter={filter}
+              onFilter={chooseFilter}
               selected={selected}
               listId={listId}
               onEntries={(list) => {
@@ -247,6 +288,8 @@ interface PanelProps {
   fieldRef: RefObject<HTMLDivElement | null>;
   phase: "in" | "out";
   query: string;
+  filter: SearchFilter;
+  onFilter(next: SearchFilter): void;
   selected: number;
   listId: string;
   onEntries(list: Entry[]): void;
@@ -272,7 +315,20 @@ function usePlace(fieldRef: RefObject<HTMLDivElement | null>) {
   return box;
 }
 
-function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEntries, onSelect, onQuery, onClose }: PanelProps): JSX.Element | null {
+function PalettePanel({
+  panelRef,
+  fieldRef,
+  phase,
+  query,
+  filter,
+  onFilter,
+  selected,
+  listId,
+  onEntries,
+  onSelect,
+  onQuery,
+  onClose,
+}: PanelProps): JSX.Element | null {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const box = usePlace(fieldRef);
@@ -308,16 +364,49 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
   const fetched = useMemo(() => search.items.map(toSearchResult), [search.items]);
   useEffect(() => {
     if (!search.hasLoaded || fetched.length === 0) return;
-    answered.delete(key);
-    answered.set(key, fetched);
-    if (answered.size > CACHED_QUERIES) answered.delete(answered.keys().next().value!);
+    keepAnswer(key, fetched);
   }, [search.hasLoaded, fetched, key]);
   const shown = search.hasLoaded ? fetched : (answered.get(key) ?? fetched);
   const soundCloud = useSoundCloudSearch(isLink ? "" : query, { enabled: soundCloudOnline, limit: LIMIT, debounceMs: DEBOUNCE_MS });
   const soundCloudResults = useMemo(() => soundCloud.items.map(soundCloudResult), [soundCloud.items]);
   const toRank = useMemo(() => songsToRank(shown, soundCloudResults, "all"), [shown, soundCloudResults]);
   const rankedSongs = useRankedSongs(trimmed, toRank);
-  const found = useMemo(() => paletteResults(local, withSoundCloud(shown, rankedSongs, "all")), [local, shown, rankedSongs]);
+  const quick = useSuggestions(isLink ? "" : query, online);
+  const suggested = useMemo(() => quick.map(toSearchResult), [quick]);
+  // a lone SoundCloud answer must not lead while the catalog is still looking
+  const undecided = online && suggested.length === 0 && shown.length === 0 && search.loading;
+  const unfiltered = useMemo(
+    () => ({ local, suggested, online: undecided ? [] : withSoundCloud(shown, rankedSongs, "all") }),
+    [local, suggested, undecided, shown, rankedSongs],
+  );
+  const found = useMemo(() => paletteResults(unfiltered), [unfiltered]);
+
+  const scopedKey = `${filter}:${key}`;
+  const known = useMemo(() => (filter === "all" ? null : filteredResults(unfiltered, filter)), [unfiltered, filter]);
+  const wanting = online && !isLink && known !== null && known.rest.length < ENOUGH && !answered.has(scopedKey);
+  const scopedSearch = (kind: SearchFilter) => ({ enabled: wanting && filter === kind, limit: LIMIT, debounceMs: DEBOUNCE_MS });
+  const tracks = useSearchTracks(query, scopedSearch("songs"));
+  const artists = useSearchArtists(query, scopedSearch("artists"));
+  const albums = useSearchAlbums(query, scopedSearch("albums"));
+  const playlists = useSearchPlaylists(query, scopedSearch("playlists"));
+  const scoped = { all: search, songs: tracks, artists, albums, playlists }[filter];
+  const scopedFetched = useMemo(() => scoped.items.map(toSearchResult), [scoped.items]);
+  useEffect(() => {
+    if (filter !== "all" && scoped.hasLoaded) keepAnswer(scopedKey, scopedFetched);
+  }, [filter, scoped.hasLoaded, scopedKey, scopedFetched]);
+  const extra = answered.get(scopedKey) ?? (scoped.hasLoaded ? scopedFetched : null);
+  const picked =
+    known && filter !== "all" ? filteredResults(extra ? { ...unfiltered, online: uniqueResults([...unfiltered.online, ...extra]) } : unfiltered, filter) : null;
+  const top = picked ? picked.top : found.top;
+  const columnRows = Math.max(FILTERED_ROWS, found.songs.length + found.others.length);
+  const songs = picked ? picked.rest.slice(0, columnRows) : found.songs;
+  const others = picked ? [] : found.others;
+
+  const split = useRef<HTMLDivElement>(null);
+  const [floor, setFloor] = useState(0);
+  useLayoutEffect(() => {
+    if (filter === "all" && split.current) setFloor(split.current.offsetHeight);
+  }, [filter, found]);
 
   const go = (href: string) => navigateWithTransition(navigate, href);
   const withTrack = (action: (track: Track) => void) => () => {
@@ -366,7 +455,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
       applyTempo: (key) => applyTempo(TEMPO_PRESETS[key as TempoPresetKey]),
     }),
   );
-  const actions = rankCommands(commands, trimmed).slice(0, trimmed ? ACTIONS_FOUND : ACTIONS_SUGGESTED);
+  const actions = filter === "all" ? rankCommands(commands, trimmed).slice(0, trimmed ? ACTIONS_FOUND : ACTIONS_SUGGESTED) : [];
   const recent = trimmed ? [] : history.slice(0, RECENT);
 
   const close = (action: () => void) => () => {
@@ -389,6 +478,13 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
       if (result.track) playTrack(result.track);
       else if (result.href) go(result.href);
     });
+  const playResult = (result: SearchResult) =>
+    close(() => {
+      remember(result);
+      if (result.track) playTrack(result.track);
+      else if (result.kind !== "song")
+        void playLibraryEntry({ kind: result.kind, id: result.id, title: result.title, cover: result.cover }, `${result.kind}:${result.id}`);
+    });
   const queueResult = (result: SearchResult) => (result.track ? close(() => playerEngine.addToQueue(result.track!)) : undefined);
   const openRecent = (item: SearchHistoryItem) => {
     if (item.type === "query") return () => onQuery(item.title);
@@ -399,9 +495,9 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
   const list: Entry[] = [
     ...recent.map((item) => ({ key: `recent:${item.id}`, section: "recent" as const, run: openRecent(item) })),
     ...actions.map((command) => ({ key: `action:${command.id}`, section: "actions" as const, run: close(command.run) })),
-    ...(found.top && trimmed ? [{ key: "top", section: "top" as const, run: openResult(found.top), queue: queueResult(found.top) }] : []),
-    ...(trimmed ? found.songs : []).map((song) => ({ key: `song:${song.id}`, section: "songs" as const, run: openResult(song), queue: queueResult(song) })),
-    ...(trimmed ? found.collections : []).map((entry) => ({ key: `entry:${entry.kind}:${entry.id}`, section: "collections" as const, run: openResult(entry) })),
+    ...(top && trimmed ? [{ key: "top", section: "top" as const, run: openResult(top), queue: queueResult(top) }] : []),
+    ...(trimmed ? songs : []).map((entry) => ({ key: rowKey(entry), section: "songs" as const, run: openResult(entry), queue: queueResult(entry) })),
+    ...(trimmed ? others : []).map((entry) => ({ key: rowKey(entry), section: "others" as const, run: openResult(entry) })),
     ...(trimmed && online ? [{ key: "more", section: "more" as const, run: close(() => go(`/search?q=${encodeURIComponent(trimmed)}`)) }] : []),
   ];
   useLayoutEffect(() => onEntries(list));
@@ -436,8 +532,8 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
     </Group>
   );
 
-  const searching = trimmed !== "" && online && search.loading && found.songs.length === 0 && !found.top;
-  const nothing = trimmed !== "" && !searching && !found.top && found.songs.length === 0 && found.collections.length === 0;
+  const searching = trimmed !== "" && online && !top && (search.loading || scoped.loading);
+  const nothing = trimmed !== "" && !searching && !top;
 
   let body: ReactNode;
   if (!trimmed) {
@@ -459,44 +555,47 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
     );
   } else {
     body = (
-      <div className={styles.split}>
+      <div ref={split} className={styles.split} style={filter === "all" ? undefined : { minHeight: floor }}>
         <div className={styles.column}>
           {actions.length > 0 ? actionRows : null}
-          {found.top ? (
+          {top ? (
             <Group label={t("ui.search.top")}>
               <div role="option" aria-selected={indexOf("top") === active} className={styles.top} data-top="" {...rowProps("top")}>
-                <Cover src={found.top.cover} size={72} radius={10} shape={found.top.kind === "artist" ? "circle" : "square"} />
-                <span className={styles.topTitle}>{found.top.title}</span>
-                <span className={styles.meta}>{subtitleOf(found.top, t)}</span>
+                <Cover src={top.cover} size={72} radius={10} shape={top.kind === "artist" ? "circle" : "square"} />
+                <span className={styles.topTitle}>{top.title}</span>
+                <span className={styles.meta}>{top.track ? <ArtistLinks track={top.track} /> : subtitleOf(top, t)}</span>
+                <TopActions result={top} onPlay={playResult(top)} onOpen={openResult(top)} />
               </div>
             </Group>
           ) : null}
         </div>
         <div className={styles.column}>
+          {isLink ? null : <Filters filter={filter} onFilter={onFilter} />}
           {searching ? <p className={styles.line}>{t("ui.search.searching")}</p> : null}
           {nothing ? <p className={styles.line}>{t("ui.search.none", { query: trimmed })}</p> : null}
-          {found.songs.length > 0 ? (
-            <Group label={t("ui.search.tab_songs")}>
-              {found.songs.map((song) => (
+          {songs.length > 0 ? (
+            <Group label={t(`ui.search.tab_${filter === "all" ? "songs" : filter}`)} bare>
+              {songs.map((entry) => (
                 <ResultRow
-                  key={song.id}
-                  result={song}
-                  meta={formatDuration(song.track?.durationMs ?? song.durationMs ?? 0)}
-                  selected={indexOf(`song:${song.id}`) === active}
-                  {...rowProps(`song:${song.id}`)}
+                  key={rowKey(entry)}
+                  result={entry}
+                  subtitle={entry.track ? undefined : subtitleOf(entry, t)}
+                  meta={entry.track ? formatDuration(entry.track.durationMs) : undefined}
+                  selected={indexOf(rowKey(entry)) === active}
+                  {...rowProps(rowKey(entry))}
                 />
               ))}
             </Group>
           ) : null}
-          {found.collections.length > 0 ? (
-            <Group label={t("ui.palette.collections")}>
-              {found.collections.map((entry) => (
+          {others.length > 0 ? (
+            <Group label={t("ui.palette.others")}>
+              {others.map((entry) => (
                 <ResultRow
-                  key={`${entry.kind}:${entry.id}`}
+                  key={rowKey(entry)}
                   result={entry}
                   subtitle={subtitleOf(entry, t)}
-                  selected={indexOf(`entry:${entry.kind}:${entry.id}`) === active}
-                  {...rowProps(`entry:${entry.kind}:${entry.id}`)}
+                  selected={indexOf(rowKey(entry)) === active}
+                  {...rowProps(rowKey(entry))}
                 />
               ))}
             </Group>
@@ -534,7 +633,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
             <b>Shift Enter</b> {t("ui.palette.hint_queue")}
           </span>
           <span>
-            <b>Tab</b> {t("ui.palette.hint_section")}
+            <b>Tab</b> {t(trimmed ? "ui.palette.hint_filter" : "ui.palette.hint_section")}
           </span>
           <span className={styles.end}>
             <b>Esc</b> {t("ui.palette.hint_close")}
@@ -552,12 +651,54 @@ function kindIcon(type: SearchHistoryItem["type"]): IconName {
   return "playlist";
 }
 
-function Group({ label, children }: { label: string; children: ReactNode }): JSX.Element {
+const rowKey = (result: SearchResult) => `${result.kind}:${result.id}`;
+
+function Filters({ filter, onFilter }: { filter: SearchFilter; onFilter(next: SearchFilter): void }): JSX.Element {
+  const { t } = useTranslation();
+  return (
+    <div role="group" aria-label={t("ui.search.tabs")} className={styles.filters}>
+      {SEARCH_FILTERS.map((id) => (
+        <button key={id} type="button" tabIndex={-1} aria-pressed={id === filter} className={styles.filter} onClick={() => onFilter(id)}>
+          {id === filter ? <Lens group="palette-filter" value={filter} radius={14} className={look.fillLens} /> : null}
+          {t(`ui.search.tab_${id}`)}
+        </button>
+      ))}
+      <span role="status" className={styles.unseen}>
+        {t(`ui.search.tab_${filter}`)}
+      </span>
+    </div>
+  );
+}
+
+function TopActions({ result, onPlay, onOpen }: { result: SearchResult; onPlay(): void; onOpen(): void }): JSX.Element {
+  const { t } = useTranslation();
+  const run = (action: () => void) => (event: MouseEvent) => {
+    event.stopPropagation();
+    action();
+  };
+  return (
+    <span className={styles.topActions}>
+      <button type="button" tabIndex={-1} className={`${look.pill} ${look.solid} ${styles.topButton}`} onClick={run(onPlay)}>
+        <Icon name="play" size={14} />
+        {t("ui.entity.play")}
+      </button>
+      {result.track ? null : (
+        <button type="button" tabIndex={-1} className={`${look.pill} ${look.glass} ${styles.topButton}`} onClick={run(onOpen)}>
+          {t("ui.palette.open")}
+        </button>
+      )}
+    </span>
+  );
+}
+
+function Group({ label, bare = false, children }: { label: string; bare?: boolean; children: ReactNode }): JSX.Element {
   return (
     <div role="group" aria-label={label} className={styles.group}>
-      <div aria-hidden="true" className={styles.label}>
-        {label}
-      </div>
+      {bare ? null : (
+        <div aria-hidden="true" className={styles.label}>
+          {label}
+        </div>
+      )}
       {children}
     </div>
   );
@@ -587,7 +728,7 @@ function ResultRow({ result, subtitle, meta, selected, ...rest }: ResultRowProps
       </span>
       <span className={styles.text}>
         <span className={styles.title}>{result.title}</span>
-        <span className={styles.meta}>{subtitle ?? result.subtitle}</span>
+        <span className={styles.meta}>{subtitle ?? (result.track ? <ArtistLinks track={result.track} /> : result.subtitle)}</span>
       </span>
       {meta ? <span className={styles.time}>{meta}</span> : null}
     </div>

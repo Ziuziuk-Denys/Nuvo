@@ -4,6 +4,7 @@ import { type Root, createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { PaletteField } from "./Palette";
+import { bindNavigate } from "../../shell/navigate";
 import { useGateStore } from "../lock/gateState";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -22,7 +23,7 @@ const mocks = vi.hoisted(() => {
     "ui.search.none": "Nothing found for “{query}”.",
     "ui.search.top": "Top result",
     "ui.search.tab_songs": "Songs",
-    "ui.palette.collections": "Playlists and albums",
+    "ui.palette.others": "Artists, albums and playlists",
     "settings.cover_glow.title": "Cover glow",
   };
   const current = { id: "t1", title: "Song" };
@@ -42,6 +43,11 @@ const mocks = vi.hoisted(() => {
       song("s2", "Supercut"),
       { kind: "album", id: "m", title: "Melodrama", subtitle: "Lorde", cover: "", href: "/collection?type=album&id=m" },
     ],
+    suggested: [] as unknown[],
+    artists: ["lordi", "lorde-fan"].map((id) => ({ kind: "artist", id, title: id, subtitle: "", cover: "", href: `/artist?id=${id}` })),
+    askedArtists: vi.fn(),
+    playEntry: vi.fn(),
+    idle: { items: [], loading: false, hasLoaded: false, runNow: () => undefined },
     soundCloud: [{ ...song("sc:1", "Royals"), subtitle: "lorde" }],
     rank: vi.fn((_query: string, songs: unknown[]) => songs),
     player: { setFullscreen: vi.fn() },
@@ -87,6 +93,7 @@ vi.mock("../../ports/navigation", async () => {
   return { useModalStore, toggleWindowFullscreen: () => undefined };
 });
 vi.mock("../../ports/library", () => ({
+  playLibraryEntry: mocks.playEntry,
   useLikedTracks: () => ({ data: { tracks: [] } }),
   usePlaylistsList: () => ({ data: { playlists: [] } }),
 }));
@@ -98,6 +105,14 @@ vi.mock("../../ports/search", () => ({
     hasLoaded: true,
     runNow: () => undefined,
   }),
+  useSuggestions: (query: string) => (query.trim() === "lorde" ? mocks.suggested : mocks.idle.items),
+  useSearchTracks: () => ({ ...mocks.idle, tracks: [] }),
+  useSearchArtists: (_query: string, { enabled }: { enabled: boolean }) => {
+    if (enabled) mocks.askedArtists();
+    return enabled ? { ...mocks.idle, items: mocks.artists, artists: mocks.artists, hasLoaded: true } : { ...mocks.idle, artists: [] };
+  },
+  useSearchAlbums: () => ({ ...mocks.idle, albums: [] }),
+  useSearchPlaylists: () => ({ ...mocks.idle, playlists: [] }),
   toSearchResult: (item: unknown) => item,
   useSoundCloudSearch: (query: string) => ({ items: query.trim() === "lorde" ? mocks.soundCloud : [], loading: false, hasLoaded: true }),
   soundCloudResult: (hit: unknown) => hit,
@@ -108,6 +123,7 @@ vi.mock("../../ports/search", () => ({
   filterTracks: () => [],
   songResult: () => null,
 }));
+vi.mock("../../ports/catalog", () => ({ warmArtist: vi.fn() }));
 vi.mock("../settings/settingItems", () => ({
   SETTING_ITEMS: [{ tabId: "Player", titleKey: "settings.cover_glow.title" }],
 }));
@@ -233,7 +249,7 @@ describe("PaletteField", () => {
   it("shows the top result, songs and albums, plays a song on Enter and queues it on Shift Enter", () => {
     ctrlK();
     type("lorde");
-    expect(groups()).toEqual(["Top result", "Songs", "Playlists and albums"]);
+    expect(groups()).toEqual(["Top result", "ui.search.tabs", "Songs", "Artists, albums and playlists"]);
     expect(dialog()!.querySelector("[data-top]")!.textContent).toContain("Lorde");
     press("ArrowDown");
     press("Enter", true);
@@ -244,6 +260,54 @@ describe("PaletteField", () => {
     press("Enter");
     expect(mocks.engine.playTrack).toHaveBeenCalledWith(expect.objectContaining({ id: "s1" }), [expect.objectContaining({ id: "s1" })], "search");
     expect(mocks.history.addItem).toHaveBeenCalledWith(expect.objectContaining({ id: "s1", type: "track" }));
+  });
+
+  it("lists other artists, and a song's artist opens from its row", () => {
+    mocks.suggested = [mocks.catalog[0], mocks.artists[0]];
+    ctrlK();
+    type("lorde");
+    expect(options().find((text) => text?.includes("lordi"))).toBeDefined();
+    const go = vi.fn();
+    bindNavigate(go);
+    act(() => dialog()!.querySelector<HTMLElement>("[data-artist-link]")!.click());
+    expect(go).toHaveBeenCalledWith("/artist?name=Lorde");
+    expect(mocks.engine.playTrack).not.toHaveBeenCalled();
+    mocks.suggested = [];
+  });
+
+  it("the top artist plays or opens from its buttons", () => {
+    ctrlK();
+    type("lorde");
+    const [play, open] = [...dialog()!.querySelectorAll<HTMLButtonElement>("[data-top] button")];
+    act(() => play.click());
+    expect(mocks.playEntry).toHaveBeenCalledWith(expect.objectContaining({ kind: "artist", id: "lorde" }), "artist:lorde");
+    expect(where()).toBe("/");
+    ctrlK();
+    type("lorde");
+    act(() => [...dialog()!.querySelectorAll<HTMLButtonElement>("[data-top] button")][1].click());
+    expect(open.textContent).toBe("ui.palette.open");
+    expect(where()).toBe("/artist?id=lorde");
+  });
+
+  it("Tab moves through the kinds, shows what it has at once and asks for more of a kind only once", () => {
+    ctrlK();
+    type("lorde");
+    const pressed = () => dialog()!.querySelector('[aria-pressed="true"]')!.textContent;
+    press("Tab");
+    expect(pressed()).toBe("Songs");
+    expect(dialog()!.querySelector("[data-top]")!.textContent).toContain("Liability");
+    press("Tab");
+    expect(pressed()).toBe("ui.search.tab_artists");
+    expect(dialog()!.querySelector("[data-top]")!.textContent).toContain("Lorde");
+    expect(options().filter((text) => text?.toLowerCase().startsWith("lord"))).toHaveLength(3);
+    press("Tab", true);
+    mocks.askedArtists.mockClear();
+    press("Tab");
+    expect(mocks.askedArtists).not.toHaveBeenCalled();
+    expect(options().some((text) => text?.includes("lordi"))).toBe(true);
+    press("ArrowDown");
+    press("Enter");
+    expect(where()).toBe("/artist?id=lordi");
   });
 
   it("ranks SoundCloud songs with the catalog's, as the search page does", () => {
@@ -267,13 +331,11 @@ describe("PaletteField", () => {
     expect(document.getElementById(input().getAttribute("aria-controls")!)!.getAttribute("role")).toBe("listbox");
   });
 
-  it("jumps to the next section on Tab", () => {
+  it("Tab still walks the sections before anything is typed", () => {
     ctrlK();
-    type("lorde");
     press("Tab");
-    expect(dialog()!.querySelector("[data-selected]")!.textContent).toContain("Liability");
-    press("Tab");
-    expect(dialog()!.querySelector("[data-selected]")!.textContent).toContain("Melodrama");
+    expect(dialog()!.querySelector("[data-selected]")!.textContent).toContain("Play or pause");
+    expect(dialog()!.querySelector("[aria-pressed]")).toBeNull();
   });
 
   it("ends with every result on the search page", () => {

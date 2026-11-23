@@ -76,6 +76,49 @@ export function useSearch<T>(query: string, load: SearchLoad<T>, options: Search
   };
 }
 
+// One request at a time and the newest text next: a burst of them slows the search they share the network with
+export function useSuggestions(query: string, enabled: boolean): SearchItem[] {
+  const text = query.trim();
+  const active = enabled && text.length >= MIN_QUERY;
+  const [result, setResult] = useState<{ query: string; items: SearchItem[] } | null>(null);
+  const [flight] = useState(() => ({ wanted: "", asking: null as AbortController | null }));
+
+  useEffect(() => {
+    flight.wanted = active ? text : "";
+    const ask = () => {
+      const catalog = catalogSource();
+      const asked = flight.wanted;
+      if (!catalog || !asked || flight.asking) return;
+      const controller = new AbortController();
+      flight.asking = controller;
+      catalog
+        .suggest(asked, controller.signal)
+        .then(
+          (items) => {
+            if (!controller.signal.aborted) setResult({ query: asked, items });
+          },
+          () => undefined,
+        )
+        .finally(() => {
+          if (flight.asking === controller) flight.asking = null;
+          if (!controller.signal.aborted && flight.wanted !== asked) ask();
+        });
+    };
+    ask();
+  }, [active, text, flight]);
+
+  useEffect(
+    () => () => {
+      flight.asking?.abort();
+      flight.asking = null;
+    },
+    [flight],
+  );
+
+  // an answer for what was typed a key ago still fits; one for another word does not
+  return active && result && (text.startsWith(result.query) || result.query.startsWith(text)) ? result.items : NONE;
+}
+
 export function useSearchAll(query: string, options?: SearchOptions): CatalogSearch {
   return useCatalogSearch(query, "all", options);
 }

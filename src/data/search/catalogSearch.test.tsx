@@ -3,12 +3,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import type { SearchItem } from "@/youtube";
-import { useSearchAll, useSearchTracks, type CatalogSearch, type SearchOptions } from "./catalogSearch";
+import { useSearchAll, useSearchTracks, useSuggestions, type CatalogSearch, type SearchOptions } from "./catalogSearch";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const search = vi.hoisted(() => vi.fn());
-vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog: { search } }) }));
+const suggest = vi.hoisted(() => vi.fn());
+vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog: { search, suggest } }) }));
 
 const song = (id: string): SearchItem => ({ kind: "track", id, title: `Song ${id}`, artists: [{ id: "q", name: "Queen" }], durationMs: 1000, explicit: false });
 
@@ -99,5 +100,55 @@ describe("useSearchTracks", () => {
     await advance(0);
     expect(search).toHaveBeenCalledWith("queen", "track", expect.any(AbortSignal));
     expect(seen?.tracks).toEqual([expect.objectContaining({ id: "s1", artists: "Queen", playCount: 0 })]);
+  });
+});
+
+describe("useSuggestions", () => {
+  let shown: SearchItem[] = [];
+  const asked: { text: string; signal: AbortSignal; answer(items: SearchItem[]): void }[] = [];
+  function Quick({ query, enabled = true }: { query: string; enabled?: boolean }) {
+    shown = useSuggestions(query, enabled);
+    return null;
+  }
+  const type = (query: string, enabled = true) => act(() => root.render(<Quick query={query} enabled={enabled} />));
+  const answer = (index: number, id: string) => act(async () => asked[index].answer([song(id)]));
+
+  beforeEach(() => {
+    asked.length = 0;
+    suggest.mockReset();
+    suggest.mockImplementation((text: string, signal: AbortSignal) => new Promise((resolve) => asked.push({ text, signal, answer: resolve })));
+  });
+
+  it("asks one at a time, shows what came while typing and asks the newest text next", async () => {
+    type("tr");
+    type("tra");
+    type("trav");
+    expect(asked.map(({ text }) => text)).toEqual(["tr"]);
+    await answer(0, "early");
+    expect(shown.map(({ id }) => id)).toEqual(["early"]);
+    expect(asked.map(({ text }) => text)).toEqual(["tr", "trav"]);
+    await answer(1, "late");
+    expect(shown.map(({ id }) => id)).toEqual(["late"]);
+    expect(asked).toHaveLength(2);
+  });
+
+  it("asks nothing after it closes", async () => {
+    type("tr");
+    type("trav");
+    act(() => root.render(null));
+    expect(asked[0].signal.aborted).toBe(true);
+    await answer(0, "late");
+    expect(asked).toHaveLength(1);
+  });
+
+  it("drops what another word brought, and asks nothing while disabled or too short", async () => {
+    type("travis");
+    await answer(0, "t");
+    type("queen");
+    expect(shown).toEqual([]);
+    type("q");
+    type("queen live", false);
+    expect(asked.map(({ text }) => text)).toEqual(["travis", "queen"]);
+    expect(shown).toEqual([]);
   });
 });

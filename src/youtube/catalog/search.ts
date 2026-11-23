@@ -1,7 +1,7 @@
 import { SEARCH_PARAMS } from "../constants";
 import type { Innertube } from "../http";
 import type { SearchFilter, SearchItem, SearchKind, YtTrack } from "../types";
-import { dedupe, mapSearchResponse } from "./rows";
+import { dedupe, mapSearchResponse, mapSuggestions } from "./rows";
 
 const STOP_WORDS = new Set([
   "a",
@@ -152,6 +152,14 @@ export async function searchFiltered(yt: Innertube, query: string, filter: Searc
   if (!trimmed) return [];
   const response = await yt.call("search", { query: trimmed, ...(filter ? { params: SEARCH_PARAMS[filter] } : {}) }, { signal });
   return mapSearchResponse(response);
+}
+
+export async function suggest(yt: Innertube, query: string, signal: AbortSignal): Promise<SearchItem[]> {
+  const input = query.trim().slice(0, 200);
+  if (!input) return [];
+  const items = mapSuggestions(await yt.call("music/get_search_suggestions", { input }, { signal }));
+  const tokens = queryTokens(input);
+  return items.filter((item) => item.kind !== "track" || (item.artists[0].id !== "unknown" && matchesWell(item, tokens)));
 }
 
 type Settled = PromiseSettledResult<SearchItem[]>;

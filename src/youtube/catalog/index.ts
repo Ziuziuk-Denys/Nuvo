@@ -1,7 +1,7 @@
 import type { FetchLike, Innertube } from "../http";
 import type { YtCatalog } from "../types";
 import { Pages, playlistPage, radio, trackPage, type AccountPlaylists } from "./pages";
-import { search, searchFiltered } from "./search";
+import { search, searchFiltered, suggest } from "./search";
 import { importUrl, parseUrl } from "./urls";
 
 export type { AccountPlaylists } from "./pages";
@@ -11,6 +11,7 @@ export function createCatalog(deps: { yt: Innertube; fetch: FetchLike; account?:
   const pages = new Pages(yt);
   return {
     search: (query, kind, signal) => search(yt, query, kind, signal),
+    suggest: (query, signal) => suggest(yt, query, signal),
     searchFiltered: (query, filter, signal) => searchFiltered(yt, query, filter, signal),
     track: (id, signal) => trackPage(yt, id, signal),
     album: (id, signal) => pages.album(id, signal),

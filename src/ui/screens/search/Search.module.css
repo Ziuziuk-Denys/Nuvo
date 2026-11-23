@@ -98,7 +98,7 @@
 .tabs {
   display: flex;
   gap: 4px;
-  margin: 11px -3px -3px;
+  margin: -3px -3px 7px;
   padding: 3px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -140,7 +140,10 @@
 }
 
 .results {
-  padding: 22px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 18px 0 24px;
 }
 
 .swap {
@@ -169,6 +172,23 @@
   display: grid;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   gap: 40px;
+}
+
+.side {
+  min-width: 0;
+}
+
+.topHeading {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin-bottom: 10px;
+}
+
+.topActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .group {

@@ -196,6 +196,7 @@ export interface DeviceCode {
 
 export interface YtCatalog {
   search(query: string, kind: SearchKind, signal: AbortSignal): Promise<SearchItem[]>;
+  suggest(query: string, signal: AbortSignal): Promise<SearchItem[]>;
   searchFiltered(query: string, filter: SearchFilter | undefined, signal: AbortSignal): Promise<SearchItem[]>;
   track(id: string, signal: AbortSignal): Promise<TrackPage>;
   album(id: string, signal: AbortSignal): Promise<AlbumPage>;

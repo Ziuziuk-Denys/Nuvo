@@ -10,7 +10,7 @@ import { useCalmLight } from "../../field/calm";
 import { Icon } from "../../icons/Icon";
 import type { IconName } from "../../icons";
 import { useTranslation } from "../../ports/i18n";
-import { useLikeTrack, useLikedTracks, usePlaylistsList } from "../../ports/library";
+import { playLibraryEntry, useLikeTrack, useLikedTracks, usePlaylistsList } from "../../ports/library";
 import { createLinkPorts, routeLink, youtubeCatalog, type Share } from "../../ports/links";
 import { openExternal } from "../../ports/system";
 import { toPlayerTrack, useLocalTracks } from "../../ports/localFiles";
@@ -27,6 +27,7 @@ import {
   useSearchHistoryStore,
   useSearchPlaylists,
   useSearchTracks,
+  useSuggestions,
   useRankedSongs,
   useSoundCloudSearch,
   type SearchHistoryItem,
@@ -51,11 +52,12 @@ import {
   withLocalFiles,
   songsToRank,
   withSoundCloud,
+  withSuggestions,
   type GroupKey,
   type SearchFilter,
   type SearchSource,
 } from "./searchModel";
-import { SearchGroups } from "./SearchGroups";
+import { LeadList, OtherGroups, TopCard } from "./SearchGroups";
 import { SearchHistory } from "./SearchHistory";
 import styles from "./Search.module.css";
 
@@ -160,7 +162,11 @@ export function Search(): JSX.Element {
   );
 
   const soundCloudOnly = searchSource === "soundcloud";
-  const options = (on: boolean) => ({ enabled: online && !soundCloudOnly && on, limit: LIMIT, debounceMs: DEBOUNCE_MS });
+  const cacheKey = `${filter}:${trimmed.toLowerCase()}`;
+  const cached = resultCache.get(cacheKey);
+  const [asked] = useState(() => new Set<string>());
+  const have = cached !== undefined && asked.has(cacheKey);
+  const options = (on: boolean) => ({ enabled: online && !soundCloudOnly && on && !have, limit: LIMIT, debounceMs: DEBOUNCE_MS });
   const all = useSearchAll(searchQuery, options(filter === "all"));
   const songs = useSearchTracks(searchQuery, options(filter === "songs"));
   const albums = useSearchAlbums(searchQuery, options(filter === "albums"));
@@ -180,16 +186,19 @@ export function Search(): JSX.Element {
     return playlists.playlists.map(toSearchResult);
   }, [filter, all.items, songs.tracks, albums.albums, artists.artists, playlists.playlists]);
 
-  const cacheKey = `${filter}:${trimmed.toLowerCase()}`;
-  const settled = source.hasLoaded && !source.loading;
+  const settled = have || (source.hasLoaded && !source.loading);
   useEffect(() => {
-    if (!settled || fetched.length === 0) return;
+    if (have || !settled || fetched.length === 0) return;
+    asked.add(cacheKey);
     resultCache.delete(cacheKey);
     resultCache.set(cacheKey, fetched);
     // a Map keeps insertion order, so the first key is the oldest search
     if (resultCache.size > CACHED_SEARCHES) resultCache.delete(resultCache.keys().next().value!);
-  }, [settled, fetched, cacheKey]);
-  const cached = resultCache.get(cacheKey);
+  }, [have, settled, fetched, cacheKey, asked]);
+  const ofFilter = (results: readonly SearchResult[]) => (filter === "all" ? [...results] : results.filter((result) => result.kind === GROUP_KIND[filter]));
+  const early = filter === "all" ? NO_RESULTS : ofFilter(resultCache.get(`all:${trimmed.toLowerCase()}`) ?? NO_RESULTS);
+  const quick = useSuggestions(searchQuery, youtubeActive);
+  const suggested = youtubeActive ? ofFilter(quick.map(toSearchResult)) : NO_RESULTS;
 
   const liked = useLikedTracks();
   const library = usePlaylistsList();
@@ -200,7 +209,7 @@ export function Search(): JSX.Element {
 
   const files = useLocalTracks(trimmed.length >= 2 ? trimmed : "", LOCAL_SEARCH_LIMIT);
   const fileResults = useMemo(() => files.items.filter((item) => !item.unsupported).map((item) => songResult(toPlayerTrack(item))), [files.items]);
-  const shownOnline = settled || !cached ? fetched : cached;
+  const shownOnline = have ? cached : settled ? fetched : (cached ?? (early.length > 0 ? early : fetched));
   const results = useMemo(
     () => withLocalFiles(online ? shownOnline : local, fileResults, filter, trimmed),
     [online, shownOnline, local, fileResults, filter, trimmed],
@@ -208,16 +217,18 @@ export function Search(): JSX.Element {
   const streamed = soundCloudOnly ? NO_RESULTS : results;
   const toRank = useMemo(() => songsToRank(streamed, soundCloudResults, filter), [streamed, soundCloudResults, filter]);
   const rankedSongs = useRankedSongs(trimmed, toRank);
-  const groups = useMemo(() => groupResults(withSoundCloud(streamed, rankedSongs, filter), filter), [streamed, rankedSongs, filter]);
+  // a lone SoundCloud answer must not lead while the catalog is still looking
+  const undecided = youtubeActive && source.loading && suggested.length === 0 && shownOnline.length === 0;
+  const groups = groupResults(withSuggestions(suggested, undecided ? streamed : withSoundCloud(streamed, rankedSongs, filter), trimmed), filter);
   const remote = youtubeActive || soundCloudActive;
-  const loading = (youtubeActive && source.loading) || (soundCloudActive && soundCloud.loading);
+  const loading = (youtubeActive && !settled && trimmed.length >= 2) || (soundCloudActive && soundCloud.loading);
   const allSettled = (!youtubeActive || settled) && (!soundCloudActive || (soundCloud.hasLoaded && !soundCloud.loading));
   const slow = useAfter(remote && loading && trimmed.length >= 2, SLOW_MS) || (linkText !== null && linkSlow);
   const noResults = isEmpty(groups) && (remote ? allSettled && trimmed.length >= 2 : trimmed !== "");
   const pending = remote && loading && isEmpty(groups);
   const hasMore = (key: GroupKey) => online || results.filter((result) => result.kind === GROUP_KIND[key]).length > groups[key].length;
 
-  const activate = (result: SearchResult) => {
+  const fileInHistory = (result: SearchResult) =>
     addHistory({
       id: result.id,
       type: result.kind === "song" ? "track" : result.kind,
@@ -227,6 +238,9 @@ export function Search(): JSX.Element {
       durationMs: result.durationMs,
       itemData: result.track ?? { href: result.href },
     });
+
+  const activate = (result: SearchResult) => {
+    fileInHistory(result);
     if (result.track) playTrack(result.track, [result.track]);
     else if (result.href) navigateWithTransition(navigate, result.href);
   };
@@ -313,7 +327,8 @@ export function Search(): JSX.Element {
     else rows[index - 1].focus();
   };
 
-  let body: JSX.Element | null;
+  let body: JSX.Element | null = null;
+  let list: JSX.Element | null = null;
   let phase: string;
   if (linkText !== null) {
     phase = "link";
@@ -344,10 +359,10 @@ export function Search(): JSX.Element {
     body = <SearchHistory onActivate={activateHistory} />;
   } else if (noResults) {
     phase = "none";
-    body = <p className={styles.line}>{t("ui.search.none", { query: trimmed })}</p>;
+    list = <p className={styles.line}>{t("ui.search.none", { query: trimmed })}</p>;
   } else if (pending) {
     phase = "pending";
-    body = (
+    list = (
       <div className={styles.placeholders} data-placeholder="row">
         {Array.from({ length: PLACEHOLDER_ROWS }, (_, index) => (
           <MediaRowPlaceholder key={index} />
@@ -356,8 +371,35 @@ export function Search(): JSX.Element {
     );
   } else {
     phase = "results";
-    body = <SearchGroups groups={groups} filter={filter} hasMore={hasMore} onShowAll={setFilter} onActivate={activate} />;
+    list = <LeadList groups={groups} filter={filter} onActivate={activate} />;
   }
+  const swapKey = `${searchSource}:${filter}:${phase}`;
+
+  const tabs = (
+    <div className={styles.tabs}>
+      <div className={`${styles.tablist} ${look.segments}`} role="tablist" aria-label={t("ui.search.tabs")}>
+        {SEARCH_FILTERS.filter((id) => !soundCloudOnly || id === "all" || id === "songs").map((id) => (
+          <button key={id} type="button" role="tab" aria-selected={id === filter} className={look.tab} onClick={() => setFilter(id)}>
+            {id === filter ? <Lens group="search-filter" value={filter} radius={16} className={look.fillLens} /> : null}
+            {t(`ui.search.tab_${id}`)}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className={`${look.tab} ${styles.sourceButton}`}
+        aria-haspopup="menu"
+        aria-expanded={sourceMenu !== null}
+        data-chosen={searchSource === "all" ? undefined : ""}
+        aria-label={sourceLabel}
+        title={sourceLabel}
+        onClick={(event) => setSourceMenu(event.currentTarget)}
+      >
+        <Icon name={SOURCE_ICONS[searchSource]} size={16} />
+        <Icon name="chevron-down" size={14} />
+      </button>
+    </div>
+  );
 
   return (
     <div className={styles.page}>
@@ -392,37 +434,40 @@ export function Search(): JSX.Element {
           ) : null}
         </div>
         {online || soundCloudActive ? null : <p className={styles.subline}>{t(offlineMode ? "ui.search.offline_mode" : "ui.search.offline")}</p>}
-        {trimmed === "" || linkText !== null ? null : (
-          <div className={styles.tabs}>
-            <div className={`${styles.tablist} ${look.segments}`} role="tablist" aria-label={t("ui.search.tabs")}>
-              {SEARCH_FILTERS.filter((id) => !soundCloudOnly || id === "all" || id === "songs").map((id) => (
-                <button key={id} type="button" role="tab" aria-selected={id === filter} className={look.tab} onClick={() => setFilter(id)}>
-                  {id === filter ? <Lens group="search-filter" value={filter} radius={16} className={look.fillLens} /> : null}
-                  {t(`ui.search.tab_${id}`)}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className={`${look.tab} ${styles.sourceButton}`}
-              aria-haspopup="menu"
-              aria-expanded={sourceMenu !== null}
-              data-chosen={searchSource === "all" ? undefined : ""}
-              aria-label={sourceLabel}
-              title={sourceLabel}
-              onClick={(event) => setSourceMenu(event.currentTarget)}
-            >
-              <Icon name={SOURCE_ICONS[searchSource]} size={16} />
-              <Icon name="chevron-down" size={14} />
-            </button>
-          </div>
-        )}
       </Enter>
       <Enter index={1} screen="search">
         <div className={styles.results} ref={resultsRef} onKeyDown={onRowsKeyDown}>
-          <div key={`${searchSource}:${filter}:${phase}`} className={styles.swap} data-swap={phase}>
-            {body}
-          </div>
+          {list === null ? (
+            <div key={swapKey} className={styles.swap} data-swap={phase}>
+              {body}
+            </div>
+          ) : (
+            <>
+              <div className={styles.lead}>
+                <div key={swapKey} className={styles.swap}>
+                  {phase === "results" && groups.top ? (
+                    <TopCard
+                      top={groups.top}
+                      onActivate={activate}
+                      onPlay={(result) => {
+                        fileInHistory(result);
+                        if (result.track) playTrack(result.track, [result.track]);
+                        else if (result.kind !== "song")
+                          void playLibraryEntry({ kind: result.kind, id: result.id, title: result.title, cover: result.cover }, `${result.kind}:${result.id}`);
+                      }}
+                    />
+                  ) : null}
+                </div>
+                <div className={styles.side}>
+                  {tabs}
+                  <div key={swapKey} className={styles.swap} data-swap={phase}>
+                    {list}
+                  </div>
+                </div>
+              </div>
+              {phase === "results" && filter === "all" ? <OtherGroups groups={groups} hasMore={hasMore} onShowAll={setFilter} onActivate={activate} /> : null}
+            </>
+          )}
         </div>
       </Enter>
       {share ? (

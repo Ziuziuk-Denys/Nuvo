@@ -5,7 +5,7 @@ import type { Track } from "../../ports/player";
 
 export type SearchFilter = "all" | "songs" | "albums" | "artists" | "playlists";
 
-export const SEARCH_FILTERS: SearchFilter[] = ["all", "songs", "albums", "artists", "playlists"];
+export const SEARCH_FILTERS: SearchFilter[] = ["all", "songs", "artists", "albums", "playlists"];
 
 export type SearchSource = "all" | "youtube" | "soundcloud";
 
@@ -32,7 +32,7 @@ export interface SearchGroups {
 
 export function groupResults(all: readonly SearchResult[], filter: SearchFilter): SearchGroups {
   const groups: SearchGroups = { songs: [], albums: [], artists: [], playlists: [] };
-  const top = filter === "all" ? all[0] : undefined;
+  const top = filter === "all" ? all[0] : all.find((result) => result.kind === GROUP_KIND[filter]);
   if (top) groups.top = top;
   const keys = filter === "all" ? (Object.keys(GROUP_KIND) as GroupKey[]) : [filter];
   for (const key of keys) {
@@ -89,6 +89,25 @@ export function withLocalFiles(results: readonly SearchResult[], files: readonly
   return [...before, ...songs.map((song) => song.result), ...others.slice(before.length)];
 }
 
+const keyOf = (result: SearchResult) => `${result.kind}:${result.id}`;
+
+export function uniqueResults(results: readonly SearchResult[]): SearchResult[] {
+  const seen = new Set<string>();
+  return results.filter((result) => !seen.has(keyOf(result)) && seen.add(keyOf(result)));
+}
+
+const wording = (result: SearchResult) => `${normalizeForSearch(result.title)}|${normalizeForSearch(result.subtitle)}`;
+
+// Suggestions answer first and keep their place, so later results only add rows
+export function withSuggestions(suggested: readonly SearchResult[], results: readonly SearchResult[], query = ""): SearchResult[] {
+  if (suggested.length === 0) return [...results];
+  const fuller = new Map(results.map((result) => [keyOf(result), result]));
+  const quick = suggested.map((result) => (result.track ? (fuller.get(keyOf(result)) ?? result) : result));
+  const worded = new Set(quick.filter((result) => result.kind === "song").map(wording));
+  const files = results.filter((result) => result.kind === "song" && result.id.startsWith("local:") && matchRank(result, query) < 2);
+  return uniqueResults([...files, ...quick, ...results.filter((result) => result.kind !== "song" || !worded.has(wording(result)))]);
+}
+
 export function isEmpty(groups: SearchGroups): boolean {
   return !groups.top && groups.songs.length + groups.albums.length + groups.artists.length + groups.playlists.length === 0;
 }
@@ -131,7 +150,10 @@ export function historyHref(item: SearchHistoryItem): string {
 
 export function subtitleOf(result: SearchResult, t: TFunction): string {
   if (result.kind === "song") return t("ui.search.kind_song", { artist: result.subtitle });
-  if (result.kind === "album") return result.subtitle ? t("ui.library.kind_album", { artist: result.subtitle }) : t("ui.library.kind_album_plain");
+  if (result.kind === "album") {
+    const line = result.subtitle ? t("ui.library.kind_album", { artist: result.subtitle }) : t("ui.library.kind_album_plain");
+    return result.year ? `${line}, ${result.year}` : line;
+  }
   if (result.kind === "artist") return t("ui.library.kind_artist");
   return result.subtitle ? t("ui.library.kind_playlist", { owner: result.subtitle }) : t("ui.library.kind_playlist_plain");
 }
