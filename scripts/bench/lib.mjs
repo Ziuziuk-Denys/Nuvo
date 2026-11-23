@@ -35,9 +35,12 @@ export function createProfile(name) {
     NUVO_CORE_KEYRING_SERVICE: keyringService,
   };
   delete env.VITE_DEV_SERVER_URL;
+  const userDataDir = path.join(work, "user-data");
+  fs.mkdirSync(userDataDir, { recursive: true });
+  fs.writeFileSync(path.join(userDataDir, "main-settings.json"), JSON.stringify({ discord: { enabled: false, chosen: true } }));
   return {
     env,
-    userDataDir: path.join(work, "user-data"),
+    userDataDir,
     remove() {
       clearTestKeyring(keyringService);
       fs.rmSync(work, { recursive: true, force: true });

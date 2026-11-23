@@ -24,8 +24,19 @@ async function keep(app: ElectronApplication): Promise<void> {
   await app.context().tracing.stop({ path: path.join(DIR, `${name}.zip`) });
 }
 
+// the runtime dir is shared, so a test song would reach the Discord running on this machine
+function discordOff(args: string[] = []): void {
+  const userData = args.find((arg) => arg.startsWith("--user-data-dir="))?.slice("--user-data-dir=".length);
+  if (!userData) return;
+  const settings = path.join(userData, "main-settings.json");
+  if (fs.existsSync(settings)) return;
+  fs.mkdirSync(userData, { recursive: true });
+  fs.writeFileSync(settings, JSON.stringify({ discord: { enabled: false, chosen: true } }));
+}
+
 const launch = _electron.launch.bind(_electron);
 _electron.launch = async (options) => {
+  discordOff(options?.args);
   const app = await launch(options);
   const failuresAtLaunch = failures;
   await app.context().tracing.start({ screenshots: true, snapshots: true });
