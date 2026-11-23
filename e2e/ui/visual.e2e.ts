@@ -53,10 +53,9 @@ async function litShare(name: string): Promise<number> {
   }, shot);
 }
 
-async function cacheSong(): Promise<void> {
-  const status = await session.page.evaluate(async () => {
+async function cacheSong(song = { id: "seed-0001", seconds: 70 }): Promise<void> {
+  const status = await session.page.evaluate(async ({ id, seconds }) => {
     const rate = 8000;
-    const seconds = 70;
     const samples = rate * seconds;
     const view = new DataView(new ArrayBuffer(44 + samples * 2));
     const text = (at: number, value: string) => [...value].forEach((c, i) => view.setUint8(at + i, c.charCodeAt(0)));
@@ -73,9 +72,9 @@ async function cacheSong(): Promise<void> {
     text(36, "data");
     view.setUint32(40, samples * 2, true);
     for (let i = 0; i < samples; i++) view.setInt16(44 + i * 2, Math.round(Math.sin(i / 6) * (i % 4000 < 800 ? 12000 : 2000)), true);
-    const response = await fetch("nuvo-core://local/v1/cache/audio/seed-0001", { method: "PUT", headers: { "content-type": "audio/wav" }, body: view.buffer });
+    const response = await fetch(`nuvo-core://local/v1/cache/audio/${id}`, { method: "PUT", headers: { "content-type": "audio/wav" }, body: view.buffer });
     return response.status;
-  });
+  }, song);
   expect(status).toBeLessThan(300);
 }
 
@@ -125,9 +124,9 @@ async function previewColour(): Promise<string> {
 
 const studio = () => session.page.getByRole("dialog", { name: "Scene studio" });
 
-async function showScene(): Promise<void> {
+async function showScene(scene: object = { background: "still", atmosphere: [], centrepiece: null, lyrics: null }): Promise<void> {
   const page = session.page;
-  await page.evaluate(() =>
+  await page.evaluate((selection) => {
     localStorage.setItem(
       "nuvo.visual",
       JSON.stringify({
@@ -136,10 +135,10 @@ async function showScene(): Promise<void> {
         template: "own",
         toured: true,
         chosen: true,
-        scene: { background: "still", atmosphere: [], centrepiece: null, lyrics: null },
+        scene: selection,
       }),
-    ),
-  );
+    );
+  }, scene);
   await page.reload();
   await session.go("#/player");
   await page.locator("canvas[aria-hidden]").first().waitFor({ timeout: 15_000 });
@@ -349,6 +348,63 @@ it("the studio exports a clip over an own photo and an own video", async () => {
   await useAsPlayer();
   fs.rmSync(dir, { recursive: true, force: true });
 }, 600_000);
+
+async function edgesAcross(): Promise<number> {
+  const shot = path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "poster-seek.png");
+  fs.mkdirSync(path.dirname(shot), { recursive: true });
+  await session.page.locator("canvas[aria-hidden]").first().screenshot({ path: shot });
+  return session.app.evaluate(({ nativeImage }, file) => {
+    const image = nativeImage.createFromPath(file);
+    const { width, height } = image.getSize();
+    const row = Math.round(height * 0.6) * width;
+    const pixels = image.toBitmap();
+    let edges = 0;
+    let lit: boolean | null = null;
+    for (let x = 0; x < width; x++) {
+      const at = (row + x) * 4;
+      const next = pixels[at] + pixels[at + 1] + pixels[at + 2] > 240;
+      if (lit !== null && next !== lit) edges++;
+      lit = next;
+    }
+    return edges;
+  }, shot);
+}
+
+it("a seek back keeps the poster's cover in scale", async () => {
+  type Player = { engine: { playList(tracks: object[]): void; seekTo(ms: number): void; getView(): { status: string } } };
+  const page = session.page;
+  const engine = (run: "status" | "far" | "back") =>
+    page.evaluate((step) => {
+      const { engine: player } = (window as unknown as { __nuvoPlayer: Player }).__nuvoPlayer;
+      if (step !== "status") player.seekTo(step === "far" ? 95_000 : 1_000);
+      return player.getView().status;
+    }, run);
+  await cacheSong({ id: "poster-seek", seconds: 120 });
+  await page.evaluate(() => localStorage.setItem("nuvo.e2e", "1"));
+  await showScene({
+    background: "print",
+    atmosphere: [],
+    centrepiece: null,
+    lyrics: "poster",
+    params: { print: { drift: 1, grain: 0, blur: 0, glitch: 0 } },
+  });
+  const halves = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#fff"/><rect width="150" height="300"/></svg>`;
+  await page.evaluate(
+    (coverUrl) =>
+      (window as unknown as { __nuvoPlayer: Player }).__nuvoPlayer.engine.playList([
+        { id: "poster-seek", title: "Poster", artists: "Nova", coverUrl, durationMs: 120_000 },
+      ]),
+    `data:image/svg+xml;utf8,${encodeURIComponent(halves)}`,
+  );
+  await expect.poll(() => engine("status")).toBe("playing");
+  await page.waitForTimeout(1_500);
+  await engine("far");
+  await page.waitForTimeout(2_000);
+  expect(await edgesAcross()).toBeLessThan(4);
+  await engine("back");
+  await page.waitForTimeout(1_500);
+  expect(await edgesAcross()).toBeLessThan(4);
+});
 
 it("controls turn dark over a light scene", async () => {
   const page = session.page;
