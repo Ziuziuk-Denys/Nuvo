@@ -27,6 +27,7 @@ export interface LookFields {
   themeBeforePreset: ThemeChoice | null;
   playerControls: PlayerControls;
   navigation: Navigation;
+  railOpen: boolean;
 }
 
 export const LOOK_DEFAULTS: LookFields = {
@@ -40,6 +41,7 @@ export const LOOK_DEFAULTS: LookFields = {
   themeBeforePreset: null,
   playerControls: "centre",
   navigation: "top",
+  railOpen: false,
 };
 
 export const RETIRED_PRESETS: Record<string, PresetId> = {
@@ -115,6 +117,7 @@ interface LookState extends LookFields {
   setThemeBeforePreset(theme: ThemeChoice | null): void;
   setPlayerControls(controls: PlayerControls): void;
   setNavigation(navigation: Navigation): void;
+  setRailOpen(open: boolean): void;
   resetAll(): void;
 }
 
@@ -134,6 +137,7 @@ export const useLookStore = create<LookState>()(
       setThemeBeforePreset: (themeBeforePreset) => set({ themeBeforePreset }),
       setPlayerControls: (playerControls) => set({ playerControls }),
       setNavigation: (navigation) => set({ navigation }),
+      setRailOpen: (railOpen) => set({ railOpen }),
       resetAll: () =>
         set({
           backgroundImage: null,
@@ -161,6 +165,7 @@ export const useLookStore = create<LookState>()(
         themeBeforePreset,
         playerControls,
         navigation,
+        railOpen,
       }) => ({
         preset,
         coverGlow,
@@ -172,6 +177,7 @@ export const useLookStore = create<LookState>()(
         themeBeforePreset,
         playerControls,
         navigation,
+        railOpen,
       }),
       merge: (saved, current) => {
         const stored = (saved ?? {}) as Partial<LookFields>;
@@ -183,6 +189,7 @@ export const useLookStore = create<LookState>()(
           backgroundDim: isNumber(stored.backgroundDim) ? clampDim(stored.backgroundDim) : current.backgroundDim,
           playerControls: stored.playerControls === "side" ? "side" : "centre",
           navigation: stored.navigation === "side" ? "side" : "top",
+          railOpen: stored.railOpen === true,
           backgroundImage: isWallpaper(stored.backgroundImage) ? stored.backgroundImage : null,
           backgroundFit: stored.backgroundFit === "contain" ? "contain" : "cover",
         };

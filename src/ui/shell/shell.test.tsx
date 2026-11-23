@@ -17,7 +17,7 @@ const modal = vi.hoisted(() => ({
   closeSearch: vi.fn(),
   openSettings: vi.fn(),
 }));
-const player = vi.hoisted(() => ({ fullscreen: false, setFullscreen: vi.fn() }));
+const player = vi.hoisted(() => ({ fullscreen: false, setFullscreen: vi.fn(), playbackContext: null as string | null, status: "paused" }));
 const shortcuts = vi.hoisted(() => ({ onEscapeFallback: (() => false) as (() => boolean) | undefined }));
 const mocks = vi.hoisted(() => ({
   railPins: [] as { kind: string; id: string; title: string; href: string; imageUrl?: string }[],
@@ -291,24 +291,75 @@ describe("Shell", () => {
       expect(host.querySelector("header [data-testid=palette-field]")).not.toBeNull();
       expect(button("ui.window.close")?.closest("header")).not.toBeNull();
       expect(host.querySelector<HTMLElement>(`.${styles.shell}`)!.dataset.nav).toBe("side");
-      const links = navLinks();
-      act(() => links[0].focus());
-      press("ArrowDown");
-      expect(document.activeElement).toBe(links[1]);
+      const order = [...rail.querySelectorAll<HTMLElement>("[data-rail-item]")].map((item) => item.dataset.railItem);
+      expect(order).toEqual([
+        "ui.nav.home",
+        "ui.nav.search",
+        "ui.nav.library",
+        "ui.nav.stats",
+        "ui.nav.recognize",
+        "Road",
+        "ui.nav.show_names",
+        "ui.nav.settings",
+      ]);
+      expect(rail.querySelector('[data-nav="search"]')!.getAttribute("aria-expanded")).toBe("false");
+      act(() => rail.querySelector<HTMLElement>('[data-nav="search"]')!.click());
+      expect(modal.openSearch).toHaveBeenCalledTimes(1);
+      act(() => navLinks()[0].focus());
       press("ArrowUp");
-      expect(document.activeElement).toBe(links[0]);
+      expect(document.activeElement).toBe(button("ui.nav.settings"));
+      press("ArrowDown");
+      expect(document.activeElement).toBe(navLinks()[0]);
+      expect(button("ui.nav.forward")!.disabled).toBe(true);
+      expect(host.querySelector<HTMLElement>(`.${styles.shell}`)!.style.getPropertyValue("--rail-space")).toBe("70px");
       const animate = vi.fn();
       HTMLElement.prototype.animate = animate;
+      act(() => button("ui.nav.show_names")!.click());
+      expect(host.querySelector<HTMLElement>(`.${styles.shell}`)!.style.getPropertyValue("--rail-space")).toBe("214px");
+      expect(rail.textContent).toContain("Road");
+      act(() => button("ui.nav.hide_names")!.click());
+      animate.mockClear();
       act(() => useCustomizationStore.getState().setNavigation("top"));
       const moved = (element: Element | null) => animate.mock.contexts.indexOf(element);
-      expect(animate.mock.calls[moved(host.querySelector(`.${styles.content}`))][0]).toEqual([{ transform: "translateX(62px)" }, { transform: "none" }]);
-      expect(animate.mock.calls[moved(host.querySelector("header"))][0]).toEqual([{ opacity: 0 }, { opacity: 1 }]);
+      expect(animate.mock.calls[moved(host.querySelector(`.${styles.content}`))][0]).toEqual([{ transform: "translateX(70px)" }, { transform: "none" }]);
+      expect(animate.mock.calls.filter((_, at) => animate.mock.contexts[at] === host.querySelector("header")).map(([frames]) => frames)).toContainEqual([
+        { opacity: 0 },
+        { opacity: 1 },
+      ]);
       expect(host.querySelector("aside")).toBeNull();
       expect(navLinks().every((link) => link.closest("header"))).toBe(true);
     } finally {
       delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
       mocks.homePins = [];
       act(() => useCustomizationStore.getState().setNavigation("top"));
+    }
+  });
+
+  it("marks the pin whose list is playing, moving only while it plays, and lights the pin of the open page", () => {
+    act(() => useCustomizationStore.getState().setNavigation("side"));
+    mocks.homePins = [
+      { kind: "playlist", id: "p9", title: "Road", href: "/library/playlist?id=p9" },
+      { kind: "album", id: "p9", title: "Blue", href: "/collection?type=album&id=p9" },
+    ];
+    player.playbackContext = "playlist:p9";
+    HTMLElement.prototype.animate = vi.fn();
+    try {
+      mount("/library/playlist?id=p9");
+      const [road, blue] = host.querySelectorAll<HTMLElement>("aside [data-pin]");
+      expect([road.hasAttribute("data-playing"), blue.hasAttribute("data-playing")]).toEqual([true, false]);
+      expect(road.getAttribute("aria-label")).toBe("ui.nav.playing");
+      expect(road.querySelector("[data-moving]")).toBeNull();
+      expect(road.getAttribute("aria-current")).toBe("page");
+      expect(navLinks().every((link) => !link.hasAttribute("aria-current"))).toBe(true);
+      player.status = "playing";
+      mount("/library/playlist?id=p9", <p>again</p>);
+      expect(host.querySelector("aside [data-pin] [data-moving]")).not.toBeNull();
+    } finally {
+      player.playbackContext = null;
+      player.status = "paused";
+      mocks.homePins = [];
+      act(() => useCustomizationStore.getState().setNavigation("top"));
+      delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
     }
   });
 

@@ -110,6 +110,12 @@ export const ICON_NAMES = [
   "window-restore",
   "window-close",
   "nuvo-mark",
+  "rail-home",
+  "rail-search",
+  "rail-library",
+  "rail-stats",
+  "rail-recognize",
+  "rail-names",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
