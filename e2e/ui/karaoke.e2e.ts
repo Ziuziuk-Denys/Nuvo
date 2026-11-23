@@ -1,7 +1,7 @@
 import http from "node:http";
 import path from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { launchNuvo, type NuvoSession } from "./harness";
+import { launchNuvo, SIZES, type NuvoSession } from "./harness";
 import { diffRatio } from "./pixels";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
@@ -109,6 +109,14 @@ it("rests after 3 s of play without moving the cover, wakes for the pointer and 
   expect(await rest.count()).toBe(0);
   await page.waitForTimeout(400);
   expect(await cover()).toEqual(asleep);
+  for (const size of [...SIZES, { width: 1440, height: 900 }]) {
+    await session.setSize(size);
+    const gaps = await page.evaluate(() => ({
+      above: document.querySelector("section > div")!.getBoundingClientRect().top,
+      below: innerHeight - document.querySelector('section button[aria-label="Pause"] path')!.getBoundingClientRect().bottom,
+    }));
+    expect(Math.abs(gaps.above - gaps.below), `${size.width}: ${gaps.above} above, ${gaps.below} below`).toBeLessThanOrEqual(4);
+  }
   await rest.waitFor({ state: "attached", timeout: 8_000 });
   await page.keyboard.press("Shift");
   expect(await rest.count()).toBe(0);

@@ -190,7 +190,7 @@
 .left {
   position: absolute;
   left: var(--k-left);
-  top: max(66px, calc(50% - 262px));
+  top: max(66px, calc(50% - 286px));
   width: 400px;
   height: 590px;
 }
