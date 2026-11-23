@@ -119,24 +119,26 @@ describe("useSuggestions", () => {
     suggest.mockImplementation((text: string, signal: AbortSignal) => new Promise((resolve) => asked.push({ text, signal, answer: resolve })));
   });
 
-  it("answers while typing: two requests overlap and only an older third is dropped", async () => {
+  it("asks one at a time, shows what came while typing and asks the newest text next", async () => {
     type("tr");
     type("tra");
-    expect(asked.map(({ signal }) => signal.aborted)).toEqual([false, false]);
     type("trav");
-    expect(asked.map(({ signal }) => signal.aborted)).toEqual([true, false, false]);
-    await answer(1, "early");
+    expect(asked.map(({ text }) => text)).toEqual(["tr"]);
+    await answer(0, "early");
     expect(shown.map(({ id }) => id)).toEqual(["early"]);
-    await answer(2, "late");
+    expect(asked.map(({ text }) => text)).toEqual(["tr", "trav"]);
+    await answer(1, "late");
     expect(shown.map(({ id }) => id)).toEqual(["late"]);
+    expect(asked).toHaveLength(2);
   });
 
-  it("never lets an earlier answer replace a later one", async () => {
+  it("asks nothing after it closes", async () => {
     type("tr");
-    type("tra");
-    await answer(1, "late");
-    await answer(0, "early");
-    expect(shown.map(({ id }) => id)).toEqual(["late"]);
+    type("trav");
+    act(() => root.render(null));
+    expect(asked[0].signal.aborted).toBe(true);
+    await answer(0, "late");
+    expect(asked).toHaveLength(1);
   });
 
   it("drops what another word brought, and asks nothing while disabled or too short", async () => {
