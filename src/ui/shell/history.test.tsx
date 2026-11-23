@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, useRef, type JSX } from "react";
 import { type Root, createRoot } from "react-dom/client";
-import { MemoryRouter, useLocation, useNavigate, type NavigateFunction } from "react-router-dom";
+import { HashRouter, MemoryRouter, useLocation, useNavigate, type NavigateFunction } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useHistoryEnds, useHistoryKeys, useScrollMemory } from "./history";
 
@@ -155,4 +155,27 @@ it("follows the window's history list and does nothing past its end", () => {
   list.canGoForward = false;
   press("ArrowRight");
   expect(path()).toBe("/b");
+});
+
+it("opens a page reached through the address at the top each time", async () => {
+  const visit = async (hash: string) => {
+    (window as { navigation?: unknown }).navigation = Object.assign(new EventTarget(), { currentEntry: { key: hash + Math.random() } });
+    await act(async () => {
+      const arrived = new Promise((resolve) => window.addEventListener("popstate", resolve, { once: true }));
+      window.location.hash = hash;
+      await arrived;
+    });
+  };
+  act(() =>
+    root.render(
+      <HashRouter>
+        <Page />
+      </HashRouter>,
+    ),
+  );
+  await visit("#/a");
+  scrollTo(300);
+  await visit("#/b");
+  await visit("#/a");
+  expect([path(), box().scrollTop]).toEqual(["/a", 0]);
 });
