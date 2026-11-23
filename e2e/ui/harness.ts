@@ -95,7 +95,13 @@ export async function launchNuvo(options: { profile: "fresh" | "seeded"; locale?
   let started: ElectronApplication | undefined;
   try {
     const app = await electron.launch({
-      args: [ROOT, "--mute-audio", `--user-data-dir=${path.join(work, "user-data")}`, ...(options.args ?? [])],
+      args: [
+        ROOT,
+        ...(process.platform === "linux" ? ["--ozone-platform=x11"] : []),
+        "--mute-audio",
+        `--user-data-dir=${path.join(work, "user-data")}`,
+        ...(options.args ?? []),
+      ],
       cwd: ROOT,
       env,
     });
