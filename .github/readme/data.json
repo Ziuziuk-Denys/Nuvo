@@ -1,7 +1,7 @@
 {
   "repo": "https://github.com/Ziuziuk-Denys/Nuvo",
   "site": "https://nuvo.quest",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "tagline": "The local-first music player.",
   "social": "Free and open source, for Linux, Windows and macOS. No account.",
   "pills": {
@@ -49,17 +49,13 @@
     ]
   },
   "new": [
-    "Discover on Home: a ring of songs you have not heard yet, under a sky drawn from the cover in the middle. Spin it with the wheel, a drag or the arrow keys",
-    "Poster, the 13th ready scene: the cover printed in two flat tones, or in characters, with the lyrics set like a poster",
-    "Try a look before you keep it. The whole karaoke view plays Scene or Karaoke, one switch tries the other, and the Scene background holds steady",
-    "Settings in 23 plain sections. Search knows other words for a setting in English and Russian, and Ctrl K opens the setting itself",
-    "Imports open the playlist at once and fill it while songs match. A song an earlier import matched lands with no search",
-    "Find lyrics one click from the karaoke view. It forgives swapped fields and titles like \"sped up\", and a Lyrics model setting picks Light or Full",
-    "Drop songs or folders on the window to add them. The first Home is never empty: one line imports your playlists or adds files",
-    "Navigation can sit in a rail on the left, and the play buttons at the side of the player",
-    "Home asks once whether this computer should get Best visuals or Best performance, on the live sky. Best performance keeps the glass and every animation",
-    "Spotify song links play. The Notch shows while the window is hidden, and Nuvo looks for an update on every launch",
-    "Auto gain starts off and a limiter keeps equalizer boosts from clipping. Host shells can show the lyrics and the queue over D-Bus, thanks to @doctorsalamii"
+    "Artist names open the artist: in search, song rows, the queue, the player and karaoke. The new artist page has an edge-to-edge photo, the latest release, popular songs, similar artists and what you played",
+    "Search answers while you type, and the suggestions keep their place. A filter above the list picks songs, artists, albums or playlists; Tab moves through it in Ctrl K",
+    "Karaoke rests while a song plays: the cover, the title and a short line stay, and the pointer or any key brings the controls back. Settings, Lyrics, Karaoke controls keeps them always visible",
+    "A new Notch: lyrics and up next are pages behind the cover, with dislike and add to playlist. On Windows its buttons work again after it was hidden and shown",
+    "Your own photo or video as the Scene background plays in the live Scene and stays after a restart",
+    "A new side navigation: a rail beside the page with search and your pins, Back and Forward, and names on request. Alt Left and Alt Right work too",
+    "A Poster scene keeps its cover whole after a seek back or a song change"
   ],
   "why": [
     {
@@ -265,7 +261,7 @@
       "sub": "Pick the moment on the timeline, tune each part and export an MP4.",
       "alt": "The clip studio: scenes on the left, a 9:16 preview of \"Already There\" in the middle, the timeline with a clip range below.",
       "bullets": [
-        "Thirteen ready scenes, or your own from a background, up to three effects, a centrepiece and a text style",
+        "Thirteen ready scenes, or your own from a background, up to three effects, a centrepiece and a text style. The background can be your photo or video",
         "The stage runs on its own thread and its own clock, so a busy app never makes a lyric late",
         "A clip studio with a timeline, a waveform and live frames: pick the moment, tune each part and see it at once",
         "MP4 export in 9:16, 1:1 or 16:9, from 720p to 4K at 30 or 60 fps, the whole song or a cut, with fades. Your EQ, reverb and speed stay in the sound",
@@ -279,7 +275,7 @@
       "sub": "YouTube and SoundCloud are ranked together. Paste a link and it plays.",
       "alt": "The search palette with a top result and songs from both sources.",
       "bullets": [
-        "One field for songs, artists and links, opened with Ctrl K",
+        "One field for songs, artists and links, opened with Ctrl K. It answers while you type and filters by songs, artists, albums or playlists",
         "YouTube and SoundCloud results in one ranked list",
         "Paste links from Spotify, Apple Music, Deezer, Yandex Music, Shazam or TikTok, and share songs and playlists as compact links",
         "Recognize a song from a video link, a file, the microphone or the sound your computer plays. The last two work on Linux"
@@ -293,7 +289,7 @@
       "alt": "Three mixes on Home: For you, Something new and Recently liked.",
       "bullets": [
         "Discover on Home: a ring of songs new to you, under a sky that takes the cover's colours",
-        "Likes, saved albums and artists, playlists with custom covers, a duplicate finder",
+        "Likes, saved albums and artists, playlists with custom covers, a duplicate finder, and artist pages with the latest release, popular songs and what you played",
         "Playlists you can merge, sort six ways, keep offline, restore after a delete and pin",
         "Mixes and radio from your plays and likes, \"Not interested\" with undo, a dislike button on every song",
         "Statistics with a listening history that you can pause, export or delete",
@@ -321,7 +317,7 @@
       "sub": "Nuvo listens to the song and times every word, on this computer.",
       "alt": "Lyric lines that Nuvo wrote for a song, marked as written by Nuvo.",
       "bullets": [
-        "Synced lyrics and karaoke by line, word, fill or step",
+        "Synced lyrics and karaoke by line, word, fill or step, with controls that fade while a song plays",
         "Lyrics follow the version that plays. Find lyrics opens from the karaoke view and forgives swapped fields and upload tags",
         "Every word timed on your computer, and lyrics written for songs that have none. The model downloads once: Light is 82 MB, Full is 264 MB, and Auto picks by your hardware",
         "Paste LRC or plain text and tap to sync, with a timing offset per track",
@@ -350,8 +346,8 @@
       "bullets": [
         "Nine themes, a colour editor with contrast checks, theme files, system or custom fonts",
         "Custom CSS with a strict checker and a safe mode",
-        "The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. It shows while the Nuvo window is hidden; switch it to Always on or Off in Settings, Notch",
-        "Navigation at the top or in a rail on the left, play buttons in the middle or at the side",
+        "The Notch, a small player at the top of the screen with lyrics and up next behind the cover, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. It shows while the Nuvo window is hidden; switch it to Always on or Off in Settings, Notch",
+        "Navigation at the top or in a rail on the left that can show names, play buttons in the middle or at the side",
         "A panel widget for the GNOME top bar, the Plasma panel and Waybar",
         "Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian",
         "Settings in 23 sections, with search in English and Russian"

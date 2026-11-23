@@ -3,7 +3,7 @@
   "heroAlt": "Home with a ring of new songs under a sky drawn from the cover in the middle.",
   "sources": {
     "home": "stills/player-{theme}.png",
-    "search": "stills/palette-{theme}.png",
+    "search": "stills/search-{theme}.png",
     "sound": "sound-{theme}.png",
     "lyrics": "stills/add-lyrics-dark.png",
     "import": "stills/import-{theme}.png",
@@ -11,7 +11,9 @@
     "lock": "stills/lock-{theme}.png",
     "scene": "stills/scene-{theme}.png",
     "studio": "stills/studio-dark.png",
-    "discover": "stills/discover-{theme}.png"
+    "discover": "stills/discover-{theme}.png",
+    "artist": "stills/artist-{theme}.png",
+    "karaoke": "stills/karaoke-awake-{theme}.png"
   },
   "widgets": {
     "scene": {
@@ -29,9 +31,9 @@
       "shot": "search",
       "box": [
         0.228,
-        0.018,
+        0.012,
         0.545,
-        0.475
+        0.655
       ],
       "radius": 18,
       "width": 500
@@ -105,18 +107,25 @@
   },
   "showcase": [
     {
-      "shot": "search",
-      "title": "Search.",
-      "caption": "Ctrl K opens one field for songs, artists and links, with YouTube and SoundCloud in one ranked list.",
+      "shot": "home",
+      "title": "Discover.",
+      "caption": "A ring of songs you have not heard yet. Spin it, and the sky behind it takes the colours of the cover in the middle.",
       "alt": "",
-      "video": "<img src=\".github/readme/motion/search.webp\" width=\"100%\" alt=\"The search palette opening over Home and finding Lorde as the name is typed\">"
+      "video": "<img src=\".github/readme/motion/discover.webp\" width=\"100%\" alt=\"Home with a ring of covers under a sky in their colours, turned by a drag\">"
     },
     {
-      "shot": "lyrics",
-      "title": "Karaoke.",
-      "caption": "Lyrics light up word by word, in full screen or beside the player.",
+      "shot": "scene",
+      "title": "Poster.",
+      "caption": "A scene that prints the cover in two tones and sets the lyrics like a poster.",
       "alt": "",
-      "video": "<img src=\".github/readme/motion/karaoke.webp\" width=\"100%\" alt=\"The karaoke view lighting up a song word by word\">"
+      "video": "<img src=\".github/readme/motion/poster.webp\" width=\"100%\" alt=\"Scene Poster: the lyrics in heavy capitals over a two-tone print of the song cover\">"
+    },
+    {
+      "shot": "search",
+      "title": "Settings search.",
+      "caption": "Type a word, even one the setting does not use, and Nuvo opens the setting and marks it.",
+      "alt": "",
+      "video": "<img src=\".github/readme/motion/settings-search.webp\" width=\"100%\" alt=\"Settings search: a typed word opens the section and marks the setting\">"
     },
     {
       "shot": "background",
@@ -139,25 +148,25 @@
   },
   "new": [
     {
-      "shot": "home",
-      "title": "Discover.",
-      "caption": "A ring of songs you have not heard yet. Spin it, and the sky behind it takes the colours of the cover in the middle.",
-      "alt": "",
-      "video": "<img src=\".github/readme/motion/discover.webp\" width=\"100%\" alt=\"Home with a ring of covers under a sky in their colours, turned by a drag\">"
-    },
-    {
-      "shot": "scene",
-      "title": "Poster.",
-      "caption": "The 13th scene prints the cover in two tones and sets the lyrics like a poster.",
-      "alt": "",
-      "video": "<img src=\".github/readme/motion/poster.webp\" width=\"100%\" alt=\"Scene Poster: the lyrics in heavy capitals over a two-tone print of the song cover\">"
+      "shot": "artist",
+      "title": "Artist pages.",
+      "caption": "An edge-to-edge photo, the latest release, popular songs and what you played, one click from any artist's name.",
+      "alt": "The Tame Impala page in Nuvo: the photo behind the name, the latest album and popular songs",
+      "video": ""
     },
     {
       "shot": "search",
-      "title": "Settings search.",
-      "caption": "Type a word, even one the setting does not use, and Nuvo opens the setting and marks it.",
-      "alt": "",
-      "video": "<img src=\".github/readme/motion/settings-search.webp\" width=\"100%\" alt=\"Settings search: a typed word opens the section and marks the setting\">"
+      "title": "Search.",
+      "caption": "Ctrl K answers while you type. The filter above the list picks songs, artists, albums or playlists.",
+      "alt": "The search palette over Home: Tame Impala as the top result, songs, albums and the filter",
+      "video": ""
+    },
+    {
+      "shot": "karaoke",
+      "title": "Karaoke.",
+      "caption": "The controls fade while a song plays and come back with the pointer.",
+      "alt": "The karaoke view with the cover, calm controls and the sung line lit",
+      "video": ""
     }
   ]
 }

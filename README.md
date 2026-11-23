@@ -19,7 +19,47 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 
 <img src=".github/readme/motion/scene.webp" width="100%" alt="Nuvo Scene: the words of the song land as they are sung">
 
-## New in 0.5.0
+## New in 0.5.1
+
+<div align="center">
+
+**Artist pages.** An edge-to-edge photo, the latest release, popular songs and what you played, one click from any artist's name.
+
+</div>
+
+<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/shots/artist-dark.webp"><img src=".github/readme/shots/artist-light.webp" width="100%" alt="The Tame Impala page in Nuvo: the photo behind the name, the latest album and popular songs"></picture>
+
+<br>
+
+<div align="center">
+
+**Search.** Ctrl K answers while you type. The filter above the list picks songs, artists, albums or playlists.
+
+</div>
+
+<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/shots/search-dark.webp"><img src=".github/readme/shots/search-light.webp" width="100%" alt="The search palette over Home: Tame Impala as the top result, songs, albums and the filter"></picture>
+
+<br>
+
+<div align="center">
+
+**Karaoke.** The controls fade while a song plays and come back with the pointer.
+
+</div>
+
+<picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/shots/karaoke-dark.webp"><img src=".github/readme/shots/karaoke-light.webp" width="100%" alt="The karaoke view with the cover, calm controls and the sung line lit"></picture>
+
+- Artist names open the artist: in search, song rows, the queue, the player and karaoke. The new artist page has an edge-to-edge photo, the latest release, popular songs, similar artists and what you played
+- Search answers while you type, and the suggestions keep their place. A filter above the list picks songs, artists, albums or playlists; Tab moves through it in Ctrl K
+- Karaoke rests while a song plays: the cover, the title and a short line stay, and the pointer or any key brings the controls back. Settings, Lyrics, Karaoke controls keeps them always visible
+- A new Notch: lyrics and up next are pages behind the cover, with dislike and add to playlist. On Windows its buttons work again after it was hidden and shown
+- Your own photo or video as the Scene background plays in the live Scene and stays after a restart
+- A new side navigation: a rail beside the page with search and your pins, Back and Forward, and names on request. Alt Left and Alt Right work too
+- A Poster scene keeps its cover whole after a seek back or a song change
+
+The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.5.1).
+
+## See it
 
 <div align="center">
 
@@ -33,7 +73,7 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 
 <div align="center">
 
-**Poster.** The 13th scene prints the cover in two tones and sets the lyrics like a poster.
+**Poster.** A scene that prints the cover in two tones and sets the lyrics like a poster.
 
 </div>
 
@@ -48,40 +88,6 @@ Nuvo is a free, open-source music player for Linux, Windows and macOS. It plays 
 </div>
 
 <img src=".github/readme/motion/settings-search.webp" width="100%" alt="Settings search: a typed word opens the section and marks the setting">
-
-- Discover on Home: a ring of songs you have not heard yet, under a sky drawn from the cover in the middle. Spin it with the wheel, a drag or the arrow keys
-- Poster, the 13th ready scene: the cover printed in two flat tones, or in characters, with the lyrics set like a poster
-- Try a look before you keep it. The whole karaoke view plays Scene or Karaoke, one switch tries the other, and the Scene background holds steady
-- Settings in 23 plain sections. Search knows other words for a setting in English and Russian, and Ctrl K opens the setting itself
-- Imports open the playlist at once and fill it while songs match. A song an earlier import matched lands with no search
-- Find lyrics one click from the karaoke view. It forgives swapped fields and titles like "sped up", and a Lyrics model setting picks Light or Full
-- Drop songs or folders on the window to add them. The first Home is never empty: one line imports your playlists or adds files
-- Navigation can sit in a rail on the left, and the play buttons at the side of the player
-- Home asks once whether this computer should get Best visuals or Best performance, on the live sky. Best performance keeps the glass and every animation
-- Spotify song links play. The Notch shows while the window is hidden, and Nuvo looks for an update on every launch
-- Auto gain starts off and a limiter keeps equalizer boosts from clipping. Host shells can show the lyrics and the queue over D-Bus, thanks to @doctorsalamii
-
-The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/releases/tag/v0.5.0).
-
-## See it
-
-<div align="center">
-
-**Search.** Ctrl K opens one field for songs, artists and links, with YouTube and SoundCloud in one ranked list.
-
-</div>
-
-<img src=".github/readme/motion/search.webp" width="100%" alt="The search palette opening over Home and finding Lorde as the name is typed">
-
-<br>
-
-<div align="center">
-
-**Karaoke.** Lyrics light up word by word, in full screen or beside the player.
-
-</div>
-
-<img src=".github/readme/motion/karaoke.webp" width="100%" alt="The karaoke view lighting up a song word by word">
 
 <br>
 
@@ -109,7 +115,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-scene-dark.svg"><img src=".github/readme/feature-scene-light.svg" width="100%" alt="A clip studio in the player. The clip studio: scenes on the left, a 9:16 preview of &quot;Already There&quot; in the middle, the timeline with a clip range below."></picture>
 
-- Thirteen ready scenes, or your own from a background, up to three effects, a centrepiece and a text style
+- Thirteen ready scenes, or your own from a background, up to three effects, a centrepiece and a text style. The background can be your photo or video
 - The stage runs on its own thread and its own clock, so a busy app never makes a lyric late
 - A clip studio with a timeline, a waveform and live frames: pick the moment, tune each part and see it at once
 - MP4 export in 9:16, 1:1 or 16:9, from 720p to 4K at 30 or 60 fps, the whole song or a cut, with fades. Your EQ, reverb and speed stay in the sound
@@ -119,7 +125,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-search-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-search-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-search-dark.svg"><img src=".github/readme/feature-search-light.svg" width="100%" alt="Two sources, one list. The search palette with a top result and songs from both sources."></picture>
 
-- One field for songs, artists and links, opened with Ctrl K
+- One field for songs, artists and links, opened with Ctrl K. It answers while you type and filters by songs, artists, albums or playlists
 - YouTube and SoundCloud results in one ranked list
 - Paste links from Spotify, Apple Music, Deezer, Yandex Music, Shazam or TikTok, and share songs and playlists as compact links
 - Recognize a song from a video link, a file, the microphone or the sound your computer plays. The last two work on Linux
@@ -129,7 +135,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-mixes-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-mixes-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-mixes-dark.svg"><img src=".github/readme/feature-mixes-light.svg" width="100%" alt="Mixes made on your computer. Three mixes on Home: For you, Something new and Recently liked."></picture>
 
 - Discover on Home: a ring of songs new to you, under a sky that takes the cover's colours
-- Likes, saved albums and artists, playlists with custom covers, a duplicate finder
+- Likes, saved albums and artists, playlists with custom covers, a duplicate finder, and artist pages with the latest release, popular songs and what you played
 - Playlists you can merge, sort six ways, keep offline, restore after a delete and pin
 - Mixes and radio from your plays and likes, "Not interested" with undo, a dislike button on every song
 - Statistics with a listening history that you can pause, export or delete
@@ -149,7 +155,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-lyrics-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-lyrics-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-lyrics-dark.svg"><img src=".github/readme/feature-lyrics-light.svg" width="100%" alt="Lyrics for songs that have none. Lyric lines that Nuvo wrote for a song, marked as written by Nuvo."></picture>
 
-- Synced lyrics and karaoke by line, word, fill or step
+- Synced lyrics and karaoke by line, word, fill or step, with controls that fade while a song plays
 - Lyrics follow the version that plays. Find lyrics opens from the karaoke view and forgives swapped fields and upload tags
 - Every word timed on your computer, and lyrics written for songs that have none. The model downloads once: Light is 82 MB, Full is 264 MB, and Auto picks by your hardware
 - Paste LRC or plain text and tap to sync, with a timing offset per track
@@ -170,8 +176,8 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 - Nine themes, a colour editor with contrast checks, theme files, system or custom fonts
 - Custom CSS with a strict checker and a safe mode
-- The Notch, a small player at the top of the screen, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. It shows while the Nuvo window is hidden; switch it to Always on or Off in Settings, Notch
-- Navigation at the top or in a rail on the left, play buttons in the middle or at the side
+- The Notch, a small player at the top of the screen with lyrics and up next behind the cover, on Windows, macOS, KDE, Hyprland, Sway and X11, on the screen, side and edge you pick. It shows while the Nuvo window is hidden; switch it to Always on or Off in Settings, Notch
+- Navigation at the top or in a rail on the left that can show names, play buttons in the middle or at the side
 - A panel widget for the GNOME top bar, the Plasma panel and Waybar
 - Rebindable shortcuts, window zoom, a reduce-effects switch, English and Russian
 - Settings in 23 sections, with search in English and Russian
@@ -466,6 +472,6 @@ Nuvo is licensed under the [GNU AGPL-3.0-or-later](LICENSE), with one added term
 
 <br>
 
-<sub>The pictures are drawn by [.github/readme/build.py](.github/readme/build.py) from real captures of the app. Album art belongs to its owners and is shown only to present the interface. The song in the Scene and karaoke pictures is "Already There" by Josh Woodward, from Ashes (2010), with its cover, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [Song page](https://www.joshwoodward.com/song/AlreadyThere). Type is Figtree, under the SIL Open Font License. The Linux, Apple and Telegram marks are from Simple Icons (CC0).</sub>
+<sub>The pictures are drawn by [.github/readme/build.py](.github/readme/build.py) from real captures of the app. Album art belongs to its owners and is shown only to present the interface. The song in the Scene and karaoke pictures is "Already There" by Josh Woodward, from Ashes (2010), with its cover, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [Song page](https://www.joshwoodward.com/song/AlreadyThere). The photo of Tame Impala is by [Abby Gillardi](https://commons.wikimedia.org/wiki/File:Tame_Impala-3844_%2818847344151%29.jpg), cropped and extended at the top, under [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/). Type is Figtree, under the SIL Open Font License. The Linux, Apple and Telegram marks are from Simple Icons (CC0).</sub>
 
 </div>
