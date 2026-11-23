@@ -165,6 +165,15 @@ describe("NotchWindow", () => {
     expect(names(lastWindow())).toContain("showInactive");
   });
 
+  it.each([
+    ["windows", true],
+    ["macos", false],
+    ["kde-wayland", false],
+  ] as const)("on %s hides its page with the window: %s", (session, throttled) => {
+    createNotch({ session });
+    expect((lastWindow().options as { webPreferences: { backgroundThrottling: boolean } }).webPreferences.backgroundThrottling).toBe(throttled);
+  });
+
   it("uses the pinned transparent window options and keeps the title fixed", () => {
     createNotch({ session: "x11" });
     const win = lastWindow();

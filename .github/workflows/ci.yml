@@ -75,6 +75,11 @@ jobs:
         env:
           NUVO_COVER_SCRIPT: ${{ github.workspace }}\e2e\windows\cover.ps1
         run: pnpm exec electron "$RUNNER_TEMP/probe/notch-zorder.mjs"
+      - name: The Notch takes presses each time it comes back
+        shell: bash
+        env:
+          NUVO_PRESS_SCRIPT: ${{ github.workspace }}\e2e\windows\press.ps1
+        run: pnpm exec electron "$RUNNER_TEMP/probe/notch-press.mjs"
       - name: The taskbar takes the thumbnail buttons and every icon loads at its size
         shell: bash
         run: pnpm exec electron "$RUNNER_TEMP/probe/thumbar.mjs"
