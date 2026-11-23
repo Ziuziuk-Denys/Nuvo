@@ -1,5 +1,15 @@
 import { ipcRenderer, contextBridge } from "electron";
-import type { Cutout, NotchAction, NotchHello, NotchLyrics, NotchPresence, NotchSettings, NotchState, ShapeRect } from "../../src/notch/contracts";
+import type {
+  Cutout,
+  NotchAction,
+  NotchHello,
+  NotchLyrics,
+  NotchPlaylists,
+  NotchPresence,
+  NotchSettings,
+  NotchState,
+  ShapeRect,
+} from "../../src/notch/contracts";
 
 const on =
   <T>(channel: string) =>
@@ -15,6 +25,7 @@ const bridge = {
   notchHello: () => ipcRenderer.invoke("notch:hello") as Promise<NotchHello>,
   onNotchState: on<NotchState>("notch:state"),
   onNotchLyrics: on<NotchLyrics>("notch:lyrics"),
+  onNotchPlaylists: on<NotchPlaylists>("notch:playlists"),
   onNotchSettings: on<NotchSettings>("notch:settings"),
   onNotchCutout: on<Cutout | null>("notch:cutout"),
   onNotchPresence: on<NotchPresence>("notch:presence"),

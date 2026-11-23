@@ -54,6 +54,35 @@ export function HeartIcon({ filled, ...props }: IconProps & { filled: boolean })
   return <Icon {...props}>{filled ? <path d={d} /> : <path d={d} fill="none" stroke="currentColor" strokeWidth="1.8" />}</Icon>;
 }
 
+function Stroke({ d, width = 1.8, size }: { d: string; width?: number; size?: number }) {
+  return (
+    <Icon size={size}>
+      <path d={d} fill="none" stroke="currentColor" strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
+    </Icon>
+  );
+}
+
+export function DislikeIcon(props: { size?: number }) {
+  return (
+    <Stroke
+      {...props}
+      d="M8.1 4.9h8.6c1 0 1.8.7 2 1.6l1.3 6.4c.2 1.2-.7 2.3-2 2.3h-4.1l.8 3.2c.3 1.3-.7 2.5-2 2.5-.5 0-.9-.3-1.1-.7L8.1 14zM5.1 4.9h3V14h-3c-.6 0-1-.4-1-1V5.9c0-.6.4-1 1-1z"
+    />
+  );
+}
+
+export function PlusIcon(props: { size?: number }) {
+  return <Stroke {...props} d="M12 5.5v13M5.5 12h13" />;
+}
+
+export function CheckIcon(props: { size?: number }) {
+  return <Stroke {...props} d="M5 12.6l4.4 4.4L19 7.4" />;
+}
+
+export function BackIcon(props: { size?: number }) {
+  return <Stroke {...props} width={2.2} d="M14.5 5.5L8 12l6.5 6.5" />;
+}
+
 export function SpeakerIcon({ louder, ...props }: IconProps & { louder: boolean }) {
   return (
     <Icon {...props}>

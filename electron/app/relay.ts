@@ -39,6 +39,10 @@ export function notchActionToCommand(action: NotchAction, liked: boolean): Remot
       return { type: "seek", positionMs: action.positionMs };
     case "like":
       return { type: liked ? "unlike" : "like" };
+    case "dislike":
+      return { type: "dislike" };
+    case "addToPlaylist":
+      return { type: "addToPlaylist", trackId: action.trackId, playlistId: action.playlistId };
     case "volumeDelta":
       return { type: "volumeDelta", delta: action.delta };
     case "playUpNext":

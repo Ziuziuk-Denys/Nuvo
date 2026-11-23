@@ -1,3 +1,5 @@
+import type { NotchAction, NotchState } from "../contracts";
+
 export interface PositionSample {
   positionMs: number;
   sampledAt: number;
@@ -9,6 +11,15 @@ export function positionAt(sample: PositionSample, now: number): number {
   if (!sample.playing) return sample.positionMs;
   const position = sample.positionMs + Math.max(0, now - sample.sampledAt);
   return sample.durationMs > 0 ? Math.min(position, sample.durationMs) : position;
+}
+
+// The app answers within half a second; the Notch shows the press at once.
+export function predicted(state: NotchState, action: NotchAction, now: number): NotchState {
+  if (action.type === "like") return { ...state, liked: !state.liked };
+  if (action.type !== "togglePlay" || !state.track || (state.status !== "playing" && state.status !== "paused")) return state;
+  const playing = state.status === "playing";
+  const positionMs = positionAt({ ...state, playing, durationMs: state.track.durationMs }, now);
+  return { ...state, status: playing ? "paused" : "playing", positionMs, sampledAt: now };
 }
 
 export interface LyricLine {

@@ -1,73 +1,153 @@
+import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useTranslation } from "@/i18n";
+import { AddPage } from "./AddPage";
 import { Cover } from "./Cover";
-import { HeartIcon, NextIcon, PauseIcon, PlayIcon, PreviousIcon } from "./icons";
+import { Deck } from "./Deck";
+import { DislikeIcon, HeartIcon, NextIcon, PauseIcon, PlayIcon, PlusIcon, PreviousIcon } from "./icons";
+import { LyricsPage } from "./LyricsPage";
 import { Scrubber } from "./Scrubber";
-import type { NotchAction, NotchState, NotchTrack } from "./contracts";
+import type { NotchAction, NotchPlaylists, NotchState, NotchTrack } from "./contracts";
+import type { NotchPage } from "./lib/geometry";
 import type { LyricLine, PositionSample } from "./lib/playback";
 
-export type ExpandedView = "now" | "lyrics" | "upNext";
-
-export const VIEWS: Array<{ id: ExpandedView; label: string }> = [
-  { id: "now", label: "Now playing" },
-  { id: "lyrics", label: "Lyrics" },
-  { id: "upNext", label: "Up next" },
-];
-
-const LYRIC_ROW = 32;
+const SWIPE_PX = 40;
 
 interface ExpandedFaceProps {
   state: NotchState & { track: NotchTrack };
   sample: PositionSample;
-  view: ExpandedView;
+  page: NotchPage;
+  pages: NotchPage[];
+  height: number;
   live: boolean;
   lines: LyricLine[];
   lineIndex: number;
-  showLyrics: boolean;
+  playlists: NotchPlaylists | null;
   accent: string;
-  onView: (view: ExpandedView) => void;
+  nudge: boolean;
+  onPage: (page: NotchPage) => void;
+  onFlip: (direction: number) => void;
   onAction: (action: NotchAction) => void;
   onHold: (holding: boolean) => void;
+  onAdded: () => void;
 }
 
 export function ExpandedFace(props: ExpandedFaceProps) {
-  const { view, onView } = props;
+  const { state, page, pages, height, accent, onPage, onFlip, onAction } = props;
+  const { t } = useTranslation();
+  const index = pages.indexOf(page);
+  const next = index >= 0 ? (pages[index + 1] ?? null) : null;
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+
+  const [turn, setTurn] = useState({ page, index, count: 0, from: "cover", forward: true });
+  if (turn.page !== page) {
+    const real = turn.index >= 0 && index >= 0;
+    setTurn({
+      page,
+      index: index >= 0 ? index : 0,
+      count: real ? turn.count + 1 : 0,
+      from: Math.min(turn.index, index) === 0 ? "cover" : "mini",
+      forward: index > turn.index,
+    });
+  }
+
+  const layer = (name: NotchPage) => ({
+    className: `page ${name}`,
+    "data-on": page === name,
+    "data-side": page === "add" || name === "add" ? undefined : pages.indexOf(name) < index ? "left" : "right",
+  });
+
   return (
-    <div className="expanded" data-view={view}>
-      <div className="view" key={view}>
-        {view === "now" && <NowView {...props} />}
-        {view === "lyrics" && <LyricsView lines={props.lines} index={props.lineIndex} />}
-        {view === "upNext" && <UpNextView tracks={props.state.upNext} onAction={props.onAction} />}
-      </div>
-      <div className="dots">
-        {VIEWS.map((item) => (
-          <button key={item.id} type="button" className="dot" aria-label={item.label} aria-pressed={view === item.id} onClick={() => onView(item.id)} />
-        ))}
+    <div
+      className="expanded"
+      data-view={page}
+      data-ahead={pages.length - 1}
+      style={{ "--page-height": height } as CSSProperties}
+      onPointerDown={(event: PointerEvent) => {
+        const control = (event.target as Element).closest("[data-control]");
+        swipe.current = event.pointerType === "touch" && !control ? { x: event.clientX, y: event.clientY } : null;
+      }}
+      onPointerUp={(event: PointerEvent) => {
+        const from = swipe.current;
+        swipe.current = null;
+        if (!from) return;
+        const dx = event.clientX - from.x;
+        if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(event.clientY - from.y)) onFlip(-Math.sign(dx));
+      }}
+    >
+      <div className="pages">
+        {turn.count > 0 && <span key={turn.count} className="flying-sheet" data-from={turn.from} data-forward={turn.forward} aria-hidden="true" />}
+        <div {...layer("now")}>
+          <NowPage {...props} />
+        </div>
+        {pages.includes("lyrics") && (
+          <div {...layer("lyrics")}>
+            <LyricsPage lines={props.lines} index={props.lineIndex} />
+          </div>
+        )}
+        {pages.includes("upNext") && (
+          <div {...layer("upNext")}>
+            <UpNextPage tracks={state.upNext} onAction={onAction} />
+          </div>
+        )}
+        <div {...layer("add")}>
+          {page === "add" && <AddPage trackId={state.track.id} playlists={props.playlists} accent={accent} onAction={onAction} onDone={props.onAdded} />}
+        </div>
+        <Deck
+          track={state.track}
+          page={page}
+          next={next}
+          ahead={index >= 0 ? pages.length - 1 - index : 0}
+          nudge={props.nudge}
+          onPage={onPage}
+          onFocusApp={() => onAction({ type: "focusApp" })}
+        />
+        <button
+          type="button"
+          className="icon-button plus"
+          data-on={page === "now" || page === "add"}
+          aria-label={page === "add" ? t("ui.notch.back") : t("ui.add.title")}
+          onClick={() => onPage(page === "add" ? "now" : "add")}
+        >
+          <PlusIcon size={20} />
+        </button>
       </div>
     </div>
   );
 }
 
-function NowView({ state, sample, live, lines, lineIndex, showLyrics, accent, onAction, onHold }: ExpandedFaceProps) {
+function NowPage({ state, sample, live, accent, onAction, onHold }: ExpandedFaceProps) {
+  const { t } = useTranslation();
   const { track } = state;
-  const focusApp = () => onAction({ type: "focusApp" });
-  const playing = state.status === "playing";
-  const current = lines[lineIndex];
-  const next = lines[lineIndex + 1];
+  const playing = state.status === "playing" || state.status === "loading";
   return (
-    <div className="now">
-      <div className="now-header">
-        <button type="button" className="now-cover" aria-label="Open Nuvo" onClick={focusApp}>
-          <Cover src={track.coverUrl} size={56} radius={12} />
+    <>
+      <button type="button" className="now-title" onClick={() => onAction({ type: "focusApp" })}>
+        {track.title}
+      </button>
+      <span className="now-artist">{track.artist}</span>
+      <Scrubber sample={sample} live={live} accent={accent} onSeek={(positionMs) => onAction({ type: "seek", positionMs })} onHold={onHold} />
+      <div className="transport">
+        <button type="button" className="icon-button opinion dislike" aria-label={t("ui.recs.dislike")} onClick={() => onAction({ type: "dislike" })}>
+          <DislikeIcon size={20} />
         </button>
-        <div className="now-text">
-          <button type="button" className="now-title" onClick={focusApp}>
-            {track.title}
-          </button>
-          <span className="now-artist">{track.artist}</span>
-        </div>
+        <button type="button" className="icon-button skip" aria-label={t("ui.island.previous")} onClick={() => onAction({ type: "prev" })}>
+          <PreviousIcon size={22} />
+        </button>
         <button
           type="button"
-          className="icon-button like"
-          aria-label="Like"
+          className="icon-button play"
+          aria-label={playing ? t("ui.island.pause") : t("ui.island.play")}
+          onClick={() => onAction({ type: "togglePlay" })}
+        >
+          {playing ? <PauseIcon size={28} /> : <PlayIcon size={28} />}
+        </button>
+        <button type="button" className="icon-button skip" aria-label={t("ui.island.next")} onClick={() => onAction({ type: "next" })}>
+          <NextIcon size={22} />
+        </button>
+        <button
+          type="button"
+          className="icon-button opinion like"
+          aria-label={t("ui.island.like")}
           aria-pressed={state.liked}
           style={state.liked ? { color: accent } : undefined}
           onClick={() => onAction({ type: "like" })}
@@ -75,58 +155,20 @@ function NowView({ state, sample, live, lines, lineIndex, showLyrics, accent, on
           <HeartIcon filled={state.liked} size={20} />
         </button>
       </div>
-      <Scrubber sample={sample} live={live} accent={accent} onSeek={(positionMs) => onAction({ type: "seek", positionMs })} onHold={onHold} />
-      <div className="transport">
-        <button type="button" className="icon-button skip" aria-label="Previous track" onClick={() => onAction({ type: "prev" })}>
-          <PreviousIcon size={22} />
-        </button>
-        <button type="button" className="icon-button play" aria-label={playing ? "Pause" : "Play"} onClick={() => onAction({ type: "togglePlay" })}>
-          {playing ? <PauseIcon size={28} /> : <PlayIcon size={28} />}
-        </button>
-        <button type="button" className="icon-button skip" aria-label="Next track" onClick={() => onAction({ type: "next" })}>
-          <NextIcon size={22} />
-        </button>
-      </div>
-      {showLyrics && lines.length > 0 && (
-        <div className="lyric-strip" aria-live="polite">
-          <span className="lyric-current" key={`c${lineIndex}`}>
-            {current?.text ?? ""}
-          </span>
-          <span className="lyric-next" key={`n${lineIndex}`}>
-            {next?.text ?? ""}
-          </span>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
-function LyricsView({ lines, index }: { lines: LyricLine[]; index: number }) {
-  if (lines.length === 0) return <p className="empty">No synced lyrics for this track</p>;
+function UpNextPage({ tracks, onAction }: { tracks: NotchTrack[]; onAction: (action: NotchAction) => void }) {
   return (
-    <div className="lyrics-window">
-      <ol className="lyrics-list" style={{ transform: `translateY(${(1 - index) * LYRIC_ROW}px)` }}>
-        {lines.map((line, i) => (
-          <li key={i} className="lyrics-line" data-state={i === index ? "current" : "other"}>
-            <span className="lyrics-text">{line.text || " "}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
-function UpNextView({ tracks, onAction }: { tracks: NotchTrack[]; onAction: (action: NotchAction) => void }) {
-  if (tracks.length === 0) return <p className="empty">Nothing queued after this track</p>;
-  return (
-    <ul className="up-next">
-      {tracks.slice(0, 3).map((track) => (
+    <ul className="rows">
+      {tracks.map((track) => (
         <li key={track.id}>
-          <button type="button" className="up-next-row" onClick={() => onAction({ type: "playUpNext", trackId: track.id })}>
-            <Cover src={track.coverUrl} size={28} radius={6} />
-            <span className="up-next-text">
-              <span className="up-next-title">{track.title}</span>
-              <span className="up-next-artist">{track.artist}</span>
+          <button type="button" className="row" onClick={() => onAction({ type: "playUpNext", trackId: track.id })}>
+            <Cover src={track.coverUrl} size={34} radius={7} />
+            <span className="row-text">
+              <span className="row-title">{track.title}</span>
+              <span className="row-meta">{track.artist}</span>
             </span>
           </button>
         </li>

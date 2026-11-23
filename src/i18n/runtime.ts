@@ -24,7 +24,7 @@ export const shippedLocales: readonly { code: Locale; name: string }[] = [
   { code: "ru", name: "Русский" },
 ];
 
-const BOOT_KEY = "nuvo_locale";
+export const LOCALE_BOOT_KEY = "nuvo_locale";
 
 function reportMissingInDev(key: string): void {
   if (import.meta.env.DEV) console.warn(`[i18n] missing key: ${key}`);
@@ -65,7 +65,7 @@ export function detectLocale(bootCopy: string | null, systemLanguages: readonly 
 
 function readBootCopy(): string | null {
   try {
-    return localStorage.getItem(BOOT_KEY);
+    return localStorage.getItem(LOCALE_BOOT_KEY);
   } catch {
     return null;
   }
@@ -73,7 +73,7 @@ function readBootCopy(): string | null {
 
 function writeBootCopy(code: Locale): void {
   try {
-    localStorage.setItem(BOOT_KEY, code);
+    localStorage.setItem(LOCALE_BOOT_KEY, code);
   } catch {
     // storage is unavailable in some sandboxes; detection simply runs again next start
   }

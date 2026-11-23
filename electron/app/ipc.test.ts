@@ -111,6 +111,13 @@ describe("notch action validation", () => {
     expect(validateNotchAction({ type: "playUpNext", trackId: "x".repeat(300) })).toBeNull();
     expect(validateNotchAction({ type: "playUpNext", trackId: "a b" })).toBeNull();
     expect(validateNotchAction({ type: "playUpNext", trackId: "dQw4w9WgXcQ" })).not.toBeNull();
+    expect(validateNotchAction({ type: "dislike" })).toEqual({ type: "dislike" });
+    expect(validateNotchAction({ type: "addToPlaylist", trackId: "a", playlistId: "../b" })).toBeNull();
+    expect(validateNotchAction({ type: "addToPlaylist", trackId: "a", playlistId: "b", junk: 1 })).toEqual({
+      type: "addToPlaylist",
+      trackId: "a",
+      playlistId: "b",
+    });
     expect(validateNotchAction({ type: "rm -rf" })).toBeNull();
     expect(validateNotchAction("next")).toBeNull();
     expect(validateNotchAction({ type: "next", junk: 1 })).toEqual({ type: "next" });

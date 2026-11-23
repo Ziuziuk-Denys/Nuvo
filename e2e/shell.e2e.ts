@@ -248,6 +248,7 @@ describe("shell e2e", () => {
       "getDiscordStatus",
       "setGlobalShortcuts",
       "notchUpdateLyrics",
+      "notchUpdatePlaylists",
       "notchUpdateSettings",
       "getPanelStatus",
       "installPanelWidget",

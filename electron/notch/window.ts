@@ -5,6 +5,7 @@ import {
   type NotchAction,
   type NotchHello,
   type NotchLyrics,
+  type NotchPlaylists,
   type NotchPresence,
   type NotchSettings,
   type NotchState,
@@ -59,6 +60,7 @@ export class NotchWindow {
   private settings = DEFAULT_NOTCH_SETTINGS;
   private state: NotchState | null = null;
   private lyrics: NotchLyrics | null = null;
+  private playlists: NotchPlaylists | null = null;
   private cutout: Cutout | null = null;
   private shape: ShapeRect | null = null;
   private capturing = false;
@@ -147,6 +149,11 @@ export class NotchWindow {
     this.send("notch:lyrics", lyrics);
   }
 
+  setPlaylists(playlists: NotchPlaylists): void {
+    this.playlists = playlists;
+    this.send("notch:playlists", playlists);
+  }
+
   setShape(rect: ShapeRect): void {
     if (!rect || typeof rect !== "object") return;
     const values = [rect.x, rect.y, rect.width, rect.height];
@@ -185,7 +192,7 @@ export class NotchWindow {
   }
 
   hello(): NotchHello {
-    return { state: this.state, lyrics: this.lyrics, settings: this.settings, cutout: this.cutout, presence: this.presence };
+    return { state: this.state, lyrics: this.lyrics, playlists: this.playlists, settings: this.settings, cutout: this.cutout, presence: this.presence };
   }
 
   focusApp(): void {
@@ -539,6 +546,32 @@ function isValidLyrics(value: unknown): value is NotchLyrics {
   );
 }
 
+const MAX_PLAYLISTS = 100;
+const MAX_TEXT = 512;
+const MAX_COVER_URL = 2048;
+const OUTCOMES = ["added", "already", "failed"];
+
+const isText = (value: unknown, max = MAX_TEXT) => typeof value === "string" && value.length <= max;
+
+function isValidPlaylists(value: unknown): value is NotchPlaylists {
+  if (!value || typeof value !== "object") return false;
+  const { items, outcome } = value as NotchPlaylists;
+  return (
+    Array.isArray(items) &&
+    items.length <= MAX_PLAYLISTS &&
+    items.every(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        isText(item.id) &&
+        isText(item.title) &&
+        Number.isInteger(item.trackCount) &&
+        (item.coverUrl === null || (isText(item.coverUrl, MAX_COVER_URL) && item.coverUrl.startsWith("https://"))),
+    ) &&
+    (outcome === null || (isText(outcome?.trackId) && isText(outcome.playlistId) && OUTCOMES.includes(outcome.kind)))
+  );
+}
+
 function isValidAction(value: unknown): value is NotchAction {
   if (!value || typeof value !== "object") return false;
   const a = value as Record<string, unknown>;
@@ -547,6 +580,7 @@ function isValidAction(value: unknown): value is NotchAction {
     case "next":
     case "prev":
     case "like":
+    case "dislike":
     case "focusApp":
       return true;
     case "seek":
@@ -555,6 +589,8 @@ function isValidAction(value: unknown): value is NotchAction {
       return Number.isFinite(a.delta);
     case "playUpNext":
       return typeof a.trackId === "string";
+    case "addToPlaylist":
+      return typeof a.trackId === "string" && typeof a.playlistId === "string";
     default:
       return false;
   }
@@ -567,6 +603,9 @@ export function registerNotchIpc(notch: NotchWindow, options: { onAction: (actio
     if (!notch.isMainSender(event.sender) || !isValidLyrics(lyrics)) return;
     notch.setLyrics(lyrics);
     options.onLyrics?.(lyrics);
+  });
+  ipcMain.on("notch:playlists", (event, playlists: NotchPlaylists) => {
+    if (notch.isMainSender(event.sender) && isValidPlaylists(playlists)) notch.setPlaylists(playlists);
   });
   ipcMain.on("notch:settings", (event, settings: NotchSettings) => {
     if (notch.isMainSender(event.sender) && isValidSettings(settings)) notch.applySettings(settings);

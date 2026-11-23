@@ -75,6 +75,7 @@ const shell: NuvoShell = {
   openReleasePage: () => invoke("update:open-release"),
   setGlobalShortcuts: (bindings) => invoke("shortcuts:set-global", bindings),
   notchUpdateLyrics: (lyrics) => ipcRenderer.send("notch:lyrics", lyrics),
+  notchUpdatePlaylists: (playlists) => ipcRenderer.send("notch:playlists", playlists),
   notchUpdateSettings: (settings) => ipcRenderer.send("notch:settings", settings),
   getPanelStatus: () => invoke("panel:get-status"),
   installPanelWidget: () => invoke("panel:install"),

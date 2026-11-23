@@ -75,6 +75,9 @@ describe("player state relay", () => {
     expect(notchActionToCommand({ type: "like" }, true)).toEqual({ type: "unlike" });
     expect(notchActionToCommand({ type: "playUpNext", trackId: "b" }, false)).toEqual({ type: "playEntry", trackId: "b" });
     expect(notchActionToCommand({ type: "volumeDelta", delta: 0.05 }, false)).toEqual({ type: "volumeDelta", delta: 0.05 });
+    expect(notchActionToCommand({ type: "dislike" }, false)).toEqual({ type: "dislike" });
+    const add = { type: "addToPlaylist", trackId: "a", playlistId: "p" } as const;
+    expect(notchActionToCommand(add, false)).toEqual(add);
     expect(notchActionToCommand({ type: "focusApp" }, false)).toBeNull();
   });
 

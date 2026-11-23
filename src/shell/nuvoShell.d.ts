@@ -1,5 +1,5 @@
 import type { RemoteCommand, SurfaceState } from "../engine/types";
-import type { NotchLyrics, NotchSettings } from "../notch/contracts";
+import type { NotchLyrics, NotchPlaylists, NotchSettings } from "../notch/contracts";
 
 export type CoreStatus = "starting" | "ready" | "restarting" | "failed";
 export interface WinState {
@@ -132,6 +132,7 @@ export interface NuvoShell {
   openReleasePage(): Promise<boolean>;
   setGlobalShortcuts(bindings: Array<{ commandId: string; accelerator: string }>): Promise<Array<{ commandId: string; ok: boolean; reason?: string }>>;
   notchUpdateLyrics(lyrics: NotchLyrics): void;
+  notchUpdatePlaylists(playlists: NotchPlaylists): void;
   notchUpdateSettings(settings: NotchSettings): void;
   getPanelStatus(): Promise<PanelStatus>;
   installPanelWidget(): Promise<PanelInstallResult>;

@@ -116,6 +116,14 @@
       "similar": "Similar artists",
       "since": "since {date}"
     },
+    "notch": {
+      "back": "Back to the song",
+      "lyrics": "Lyrics",
+      "now": "Now playing",
+      "open_app": "Open Nuvo",
+      "show": "Show {page}",
+      "up_next": "Up next"
+    },
     "clear": "Clear",
     "entity": {
       "add_to_playlist": "Add to playlist",

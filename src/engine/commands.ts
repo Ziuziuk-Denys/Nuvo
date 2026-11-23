@@ -17,6 +17,7 @@ export interface LibraryPort {
   like(trackId: string): void;
   unlike(trackId: string): void;
   dislike?(track: Track): void;
+  addToPlaylist?(track: Track, playlistId: string): void;
 }
 
 export function runCommand(engine: CommandTarget, library: LibraryPort, command: unknown): void {
@@ -56,6 +57,12 @@ export function runCommand(engine: CommandTarget, library: LibraryPort, command:
       if (!id) return;
       if (c.type === "like") library.like(id);
       else library.unlike(id);
+      return;
+    }
+    case "addToPlaylist": {
+      if (typeof c.playlistId !== "string") return;
+      const entry = view.entries.find((e) => e.track.id === c.trackId);
+      if (entry) library.addToPlaylist?.(entry.track, c.playlistId);
       return;
     }
     case "dislike": {
