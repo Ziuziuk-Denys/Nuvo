@@ -118,7 +118,7 @@ export function ExpandedFace(props: ExpandedFaceProps) {
 function NowPage({ state, sample, live, accent, onAction, onHold }: ExpandedFaceProps) {
   const { t } = useTranslation();
   const { track } = state;
-  const playing = state.status === "playing";
+  const playing = state.status === "playing" || state.status === "loading";
   return (
     <>
       <button type="button" className="now-title" onClick={() => onAction({ type: "focusApp" })}>

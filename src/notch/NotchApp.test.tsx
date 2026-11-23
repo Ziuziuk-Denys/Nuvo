@@ -243,6 +243,8 @@ describe("NotchApp", () => {
     await expand(harness, makeState({ status: "paused" }));
     expect(button("Play")).not.toBeNull();
     expect(button("Pause")).toBeNull();
+    harness.pushState(makeState({ status: "loading" }));
+    expect(button("Pause")).not.toBeNull();
   });
 
   it("grows the input shape at once with room for the overshoot, shrinks it after the morph", async () => {
