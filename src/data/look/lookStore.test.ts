@@ -45,6 +45,7 @@ describe("look store migration", () => {
       themeBeforePreset: "light",
       playerControls: "centre",
       navigation: "top",
+      railOpen: false,
     });
   });
 

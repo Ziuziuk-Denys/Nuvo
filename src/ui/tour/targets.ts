@@ -9,7 +9,7 @@ const soundTab = (index: number) => soundPanel()?.querySelectorAll('[role="tab"]
 
 const TARGETS: Record<TargetId, () => Element | null> = {
   island: () => document.querySelector("[data-island]"),
-  "search-bar": () => document.querySelector("header [role=combobox]")?.parentElement ?? null,
+  "search-bar": () => document.querySelector('[data-nav="search"]') ?? document.querySelector("header [role=combobox]")?.parentElement ?? null,
   palette: () => document.querySelector('[role="dialog"]:has(> [role="listbox"])'),
   "nav-recognize": () => document.querySelector('[data-nav="recognize"]'),
   "recognize-sources": () => tour("recognize-sources"),

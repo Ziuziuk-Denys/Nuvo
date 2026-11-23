@@ -623,7 +623,12 @@
       "settings": "Settings",
       "recognize": "Recognize",
       "stats": "Statistics",
-      "pinned": "Pinned"
+      "pinned": "Pinned",
+      "forward": "Forward",
+      "search": "Search",
+      "show_names": "Show names",
+      "hide_names": "Hide names",
+      "playing": "{title}, playing"
     },
     "new_playlist": {
       "cancel": "Cancel",

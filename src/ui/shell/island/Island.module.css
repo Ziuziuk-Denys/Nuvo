@@ -1,7 +1,7 @@
 .bar {
   position: absolute;
   z-index: 60;
-  left: 6px;
+  left: calc(6px + var(--rail-space, 0px));
   right: 6px;
   bottom: 6px;
   display: grid;
@@ -16,7 +16,7 @@
 }
 
 .bar[data-notice] {
-  grid-template-columns: 430px minmax(0, 1fr) 260px;
+  grid-template-columns: min(430px, calc(50% - 70px)) minmax(0, 1fr) 260px;
 }
 
 .bar[data-controls="side"] {

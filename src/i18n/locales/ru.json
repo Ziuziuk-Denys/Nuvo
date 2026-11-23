@@ -665,7 +665,12 @@
       "settings": "Настройки",
       "recognize": "Что играет",
       "stats": "Статистика",
-      "pinned": "Закреплённые"
+      "pinned": "Закреплённые",
+      "forward": "Вперёд",
+      "search": "Поиск",
+      "show_names": "Показать названия",
+      "hide_names": "Скрыть названия",
+      "playing": "{title}, играет"
     },
     "new_playlist": {
       "cancel": "Отмена",

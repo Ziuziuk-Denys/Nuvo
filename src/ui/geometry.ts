@@ -12,6 +12,8 @@ export const TOP_BAR = {
 
 export const FRAME = 6;
 
+export const RAIL = { width: 64, open: 208 } as const;
+
 export const ISLAND = {
   height: 64,
   left: 6,
@@ -60,6 +62,10 @@ export const ROW = { list: 64, track: 64, numbered: 44, cover: 48, pinnedMax: 8 
 export const COVER = { hero: 168, gridMin: 165, mix: 160 } as const;
 
 export const ENTITY_OFFSET = { x: 4, y: 8 } as const;
+
+export function railSpace(side: boolean, open: boolean): number {
+  return side ? (open ? RAIL.open : RAIL.width) + FRAME : 0;
+}
 
 export function islandWidth(windowWidth: number): number {
   return windowWidth - ISLAND.left - ISLAND.sideMargin;

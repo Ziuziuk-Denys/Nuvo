@@ -1,10 +1,22 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type JSX, type ReactNode, type UIEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type JSX,
+  type ReactNode,
+  type UIEvent,
+} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShallow } from "zustand/react/shallow";
 import { hasOpenLayer, usePresence } from "../components/layers";
 import { useScrollActivity } from "../components/useScrollActivity";
 import { Field } from "../field/Field";
+import { railSpace } from "../geometry";
 import { reducedEffectsNow } from "../effects";
 import { DURATION_MS, EASE, seconds } from "../motion";
 import { useTranslation } from "../ports/i18n";
@@ -31,6 +43,7 @@ import { ShareSheetHost } from "../sheets/ShareSheet";
 import { SourceSheetHost } from "../sheets/SourceSheet";
 import { TrimSheetHost } from "../sheets/TrimSheet";
 import { Island } from "./island/Island";
+import { useHistoryKeys, useScrollMemory } from "./history";
 import { bindNavigate, isEntityRoute } from "./navigate";
 import { usePageLit } from "./pageLit";
 import { ShellScrollContext } from "./scroller";
@@ -49,7 +62,7 @@ const STAY_IN_PLACE = { replace: true } as const;
 const LEGACY_SCROLLERS = ".overflow-y-auto";
 
 const CHROME = { hidden: { opacity: 0 }, shown: { opacity: 1 } };
-const RAIL_SHIFT_PX = 62;
+const BESIDE_RAIL = "header[data-window-drag], [data-island], [data-beside-rail]";
 
 const watchEngine = (notify: () => void) => playerEngine.subscribe(notify);
 const engineHasTrack = () => playerEngine.getSnapshot().currentTrack !== null;
@@ -66,7 +79,8 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   useToolDownloadToast();
   // idempotent: builds the import runtime once, later calls only pass the current translator
   bootImports(t);
-  const { pathname, search } = useLocation();
+  const location = useLocation();
+  const { pathname, search } = location;
   const navigate = useNavigate();
   useEffect(() => bindNavigate(navigate), [navigate]);
   useEffect(() => onShareLink((link) => void navigate(`/search?link=1&q=${encodeURIComponent(link)}`)), [navigate]);
@@ -84,7 +98,9 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const { fullscreen, setFullscreen } = usePlayerStore(useShallow(({ fullscreen, setFullscreen }) => ({ fullscreen, setFullscreen })));
   const gated = useGateStore((store) => store.locked);
   const trackLoaded = useSyncExternalStore(watchEngine, engineHasTrack, () => false);
-  const navigation = useCustomizationStore((state) => state.navigation);
+  const side = useCustomizationStore((state) => state.navigation) === "side";
+  const railOpen = useCustomizationStore((state) => state.railOpen);
+  const space = railSpace(side, railOpen);
   const pageLit = usePageLit();
 
   const onKaraokeRoute = pathname === KARAOKE_PATH;
@@ -97,18 +113,18 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
 
   const scroller = useRef<HTMLDivElement>(null);
 
-  useEffect(
-    () =>
-      useCustomizationStore.subscribe((state, previous) => {
-        if (state.navigation === previous.navigation || !scroller.current || reducedEffectsNow()) return;
-        const from = state.navigation === "side" ? -RAIL_SHIFT_PX : RAIL_SHIFT_PX;
-        scroller.current.animate([{ transform: `translateX(${from}px)` }, { transform: "none" }], {
-          duration: DURATION_MS.base,
-          easing: `cubic-bezier(${EASE.out.join(", ")})`,
-        });
-      }),
-    [],
-  );
+  const drawnSpace = useRef(space);
+  useLayoutEffect(() => {
+    const from = drawnSpace.current - space;
+    drawnSpace.current = space;
+    if (from === 0 || reducedEffectsNow()) return;
+    for (const box of scroller.current?.parentElement?.querySelectorAll(BESIDE_RAIL) ?? []) {
+      box.animate([{ transform: `translateX(${from}px)` }, { transform: "none" }], {
+        duration: DURATION_MS.base,
+        easing: `cubic-bezier(${EASE.out.join(", ")})`,
+      });
+    }
+  }, [space]);
   useScrollActivity(scroller);
 
   const settingsLink = pathname === "/settings" ? (new URLSearchParams(search).get("section") ?? "") : null;
@@ -119,12 +135,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     void navigate("/", STAY_IN_PLACE);
   }, [settingsLink, showSettings, navigate]);
 
-  const location = pathname + search;
-  useLayoutEffect(() => {
-    const box = scroller.current;
-    if (!box) return;
-    for (const inner of [box, ...box.querySelectorAll(LEGACY_SCROLLERS)]) inner.scrollTop = 0;
-  }, [location]);
+  useScrollMemory(scroller, location, LEGACY_SCROLLERS);
 
   const leaveKaraoke = useCallback(() => {
     if (fullscreen) setFullscreen(false);
@@ -158,6 +169,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     if (pathname !== "/recognize") void navigate("/recognize");
   };
 
+  useHistoryKeys(navigate, () => useGateStore.getState().locked || karaokeShown || modal.searchOpen || hasOpenLayer());
   useDisableButtonFocus();
   const unlocked =
     <T,>(action: () => T, otherwise: T) =>
@@ -196,14 +208,22 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   );
 
   return (
-    <div className={styles.shell} data-edge={edgeToEdge ? "" : undefined} data-nav={navigation} onScroll={pinWindow}>
+    <div
+      className={styles.shell}
+      data-edge={edgeToEdge ? "" : undefined}
+      data-nav={side ? "side" : "top"}
+      style={side ? ({ "--rail-space": `${space}px` } as CSSProperties) : undefined}
+      onScroll={pinWindow}
+    >
       <Field />
+      {side ? <div className={styles.sheet} data-beside-rail data-player-below={trackLoaded && !gated ? "" : undefined} aria-hidden="true" /> : null}
       <AnimatePresence>{chrome}</AnimatePresence>
       <div
         ref={scroller}
         className={`${styles.content} n-scroll`}
+        data-beside-rail
         data-locked={karaokeShown || modal.searchOpen ? "" : undefined}
-        data-player-below={trackLoaded && !pageLit ? "" : undefined}
+        data-player-below={trackLoaded && (side || !pageLit) ? "" : undefined}
       >
         <ShellScrollContext.Provider value={scroller}>
           <div className={styles.column} data-page>
