@@ -18,6 +18,7 @@ import { TrackList, trackKey } from "./TrackList";
 import { TrackBulkBar } from "./TrackBulkBar";
 import { useTrackSelection } from "./trackSelection";
 import { openLyricsTool } from "../lyrics/lyricsTools";
+import { openArtist } from "../../shell/openArtist";
 
 export type Unavailable = (track: Track) => string | null;
 
@@ -94,7 +95,7 @@ export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hid
       setAddOpen(true);
     },
     startRadio: (track) => void playerEngine.startRadioStation(track),
-    goToArtist: (artistId) => navigateWithTransition(navigate, `/artist?id=${encodeURIComponent(artistId)}`),
+    goToArtist: openArtist,
     goToAlbum: (albumId) => navigateWithTransition(navigate, `/collection?type=album&id=${encodeURIComponent(albumId)}`),
     editLyrics: (track) => openLyricsTool(track, "edit"),
     translateLyrics: (track) => openLyricsTool(track, "translate"),

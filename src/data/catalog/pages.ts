@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { AlbumPage, ArtistPage, ArtistRef, PlaylistPage, Release, YtCatalog } from "@/youtube";
-import { isAbortError } from "@/youtube/types";
+import { isAbortError, YtError } from "@/youtube/types";
+import { normalizeForSearch } from "../search/trackMatch";
 import { catalogSource } from "./source";
 import { toUiTrack, type UiTrack } from "./tracks";
 
@@ -93,7 +94,48 @@ function toPlaylistPageData(page: PlaylistPage): CollectionPageData {
   };
 }
 
-const loadArtist: Loader<ArtistPageData> = async (catalog, id, signal) => toArtistPageData(await catalog.artist(id, signal));
+const warming = new Map<string, Promise<ArtistPage>>();
+
+const loadArtist: Loader<ArtistPageData> = async (catalog, id, signal, partial) => {
+  const page = await (warming.get(id) ?? catalog.artist(id, signal));
+  const first = toArtistPageData(page);
+  if (!page.more) return first;
+  partial(first);
+  return { ...first, tracks: (await page.more(signal)).map(toUiTrack) };
+};
+
+const nameKey = (name: string) => normalizeForSearch(name).split(" ").sort().join(" ");
+
+const loadArtistByName: Loader<ArtistPageData> = async (catalog, name, signal, partial) => {
+  const wanted = nameKey(name);
+  const votes = new Map<string, number>();
+  for (const item of await catalog.search(name, "all", signal)) {
+    const credits: ArtistRef[] = item.kind === "artist" ? [item] : "artists" in item ? item.artists : [];
+    for (const { id, name: credited } of credits) {
+      if (id && id !== "unknown" && nameKey(credited) === wanted) votes.set(id, (votes.get(id) ?? 0) + 1);
+    }
+  }
+  // fan channels share an artist's name, and the catalog may title the artist in another script: the most credited id is theirs
+  const [found] = [...votes].sort((a, b) => b[1] - a[1]);
+  if (!found) throw new YtError("not-found");
+  return loadArtist(catalog, found[0], signal, partial);
+};
+
+export function warmArtist(id: string): void {
+  const catalog = catalogSource();
+  const key = artistKey(id);
+  if (!catalog || cache.has(key) || warming.has(id)) return;
+  const page = catalog.artist(id, AbortSignal.timeout(ARTIST_TIMEOUT_MS));
+  warming.set(id, page);
+  page.then(
+    (value) => {
+      if (!cache.has(key)) remember(key, toArtistPageData(value));
+      warming.delete(id);
+    },
+    () => warming.delete(id),
+  );
+}
+
 const loadAlbum: Loader<CollectionPageData> = async (catalog, id, signal) => toAlbumPageData(await catalog.album(id, signal));
 const loadPlaylist: Loader<CollectionPageData> = async (catalog, id, signal, partial) => {
   const page = await catalog.playlist(id, signal);
@@ -149,8 +191,11 @@ function useCatalogPage<T>(key: string | null, id: string | null, load: Loader<T
     : { data: cached, loading: key !== null, error: false, retry };
 }
 
-export function useArtist(id: string | null): CatalogPage<ArtistPageData> {
-  return useCatalogPage(id ? `artist:${id}` : null, id, loadArtist);
+const artistKey = (id: string) => `artist:${id}`;
+
+export function useArtist(id: string | null, name: string | null = null): CatalogPage<ArtistPageData> {
+  const byName = !id && name ? name : null;
+  return useCatalogPage(id ? artistKey(id) : byName && `artist-name:${byName}`, id || byName, id ? loadArtist : loadArtistByName);
 }
 
 export function useCollection(kind: "album" | "playlist", id: string | null): CatalogPage<CollectionPageData> {
@@ -174,7 +219,10 @@ export async function entityTracks(kind: "artist" | "album" | "playlist", id: st
   if (!catalog) return [];
   const signal = AbortSignal.timeout(WHOLE_PAGE_TIMEOUT_MS);
   try {
-    if (kind === "artist") return (await catalog.artist(id, signal)).tracks.map(toUiTrack);
+    if (kind === "artist") {
+      const page = await catalog.artist(id, signal);
+      return (page.more ? await page.more(signal) : page.tracks).map(toUiTrack);
+    }
     if (kind === "album") return (await catalog.album(id, signal)).tracks.map(toUiTrack);
     const page = await loadPlaylist(catalog, id, signal, () => undefined);
     return page.tracks;

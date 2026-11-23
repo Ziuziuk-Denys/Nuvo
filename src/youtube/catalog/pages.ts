@@ -195,27 +195,17 @@ export class Pages {
     const microformat = isObj(response) ? response.microformat?.microformatDataRenderer : undefined;
     const cover = pickCover(thumbnailsOf(microformat), true) ?? pickCover(thumbnailsOf(header), true);
     const self: ArtistRef[] = [{ id, name }];
-    let tracks = trackRows(response, self);
     const { albums, singles } = releases(response);
     const topSongs = findAll(response, "musicShelfRenderer")
       .map((shelf) => browseOf(runsOf(shelf.title)[0]?.navigationEndpoint) ?? browseOf(shelf.bottomEndpoint))
       .find((target) => target !== undefined);
-    if (topSongs) {
-      try {
-        const full = await this.yt.call(
-          "browse",
-          {
-            browseId: topSongs.browseId,
-            ...(topSongs.params ? { params: topSongs.params } : {}),
-          },
-          { signal },
-        );
-        const rows = trackRows(full, self);
-        if (rows.length > 0) tracks = rows;
-      } catch (error) {
-        if (isAbortError(error)) throw error;
-      }
-    }
+    const tracks = trackRows(response, self);
+    let full: Promise<YtTrack[]> | undefined;
+    const loadFull = async (target: NonNullable<typeof topSongs>, moreSignal: AbortSignal) => {
+      const { browseId, params } = target;
+      const rows = trackRows(await this.yt.call("browse", { browseId, ...(params ? { params } : {}) }, { signal: moreSignal }), self);
+      return rows.length > 0 ? rows : tracks;
+    };
     const page: ArtistPage = {
       id,
       name,
@@ -225,6 +215,16 @@ export class Pages {
       tracks,
       albums,
       singles,
+      more: topSongs
+        ? (moreSignal) => {
+            full ??= loadFull(topSongs, moreSignal).catch((error) => {
+              full = undefined;
+              if (isAbortError(error)) throw error;
+              return tracks;
+            });
+            return full;
+          }
+        : undefined,
     };
     this.artists.set(id, page);
     return page;

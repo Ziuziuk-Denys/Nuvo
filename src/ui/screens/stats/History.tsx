@@ -8,6 +8,7 @@ import { Lens } from "../../components/Lens";
 import { useTranslation, type TFunction } from "../../ports/i18n";
 import { playerEngine, usePlayerStore } from "../../ports/player";
 import { listeningHistory, type HistoryEntry, type HistoryFilter } from "../../ports/stats";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import { navigateWithTransition } from "../../shell/navigate";
 import look from "../look.module.css";
 import { MediaRow } from "../MediaRow";
@@ -93,7 +94,12 @@ export function History(): JSX.Element {
                   className={styles.mediaRow}
                   leading={<Cover src={item.track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />}
                   title={item.track.title}
-                  subtitle={item.skipped ? `${item.track.artists} · ${t("ui.history.skipped")}` : item.track.artists}
+                  subtitle={
+                    <>
+                      <ArtistLinks track={item.track} />
+                      {item.skipped ? ` · ${t("ui.history.skipped")}` : null}
+                    </>
+                  }
                   meta={new Date(item.listenedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   active={item.track.id === currentId}
                   onActivate={() => void playerEngine.playTrack(item.track, [item.track], "history", "")}

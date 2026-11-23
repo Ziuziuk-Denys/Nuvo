@@ -16,6 +16,7 @@ import { useUnavailable } from "../entity/EntityTracks";
 import { trackMenuItems, type TrackMenuActions } from "../entity/trackMenu";
 import { openLyricsTool } from "../lyrics/lyricsTools";
 import { MediaRow } from "../MediaRow";
+import { openArtist } from "../../shell/openArtist";
 import styles from "./Stats.module.css";
 
 export const trackHref = (id: string) => `/stats/track?id=${encodeURIComponent(id)}`;
@@ -61,7 +62,7 @@ export function useSongMenu(): {
       setAddOpen(true);
     },
     startRadio: (track) => void playerEngine.startRadioStation(track),
-    goToArtist: (artistId) => navigateWithTransition(navigate, `/artist?id=${encodeURIComponent(artistId)}`),
+    goToArtist: openArtist,
     goToAlbum: (albumId) => navigateWithTransition(navigate, `/collection?type=album&id=${encodeURIComponent(albumId)}`),
     editLyrics: (track) => openLyricsTool(track, "edit"),
     translateLyrics: (track) => openLyricsTool(track, "translate"),

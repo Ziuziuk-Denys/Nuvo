@@ -31,7 +31,7 @@ import { ShareSheetHost } from "../sheets/ShareSheet";
 import { SourceSheetHost } from "../sheets/SourceSheet";
 import { TrimSheetHost } from "../sheets/TrimSheet";
 import { Island } from "./island/Island";
-import { isEntityRoute } from "./navigate";
+import { bindNavigate, isEntityRoute } from "./navigate";
 import { usePageLit } from "./pageLit";
 import { ShellScrollContext } from "./scroller";
 import { useShellStore } from "./shellStore";
@@ -68,6 +68,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   bootImports(t);
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
+  useEffect(() => bindNavigate(navigate), [navigate]);
   useEffect(() => onShareLink((link) => void navigate(`/search?link=1&q=${encodeURIComponent(link)}`)), [navigate]);
   const edgeToEdge = useWindowState().isEdgeToEdge;
 

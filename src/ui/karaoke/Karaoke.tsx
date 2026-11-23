@@ -12,6 +12,7 @@ import { songMenuNotInterested } from "../recs/notInterested";
 import { lyricsCommands, lyricsErrorText, useLyrics, versionLabel } from "../ports/lyrics";
 import { canMinimizeWindow, closeWindow, minimizeWindow, toggleMaximizeWindow, useWindowState } from "../ports/navigation";
 import { isRadioContext, nextRepeatMode, playerEngine, toVolumeGain, toVolumeLevel, usePlayerStore } from "../ports/player";
+import { ArtistLinks } from "../shell/ArtistLinks";
 import { formatTime } from "../shell/island/Scrubber";
 import { Backdrop } from "./backdrop/Backdrop";
 import { layoutFor } from "./layout";
@@ -505,7 +506,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
         <section ref={columnRef} className={styles.left}>
           <Cover src={track?.coverUrl ?? ""} size={340} radius={12} />
           <h1 className={styles.title}>{track?.title ?? ""}</h1>
-          <p className={styles.artist}>{track?.artists ?? ""}</p>
+          <p className={styles.artist}>{track ? <ArtistLinks track={track} focusable /> : null}</p>
           {track ? (
             <GlyphButton
               icon={liked ? "liked" : "like"}

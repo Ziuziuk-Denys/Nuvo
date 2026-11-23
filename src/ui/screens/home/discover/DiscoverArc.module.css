@@ -68,6 +68,7 @@
 
 .artist {
   max-width: 100%;
+  pointer-events: auto;
   overflow: hidden;
   color: var(--n-ink-2);
   font: var(--n-type-caption);

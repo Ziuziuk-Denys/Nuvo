@@ -9,6 +9,7 @@ import { DislikeButton } from "../../recs/DislikeButton";
 import { useTranslation, type TFunction } from "../../ports/i18n";
 import { useListReorder } from "../../ports/library";
 import type { Track } from "../../ports/player";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import { useShellScroller } from "../../shell/scroller";
 import { MediaRow } from "../MediaRow";
 import { formatDuration, type TrackMatch } from "./entityModel";
@@ -197,7 +198,7 @@ export function TrackList({
                 }
                 title={track.title}
                 badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
-                subtitle={hideArtists ? undefined : track.artists}
+                subtitle={hideArtists ? undefined : <ArtistLinks track={track} />}
                 meta={formatDuration(track.durationMs)}
                 extra={<DislikeButton track={track} />}
                 active={current}

@@ -6,6 +6,7 @@ import type { Track } from "@/engine/types";
 
 export {
   useArtist,
+  warmArtist,
   useCollection,
   type ArtistPageData,
   type CollectionPageData,

@@ -3,11 +3,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import type { YtTrack } from "@/youtube";
-import { artistTopTrack, entityTracks, useArtist, useCollection, type CatalogPage } from "./pages";
+import { artistTopTrack, entityTracks, useArtist, useCollection, warmArtist, type CatalogPage } from "./pages";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const catalog = vi.hoisted(() => ({ artist: vi.fn(), album: vi.fn(), playlist: vi.fn() }));
+const catalog = vi.hoisted(() => ({ artist: vi.fn(), album: vi.fn(), playlist: vi.fn(), search: vi.fn() }));
 vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog }) }));
 
 const cover = (url: string) => ({ url, width: 544, height: 544 });
@@ -51,6 +51,65 @@ beforeEach(() => {
 afterEach(() => act(() => root.unmount()));
 
 describe("useArtist", () => {
+  const page = (id: string, name = "Nova") => ({ id, name, verified: false, tracks: [track("t1")], albums: [], singles: [] });
+  const ids = () => (seen?.data as { tracks: { id: string }[] } | null)?.tracks.map((item) => item.id);
+
+  it("shows the page before the whole list of songs", async () => {
+    const full = deferred<YtTrack[]>();
+    catalog.artist.mockResolvedValue({ ...page("ar-more"), more: () => full.promise });
+    render(() => useArtist("ar-more"));
+    await flush();
+    expect(ids()).toEqual(["t1"]);
+    full.resolve([track("t1"), track("t2")]);
+    await flush();
+    expect(ids()).toEqual(["t1", "t2"]);
+  });
+
+  it("finds an artist without an id by the exact name", async () => {
+    catalog.search.mockResolvedValue([
+      { kind: "artist", id: "ar-cover", name: "Nova Covers" },
+      { kind: "artist", id: "ar-nova", name: "NÓVA" },
+    ]);
+    catalog.artist.mockResolvedValue(page("ar-nova"));
+    render(() => useArtist(null, "nova"));
+    await flush();
+    expect(catalog.artist.mock.calls[0][0]).toBe("ar-nova");
+    expect(seen?.data).toMatchObject({ id: "ar-nova" });
+  });
+
+  it("finds an artist the catalog titles in another script by a song's credit", async () => {
+    catalog.search.mockResolvedValue([
+      { kind: "artist", id: "ar-kino", name: "KINO" },
+      { kind: "artist", id: "ar-fan", name: "кино" },
+      { kind: "track", ...track("t8"), artists: [{ id: "ar-kino", name: "Кино" }] },
+      { kind: "track", ...track("t9"), artists: [{ id: "ar-kino", name: "Кино" }] },
+    ]);
+    catalog.artist.mockResolvedValue(page("ar-kino", "KINO"));
+    render(() => useArtist(null, "Кино"));
+    await flush();
+    expect(seen?.data).toMatchObject({ id: "ar-kino" });
+  });
+
+  it("reports a name nobody has instead of opening someone else", async () => {
+    catalog.search.mockResolvedValue([{ kind: "artist", id: "ar-other", name: "Other" }]);
+    render(() => useArtist(null, "Nobody"));
+    await flush();
+    expect(catalog.artist).not.toHaveBeenCalled();
+    expect(seen).toMatchObject({ data: null, loading: false, error: true });
+  });
+
+  it("opens a warmed artist at once and with one request", async () => {
+    const slow = deferred<ReturnType<typeof page>>();
+    catalog.artist.mockReturnValue(slow.promise);
+    warmArtist("ar-warm");
+    warmArtist("ar-warm");
+    render(() => useArtist("ar-warm"));
+    slow.resolve(page("ar-warm"));
+    await flush();
+    expect(catalog.artist).toHaveBeenCalledTimes(1);
+    expect(seen).toMatchObject({ loading: false, data: { id: "ar-warm" } });
+  });
+
   it("maps the catalog's artist page for the screen", async () => {
     catalog.artist.mockResolvedValue({
       id: "ar1",
@@ -187,7 +246,15 @@ describe("useCollection", () => {
 
 describe("artistTopTrack", () => {
   it("is the artist's first song, or undefined when the catalog fails", async () => {
-    catalog.artist.mockResolvedValueOnce({ id: "ar9", name: "N", verified: false, tracks: [track("top"), track("second")], albums: [], singles: [] });
+    catalog.artist.mockResolvedValueOnce({
+      id: "ar9",
+      name: "N",
+      verified: false,
+      tracks: [track("top"), track("second")],
+      albums: [],
+      singles: [],
+      similar: [],
+    });
     expect((await artistTopTrack("ar9"))?.id).toBe("top");
     catalog.artist.mockRejectedValueOnce(new Error("bot-check"));
     expect(await artistTopTrack("ar9")).toBeUndefined();

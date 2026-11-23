@@ -11,6 +11,7 @@ import { DislikeButton } from "./DislikeButton";
 import { markNotInterested } from "./notInterested";
 import { notInterestedItems } from "./notInterestedItems";
 import { reasonText } from "./reasonText";
+import { ArtistLinks } from "../shell/ArtistLinks";
 import styles from "./PlaylistSuggestions.module.css";
 
 export interface PlaylistSuggestionsProps {
@@ -55,29 +56,37 @@ export function PlaylistSuggestions({ playlistId, trackIds, onAdd }: PlaylistSug
         </button>
       </div>
       <div className={styles.rows}>
-        {shown.map((track, index) => (
-          <MediaRow
-            key={track.id}
-            data-track-row=""
-            data-selected={menu?.track.id === track.id ? "" : undefined}
-            leading={<Cover src={track.coverUrl} size={48} radius={8} fetchPriority="low" />}
-            title={track.title}
-            subtitle={[track.artists, reasonText(track.reason ?? null, t)].filter(Boolean).join(" · ")}
-            meta={formatDuration(track.durationMs)}
-            onActivate={() => playSuggestions(playlistId, shown, index)}
-            onContextMenu={(event) => {
-              event.preventDefault();
-              setMenu({ track, at: { x: event.clientX, y: event.clientY } });
-            }}
-            extra={
-              <span className={styles.actions}>
-                {/* a failed add toasts from the api layer; the pick stays */}
-                <IconButton icon="add" label={t("ui.recs.suggest.add")} onClick={() => void onAdd(track).catch(() => undefined)} />
-                <DislikeButton track={track} onDisliked={drop} />
-              </span>
-            }
-          />
-        ))}
+        {shown.map((track, index) => {
+          const reason = reasonText(track.reason ?? null, t);
+          return (
+            <MediaRow
+              key={track.id}
+              data-track-row=""
+              data-selected={menu?.track.id === track.id ? "" : undefined}
+              leading={<Cover src={track.coverUrl} size={48} radius={8} fetchPriority="low" />}
+              title={track.title}
+              subtitle={
+                <>
+                  <ArtistLinks track={track} />
+                  {reason ? ` · ${reason}` : null}
+                </>
+              }
+              meta={formatDuration(track.durationMs)}
+              onActivate={() => playSuggestions(playlistId, shown, index)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setMenu({ track, at: { x: event.clientX, y: event.clientY } });
+              }}
+              extra={
+                <span className={styles.actions}>
+                  {/* a failed add toasts from the api layer; the pick stays */}
+                  <IconButton icon="add" label={t("ui.recs.suggest.add")} onClick={() => void onAdd(track).catch(() => undefined)} />
+                  <DislikeButton track={track} onDisliked={drop} />
+                </span>
+              }
+            />
+          );
+        })}
       </div>
       <Menu
         open={menu !== null}

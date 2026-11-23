@@ -12,6 +12,7 @@ import shelf from "./SavedShelf.module.css";
 import styles from "./SongCovers.module.css";
 import type { Shelf } from "./useShelf";
 import { useTrackMenu } from "../entity/useTrackMenu";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 
 type ShelfState = Pick<Shelf, "round" | "arrived" | "busy" | "refresh">;
 const order = (index: number) => ({ "--i": index }) as CSSProperties;
@@ -27,18 +28,15 @@ interface SongCardProps {
 
 function SongCard({ track, size, index, onPlay, onContextMenu }: SongCardProps): JSX.Element {
   return (
-    <button
-      type="button"
-      className={`${shelf.card} ${styles.card}`}
-      style={{ ...order(index), width: size }}
-      data-song={track.id}
-      onClick={onPlay}
-      onContextMenu={onContextMenu}
-    >
-      <Cover src={track.coverUrl} size={size} />
-      <span className={shelf.name}>{track.title}</span>
-      <span className={shelf.subtitle}>{track.artists}</span>
-    </button>
+    <div className={shelf.card} style={{ ...order(index), width: size }} data-song={track.id} onContextMenu={onContextMenu}>
+      <button type="button" className={`${styles.card} ${styles.play}`} onClick={onPlay}>
+        <Cover src={track.coverUrl} size={size} />
+        <span className={shelf.name}>{track.title}</span>
+      </button>
+      <span className={shelf.subtitle}>
+        <ArtistLinks track={track} />
+      </span>
+    </div>
   );
 }
 

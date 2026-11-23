@@ -47,7 +47,8 @@
 }
 
 .card:hover img,
-.card:focus-visible img {
+.card:focus-visible img,
+.card > :focus-visible img {
   filter: brightness(1.15);
 }
 

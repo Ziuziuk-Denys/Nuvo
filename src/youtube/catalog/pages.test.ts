@@ -318,8 +318,13 @@ describe("artist", () => {
       ["MPREb_e1", "ep"],
       ["MPREb_s1", "single"],
     ]);
-    expect(page.tracks.map((track) => track.id)).toEqual(["vidTOP00001", "vidTOP00002"]);
-    expect(page.tracks[0].artists).toEqual([{ id: "UCa", name: "Artist" }]);
+    expect(page.tracks.map((track) => track.id)).toEqual(["vidINLINE01"]);
+    expect(fake.callsTo("POST", BROWSE)).toHaveLength(1);
+    const full = await page.more!(signal());
+    expect(full.map((track) => track.id)).toEqual(["vidTOP00001", "vidTOP00002"]);
+    expect(full[0].artists).toEqual([{ id: "UCa", name: "Artist" }]);
+    await page.more!(signal());
+    expect(fake.callsTo("POST", BROWSE)).toHaveLength(2);
     expect(fake.calls.at(-1)!.json<{ params: string }>().params).toBe("ggMx");
   });
 
@@ -327,7 +332,8 @@ describe("artist", () => {
     const { fake, yt } = harness();
     fake.innertube("browse", json(artistFull()), byBrowseId("UCa"));
     fake.innertube("browse", json({}, 500), byBrowseId("VLtop"));
-    expect((await new Pages(yt).artist("UCa", signal())).tracks.map((track) => track.id)).toEqual(["vidINLINE01"]);
+    const page = await new Pages(yt).artist("UCa", signal());
+    expect((await page.more!(signal())).map((track) => track.id)).toEqual(["vidINLINE01"]);
   });
 
   it("listener counts in Russian and with space groups", () => {
@@ -595,7 +601,7 @@ describe("page fallbacks", () => {
       }),
     );
     const page = await new Pages(yt).artist("UCa", signal());
-    expect([page.tracks, page.albums, page.singles]).toEqual([[], [], []]);
+    expect([page.tracks, page.albums, page.singles, page.more]).toEqual([[], [], [], undefined]);
   });
 
   it("releases follow the subtitle word first, the shelf title only as a hint", async () => {

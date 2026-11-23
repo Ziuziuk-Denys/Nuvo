@@ -147,6 +147,7 @@ export interface ArtistPage {
   tracks: YtTrack[];
   albums: Release[];
   singles: Single[];
+  more?: (signal: AbortSignal) => Promise<YtTrack[]>;
 }
 
 export interface PlaylistPage {

@@ -12,6 +12,7 @@ import { LAYER_ATTRIBUTE, usePresence } from "../../components/layers";
 import { useListReorder } from "../../components/useListReorder";
 import { DislikeButton } from "../../recs/DislikeButton";
 import { formatDuration } from "../../screens/entity/entityModel";
+import { ArtistLinks } from "../ArtistLinks";
 import { useShellStore } from "../shellStore";
 import { QUEUE_PANEL } from "../../geometry";
 import { DURATION_MS, STAGGER_MS } from "../../motion";
@@ -146,7 +147,7 @@ export function QueuePanel(): JSX.Element | null {
                   leading={<Cover src={track.coverUrl} size={36} />}
                   title={track.title}
                   badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
-                  subtitle={track.artists}
+                  subtitle={<ArtistLinks track={track} />}
                   meta={formatDuration(track.durationMs)}
                   active={index === currentIndex}
                   onActivate={() => playerEngine.playQueueIndex(index)}

@@ -15,6 +15,7 @@ import { useOnline } from "../../ports/network";
 import { playerEngine, type Track } from "../../ports/player";
 import { findSong, songFacts, timeAgo, type RecognizedEntry, type RecognizedSong, type Session } from "../../ports/recognize";
 import { DislikeButton } from "../../recs/DislikeButton";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import { navigateWithTransition } from "../../shell/navigate";
 import { openExternal } from "../../ports/system";
 import { AddToPlaylistPopover } from "../../shell/popovers/AddToPlaylistPopover";
@@ -216,7 +217,9 @@ function ResultCard({ song, onAgain }: { song: RecognizedSong; onAgain(): void }
       <Cover src={song.coverUrl ?? ""} size={COVER_PX} radius={12} />
       <div className={styles.about}>
         <h2 className={styles.song}>{song.title}</h2>
-        <p className={styles.artist}>{song.artist}</p>
+        <p className={styles.artist}>
+          <ArtistLinks track={{ artists: song.artist }} focusable />
+        </p>
         {facts ? <p className={styles.facts}>{facts}</p> : null}
         <div className={styles.actions}>
           {track === null ? (
@@ -314,7 +317,7 @@ function History({ items, onForget }: { items: RecognizedEntry[]; onForget(id: s
             data-selected={menuOpen && menu?.entry.id === entry.id ? "" : undefined}
             leading={<Cover src={entry.track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />}
             title={entry.track.title}
-            subtitle={entry.track.artist}
+            subtitle={<ArtistLinks track={{ artists: entry.track.artist }} />}
             meta={timeAgo(entry.createdAt, now, locale)}
             extra={<DislikeButton track={() => lookUp(entry)} />}
             onActivate={() => withTrack(entry, (track) => play(track))}

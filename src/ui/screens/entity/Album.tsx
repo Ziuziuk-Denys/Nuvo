@@ -9,6 +9,7 @@ import { useCollection, type CollectionPageData } from "../../ports/catalog";
 import { useTranslation } from "../../ports/i18n";
 import { playerEngine, type Track } from "../../ports/player";
 import { useHomeMix } from "../../ports/recs";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import { navigateWithTransition } from "../../shell/navigate";
 import { MIX_PREFIX, mixText, mosaicCovers } from "../home/homeModel";
 import look from "../look.module.css";
@@ -152,7 +153,7 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
           <EntityHead
             cover={art}
             title={data.title}
-            subtitle={by}
+            subtitle={data.artists?.length ? <ArtistLinks track={{ artists: by ?? "", artistList: data.artists }} focusable /> : by}
             chips={<Facts year={data.year ? String(data.year) : undefined} count={t("common.tracks", { count })} length={formatTotal(totalMs(tracks), t)} />}
             onPlay={playAll}
             onShuffle={shuffle}

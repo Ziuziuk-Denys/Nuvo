@@ -20,6 +20,16 @@ export function activeNav(pathname: string): NavItem | null {
   return null;
 }
 
+let boundNavigate: NavigateFunction | null = null;
+
+export function bindNavigate(navigate: NavigateFunction): void {
+  boundNavigate = navigate;
+}
+
+export function goTo(href: string): void {
+  if (boundNavigate) navigateWithTransition(boundNavigate, href);
+}
+
 // Animates the live page rather than a view transition: a page snapshot paints above the player and hides its glass
 const PAGE_IN: Keyframe[] = [
   { opacity: 0, transform: "translateY(12px)" },

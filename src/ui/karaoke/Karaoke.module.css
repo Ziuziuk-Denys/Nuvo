@@ -224,6 +224,7 @@
 }
 
 .artist {
+  --artist-link-ink: currentColor;
   top: 392px;
   font-size: 14px;
   font-weight: 500;

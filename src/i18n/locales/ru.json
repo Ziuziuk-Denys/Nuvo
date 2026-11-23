@@ -112,6 +112,8 @@
     "entity": {
       "add_to_playlist": "Добавить в плейлист",
       "add_to_queue": "Добавить в очередь",
+      "artist_not_found_message": "Возможно, в каталоге он записан под другим именем.",
+      "artist_not_found_title": "{name}: исполнитель не найден",
       "albums": "Альбомы",
       "back_to_library": "Вернуться в медиатеку",
       "go_album": "Перейти к альбому",

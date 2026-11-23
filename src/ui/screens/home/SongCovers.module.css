@@ -7,6 +7,14 @@
   cursor: pointer;
 }
 
+.play {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: inherit;
+  outline: none;
+}
+
 .covers {
   display: flex;
   gap: 28px;

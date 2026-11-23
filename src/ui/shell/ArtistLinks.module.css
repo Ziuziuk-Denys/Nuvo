@@ -1,0 +1,22 @@
+.link {
+  cursor: pointer;
+  text-decoration: underline transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition:
+    color var(--n-t-quick) var(--n-ease-out),
+    text-decoration-color var(--n-t-quick) var(--n-ease-out);
+}
+
+.link:hover,
+.link:focus-visible {
+  outline: none;
+  color: var(--artist-link-ink, var(--n-ink));
+  text-decoration-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}
