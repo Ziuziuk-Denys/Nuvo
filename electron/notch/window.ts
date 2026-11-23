@@ -239,7 +239,8 @@ export class NotchWindow {
         preload: this.deps.preloadPath,
         contextIsolation: true,
         sandbox: true,
-        backgroundThrottling: false,
+        // Without throttling Chromium leaves its input window hidden after a hide and show on Windows, and presses are lost.
+        backgroundThrottling: this.deps.session === "windows",
         spellcheck: false,
       },
     });
