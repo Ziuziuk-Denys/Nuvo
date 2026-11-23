@@ -124,6 +124,7 @@ export const CHANNELS = {
   fontsDelete: "fonts:delete",
   wallpaperImport: "wallpaper:import",
   wallpaperClear: "wallpaper:clear",
+  sceneMediaImport: "scene-media:import",
   themeExport: "theme:export",
   themeImport: "theme:import",
   playlistCoverPick: "playlist:cover-pick",

@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from "react";
 import type { Line } from "../../ports/lyrics";
-import { filmstripOf, trackPeaks, type Aspect, type Template } from "../../ports/visual";
+import { filmstripOf, trackPeaks, type Aspect, type Media, type Template } from "../../ports/visual";
 
 const STRIP_DEBOUNCE_MS = 300;
 const STRIP_RETRY_MS = 2_000;
@@ -39,6 +39,7 @@ interface StripRequest {
   template: Template;
   aspect: Aspect;
   coverUrl: string;
+  media: Media | null;
   lines: Line[];
   fromMs: number;
   toMs: number;
@@ -48,10 +49,10 @@ interface StripRequest {
 const disposed = new WeakSet<Map<number, string>>();
 
 // tiles sit on a fixed grid of moments, so panning and following the playhead reuse them
-export function useFilmstrip({ trackId, template, aspect, coverUrl, lines, fromMs, toMs, count }: StripRequest): StripTile[] {
+export function useFilmstrip({ trackId, template, aspect, coverUrl, media, lines, fromMs, toMs, count }: StripRequest): StripTile[] {
   const step = count > 0 ? Math.max(1, Math.round((toMs - fromMs) / count)) : 0;
   // anything that changes how a frame looks starts a fresh set of tiles
-  const inputs = [trackId, template, aspect, coverUrl, lines, step] as const;
+  const inputs = [trackId, template, aspect, coverUrl, media, lines, step] as const;
   const [cache, setCache] = useState(() => ({ inputs, tiles: new Map<number, string>() }));
   if (inputs.some((value, i) => value !== cache.inputs[i])) setCache({ inputs, tiles: new Map() });
   const store = cache.tiles;
@@ -74,7 +75,16 @@ export function useFilmstrip({ trackId, template, aspect, coverUrl, lines, fromM
     for (let k = first; k < last; k++) if (!store.has(k)) missing.push(k);
     if (missing.length === 0) return;
     const timer = window.setTimeout(() => {
-      filmstripOf({ trackId, template, aspect, coverUrl, lines, timesMs: missing.map((k) => (k + 0.5) * step), height: STRIP_HEIGHT * devicePixelRatio }).then(
+      filmstripOf({
+        trackId,
+        template,
+        aspect,
+        coverUrl,
+        media,
+        lines,
+        timesMs: missing.map((k) => (k + 0.5) * step),
+        height: STRIP_HEIGHT * devicePixelRatio,
+      }).then(
         (urls) => {
           if (disposed.has(store)) return urls.forEach((url) => URL.revokeObjectURL(url));
           missing.forEach((k, i) => store.set(k, urls[i]));
@@ -90,7 +100,7 @@ export function useFilmstrip({ trackId, template, aspect, coverUrl, lines, fromM
       window.clearTimeout(timer);
       window.clearTimeout(retry);
     };
-  }, [store, first, last, step, trackId, template, aspect, coverUrl, lines, attempt]);
+  }, [store, first, last, step, trackId, template, aspect, coverUrl, media, lines, attempt]);
 
   const tiles: StripTile[] = [];
   for (let k = first; k < last; k++) tiles.push({ startMs: k * step, endMs: (k + 1) * step, url: store.get(k) ?? null });

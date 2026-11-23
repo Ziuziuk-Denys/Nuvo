@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { textLookOf, type Selection } from "../ports/visual";
+import { sceneMedia, textLookOf, type Media, type Selection } from "../ports/visual";
 
 const KEY = "nuvo.visual";
 
@@ -8,11 +8,12 @@ export interface VisualSettings {
   stage: boolean;
   template: string;
   scene: Selection | null;
+  media: Media | null;
   toured: boolean;
   chosen: boolean;
 }
 
-const DEFAULTS: VisualSettings = { enabled: false, stage: false, template: "random", scene: null, toured: false, chosen: false };
+const DEFAULTS: VisualSettings = { enabled: false, stage: false, template: "random", scene: null, media: null, toured: false, chosen: false };
 
 const text = (value: unknown) => typeof value === "string";
 
@@ -39,6 +40,7 @@ function read(): VisualSettings {
       stage: typeof stored.stage === "boolean" ? stored.stage : DEFAULTS.stage,
       template: typeof stored.template === "string" ? stored.template : DEFAULTS.template,
       scene: readScene(stored.scene),
+      media: sceneMedia(stored.media?.url),
       toured: stored.toured === true,
       chosen: stored.chosen === true,
     };

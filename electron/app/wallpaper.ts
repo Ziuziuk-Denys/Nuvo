@@ -108,7 +108,7 @@ export async function wallpaperResponse(request: Request, store: WallpaperStore,
   const origin = request.headers.get("origin");
   if (origin !== null && !allowedOrigins.includes(origin)) return new Response(null, { status: 403 });
   const cors: Record<string, string> = origin ? { "access-control-allow-origin": origin, vary: "Origin" } : {};
-  const match = /^\/wallpaper\/([^/]+)$/.exec(new URL(request.url).pathname);
+  const match = /^\/(?:wallpaper|scene-media)\/([^/]+)$/.exec(new URL(request.url).pathname);
   const found = match && request.method === "GET" ? store.find(match[1]) : null;
   const size = found
     ? await fs.promises.stat(found.file).then(

@@ -17,7 +17,7 @@ const onChange = vi.fn();
 function show(selection: Selection) {
   const scene = sceneOf(selection);
   const parts = partsFor("lyrics").filter((part) => part.id === selection.lyrics);
-  act(() => root.render(<Inspector scene={scene} parts={parts} coverUrl="" onChange={onChange} />));
+  act(() => root.render(<Inspector scene={scene} parts={parts} coverUrl="" media={null} onChange={onChange} />));
 }
 
 const button = (name: string) => [...host.querySelectorAll("button")].find((element) => element.textContent === name);

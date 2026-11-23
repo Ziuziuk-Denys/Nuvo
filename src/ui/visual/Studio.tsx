@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { pushLayer } from "../components/layers";
 import { Menu } from "../components/Menu";
 import { Icon } from "../icons/Icon";
+import { MEDIA_REFUSALS } from "../mediaFiles";
 import { useTranslation } from "../ports/i18n";
 import { lyricsCommands, useLyrics } from "../ports/lyrics";
 import { usePlayerStore } from "../ports/player";
-import { partsFor, sceneOf, SCENES, type Aspect, type Media, type Part, type Selection } from "../ports/visual";
-import { chooseScene, setVisualSettings, useVisualSettings } from "./settings";
+import { importSceneMedia, partsFor, sceneOf, SCENES, type Aspect, type Part, type Selection } from "../ports/visual";
+import { chooseScene, setVisualSettings, useVisualSettings, visualSettings } from "./settings";
 import { setStudioOpen } from "./studioOpen";
 import { Assets } from "./studio/Assets";
 import { ExportClip } from "./studio/ExportClip";
@@ -94,13 +95,13 @@ function UseAsPlayer({ selection, mode }: { selection: Selection; mode: "own" | 
 export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
   const { t } = useTranslation();
   const visual = useVisualSettings();
+  const media = visual.media;
   const track = usePlayerStore((state) => state.currentTrack);
   const positionMs = usePlayerStore((state) => state.positionMs);
   const durationMs = usePlayerStore((state) => state.durationMs);
   const lines = useLyrics((state) => state.lines);
   const [category, setCategory] = useState<Category>("scenes");
   const [aspect, setAspect] = useState<Aspect>("tall");
-  const [media, setMedia] = useState<Media | null>(null);
   const [mirror, setMirror] = useState<HTMLCanvasElement | null>(null);
   const [foot, setFoot] = useState<[number, number, number] | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -135,7 +136,6 @@ export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
     setRange(([start]) => [start, Math.max(start + MIN_CLIP_MS, Math.min(start + MAX_CLIP_MS, at))]);
   };
   useStudioKeys({ undo: history.undo, redo: history.redo, markIn, markOut });
-  useEffect(() => () => (media ? URL.revokeObjectURL(media.url) : undefined), [media]);
 
   const save = (next: Selection) => {
     if (JSON.stringify(next) !== JSON.stringify(selection)) history.commit(next);
@@ -152,8 +152,12 @@ export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
     }
   };
   const importMedia = (file: File) => {
-    setMedia({ url: URL.createObjectURL(file), kind: file.type.startsWith("video/") ? "video" : "image" });
-    if (scene.selection.background !== "ascii") save({ ...selection, background: "media" });
+    void importSceneMedia(file).then((result) => {
+      if ("error" in result) return showNotice(t(MEDIA_REFUSALS[result.error]));
+      setVisualSettings({ media: result.media });
+      const chosen = visualSettings().scene ?? START;
+      if (!["ascii", "media"].includes(sceneOf(chosen).selection.background)) history.commit({ ...chosen, background: "media" });
+    });
   };
   const inspected = [scene.selection.background, ...scene.selection.atmosphere, scene.selection.centrepiece, scene.selection.lyrics]
     .map((id) => ALL_PARTS.find((part) => part.id === id))
@@ -209,13 +213,14 @@ export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
           />
         </div>
         <Player template={scene.template} aspect={aspect} coverUrl={coverUrl} lines={lines} media={media} mirror={mirror} onFoot={setFoot} range={range} />
-        <Inspector scene={scene} parts={inspected} coverUrl={coverUrl} onChange={save} />
+        <Inspector scene={scene} parts={inspected} coverUrl={coverUrl} media={media} onChange={save} />
       </div>
       {track ? (
         <Timeline
           track={{ id: track.id, coverUrl: track.coverUrl }}
           template={scene.template}
           aspect={aspect}
+          media={media}
           lines={lines}
           range={range}
           onRange={setRange}

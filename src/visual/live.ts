@@ -1,5 +1,6 @@
 import type { Line } from "@/lyrics";
 import { loadCover } from "./cover";
+import { loadImage, openVideo, type Media } from "./media";
 import { sharedNow, type FromStage, type ToStage } from "./stageProtocol";
 import type { Aspect, Template } from "./template/schema";
 
@@ -12,11 +13,6 @@ export interface LiveDeps {
   subscribe(listener: (frame: LiveFrame) => void): () => void;
   clock(): { atMs: number; playing: boolean };
   decoded?(): { pcm: Float32Array; sampleRate: number } | null;
-}
-
-export interface Media {
-  url: string;
-  kind: "image" | "video";
 }
 
 export interface Live {
@@ -77,8 +73,9 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
       post({ type: "song", pcm, sampleRate: decoded?.sampleRate ?? 0 }, pcm ? [pcm.buffer] : []);
     }
     if (video) {
-      if (playing && video.paused) void video.play().catch(() => undefined);
-      else if (!playing && !video.paused) video.pause();
+      const moving = playing && !motion.matches;
+      if (moving && video.paused) void video.play().catch(() => undefined);
+      else if (!moving && !video.paused) video.pause();
     }
   };
   frameId = requestAnimationFrame(tick);
@@ -91,14 +88,18 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
 
   // every decoded video frame goes over once, as a VideoFrame the worker uploads and closes
   const sendVideoFrames = (element: VideoWithFrames) => {
+    const send = () => {
+      if (video !== element || element.readyState < 2) return;
+      const frame = new VideoFrame(element);
+      post({ type: "image", source: frame, width: element.videoWidth, height: element.videoHeight }, [frame]);
+    };
     const next = () => {
       if (video !== element) return;
-      if (element.readyState >= 2) {
-        const frame = new VideoFrame(element);
-        post({ type: "image", source: frame, width: element.videoWidth, height: element.videoHeight }, [frame]);
-      }
+      send();
       element.requestVideoFrameCallback?.(next);
     };
+    // a paused video off the page may never present its first frame
+    element.addEventListener("loadeddata", send, { once: true });
     element.requestVideoFrameCallback?.(next);
   };
 
@@ -128,24 +129,21 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
       mediaUrl = media?.url ?? "";
       video?.pause();
       video = null;
-      if (!media) return post({ type: "image", source: null, width: 0, height: 0 });
+      const none = () => {
+        if (mediaUrl === (media?.url ?? "")) post({ type: "image", source: null, width: 0, height: 0 });
+      };
+      if (!media) return none();
+      post({ type: "await-image" });
       if (media.kind === "video") {
-        video = Object.assign(document.createElement("video") as VideoWithFrames, { src: media.url, muted: true, loop: true, playsInline: true });
+        video = openVideo(media.url);
+        video.onerror = none;
         sendVideoFrames(video);
         return;
       }
-      const image = new Image();
-      image.src = media.url;
-      image
-        .decode()
-        .then(() => createImageBitmap(image))
-        .then(
-          (bitmap) => {
-            if (mediaUrl === media.url) post({ type: "image", source: bitmap, width: bitmap.width, height: bitmap.height }, [bitmap]);
-            else bitmap.close();
-          },
-          () => undefined,
-        );
+      loadImage(media.url).then((bitmap) => {
+        if (mediaUrl === media.url) post({ type: "image", source: bitmap, width: bitmap.width, height: bitmap.height }, [bitmap]);
+        else bitmap.close();
+      }, none);
     },
     setMirror(target) {
       if (!target || handedOver.has(target)) return;

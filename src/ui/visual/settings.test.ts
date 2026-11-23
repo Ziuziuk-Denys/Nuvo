@@ -8,16 +8,17 @@ beforeEach(() => {
 describe("visual settings", () => {
   it("starts off, on the karaoke view, in random mode, with no own scene", async () => {
     const { visualSettings } = await import("./settings");
-    expect(visualSettings()).toEqual({ enabled: false, stage: false, template: "random", scene: null, toured: false, chosen: false });
+    expect(visualSettings()).toEqual({ enabled: false, stage: false, template: "random", scene: null, media: null, toured: false, chosen: false });
   });
 
   it("remembers each choice across reloads", async () => {
     const first = await import("./settings");
     const scene = { background: "duo", atmosphere: [], centrepiece: null, lyrics: "kinetic" };
-    first.setVisualSettings({ enabled: true, stage: true, template: "own", scene, toured: true, chosen: true });
+    const media = { url: "nuvo-core://local/scene-media/0b7c63c8-1d0a-4c3e-9f55-2a8e7d1b4c11.webm", kind: "video" as const };
+    first.setVisualSettings({ enabled: true, stage: true, template: "own", scene, media, toured: true, chosen: true });
     vi.resetModules();
     const second = await import("./settings");
-    expect(second.visualSettings()).toEqual({ enabled: true, stage: true, template: "own", scene, toured: true, chosen: true });
+    expect(second.visualSettings()).toEqual({ enabled: true, stage: true, template: "own", scene, media, toured: true, chosen: true });
   });
 
   it("makes a scene picked in the studio the player's scene, even after random mode", async () => {
@@ -38,6 +39,15 @@ describe("visual settings", () => {
     localStorage.setItem("nuvo.visual", JSON.stringify({ scene: { background: 3 } }));
     const { visualSettings } = await import("./settings");
     expect(visualSettings().scene).toBeNull();
+  });
+
+  it("drops stored media that is not Nuvo's own copy", async () => {
+    for (const url of ["https://example.com/a.mp4", "blob:file:///x", "nuvo-core://local/scene-media/../a.mp4", 3]) {
+      localStorage.setItem("nuvo.visual", JSON.stringify({ media: { url, kind: "video" } }));
+      vi.resetModules();
+      const { visualSettings } = await import("./settings");
+      expect(visualSettings().media).toBeNull();
+    }
   });
 
   it("keeps a scene's text look and cleans one it cannot trust", async () => {

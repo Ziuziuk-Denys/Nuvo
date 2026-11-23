@@ -1,7 +1,7 @@
 import { useEffect, useRef, type JSX } from "react";
 import type { Line } from "../ports/lyrics";
 import { useVisualQuality } from "../effects";
-import { createLiveStage, type Aspect, type Live, type Media, type Template } from "../ports/visual";
+import { createLiveStage, mediaFor, type Aspect, type Live, type Media, type Template } from "../ports/visual";
 
 interface StageProps {
   template: Template;
@@ -17,7 +17,20 @@ interface StageProps {
   className?: string;
 }
 
-export function Stage({ template, aspect, coverUrl, lines, media = null, mirror = null, onFoot, onTone, onLuma, clock, className }: StageProps): JSX.Element {
+export function Stage({
+  template,
+  aspect,
+  coverUrl,
+  lines,
+  media: own = null,
+  mirror = null,
+  onFoot,
+  onTone,
+  onLuma,
+  clock,
+  className,
+}: StageProps): JSX.Element {
+  const media = mediaFor(template, own);
   const host = useRef<HTMLDivElement>(null);
   const liveRef = useRef<Live | null>(null);
   const light = useVisualQuality() === "performance";

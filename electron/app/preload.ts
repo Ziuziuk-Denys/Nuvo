@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
-import type { NuvoShell } from "../../src/shell/nuvoShell";
+import type { NuvoShell, WallpaperImport } from "../../src/shell/nuvoShell";
 
 const on =
   <T>(channel: string) =>
@@ -12,6 +12,11 @@ const on =
   };
 
 const invoke = <T>(channel: string, payload?: unknown) => ipcRenderer.invoke(channel, payload) as Promise<T>;
+
+async function importFile(channel: string, file: File): Promise<WallpaperImport> {
+  const path = webUtils.getPathForFile(file);
+  return path ? invoke(channel, { path }) : { ok: false, error: "read" };
+}
 
 const shell: NuvoShell = {
   minimize: () => invoke("win:minimize"),
@@ -79,11 +84,9 @@ const shell: NuvoShell = {
   listSystemFonts: (rescan = false) => invoke("fonts:list-system", { rescan }),
   importFontFile: () => invoke("fonts:import-file"),
   deleteFontFile: (id) => invoke("fonts:delete", { id }),
-  importWallpaper: async (file) => {
-    const path = webUtils.getPathForFile(file);
-    return path ? invoke("wallpaper:import", { path }) : { ok: false, error: "read" };
-  },
+  importWallpaper: (file) => importFile("wallpaper:import", file),
   clearWallpaper: () => invoke("wallpaper:clear"),
+  importSceneMedia: (file) => importFile("scene-media:import", file),
   pickCoverImage: () => invoke("playlist:cover-pick"),
   exportTheme: (name, text) => invoke("theme:export", { name, text }),
   importThemeFile: () => invoke("theme:import"),

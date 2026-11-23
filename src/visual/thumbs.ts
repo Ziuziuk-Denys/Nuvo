@@ -44,6 +44,7 @@ async function prepared(
   template: Template,
   aspect: Aspect,
   cover: LoadedCover | null,
+  still: ImageBitmap | null,
   width: number,
   height: number,
 ): Promise<{ stage: Stage; canvas: OffscreenCanvas } | null> {
@@ -56,13 +57,14 @@ async function prepared(
   stage.reset();
   if (cover) stage.setCover(cover.bitmap, cover.palette);
   else stage.setCover(new ImageData(new Uint8ClampedArray([40, 44, 56, 255]), 1, 1), DEFAULT_PALETTE);
+  stage.setImage(still, still?.width ?? 1, still?.height ?? 1);
   return { stage, canvas };
 }
 
 const snapshot = async (target: OffscreenCanvas) => URL.createObjectURL(await target.convertToBlob({ type: "image/jpeg", quality: 0.86 }));
 
-async function draw(template: Template, cover: LoadedCover | null): Promise<string> {
-  const ready = await prepared(template, "tall", cover, WIDTH, HEIGHT);
+async function draw(template: Template, cover: LoadedCover | null, still: ImageBitmap | null): Promise<string> {
+  const ready = await prepared(template, "tall", cover, still, WIDTH, HEIGHT);
   if (!ready) return "";
   const raster = createTextRaster(WIDTH * 2, HEIGHT * 2);
   for (let frame = 0; frame < FRAMES; frame++) paint(ready.stage, raster, template, "tall", SAMPLE, 1_200 + frame * (1000 / 60), features(frame));
@@ -73,6 +75,7 @@ export interface StripRequest {
   template: Template;
   aspect: Aspect;
   cover: LoadedCover | null;
+  still: ImageBitmap | null;
   lines: Line[];
   pcm: Float32Array;
   sampleRate: number;
@@ -83,7 +86,7 @@ export interface StripRequest {
 async function drawStrip(request: StripRequest): Promise<string[]> {
   const height = Math.round(request.height);
   const width = Math.round((height * ASPECT_RATIO[request.aspect]) / 2) * 2;
-  const ready = await prepared(request.template, request.aspect, request.cover, width, height);
+  const ready = await prepared(request.template, request.aspect, request.cover, request.still, width, height);
   if (!ready) return [];
   const raster = createTextRaster(width * 2, height * 2);
   const frames: string[] = [];
@@ -106,8 +109,8 @@ function queued<T>(work: () => Promise<T>): Promise<T> {
   return next;
 }
 
-export function thumbnail(template: Template, cover: LoadedCover | null): Promise<string> {
-  return queued(() => draw(template, cover));
+export function thumbnail(template: Template, cover: LoadedCover | null, still: ImageBitmap | null): Promise<string> {
+  return queued(() => draw(template, cover, still));
 }
 
 export function strip(request: StripRequest): Promise<string[]> {
