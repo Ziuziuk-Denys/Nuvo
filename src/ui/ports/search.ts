@@ -33,6 +33,7 @@ export interface SearchResult {
   preview?: boolean;
   plays?: number;
   verified?: boolean;
+  year?: number;
 }
 
 export function songResult(track: Track): SearchResult {
@@ -61,6 +62,7 @@ export function toSearchResult(item: CatalogSearchItem): SearchResult {
       title: item.title,
       subtitle: item.artists.map((artist) => artist.name).join(", "),
       cover,
+      ...(item.year ? { year: item.year } : {}),
       href: `/collection?type=album&id=${encodeURIComponent(item.id)}`,
     };
   }

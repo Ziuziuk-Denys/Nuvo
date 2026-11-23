@@ -134,6 +134,44 @@
   letter-spacing: var(--n-track-caption);
 }
 
+.filters {
+  display: flex;
+  height: 28px;
+  margin: 2px 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  isolation: isolate;
+}
+
+.filter {
+  position: relative;
+  flex: none;
+  height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--n-ink-3);
+  font: 500 12.5px/28px var(--n-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms var(--n-ease-out);
+}
+
+.filter:hover,
+.filter[aria-pressed="true"] {
+  color: var(--n-ink);
+}
+
+.unseen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .recent {
   display: flex;
   flex-wrap: wrap;
@@ -286,6 +324,20 @@
   letter-spacing: var(--n-track-title);
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.topActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.topButton {
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 15px;
+  font-size: 12.5px;
 }
 
 .more {

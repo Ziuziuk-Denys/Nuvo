@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SearchResult } from "../../ports/search";
 import type { Track } from "../../ports/player";
-import { groupResults, isEmpty, localResults, songsToRank, withLocalFiles, withSoundCloud } from "./searchModel";
+import { groupResults, isEmpty, localResults, songsToRank, withLocalFiles, withSoundCloud, withSuggestions } from "./searchModel";
 
 const hit = (kind: SearchResult["kind"], id: string): SearchResult => ({ kind, id, title: id, subtitle: "", cover: "" });
 const many = (kind: SearchResult["kind"], count: number) => Array.from({ length: count }, (_, index) => hit(kind, `${kind}${index}`));
@@ -29,17 +29,45 @@ describe("groupResults", () => {
     expect(groups.playlists).toHaveLength(4);
   });
 
-  it("shows one group uncapped for a filter, with no top result", () => {
+  it("shows one group uncapped for a filter, its best match on top", () => {
     const groups = groupResults(all, "songs");
-    expect(groups.top).toBeUndefined();
-    expect(groups.songs).toHaveLength(10);
+    expect(groups.top?.id).toBe("song0");
+    expect(groups.songs).toHaveLength(9);
     expect(groups.albums).toHaveLength(0);
-    expect(groupResults(all, "playlists").playlists).toHaveLength(9);
+    expect(groupResults(all, "playlists").playlists).toHaveLength(8);
   });
 
   it("is empty for no results", () => {
     expect(isEmpty(groupResults([], "all"))).toBe(true);
     expect(isEmpty(groupResults(many("album", 2), "songs"))).toBe(true);
+  });
+});
+
+describe("withSuggestions", () => {
+  const song = (id: string, title: string, over: Partial<SearchResult> = {}): SearchResult => ({
+    ...hit("song", id),
+    title,
+    subtitle: "Queen",
+    track: { id } as SearchResult["track"],
+    ...over,
+  });
+
+  it("leads with the suggestions, takes the fuller copy and drops the same wording under another id", () => {
+    const suggested = [hit("artist", "queen"), song("q1", "Bohemian Rhapsody")];
+    const results = [
+      song("s2", "Bohemian Rhapsody"),
+      song("q1", "Bohemian Rhapsody", { durationMs: 5 }),
+      song("s3", "Bohemian Rhapsody (Live)"),
+      hit("artist", "queen"),
+    ];
+    const merged = withSuggestions(suggested, results);
+    expect(merged.map((result) => result.id)).toEqual(["queen", "q1", "s3"]);
+    expect(merged[1].durationMs).toBe(5);
+  });
+
+  it("keeps a file that matches the query above the suggestions", () => {
+    const merged = withSuggestions([hit("artist", "queen")], [song("local:1", "Queen"), song("local:2", "Other")], "queen");
+    expect(merged.map((result) => result.id)).toEqual(["local:1", "queen", "local:2"]);
   });
 });
 

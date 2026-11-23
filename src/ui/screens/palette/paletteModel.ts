@@ -1,9 +1,9 @@
-import type { SearchKind, SearchResult } from "../../ports/search";
-import { songKey } from "../search/searchModel";
+import type { SearchResult } from "../../ports/search";
+import { GROUP_KIND, uniqueResults, withSuggestions, type SearchFilter } from "../search/searchModel";
 
 export const PALETTE_SONGS = 4;
-export const PALETTE_ARTISTS = 3;
-export const PALETTE_COLLECTIONS = 3;
+export const PALETTE_OTHERS = 3;
+const PALETTE_ARTISTS = 2;
 const SUGGESTED_SONGS = PALETTE_SONGS - 1;
 
 export interface PaletteSources {
@@ -15,38 +15,26 @@ export interface PaletteSources {
 export interface PaletteResults {
   top: SearchResult | null;
   songs: SearchResult[];
-  artists: SearchResult[];
-  collections: SearchResult[];
+  others: SearchResult[];
 }
 
-const keyOf = (result: SearchResult) => `${result.kind}:${result.id}`;
-
-// Suggestions answer first and keep their place, so later results only add rows
 export function paletteResults({ local, suggested, online }: PaletteSources): PaletteResults {
-  const richer = new Map(online.map((result) => [keyOf(result), result]));
-  const quick = suggested.map((result) => (result.track ? (richer.get(keyOf(result)) ?? result) : result));
-  const top = quick[0] ?? online[0] ?? local[0] ?? null;
-  const seen = new Set<string>();
-  const fresh = (result: SearchResult) => {
-    const keys = result.kind === "song" ? [keyOf(result), songKey(result)] : [keyOf(result)];
-    if (keys.some((key) => seen.has(key))) return false;
-    keys.forEach((key) => seen.add(key));
-    return true;
-  };
-  if (top) fresh(top);
-  const pick = (kinds: readonly SearchKind[], cap: number, from: readonly SearchResult[]) => {
-    const picked: SearchResult[] = [];
-    for (const result of from) {
-      if (picked.length === cap) break;
-      if (kinds.includes(result.kind) && fresh(result)) picked.push(result);
-    }
-    return picked;
-  };
-  const quickSongs = quick.filter((result) => result.kind === "song").slice(0, SUGGESTED_SONGS);
-  return {
-    top,
-    songs: pick(["song"], PALETTE_SONGS, [...local, ...quickSongs, ...online]),
-    artists: pick(["artist"], PALETTE_ARTISTS, [...quick, ...online]),
-    collections: pick(["playlist", "album"], PALETTE_COLLECTIONS, [...local, ...quick, ...online]),
-  };
+  const quickSongs = suggested.filter((result) => result.kind === "song").slice(0, SUGGESTED_SONGS);
+  const quick = withSuggestions([...suggested.filter((result) => result.kind !== "song"), ...quickSongs], online);
+  const first = suggested[0] ?? online[0] ?? local[0];
+  const top = (first && quick.find((result) => result.kind === first.kind && result.id === first.id)) ?? first ?? null;
+  const [, ...rest] = uniqueResults([...(top ? [top] : []), ...local, ...quick]);
+  const songs = rest.filter((result) => result.kind === "song").slice(0, PALETTE_SONGS);
+  const artists = rest.filter((result) => result.kind === "artist").slice(0, PALETTE_ARTISTS);
+  const collections = rest.filter((result) => result.kind === "album" || result.kind === "playlist");
+  return { top, songs, others: [...artists, ...collections].slice(0, PALETTE_OTHERS) };
+}
+
+export function filteredResults(
+  { local, suggested, online }: PaletteSources,
+  filter: Exclude<SearchFilter, "all">,
+): { top: SearchResult | null; rest: SearchResult[] } {
+  const ofKind = (results: readonly SearchResult[]) => results.filter((result) => result.kind === GROUP_KIND[filter]);
+  const [top = null, ...rest] = uniqueResults([...withSuggestions(ofKind(suggested), ofKind(online)), ...ofKind(local)]);
+  return { top, rest };
 }

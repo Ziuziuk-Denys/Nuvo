@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => {
     state: { online: true, offlineMode: false, browserOnline: null as boolean | null },
     liked: [track("l1", "Bohemian Rhapsody", "Queen"), track("l2", "Ёлка", "Звери")],
     search: vi.fn(),
+    suggest: vi.fn(() => Promise.resolve([] as unknown[])),
+    playEntry: vi.fn(),
     scSearch: vi.fn(),
     rank: vi.fn(async (_query: string, songs: readonly { id: string }[]) => songs.map((song) => song.id)),
     startImport: vi.fn(),
@@ -33,7 +35,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog: { search: mocks.search } }) }));
+vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog: { search: mocks.search, suggest: mocks.suggest } }) }));
 vi.mock("../../ports/i18n", () => ({
   useTranslation: () => ({
     t: (key: string, vars?: Record<string, string | number>) => (vars ? `${key}(${Object.values(vars).join(",")})` : key),
@@ -72,6 +74,7 @@ vi.mock("../../ports/links", async (importOriginal) => {
   };
 });
 vi.mock("../../ports/library", () => ({
+  playLibraryEntry: mocks.playEntry,
   useLikedTracks: () => ({ data: { tracks: mocks.liked, total: 2 }, isLoading: false }),
   usePlaylistsList: () => ({ data: { playlists: [], total: 0 }, isLoading: false }),
   useIsTrackLiked: () => false,
@@ -288,6 +291,42 @@ describe("Search", () => {
     expect(host.querySelector("[data-swap]")).toBe(results);
     act(() => button("ui.search.tab_songs").closest("button")!.click());
     expect(host.querySelector("[data-swap]")).not.toBe(results);
+  });
+
+  it("answers with suggestions before the search, and keeps them in place after it", async () => {
+    let answer!: (items: unknown[]) => void;
+    mocks.search.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    mocks.suggest.mockResolvedValueOnce([{ kind: "artist", id: "q", name: "Queen" }, mocks.ytTrack("s9", "Radio Ga Ga")]);
+    renderSearch();
+    typeInto(field(), "radio queen");
+    await settle(40);
+    expect(host.querySelector("[data-top]")?.textContent).toContain("Queen");
+    expect(rowTitles()).toEqual(["Queen", "Radio Ga Ga"]);
+    await settle(320);
+    await act(async () => answer([mocks.ytTrack("s1", "Bohemian Rhapsody")]));
+    expect(host.querySelector("[data-top]")?.textContent).toContain("Queen");
+    expect(rowTitles()).toEqual(["Queen", "Radio Ga Ga", "Bohemian Rhapsody"]);
+  });
+
+  it("switches to a kind at once with what it has, and asks for it only once", async () => {
+    const artist = (id: string, name: string) => ({ kind: "artist", id, name });
+    mocks.search.mockImplementation(async (_text: string, kind: string) =>
+      kind === "artist" ? [artist("q", "Queen"), artist("k", "King")] : [artist("q", "Queen"), mocks.ytTrack("s1", "Bohemian Rhapsody")],
+    );
+    renderSearch();
+    typeInto(field(), "queen");
+    await settle(320);
+    act(() => button("ui.search.tab_artists").closest("button")!.click());
+    expect(host.querySelector("[data-top]")?.textContent).toContain("Queen");
+    await settle(320);
+    expect(rowTitles()).toEqual(["Queen", "King"]);
+    act(() => button("ui.search.tab_all").closest("button")!.click());
+    act(() => button("ui.search.tab_artists").closest("button")!.click());
+    expect(rowTitles()).toEqual(["Queen", "King"]);
+    await settle(320);
+    expect(mocks.search.mock.calls.filter(([, kind]) => kind === "artist")).toHaveLength(1);
+    act(() => [...host.querySelectorAll<HTMLButtonElement>("[data-top] button")][0].click());
+    expect(mocks.playEntry).toHaveBeenCalledWith(expect.objectContaining({ kind: "artist", id: "q" }), "artist:q");
   });
 
   it("plays a song result alone and files it in the history", async () => {

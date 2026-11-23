@@ -12,9 +12,10 @@ import { DislikeButton } from "../../recs/DislikeButton";
 import { useTrackMenu } from "../entity/useTrackMenu";
 import { subtitleOf, type GroupKey, type SearchFilter, type SearchGroups as Groups } from "./searchModel";
 import { ArtistLinks } from "../../shell/ArtistLinks";
+import look from "../look.module.css";
 import styles from "./Search.module.css";
 
-const GROUP_ORDER: GroupKey[] = ["songs", "albums", "artists", "playlists"];
+const OTHER_GROUPS: GroupKey[] = ["artists", "albums", "playlists"];
 
 export interface SearchGroupsProps {
   groups: Groups;
@@ -89,15 +90,16 @@ function EntityCover({ result }: { result: SearchResult }) {
 }
 
 // albums, artists and playlists spread into columns like Home's songs; songs keep one column for their times
-function EntityRows({ results, onActivate }: { results: SearchResult[]; onActivate: (result: SearchResult) => void }) {
+function EntityRows({ results, onActivate, single = false }: { results: SearchResult[]; onActivate: (result: SearchResult) => void; single?: boolean }) {
+  const { t } = useTranslation();
   return (
-    <div className={styles.columns}>
+    <div className={single ? styles.rows : styles.columns}>
       {results.map((result) => (
         <MediaRow
           key={`${result.kind}:${result.id}`}
           leading={<EntityCover result={result} />}
           title={result.title}
-          subtitle={result.subtitle || undefined}
+          subtitle={single ? subtitleOf(result, t) : result.subtitle || undefined}
           onActivate={() => onActivate(result)}
         />
       ))}
@@ -105,7 +107,15 @@ function EntityRows({ results, onActivate }: { results: SearchResult[]; onActiva
   );
 }
 
-function TopCard({ top, onActivate }: { top: SearchResult; onActivate: (result: SearchResult) => void }) {
+export function TopCard({
+  top,
+  onActivate,
+  onPlay,
+}: {
+  top: SearchResult;
+  onActivate: (result: SearchResult) => void;
+  onPlay: (result: SearchResult) => void;
+}): JSX.Element {
   const { t } = useTranslation();
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
@@ -113,64 +123,71 @@ function TopCard({ top, onActivate }: { top: SearchResult; onActivate: (result: 
     if (!event.repeat) onActivate(top);
   };
   return (
-    <div role="button" tabIndex={0} data-top="" className={styles.top} onClick={() => onActivate(top)} onKeyDown={onKeyDown}>
-      <Cover src={top.cover} size={112} radius={10} shape={top.kind === "artist" ? "circle" : "square"} fetchPriority="high" />
-      <span className={styles.topText}>
-        <span className={styles.topLine}>
-          <span className={styles.topTitle}>{top.title}</span>
-          {songBadge(top, t)}
+    <section className={styles.group} aria-label={t("ui.search.top")}>
+      <div className={styles.topHeading}>
+        <h2 className={styles.heading}>{t("ui.search.top")}</h2>
+      </div>
+      <div role="button" tabIndex={0} data-top="" className={styles.top} onClick={() => onActivate(top)} onKeyDown={onKeyDown}>
+        <Cover src={top.cover} size={112} radius={10} shape={top.kind === "artist" ? "circle" : "square"} fetchPriority="high" />
+        <span className={styles.topText}>
+          <span className={styles.topLine}>
+            <span className={styles.topTitle}>{top.title}</span>
+            {songBadge(top, t)}
+          </span>
+          <span className={styles.topSubtitle}>{top.track ? <ArtistLinks track={top.track} /> : subtitleOf(top, t)}</span>
         </span>
-        <span className={styles.topSubtitle}>{top.track ? <ArtistLinks track={top.track} /> : subtitleOf(top, t)}</span>
-      </span>
-      {top.track ? (
-        <span className={styles.topEnd} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-          <DislikeButton track={top.track} />
+        <span className={styles.topActions} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <button type="button" className={`${look.pill} ${look.solid}`} onClick={() => onPlay(top)}>
+            <Icon name="play" size={16} />
+            {t("ui.entity.play")}
+          </button>
+          {top.track ? null : (
+            <button type="button" className={`${look.pill} ${look.glass}`} onClick={() => onActivate(top)}>
+              {t("ui.palette.open")}
+            </button>
+          )}
         </span>
-      ) : null}
-    </div>
+        {top.track ? (
+          <span className={styles.topEnd} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+            <DislikeButton track={top.track} />
+          </span>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
-export function SearchGroups({ groups, filter, hasMore, onShowAll, onActivate }: SearchGroupsProps): JSX.Element {
+export function LeadList({ groups, filter, onActivate }: Pick<SearchGroupsProps, "groups" | "filter" | "onActivate">): JSX.Element {
   const { t } = useTranslation();
-  const top = groups.top;
-  const all = filter === "all";
+  const key = filter === "all" ? "songs" : filter;
+  const results = groups[key];
+  return (
+    <section className={styles.group} aria-label={t(`ui.search.tab_${key}`)}>
+      {key === "songs" ? <SongRows songs={results} onActivate={onActivate} /> : <EntityRows results={results} onActivate={onActivate} single />}
+    </section>
+  );
+}
 
-  const section = (key: GroupKey) => {
-    const results = groups[key];
-    if (results.length === 0) return null;
-    const title = t(`ui.search.tab_${key}`);
-    return (
-      <section key={key} className={styles.group} aria-label={title}>
-        <div className={styles.headingLine}>
-          <h2 className={styles.heading}>{title}</h2>
-          {all && hasMore(key) ? (
-            <button type="button" className={styles.more} onClick={() => onShowAll(key)}>
-              {t("ui.search.show_all")}
-            </button>
-          ) : null}
-        </div>
-        {key === "songs" ? <SongRows songs={results} onActivate={onActivate} /> : <EntityRows results={results} onActivate={onActivate} />}
-      </section>
-    );
-  };
-
+export function OtherGroups({ groups, hasMore, onShowAll, onActivate }: Omit<SearchGroupsProps, "filter">): JSX.Element {
+  const { t } = useTranslation();
   return (
     <>
-      {top ? (
-        <div className={styles.lead}>
-          <section className={styles.group} aria-label={t("ui.search.top")}>
+      {OTHER_GROUPS.filter((key) => groups[key].length > 0).map((key) => {
+        const title = t(`ui.search.tab_${key}`);
+        return (
+          <section key={key} className={styles.group} aria-label={title}>
             <div className={styles.headingLine}>
-              <h2 className={styles.heading}>{t("ui.search.top")}</h2>
+              <h2 className={styles.heading}>{title}</h2>
+              {hasMore(key) ? (
+                <button type="button" className={styles.more} onClick={() => onShowAll(key)}>
+                  {t("ui.search.show_all")}
+                </button>
+              ) : null}
             </div>
-            <TopCard top={top} onActivate={onActivate} />
+            <EntityRows results={groups[key]} onActivate={onActivate} />
           </section>
-          {section("songs")}
-        </div>
-      ) : (
-        section("songs")
-      )}
-      {GROUP_ORDER.filter((key) => key !== "songs").map(section)}
+        );
+      })}
     </>
   );
 }
