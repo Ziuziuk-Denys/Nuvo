@@ -1,3 +1,8 @@
+:root[data-theme="light"] [data-entity="artist"] {
+  --n-ink-2: color-mix(in srgb, var(--n-ink) 80%, transparent);
+  --n-ink-3: var(--n-ink-2);
+}
+
 .sections {
   display: flex;
   flex-direction: column;
