@@ -817,6 +817,7 @@
       "close": "Close",
       "earlier": "Show lyrics earlier",
       "instrumental": "Instrumental",
+      "lyrics_tools": "Lyrics timing and look",
       "later": "Show lyrics later",
       "like": "Like",
       "mute": "Mute",
@@ -1843,6 +1844,12 @@
       "word": "Word",
       "fill": "Fill",
       "step": "Step"
+    },
+    "karaoke_controls": {
+      "title": "Karaoke controls",
+      "description": "Fade hides the player buttons while a song plays and nothing moves. The pointer or any key brings them back.",
+      "fade": "Fade",
+      "always": "Always visible"
     },
     "word_timing": {
       "title": "Word timing",

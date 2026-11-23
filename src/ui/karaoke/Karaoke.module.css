@@ -1,12 +1,13 @@
 .root {
   --k-ink: #fff;
   --k-solid: #fff;
-  --k-ink-2: rgba(255, 255, 255, 0.72);
+  --k-ink-2: rgba(255, 255, 255, 0.84);
   --k-ink-3: rgba(255, 255, 255, 0.5);
   --k-hover: rgba(255, 255, 255, 0.1);
   --k-on: rgba(255, 255, 255, 0.16);
-  --k-track: rgba(255, 255, 255, 0.18);
+  --k-track: rgba(255, 255, 255, 0.28);
   --k-halo: rgba(255, 255, 255, 0.32);
+  --k-lift: rgba(0, 0, 0, 0.5);
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -91,42 +92,36 @@
   color: #ff8a8e;
 }
 
-/* right: clear of the three window buttons */
-.sourceRow {
-  position: absolute;
-  top: 13px;
-  left: var(--k-lyrics);
-  right: 136px;
-  display: flex;
-  justify-content: flex-end;
-  opacity: 0;
-  transition: opacity 200ms var(--n-ease-out);
-}
-
-.top[data-stage-tools] .sourceRow {
-  right: 220px;
-}
-
-.top:hover .sourceRow,
-.sourceRow:has(:focus-visible),
-.sourceRow:has([aria-expanded="true"]),
-.sourceRow[data-busy] {
-  opacity: 1;
-}
-
 /* Solid enough to read over a lyric line without a blur under it */
 .pill {
+  position: absolute;
+  right: calc(100% + 6px);
+  bottom: 0;
   display: flex;
   align-items: center;
   gap: 2px;
   box-sizing: border-box;
-  /* centred over the lyrics while it fits; past that it grows left toward the close button, never over its own edge */
-  max-width: calc(100% + var(--k-lyrics) - 64px);
+  /* from the cover's right edge to the three tools */
+  max-width: calc(100vw - var(--k-left) - 572px);
   height: 36px;
-  margin-inline: auto;
   padding: 0 4px;
   border-radius: var(--n-r-pill);
   background: rgba(14, 15, 20, 0.72);
+  visibility: hidden;
+  opacity: 0;
+  translate: 8px 0;
+  transition:
+    opacity 160ms var(--n-ease-out),
+    translate 160ms var(--n-ease-out),
+    visibility 0s 160ms;
+}
+
+.pill[data-open] {
+  visibility: visible;
+  opacity: 1;
+  translate: none;
+  transition-duration: 220ms, 220ms, 0s;
+  transition-delay: 0s;
 }
 
 .versionMenu {
@@ -195,9 +190,31 @@
 .left {
   position: absolute;
   left: var(--k-left);
-  top: max(44px, calc(50% - 294.6px));
-  width: 340px;
-  height: 589.2px;
+  top: max(66px, calc(50% - 262px));
+  width: 400px;
+  height: 590px;
+}
+
+.cover {
+  position: relative;
+  width: 400px;
+  height: 400px;
+}
+
+.mark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.34);
+  color: #fff;
+  font-size: 56px;
+  font-weight: 500;
+  letter-spacing: -1.5px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .root[data-choosing] .left > :nth-child(n + 4) {
@@ -208,7 +225,7 @@
 .artist {
   position: absolute;
   left: 0;
-  width: 240px;
+  width: 300px;
   margin: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -216,32 +233,33 @@
 }
 
 .title {
-  top: 364px;
-  font-size: 20px;
+  top: 424px;
+  font-size: 24px;
   font-weight: 600;
-  letter-spacing: -0.2px;
-  line-height: 24px;
+  letter-spacing: -0.4px;
+  line-height: 30px;
 }
 
 .artist {
   --artist-link-ink: currentColor;
-  top: 392px;
-  font-size: 14px;
+  top: 457px;
+  font-size: 15px;
   font-weight: 500;
-  line-height: 19.25px;
-  color: var(--k-ink-2);
+  line-height: 20px;
+  color: var(--k-ink);
+}
+
+.opinion {
+  position: absolute;
+  top: 430px;
+  right: -8px;
+  display: flex;
+  gap: 2px;
 }
 
 .like {
-  position: absolute;
-  top: 369.6px;
-  right: 0;
   width: 36px;
   height: 36px;
-}
-
-.dislike {
-  right: 40px;
 }
 
 .bar {
@@ -251,140 +269,257 @@
   touch-action: none;
 }
 
-.bar::before,
-.fill {
+.track {
   position: absolute;
   top: 10px;
-  left: 0;
-  height: 4px;
+  inset-inline: 0;
+  height: 3px;
+  overflow: hidden;
   border-radius: 2px;
-  content: "";
-  transition: transform 150ms var(--n-ease-out);
-}
-
-.bar::before {
-  right: 0;
   background: var(--k-track);
+  transform-origin: left;
+  transition:
+    transform 250ms var(--n-ease-out),
+    scale 150ms var(--n-ease-out);
 }
 
 .fill {
-  width: calc(var(--fraction) * 100%);
+  position: absolute;
+  inset: 0;
   background: var(--k-solid);
+  transform: translateX(calc((var(--fraction) - 1) * 100%));
 }
 
-.bar:hover::before,
-.bar:hover .fill,
-.bar:active::before,
-.bar:active .fill,
-.bar:focus-visible::before,
-.bar:focus-visible .fill {
-  transform: scaleY(1.5);
+.bar:hover .track,
+.bar:active .track,
+.bar:focus-visible .track {
+  scale: 1 1.67;
 }
 
-.bar:focus-visible::before {
+.bar:focus-visible .track {
   background: var(--k-halo);
 }
 
 .seek {
   position: absolute;
-  top: 433.2px;
+  top: 486px;
   left: 0;
-  width: 340px;
+  width: 400px;
 }
 
 .times {
   position: absolute;
-  top: 461.2px;
+  top: 509px;
   left: 0;
   display: flex;
   justify-content: space-between;
-  width: 340px;
+  width: 400px;
   font-size: 12px;
   font-weight: 500;
   line-height: 18px;
   font-variant-numeric: tabular-nums;
-  color: var(--k-ink-3);
-}
-
-/* Centred on the measured 44 px row, so the bigger play button moves nothing else */
-.transport {
-  position: absolute;
-  top: 493.2px;
-  left: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  width: 340px;
-  height: 56px;
-}
-
-.side {
-  width: 40px;
-  height: 40px;
-}
-
-.side > svg {
-  width: 22px;
-  height: 22px;
-}
-
-.mode > svg {
-  width: 20px;
-  height: 20px;
-}
-
-.root .mode[data-on] {
-  background: var(--k-on);
   color: var(--k-ink);
 }
 
-/* opaque ink: the glyph's fill and stroke overlap, a translucent one would show the seam */
-.root .play {
-  width: 56px;
-  height: 56px;
-  background: var(--k-solid);
-  color: rgb(16, 19, 32);
-}
-
-.root .play:hover {
-  background: var(--k-solid);
-  color: rgb(16, 19, 32);
-  transform: scale(1.04);
-}
-
-.root .play:active {
-  transform: scale(0.96);
-}
-
-.root .play:focus-visible {
-  background: var(--k-solid);
-  color: rgb(16, 19, 32);
-  box-shadow: 0 0 0 4px var(--k-halo);
-}
-
-.volume {
+.transport {
   position: absolute;
-  top: 565.2px;
+  top: 534px;
   left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: 340px;
-  height: 24px;
+  width: 400px;
+  height: 52px;
+}
+
+.side {
+  width: 44px;
+  height: 44px;
+  color: var(--k-ink);
+}
+
+.side > svg {
+  width: 26px;
+  height: 26px;
+}
+
+.mode {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  color: var(--k-ink-2);
+}
+
+.mode > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.root .mode[data-on] {
+  color: var(--k-ink);
+}
+
+.mode[data-on]::after {
+  content: "";
+  position: absolute;
+  bottom: 1px;
+  left: calc(50% - 2px);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.play {
+  width: 52px;
+  height: 52px;
+  color: var(--k-ink);
+}
+
+.volume {
+  position: absolute;
+  top: 542px;
+  right: -9px;
+  width: 36px;
+  height: 36px;
 }
 
 .mute {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
+  color: var(--k-ink);
 }
 
-.level {
-  width: 170px;
+.mute > svg {
+  width: 18px;
+  height: 18px;
 }
 
-/* starts under the top bar, so no line ever runs beneath the timing controls */
+.volume .level {
+  position: absolute;
+  top: 6px;
+  right: 100%;
+  box-sizing: content-box;
+  width: 76px;
+  padding-inline-end: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms var(--n-ease-out);
+}
+
+.level .track {
+  inset-inline-end: 4px;
+  transform: scaleX(0.5);
+  transform-origin: right;
+  transition-duration: 220ms;
+}
+
+.volume:hover .level,
+.volume:has(:focus-visible, :active) .level {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.volume:hover .track,
+.volume:has(:focus-visible, :active) .track {
+  transform: none;
+}
+
+.volume:hover .mute {
+  color: var(--k-ink);
+}
+
+.left:has(.volume:hover, .volume :focus-visible, .volume :active) .repeat {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.title,
+.artist,
+.times {
+  text-shadow: 0 0 6px var(--k-lift);
+}
+
+:is(.transport, .opinion, .mute, .tool, .close, .window) svg {
+  filter: drop-shadow(0 0 3px var(--k-lift));
+}
+
+.tools {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tool {
+  width: 36px;
+  height: 36px;
+}
+
+.root .tool[data-on] {
+  color: var(--k-ink);
+}
+
+.transport > button,
+.opinion > button,
+.mute,
+.times > span,
+.tools,
+.close,
+.windowButtons {
+  transition:
+    opacity 250ms var(--n-ease-out),
+    translate 250ms var(--n-ease-out),
+    color 150ms var(--n-ease-out),
+    background-color 150ms var(--n-ease-out),
+    transform 150ms var(--n-ease-out);
+}
+
+.times > span,
+.opinion > button {
+  transition-delay: 30ms, 30ms, 0s, 0s, 0s;
+}
+
+.transport > button:nth-child(2),
+.transport > button:nth-child(4) {
+  transition-delay: 30ms, 30ms, 0s, 0s, 0s;
+}
+
+.transport > button:nth-child(1),
+.transport > button:nth-child(5),
+.mute,
+.tools {
+  transition-delay: 60ms, 60ms, 0s, 0s, 0s;
+}
+
+.root[data-rest] {
+  cursor: none;
+}
+
+.root[data-rest] :is(.transport > button, .opinion > button, .mute, .times > span, .tools, .close, .windowButtons) {
+  opacity: 0;
+  pointer-events: none;
+  transition-duration: 600ms;
+  transition-delay: 0s;
+}
+
+.root[data-rest] :is(.transport > button, .opinion > button, .mute, .times > span) {
+  translate: 0 4px;
+}
+
+.root[data-rest] .seek {
+  pointer-events: none;
+}
+
+.root[data-rest] .seek .track {
+  transform: scaleX(0.3);
+  transition: transform 700ms var(--n-ease-inout);
+}
+
 .lines {
   position: absolute;
   top: 62px;
@@ -542,14 +677,22 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .root :where(button):active,
-  .root .play:hover,
-  .root .play:active {
+  .root :where(button):active {
     transform: none;
   }
 
-  .bar::before,
-  .fill,
+  .transport > button,
+  .opinion > button,
+  .mute,
+  .times > span {
+    translate: none !important;
+  }
+
+  .root[data-rest] .seek .track,
+  .track {
+    transition: none;
+  }
+
   .meter[data-known]::after {
     transition: none;
   }
@@ -579,14 +722,6 @@
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.stageToggle {
-  position: absolute;
-  top: 13px;
-  right: 136px;
-  width: 36px;
-  height: 36px;
 }
 
 .zoneOff {
@@ -676,23 +811,16 @@
   opacity: 1;
 }
 
-.editToggle {
-  position: absolute;
-  top: 13px;
-  right: 176px;
-  width: 36px;
-  height: 36px;
-}
-
 .root[data-scene-tone="light"] {
   --k-ink: #101320;
   --k-solid: #101320;
-  --k-ink-2: rgba(16, 19, 32, 0.72);
+  --k-ink-2: rgba(16, 19, 32, 0.84);
   --k-ink-3: rgba(16, 19, 32, 0.5);
   --k-hover: rgba(16, 19, 32, 0.08);
   --k-on: rgba(16, 19, 32, 0.12);
-  --k-track: rgba(16, 19, 32, 0.18);
+  --k-track: rgba(16, 19, 32, 0.26);
   --k-halo: rgba(16, 19, 32, 0.22);
+  --k-lift: rgba(255, 255, 255, 0.5);
 }
 
 .root[data-scene-tone="light"] .pill {
@@ -703,48 +831,32 @@
     0 6px 18px -10px rgba(16, 19, 32, 0.35);
 }
 
-.root[data-scene-tone="light"] .play {
-  color: #fff;
-}
-
 .root [data-ink="light"] {
   --k-ink: #fff;
   --k-solid: #fff;
-  --k-ink-2: rgba(255, 255, 255, 0.72);
+  --k-ink-2: rgba(255, 255, 255, 0.84);
   --k-ink-3: rgba(255, 255, 255, 0.5);
   --k-hover: rgba(255, 255, 255, 0.1);
   --k-on: rgba(255, 255, 255, 0.16);
-  --k-track: rgba(255, 255, 255, 0.18);
+  --k-track: rgba(255, 255, 255, 0.28);
   --k-halo: rgba(255, 255, 255, 0.32);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --k-lift: rgba(0, 0, 0, 0.5);
 }
 
 .root [data-ink="dark"] {
   --k-ink: #101320;
   --k-solid: #101320;
-  --k-ink-2: rgba(16, 19, 32, 0.72);
+  --k-ink-2: rgba(16, 19, 32, 0.84);
   --k-ink-3: rgba(16, 19, 32, 0.5);
   --k-hover: rgba(16, 19, 32, 0.08);
   --k-on: rgba(16, 19, 32, 0.12);
-  --k-track: rgba(16, 19, 32, 0.18);
+  --k-track: rgba(16, 19, 32, 0.26);
   --k-halo: rgba(16, 19, 32, 0.22);
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.3);
+  --k-lift: rgba(255, 255, 255, 0.5);
 }
 
 :where(.root [data-ink]) {
   color: var(--k-ink);
-}
-
-:where(.stageZone .times > [data-ink]) {
-  color: var(--k-ink-3);
-}
-
-.stageZone .play[data-ink="light"] {
-  color: #101320;
-}
-
-.stageZone .play[data-ink="dark"] {
-  color: #fff;
 }
 
 .noLyrics {

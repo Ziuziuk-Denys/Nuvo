@@ -40,6 +40,8 @@ void main() {
   vec2 p = flow(turn * ((uv - 0.5) * aspect / ZOOM) + 0.5, time);
   vec3 c = mix(soft(previous, p), soft(current, p), blend);
   c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.15);
+  // under the 40 % shade this keeps white text at 4.5:1 over any cover
+  c *= min(1.0, 0.72 / max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 0.001));
   float corner = smoothstep(0.3, 1.4, length((uv - 0.5) * 2.0));
   color = vec4(c * mix(1.0, 0.94, corner), 1.0);
 }`;
