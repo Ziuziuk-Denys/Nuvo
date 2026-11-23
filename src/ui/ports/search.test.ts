@@ -13,7 +13,7 @@ describe("toSearchResult", () => {
       title: "Queen",
       subtitle: "",
       cover: cover.url,
-      href: "/artist?id=UC1",
+      href: "/artist?id=UC1&name=Queen",
     });
     expect(
       toSearchResult({

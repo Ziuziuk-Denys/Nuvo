@@ -17,6 +17,7 @@ import {
   toSearchResult,
   useRankedSongs,
   useSearchAll,
+  useSuggestions,
   useSearchHistoryStore,
   useSoundCloudSearch,
   type SearchHistoryItem,
@@ -24,6 +25,7 @@ import {
 } from "../../ports/search";
 import { shortcutKeycaps, useRecorderState, useShortcutBindings } from "../../ports/shortcuts";
 import { applyTempo, BUILT_IN_PRESETS, TEMPO_PRESETS, useSoundStore, type TempoPresetKey } from "../../ports/sound";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import { navigateWithTransition } from "../../shell/navigate";
 import { useTour } from "../../tour/tourStore";
 import { formatDuration } from "../entity/entityModel";
@@ -56,7 +58,7 @@ const TEMPO_LABELS: Record<TempoPresetKey, string> = {
 };
 const TEMPO_KEYS = (Object.keys(TEMPO_PRESETS) as TempoPresetKey[]).map((key) => ({ key, labelKey: TEMPO_LABELS[key] }));
 
-type Section = "recent" | "top" | "actions" | "songs" | "collections" | "more";
+type Section = "recent" | "top" | "actions" | "artists" | "songs" | "collections" | "more";
 
 interface Entry {
   key: string;
@@ -317,7 +319,14 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
   const soundCloudResults = useMemo(() => soundCloud.items.map(soundCloudResult), [soundCloud.items]);
   const toRank = useMemo(() => songsToRank(shown, soundCloudResults, "all"), [shown, soundCloudResults]);
   const rankedSongs = useRankedSongs(trimmed, toRank);
-  const found = useMemo(() => paletteResults(local, withSoundCloud(shown, rankedSongs, "all")), [local, shown, rankedSongs]);
+  const quick = useSuggestions(isLink ? "" : query, online);
+  const suggested = useMemo(() => quick.items.map(toSearchResult), [quick.items]);
+  // a lone SoundCloud answer must not lead while the catalog is still looking
+  const undecided = online && suggested.length === 0 && shown.length === 0 && search.loading;
+  const found = useMemo(
+    () => paletteResults({ local, suggested, online: undecided ? [] : withSoundCloud(shown, rankedSongs, "all") }),
+    [local, suggested, undecided, shown, rankedSongs],
+  );
 
   const go = (href: string) => navigateWithTransition(navigate, href);
   const withTrack = (action: (track: Track) => void) => () => {
@@ -400,6 +409,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
     ...recent.map((item) => ({ key: `recent:${item.id}`, section: "recent" as const, run: openRecent(item) })),
     ...actions.map((command) => ({ key: `action:${command.id}`, section: "actions" as const, run: close(command.run) })),
     ...(found.top && trimmed ? [{ key: "top", section: "top" as const, run: openResult(found.top), queue: queueResult(found.top) }] : []),
+    ...(trimmed ? found.artists : []).map((artist) => ({ key: `artist:${artist.id}`, section: "artists" as const, run: openResult(artist) })),
     ...(trimmed ? found.songs : []).map((song) => ({ key: `song:${song.id}`, section: "songs" as const, run: openResult(song), queue: queueResult(song) })),
     ...(trimmed ? found.collections : []).map((entry) => ({ key: `entry:${entry.kind}:${entry.id}`, section: "collections" as const, run: openResult(entry) })),
     ...(trimmed && online ? [{ key: "more", section: "more" as const, run: close(() => go(`/search?q=${encodeURIComponent(trimmed)}`)) }] : []),
@@ -437,7 +447,7 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
   );
 
   const searching = trimmed !== "" && online && search.loading && found.songs.length === 0 && !found.top;
-  const nothing = trimmed !== "" && !searching && !found.top && found.songs.length === 0 && found.collections.length === 0;
+  const nothing = trimmed !== "" && !searching && !found.top;
 
   let body: ReactNode;
   if (!trimmed) {
@@ -469,6 +479,19 @@ function PalettePanel({ panelRef, fieldRef, phase, query, selected, listId, onEn
                 <span className={styles.topTitle}>{found.top.title}</span>
                 <span className={styles.meta}>{subtitleOf(found.top, t)}</span>
               </div>
+            </Group>
+          ) : null}
+          {found.artists.length > 0 ? (
+            <Group label={t("ui.search.tab_artists")}>
+              {found.artists.map((artist) => (
+                <ResultRow
+                  key={artist.id}
+                  result={artist}
+                  subtitle={subtitleOf(artist, t)}
+                  selected={indexOf(`artist:${artist.id}`) === active}
+                  {...rowProps(`artist:${artist.id}`)}
+                />
+              ))}
             </Group>
           ) : null}
         </div>
@@ -587,7 +610,7 @@ function ResultRow({ result, subtitle, meta, selected, ...rest }: ResultRowProps
       </span>
       <span className={styles.text}>
         <span className={styles.title}>{result.title}</span>
-        <span className={styles.meta}>{subtitle ?? result.subtitle}</span>
+        <span className={styles.meta}>{subtitle ?? (result.track ? <ArtistLinks track={result.track} /> : result.subtitle)}</span>
       </span>
       {meta ? <span className={styles.time}>{meta}</span> : null}
     </div>

@@ -9,6 +9,7 @@ import {
   artistsFromRuns,
   browseOf,
   durationFromRuns,
+  findAll,
   hasExplicit,
   isObj,
   isSeparator,
@@ -211,6 +212,10 @@ export function mapSearchResponse(response: unknown): SearchItem[] {
     }
   }
   return dedupe(out);
+}
+
+export function mapSuggestions(response: unknown): SearchItem[] {
+  return dedupe(findAll(response, "musicResponsiveListItemRenderer").flatMap((row) => mapSearchItem(row) ?? []));
 }
 
 export function mapQueueRow(item: unknown, mode: "radio" | "details"): TrackPage | undefined {

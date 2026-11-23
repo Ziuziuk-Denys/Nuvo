@@ -58,7 +58,7 @@ export function withSoundCloud(results: readonly SearchResult[], songs: readonly
 
 export const LOCAL_SEARCH_LIMIT = 6;
 
-function songKey(result: SearchResult): string {
+export function songKey(result: SearchResult): string {
   const title = normalizeForSearch(result.title.replace(/[([][^)\]]*[)\]]/g, " "))
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();

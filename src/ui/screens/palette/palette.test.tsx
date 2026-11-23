@@ -4,6 +4,7 @@ import { type Root, createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { PaletteField } from "./Palette";
+import { bindNavigate } from "../../shell/navigate";
 import { useGateStore } from "../lock/gateState";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -42,6 +43,7 @@ const mocks = vi.hoisted(() => {
       song("s2", "Supercut"),
       { kind: "album", id: "m", title: "Melodrama", subtitle: "Lorde", cover: "", href: "/collection?type=album&id=m" },
     ],
+    suggested: [] as unknown[],
     soundCloud: [{ ...song("sc:1", "Royals"), subtitle: "lorde" }],
     rank: vi.fn((_query: string, songs: unknown[]) => songs),
     player: { setFullscreen: vi.fn() },
@@ -98,6 +100,7 @@ vi.mock("../../ports/search", () => ({
     hasLoaded: true,
     runNow: () => undefined,
   }),
+  useSuggestions: (query: string) => ({ items: query.trim() === "lorde" ? mocks.suggested : [], loading: false, hasLoaded: true }),
   toSearchResult: (item: unknown) => item,
   useSoundCloudSearch: (query: string) => ({ items: query.trim() === "lorde" ? mocks.soundCloud : [], loading: false, hasLoaded: true }),
   soundCloudResult: (hit: unknown) => hit,
@@ -108,6 +111,7 @@ vi.mock("../../ports/search", () => ({
   filterTracks: () => [],
   songResult: () => null,
 }));
+vi.mock("../../ports/catalog", () => ({ warmArtist: vi.fn() }));
 vi.mock("../settings/settingItems", () => ({
   SETTING_ITEMS: [{ tabId: "Player", titleKey: "settings.cover_glow.title" }],
 }));
@@ -244,6 +248,27 @@ describe("PaletteField", () => {
     press("Enter");
     expect(mocks.engine.playTrack).toHaveBeenCalledWith(expect.objectContaining({ id: "s1" }), [expect.objectContaining({ id: "s1" })], "search");
     expect(mocks.history.addItem).toHaveBeenCalledWith(expect.objectContaining({ id: "s1", type: "track" }));
+  });
+
+  it("lists other artists and opens one, and a song's artist opens from its row", () => {
+    mocks.suggested = [
+      { kind: "artist", id: "lorde", title: "Lorde", subtitle: "", cover: "", href: "/artist?id=lorde" },
+      { kind: "artist", id: "lordi", title: "Lordi", subtitle: "", cover: "", href: "/artist?id=lordi" },
+    ];
+    ctrlK();
+    type("lorde");
+    expect(groups()).toEqual(["Top result", "ui.search.tab_artists", "Songs", "Playlists and albums"]);
+    press("ArrowDown");
+    press("Enter");
+    expect(where()).toBe("/artist?id=lordi");
+    const go = vi.fn();
+    bindNavigate(go);
+    ctrlK();
+    type("lorde");
+    act(() => dialog()!.querySelector<HTMLElement>("[data-artist-link]")!.click());
+    expect(go).toHaveBeenCalledWith("/artist?name=Lorde");
+    expect(mocks.engine.playTrack).not.toHaveBeenCalled();
+    mocks.suggested = [];
   });
 
   it("ranks SoundCloud songs with the catalog's, as the search page does", () => {

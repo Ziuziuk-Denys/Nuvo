@@ -76,6 +76,13 @@ export function useSearch<T>(query: string, load: SearchLoad<T>, options: Search
   };
 }
 
+const SUGGEST_DEBOUNCE_MS = 30;
+const loadSuggestions: SearchLoad<SearchItem> = (text, signal) => catalogSource()?.suggest(text, signal) ?? Promise.resolve(NONE);
+
+export function useSuggestions(query: string, enabled: boolean): CatalogSearch {
+  return useSearch(query, loadSuggestions, { enabled, debounceMs: SUGGEST_DEBOUNCE_MS });
+}
+
 export function useSearchAll(query: string, options?: SearchOptions): CatalogSearch {
   return useCatalogSearch(query, "all", options);
 }

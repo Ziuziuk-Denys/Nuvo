@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isJunk, matchesWell, queryTokens, search, searchFiltered } from "./search";
+import { isJunk, matchesWell, queryTokens, search, searchFiltered, suggest } from "./search";
 import { json } from "../test/fakeFetch";
 import { harness, searchFor, signal } from "../test/harness";
 import { SEP, artistRun, browse, browseRow, card, run, searchResponse, shelf, songRow } from "../test/shapes";
@@ -38,6 +38,43 @@ describe("query matching", () => {
   it("modified audio is junk unless the query asks for it", () => {
     expect(isJunk(track("song (slowed + reverb)"), "song slowed")).toBe(false);
     expect(isJunk(track("song (slowed + reverb)"), "song")).toBe(true);
+  });
+});
+
+describe("suggest", () => {
+  it("gives the named artists and songs in their order and drops uncredited videos", async () => {
+    const { fake, yt } = harness();
+    const video = songRow({ id: "vidCLIP0001", title: "Clip", kind: "Video", extra: ["3.6K views"] });
+    fake.innertube(
+      "music/get_search_suggestions",
+      json({
+        contents: [
+          { searchSuggestionsSectionRenderer: { contents: [{ searchSuggestionRenderer: { suggestion: { runs: [run("travis scott")] } } }] } },
+          {
+            searchSuggestionsSectionRenderer: {
+              contents: [
+                browseRow("ARTIST", "UCtravis", "Travis Scott", [run("94.9M monthly audience")]),
+                video,
+                song("vidFEIN0001", "FE!N", "Travis Scott"),
+                song("vidOTHER001", "Unrelated"),
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    const items = await suggest(yt, " travis ", signal());
+    expect(items).toMatchObject([
+      { kind: "artist", id: "UCtravis", name: "Travis Scott" },
+      { kind: "track", id: "vidFEIN0001" },
+    ]);
+    expect(fake.calls.at(-1)!.json<{ input: string }>().input).toBe("travis");
+  });
+
+  it("asks nothing for an empty query", async () => {
+    const { fake, yt } = harness();
+    expect(await suggest(yt, "  ", signal())).toEqual([]);
+    expect(fake.calls).toHaveLength(0);
   });
 });
 
