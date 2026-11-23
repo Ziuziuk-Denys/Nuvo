@@ -105,7 +105,7 @@ vi.mock("../../ports/search", () => ({
     hasLoaded: true,
     runNow: () => undefined,
   }),
-  useSuggestions: (query: string) => ({ items: query.trim() === "lorde" ? mocks.suggested : [], loading: false, hasLoaded: true }),
+  useSuggestions: (query: string) => (query.trim() === "lorde" ? mocks.suggested : mocks.idle.items),
   useSearchTracks: () => ({ ...mocks.idle, tracks: [] }),
   useSearchArtists: (_query: string, { enabled }: { enabled: boolean }) => {
     if (enabled) mocks.askedArtists();

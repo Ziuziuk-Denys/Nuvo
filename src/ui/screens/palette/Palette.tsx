@@ -372,7 +372,7 @@ function PalettePanel({
   const toRank = useMemo(() => songsToRank(shown, soundCloudResults, "all"), [shown, soundCloudResults]);
   const rankedSongs = useRankedSongs(trimmed, toRank);
   const quick = useSuggestions(isLink ? "" : query, online);
-  const suggested = useMemo(() => quick.items.map(toSearchResult), [quick.items]);
+  const suggested = useMemo(() => quick.map(toSearchResult), [quick]);
   // a lone SoundCloud answer must not lead while the catalog is still looking
   const undecided = online && suggested.length === 0 && shown.length === 0 && search.loading;
   const unfiltered = useMemo(

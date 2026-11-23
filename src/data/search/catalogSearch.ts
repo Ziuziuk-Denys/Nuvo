@@ -76,11 +76,39 @@ export function useSearch<T>(query: string, load: SearchLoad<T>, options: Search
   };
 }
 
-const SUGGEST_DEBOUNCE_MS = 30;
-const loadSuggestions: SearchLoad<SearchItem> = (text, signal) => catalogSource()?.suggest(text, signal) ?? Promise.resolve(NONE);
+const SUGGESTIONS_IN_FLIGHT = 2;
 
-export function useSuggestions(query: string, enabled: boolean): CatalogSearch {
-  return useSearch(query, loadSuggestions, { enabled, debounceMs: SUGGEST_DEBOUNCE_MS });
+// Two requests may overlap: cancelling each one on the next key would answer only once typing stops
+export function useSuggestions(query: string, enabled: boolean): SearchItem[] {
+  const text = query.trim();
+  const active = enabled && text.length >= MIN_QUERY;
+  const [result, setResult] = useState<{ at: number; query: string; items: SearchItem[] } | null>(null);
+  const [flight] = useState(() => ({ last: 0, running: [] as AbortController[] }));
+
+  useEffect(() => {
+    const catalog = active ? catalogSource() : null;
+    if (!catalog) return;
+    const controller = new AbortController();
+    const at = ++flight.last;
+    flight.running.push(controller);
+    if (flight.running.length > SUGGESTIONS_IN_FLIGHT) flight.running.shift()?.abort();
+    catalog
+      .suggest(text, controller.signal)
+      .then(
+        (items) => {
+          if (!controller.signal.aborted) setResult((shown) => (shown && shown.at > at ? shown : { at, query: text, items }));
+        },
+        () => undefined,
+      )
+      .finally(() => {
+        flight.running = flight.running.filter((running) => running !== controller);
+      });
+  }, [active, text, flight]);
+
+  useEffect(() => () => flight.running.forEach((controller) => controller.abort()), [flight]);
+
+  // an answer for what was typed a key ago still fits; one for another word does not
+  return active && result && (text.startsWith(result.query) || result.query.startsWith(text)) ? result.items : NONE;
 }
 
 export function useSearchAll(query: string, options?: SearchOptions): CatalogSearch {

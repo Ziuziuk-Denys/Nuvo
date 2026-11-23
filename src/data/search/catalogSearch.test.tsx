@@ -3,12 +3,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import type { SearchItem } from "@/youtube";
-import { useSearchAll, useSearchTracks, type CatalogSearch, type SearchOptions } from "./catalogSearch";
+import { useSearchAll, useSearchTracks, useSuggestions, type CatalogSearch, type SearchOptions } from "./catalogSearch";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const search = vi.hoisted(() => vi.fn());
-vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog: { search } }) }));
+const suggest = vi.hoisted(() => vi.fn());
+vi.mock("@/youtubeBoot", () => ({ getYoutube: () => ({ catalog: { search, suggest } }) }));
 
 const song = (id: string): SearchItem => ({ kind: "track", id, title: `Song ${id}`, artists: [{ id: "q", name: "Queen" }], durationMs: 1000, explicit: false });
 
@@ -99,5 +100,53 @@ describe("useSearchTracks", () => {
     await advance(0);
     expect(search).toHaveBeenCalledWith("queen", "track", expect.any(AbortSignal));
     expect(seen?.tracks).toEqual([expect.objectContaining({ id: "s1", artists: "Queen", playCount: 0 })]);
+  });
+});
+
+describe("useSuggestions", () => {
+  let shown: SearchItem[] = [];
+  const asked: { text: string; signal: AbortSignal; answer(items: SearchItem[]): void }[] = [];
+  function Quick({ query, enabled = true }: { query: string; enabled?: boolean }) {
+    shown = useSuggestions(query, enabled);
+    return null;
+  }
+  const type = (query: string, enabled = true) => act(() => root.render(<Quick query={query} enabled={enabled} />));
+  const answer = (index: number, id: string) => act(async () => asked[index].answer([song(id)]));
+
+  beforeEach(() => {
+    asked.length = 0;
+    suggest.mockReset();
+    suggest.mockImplementation((text: string, signal: AbortSignal) => new Promise((resolve) => asked.push({ text, signal, answer: resolve })));
+  });
+
+  it("answers while typing: two requests overlap and only an older third is dropped", async () => {
+    type("tr");
+    type("tra");
+    expect(asked.map(({ signal }) => signal.aborted)).toEqual([false, false]);
+    type("trav");
+    expect(asked.map(({ signal }) => signal.aborted)).toEqual([true, false, false]);
+    await answer(1, "early");
+    expect(shown.map(({ id }) => id)).toEqual(["early"]);
+    await answer(2, "late");
+    expect(shown.map(({ id }) => id)).toEqual(["late"]);
+  });
+
+  it("never lets an earlier answer replace a later one", async () => {
+    type("tr");
+    type("tra");
+    await answer(1, "late");
+    await answer(0, "early");
+    expect(shown.map(({ id }) => id)).toEqual(["late"]);
+  });
+
+  it("drops what another word brought, and asks nothing while disabled or too short", async () => {
+    type("travis");
+    await answer(0, "t");
+    type("queen");
+    expect(shown).toEqual([]);
+    type("q");
+    type("queen live", false);
+    expect(asked.map(({ text }) => text)).toEqual(["travis", "queen"]);
+    expect(shown).toEqual([]);
   });
 });

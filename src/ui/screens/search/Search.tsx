@@ -198,7 +198,7 @@ export function Search(): JSX.Element {
   const ofFilter = (results: readonly SearchResult[]) => (filter === "all" ? [...results] : results.filter((result) => result.kind === GROUP_KIND[filter]));
   const early = filter === "all" ? NO_RESULTS : ofFilter(resultCache.get(`all:${trimmed.toLowerCase()}`) ?? NO_RESULTS);
   const quick = useSuggestions(searchQuery, youtubeActive);
-  const suggested = youtubeActive ? ofFilter(quick.items.map(toSearchResult)) : NO_RESULTS;
+  const suggested = youtubeActive ? ofFilter(quick.map(toSearchResult)) : NO_RESULTS;
 
   const liked = useLikedTracks();
   const library = usePlaylistsList();
