@@ -50,11 +50,9 @@ describe("targetElement", () => {
     const box = { left: 200, top: 720, width: 70, height: 40 };
     const island = document.createElement("div");
     island.setAttribute("data-island", "");
-    const open = sized(document.createElement("button"), box);
-    open.append(Object.assign(document.createElement("span"), { textContent: "Song" }));
-    open.firstElementChild!.setAttribute("data-island-title", "");
+    const open = place("lyrics", box, island);
     const rate = sized(document.createElement("span"), box);
-    island.append(open, rate);
+    island.append(rate);
     document.body.append(island);
     // each button sits in its own tooltip wrapper, so the ring takes the span holding both
     for (const name of ["data-like", "data-dislike"]) {

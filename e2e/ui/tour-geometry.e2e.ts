@@ -32,7 +32,7 @@ const TARGETS: Record<string, string> = {
   "nav-recognize": '[data-nav="recognize"]',
   scrubber: '[data-island] [role="slider"]',
   rate: "[data-island] span:has([data-like]):has([data-dislike])",
-  lyrics: "[data-island] button:has([data-island-title])",
+  lyrics: "[data-tour=lyrics]",
   queue: '[data-tour="queue"]',
   "sound-panel": '[role="dialog"]:not([aria-modal]):has([role="tab"])',
   "add-button": '[data-tour="add"]',

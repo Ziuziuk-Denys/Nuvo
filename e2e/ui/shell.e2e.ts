@@ -178,10 +178,10 @@ async function measureIsland(page: Page) {
       background: getComputedStyle(island).backgroundColor,
       backdrop: getComputedStyle(island).backdropFilter,
       lit: island.hasAttribute("data-lit"),
-      cover: box(open.firstElementChild!),
-      title: box(open.querySelector("[data-island-title]")!),
+      cover: box(open.parentElement!.firstElementChild!),
+      title: box(island.querySelector("[data-island-title]")!),
       titleClipped: (() => {
-        const title = open.querySelector("[data-island-title]")!;
+        const title = island.querySelector("[data-island-title]")!;
         return title.scrollWidth > title.clientWidth;
       })(),
       previous: box(previous),
@@ -531,7 +531,7 @@ describe("shell", () => {
     await setCurrentTrack(live, 0, "radio:seed-0001");
     const line = page.locator("[data-state-line]");
     await live.shoot(STEP, "island-state", "radio", { looks: NUVO_LOOKS, sizes: [SIZES[0]], prepare: () => line.waitFor({ timeout: 10_000 }) });
-    expect(await line.textContent()).toMatch(/^(Radio · from .+|Offline)$/);
+    expect(await line.textContent()).toMatch(/^(.+ · Radio · from .+|Offline)$/);
     const fit = await page.evaluate(() => {
       const title = document.querySelector("[data-island-title]")!;
       const island = title.closest("[data-island]")!.getBoundingClientRect();
