@@ -9,7 +9,7 @@ export interface RowProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
   leading?: ReactNode;
   title: string;
   badge?: ReactNode;
-  subtitle?: string;
+  subtitle?: ReactNode;
   column?: string;
   meta?: ReactNode;
   actions?: ReactNode;

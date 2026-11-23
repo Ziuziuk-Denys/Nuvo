@@ -37,6 +37,7 @@ import { reasonText } from "../../recs/reasonText";
 import { noticeText, UndoNotice } from "../../recs/UndoNotice";
 import { useLook } from "../../ports/theme";
 import { useTourDemo } from "../../tour/demo";
+import { ArtistLinks } from "../ArtistLinks";
 import { AddToPlaylistPopover } from "../popovers/AddToPlaylistPopover";
 import { SOUND_TABS, SoundPopover, SoundTrailing, type SoundTab } from "../popovers/SoundPopover";
 import { VolumePopover, wheelVolume } from "../popovers/VolumePopover";
@@ -49,6 +50,8 @@ import { stateLine, type StateLine } from "./stateLine";
 import { VolumeLadder } from "./VolumeLadder";
 
 type Panel = "add" | "sound" | "volume";
+
+const WITH_ARTIST: ReadonlySet<StateLine["kind"]> = new Set(["reason", "radio-seed", "radio-queue"]);
 
 const CODEC_NAMES: Record<string, string> = { opus: "Opus", aac: "AAC", mp3: "MP3" };
 
@@ -225,14 +228,12 @@ export function Island(): JSX.Element | null {
       {...{ [LAYER_ATTRIBUTE]: "" }}
     >
       <div className={styles.now}>
-        <button
-          type="button"
+        <div
           className={styles.open}
-          aria-label={t("ui.island.open_lyrics")}
           onClick={openPlayer}
           onContextMenu={
             standIn || (recsEnabled && pick.track)
-              ? (event: MouseEvent<HTMLButtonElement>) => {
+              ? (event: MouseEvent<HTMLElement>) => {
                   event.preventDefault();
                   setOpen(false);
                   setDislikeMenu({ open: true, at: { x: event.clientX, y: event.clientY } });
@@ -248,14 +249,23 @@ export function Island(): JSX.Element | null {
             <Tooltip text={hint}>
               {line ? (
                 <span className={styles.artist} data-state-line="">
+                  {WITH_ARTIST.has(line.kind) && track.artists ? (
+                    <>
+                      <ArtistLinks track={track} focusable />
+                      {" · "}
+                    </>
+                  ) : null}
                   {lineText(line)}
                 </span>
               ) : (
-                <span className={styles.artist}>{track.artists}</span>
+                <span className={styles.artist}>
+                  <ArtistLinks track={track} focusable />
+                </span>
               )}
             </Tooltip>
           </span>
-        </button>
+          <button type="button" className={styles.hit} aria-label={t("ui.island.open_lyrics")} />
+        </div>
         <span className={styles.rate}>
           <IconButton
             icon={liked ? "liked" : "like"}

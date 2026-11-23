@@ -29,6 +29,7 @@ import {
 } from "../../ports/links";
 import type { Track } from "../../ports/player";
 import { formatDuration } from "../entity/entityModel";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import searchStyles from "./Search.module.css";
 import styles from "./LinkBlock.module.css";
 
@@ -248,7 +249,7 @@ export function LinkBlock(props: LinkBlockProps): JSX.Element {
           data-selected={menuOpen ? "" : undefined}
           leading={<Cover src={track.coverUrl ?? ""} size={40} />}
           title={track.title}
-          subtitle={track.artists}
+          subtitle={<ArtistLinks track={track} />}
           meta={formatDuration(track.durationMs)}
           onActivate={() => props.onPlay(track)}
           onContextMenu={(event) => {

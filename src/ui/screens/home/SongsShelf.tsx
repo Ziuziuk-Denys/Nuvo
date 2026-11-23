@@ -6,6 +6,7 @@ import type { Track } from "../../ports/recs";
 import { useTrackMenu } from "../entity/useTrackMenu";
 import { ShelfHeading } from "./ShelfHeading";
 import type { Shelf } from "./useShelf";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import shelf from "./SavedShelf.module.css";
 import styles from "./SongsShelf.module.css";
 
@@ -32,7 +33,7 @@ export function SongsShelf({ name, title, icon, shelf: state, songs, onPlay }: S
             data-song={track.id}
             leading={<Cover src={track.coverUrl} size={40} radius={6} />}
             title={track.title}
-            subtitle={track.artists}
+            subtitle={<ArtistLinks track={track} />}
             onActivate={() => onPlay(index)}
             onContextMenu={menu.onContextMenu(track)}
           />

@@ -1,3 +1,4 @@
+import { artistsOf, type ArtistTarget } from "../../app/hrefs";
 import type { MenuAction, MenuItem } from "../../components/Menu";
 import type { TFunction } from "../../ports/i18n";
 import type { Track } from "../../ports/player";
@@ -14,7 +15,7 @@ export interface TrackMenuActions {
   addToQueue(track: Track): void;
   addToPlaylist(track: Track): void;
   startRadio(track: Track): void;
-  goToArtist(artistId: string): void;
+  goToArtist(artist: ArtistTarget): void;
   goToAlbum(albumId: string): void;
   remove(track: Track): void;
   notInterested?(track: Track, scope: NotInterestedScope): void;
@@ -26,7 +27,7 @@ export interface TrackMenuActions {
 
 export function trackMenuItems(track: Track, context: { playlistId?: string }, actions: TrackMenuActions): MenuItem[] {
   const { t } = actions;
-  const artistId = track.artistId;
+  const [artist] = artistsOf(track);
   const albumId = track.album?.id;
   const sections: MenuItem[][] = [
     [
@@ -40,7 +41,7 @@ export function trackMenuItems(track: Track, context: { playlistId?: string }, a
     ],
   ];
   const goTo: MenuItem[] = [];
-  if (artistId) goTo.push({ label: t("ui.entity.go_artist"), icon: "artist", onSelect: () => actions.goToArtist(artistId) });
+  if (artist) goTo.push({ label: t("ui.entity.go_artist"), icon: "artist", onSelect: () => actions.goToArtist(artist) });
   if (albumId) goTo.push({ label: t("ui.entity.go_album"), icon: "album", onSelect: () => actions.goToAlbum(albumId) });
   goTo.push({ label: t("ui.stats.track_stats"), icon: "stats", onSelect: () => void (location.hash = `#/stats/track?id=${encodeURIComponent(track.id)}`) });
   sections.push(goTo);

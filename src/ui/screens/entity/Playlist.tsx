@@ -62,6 +62,7 @@ import { TrackBulkBar } from "./TrackBulkBar";
 import { useTrackSelection } from "./trackSelection";
 import pageStyles from "./EntityPage.module.css";
 import { openLyricsTool } from "../lyrics/lyricsTools";
+import { openArtist } from "../../shell/openArtist";
 
 const SORTS: TrackOrder[] = ["default", "title", "duration"];
 const PLAYLIST_SORTS: PlaylistSort[] = ["manual", "added", "title", "artist", "album", "duration"];
@@ -285,7 +286,7 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
       setAddOpen(true);
     },
     startRadio: (track) => void playerEngine.startRadioStation(track),
-    goToArtist: (artistId) => navigateWithTransition(navigate, `/artist?id=${encodeURIComponent(artistId)}`),
+    goToArtist: openArtist,
     goToAlbum: (albumId) => navigateWithTransition(navigate, `/collection?type=album&id=${encodeURIComponent(albumId)}`),
     editLyrics: (track) => openLyricsTool(track, "edit"),
     translateLyrics: (track) => openLyricsTool(track, "translate"),

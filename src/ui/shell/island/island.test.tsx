@@ -6,6 +6,7 @@ import { useCustomizationStore } from "../../ports/settings";
 import { useNotInterestedStore } from "../../recs/notInterested";
 import { useTour } from "../../tour/tourStore";
 import { useShellStore } from "../shellStore";
+import { bindNavigate } from "../navigate";
 import { Island } from "./Island";
 import { volumeGlyph } from "./VolumeLadder";
 
@@ -67,7 +68,7 @@ const rejectVersion = vi.hoisted(() => vi.fn(async (_id: string) => undefined));
 
 vi.mock("../../ports/player", () => ({
   usePlayerState: () => mocks.player,
-  usePlayerStore: (select: (state: typeof mocks.player) => unknown) => select(mocks.player),
+  usePlayerStore: Object.assign((select: (state: typeof mocks.player) => unknown) => select(mocks.player), { getState: () => mocks.player }),
   playerEngine: mocks.engine,
   playerOutputs: { unmute: unmuteOutput },
   toVolumeGain: (level: number) => level * level,
@@ -252,7 +253,7 @@ describe("Island", () => {
     mocks.pick.track = { id: "t1", title: "Teardrop", artists: "Massive Attack", coverUrl: "", durationMs: 330_000 };
     mocks.pick.reason = { kind: "session", name: "Roygbiv" };
     mount();
-    expect(document.querySelector("[data-state-line]")?.textContent).toBe("ui.recs.reason.session");
+    expect(document.querySelector("[data-state-line]")?.textContent).toBe("Massive Attack · ui.recs.reason.session");
   });
 
   it("says quietly when another source stands in and offers to keep or refuse it", () => {
@@ -370,6 +371,16 @@ describe("Island", () => {
     expect(mocks.player.setFullscreen).toHaveBeenCalledWith(true);
   });
 
+  it("opens the artist from the artist's name, not the karaoke view", () => {
+    const go = vi.fn();
+    bindNavigate(go);
+    mount();
+    mocks.player.setFullscreen.mockClear();
+    click(document.querySelector<HTMLElement>("[data-island] [data-artist-link]")!);
+    expect(go).toHaveBeenCalledWith("/artist?name=Massive+Attack");
+    expect(mocks.player.setFullscreen).not.toHaveBeenCalledWith(true);
+  });
+
   it("seeks 5 s with ArrowRight and tints the played part from the left", () => {
     mount();
     const scrubber = document.querySelector<HTMLElement>('[role="slider"][aria-label="ui.island.seek"]')!;
@@ -402,7 +413,7 @@ describe("Island", () => {
     expect(document.querySelector("[data-state-line]")).toBeNull();
     mocks.player.currentIndex = 3;
     mount();
-    expect(document.querySelector("[data-state-line]")?.textContent).toBe("ui.island.state.radio_queue");
+    expect(document.querySelector("[data-state-line]")?.textContent).toBe("Massive Attack · ui.island.state.radio_queue");
   });
 
   it("says offline before anything else", () => {
@@ -431,7 +442,7 @@ describe("Island", () => {
   it("keeps the square cover under the vinyl look", () => {
     mocks.look.preset = "vinyl";
     mount();
-    expect(button("ui.island.open_lyrics")!.firstElementChild!.className).not.toContain("vinyl");
+    expect(button("ui.island.open_lyrics")!.parentElement!.firstElementChild!.className).not.toContain("vinyl");
   });
 
   it("moves the transport to the side when the player controls setting says so", () => {

@@ -8,6 +8,7 @@ import { useTranslation } from "../../../ports/i18n";
 import type { Track } from "../../../ports/recs";
 import { ShelfHeading } from "../ShelfHeading";
 import { PERSPECTIVE, place, ringFor, ringOffset, ringSlots } from "./ring";
+import { ArtistLinks } from "../../../shell/ArtistLinks";
 import styles from "./DiscoverArc.module.css";
 
 const HEIGHT = 460;
@@ -269,9 +270,13 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
           </li>
         ))}
       </ul>
-      <p className={styles.caption} style={{ top: ring.centreY + (ring.cover / 2) * 1.12 + 14 }} aria-hidden="true">
-        <span className={styles.title}>{current.title}</span>
-        <span className={styles.artist}>{current.artists}</span>
+      <p className={styles.caption} style={{ top: ring.centreY + (ring.cover / 2) * 1.12 + 14 }}>
+        <span className={styles.title} aria-hidden="true">
+          {current.title}
+        </span>
+        <span className={styles.artist}>
+          <ArtistLinks track={current} focusable />
+        </span>
       </p>
     </section>
   );

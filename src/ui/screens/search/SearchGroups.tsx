@@ -11,6 +11,7 @@ import { useUnavailable } from "../entity/EntityTracks";
 import { DislikeButton } from "../../recs/DislikeButton";
 import { useTrackMenu } from "../entity/useTrackMenu";
 import { subtitleOf, type GroupKey, type SearchFilter, type SearchGroups as Groups } from "./searchModel";
+import { ArtistLinks } from "../../shell/ArtistLinks";
 import styles from "./Search.module.css";
 
 const GROUP_ORDER: GroupKey[] = ["songs", "albums", "artists", "playlists"];
@@ -65,7 +66,7 @@ function SongRows({ songs, onActivate }: { songs: SearchResult[]; onActivate: (r
               leading={<Cover src={song.cover} size={48} radius={8} fetchPriority="low" />}
               title={song.title}
               badge={songBadge(song, t)}
-              subtitle={song.subtitle}
+              subtitle={<ArtistLinks track={track} />}
               meta={formatDuration(track.durationMs)}
               extra={<DislikeButton track={track} />}
               active={track.id === currentId}
@@ -119,7 +120,7 @@ function TopCard({ top, onActivate }: { top: SearchResult; onActivate: (result: 
           <span className={styles.topTitle}>{top.title}</span>
           {songBadge(top, t)}
         </span>
-        <span className={styles.topSubtitle}>{subtitleOf(top, t)}</span>
+        <span className={styles.topSubtitle}>{top.track ? <ArtistLinks track={top.track} /> : subtitleOf(top, t)}</span>
       </span>
       {top.track ? (
         <span className={styles.topEnd} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>

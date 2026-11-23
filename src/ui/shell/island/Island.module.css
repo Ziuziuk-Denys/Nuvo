@@ -71,16 +71,20 @@
 }
 
 .open {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
   min-width: 0;
+  cursor: pointer;
+}
+
+.hit {
+  position: absolute;
+  inset: 0;
   padding: 0;
   border: 0;
   background: none;
-  color: inherit;
-  font: inherit;
-  text-align: start;
   cursor: pointer;
 }
 
@@ -103,6 +107,8 @@
 }
 
 .artist {
+  position: relative;
+  z-index: 1;
   margin-top: 4px;
   color: var(--n-ink-3);
   font: 300 13px/15px var(--n-font);

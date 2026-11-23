@@ -212,6 +212,36 @@ describe("Artist", () => {
     expect(button("ui.entity.show_all")).toBeUndefined();
   });
 
+  it("shows the name at once while the page loads", () => {
+    mocks.state.artist = { data: null, loading: true };
+    render("/artist?id=q&name=Queen", <Artist />);
+    expect(host.querySelector("h1")?.textContent).toBe("Queen");
+  });
+
+  it("offers a search when nobody has that name", () => {
+    mocks.state.artist = { data: null, loading: false };
+    render("/artist?name=Nobody", <Artist />);
+    expect(host.textContent).toContain("ui.entity.artist_not_found_title(Nobody)");
+    expect(buttons().map((node) => node.textContent)).toEqual(["ui.palette.show_all(Nobody)"]);
+  });
+
+  it("plays the whole list even when Play came before it", () => {
+    const page = { title: "Queen", coverUrl: "q.jpg", albums: [], singles: [] };
+    mocks.state.artist = { data: { ...page, tracks: [1].map(mocks.track) }, loading: true };
+    render("/artist?id=q", <Artist />);
+    act(() => button("ui.entity.play")!.click());
+    expect(mocks.engine.playTrack).not.toHaveBeenCalled();
+    mocks.state.artist = { data: { ...page, tracks: [1, 2].map(mocks.track) }, loading: false };
+    act(() =>
+      root!.render(
+        <MemoryRouter initialEntries={["/artist?id=q"]}>
+          <Artist />
+        </MemoryRouter>,
+      ),
+    );
+    expect(mocks.engine.playTrack).toHaveBeenCalledWith(mocks.track(1), [1, 2].map(mocks.track), "artist:q", "q.jpg");
+  });
+
   it("with no data and no network, shows only the name and the radio button", () => {
     mocks.state.online = false;
     mocks.state.savedArtists = [{ id: "q", title: "Queen" }];

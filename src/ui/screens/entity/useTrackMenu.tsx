@@ -11,6 +11,7 @@ import { navigateWithTransition } from "../../shell/navigate";
 import { AddToPlaylistPopover } from "../../shell/popovers/AddToPlaylistPopover";
 import { openLyricsTool } from "../lyrics/lyricsTools";
 import { trackMenuItems, type TrackMenuActions } from "./trackMenu";
+import { openArtist } from "../../shell/openArtist";
 
 interface MenuState {
   track: Track;
@@ -43,7 +44,7 @@ export function useTrackMenu(): TrackMenu {
       setAddOpen(true);
     },
     startRadio: (track) => void playerEngine.startRadioStation(track),
-    goToArtist: (artistId) => navigateWithTransition(navigate, `/artist?id=${encodeURIComponent(artistId)}`),
+    goToArtist: openArtist,
     goToAlbum: (albumId) => navigateWithTransition(navigate, `/collection?type=album&id=${encodeURIComponent(albumId)}`),
     editLyrics: (track) => openLyricsTool(track, "edit"),
     translateLyrics: (track) => openLyricsTool(track, "translate"),

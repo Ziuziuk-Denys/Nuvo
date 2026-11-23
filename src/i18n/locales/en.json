@@ -108,6 +108,8 @@
     "entity": {
       "add_to_playlist": "Add to playlist",
       "add_to_queue": "Add to queue",
+      "artist_not_found_message": "They may go by another name in the catalog.",
+      "artist_not_found_title": "Couldn't find {name}",
       "albums": "Albums",
       "back_to_library": "Back to library",
       "go_album": "Go to album",

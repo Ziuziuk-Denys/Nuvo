@@ -1,4 +1,4 @@
-import { useMemo, useState, type JSX } from "react";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Cover } from "../../components/Cover";
 import { Icon } from "../../icons/Icon";
@@ -10,6 +10,7 @@ import { useTranslation, type TFunction } from "../../ports/i18n";
 import { usePlayerStore, type Track } from "../../ports/player";
 import { navigateWithTransition } from "../../shell/navigate";
 import look from "../look.module.css";
+import { MediaRowPlaceholder } from "../MediaRow";
 import styles from "./Artist.module.css";
 import { usePinItems, useSaved } from "./entityActions";
 import { EntityHead } from "./EntityHead";
@@ -22,7 +23,8 @@ const NO_TRACKS: Track[] = [];
 export function Artist(): JSX.Element {
   const [params] = useSearchParams();
   const id = params.get("id") ?? "";
-  return <ArtistPage key={id} id={id} />;
+  const name = params.get("name") ?? "";
+  return <ArtistPage key={id || name} pageId={id} givenName={name} />;
 }
 
 function byArtist(track: Track, id: string): boolean {
@@ -56,10 +58,11 @@ function Shelf({ title, items, onOpen }: { title: string; items: ArtistAlbumView
   );
 }
 
-function ArtistPage({ id }: { id: string }): JSX.Element {
+function ArtistPage({ pageId, givenName }: { pageId: string; givenName: string }): JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, loading } = useArtist(id || null);
+  const { data, loading } = useArtist(pageId || null, givenName);
+  const id = pageId || data?.id || "";
   const localSeed = usePlayerStore((state) => state.queue.find((track) => byArtist(track, id)));
   const [all, setAll] = useState(false);
 
@@ -70,13 +73,21 @@ function ArtistPage({ id }: { id: string }): JSX.Element {
     title: data?.title ?? "",
     ...(data?.coverUrl ? { cover: { url: data.coverUrl } } : {}),
   }));
-  const name = data?.title ?? item?.title ?? localSeed?.artistList?.find((artist) => artist.id === id)?.name ?? "";
+  const name = data?.title ?? item?.title ?? localSeed?.artistList?.find((artist) => artist.id === id)?.name ?? givenName;
   const cover = data?.coverUrl || item?.imageUrl || "";
   usePageBackdrop(cover || undefined);
 
   const unavailable = useUnavailable(tracks);
   // the library plays an artist under its name, so the two agree on what is playing
   const { playable, play, playAll, shuffle } = entityPlayback(tracks, unavailable, `artist:${id}`, cover);
+  const [pressed, setPressed] = useState<"play" | "shuffle" | null>(null);
+  const partial = loading && data !== null;
+  useEffect(() => {
+    if (!pressed || partial) return;
+    setPressed(null);
+    if (pressed === "play") playAll();
+    else shuffle();
+  }, [pressed, partial, playAll, shuffle]);
   const shown = useMemo(() => (all ? tracks : tracks.slice(0, TOP)).map((track, index) => ({ track, index })), [all, tracks]);
   const albums = data?.albums ?? [];
   const singles = data?.singles ?? [];
@@ -86,7 +97,7 @@ function ArtistPage({ id }: { id: string }): JSX.Element {
     t,
   );
 
-  if (!data && loading) return <EntityLoading kind="artist" />;
+  if (!data && loading && !name) return <EntityLoading kind="artist" />;
 
   const menu: MenuItem[] = [
     { label: t("ui.entity.start_radio"), onSelect: () => void startArtistRadio(id, playable[0]) },
@@ -109,8 +120,8 @@ function ArtistPage({ id }: { id: string }): JSX.Element {
         ) : undefined
       }
       subtitle={data ? audience(data.monthlyListeners, tracks.length, t) : undefined}
-      onPlay={playAll}
-      onShuffle={shuffle}
+      onPlay={() => setPressed("play")}
+      onShuffle={() => setPressed("shuffle")}
       saved={saved}
       onSave={toggle}
       menu={menu}
@@ -119,13 +130,32 @@ function ArtistPage({ id }: { id: string }): JSX.Element {
     />
   );
 
+  if (!data && loading)
+    return (
+      <EntityPage
+        kind="artist"
+        head={head()}
+        tracks={Array.from({ length: TOP }, (_, index) => (
+          <MediaRowPlaceholder key={index} />
+        ))}
+      />
+    );
+
   if (!data) {
-    if (!name) {
+    if (!name || !id) {
       return (
         <EmptyState
-          title={t("ui.entity.load_failed_title")}
-          message={t("ui.entity.load_failed_message")}
-          actions={[{ label: t("ui.entity.back_to_library"), primary: true, onClick: () => navigateWithTransition(navigate, "/library") }]}
+          title={name ? t("ui.entity.artist_not_found_title", { name }) : t("ui.entity.load_failed_title")}
+          message={t(name ? "ui.entity.artist_not_found_message" : "ui.entity.load_failed_message")}
+          actions={[
+            name
+              ? {
+                  label: t("ui.palette.show_all", { query: name }),
+                  primary: true,
+                  onClick: () => navigateWithTransition(navigate, `/search?q=${encodeURIComponent(name)}`),
+                }
+              : { label: t("ui.entity.back_to_library"), primary: true, onClick: () => navigateWithTransition(navigate, "/library") },
+          ]}
         />
       );
     }
