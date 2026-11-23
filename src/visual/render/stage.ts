@@ -3,6 +3,7 @@ import { RING_POINTS, createRing } from "../signal/ring";
 import { evaluate } from "../template/bindings";
 import { inkOf } from "../template/text";
 import type { Aspect, Layer, Template } from "../template/schema";
+import { createCuts } from "./cuts";
 import { createProgram, createQuad, createTarget, createTexture, deleteTarget, getContext, uploadFloats, type GlCanvas, type Program, type Target } from "./gl";
 import type { Pulse, Signals } from "../type/animations/types";
 import type { Palette, Rgb } from "./palette";
@@ -13,7 +14,6 @@ export const HISTORY_ROWS = 128;
 export const HISTORY_RATE = 30;
 export const GLYPHS = " .·:-=+*xo%#@";
 const GLYPH_PX = 64;
-const SHOT_MIN_MS = 450;
 
 const FINISH = `#version 300 es
 precision highp float;
@@ -157,10 +157,8 @@ export function createStage(canvas: GlCanvas): Stage | null {
   let height = 1;
 
   let lastMs: number | null = null;
-  let cuts = 0;
-  let cutAtMs = -Infinity;
-  let shots = 0;
-  let shotAtMs = -Infinity;
+  const cuts = createCuts();
+  let cut = cuts.step(0, false);
   let drive = 0;
   let historyHead = 0;
   let historyDue = 0;
@@ -192,10 +190,7 @@ export function createStage(canvas: GlCanvas): Stage | null {
 
   function reset(): void {
     lastMs = null;
-    cuts = 0;
-    cutAtMs = -Infinity;
-    shots = 0;
-    shotAtMs = -Infinity;
+    cuts.reset();
     drive = 0;
     historyHead = 0;
     historyDue = 0;
@@ -215,14 +210,7 @@ export function createStage(canvas: GlCanvas): Stage | null {
   function advance(timeMs: number, features: Features): number {
     const delta = lastMs === null ? 1000 / 60 : Math.max(0, Math.min(250, timeMs - lastMs));
     lastMs = timeMs;
-    if (features.onset === 1 && delta > 0) {
-      cuts += 1;
-      cutAtMs = timeMs;
-      if (timeMs - shotAtMs >= SHOT_MIN_MS) {
-        shots += 1;
-        shotAtMs = timeMs;
-      }
-    }
+    cut = cuts.step(timeMs, features.onset === 1 && delta > 0);
     drive += (delta / 1000) * (0.25 + features.level + 1.5 * features.onset);
     historyDue += delta;
     while (historyDue >= 1000 / HISTORY_RATE) {
@@ -263,10 +251,10 @@ export function createStage(canvas: GlCanvas): Stage | null {
     set1("uFlux", features.flux);
     set1("uOnset", features.onset);
     set1("uBeat", features.beat);
-    set1("uCut", cuts);
-    set1("uCutAge", (timeMs - cutAtMs) / 1000);
-    set1("uShot", shots);
-    set1("uShotAge", (timeMs - shotAtMs) / 1000);
+    set1("uCut", cut.cuts);
+    set1("uCutAge", cut.cutAgeMs / 1000);
+    set1("uShot", cut.shots);
+    set1("uShotAge", cut.shotAgeMs / 1000);
     set1("uHistoryHead", (historyHead + 0.5) / HISTORY_ROWS);
     set1("uImageAspect", imageAspect);
     set1("uHasImage", hasImage);
@@ -413,7 +401,7 @@ export function createStage(canvas: GlCanvas): Stage | null {
       frameDelta = advance(timeMs, features);
       frameMs = timeMs;
       frameFeatures = features;
-      return { cuts, cutAgeMs: timeMs - cutAtMs, drive, onset: features.onset, level: features.level };
+      return { cuts: cut.cuts, cutAgeMs: cut.cutAgeMs, drive, onset: features.onset, level: features.level };
     },
     render(nextSignals, reduced = false) {
       const features = frameFeatures;
