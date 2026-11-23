@@ -1,4 +1,5 @@
 import type { Line } from "@/lyrics";
+import type { WallpaperImportError } from "@/shell/nuvoShell";
 import { cachedAudio } from "@/features/sound/measureLoudness";
 import { pitchShifter } from "@/engine/compat";
 import { renderWithEffects, wavBytes, type SoundEffects } from "@/engine/audio/renderOffline";
@@ -6,7 +7,8 @@ import { loadCover, type LoadedCover } from "@/visual/cover";
 import { downmix } from "@/visual/signal/offline";
 import { peaks } from "@/visual/signal/peaks";
 import { bitrateFor, frameSize, renderClip, type Backdrop, type Quality } from "@/visual/export";
-import { createLive, type Live, type Media } from "@/visual/live";
+import { createLive, type Live } from "@/visual/live";
+import { loadImage, loadStill, loadVideo, mediaFor, probe, type Media } from "@/visual/media";
 import { SHADERS } from "@/visual/render/shaders/library";
 import type { Part, Selection, Slot } from "@/visual/template/compose";
 import { pickTemplate } from "@/visual/template/pick";
@@ -29,7 +31,7 @@ export function clipEstimate(aspect: Aspect, quality: Quality, fps: number, lenM
   return { width, height, bytes: Math.round(((bitrateFor(width, height, fps) + AUDIO_BITS) * lenMs) / 8_000) };
 }
 export type { Aspect, Live, Media, Part, Scene, Selection, Slot, Template };
-export { partsFor, sceneOf, SCENES, WEIGHT_BUDGET };
+export { mediaFor, partsFor, sceneOf, SCENES, WEIGHT_BUDGET };
 
 export const VISUAL_TEMPLATES: Template[] = [...TEMPLATES, ...PRESETS];
 const WHOLE_STEPS = new Set(["count", "levels", "lines", "thorns"]);
@@ -116,16 +118,29 @@ function coverOf(coverUrl: string): Promise<LoadedCover | null> {
   return covers.get(coverUrl)!;
 }
 
-export function thumbnailOf(part: Part, coverUrl: string): Promise<string> {
-  return coverOf(coverUrl).then((cover) => thumbnail(sceneOf(showcase(part), `thumb-${part.id}`).template, cover));
+let still: { url: string; work: Promise<ImageBitmap | null> } | null = null;
+
+function stillFor(template: Template, media: Media | null): Promise<ImageBitmap | null> {
+  const used = mediaFor(template, media);
+  if (!used) return Promise.resolve(null);
+  if (still?.url !== used.url) {
+    const work: Promise<ImageBitmap | null> = loadStill(used).catch(() => null);
+    still = { url: used.url, work };
+  }
+  return still.work;
 }
 
-export function sceneThumbnail(selection: Selection, id: string, coverUrl: string): Promise<string> {
-  return coverOf(coverUrl).then((cover) => thumbnail(sceneOf(selection, `scene-${id}`).template, cover));
+export function thumbnailOf(part: Part, coverUrl: string, media: Media | null): Promise<string> {
+  return templateThumbnail(sceneOf(showcase(part), `thumb-${part.id}`).template, coverUrl, media);
 }
 
-export function templateThumbnail(template: Template, coverUrl: string): Promise<string> {
-  return coverOf(coverUrl).then((cover) => thumbnail(template, cover));
+export function sceneThumbnail(selection: Selection, id: string, coverUrl: string, media: Media | null): Promise<string> {
+  return templateThumbnail(sceneOf(selection, `scene-${id}`).template, coverUrl, media);
+}
+
+export async function templateThumbnail(template: Template, coverUrl: string, media: Media | null): Promise<string> {
+  const [cover, picture] = await Promise.all([coverOf(coverUrl), stillFor(template, media)]);
+  return thumbnail(template, cover, picture);
 }
 
 interface TrackAudio {
@@ -165,14 +180,19 @@ export interface FilmstripRequest {
   template: Template;
   aspect: Aspect;
   coverUrl: string;
+  media: Media | null;
   lines: Line[];
   timesMs: number[];
   height: number;
 }
 
 export async function filmstripOf(request: FilmstripRequest): Promise<string[]> {
-  const [{ pcm, sampleRate }, cover] = await Promise.all([trackAudio(request.trackId), coverOf(request.coverUrl)]);
-  return strip({ ...request, cover, pcm, sampleRate });
+  const [{ pcm, sampleRate }, cover, picture] = await Promise.all([
+    trackAudio(request.trackId),
+    coverOf(request.coverUrl),
+    stillFor(request.template, request.media),
+  ]);
+  return strip({ ...request, cover, still: picture, pcm, sampleRate });
 }
 
 export interface ClipRequest {
@@ -190,22 +210,49 @@ export interface ClipRequest {
   media: Media | null;
 }
 
+const MEDIA_BASE = "nuvo-core://local/scene-media/";
+const MEDIA_NAME = /^[0-9a-f-]{36}\.[a-z0-9]{3,4}$/;
+
+export function sceneMedia(url: unknown): Media | null {
+  if (typeof url !== "string" || !url.startsWith(MEDIA_BASE) || !MEDIA_NAME.test(url.slice(MEDIA_BASE.length))) return null;
+  return { url, kind: /\.(mp4|webm)$/.test(url) ? "video" : "image" };
+}
+
+async function plays(file: File): Promise<boolean> {
+  const url = URL.createObjectURL(file);
+  try {
+    await probe({ url, kind: file.type.startsWith("video/") ? "video" : "image" });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+export type MediaRefusal = WallpaperImportError | "undecodable";
+
+// the probe runs first because an import replaces the stored file
+export async function importSceneMedia(file: File): Promise<{ media: Media } | { error: MediaRefusal }> {
+  const shell = window.nuvoShell;
+  if (!shell) return { error: "read" };
+  if (!(await plays(file))) return { error: file.type.startsWith("video/") ? "undecodable" : "format" };
+  const result = await shell.importSceneMedia(file).catch(() => ({ ok: false, error: "write" }) as const);
+  if (!result.ok) return { error: result.error };
+  const media = sceneMedia(MEDIA_BASE + result.name);
+  return media ? { media } : { error: "write" };
+}
+
 export type ClipResult = { path: string } | { error: string } | null;
 
 async function backdropOf(media: Media | null): Promise<((clipMs: number) => Promise<Backdrop>) | null> {
   if (!media) return null;
   if (media.kind === "image") {
-    const image = new Image();
-    image.src = media.url;
-    await image.decode();
-    const still = { source: image, width: image.naturalWidth, height: image.naturalHeight };
-    return () => Promise.resolve(still);
+    const source = await loadImage(media.url);
+    const picture = { source, width: source.width, height: source.height };
+    return () => Promise.resolve(picture);
   }
-  const video = Object.assign(document.createElement("video"), { src: media.url, muted: true, preload: "auto" });
-  await new Promise((resolve, reject) => {
-    video.onloadeddata = resolve;
-    video.onerror = reject;
-  });
+  const video = await loadVideo(media.url);
   // the clip shows the video from its start and loops it, the way the live stage plays it
   return async (clipMs) => {
     const target = (clipMs / 1000) % video.duration;
@@ -235,7 +282,7 @@ export async function exportClip(request: ClipRequest, onProgress: (done: number
     const [{ pcm, sampleRate }, cover, backdrop, sound] = await Promise.all([
       trackAudio(request.trackId),
       coverOf(request.coverUrl),
-      backdropOf(request.media),
+      backdropOf(mediaFor(request.template, request.media)),
       soundedClip(request, effects),
     ]);
     if (!(await shell.clipAudio(begun.id, sound))) throw new Error("the clip's sound could not be written");

@@ -53,6 +53,112 @@ async function litShare(name: string): Promise<number> {
   }, shot);
 }
 
+async function cacheSong(): Promise<void> {
+  const status = await session.page.evaluate(async () => {
+    const rate = 8000;
+    const seconds = 70;
+    const samples = rate * seconds;
+    const view = new DataView(new ArrayBuffer(44 + samples * 2));
+    const text = (at: number, value: string) => [...value].forEach((c, i) => view.setUint8(at + i, c.charCodeAt(0)));
+    text(0, "RIFF");
+    view.setUint32(4, 36 + samples * 2, true);
+    text(8, "WAVEfmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, rate, true);
+    view.setUint32(28, rate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    text(36, "data");
+    view.setUint32(40, samples * 2, true);
+    for (let i = 0; i < samples; i++) view.setInt16(44 + i * 2, Math.round(Math.sin(i / 6) * (i % 4000 < 800 ? 12000 : 2000)), true);
+    const response = await fetch("nuvo-core://local/v1/cache/audio/seed-0001", { method: "PUT", headers: { "content-type": "audio/wav" }, body: view.buffer });
+    return response.status;
+  });
+  expect(status).toBeLessThan(300);
+}
+
+async function saveClipTo(file: string): Promise<void> {
+  await session.app.evaluate(({ dialog }, filePath) => {
+    dialog.showSaveDialog = (async () => ({ canceled: false, filePath })) as typeof dialog.showSaveDialog;
+  }, file);
+}
+
+function fixture(dir: string, name: string, colour: string): string {
+  const file = path.join(dir, name);
+  const still = name.endsWith(".png");
+  execFileSync("ffmpeg", [
+    ...["-nostdin", "-loglevel", "error", "-y", "-f", "lavfi", "-i", `color=c=${colour}:s=360x640:r=15:d=${still ? 0.1 : 2}`],
+    ...(still ? ["-frames:v", "1"] : ["-c:v", name.endsWith(".mp4") ? "h264" : "vp9", "-pix_fmt", "yuv420p"]),
+    file,
+  ]);
+  return file;
+}
+
+async function dominant(file: string): Promise<"red" | "green" | "blue" | "none"> {
+  return session.app.evaluate(({ nativeImage }, shot) => {
+    const pixels = nativeImage.createFromPath(shot).toBitmap();
+    const sums = { blue: 0, green: 0, red: 0 };
+    for (let i = 0; i < pixels.length; i += 4) {
+      sums.blue += pixels[i];
+      sums.green += pixels[i + 1];
+      sums.red += pixels[i + 2];
+    }
+    const [first, second] = Object.entries(sums).sort((a, b) => b[1] - a[1]);
+    return first[1] > second[1] * 1.5 ? (first[0] as keyof typeof sums) : "none";
+  }, file);
+}
+
+async function sceneColour(): Promise<string> {
+  const shot = path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "own-media.png");
+  fs.mkdirSync(path.dirname(shot), { recursive: true });
+  await session.page.locator("canvas[aria-hidden]").first().screenshot({ path: shot });
+  return dominant(shot);
+}
+
+async function previewColour(): Promise<string> {
+  const shot = path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "own-media-preview.png");
+  await session.page.locator("[data-tour=studio-player] canvas[aria-hidden]").first().screenshot({ path: shot });
+  return dominant(shot);
+}
+
+const studio = () => session.page.getByRole("dialog", { name: "Scene studio" });
+
+async function showScene(): Promise<void> {
+  const page = session.page;
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "nuvo.visual",
+      JSON.stringify({
+        enabled: true,
+        stage: true,
+        template: "own",
+        toured: true,
+        chosen: true,
+        scene: { background: "still", atmosphere: [], centrepiece: null, lyrics: null },
+      }),
+    ),
+  );
+  await page.reload();
+  await session.go("#/player");
+  await page.locator("canvas[aria-hidden]").first().waitFor({ timeout: 15_000 });
+}
+
+async function openMedia(): Promise<void> {
+  await session.page.locator('button[aria-label="Edit the scene"]').click();
+  await studio().waitFor({ timeout: 10_000 });
+  await studio().getByRole("button", { name: "Media", exact: true }).click();
+  await session.page.waitForTimeout(800);
+}
+
+const pick = (file: string) => studio().locator("input[type=file]").setInputFiles(file);
+
+async function useAsPlayer(): Promise<void> {
+  await session.page.getByRole("button", { name: "Use as player", exact: true }).click();
+  await studio().waitFor({ state: "detached", timeout: 10_000 });
+}
+
 it("the visual player draws a lit scene in the karaoke view at 60 fps", async () => {
   const page = session.page;
   await page.evaluate(() =>
@@ -138,34 +244,10 @@ it("the karaoke column comes back over the dimmed scene, and the studio opens fu
 
 it("the studio exports the picked range as an MP4 with the song under it", async () => {
   const page = session.page;
-  const status = await page.evaluate(async () => {
-    const rate = 8000;
-    const seconds = 70;
-    const samples = rate * seconds;
-    const view = new DataView(new ArrayBuffer(44 + samples * 2));
-    const text = (at: number, value: string) => [...value].forEach((c, i) => view.setUint8(at + i, c.charCodeAt(0)));
-    text(0, "RIFF");
-    view.setUint32(4, 36 + samples * 2, true);
-    text(8, "WAVEfmt ");
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, rate, true);
-    view.setUint32(28, rate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    text(36, "data");
-    view.setUint32(40, samples * 2, true);
-    for (let i = 0; i < samples; i++) view.setInt16(44 + i * 2, Math.round(Math.sin(i / 6) * (i % 4000 < 800 ? 12000 : 2000)), true);
-    const response = await fetch("nuvo-core://local/v1/cache/audio/seed-0001", { method: "PUT", headers: { "content-type": "audio/wav" }, body: view.buffer });
-    return response.status;
-  });
-  expect(status).toBeLessThan(300);
+  await cacheSong();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-clip-e2e-"));
   const out = path.join(dir, "clip.mp4");
-  await session.app.evaluate(({ dialog }, file) => {
-    dialog.showSaveDialog = (async () => ({ canceled: false, filePath: file })) as typeof dialog.showSaveDialog;
-  }, out);
+  await saveClipTo(out);
 
   await page.getByRole("option", { name: "Poster" }).click();
   await page.getByRole("button", { name: "Export", exact: true }).click();
@@ -206,6 +288,66 @@ it("a scene picked in the studio becomes the player's scene, even from random mo
   expect(stored.template).toBe("own");
   expect(stored.scene).toMatchObject({ background: "glass", lyrics: "wipe" });
 });
+
+it("an own photo or video plays in the studio, the live scene and after a restart", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-media-e2e-"));
+  await showScene();
+  for (const [name, colour] of [
+    ["photo.png", "red"],
+    ["video.mp4", "blue"],
+    ["clip.webm", "lime"],
+  ]) {
+    const expected = colour === "lime" ? "green" : colour;
+    await openMedia();
+    await pick(fixture(dir, name, colour));
+    await expect.poll(previewColour).toBe(expected);
+    await useAsPlayer();
+    await expect.poll(sceneColour).toBe(expected);
+  }
+
+  await session.page.reload();
+  await session.go("#/player");
+  await expect.poll(sceneColour).toBe("green");
+
+  const broken = path.join(dir, "broken.mp4");
+  fs.writeFileSync(broken, Buffer.concat([Buffer.from([0, 0, 0, 0x20]), Buffer.from("ftypisom"), Buffer.alloc(4_000)]));
+  await openMedia();
+  await expect.poll(previewColour).toBe("green");
+  await pick(broken);
+  await studio().getByText("This file doesn't play here", { exact: false }).waitFor({ timeout: 5_000 });
+  await expect.poll(previewColour).toBe("green");
+  await useAsPlayer();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+it("the studio exports a clip over an own photo and an own video", async () => {
+  const page = session.page;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nuvo-media-e2e-"));
+  await showScene();
+  await cacheSong();
+  await openMedia();
+  await page.keyboard.press("o");
+  for (const [name, colour] of [
+    ["photo.png", "red"],
+    ["video.mp4", "blue"],
+  ]) {
+    await pick(fixture(dir, name, colour));
+    await expect.poll(previewColour).toBe(colour);
+    const out = path.join(dir, `${name}-clip.mp4`);
+    await saveClipTo(out);
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await page.getByRole("button", { name: "720p", exact: true }).click();
+    await page.getByRole("button", { name: "30 fps", exact: true }).click();
+    await page.getByRole("button", { name: "Save clip" }).click();
+    await page.getByRole("dialog", { name: "Your clip is ready" }).waitFor({ timeout: 240_000 });
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+    const still = path.join(dir, `${name}.still.png`);
+    execFileSync("ffmpeg", ["-nostdin", "-loglevel", "error", "-y", "-ss", "2", "-i", out, "-frames:v", "1", still]);
+    expect(await dominant(still)).toBe(colour);
+  }
+  await useAsPlayer();
+  fs.rmSync(dir, { recursive: true, force: true });
+}, 600_000);
 
 it("controls turn dark over a light scene", async () => {
   const page = session.page;

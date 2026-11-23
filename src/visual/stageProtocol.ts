@@ -8,6 +8,7 @@ export type ToStage =
   | { type: "template"; template: Template; aspect: Aspect }
   | { type: "cover"; bitmap: ImageBitmap; palette: Palette }
   | { type: "lyrics"; lines: Line[] }
+  | { type: "await-image" }
   | { type: "image"; source: ImageBitmap | VideoFrame | null; width: number; height: number }
   | { type: "song"; pcm: Float32Array | null; sampleRate: number }
   | { type: "tap"; wave: Float32Array; sampleRate: number }

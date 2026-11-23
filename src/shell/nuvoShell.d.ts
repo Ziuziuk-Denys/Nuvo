@@ -64,6 +64,7 @@ export interface FontFileEntry {
   addedAt: number;
 }
 export type WallpaperImportError = "too_large" | "empty" | "format" | "read" | "write";
+export type WallpaperImport = { ok: true; name: string } | { ok: false; error: WallpaperImportError };
 export type FontImportError = "cancelled" | "too_large" | "empty" | "format" | "woff1" | "collection" | "damaged" | "limit" | "write";
 export interface ChromiumUsage {
   httpCacheBytes: number;
@@ -142,8 +143,9 @@ export interface NuvoShell {
   importFontFile(): Promise<{ ok: true; file: FontFileEntry } | { ok: false; error: FontImportError }>;
   deleteFontFile(id: string): Promise<boolean>;
   /** Main keeps its own copy; the page gets its name, never a path. */
-  importWallpaper(file: File): Promise<{ ok: true; name: string } | { ok: false; error: WallpaperImportError }>;
+  importWallpaper(file: File): Promise<WallpaperImport>;
   clearWallpaper(): Promise<void>;
+  importSceneMedia(file: File): Promise<WallpaperImport>;
   pickCoverImage(): Promise<{ ok: true; bytes: Uint8Array; mime: string } | { ok: false; error: "cancelled" | "too_large" | "format" | "damaged" }>;
   exportTheme(name: string, text: string): Promise<boolean | "failed">;
   importThemeFile(): Promise<{ ok: true; text: string } | { ok: false; error: "cancelled" | "theme_size" | "theme_encoding" | "theme_css" }>;

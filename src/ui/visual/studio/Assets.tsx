@@ -1,5 +1,6 @@
 import { useCallback, useRef, type CSSProperties, type JSX } from "react";
 import { Icon } from "../../icons/Icon";
+import { MEDIA_TYPES } from "../../mediaFiles";
 import { useTranslation } from "../../ports/i18n";
 import { partsFor, sceneThumbnail, SCENES, thumbnailOf, type Media, type Part, type Selection } from "../../ports/visual";
 import theme from "./theme.module.css";
@@ -59,6 +60,7 @@ function Tile({
 function PartTile({
   part,
   coverUrl,
+  media,
   selected,
   onPick,
   index,
@@ -66,13 +68,14 @@ function PartTile({
 }: {
   part: Part;
   coverUrl: string;
+  media: Media | null;
   selected: boolean;
   onPick(): void;
   index: number;
   dim: boolean;
 }): JSX.Element {
   const { t } = useTranslation();
-  const src = usePreview(useCallback(() => thumbnailOf(part, coverUrl), [part, coverUrl]));
+  const src = usePreview(useCallback(() => thumbnailOf(part, coverUrl, media), [part, coverUrl, media]));
   return <Tile label={t(`visual.part.${part.id}.title`)} src={src} selected={selected} onPick={onPick} index={index} dim={dim} />;
 }
 
@@ -80,6 +83,7 @@ function SceneTile({
   id,
   selection,
   coverUrl,
+  media,
   selected,
   onPick,
   index,
@@ -87,12 +91,13 @@ function SceneTile({
   id: string;
   selection: Selection;
   coverUrl: string;
+  media: Media | null;
   selected: boolean;
   onPick(): void;
   index: number;
 }): JSX.Element {
   const { t } = useTranslation();
-  const src = usePreview(useCallback(() => sceneThumbnail(selection, id, coverUrl), [selection, id, coverUrl]));
+  const src = usePreview(useCallback(() => sceneThumbnail(selection, id, coverUrl, media), [selection, id, coverUrl, media]));
   return <Tile label={t(`visual.scene.${id}`)} src={src} selected={selected} onPick={onPick} index={index} />;
 }
 
@@ -117,7 +122,7 @@ export function Assets({ category, selection, coverUrl, media, isChosen, onPart,
           <input
             ref={file}
             type="file"
-            accept="image/*,video/*"
+            accept={MEDIA_TYPES}
             hidden
             onChange={(event) => {
               const picked = event.currentTarget.files?.[0];
@@ -125,7 +130,7 @@ export function Assets({ category, selection, coverUrl, media, isChosen, onPart,
               event.currentTarget.value = "";
             }}
           />
-          {media ? <p className={theme.hint}>{t("visual.studio.media_in_use")}</p> : null}
+          {selection.background === "media" && media ? <p className={theme.hint}>{t("visual.studio.media_in_use")}</p> : null}
         </div>
       ) : (
         <div key={category} className={`${styles.grid} n-scroll`} role="listbox" aria-label={title}>
@@ -137,6 +142,7 @@ export function Assets({ category, selection, coverUrl, media, isChosen, onPart,
                   id={item.id}
                   selection={item.selection}
                   coverUrl={coverUrl}
+                  media={media}
                   selected={same(item.selection, selection)}
                   onPick={() => onScene(item.selection)}
                 />
@@ -148,7 +154,16 @@ export function Assets({ category, selection, coverUrl, media, isChosen, onPart,
                 .map((part, index) => {
                   const chosen = isChosen(part);
                   return (
-                    <PartTile key={part.id} index={index} part={part} coverUrl={coverUrl} selected={chosen} dim={full && !chosen} onPick={() => onPart(part)} />
+                    <PartTile
+                      key={part.id}
+                      index={index}
+                      part={part}
+                      coverUrl={coverUrl}
+                      media={media}
+                      selected={chosen}
+                      dim={full && !chosen}
+                      onPick={() => onPart(part)}
+                    />
                   );
                 })
             : null}

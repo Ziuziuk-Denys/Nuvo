@@ -48,8 +48,8 @@ export function ExportClip({
   const [fade, setFade] = useState(true);
   const abort = useRef<AbortController | null>(null);
   const request = whole && songMs > 0 ? { ...clip, fromMs: 0, lenMs: Math.round(songMs) } : clip;
-  const { template, coverUrl, aspect, fromMs, lenMs } = request;
-  const preview = usePreview(useCallback(() => templateThumbnail(template, coverUrl), [template, coverUrl]));
+  const { template, coverUrl, media, aspect, fromMs, lenMs } = request;
+  const preview = usePreview(useCallback(() => templateThumbnail(template, coverUrl, media), [template, coverUrl, media]));
   const estimate = clipEstimate(aspect, quality, Number(fps), lenMs);
   const working = state.kind === "working";
 

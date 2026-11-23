@@ -109,6 +109,7 @@ describe("wallpaperResponse", () => {
     const part = await get(`/wallpaper/${saved.name}`, { range: "bytes=4-7" });
     expect([part.status, part.headers.get("content-range"), part.headers.get("content-length")]).toEqual([206, `bytes 4-7/${WEBM.length}`, "4"]);
     expect(Buffer.from(await part.arrayBuffer())).toEqual(WEBM.subarray(4, 8));
+    expect((await get(`/scene-media/${saved.name}`)).status).toBe(200);
     expect((await get(`/wallpaper/${saved.name}`, { range: "bytes=999-" })).status).toBe(416);
     expect((await get(`/wallpaper/${saved.name}`, { origin: "https://evil.test" })).status).toBe(403);
     for (const p of ["/wallpaper/../main-settings.json", "/wallpaper/%2e%2e%2fmain-settings.json", "/wallpaper/", "/wallpaper/other.webm"]) {

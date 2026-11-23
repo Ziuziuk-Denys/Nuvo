@@ -118,6 +118,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   const settings = new MainSettingsStore(path.join(app.getPath("userData"), "main-settings.json"), safeStorage, log);
   const fonts = new FontStore(path.join(app.getPath("userData"), "fonts"));
   const wallpaper = new WallpaperStore(path.join(app.getPath("userData"), "wallpaper"));
+  const sceneMedia = new WallpaperStore(path.join(app.getPath("userData"), "scene-media"));
   const startWatch = new StartWatch({ get: () => settings.value.appearance, set: (flags) => settings.setAppearance(flags) });
   if (process.argv.includes(SAFE_FLAG)) startWatch.forceSafe();
   const systemFonts = new SystemFonts(
@@ -644,12 +645,17 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         return picked.canceled || !file ? { ok: false, error: "cancelled" } : readCoverFile(file);
       }),
     );
-    ipc.handle(CHANNELS.wallpaperImport, "main", (payload) => {
-      const file = (payload as { path?: unknown } | null)?.path;
-      if (typeof file === "string" && path.isAbsolute(file)) return wallpaper.import(file);
-      refusals.refuse(CHANNELS.wallpaperImport, "shape");
-      return { ok: false, error: "read" };
-    });
+    for (const [channel, store] of [
+      [CHANNELS.wallpaperImport, wallpaper],
+      [CHANNELS.sceneMediaImport, sceneMedia],
+    ] as const) {
+      ipc.handle(channel, "main", (payload) => {
+        const file = (payload as { path?: unknown } | null)?.path;
+        if (typeof file === "string" && path.isAbsolute(file)) return store.import(file);
+        refusals.refuse(channel, "shape");
+        return { ok: false, error: "read" };
+      });
+    }
     ipc.handle(CHANNELS.wallpaperClear, "main", () => wallpaper.clear());
     ipc.handle(CHANNELS.fontsDelete, "main", (payload) => {
       const id = (payload as { id?: unknown } | null)?.id;
@@ -925,6 +931,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       const url = new URL(request.url);
       if (url.hostname === "local" && url.pathname.startsWith("/fonts/")) return fontResponse(request, fonts, allowedOrigins);
       if (url.hostname === "local" && url.pathname.startsWith("/wallpaper/")) return wallpaperResponse(request, wallpaper, allowedOrigins);
+      if (url.hostname === "local" && url.pathname.startsWith("/scene-media/")) return wallpaperResponse(request, sceneMedia, allowedOrigins);
       return forwardToCore(request, { socketPath, token: core.token, waitReady: () => core.whenReady(), allowedOrigins });
     });
     screen.on("display-removed", keepOnScreen);

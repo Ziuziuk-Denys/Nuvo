@@ -19,6 +19,7 @@ declare const self: DedicatedWorkerGlobalScope;
 const FOOT_EVERY_MS = 500;
 const FOOT_WIDTH = 16;
 const FOOT_DARKEN = 0.38;
+const IMAGE_WAIT_MS = 2_000;
 const LUMA_STEP = 6;
 const LIGHT_ABOVE = 0.62;
 const DARK_BELOW = 0.5;
@@ -41,6 +42,8 @@ let mirror: OffscreenCanvasRenderingContext2D | null = null;
 let foot: OffscreenCanvasRenderingContext2D | null = null;
 let size = { width: 1, height: 1 };
 let dirty = true;
+let pictured = false;
+let heldUntil = 0;
 let drawnAtMs = Number.NaN;
 let lastFrame: number | null = null;
 let lastFoot = 0;
@@ -119,6 +122,7 @@ function loop(now: number): void {
   frameId = self.requestAnimationFrame(loop);
   if (lastFrame !== null && governor.frame(now - lastFrame) !== null) applySize();
   lastFrame = now;
+  if (now < heldUntil) return;
   const { atMs, playing } = clock.read(sharedNow());
   // a paused song holds its frame; only a seek or a change to the scene draws again
   if (!playing && !dirty && atMs === drawnAtMs) {
@@ -159,6 +163,8 @@ function start(target: OffscreenCanvas): void {
 function replaceImage(next: ImageBitmap | VideoFrame | null, width: number, height: number): void {
   stage?.setImage(next, width, height);
   next?.close();
+  pictured = next !== null;
+  heldUntil = 0;
   dirty = true;
 }
 
@@ -188,6 +194,10 @@ self.onmessage = (event: MessageEvent<ToStage>) => {
     case "lyrics":
       lines = message.lines;
       dirty = true;
+      break;
+    case "await-image":
+      // the cover would flash in place of a picture that is still loading
+      if (!pictured) heldUntil = performance.now() + IMAGE_WAIT_MS;
       break;
     case "image":
       replaceImage(message.source, message.width, message.height);

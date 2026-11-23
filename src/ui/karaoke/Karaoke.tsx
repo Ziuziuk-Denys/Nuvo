@@ -462,7 +462,16 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       data-choosing={visual.chosen ? undefined : ""}
     >
       {stageOn && !editing ? (
-        <Stage className={styles.stage} template={scene} aspect="wide" coverUrl={track?.coverUrl ?? ""} lines={lines} onTone={setLightScene} onLuma={onLuma} />
+        <Stage
+          className={styles.stage}
+          template={scene}
+          aspect="wide"
+          coverUrl={track?.coverUrl ?? ""}
+          lines={lines}
+          media={visual.media}
+          onTone={setLightScene}
+          onLuma={onLuma}
+        />
       ) : (
         <Backdrop cover={track?.coverUrl ?? ""} open />
       )}

@@ -4,7 +4,7 @@ import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
 import { lyricsCommands, type Line } from "../../ports/lyrics";
 import { playerEngine, usePlayerStore } from "../../ports/player";
-import type { Aspect, Template } from "../../ports/visual";
+import type { Aspect, Media, Template } from "../../ports/visual";
 import { formatTime } from "../../shell/island/Scrubber";
 import theme from "./theme.module.css";
 import { STRIP_HEIGHT, useFilmstrip, useWave } from "./timelineData";
@@ -29,6 +29,7 @@ interface TimelineProps {
   track: { id: string; coverUrl?: string };
   template: Template;
   aspect: Aspect;
+  media: Media | null;
   lines: Line[];
   range: Range;
   onRange(next: Range): void;
@@ -42,7 +43,7 @@ const viewFor = (zoom: number, total: number) => Math.min(total, total * Math.po
 
 const tickStep = (view: number, width: number) => TICK_STEPS_MS.find((step) => (step / view) * width >= TARGET_TICK_PX) ?? TICK_STEPS_MS.at(-1)!;
 
-export function Timeline({ track, template, aspect, lines, range, onRange, history, onMarkIn, onMarkOut }: TimelineProps): JSX.Element {
+export function Timeline({ track, template, aspect, media, lines, range, onRange, history, onMarkIn, onMarkOut }: TimelineProps): JSX.Element {
   const { t } = useTranslation();
   const durationMs = usePlayerStore((state) => state.durationMs);
   const total = Math.max(durationMs, range[1], MIN_VIEW_MS);
@@ -63,6 +64,7 @@ export function Timeline({ track, template, aspect, lines, range, onRange, histo
     template,
     aspect,
     coverUrl: track.coverUrl ?? "",
+    media,
     lines,
     fromMs: Math.round(from),
     toMs: Math.round(to),

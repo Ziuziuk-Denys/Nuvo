@@ -3,7 +3,7 @@ import { Popover } from "../../components/Popover";
 import { Slider } from "../../components/Slider";
 import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
-import { controlsOf, TEXT_SIZE, thumbnailOf, WEIGHT_BUDGET, type Part, type Scene, type Selection, type TextLook } from "../../ports/visual";
+import { controlsOf, TEXT_SIZE, thumbnailOf, WEIGHT_BUDGET, type Media, type Part, type Scene, type Selection, type TextLook } from "../../ports/visual";
 import { Segmented } from "../../screens/settings/controls";
 import { ColorPicker } from "../../screens/settings/ColorPicker";
 import { PercentField } from "./PercentField";
@@ -31,6 +31,7 @@ interface InspectorProps {
   scene: Scene;
   parts: Part[];
   coverUrl: string;
+  media: Media | null;
   onChange(next: Selection): void;
 }
 
@@ -119,12 +120,12 @@ function TextRows({ part, selection, onChange }: { part: Part; selection: Select
   );
 }
 
-function Thumb({ part, coverUrl }: { part: Part; coverUrl: string }): JSX.Element {
-  const src = usePreview(useCallback(() => thumbnailOf(part, coverUrl), [part, coverUrl]));
+function Thumb({ part, coverUrl, media }: { part: Part; coverUrl: string; media: Media | null }): JSX.Element {
+  const src = usePreview(useCallback(() => thumbnailOf(part, coverUrl, media), [part, coverUrl, media]));
   return <span className={styles.thumb}>{src ? <img src={src} alt="" /> : null}</span>;
 }
 
-export function Inspector({ scene, parts, coverUrl, onChange }: InspectorProps): JSX.Element {
+export function Inspector({ scene, parts, coverUrl, media, onChange }: InspectorProps): JSX.Element {
   const { t } = useTranslation();
   const selection = scene.selection;
   const editable = parts.filter((part) => controlsOf(part, selection).length > 0 || part.id === "duo" || part.slot === "lyrics");
@@ -161,7 +162,7 @@ export function Inspector({ scene, parts, coverUrl, onChange }: InspectorProps):
             <section key={part.id} className={styles.part} data-open={expanded ? "" : undefined}>
               <div className={styles.partHead}>
                 <button type="button" className={styles.toggle} aria-expanded={expanded} onClick={() => setOpenId(expanded ? "" : part.id)}>
-                  <Thumb part={part} coverUrl={coverUrl} />
+                  <Thumb part={part} coverUrl={coverUrl} media={media} />
                   <b>{title}</b>
                   <Icon name="chevron-down" size={16} className={styles.chevron} />
                 </button>

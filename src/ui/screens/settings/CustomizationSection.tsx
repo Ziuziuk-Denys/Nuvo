@@ -14,20 +14,13 @@ import {
   type WallpaperFit,
 } from "../../ports/settings";
 import { WallpaperMedia } from "../../field/Field";
+import { MEDIA_REFUSALS, MEDIA_TYPES } from "../../mediaFiles";
 import { FRAME_CAPS, LOOKS, useEffectsStore, type FrameCap } from "../../effects";
 import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
 import styles from "./sections.module.css";
 
-const ACCEPTED = "image/png,image/jpeg,image/webp,image/avif,image/gif,video/mp4,video/webm";
 const PREVIEW_BLUR = 0.25;
 const KEYS = "settings.customization.";
-const REFUSALS = {
-  too_large: "file_too_large",
-  empty: "invalid_file_type",
-  format: "invalid_file_type",
-  read: "read_error",
-  write: "save_error",
-} as const;
 
 export async function resetCustomization(): Promise<void> {
   const look = useCustomizationStore.getState();
@@ -180,7 +173,7 @@ export function BackgroundSection(): JSX.Element {
     const shell = window.nuvoShell;
     if (!file || busy) return;
     if (!shell) {
-      setNote(t(KEYS + "read_error"));
+      setNote(t(MEDIA_REFUSALS.read));
       return;
     }
     setBusy(true);
@@ -191,7 +184,7 @@ export function BackgroundSection(): JSX.Element {
       .then((result) => {
         setBusy(false);
         if (result.ok) setWallpaper(WALLPAPER_BASE + result.name);
-        else setNote(t(KEYS + REFUSALS[result.error]));
+        else setNote(t(MEDIA_REFUSALS[result.error]));
       });
   };
 
@@ -205,7 +198,7 @@ export function BackgroundSection(): JSX.Element {
       <input
         ref={picker}
         type="file"
-        accept={ACCEPTED}
+        accept={MEDIA_TYPES}
         hidden
         onChange={(event) => {
           const input = event.currentTarget;
@@ -227,7 +220,7 @@ export function BackgroundSection(): JSX.Element {
             onPick={openPicker}
             onFile={accept}
             onRemove={remove}
-            onBroken={() => setNote(t(KEYS + "media_error"))}
+            onBroken={() => setNote(t(MEDIA_REFUSALS.undecodable))}
           />
         ) : (
           <DropTarget t={t} busy={busy} onPick={openPicker} onFile={accept} />

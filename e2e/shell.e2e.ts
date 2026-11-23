@@ -260,6 +260,7 @@ describe("shell e2e", () => {
       "deleteFontFile",
       "importWallpaper",
       "clearWallpaper",
+      "importSceneMedia",
       "exportTheme",
       "importThemeFile",
       "appearanceReady",
