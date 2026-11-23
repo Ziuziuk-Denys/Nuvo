@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { Cover } from "../components/Cover";
 import { Menu } from "../components/Menu";
 import { MorphPlayIcon } from "../components/MorphPlayIcon";
 import { Icon } from "../icons/Icon";
 import type { IconName } from "../icons";
-import { isEscapeGuarded } from "../ports/escape";
+import { acquireEscapeGuard, isEscapeGuarded } from "../ports/escape";
 import { useTranslation } from "../ports/i18n";
 import { useIsTrackLiked, useLikeTrack, useUnlikeTrack } from "../ports/library";
 import { songMenuNotInterested } from "../recs/notInterested";
@@ -14,6 +13,7 @@ import { canMinimizeWindow, closeWindow, minimizeWindow, toggleMaximizeWindow, u
 import { isRadioContext, nextRepeatMode, playerEngine, toVolumeGain, toVolumeLevel, usePlayerStore } from "../ports/player";
 import { ArtistLinks } from "../shell/ArtistLinks";
 import { formatTime } from "../shell/island/Scrubber";
+import { CoverControl } from "./CoverControl";
 import { Backdrop } from "./backdrop/Backdrop";
 import { layoutFor } from "./layout";
 import { LyricsPane } from "./LyricsPane";
@@ -33,7 +33,9 @@ import { setStudioOpen, useStudioOpen } from "../visual/studioOpen";
 import { useLook } from "../ports/theme";
 import { templateFor } from "../ports/visual";
 import styles from "./Karaoke.module.css";
+import { useControlsMode } from "./controlsMode";
 import { useSceneInk } from "./sceneInk";
+import { useRest } from "./useRest";
 
 const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
   line: { label: "ui.karaoke.highlight_line", hint: "ui.karaoke.highlight_line_hint" },
@@ -44,10 +46,15 @@ const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
 const SEEK_STEP_MS = 5_000;
 const VOLUME_STEP = 0.05;
 const DEFAULT_VOLUME_LEVEL = 0.7;
+const COVER_GROWTH = 24;
 const WIDE = layoutFor(1200);
 const NARROW = layoutFor(1100);
 // Column edges interpolate linearly between the measured 1100 px and 1200 px windows
 const along = (wide: number, narrow: number, width: number) => narrow + ((wide - narrow) * (width - 1100)) / 100;
+
+function dropPointerFocus(event: MouseEvent): void {
+  if (event.detail > 0 && document.activeElement instanceof HTMLButtonElement) document.activeElement.blur();
+}
 
 function useWindowWidth(): number {
   const [width, setWidth] = useState(() => window.innerWidth);
@@ -145,7 +152,9 @@ function Bar({ label, value, valueNow, valueMax, valueText, className, onChange,
       onPointerCancel={() => setDrag(null)}
       onKeyDown={onKeyDown}
     >
-      <span className={styles.fill} />
+      <span className={styles.track}>
+        <span className={styles.fill} />
+      </span>
     </div>
   );
 }
@@ -202,60 +211,134 @@ function VersionButton({ track }: { track: LyricsTrack | null }): JSX.Element | 
   );
 }
 
-function OffsetPill({ track, mode, reveal = false }: { track: LyricsTrack | null; mode: HighlightMode; reveal?: boolean }): JSX.Element {
+interface LyricsPillProps {
+  track: LyricsTrack | null;
+  mode: HighlightMode;
+  stageOn: boolean;
+  busy: boolean;
+  open: boolean;
+}
+
+function LyricsPill({ track, mode, stageOn, busy, open }: LyricsPillProps): JSX.Element {
   const { t } = useTranslation();
   const offsetMs = useLyrics((state) => state.offsetMs);
   const { available, kanaOnly, on, toggle } = useRomanization();
   const synced = useLyrics((state) => state.synced);
   const wordTimed = useLyrics((state) => state.wordTimed);
   const trackId = useLyrics((state) => state.trackId);
-  const busy = isRunning(useWordTiming()?.job, trackId);
   return (
-    <div className={styles.sourceRow} data-busy={busy ? "" : undefined} data-stage-reveal={reveal ? "" : undefined}>
-      <div className={styles.pill} data-no-window-drag>
-        <GlyphButton icon="remove" size={18} label={t("ui.karaoke.earlier")} className={styles.small} onClick={() => lyricsCommands.nudgeOffset(-100)} />
-        <button type="button" aria-label={t("ui.karaoke.offset")} className={styles.offset} onClick={() => lyricsCommands.clearOffset()}>
-          {`${(offsetMs / 1000).toFixed(1)}s`}
+    <div className={styles.pill} data-open={open ? "" : undefined} data-busy={busy ? "" : undefined} data-no-window-drag>
+      <GlyphButton icon="remove" size={18} label={t("ui.karaoke.earlier")} className={styles.small} onClick={() => lyricsCommands.nudgeOffset(-100)} />
+      <button type="button" aria-label={t("ui.karaoke.offset")} className={styles.offset} onClick={() => lyricsCommands.clearOffset()}>
+        {`${(offsetMs / 1000).toFixed(1)}s`}
+      </button>
+      <GlyphButton icon="add" size={18} label={t("ui.karaoke.later")} className={styles.small} onClick={() => lyricsCommands.nudgeOffset(100)} />
+      <VersionButton track={track} />
+      {available ? (
+        <button
+          type="button"
+          aria-label={t(kanaOnly ? "ui.karaoke.romanize_kana" : "ui.karaoke.romanize")}
+          title={t(kanaOnly ? "ui.karaoke.romanize_kana" : "ui.karaoke.romanize")}
+          aria-pressed={on}
+          data-on={on ? "" : undefined}
+          className={styles.romaji}
+          onClick={toggle}
+        >
+          Aa
         </button>
-        <GlyphButton icon="add" size={18} label={t("ui.karaoke.later")} className={styles.small} onClick={() => lyricsCommands.nudgeOffset(100)} />
-        <VersionButton track={track} />
-        {available ? (
-          <button
-            type="button"
-            aria-label={t(kanaOnly ? "ui.karaoke.romanize_kana" : "ui.karaoke.romanize")}
-            title={t(kanaOnly ? "ui.karaoke.romanize_kana" : "ui.karaoke.romanize")}
-            aria-pressed={on}
-            data-on={on ? "" : undefined}
-            className={styles.romaji}
-            onClick={toggle}
-          >
-            Aa
-          </button>
-        ) : null}
-        {wordTimed && !reveal ? (
-          <div role="group" aria-label={t("ui.karaoke.highlight")} className={styles.modes}>
-            {HIGHLIGHT_MODES.map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={option === mode}
-                data-on={option === mode ? "" : undefined}
-                title={t(MODE_TEXT[option].hint)}
-                className={styles.words}
-                onClick={() => setHighlightMode(option)}
-              >
-                {t(MODE_TEXT[option].label)}
-              </button>
-            ))}
-          </div>
-        ) : null}
-        {!synced && track ? (
-          <button type="button" className={styles.words} onClick={() => openLyricsTool(track, "find")}>
-            {t("ui.lyrics.find")}
-          </button>
-        ) : null}
-        <TimeWords trackId={trackId} have={wordTimed ? "words" : synced ? "lines" : "plain"} />
-      </div>
+      ) : null}
+      {wordTimed && !stageOn ? (
+        <div role="group" aria-label={t("ui.karaoke.highlight")} className={styles.modes}>
+          {HIGHLIGHT_MODES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={option === mode}
+              data-on={option === mode ? "" : undefined}
+              title={t(MODE_TEXT[option].hint)}
+              className={styles.words}
+              onClick={() => setHighlightMode(option)}
+            >
+              {t(MODE_TEXT[option].label)}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {!synced && track ? (
+        <button type="button" className={styles.words} onClick={() => openLyricsTool(track, "find")}>
+          {t("ui.lyrics.find")}
+        </button>
+      ) : null}
+      <TimeWords trackId={trackId} have={wordTimed ? "words" : synced ? "lines" : "plain"} />
+    </div>
+  );
+}
+
+interface ToolsProps {
+  track: LyricsTrack | null;
+  mode: HighlightMode;
+  lyricsReady: boolean;
+  sceneOffered: boolean;
+  stageOn: boolean;
+}
+
+function Tools({ track, mode, lyricsReady, sceneOffered, stageOn }: ToolsProps): JSX.Element {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const trackId = useLyrics((state) => state.trackId);
+  const busy = isRunning(useWordTiming()?.job, trackId);
+  const shown = lyricsReady && (open || busy);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: globalThis.PointerEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!box.current?.contains(target) && !target?.closest("[role='menu']")) setOpen(false);
+    };
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented || document.querySelector("[role='menu']")) return;
+      event.preventDefault();
+      setOpen(false);
+    };
+    const release = acquireEscapeGuard();
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      release();
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, [open]);
+
+  return (
+    <div ref={box} className={styles.tools} data-tools="" data-hold="">
+      {lyricsReady ? <LyricsPill track={track} mode={mode} stageOn={stageOn} busy={busy} open={shown} /> : null}
+      {lyricsReady ? (
+        <button
+          type="button"
+          aria-label={t("ui.karaoke.lyrics_tools")}
+          aria-expanded={shown}
+          data-on={shown ? "" : undefined}
+          className={styles.tool}
+          onClick={() => setOpen(!open)}
+        >
+          <Icon name="lyrics" size={20} />
+        </button>
+      ) : null}
+      {sceneOffered && stageOn ? (
+        <GlyphButton icon="edit" label={t("visual.editor.edit")} className={styles.tool} onClick={() => setStudioOpen(true)} tour="scene-edit" />
+      ) : null}
+      {sceneOffered ? (
+        <GlyphButton
+          icon="gallery"
+          label={t(stageOn ? "ui.karaoke.stage_off" : "ui.karaoke.stage_on")}
+          className={styles.tool}
+          on={stageOn}
+          onClick={() => setVisualSettings({ stage: !stageOn })}
+          tour="look-switch"
+        />
+      ) : null}
     </div>
   );
 }
@@ -385,7 +468,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   };
 
   const vars = {
-    "--k-left": `${Math.max(24, along(WIDE.cover.x, NARROW.cover.x, width))}px`,
+    "--k-left": `${Math.max(24, along(WIDE.cover.x, NARROW.cover.x, width) - COVER_GROWTH)}px`,
     "--k-lyrics": `${along(WIDE.lyrics.x, NARROW.lyrics.x, width)}px`,
     "--k-lines": `${WIDE.lyrics.width}px`,
   } as CSSProperties;
@@ -419,13 +502,16 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
     },
     [],
   );
+  const always = useControlsMode() === "always";
+  const touring = stageOn && !visual.toured;
+  useRest(rootRef, always || !playing || !visual.chosen || hint || touring || editing);
   const hideHint = useCallback(() => setHint(false), []);
 
   const transport = (
-    <div className={styles.transport}>
+    <div className={styles.transport} data-hold="">
       <GlyphButton
         icon="shuffle"
-        size={24}
+        size={18}
         label={t(player.shuffle ? "ui.karaoke.shuffle_on" : "ui.karaoke.shuffle_off")}
         className={`${styles.side} ${styles.mode}`}
         on={player.shuffle}
@@ -438,14 +524,14 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
         aria-label={t(playing ? "ui.karaoke.pause" : "ui.karaoke.play")}
         onClick={() => void playerEngine.togglePlayPause()}
       >
-        <MorphPlayIcon playing={playing} size={22} />
+        <MorphPlayIcon playing={playing} size={38} />
       </button>
       <GlyphButton icon="next" label={t("ui.karaoke.next")} className={styles.side} onClick={() => void playerEngine.skipNext()} />
       <GlyphButton
         icon={player.repeat === "one" ? "repeat-one" : "repeat"}
-        size={24}
+        size={18}
         label={t(`ui.karaoke.repeat_${player.repeat}`)}
-        className={`${styles.side} ${styles.mode}`}
+        className={`${styles.side} ${styles.mode} ${styles.repeat}`}
         on={player.repeat !== "off"}
         onClick={() => playerEngine.setRepeat(nextRepeatMode(player.repeat, isRadioContext(player.playbackContext)))}
       />
@@ -477,22 +563,8 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       )}
 
       {visual.chosen ? null : <LookChoice light={lightLook} onChosen={choose} />}
-      <header ref={headerRef} className={styles.top} data-window-drag data-stage-tools={visual.enabled ? "" : undefined}>
+      <header ref={headerRef} className={styles.top} data-window-drag data-hold="">
         <GlyphButton icon="chevron-down" label={t("ui.karaoke.close")} className={styles.close} onClick={onClose} />
-        {lyricsReady ? <OffsetPill track={track} mode={mode} reveal={stageOn} /> : null}
-        {visual.enabled ? (
-          <GlyphButton
-            icon="gallery"
-            label={t(stageOn ? "ui.karaoke.stage_off" : "ui.karaoke.stage_on")}
-            className={styles.stageToggle}
-            on={stageOn}
-            onClick={() => setVisualSettings({ stage: !stageOn })}
-            tour="look-switch"
-          />
-        ) : null}
-        {stageOn ? (
-          <GlyphButton icon="edit" label={t("visual.editor.edit")} className={styles.editToggle} onClick={() => setStudioOpen(true)} tour="scene-edit" />
-        ) : null}
         <div className={styles.windowButtons} data-window-controls>
           <GlyphButton
             icon="window-minimize"
@@ -512,30 +584,30 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
 
       {stageOn ? <div className={styles.stageDim} /> : null}
       <div className={stageOn ? styles.stageZone : styles.zoneOff}>
-        <section ref={columnRef} className={styles.left}>
-          <Cover src={track?.coverUrl ?? ""} size={340} radius={12} />
+        <section ref={columnRef} className={styles.left} onClick={dropPointerFocus}>
+          <CoverControl src={track?.coverUrl ?? ""} playing={playing} />
           <h1 className={styles.title}>{track?.title ?? ""}</h1>
           <p className={styles.artist}>{track ? <ArtistLinks track={track} focusable /> : null}</p>
           {track ? (
-            <GlyphButton
-              icon={liked ? "liked" : "like"}
-              label={t(liked ? "ui.karaoke.unlike" : "ui.karaoke.like")}
-              className={styles.like}
-              onClick={() => (liked ? unlike.mutate(track.id) : like.mutate(track))}
-            />
-          ) : null}
-          {track ? (
-            <GlyphButton
-              icon="dislike"
-              label={t("ui.recs.dislike")}
-              hint={t("ui.recs.dislike_hint")}
-              className={`${styles.like} ${styles.dislike}`}
-              onClick={() => songMenuNotInterested?.(track, "exact")}
-            />
+            <div className={styles.opinion} data-hold="">
+              <GlyphButton
+                icon="dislike"
+                label={t("ui.recs.dislike")}
+                hint={t("ui.recs.dislike_hint")}
+                className={styles.like}
+                onClick={() => songMenuNotInterested?.(track, "exact")}
+              />
+              <GlyphButton
+                icon={liked ? "liked" : "like"}
+                label={t(liked ? "ui.karaoke.unlike" : "ui.karaoke.like")}
+                className={styles.like}
+                onClick={() => (liked ? unlike.mutate(track.id) : like.mutate(track))}
+              />
+            </div>
           ) : null}
           <Timeline fallbackMs={track?.durationMs ?? 0} />
           {transport}
-          <div className={styles.volume}>
+          <div className={styles.volume} data-hold="">
             <button
               type="button"
               aria-label={t(level > 0 ? "ui.karaoke.mute" : "ui.karaoke.unmute")}
@@ -563,9 +635,10 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
         </section>
       </div>
 
+      {visual.chosen ? <Tools track={track} mode={mode} lyricsReady={lyricsReady} sceneOffered={visual.enabled} stageOn={stageOn} /> : null}
       {!visual.chosen ? null : stageOn ? <StageLyricsHelp track={track} /> : <LyricsColumn track={track} mode={mode} />}
       {hint ? <CornerHint onDone={hideHint} /> : null}
-      {stageOn && !hint && !visual.toured ? <SceneTour onDone={finishTour} /> : null}
+      {touring && !hint ? <SceneTour onDone={finishTour} /> : null}
       {lyricsReady && track ? (
         <div className={stageOn ? styles.stageLayer : styles.zoneOff} data-stage-reveal={stageOn ? "" : undefined}>
           <MadeMark track={track} />

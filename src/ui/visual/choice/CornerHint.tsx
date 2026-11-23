@@ -33,7 +33,7 @@ export function CornerHint({ onDone }: { onDone(): void }): JSX.Element | null {
         ring={ringAround(box, view)}
         panel={null}
         area={{ width: view.width, top: 0, bottom: view.height }}
-        side="below"
+        side="above"
         text={t("visual.choice.here")}
         stepKey="here"
       />

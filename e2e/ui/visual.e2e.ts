@@ -145,7 +145,13 @@ async function showScene(): Promise<void> {
   await page.locator("canvas[aria-hidden]").first().waitFor({ timeout: 15_000 });
 }
 
+async function wakeControls(): Promise<void> {
+  await session.page.mouse.move(640, 120);
+  await session.page.mouse.move(650, 130);
+}
+
 async function openMedia(): Promise<void> {
+  await wakeControls();
   await session.page.locator('button[aria-label="Edit the scene"]').click();
   await studio().waitFor({ timeout: 10_000 });
   await studio().getByRole("button", { name: "Media", exact: true }).click();
@@ -183,6 +189,7 @@ it("the visual player draws a lit scene in the karaoke view at 60 fps", async ()
   expect(await litShare("visual-canvas.png")).toBeGreaterThan(0.002);
 
   await session.shoot("visual", "stage", "emblem", { looks: [DARK] });
+  await wakeControls();
   await toggle.click();
   await page.locator('button[aria-label="Show the scene"]').waitFor({ timeout: 5_000 });
 });
@@ -201,18 +208,22 @@ it("the Poster scene plays in the karaoke view at 60 fps", async () => {
   console.info(`poster scene: ${fps.toFixed(1)} fps`);
   expect(fps).toBeGreaterThan(55);
   expect(await litShare("visual-poster.png")).toBeGreaterThan(0.002);
+  await wakeControls();
   await page.locator('button[aria-label="Show the lyrics"]').click();
   await page.locator('button[aria-label="Show the scene"]').waitFor({ timeout: 5_000 });
 });
 
 it("the karaoke column comes back over the dimmed scene, and the studio opens full screen", async () => {
   const page = session.page;
+  await wakeControls();
   await page.locator('button[aria-label="Show the scene"]').click();
   const column = page.locator("section[class*=left]");
   await column.hover();
   await page.waitForTimeout(900);
   expect(await column.evaluate((element) => getComputedStyle(element.firstElementChild!).opacity)).toBe("1");
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "stage-column.png") });
+  await column.getByRole("button", { name: "Mute" }).hover();
+  await page.waitForTimeout(300);
   const volume = page.getByRole("slider", { name: "Volume" });
   const handle = (await volume.boundingBox())!;
   await page.mouse.move(handle.x + handle.width * 0.8, handle.y + handle.height / 2);
@@ -222,18 +233,8 @@ it("the karaoke column comes back over the dimmed scene, and the studio opens fu
   await page.mouse.move(handle.x + 700, handle.y - 300);
   await page.waitForTimeout(600);
   expect(await column.evaluate((element) => getComputedStyle(element.firstElementChild!).opacity)).toBe("0");
-  await page.evaluate(() => {
-    const pill = document.querySelector("[data-stage-reveal]");
-    pill?.querySelector("button")?.setAttribute("aria-expanded", "true");
-  });
-  await page.waitForTimeout(800);
-  expect(
-    await page
-      .locator("[data-stage-reveal]")
-      .first()
-      .evaluate((element) => getComputedStyle(element).opacity),
-  ).toBe("1");
-  await page.evaluate(() => document.querySelector("[data-stage-reveal] button")?.setAttribute("aria-expanded", "false"));
+  const tools = page.locator("[data-tools]");
+  expect(await tools.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
   await page.locator('button[aria-label="Edit the scene"]').click();
   await page.getByRole("dialog", { name: "Scene studio" }).waitFor({ timeout: 10_000 });
   await page.waitForFunction(() => document.querySelectorAll("img[src^='blob:']").length >= 6, undefined, { timeout: 20_000 });

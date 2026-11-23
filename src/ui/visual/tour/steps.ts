@@ -9,8 +9,8 @@ export interface SceneTourStep {
 
 export const SCENE_TOUR: SceneTourStep[] = [
   { target: null, text: "intro" },
-  { target: "look-switch", text: "switch", side: "below" },
-  { target: "scene-edit", text: "edit", side: "below", press: true },
+  { target: "look-switch", text: "switch", side: "above" },
+  { target: "scene-edit", text: "edit", side: "above", press: true },
   { target: "studio-browser", text: "browser", side: "right" },
   { target: "studio-player", text: "player", side: "right" },
   { target: "studio-inspector", text: "inspector", side: "left" },

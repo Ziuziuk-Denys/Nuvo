@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { CONTROLS_MODES, setControlsMode, useControlsMode } from "../../karaoke/controlsMode";
 import { HIGHLIGHT_MODES, setHighlightMode, useHighlightMode } from "../../karaoke/highlightMode";
 import { useTranslation, type TFunction } from "../../ports/i18n";
 import { usePlayerStore } from "../../ports/player";
@@ -17,6 +18,7 @@ const DOUBLE_CLICK = "settings.track_double_click";
 const START_CONTEXT = "settings.default_playback_context";
 const AUTOPLAY = "settings.autoplay_similar";
 const LYRICS_HIGHLIGHT = "settings.lyrics_highlight";
+const KARAOKE_CONTROLS = "settings.karaoke_controls";
 const VISUAL_PLAYER = "settings.visual_player";
 
 export function StartupSection(): JSX.Element {
@@ -80,9 +82,11 @@ export function BetweenSongsSection(): JSX.Element {
 export function LyricsSection(): JSX.Element {
   const { t } = useTranslation();
   const lyricsHighlight = rowText(t, LYRICS_HIGHLIGHT);
+  const karaokeControls = rowText(t, KARAOKE_CONTROLS);
   const visualPlayer = rowText(t, VISUAL_PLAYER);
   const visual = useVisualSettings();
   const highlightMode = useHighlightMode();
+  const controlsMode = useControlsMode();
 
   return (
     <>
@@ -97,6 +101,13 @@ export function LyricsSection(): JSX.Element {
               value={highlightMode}
               onChange={setHighlightMode}
             />
+          }
+        />
+        <SettingRow
+          {...karaokeControls}
+          explained
+          control={
+            <Segmented label={karaokeControls.title} options={choices(t, KARAOKE_CONTROLS, CONTROLS_MODES)} value={controlsMode} onChange={setControlsMode} />
           }
         />
         <WordTimingRow />

@@ -63,6 +63,7 @@ export const SETTING_ITEMS: SettingItem[] = [
   row("Spatial", "sound.moving.path", "sound.moving.path_desc"),
   row("Spatial", "sound.moving.speed", "sound.moving.speed_desc"),
   titled("Lyrics", "settings.lyrics_highlight", "karaoke"),
+  titled("Lyrics", "settings.karaoke_controls", "karaoke"),
   titled("Lyrics", "settings.word_timing", "karaoke"),
   titled("Lyrics", "settings.lyrics_model"),
   titled("Lyrics", "settings.visual_player", "scene"),

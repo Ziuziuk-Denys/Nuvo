@@ -150,7 +150,17 @@ function litOrder(ms: number): Promise<number[]> {
 
 const player = (script: string) => main.evaluate(`window.__nuvoPlayer.engine.${script}`);
 
+async function openLyricsBar() {
+  const button = main.locator("[data-tools] > button[aria-expanded]");
+  await main.mouse.move(700, 300);
+  await main.mouse.move(710, 310);
+  if ((await button.getAttribute("aria-expanded")) === "true") return;
+  await button.click();
+  await main.waitForTimeout(300);
+}
+
 async function chooseMode(label: string) {
+  await openLyricsBar();
   await main.locator('[role="group"][aria-label="Highlight"] button', { hasText: label }).click({ force: true });
   await main.waitForTimeout(250);
 }
@@ -494,7 +504,7 @@ async function barProblems(): Promise<string[]> {
       const box = child.getBoundingClientRect();
       if (box.left < frame.left + 2 || box.right > frame.right - 2) problems.push(`${child.textContent || child.getAttribute("aria-label")} touches the edge`);
     }
-    for (const other of document.querySelectorAll<HTMLElement>("header button")) {
+    for (const other of document.querySelectorAll<HTMLElement>("header button, [data-tools] > button, section button")) {
       if (pill.contains(other)) continue;
       const box = other.getBoundingClientRect();
       if (box.width && box.left < frame.right && box.right > frame.left && box.top < frame.bottom && box.bottom > frame.top)
@@ -507,6 +517,7 @@ async function barProblems(): Promise<string[]> {
 async function barFitsAt(widths: number[]) {
   for (const width of widths) {
     await setSize(width, Math.round(width * 0.65));
+    await openLyricsBar();
     expect(await barProblems(), `at ${width}`).toEqual([]);
   }
 }
@@ -520,7 +531,7 @@ it("shots: dark at 1200 and Russian at 1100", async () => {
   await setSize(1200, 780);
   await player("seekTo(2300)");
   await main.waitForTimeout(700);
-  await main.mouse.move(800, 20);
+  await openLyricsBar();
   await main.waitForTimeout(300);
   await main.screenshot({
     path: path.join(SHOTS, "karaoke-words-dark-1200.png"),
@@ -593,7 +604,8 @@ it("with the user's own lyrics saved, the version menu lists both and switches b
   await main.waitForFunction(() => (window as unknown as { __nuvoLyrics: Lyrics }).__nuvoLyrics.getState().versions.length === 2, undefined, {
     timeout: 30_000,
   });
-  await main.locator('header button[aria-label="Версия текста"]').click({ force: true });
+  await openLyricsBar();
+  await main.locator('[data-tools] button[aria-label="Версия текста"]').click();
   const items = main.locator('[role="menu"] [role="menuitem"]');
   await items.first().waitFor();
   expect(await items.allTextContents()).toEqual(["Ваш текст", "С временем по словам", "Найти текст"]);

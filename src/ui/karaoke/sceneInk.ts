@@ -12,6 +12,7 @@ interface Area {
 
 const DARK_ABOVE = 0.52;
 const LIGHT_BELOW = 0.4;
+const ROW = "section [data-hold], [data-tools], [data-window-controls]";
 
 const clampCell = (value: number, count: number) => Math.min(count - 1, Math.max(0, value));
 
@@ -38,7 +39,8 @@ function probesOf(column: Element, header: Element | null): HTMLElement[] {
     else for (const child of element.children) visit(child);
   };
   for (const child of [...column.children].slice(1)) visit(child);
-  if (header) found.push(...header.querySelectorAll<HTMLElement>(":scope > button, [data-window-controls] button"));
+  const view = header?.parentElement;
+  if (view) found.push(...view.querySelectorAll<HTMLElement>("header > button, [data-window-controls] button, [data-tools] > button"));
   return found;
 }
 
@@ -75,7 +77,7 @@ export function useSceneInk(
       if (!probes.current) {
         const frame = canvas.getBoundingClientRect();
         probes.current = probesOf(element, header.current).map((probe) => {
-          const rect = probe.getBoundingClientRect();
+          const rect = (probe.closest(ROW) ?? probe).getBoundingClientRect();
           return {
             element: probe,
             area: {

@@ -67,7 +67,7 @@ vi.mock("../ports/navigation", () => ({
   toggleMaximizeWindow: vi.fn(),
   closeWindow: vi.fn(),
 }));
-vi.mock("../ports/escape", () => ({ isEscapeGuarded: () => false }));
+vi.mock("../ports/escape", () => ({ isEscapeGuarded: () => false, acquireEscapeGuard: () => () => undefined }));
 vi.mock("../ports/lyrics", () => ({
   useLyrics: (select: (state: unknown) => unknown) =>
     select({
@@ -227,16 +227,38 @@ describe("karaoke view", () => {
     found.unmount();
   });
 
-  it("the top bar names no lyrics provider; Earlier, the offset and Later stay", () => {
+  it("the lyrics bar names no provider and keeps Earlier, the offset and Later; the top bar holds only the window", () => {
     current = { id: "t", title: "Song", artists: "Ann", coverUrl: "" };
     lyricsStatus = "ready";
     const view = mount(<Karaoke onClose={() => undefined} />);
-    const header = view.host.querySelector("header")!;
-    expect(header.textContent).not.toMatch(/lrclib/i);
+    const labels = [...view.host.querySelectorAll("header button")].map((button) => button.getAttribute("aria-label"));
+    expect(labels).toEqual(["ui.karaoke.close", "ui.window.minimize", "ui.window.maximize", "ui.window.close"]);
+    const tools = view.host.querySelector("[data-tools]")!;
+    expect(tools.textContent).not.toMatch(/lrclib/i);
     for (const label of ["ui.karaoke.earlier", "ui.karaoke.offset", "ui.karaoke.later"]) {
-      expect(header.querySelector(`button[aria-label="${label}"]`)).not.toBeNull();
+      expect(tools.querySelector(`button[aria-label="${label}"]`)).not.toBeNull();
     }
     expect(lyricsCalls.chooseVersion).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it("the lyrics bar opens from its button; Escape closes the bar first and leaves the view open", () => {
+    current = { id: "t", title: "Song", artists: "Ann", coverUrl: "" };
+    lyricsStatus = "ready";
+    const onClose = vi.fn();
+    const view = mount(<Karaoke onClose={onClose} />);
+    const button = view.host.querySelector<HTMLButtonElement>('button[aria-label="ui.karaoke.lyrics_tools"]')!;
+    const isOpen = () => view.host.querySelector("[data-open]") !== null;
+    expect(isOpen()).toBe(false);
+    act(() => button.click());
+    expect(isOpen()).toBe(true);
+    expect(button.getAttribute("aria-expanded")).toBe("true");
+    const escape = () => act(() => void document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
+    escape();
+    expect(isOpen()).toBe(false);
+    expect(onClose).not.toHaveBeenCalled();
+    escape();
+    expect(onClose).toHaveBeenCalledOnce();
     view.unmount();
   });
 
@@ -244,7 +266,7 @@ describe("karaoke view", () => {
     current = { id: "t", title: "Song", artists: "Ann", coverUrl: "" };
     lyricsStatus = "ready";
     const single = mount(<Karaoke onClose={() => undefined} />);
-    act(() => single.host.querySelector<HTMLButtonElement>('header button[aria-label="ui.karaoke.version"]')!.click());
+    act(() => single.host.querySelector<HTMLButtonElement>('[data-tools] button[aria-label="ui.karaoke.version"]')!.click());
     const only = [...document.querySelectorAll<HTMLButtonElement>('[role="menu"] [role="menuitem"]')];
     expect(only.map((item) => item.textContent)).toEqual(["ui.lyrics.find"]);
     act(() => only[0].click());
@@ -252,7 +274,7 @@ describe("karaoke view", () => {
     single.unmount();
     twoVersions = true;
     const view = mount(<Karaoke onClose={() => undefined} />);
-    const button = view.host.querySelector<HTMLButtonElement>('header button[aria-label="ui.karaoke.version"]')!;
+    const button = view.host.querySelector<HTMLButtonElement>('[data-tools] button[aria-label="ui.karaoke.version"]')!;
     expect(button).not.toBeNull();
     act(() => button.click());
     const items = [...document.querySelectorAll<HTMLButtonElement>('[role="menu"] [role="menuitem"]')];
