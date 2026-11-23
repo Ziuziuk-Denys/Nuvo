@@ -4,6 +4,7 @@ import { useNavigationType, type Location, type NavigateFunction } from "react-r
 interface HistoryEntries extends EventTarget {
   readonly canGoBack: boolean;
   readonly canGoForward: boolean;
+  readonly currentEntry?: { readonly key: string } | null;
 }
 
 const RESTORE_MS = 2_000;
@@ -71,7 +72,8 @@ function scrollBack(box: HTMLElement, top: number, settled: () => void): () => v
 export function useScrollMemory(scroller: RefObject<HTMLElement | null>, location: Location, innerScrollers: string): void {
   const type = useNavigationType();
   const place = location.pathname + location.search;
-  const spot = `${location.key} ${place}`;
+  // the router gives every address set by hand one key
+  const spot = `${entries()?.currentEntry?.key ?? location.key} ${place}`;
   const spots = useRef(new Map<string, number>());
   const restoring = useRef(false);
   const latest = useRef({ spot, type });
