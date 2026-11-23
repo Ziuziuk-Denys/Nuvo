@@ -4,9 +4,118 @@
   gap: 40px;
 }
 
+.lead {
+  display: grid;
+  grid-template-columns: clamp(232px, 22cqw, 320px) minmax(0, 1fr);
+  gap: 44px;
+  align-items: start;
+}
+
+.lead > section:only-child {
+  grid-column: 1 / -1;
+}
+
+.songsHead {
+  margin-bottom: 10px;
+}
+
 /* rows pad 8 px; pulling them out by 8 puts the covers on the title's edge */
 .songs {
-  margin: -6px -8px 0;
+  margin: 0 -8px;
+}
+
+.songs[data-columns="2"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
+}
+
+.latestCover {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+}
+
+.latestCover > span {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1;
+  transition: filter 300ms;
+}
+
+.latestCover:hover > span {
+  filter: brightness(1.08);
+}
+
+.latestCover:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--n-focus-halo);
+}
+
+.latestLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.latestText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink);
+  text-align: start;
+  cursor: pointer;
+}
+
+.latestTitle {
+  overflow: hidden;
+  font: 500 16px/20px var(--n-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.face {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  width: 120px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink);
+  cursor: pointer;
+}
+
+.face > .cardTitle {
+  max-width: 100%;
+}
+
+.face > .art {
+  border-radius: 50%;
+}
+
+.face:focus-visible {
+  outline: none;
+}
+
+.face:focus-visible .art {
+  box-shadow: 0 0 0 3px var(--n-focus-halo);
+}
+
+.face:hover .art > span {
+  filter: brightness(1.15);
 }
 
 .shelfTitle {
@@ -16,9 +125,10 @@
 .shelf {
   display: flex;
   gap: 24px;
-  width: 100%;
-  padding-bottom: 24px;
+  margin: 0 calc(-1 * var(--n-gutter));
+  padding: 0 var(--n-gutter) 2px;
   overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .card {
@@ -82,19 +192,8 @@
   font: 400 13px/normal var(--n-font);
 }
 
-.initial {
-  color: color-mix(in srgb, var(--n-ink) 20%, transparent);
-  font: 700 56px/1 var(--n-font);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .art > span {
     transition: none;
   }
-}
-
-.verified {
-  display: inline-flex;
-  flex: none;
-  color: var(--n-accent);
 }

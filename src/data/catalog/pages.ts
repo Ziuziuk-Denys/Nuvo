@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { AlbumPage, ArtistPage, ArtistRef, PlaylistPage, Release, YtCatalog } from "@/youtube";
+import type { AlbumPage, ArtistPage, ArtistRef, PlaylistPage, Release, Single, YtCatalog } from "@/youtube";
 import { isAbortError, YtError } from "@/youtube/types";
 import { normalizeForSearch } from "../search/trackMatch";
 import { catalogSource } from "./source";
@@ -7,8 +7,15 @@ import { toUiTrack, type UiTrack } from "./tracks";
 
 export interface ArtistRelease {
   id: string;
+  kind: "album" | "ep" | "single";
   title: string;
   releaseDate?: string;
+  coverUrl: string;
+}
+
+export interface RelatedArtist {
+  id: string;
+  name: string;
   coverUrl: string;
 }
 
@@ -16,11 +23,12 @@ export interface ArtistPageData {
   id: string;
   title: string;
   coverUrl: string;
-  verified?: boolean;
+  bannerUrl?: string;
   monthlyListeners?: string;
   tracks: UiTrack[];
   albums: ArtistRelease[];
   singles: ArtistRelease[];
+  similar: RelatedArtist[];
 }
 
 export interface CollectionPageData {
@@ -53,8 +61,14 @@ function remember(key: string, value: unknown): void {
   if (cache.size > CACHED_PAGES) cache.delete(cache.keys().next().value!);
 }
 
-function release(item: Release): ArtistRelease {
-  return { id: item.id, title: item.title, releaseDate: item.year ? String(item.year) : undefined, coverUrl: item.cover?.url ?? "" };
+function release(item: Release | Single): ArtistRelease {
+  return {
+    id: item.id,
+    kind: "releaseKind" in item ? item.releaseKind : "album",
+    title: item.title,
+    releaseDate: item.year ? String(item.year) : undefined,
+    coverUrl: item.cover?.url ?? "",
+  };
 }
 
 function toArtistPageData(page: ArtistPage): ArtistPageData {
@@ -62,11 +76,12 @@ function toArtistPageData(page: ArtistPage): ArtistPageData {
     id: page.id,
     title: page.name,
     coverUrl: page.cover?.url ?? "",
-    verified: page.verified,
+    bannerUrl: page.banner?.url,
     monthlyListeners: page.listenersText,
     tracks: page.tracks.map(toUiTrack),
     albums: page.albums.map(release),
     singles: page.singles.map(release),
+    similar: page.similar.map((artist) => ({ id: artist.id, name: artist.name, coverUrl: artist.cover?.url ?? "" })),
   };
 }
 
@@ -104,7 +119,11 @@ const loadArtist: Loader<ArtistPageData> = async (catalog, id, signal, partial) 
   return { ...first, tracks: (await page.more(signal)).map(toUiTrack) };
 };
 
-const nameKey = (name: string) => normalizeForSearch(name).split(" ").sort().join(" ");
+function nameKey(name: string): string {
+  const folded = normalizeForSearch(name);
+  const words = folded.match(/[\p{L}\p{N}]+/gu) ?? [folded];
+  return words.sort().join(" ");
+}
 
 const loadArtistByName: Loader<ArtistPageData> = async (catalog, name, signal, partial) => {
   const wanted = nameKey(name);

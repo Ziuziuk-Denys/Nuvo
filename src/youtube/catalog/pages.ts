@@ -8,6 +8,7 @@ import {
   type Cover,
   type PlaylistPage,
   type Release,
+  type SimilarArtist,
   type Single,
   type TrackPage,
   type YtTrack,
@@ -209,12 +210,13 @@ export class Pages {
     const page: ArtistPage = {
       id,
       name,
-      verified: parseCount(listenersText) >= 50_000,
       cover,
+      banner: banner(thumbnailsOf(header)),
       listenersText,
       tracks,
       albums,
       singles,
+      similar: similarArtists(response, id),
       more: topSongs
         ? (moreSignal) => {
             full ??= loadFull(topSongs, moreSignal).catch((error) => {
@@ -231,6 +233,24 @@ export class Pages {
   }
 }
 
+const BANNER_MIN_RATIO = 1.6;
+
+function banner(thumbs: Cover[]): Cover | undefined {
+  const wide = thumbs.filter((thumb) => thumb.width >= thumb.height * BANNER_MIN_RATIO);
+  return wide.length > 0 ? wide.reduce((best, thumb) => (thumb.width > best.width ? thumb : best)) : undefined;
+}
+
+function similarArtists(response: unknown, self: string): SimilarArtist[] {
+  const found = new Map<string, SimilarArtist>();
+  for (const item of findAll(response, "musicTwoRowItemRenderer")) {
+    const target = browseOf(item.navigationEndpoint);
+    const name = textOf(item.title);
+    if (target?.pageType !== ARTIST || !name || target.browseId === self || found.has(target.browseId)) continue;
+    found.set(target.browseId, { id: target.browseId, name, cover: pickCover(thumbnailsOf(item), true) });
+  }
+  return [...found.values()];
+}
+
 const LISTENERS =
   /\d[\d.,\s ]*\s*(?:[KMB]|thousand|million|billion|mln|bln|тыс\.?|тис\.?|млн|млрд)?\s*(?:monthly audience|monthly listeners|слушател\p{L}* за месяц|слухач\p{L}* за місяць)/iu;
 
@@ -244,32 +264,6 @@ function listeners(header: Obj): string | undefined {
     if (match) return match[0].trim();
   }
   return undefined;
-}
-
-const MULTIPLIERS: Record<string, number> = {
-  k: 1e3,
-  thousand: 1e3,
-  тыс: 1e3,
-  тис: 1e3,
-  m: 1e6,
-  million: 1e6,
-  mln: 1e6,
-  млн: 1e6,
-  b: 1e9,
-  billion: 1e9,
-  bln: 1e9,
-  млрд: 1e9,
-};
-
-/** "1.2M", "1,2 млн", "12,345", "12.345", "12 345", "3 thousand" as a number; 0 when nothing parses. */
-export function parseCount(text: string | undefined): number {
-  const match = text?.match(/(\d+(?:[.,\s ]\d+)*)\s*(k|m|b|thousand|million|billion|mln|bln|тыс|тис|млн|млрд)?(?![\p{L}])/iu);
-  if (!match) return 0;
-  const multiplier = match[2] ? MULTIPLIERS[match[2].toLowerCase()] : 1;
-  let digits = match[1].replace(/[\s ]/g, "");
-  const decimal = match[2] ? digits.match(/^(\d+)[.,](\d{1,2})$/) : null;
-  digits = decimal ? `${decimal[1]}.${decimal[2]}` : digits.replace(/[.,]/g, "");
-  return Number(digits) * multiplier;
 }
 
 /** Releases classified by album page type and the subtitle kind word; shelf titles are only a hint. */

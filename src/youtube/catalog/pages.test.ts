@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CONTINUATIONS, Pages, isNoise, parseCount, playlistPage, radio, trackPage } from "./pages";
+import { MAX_CONTINUATIONS, Pages, isNoise, playlistPage, radio, trackPage } from "./pages";
 import { json } from "../test/fakeFetch";
 import { harness, searchFor, signal } from "../test/harness";
 import {
@@ -301,7 +301,7 @@ describe("artist", () => {
     },
   });
 
-  it("artist-full: verified, releases typed, tracks from the top songs browse", async () => {
+  it("artist-full: releases typed, tracks from the top songs browse", async () => {
     const { fake, yt } = harness();
     fake.innertube("browse", json(artistFull()), byBrowseId("UCa"));
     fake.innertube(
@@ -310,7 +310,6 @@ describe("artist", () => {
       byBrowseId("VLtop"),
     );
     const page = await new Pages(yt).artist("UCa", signal());
-    expect(page.verified).toBe(true);
     expect(page.listenersText).toBe("1.2M monthly audience");
     expect(page.albums.map((album) => album.id)).toEqual(["MPREb_a1", "MPREb_a2"]);
     expect(page.albums[1].explicit).toBe(true);
@@ -319,6 +318,8 @@ describe("artist", () => {
       ["MPREb_s1", "single"],
     ]);
     expect(page.tracks.map((track) => track.id)).toEqual(["vidINLINE01"]);
+    expect(page.similar).toEqual([{ id: "UCf", name: "Friend", cover: undefined }]);
+    expect(page.banner).toBeUndefined();
     expect(fake.callsTo("POST", BROWSE)).toHaveLength(1);
     const full = await page.more!(signal());
     expect(full.map((track) => track.id)).toEqual(["vidTOP00001", "vidTOP00002"]);
@@ -336,16 +337,20 @@ describe("artist", () => {
     expect((await page.more!(signal())).map((track) => track.id)).toEqual(["vidINLINE01"]);
   });
 
-  it("listener counts in Russian and with space groups", () => {
-    expect(parseCount("1,2 млн слушателей за месяц")).toBe(1_200_000);
-    expect(parseCount("12 345 monthly listeners")).toBe(12_345);
-    expect(parseCount("12,345")).toBe(12_345);
-    expect(parseCount("12.345")).toBe(12_345);
-    expect(parseCount("3 thousand")).toBe(3000);
-    expect(parseCount("2,5 тыс")).toBe(2500);
+  it("the widest header picture is the banner", async () => {
+    const { fake, yt } = harness();
+    const wide = (width: number, height: number) => ({ url: `https://yt3.googleusercontent.com/pic=w${width}-h${height}`, width, height });
+    const thumbnails = [wide(540, 225), wide(1920, 800), wide(1440, 600)];
+    fake.innertube(
+      "browse",
+      json({
+        header: { musicImmersiveHeaderRenderer: { title: runs(run("Artist")), thumbnail: { musicThumbnailRenderer: { thumbnail: { thumbnails } } } } },
+      }),
+    );
+    expect((await new Pages(yt).artist("UCa", signal())).banner).toEqual(wide(1920, 800));
   });
 
-  it("listener text found in the subtitle sets verified", async () => {
+  it("listener text is found in the subtitle", async () => {
     const { fake, yt } = harness();
     const header = (subtitle: string) =>
       json({
@@ -359,8 +364,8 @@ describe("artist", () => {
     fake.innertube("browse", header("1,2 млн слушателей за месяц"), byBrowseId("UCru"));
     fake.innertube("browse", header("12 345 monthly listeners"), byBrowseId("UCsmall"));
     const ru = await new Pages(yt).artist("UCru", signal());
-    expect([ru.listenersText, ru.verified]).toEqual(["1,2 млн слушателей за месяц", true]);
-    expect((await new Pages(yt).artist("UCsmall", signal())).verified).toBe(false);
+    expect(ru.listenersText).toBe("1,2 млн слушателей за месяц");
+    expect((await new Pages(yt).artist("UCsmall", signal())).listenersText).toBe("12 345 monthly listeners");
   });
 
   it("a renamed channel is found through an artist search", async () => {
@@ -601,7 +606,7 @@ describe("page fallbacks", () => {
       }),
     );
     const page = await new Pages(yt).artist("UCa", signal());
-    expect([page.tracks, page.albums, page.singles, page.more]).toEqual([[], [], [], undefined]);
+    expect([page.tracks, page.albums, page.singles, page.similar, page.more]).toEqual([[], [], [], [], undefined]);
   });
 
   it("releases follow the subtitle word first, the shelf title only as a hint", async () => {

@@ -802,6 +802,7 @@ impl DetailTally {
             by_weekday: self.by_weekday.to_vec(),
             sources: shares(self.sources),
             top_tracks,
+            track_ids: Vec::new(),
         }
     }
 }
@@ -825,7 +826,7 @@ pub fn track_detail(conn: &Connection, id: &str) -> Result<StatsDetail, StoreErr
 pub fn artist_detail(conn: &Connection, key: &str) -> Result<StatsDetail, StoreError> {
     let track_ids: Vec<String> = match key.strip_prefix("name:") {
         Some(name) => {
-            let mut stmt = conn.prepare_cached("SELECT id FROM tracks WHERE nuvo_fold(artist) = ?1")?;
+            let mut stmt = conn.prepare_cached("SELECT id FROM tracks WHERE nuvo_fold(artist) = nuvo_fold(?1)")?;
             stmt.query_map([name], |r| r.get(0))?.collect::<Result<_, _>>()?
         }
         None => {
@@ -875,7 +876,8 @@ pub fn artist_detail(conn: &Connection, key: &str) -> Result<StatsDetail, StoreE
     let title = lead.map(|meta| meta.artist.clone()).unwrap_or_default();
     let cover = lead.and_then(|meta| meta.cover_url.clone());
     let open_id = lead.and_then(|meta| first_artist_id(&meta.artists_json));
-    Ok(tally.into_detail(title, None, cover, None, open_id, top))
+    let track_ids = groups.iter().filter(|(_, plays, _)| *plays > 0).map(|(id, _, _)| id.to_string()).collect();
+    Ok(StatsDetail { track_ids, ..tally.into_detail(title, None, cover, None, open_id, top) })
 }
 
 pub struct ExportEvent {

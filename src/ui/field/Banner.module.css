@@ -1,0 +1,90 @@
+.banner {
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--n-hero);
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 46%, rgba(0, 0, 0, 0.62) 66%, transparent 100%);
+  animation: leave linear both;
+  animation-timeline: --page-scroll;
+  animation-range: 0 var(--n-hero);
+}
+
+@keyframes leave {
+  to {
+    transform: translateY(calc(-1 * var(--n-hero)));
+  }
+}
+
+.photo,
+.fill,
+.portrait {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--n-t-page) var(--n-ease-out);
+}
+
+.photo {
+  object-position: 50% 32%;
+}
+
+.fill {
+  filter: blur(48px) saturate(1.3);
+  scale: 1.3;
+}
+
+.portrait {
+  left: auto;
+  width: auto;
+  aspect-ratio: 1;
+  object-position: 50% 24%;
+  mask-image: linear-gradient(to left, #000 50%, transparent 100%);
+}
+
+.photo[data-shown],
+.fill[data-shown],
+.portrait[data-shown] {
+  opacity: 1;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--n-deep) 58%, transparent), transparent 24%),
+    linear-gradient(to top, color-mix(in srgb, var(--n-deep) 86%, transparent), transparent 66%);
+}
+
+[data-mode="light"] .fill[data-shown] {
+  opacity: 0.55;
+}
+
+[data-mode="light"] .shade {
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--n-deep) 90%, transparent),
+      color-mix(in srgb, var(--n-deep) 56%, transparent) 18%,
+      color-mix(in srgb, var(--n-deep) 16%, transparent) 40%,
+      transparent 60%
+    ),
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--n-deep) 94%, transparent),
+      color-mix(in srgb, var(--n-deep) 66%, transparent) 34%,
+      color-mix(in srgb, var(--n-deep) 30%, transparent) 56%,
+      transparent 84%
+    );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo,
+  .fill,
+  .portrait {
+    transition: none;
+  }
+}

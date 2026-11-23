@@ -138,15 +138,20 @@ export interface Single extends Release {
   releaseKind: "single" | "ep";
 }
 
+export interface SimilarArtist extends ArtistRef {
+  cover?: Cover;
+}
+
 export interface ArtistPage {
   id: string;
   name: string;
-  verified: boolean;
   cover?: Cover;
+  banner?: Cover;
   listenersText?: string;
   tracks: YtTrack[];
   albums: Release[];
   singles: Single[];
+  similar: SimilarArtist[];
   more?: (signal: AbortSignal) => Promise<YtTrack[]>;
 }
 

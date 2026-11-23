@@ -108,6 +108,20 @@
       "no_match": "Плейлиста с таким названием нет",
       "title": "Добавить в плейлист"
     },
+    "artist": {
+      "heard": "Услышано {heard} из {total} главных песен",
+      "latest_album": "Последний альбом",
+      "latest_ep": "Последний EP",
+      "latest_single": "Последний сингл",
+      "liked_mark": "В любимых",
+      "liked_few": "{count} в любимых",
+      "liked_many": "{count} в любимых",
+      "liked_one": "{count} в любимых",
+      "liked_other": "{count} в любимых",
+      "play_release": "Включить «{title}»",
+      "similar": "Похожие исполнители",
+      "since": "с {date}"
+    },
     "clear": "Очистить",
     "entity": {
       "add_to_playlist": "Добавить в плейлист",
@@ -141,7 +155,6 @@
       "unavailable": "Недоступен",
       "unavailable_offline": "Не сохранён для прослушивания без сети",
       "untitled": "Плейлист без названия",
-      "verified": "Подтверждённый артист",
       "unavailable_offline_mode": "Не сохранено для офлайн-режима",
       "sort_added": "Недавно добавленные",
       "sort_artist": "По исполнителю",
@@ -166,10 +179,6 @@
       "clip": "Сигнал перегружен"
     },
     "home": {
-      "songs_one": "{count} трек",
-      "songs_few": "{count} трека",
-      "songs_many": "{count} треков",
-      "songs_other": "{count} трека",
       "artist_mix": "Микс по артисту {name}",
       "artist_mix_subtitle": "{name} и близкие к нему артисты",
       "discover_subtitle": "Песни и артисты за пределами привычного круга",

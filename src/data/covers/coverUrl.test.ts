@@ -10,7 +10,7 @@ describe("coverUrl", () => {
     expect(coverUrl(BASE, src, 40, 2)).toBe(daemon(src, 128));
     expect(coverUrl(BASE, src, 40, 1)).toBe(daemon(src, 64));
     expect(coverUrl(BASE, src, 200, 2)).toBe(daemon(src, 512));
-    expect(coverUrl(BASE, src, 2000, 2)).toBe(daemon(src, 1024));
+    expect(coverUrl(BASE, src, 2000, 2)).toBe(daemon(src, 2048));
     expect(coverUrl(BASE, src, 40, 0.5)).toBe(daemon(src, 64));
   });
 
@@ -24,8 +24,10 @@ describe("coverUrl", () => {
 });
 
 describe("coverBucket", () => {
-  it("rounds up to 64, 128, 256, 512 or 1024; nothing usable is 512 (covers 3.1)", () => {
-    expect([1, 64, 65, 128, 129, 256, 300, 512, 513, 1024, 5000].map(coverBucket)).toEqual([64, 64, 128, 128, 256, 256, 512, 512, 1024, 1024, 1024]);
+  it("rounds up to the next of 64 to 2048; nothing usable is 512 (covers 3.1)", () => {
+    expect([1, 64, 65, 128, 129, 256, 300, 512, 513, 1024, 1025, 5000].map(coverBucket)).toEqual([
+      64, 64, 128, 128, 256, 256, 512, 512, 1024, 1024, 2048, 2048,
+    ]);
     expect(coverBucket(0)).toBe(512);
     expect(coverBucket(Number.NaN)).toBe(512);
   });
