@@ -1,12 +1,12 @@
 import type { Line } from "@/lyrics";
-import type { Palette } from "./render/palette";
+import type { LoadedCover } from "./cover";
 import type { Aspect, Template } from "./template/schema";
 
 export type ToStage =
   | { type: "init"; canvas: OffscreenCanvas; reduced: boolean }
   | { type: "mirror"; canvas: OffscreenCanvas }
   | { type: "template"; template: Template; aspect: Aspect }
-  | { type: "cover"; bitmap: ImageBitmap; palette: Palette }
+  | { type: "cover"; cover: LoadedCover | null }
   | { type: "lyrics"; lines: Line[] }
   | { type: "await-image" }
   | { type: "image"; source: ImageBitmap | VideoFrame | null; width: number; height: number }

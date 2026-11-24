@@ -2,7 +2,6 @@
 import type { Line } from "@/lyrics";
 import { createGovernor } from "./governor";
 import { DISPLAY_LEAD_MS, paint } from "./paint";
-import { DEFAULT_PALETTE } from "./render/palette";
 import { SHADERS } from "./render/shaders/library";
 import { createStage, type Stage } from "./render/stage";
 import { createExtractor, WINDOW } from "./signal/features";
@@ -69,6 +68,7 @@ function applySize(): void {
   dirty = true;
 }
 
+const NO_COVER = new ImageData(new Uint8ClampedArray([20, 22, 28, 255]), 1, 1);
 const SILENCE = { wave: new Float32Array(WINDOW), sampleRate: 48_000 };
 
 function draw(atMs: number): void {
@@ -155,7 +155,7 @@ function start(target: OffscreenCanvas): void {
   canvas = target;
   stage = createStage(target);
   if (!stage) return;
-  stage.setCover(new ImageData(new Uint8ClampedArray([20, 22, 28, 255]), 1, 1), DEFAULT_PALETTE);
+  stage.setCover(NO_COVER, null);
   const ready = () => {
     fontsReady = true;
     applySize();
@@ -193,8 +193,9 @@ self.onmessage = (event: MessageEvent<ToStage>) => {
       dirty = true;
       break;
     case "cover":
-      stage?.setCover(message.bitmap, message.palette);
-      message.bitmap.close();
+      if (message.cover) stage?.setCover(message.cover.bitmap, message.cover.palette);
+      else stage?.setCover(NO_COVER, null);
+      message.cover?.bitmap.close();
       dirty = true;
       break;
     case "lyrics":

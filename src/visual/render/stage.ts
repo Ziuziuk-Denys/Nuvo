@@ -6,7 +6,7 @@ import type { Aspect, Layer, Template } from "../template/schema";
 import { createCuts } from "./cuts";
 import { createProgram, createQuad, createTarget, createTexture, deleteTarget, getContext, uploadFloats, type GlCanvas, type Program, type Target } from "./gl";
 import type { Pulse, Signals } from "../type/animations/types";
-import type { Palette, Rgb } from "./palette";
+import { DEFAULT_PALETTE, type Palette, type Rgb } from "./palette";
 import { COMMON } from "./shaders/common";
 import { SHADERS } from "./shaders/library";
 
@@ -73,7 +73,7 @@ void main() { outColor = texture(uSource, vUv); }`;
 export interface Stage {
   setTemplate(template: Template, aspect: Aspect): void;
   prepare(shader: string): void;
-  setCover(image: TexImageSource, palette: Palette): void;
+  setCover(image: TexImageSource, palette: Palette | null): void;
   setText(text: TexImageSource | null): void;
   setImage(image: TexImageSource | null, width: number, height: number): void;
   step(timeMs: number, features: Features): Pulse;
@@ -137,6 +137,7 @@ export function createStage(canvas: GlCanvas): Stage | null {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
   let imageAspect = 1;
   let hasImage = 0;
+  let hasCover = 0;
   const glyphs = createTexture(gl, gl.LINEAR);
   const atlas = new OffscreenCanvas(GLYPH_PX * GLYPHS.length, GLYPH_PX);
   const atlasCtx = atlas.getContext("2d")!;
@@ -258,6 +259,7 @@ export function createStage(canvas: GlCanvas): Stage | null {
     set1("uHistoryHead", (historyHead + 0.5) / HISTORY_ROWS);
     set1("uImageAspect", imageAspect);
     set1("uHasImage", hasImage);
+    set1("uHasCover", hasCover);
     set1("uGlyphCount", GLYPHS.length);
     set1("uFlash", signals.flash);
     set1("uStrobe", signals.strobe);
@@ -374,7 +376,10 @@ export function createStage(canvas: GlCanvas): Stage | null {
     prepare(shader) {
       program(shader);
     },
-    setCover(image, nextPalette) {
+    // no palette means the image only stands in for a cover
+    setCover(image, ownPalette) {
+      hasCover = ownPalette ? 1 : 0;
+      const nextPalette = ownPalette ?? DEFAULT_PALETTE;
       gl.bindTexture(gl.TEXTURE_2D, cover);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, gl.RGBA, gl.UNSIGNED_BYTE, image);
       gl.generateMipmap(gl.TEXTURE_2D);

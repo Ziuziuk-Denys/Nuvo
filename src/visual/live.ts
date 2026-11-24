@@ -111,14 +111,17 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
       post({ type: "quality", light });
     },
     setCover(url) {
-      if (!url || url === coverUrl) return;
+      if (url === coverUrl) return;
       coverUrl = url;
+      if (!url) return post({ type: "cover", cover: null });
       loadCover(url).then(
-        ({ bitmap, palette }) => {
-          if (url === coverUrl) post({ type: "cover", bitmap, palette }, [bitmap]);
-          else bitmap.close();
+        (cover) => {
+          if (url === coverUrl) post({ type: "cover", cover }, [cover.bitmap]);
+          else cover.bitmap.close();
         },
-        () => undefined,
+        () => {
+          if (url === coverUrl) post({ type: "cover", cover: null });
+        },
       );
     },
     setLyrics(lines) {
