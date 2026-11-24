@@ -1,5 +1,5 @@
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
@@ -135,6 +135,12 @@ describe.skipIf(!linux)("audio output", () => {
       stopApp(isolation.userData, "KILL");
     }
     if (moduleId) pactl("unload-module", moduleId);
+    if (isolation) {
+      const log = path.join(isolation.env.XDG_STATE_HOME, "nuvo", "core.log");
+      const kept = path.join(ROOT, "e2e", "artifacts", "failures");
+      mkdirSync(kept, { recursive: true });
+      if (existsSync(log)) copyFileSync(log, path.join(kept, "audio-output-core.log"));
+    }
     isolation?.dispose();
   });
 
