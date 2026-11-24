@@ -1,7 +1,5 @@
 import recorded from "./presetTokens.json";
-import { drawPresetIcon } from "./presetIcons";
-import stockDark from "../../../build/icons/themes/nuvo.svg?raw";
-import stockLight from "../../../build/icons/themes/nuvo-light.svg?raw";
+import { type FlatSize, presetFlatSvg, presetRenderUrl } from "./presetIcons";
 
 export type PresetId = "nuvo" | "ink" | "frost" | "moss" | "matcha" | "amber" | "dusk" | "blossom" | "velvet";
 export type PresetMode = "light" | "dark";
@@ -27,7 +25,10 @@ export function resolvePresetMode(preset: Preset, wanted: PresetMode): PresetMod
   return preset.modes.includes(wanted) ? wanted : preset.modes[0];
 }
 
-export function presetIconSvg(id: PresetId, mode: PresetMode): string {
-  if (id === "nuvo") return mode === "light" ? stockLight : stockDark;
-  return drawPresetIcon(id, resolvePresetMode(getPreset(id), mode));
+export function presetIconSrc(id: PresetId, mode: PresetMode, size: 128 | 512 = 128): string {
+  return presetRenderUrl(id, resolvePresetMode(getPreset(id), mode), size);
+}
+
+export function presetFlatSrc(id: PresetId, mode: PresetMode, size: FlatSize): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(presetFlatSvg(id, resolvePresetMode(getPreset(id), mode), size))}`;
 }

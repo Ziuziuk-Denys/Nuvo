@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyPresetTokens, applyTokens } from "./apply";
-import { PRESETS, PRESET_IDS, getPreset, presetIconSvg, resolvePresetMode } from "./presets";
+import { FLAT_SIZES } from "./presetIcons";
+import { PRESETS, PRESET_IDS, getPreset, presetFlatSrc, presetIconSrc, resolvePresetMode } from "./presets";
 
 describe("presets", () => {
   it("has the nine presets in order, each mode with the same token names", () => {
@@ -21,19 +22,24 @@ describe("presets", () => {
     expect(resolvePresetMode(getPreset("nuvo"), "light")).toBe("light");
   });
 
-  it("every preset has its own icon per mode, a light tile in light mode and a dark one in dark", () => {
-    const icons = new Set<string>();
+  it("every preset and mode has its own scene at both sizes and its own flat drawings", () => {
     const luma = (hex: string) => [0, 2, 4].reduce((sum, at, i) => sum + parseInt(hex.slice(1 + at, 3 + at), 16) * [0.2126, 0.7152, 0.0722][i], 0);
+    const scenes = new Set<string>();
+    const flats = new Set<string>();
     for (const preset of PRESETS) {
       for (const mode of preset.modes) {
-        const svg = presetIconSvg(preset.id, mode);
-        expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
-        const tileTop = /id="bg"[^>]*><stop offset="0" stop-color="(#[0-9a-fA-F]{6})"/.exec(svg)![1];
-        expect(luma(tileTop) > 128).toBe(mode === "light");
-        icons.add(svg);
+        for (const size of [128, 512] as const) scenes.add(presetIconSrc(preset.id, mode, size));
+        for (const size of FLAT_SIZES) {
+          const svg = decodeURIComponent(presetFlatSrc(preset.id, mode, size));
+          const tileTop = /id="bg"[^>]*><stop offset="0" stop-color="(#[0-9a-fA-F]{6})"/.exec(svg)![1];
+          expect(luma(tileTop) > 128).toBe(mode === "light");
+          flats.add(svg);
+        }
       }
     }
-    expect(icons.size).toBe(PRESETS.length * 2);
+    expect([...scenes].every((src) => src.includes(".webp"))).toBe(true);
+    expect(scenes.size).toBe(PRESETS.length * 4);
+    expect(flats.size).toBe(PRESETS.length * 2 * FLAT_SIZES.length);
   });
 
   it("applying sets the tokens and drops stale --n-* ones", () => {

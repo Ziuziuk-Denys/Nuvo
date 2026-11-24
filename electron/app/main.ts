@@ -541,9 +541,9 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     ipc.handle(CHANNELS.iconApply, "main", (payload) => {
       const icon = validateIcon(payload);
       if (!icon) return refusals.refuse(CHANNELS.iconApply, "shape");
-      presetIcon = icon.stock ? null : Buffer.from(icon.pngDataUrl.slice("data:image/png;base64,".length), "base64");
+      presetIcon = icon.stock ? null : Buffer.from((icon.flat?.[1] ?? icon.pngDataUrl).slice("data:image/png;base64,".length), "base64");
       trayIcon?.setImage(trayImage());
-      return icons.apply(icon.pngDataUrl, icon.stock);
+      return icons.apply(icon.pngDataUrl, icon.stock, icon.flat);
     });
     ipc.handle(CHANNELS.shellReveal, "main", (payload) => {
       const target = revealTarget((payload as { path?: unknown } | null)?.path, homeRoots(app.getPath("downloads"), lastSaveDir));

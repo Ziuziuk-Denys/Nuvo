@@ -8,7 +8,8 @@ const ICON_BODY = Object.fromEntries(
 
 const MASK_ID = /icon-mask/g;
 
-export function Icon({ name, size = 20, className }: { name: IconName; size?: IconSize; className?: string }): JSX.Element {
+export function Icon({ name: asked, size = 20, className }: { name: IconName; size?: IconSize; className?: string }): JSX.Element {
+  const name = asked === "nuvo-mark" && size < 24 ? "nuvo-mark-16" : asked;
   const instance = useId().replace(/[^a-zA-Z0-9]/g, "");
   // a mask id must be unique per page: the first copy wins, and a hidden first copy blanks every other
   const body = useMemo(() => {
