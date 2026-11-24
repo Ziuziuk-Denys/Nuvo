@@ -44,8 +44,8 @@
   gap: 14px;
   width: 100%;
   max-height: calc(100vh - 48px);
-  padding: 18px;
-  border-radius: 24px;
+  padding: 22px;
+  border-radius: 18px;
   background: var(--n-pop);
   box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
@@ -54,7 +54,7 @@
 }
 
 .panel > * {
-  animation: rise 240ms var(--n-ease-out) both;
+  animation: rise var(--n-t-base) var(--n-ease-out) both;
 }
 
 .panel > :nth-child(2) {
@@ -79,14 +79,14 @@
 .title {
   margin: 0;
   color: var(--n-ink);
-  font: var(--n-type-heading);
+  font: 620 calc(19px * var(--n-scale, 1)) / 1.25 var(--n-font);
   letter-spacing: var(--n-track-title);
   overflow-wrap: anywhere;
 }
 
 .caption {
   margin: 0;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
   letter-spacing: var(--n-track-caption);
   text-wrap: pretty;
@@ -107,7 +107,6 @@
 
 .footer button {
   height: 34px;
-  border-radius: var(--n-r-pill);
 }
 
 .quiet {
