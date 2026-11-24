@@ -481,10 +481,10 @@ describe("shell", () => {
 
     await live.setSize(SIZES[0]);
     const bar = await page.locator("[data-island]").boundingBox();
-    await page.mouse.click(bar!.x + bar!.width * 0.75, bar!.y + 6);
+    await page.mouse.click(bar!.x + bar!.width * 0.75, bar!.y + 8);
     await page.waitForTimeout(400);
     const played = await page.evaluate(() => {
-      const fill = document.querySelector<HTMLElement>('[role="slider"][aria-label="Position"] > span')!;
+      const fill = document.querySelector<HTMLElement>('[role="slider"][aria-label="Position"] [data-played]')!;
       return parseFloat(fill.style.transform.replace("translateX(", "")) + 100;
     });
     expect(played, "seek on the bar").toBeGreaterThan(60);

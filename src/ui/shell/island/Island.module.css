@@ -5,28 +5,43 @@
   right: 6px;
   bottom: 6px;
   display: grid;
-  grid-template-columns: 312px minmax(0, 1fr) 260px;
+  grid-template-columns: calc(50% - 140px) minmax(0, 1fr) 260px;
+  box-sizing: border-box;
   height: 64px;
-  border-radius: 12px;
-  background: var(--n-plate);
-  box-shadow: var(--n-rim);
+  padding-top: 10px;
   color: var(--n-ink);
   font-family: var(--n-font);
-  cursor: pointer;
   user-select: none;
 }
 
-.bar[data-notice] {
-  grid-template-columns: min(430px, calc(50% - 70px)) minmax(0, 1fr) 260px;
+.bar::before,
+.bar::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 12px;
+  background: var(--n-plate);
+  box-shadow: var(--n-plate-shadow);
+}
+
+/* the plate rises behind the groove, so the enlarged line never sits on page content */
+.bar::after {
+  z-index: -2;
+  transition: transform var(--n-t-base) var(--n-spring);
+}
+
+.bar:has([data-groove]:is(:hover, :focus-visible, [data-dragging]))::after {
+  transform: translateY(-14px);
+}
+
+.bar:has([data-groove]:is(:hover, :focus-visible, [data-dragging]))::before {
+  box-shadow: none;
 }
 
 .bar[data-controls="side"] {
-  grid-template-columns: auto 312px minmax(0, 1fr) 260px;
+  grid-template-columns: auto minmax(0, 1fr) 0 260px;
   grid-template-areas: "controls now . actions";
-}
-
-.bar[data-controls="side"][data-notice] {
-  grid-template-columns: auto 430px minmax(0, 1fr) 260px;
 }
 
 .bar[data-controls="side"] .centre {
@@ -62,7 +77,7 @@
 
 .now {
   gap: 16px;
-  padding: 1px 18px 0;
+  padding: 0 18px 4px;
 }
 
 .open {
@@ -173,7 +188,7 @@
 .centre {
   position: absolute;
   z-index: 1;
-  inset: 0;
+  inset: 10px 0 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -182,6 +197,22 @@
 
 .transport {
   gap: 6px;
+}
+
+.clock {
+  width: 44px;
+  color: var(--n-ink-3);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+}
+
+.clock:first-child {
+  margin-right: 6px;
+  text-align: right;
+}
+
+.clock:last-child {
+  margin-left: 6px;
 }
 
 .play {
@@ -194,7 +225,6 @@
   border: 0;
   border-radius: 50%;
   background: var(--btn-primary-bg);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   color: var(--btn-primary-text);
   cursor: pointer;
   transition: transform var(--n-t-quick) var(--n-ease-out);
@@ -224,7 +254,7 @@
 .actions {
   grid-column: 3;
   justify-content: flex-end;
-  padding: 0 18px 0 10px;
+  padding: 0 14px 4px 10px;
 }
 
 .well {
@@ -250,6 +280,10 @@
   .play:hover,
   .play:active {
     transform: none;
+  }
+
+  .bar::after {
+    transition: none;
   }
 
   .heart[data-pop] > svg {
