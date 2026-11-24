@@ -218,8 +218,8 @@ it("the karaoke column comes back over the dimmed scene, and the studio opens fu
   await page.locator('button[aria-label="Show the scene"]').click();
   const column = page.locator("section[class*=left]");
   await column.hover();
-  await page.waitForTimeout(900);
-  expect(await column.evaluate((element) => getComputedStyle(element.firstElementChild!).opacity)).toBe("1");
+  const opacity = () => column.evaluate((element) => getComputedStyle(element.firstElementChild!).opacity);
+  await expect.poll(opacity, { timeout: 3_000 }).toBe("1");
   await page.screenshot({ path: path.join(import.meta.dirname, "..", "artifacts", "ui", "visual", "stage-column.png") });
   await column.getByRole("button", { name: "Mute" }).hover();
   await page.waitForTimeout(300);
@@ -230,8 +230,7 @@ it("the karaoke column comes back over the dimmed scene, and the studio opens fu
   await page.mouse.move(handle.x + handle.width * 0.6, handle.y + handle.height / 2);
   await page.mouse.up();
   await page.mouse.move(handle.x + 700, handle.y - 300);
-  await page.waitForTimeout(600);
-  expect(await column.evaluate((element) => getComputedStyle(element.firstElementChild!).opacity)).toBe("0");
+  await expect.poll(opacity, { timeout: 3_000 }).toBe("0");
   const tools = page.locator("[data-tools]");
   expect(await tools.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
   await page.locator('button[aria-label="Edit the scene"]').click();
