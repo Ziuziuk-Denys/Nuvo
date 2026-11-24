@@ -146,7 +146,7 @@ function drawFooter(ctx: Context, image: ReplayImage, height: number): void {
   write(ctx, image.madeWith, EDGE + 54, y, 32, 500, DIM, image.font);
 }
 
-function drawSong(ctx: Context, image: ReplayImage, cover: HTMLImageElement | null, height: number): void {
+function drawSong(ctx: Context, image: ReplayImage, cover: HTMLImageElement | null): void {
   const story = image.format === "story";
   const size = story ? WIDTH - EDGE * 2 : 520;
   const top = story ? 330 : 178;
@@ -241,7 +241,7 @@ export async function renderReplayImage(canvas: HTMLCanvasElement, image: Replay
   ctx.fillRect(0, 0, WIDTH, height);
   drawRoom(ctx, color, image.card === "hours" ? WIDTH / 2 : WIDTH * 0.2, image.card === "time" ? height * 0.12 : height * 0.36, WIDTH, height);
   write(ctx, fitText(ctx, image.period, WIDTH), EDGE, story ? 200 : 130, story ? 52 : 40, 600, INK, image.font, -0.02);
-  if (image.card === "song") drawSong(ctx, image, cover, height);
+  if (image.card === "song") drawSong(ctx, image, cover);
   else if (image.card === "time") drawTime(ctx, image, covers, height);
   else drawHours(ctx, image, height);
   drawFooter(ctx, image, height);

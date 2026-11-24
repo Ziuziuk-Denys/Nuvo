@@ -277,7 +277,7 @@ describe("the Statistics page", () => {
     expect(await scrolled(), "a small turn of the wheel stays where it was put").toBeGreaterThan(200);
     await live.page.keyboard.press("PageDown");
     await expect.poll(() => live.page.evaluate(() => (document.activeElement as HTMLElement).dataset.replayScreen), { timeout: 5_000 }).toBe("song");
-    await shot(live, "replay-light", W1200, true);
+    await shot(live, "replay-light", W1200);
     await live.page.getByRole("button", { name: "Share image", exact: true }).first().click();
     const canvas = live.page.locator("canvas[data-drawn]");
     await canvas.waitFor({ timeout: 15_000 });

@@ -170,6 +170,7 @@ function Screens({
 const QUIET_HOURS = Array.from({ length: 24 }, () => 0);
 
 function Quiet({ id, title, message, action, onAction }: { id: string; title: string; message: string; action: string; onAction: () => void }): JSX.Element {
+  const [hour] = useState(() => new Date().getHours());
   return (
     <section className={styles.screen} data-testid={id} data-replay-quiet="">
       <div className={styles.hours}>
@@ -183,7 +184,7 @@ function Quiet({ id, title, message, action, onAction }: { id: string; title: st
           </div>
         </div>
         <div className={styles.dial} aria-hidden="true">
-          <Dial byHour={QUIET_HOURS} shown={new Date().getHours()} />
+          <Dial byHour={QUIET_HOURS} shown={hour} />
         </div>
       </div>
     </section>
