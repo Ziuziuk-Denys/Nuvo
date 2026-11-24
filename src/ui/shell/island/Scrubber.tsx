@@ -15,7 +15,7 @@ import { useLyrics, type Line } from "../../ports/lyrics";
 import { playerEngine } from "../../ports/player";
 import { useLoudnessShape } from "../../ports/sound";
 import { isWindowVisible, onWindowVisibilityChange } from "../../ports/window";
-import { GROOVE_HEIGHT, groovePath } from "./groovePath";
+import { GROOVE_HEIGHT, groovePath, lens } from "./groovePath";
 import styles from "./Scrubber.module.css";
 
 const ARROW_MS = 5_000;
@@ -59,13 +59,9 @@ const Groove = memo(function Groove({ path }: { path: string }): JSX.Element {
 });
 
 // the window moves and the line inside moves back, so a position update only recomposites
-function Lit({ path, fraction, played = false }: { path: string; fraction: number; played?: boolean }): JSX.Element {
+function Lit({ path, fraction }: { path: string; fraction: number }): JSX.Element {
   return (
-    <span
-      className={`${styles.window} ${played ? styles.played : styles.ahead}`}
-      data-played={played ? "" : undefined}
-      style={{ transform: `translateX(${(fraction - 1) * 100}%)` }}
-    >
+    <span className={`${styles.window} ${styles.played}`} data-played="" style={{ transform: `translateX(${(fraction - 1) * 100}%)` }}>
       <span className={styles.still} style={{ transform: `translateX(${(1 - fraction) * 100}%)` }}>
         <Groove path={path} />
       </span>
@@ -85,7 +81,8 @@ export function Scrubber({ trackId, positionMs, durationMs, loop }: ScrubberProp
   // Background throttling is off for playback, so a minimised window still draws: hold the line
   const visible = useSyncExternalStore(onWindowVisibilityChange, isWindowVisible);
   const shape = useLoudnessShape(trackId, visible);
-  const path = useMemo(() => groovePath(shape ?? []), [shape]);
+  const centre = hover ? Math.round((hover.x / hover.width) * 500) / 500 : null;
+  const path = useMemo(() => groovePath(lens(shape ?? [], centre)), [shape, centre]);
   const shown = useRef(fraction);
   useLayoutEffect(() => {
     if (visible) shown.current = fraction;
@@ -152,8 +149,7 @@ export function Scrubber({ trackId, positionMs, durationMs, loop }: ScrubberProp
         <span className={styles.rest}>
           <Groove path={path} />
         </span>
-        {hover && dragMs === null ? <Lit path={path} fraction={hover.ms / duration} /> : null}
-        <Lit path={path} fraction={drawn} played />
+        <Lit path={path} fraction={drawn} />
       </span>
       <span className={styles.track} style={{ transform: `translateX(${drawn * 100}%)` }}>
         <span className={styles.needle} />

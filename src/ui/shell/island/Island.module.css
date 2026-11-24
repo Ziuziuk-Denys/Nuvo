@@ -32,7 +32,7 @@
 }
 
 .bar:has([data-groove]:is(:hover, :focus-visible, [data-dragging]))::after {
-  transform: translateY(-14px);
+  transform: translateY(-10px);
 }
 
 .bar:has([data-groove]:is(:hover, :focus-visible, [data-dragging]))::before {

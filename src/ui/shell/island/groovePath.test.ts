@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { groovePath } from "./groovePath";
+import { groovePath, lens } from "./groovePath";
 
 it("draws a closed contour from edge to edge, mirrored around the middle", () => {
   const path = groovePath([0, 1, 0]);
@@ -12,4 +12,12 @@ it("draws a closed contour from edge to edge, mirrored around the middle", () =>
 
 it("draws nothing without a shape", () => {
   expect(groovePath([])).toBe("");
+});
+
+it("lifts the line at the pointer and leaves it whole without one", () => {
+  const flat = [1, 1, 1, 1, 1];
+  expect(lens(flat, null)).toEqual(flat);
+  const [left, , centre] = lens(flat, 0.5);
+  expect(centre).toBe(1);
+  expect(left).toBeCloseTo(0.34);
 });
