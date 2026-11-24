@@ -4,7 +4,6 @@ import type { RawLyrics } from "./types";
 export type SyncUnit = "line" | "word";
 
 export interface SyncWord {
-  /** Keeps its trailing space, so joining the words gives the line. */
   text: string;
   atMs: number | null;
 }
@@ -113,7 +112,6 @@ export function tap(lines: SyncLine[], cursor: SyncCursor, ms: number, unit: Syn
   return { lines: replaced(lines, cursor.line, timed), cursor: forward(lines, cursor, unit) };
 }
 
-/** Ends the line sung last, so a pause after it stays empty. */
 export function endLine(lines: SyncLine[], cursor: SyncCursor, ms: number): SyncLine[] {
   const index = cursor.word > 0 ? cursor.line : cursor.line - 1;
   const line = lines[index];
@@ -150,7 +148,6 @@ export function isComplete(lines: SyncLine[]): boolean {
   return lines.length > 0 && lines.every(lineTimed);
 }
 
-/** The first line or word with no time yet. */
 export function firstOpen(lines: SyncLine[], unit: SyncUnit): SyncCursor {
   const line = lines.findIndex((candidate) => (unit === "line" ? !lineTimed(candidate) : !wordsTimed(candidate)));
   if (line < 0) return { line: lines.length, word: 0 };
@@ -166,7 +163,6 @@ export function firstOpen(lines: SyncLine[], unit: SyncUnit): SyncCursor {
   };
 }
 
-/** What sounds at a moment: the last timed line that started and, in it, the last word. */
 export function soundingAt(lines: SyncLine[], ms: number): SyncCursor | null {
   let line = -1;
   lines.forEach((candidate, index) => {
