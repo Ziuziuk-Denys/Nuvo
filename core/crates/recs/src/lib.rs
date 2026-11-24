@@ -9,6 +9,7 @@ pub mod model;
 pub mod rank;
 pub mod feedback;
 pub mod mixes;
+pub mod mood;
 pub mod starters;
 
 use nuvo_store::StoreError;

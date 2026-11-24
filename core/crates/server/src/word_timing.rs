@@ -263,7 +263,7 @@ pub(crate) async fn audio_source(data: &Unlocked, track_id: &str, stop: &AtomicB
 }
 
 /// 16 kHz mono floats, the model's input, cut at the length budget.
-async fn decode(ffmpeg: &Path, audio: Audio) -> Result<Vec<f32>, &'static str> {
+pub(crate) async fn decode(ffmpeg: &Path, audio: Audio) -> Result<Vec<f32>, &'static str> {
     let mut command = Command::new(ffmpeg);
     command.args(["-nostdin", "-hide_banner", "-loglevel", "error"]);
     let input = match audio {

@@ -10,6 +10,7 @@ nuvo-contracts.workspace = true
 nuvo-store.workspace = true
 deunicode.workspace = true
 rusqlite.workspace = true
+rustfft.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 strsim.workspace = true

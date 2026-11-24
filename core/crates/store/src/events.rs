@@ -61,7 +61,7 @@ pub fn record(conn: &Connection, event: &RecordPlaybackEvent, now: i64) -> Resul
     Ok(Recorded { is_new, queued })
 }
 
-pub fn history(conn: &Connection, limit: usize, cursor: Option<&str>, filter: Option<&str>) -> Result<PlaybackHistoryResponse, StoreError> {
+pub fn history(conn: &Connection, limit: usize, cursor: Option<&str>, filter: Option<&str>, range: Option<(i64, i64)>) -> Result<PlaybackHistoryResponse, StoreError> {
     let limit = limit.clamp(1, 200);
     let before: Option<i64> = cursor
         .map(|c| c.parse().map_err(|_| StoreError::Invalid("bad cursor".into())))
@@ -77,10 +77,11 @@ pub fn history(conn: &Connection, limit: usize, cursor: Option<&str>, filter: Op
         "SELECT e.id, e.session_id, t.snapshot_json, e.played_ms, e.duration_ms, e.end_reason, e.loop_count,
                 e.seek_back, e.context, e.context_id, e.started_at
          FROM play_events e JOIN tracks t ON t.id = e.track_id AND (e.played_ms >= 3000 OR e.end_reason = 'complete')
-         WHERE (?1 IS NULL OR e.id < ?1) AND (?3 IS NULL OR e.end_reason = ?3) ORDER BY e.id DESC LIMIT ?2",
+         WHERE (?1 IS NULL OR e.id < ?1) AND (?3 IS NULL OR e.end_reason = ?3)
+           AND (?4 IS NULL OR e.started_at >= ?4) AND (?5 IS NULL OR e.started_at < ?5) ORDER BY e.id DESC LIMIT ?2",
     )?;
     let rows = stmt
-        .query_map(params![before, limit as i64 + 1, reason], |row| {
+        .query_map(params![before, limit as i64 + 1, reason, range.map(|r| r.0), range.map(|r| r.1)], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
                 row.get::<_, String>(1)?,

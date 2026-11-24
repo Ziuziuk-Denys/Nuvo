@@ -2,10 +2,10 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post, put};
 use axum::{Json, Router};
-use nuvo_contracts::{ExcludedItem, Items, NotInterestedRequest, NotInterestedResult, PoolRequest, RankRequest, RankResponse, SeedsResponse, SuppressionItem};
+use nuvo_contracts::{ExcludedItem, Items, MoodMap, NotInterestedRequest, NotInterestedResult, PoolRequest, RankRequest, RankResponse, SeedsResponse, SuppressionItem};
 use nuvo_crypto::random_bytes;
 use nuvo_match::{Answer, Candidate, Reason, Source};
-use nuvo_recs::{pool, rank, rewards, starters, suppress};
+use nuvo_recs::{mood, pool, rank, rewards, starters, suppress};
 use nuvo_soundcloud::{SoundCloud, map};
 use nuvo_store::{alternatives, now_ms, tracks};
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,7 @@ use crate::state::AppState;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/v1/recs/rank", post(rank_batch))
+        .route("/v1/recs/mood", get(mood_map))
         .route("/v1/recs/seeds", get(seeds))
         .route("/v1/recs/pool", put(replace_pool))
         .route("/v1/recs/pool/sc-related", post(sc_related))
@@ -33,6 +34,11 @@ async fn rank_batch(State(state): State<AppState>, JsonBody(req): JsonBody<RankR
     let data = state.data()?;
     let seed = u64::from_le_bytes(random_bytes::<8>());
     Ok(Json(data.db.call(move |c| rank::rank(c, &req, now_ms(), seed)).await?))
+}
+
+async fn mood_map(State(state): State<AppState>) -> Result<Json<MoodMap>, ApiError> {
+    let data = state.data()?;
+    Ok(Json(data.db.call(|c| mood::map(c, now_ms())).await?))
 }
 
 #[derive(Deserialize)]

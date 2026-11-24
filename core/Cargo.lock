@@ -1963,6 +1963,7 @@ dependencies = [
  "nuvo-contracts",
  "nuvo-store",
  "rusqlite",
+ "rustfft",
  "serde",
  "serde_json",
  "strsim",
