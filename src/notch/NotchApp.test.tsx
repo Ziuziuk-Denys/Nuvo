@@ -247,7 +247,7 @@ describe("NotchApp", () => {
     expect(button("Pause")).not.toBeNull();
   });
 
-  it("grows the input shape at once with room for the overshoot, shrinks it after the morph", async () => {
+  it("grows the input shape at once, shrinks it after the morph", async () => {
     const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
     await mount();
     harness.pushState(makeState());
@@ -258,7 +258,6 @@ describe("NotchApp", () => {
     click(island());
     const padded = grownRect(ISLAND_SIZES.live, ISLAND_SIZES.expanded, OVERSHOOT);
     expect(shape).toHaveBeenLastCalledWith(padded);
-    expect(padded.height).toBeGreaterThan(islandRect(ISLAND_SIZES.expanded).height + 5);
     advance(MORPH_MS);
     expect(shape).toHaveBeenLastCalledWith(islandRect(ISLAND_SIZES.expanded));
     enter();

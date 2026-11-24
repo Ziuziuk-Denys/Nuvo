@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NuvoGlyph } from "./icons";
+import { Icon } from "@/ui/icons/Icon";
 import { accentFromPixels } from "./lib/accent";
 
 const SAMPLE = 16;
@@ -33,7 +33,7 @@ export function Cover({ src, size, radius, onAccent }: CoverProps) {
   if (!src || failedSrc === src) {
     return (
       <span className="cover cover-placeholder" style={style}>
-        <NuvoGlyph size={Math.round(size * 0.42)} />
+        <Icon name="nuvo-mark" size={size > 60 ? 26 : 14} />
       </span>
     );
   }

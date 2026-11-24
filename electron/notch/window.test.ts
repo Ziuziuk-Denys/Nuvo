@@ -95,7 +95,7 @@ vi.mock("electron", () => electron.module);
 import { DEFAULT_NOTCH_SETTINGS, type NotchState } from "../../src/notch/contracts";
 import { ISLAND_SIZES, islandRect } from "../../src/notch/lib/geometry";
 import type { NotchSession } from "./session";
-import { NOTCH_TITLE, NotchWindow, notchDisplays, registerNotchIpc } from "./window";
+import { NOTCH_TITLE, NotchWindow, notchDisplays, registerNotchIpc, withCovers } from "./window";
 
 type FakeWin = InstanceType<typeof electron.module.BrowserWindow>;
 const lastWindow = () => electron.windows.at(-1)!;
@@ -133,6 +133,24 @@ afterEach(() => {
   vi.useRealTimers();
   electron.module.screen.getDisplayMatching.mockImplementation(() => electron.display);
   electron.module.screen.getCursorScreenPoint.mockImplementation(() => ({ x: 0, y: 900 }));
+});
+
+describe("withCovers", () => {
+  const track = { id: "t", title: "T", artist: "A", coverUrl: null, durationMs: 1 };
+  const state = { track, status: "playing" as const, positionMs: 0, sampledAt: 0, liked: false, upNext: [{ ...track, id: "n" }] };
+  const feed = {
+    trackId: "t",
+    coverUrl: "nuvo-core://local/a",
+    upNext: [{ ...track, id: "n", coverUrl: "nuvo-core://local/b" }],
+    look: { light: false, field: "#000", ink: "#fff" },
+  };
+
+  it("fills covers the public state leaves out, only for the same song", () => {
+    const filled = withCovers(state, feed);
+    expect([filled.track!.coverUrl, filled.upNext[0].coverUrl]).toEqual(["nuvo-core://local/a", "nuvo-core://local/b"]);
+    expect(withCovers({ ...state, track: { ...track, coverUrl: "https://x" } }, feed).track!.coverUrl).toBe("https://x");
+    expect(withCovers(state, { ...feed, trackId: "other" })).toBe(state);
+  });
 });
 
 describe("NotchWindow", () => {

@@ -1,6 +1,6 @@
 import { useTranslation } from "@/i18n";
+import { Icon } from "@/ui/icons/Icon";
 import { Cover } from "./Cover";
-import { BackIcon } from "./icons";
 import type { NotchTrack } from "./contracts";
 import type { NotchPage } from "./lib/geometry";
 
@@ -31,14 +31,14 @@ export function Deck({ track, page, next, ahead, nudge, onPage, onFocusApp }: De
         <span key={depth} className="sheet" data-depth={depth} data-on={depth <= ahead} aria-hidden="true" />
       ))}
       <button type="button" className="deck-cover" aria-label={coverLabel} onClick={onCover}>
-        <Cover src={track.coverUrl} size={100} radius={16} />
+        <Cover src={track.coverUrl} size={100} radius={14} />
         {next && (
           <span className="deck-name" aria-hidden="true">
             {t(NAMES[next])}
           </span>
         )}
         <span className="deck-back" aria-hidden="true">
-          <BackIcon size={54} />
+          <Icon name="back" size={26} />
         </span>
       </button>
       <div className="deck-row" aria-hidden={front}>

@@ -1,9 +1,10 @@
 import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { useTranslation } from "@/i18n";
+import { MorphPlayIcon } from "@/ui/components/MorphPlayIcon";
+import { Icon } from "@/ui/icons/Icon";
 import { AddPage } from "./AddPage";
 import { Cover } from "./Cover";
 import { Deck } from "./Deck";
-import { DislikeIcon, HeartIcon, NextIcon, PauseIcon, PlayIcon, PlusIcon, PreviousIcon } from "./icons";
 import { LyricsPage } from "./LyricsPage";
 import { Scrubber } from "./Scrubber";
 import type { NotchAction, NotchPlaylists, NotchState, NotchTrack } from "./contracts";
@@ -74,6 +75,7 @@ export function ExpandedFace(props: ExpandedFaceProps) {
         if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(event.clientY - from.y)) onFlip(-Math.sign(dx));
       }}
     >
+      <span className="lamp" style={{ "--light": accent } as CSSProperties} aria-hidden="true" />
       <div className="pages">
         {turn.count > 0 && <span key={turn.count} className="flying-sheet" data-from={turn.from} data-forward={turn.forward} aria-hidden="true" />}
         <div {...layer("now")}>
@@ -108,7 +110,7 @@ export function ExpandedFace(props: ExpandedFaceProps) {
           aria-label={page === "add" ? t("ui.notch.back") : t("ui.add.title")}
           onClick={() => onPage(page === "add" ? "now" : "add")}
         >
-          <PlusIcon size={20} />
+          <Icon name="add" size={20} />
         </button>
       </div>
     </div>
@@ -128,10 +130,10 @@ function NowPage({ state, sample, live, accent, onAction, onHold }: ExpandedFace
       <Scrubber sample={sample} live={live} accent={accent} onSeek={(positionMs) => onAction({ type: "seek", positionMs })} onHold={onHold} />
       <div className="transport">
         <button type="button" className="icon-button opinion dislike" aria-label={t("ui.recs.dislike")} onClick={() => onAction({ type: "dislike" })}>
-          <DislikeIcon size={20} />
+          <Icon name="dislike" size={20} />
         </button>
         <button type="button" className="icon-button skip" aria-label={t("ui.island.previous")} onClick={() => onAction({ type: "prev" })}>
-          <PreviousIcon size={22} />
+          <Icon name="previous" size={24} />
         </button>
         <button
           type="button"
@@ -139,10 +141,10 @@ function NowPage({ state, sample, live, accent, onAction, onHold }: ExpandedFace
           aria-label={playing ? t("ui.island.pause") : t("ui.island.play")}
           onClick={() => onAction({ type: "togglePlay" })}
         >
-          {playing ? <PauseIcon size={28} /> : <PlayIcon size={28} />}
+          <MorphPlayIcon playing={playing} size={34} />
         </button>
         <button type="button" className="icon-button skip" aria-label={t("ui.island.next")} onClick={() => onAction({ type: "next" })}>
-          <NextIcon size={22} />
+          <Icon name="next" size={24} />
         </button>
         <button
           type="button"
@@ -152,7 +154,7 @@ function NowPage({ state, sample, live, accent, onAction, onHold }: ExpandedFace
           style={state.liked ? { color: accent } : undefined}
           onClick={() => onAction({ type: "like" })}
         >
-          <HeartIcon filled={state.liked} size={20} />
+          <Icon name={state.liked ? "liked" : "like"} size={20} />
         </button>
       </div>
     </>

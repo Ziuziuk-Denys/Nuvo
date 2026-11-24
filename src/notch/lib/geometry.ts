@@ -24,7 +24,7 @@ export function pageSize(expanded: IslandSize, page: NotchPage): IslandSize {
 }
 
 export const WING = 14;
-// The tallest page plus the largest spring overshoot (geometry.test.ts checks it)
+// Holds the tallest page and the widest island (geometry.test.ts checks it)
 export const NOTCH_WINDOW = { width: 460, height: 254 };
 
 // Room beside the camera for the cover on the left and the bars on the right
