@@ -4,9 +4,9 @@ import presetTokens from "@/data/look/presetTokens.json";
 import { likesCoverSvg, likesCoverTones } from "./likesCover";
 
 describe("likes cover", () => {
-  it("sets a white heart on the accent in a light theme", () => {
+  it("sets a white heart on a muted accent in a light theme", () => {
     const tones = likesCoverTones("#4a69b0", "#f4f7ff");
-    expect(tones[1]).toBe("#4a69b0");
+    expect(tones[1]).toBe("#546998");
     expect(tones[4]).toBe("#ffffff");
   });
 

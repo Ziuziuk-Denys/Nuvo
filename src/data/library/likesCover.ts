@@ -4,12 +4,19 @@ import heart from "./likesHeart.webp?inline";
 
 const mix = (from: string, to: string, amount: number) => toHex(composite({ ...parseColor(to), a: amount }, parseColor(from)));
 
+const grey = (color: string) => {
+  const { r, g, b } = parseColor(color);
+  const level = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return toHex({ r: level, g: level, b: level, a: 1 });
+};
+
 // From the deepest shadow on the wall to the brightest edge of the heart
 export function likesCoverTones(accent: string, field: string): string[] {
   const a = toHex(parseColor(accent));
   const f = toHex(parseColor(field));
   if (luminance(parseColor(a)) < luminance(parseColor(f))) {
-    return [mix(a, "#000000", 0.6), a, mix(a, "#ffffff", 0.5), mix(a, "#ffffff", 0.9), "#ffffff"];
+    const wall = mix(a, grey(a), 0.33);
+    return [mix(wall, "#000000", 0.6), wall, mix(wall, "#ffffff", 0.5), mix(wall, "#ffffff", 0.9), "#ffffff"];
   }
   return [mix(f, "#000000", 0.75), mix(f, a, 0.13), mix(a, f, 0.35), a, mix(a, "#ffffff", 0.75)];
 }
