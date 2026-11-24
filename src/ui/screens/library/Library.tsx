@@ -291,6 +291,7 @@ export function Library(): JSX.Element {
   } else if (libraryEmpty && !filtering) {
     content = (
       <EmptyState
+        art
         title={t("ui.library.empty_title")}
         message={t("ui.library.empty_message")}
         tour="library-import"

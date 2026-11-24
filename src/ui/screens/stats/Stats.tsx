@@ -534,6 +534,7 @@ export function Stats(): JSX.Element {
     content = (
       <div data-testid="stats-empty">
         <EmptyState
+          art
           title={t("ui.stats.empty_title")}
           message={t("ui.stats.empty_message")}
           actions={[{ label: t("ui.stats.empty_action"), primary: true, onClick: () => navigateWithTransition(navigate, "/library") }]}
