@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent, type PointerEvent } from "react";
 import { Cover } from "../../../components/Cover";
 import { useReducedEffects } from "../../../effects";
 import { useSkyFollows, useSkyMode } from "../../../field/useSky";
@@ -310,7 +310,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
           </li>
         ))}
       </ul>
-      <p className={styles.caption} style={{ top: floorOf(ring) + 14 }}>
+      <p className={styles.caption} style={{ top: floorOf(ring) + 20 }}>
         <span className={styles.title} aria-hidden="true">
           {current.title}
         </span>

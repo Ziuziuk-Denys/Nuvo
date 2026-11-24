@@ -83,8 +83,8 @@
   max-width: 100%;
   pointer-events: auto;
   overflow: hidden;
-  color: var(--n-ink-2);
-  font: var(--n-type-caption);
+  color: color-mix(in srgb, var(--n-ink) 84%, transparent);
+  font: var(--n-type-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

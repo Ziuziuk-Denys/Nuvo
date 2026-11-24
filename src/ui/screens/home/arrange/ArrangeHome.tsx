@@ -1,11 +1,11 @@
-import { useRef, type JSX, type KeyboardEvent } from "react";
+import { useRef, useState, type JSX, type KeyboardEvent, type PointerEvent } from "react";
 import { Button } from "../../../components/Button";
 import { Sheet } from "../../../components/Sheet";
 import { Toggle } from "../../../components/Toggle";
 import { useListReorder } from "../../../components/useListReorder";
 import { Icon } from "../../../icons/Icon";
 import { useTranslation } from "../../../ports/i18n";
-import { useHomeLayout } from "./homeLayout";
+import { useHomeLayout, type SectionId } from "./homeLayout";
 import styles from "./ArrangeHome.module.css";
 
 const ROW = 48;
@@ -14,6 +14,7 @@ export function ArrangeHome(): JSX.Element {
   const { t } = useTranslation();
   const { order, hidden, arranging, move, toggle, reset, arrange } = useHomeLayout();
   const list = useRef<HTMLOListElement>(null);
+  const [top, setTop] = useState(0);
   const drag = useListReorder({ items: order, scrollContainerRef: list, listContainerRef: list, itemHeight: ROW, onReorder: move });
   const shift = (index: number) => {
     const { dragIndex, dropIndex } = drag;
@@ -22,7 +23,12 @@ export function ArrangeHome(): JSX.Element {
     if (index < dragIndex && index >= dropIndex) return ROW;
     return 0;
   };
-  const held = (index: number) => drag.pointerPos.y - (list.current?.getBoundingClientRect().top ?? 0) - drag.grabOffset.y - index * ROW;
+  const held = (index: number) => drag.pointerPos.y - top - drag.grabOffset.y - index * ROW;
+  const grab = (index: number, id: SectionId) => (event: PointerEvent<HTMLLIElement>) => {
+    if ((event.target as Element).closest("[role=switch]")) return;
+    setTop(list.current!.getBoundingClientRect().top);
+    drag.handleCardGrab(index, id, event);
+  };
   const onKeyDown = (index: number) => (event: KeyboardEvent<HTMLButtonElement>) => {
     const step = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
     const to = index + step;
@@ -57,14 +63,9 @@ export function ArrangeHome(): JSX.Element {
                 data-dragged={dragged ? "" : undefined}
                 data-moving={drag.isDragging && !dragged ? "" : undefined}
                 style={{ height: ROW, transform: `translateY(${dragged ? held(index) : shift(index)}px)` }}
+                onPointerDown={grab(index, id)}
               >
-                <button
-                  type="button"
-                  className={styles.grip}
-                  aria-label={t("ui.home.arrange.move", { name })}
-                  onKeyDown={onKeyDown(index)}
-                  onPointerDown={(event) => drag.handleCardGrab(index, id, event)}
-                >
+                <button type="button" className={styles.grip} aria-label={t("ui.home.arrange.move", { name })} onKeyDown={onKeyDown(index)}>
                   <Icon name="drag" size={18} />
                 </button>
                 <span className={styles.name}>{name}</span>

@@ -133,6 +133,7 @@ export function createRoom(canvas: HTMLCanvasElement, changed: () => void): Room
     gl.uniform4f(at.spin, Math.cos(spot.tilt), Math.sin(spot.tilt), Math.cos(turn), Math.sin(turn));
     gl.uniform1f(at.cover, size);
     gl.uniform1f(at.scale, spot.scale);
+    gl.uniform1f(at.stand, spot.depth);
     gl.uniform1f(at.back, back);
     gl.uniform2f(at.spread, 1, flat);
     gl.uniform2f(at.floorLine, ring.vanishY, view.floor);
@@ -156,7 +157,7 @@ export function createRoom(canvas: HTMLCanvasElement, changed: () => void): Room
     gl.uniform1f(floors.at.bright, view.light ? 1 : 0);
     gl.uniform1f(floors.at.mirrored, 0);
     for (const card of order) {
-      const base = view.ring.vanishY + (view.floor - view.ring.vanishY) * card.spot.scale;
+      const base = view.ring.vanishY + (view.floor - view.ring.vanishY) * card.spot.depth;
       const reach = card.spot.scale * view.ring.cover;
       const lit = Math.max(0, 1 - Math.abs(card.offset) / 3.2);
       const lifted = Math.max(0, base - (card.spot.y + reach / 2)) / reach;
@@ -170,13 +171,13 @@ export function createRoom(canvas: HTMLCanvasElement, changed: () => void): Room
     gl.uniform1f(cards.at.ratio, ratio);
     gl.uniform1f(cards.at.radius, RADIUS);
     gl.uniform1f(cards.at.bright, view.light ? 1 : 0);
-    gl.uniform1f(cards.at.mirrorGain, view.light ? 0.34 : 0.5);
     for (const mirrored of [1, 0]) {
       gl.uniform1f(cards.at.mirrored, mirrored);
       for (const card of order) {
         const far = Math.min(1, Math.max(0, Math.abs(card.offset) - 0.6) / 4.4);
         const centre = Math.max(0, 1 - Math.abs(card.offset));
         const turn = card.spot.turn + view.lean + view.tilt.x * view.tilt.amount * centre;
+        gl.uniform1f(cards.at.mirrorGain, (view.light ? 0.34 : 0.5) * (1 - 0.5 * centre));
         gl.uniform1f(cards.at.ready, bind(card));
         gl.uniform1f(cards.at.shown, card.spot.shown);
         gl.uniform1f(cards.at.blur, far * FAR_BLUR);

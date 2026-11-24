@@ -5,6 +5,7 @@ uniform vec2 at;
 uniform vec4 spin;
 uniform float cover;
 uniform float scale;
+uniform float stand;
 uniform float back;
 uniform vec2 spread;
 uniform vec2 floorLine;
@@ -19,7 +20,7 @@ void main() {
   vec3 q = vec3(p.x * spin.z - back * spin.w, p.y, -p.x * spin.w - back * spin.z);
   float w = 1.0 - q.z / P;
   vec2 flat2 = at + q.xy * scale / w;
-  float ground = floorLine.x + (floorLine.y - floorLine.x) * scale / w;
+  float ground = floorLine.x + (floorLine.y - floorLine.x) * stand / w;
   above = (ground - flat2.y) / (cover * scale);
   flat2.y = mix(flat2.y, 2.0 * ground - flat2.y, mirrored);
   uv = corner * 0.5 + 0.5;

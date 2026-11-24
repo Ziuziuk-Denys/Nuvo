@@ -28,6 +28,7 @@ export interface Ring {
 export interface Placement {
   x: number;
   y: number;
+  depth: number;
   scale: number;
   turn: number;
   tilt: number;
@@ -97,6 +98,7 @@ export function place(ring: Ring, offset: number): Placement | null {
   return {
     x,
     y: ring.vanishY + (ring.centreY - ring.rise * (1 - Math.cos(angle)) - ring.vanishY) * scale - (ring.cover / 2) * scale * lift,
+    depth: scale,
     scale: scale * (1 + lift),
     turn: -angle * TURN_DEG,
     tilt: -Math.atan2(ring.rise * Math.sin(angle), ring.radius * Math.cos(angle)) * TILT,
