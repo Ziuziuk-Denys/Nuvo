@@ -10,8 +10,9 @@
 
 .stage {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 42cqw);
   align-items: center;
+  justify-content: center;
   gap: clamp(36px, 5cqw, 96px);
   box-sizing: border-box;
   min-height: max(400px, calc(100cqh - 160px));

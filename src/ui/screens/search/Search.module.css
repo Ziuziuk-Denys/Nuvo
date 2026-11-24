@@ -238,6 +238,77 @@
   margin-inline: -8px;
 }
 
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 24px 20px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--n-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tile[data-kind="artist"] {
+  text-align: center;
+}
+
+.tileArt {
+  border-radius: 10px;
+  transition:
+    transform var(--n-t-base) var(--n-ease-out),
+    box-shadow var(--n-t-base) var(--n-ease-out);
+}
+
+.tile[data-kind="artist"] .tileArt {
+  border-radius: 50%;
+}
+
+.tileArt > span {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1;
+  border-radius: inherit !important;
+}
+
+.tile:hover .tileArt {
+  transform: translateY(-3px);
+  box-shadow: calc(var(--n-light-x) * 8px) calc(var(--n-light-y) * 16px) 32px -14px rgba(var(--n-contact), 0.6);
+}
+
+.tile:focus-visible {
+  outline: none;
+}
+
+.tile:focus-visible .tileArt {
+  box-shadow: 0 0 0 3px var(--n-focus-halo);
+}
+
+.tileTitle,
+.tileSubtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tileTitle {
+  margin-top: 8px;
+  font: 560 calc(14.5px * var(--n-scale, 1)) / 21px var(--n-font);
+  letter-spacing: -0.008em;
+}
+
+.tileSubtitle {
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}
+
 .top {
   position: relative;
   display: flex;
@@ -247,18 +318,18 @@
   box-sizing: border-box;
   padding: 22px;
   border-radius: 20px;
-  background: var(--n-plate);
+  background: radial-gradient(130% 110% at 24% 0%, color-mix(in oklab, var(--lit) 30%, var(--n-plate)) 0%, var(--n-plate) 78%) var(--n-plate);
   box-shadow: var(--n-plate-shadow);
   color: var(--n-ink);
   outline: none;
   cursor: pointer;
   user-select: none;
-  transition: background-color var(--n-t-quick) var(--n-ease-out);
+  transition: box-shadow var(--n-t-base) var(--n-ease-out);
 }
 
 .top:hover,
 .top:focus-visible {
-  background: color-mix(in srgb, var(--n-ink) 4%, var(--n-plate));
+  box-shadow: var(--n-panel-shadow);
 }
 
 .topText {
@@ -353,6 +424,14 @@
 
   .swap {
     animation: appear var(--n-t-quick) linear both;
+  }
+
+  .tileArt {
+    transition: none;
+  }
+
+  .tile:hover .tileArt {
+    transform: none;
   }
 
   .segment {
