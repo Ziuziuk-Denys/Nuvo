@@ -151,7 +151,10 @@ async def main(argv):
     from telethon.sessions import MemorySession
 
     env = os.environ
-    client = TelegramClient(MemorySession(), int(env["TG_API_ID"]), env["TG_API_HASH"])
+    # The bot's home data centre: sign-in through Telethon's default, DC 2, can fail with RPC_CALL_FAIL
+    session = MemorySession()
+    session.set_dc(1, "149.154.175.53", 443)
+    client = TelegramClient(session, int(env["TG_API_ID"]), env["TG_API_HASH"])
     await client.start(bot_token=env["BOT_TOKEN"])
     try:
         await run(client, BotApi(env["BOT_TOKEN"]), make_recorder(env["WORKER_URL"], env["UPLOAD_SECRET"]), int(env["ADMIN_ID"]), argv[0], argv[1:], env.get("ADMIN_LANG", "en"))
