@@ -18,6 +18,7 @@ const CLEAR_TOP = 64;
 const STIFFNESS = 15;
 const LONGEST_STEP_S = 1 / 30;
 const DETENT = 0.45;
+const LANDING = 1.4;
 const LEAN_PER_SPEED = 1.6;
 const MAX_LEAN = 9;
 const POINTER_TILT = 7;
@@ -123,7 +124,7 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
       const fading = paintRef.current(now);
       setCentre(wrap(Math.round(position.current)));
       const resting = position.current === target.current && !drag.current?.moved;
-      if (resting) setSettled(wrap(target.current));
+      if (!drag.current?.moved && Math.abs(target.current - position.current) < LANDING) setSettled(wrap(Math.round(target.current)));
       frame.current = resting && !fading && !tilting ? 0 : requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
