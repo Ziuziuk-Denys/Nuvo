@@ -61,12 +61,14 @@ function percentChange(delta: number, locale: string): string {
   return new Intl.NumberFormat(locale, { style: "percent", signDisplay: "exceptZero" }).format(delta / 100);
 }
 
+const MAX_DELTA = 300;
+
 const count = (value: number, locale: string) => value.toLocaleString(locale);
 
 function Delta({ now, before }: { now: number; before: number | undefined }): JSX.Element | null {
   const { locale } = useTranslation();
   const delta = change(now, before);
-  if (!delta) return null;
+  if (!delta || Math.abs(delta) > MAX_DELTA) return null;
   return <span className={styles.delta}>{percentChange(delta, locale)}</span>;
 }
 
@@ -112,7 +114,9 @@ function Lead({ stats, range }: { stats: StatsOverview; range: RangeKey }): JSX.
         </p>
         <p className={styles.leadLine}>
           {leadText(range, stats, t, locale)}
-          {delta !== null ? <span className={styles.leadDelta}> {t("ui.stats.vs_previous", { delta: percentChange(delta, locale) })}</span> : null}
+          {delta !== null && Math.abs(delta) <= MAX_DELTA ? (
+            <span className={styles.leadDelta}> {t("ui.stats.vs_previous", { delta: percentChange(delta, locale) })}</span>
+          ) : null}
         </p>
         {sentence ? <p className={styles.leadStory}>{sentence}</p> : null}
       </div>

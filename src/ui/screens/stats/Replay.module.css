@@ -15,8 +15,8 @@
 .title {
   margin: 0;
   color: var(--n-ink);
-  font: var(--n-type-title);
-  letter-spacing: var(--n-track-title);
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
 }
 
 .bar {
@@ -97,7 +97,7 @@
 }
 
 .head + .screen {
-  min-height: max(500px, calc(100cqh - 88px));
+  min-height: max(500px, calc(100cqh - 104px));
   padding-top: 0;
 }
 

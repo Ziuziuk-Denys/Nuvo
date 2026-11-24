@@ -107,7 +107,7 @@
 .notice > svg {
   flex: none;
   margin-top: -1px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
 }
 
 .list {
@@ -168,7 +168,7 @@
   overflow: hidden;
   flex: 0 1 auto;
   color: var(--n-ink);
-  font: 500 13px/18px var(--n-font);
+  font: 500 calc(14px * var(--n-scale, 1)) / 18px var(--n-font);
   text-overflow: ellipsis;
 }
 
@@ -176,21 +176,21 @@
   overflow: hidden;
   flex: 1 1 0;
   min-width: 48px;
-  color: var(--n-ink-3);
-  font: 400 12px/16px var(--n-font);
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
   text-overflow: ellipsis;
 }
 
 .time {
   flex: none;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
 }
 
 .rest {
   padding: 8px 10px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
 }
 
