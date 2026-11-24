@@ -16,7 +16,6 @@ import { Lens } from "../../components/Lens";
 import { LAYER_ATTRIBUTE } from "../../components/layers";
 import { useContextMenu } from "../../components/Menu";
 import { Icon } from "../../icons/Icon";
-import type { IconName } from "../../icons";
 import { useTranslation } from "../../ports/i18n";
 import { useModalStore } from "../../ports/navigation";
 import { usePlayerStore } from "../../ports/player";
@@ -30,13 +29,6 @@ const LENS = "side-nav";
 const LENS_RADIUS = 14;
 const FOLLOW = 0.14;
 const TIP_DELAY_MS = 140;
-
-const RAIL_ICONS: Partial<Record<string, IconName>> = {
-  home: "rail-home",
-  library: "rail-library",
-  stats: "rail-stats",
-  recognize: "rail-recognize",
-};
 
 interface Tip {
   text: string;
@@ -158,7 +150,7 @@ export function Rail({ ref }: { ref: Ref<HTMLElement> }): JSX.Element {
       onClick={(event) => go(event, section.href)}
     >
       {section.id === lens ? <Lens group={LENS} value={section.id} radius={LENS_RADIUS} /> : null}
-      <Icon name={RAIL_ICONS[section.id] ?? section.icon} size={24} />
+      <Icon name={section.icon} size={24} filled={section.id === lens} />
       <Name shown={open}>{section.label}</Name>
     </a>
   ));
@@ -195,7 +187,7 @@ export function Rail({ ref }: { ref: Ref<HTMLElement> }): JSX.Element {
             {...{ [LAYER_ATTRIBUTE]: "" }}
             onClick={searchOpen ? closeSearch : openSearch}
           >
-            <Icon name="rail-search" size={24} />
+            <Icon name="search" size={24} filled={searchOpen} />
             <Name shown={open}>{t("ui.nav.search")}</Name>
           </button>
           {others}
@@ -259,7 +251,7 @@ export function Rail({ ref }: { ref: Ref<HTMLElement> }): JSX.Element {
             data-nuvo-guard="grid"
             onClick={openSettings}
           >
-            <Icon name="settings" size={24} />
+            <Icon name="settings" size={24} filled={settingsOpen} />
             <Name shown={open}>{t("ui.nav.settings")}</Name>
           </button>
         </div>

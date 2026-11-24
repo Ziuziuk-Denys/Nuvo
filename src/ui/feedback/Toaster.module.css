@@ -23,8 +23,8 @@
   box-sizing: border-box;
   min-width: 200px;
   max-width: min(480px, calc(100vw - 32px));
-  min-height: 40px;
-  padding: 6px 14px 6px 12px;
+  min-height: 44px;
+  padding: 7px 16px 7px 14px;
   overflow: hidden;
   border-radius: 12px;
   background: var(--n-pop);
@@ -84,7 +84,7 @@
 .message {
   min-width: 0;
   padding-block: 4px;
-  font: 500 13px/18px var(--n-font);
+  font: 500 14px/20px var(--n-font);
   text-wrap: pretty;
 }
 
@@ -95,13 +95,13 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--n-ink-3);
-  font: 400 13px/18px var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 14px/20px var(--n-font);
 }
 
 .dot {
-  color: var(--n-ink-3);
-  font: 400 13px/18px var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 14px/20px var(--n-font);
 }
 
 .action {
@@ -118,8 +118,8 @@
   font: 500 13px/1 var(--n-font);
   cursor: pointer;
   transition:
-    background-color 150ms var(--n-ease-out),
-    transform 150ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
 }
 
 .later {
@@ -161,11 +161,10 @@
 .card[data-progress]::after,
 .progress {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 4px;
-  height: 2px;
-  border-radius: 1px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5px;
 }
 
 .card[data-progress]::after {
@@ -175,7 +174,7 @@
 
 .progress {
   z-index: 1;
-  background: var(--n-ink-2);
+  background: var(--n-ink);
   transform-origin: left center;
   transition: transform 900ms linear;
 }

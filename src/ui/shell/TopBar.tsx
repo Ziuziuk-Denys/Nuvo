@@ -121,7 +121,7 @@ export function TopBar(): JSX.Element {
                 onClick={(event) => go(event, section.href)}
               >
                 {section.id === active ? <Lens group="top-nav" value={section.id} radius={18} /> : null}
-                <Icon name={section.icon} size={24} />
+                <Icon name={section.icon} size={24} filled={section.id === active} />
               </a>
             </Tooltip>
           ))}
@@ -167,7 +167,7 @@ export function TopBar(): JSX.Element {
               data-no-window-drag
               onClick={openSettings}
             >
-              <Icon name="settings" size={24} />
+              <Icon name="settings" size={24} filled={settingsOpen} />
             </button>
           </Tooltip>
           <span className={styles.rule} aria-hidden="true" />

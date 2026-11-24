@@ -1,7 +1,21 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type JSX, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  memo,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type JSX,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 import { useTranslation } from "../../ports/i18n";
+import { useLyrics, type Line } from "../../ports/lyrics";
 import { playerEngine } from "../../ports/player";
+import { useLoudnessShape } from "../../ports/sound";
 import { isWindowVisible, onWindowVisibilityChange } from "../../ports/window";
+import { GROOVE_HEIGHT, groovePath, lens } from "./groovePath";
 import styles from "./Scrubber.module.css";
 
 const ARROW_MS = 5_000;
@@ -20,22 +34,55 @@ export function formatTime(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
+export function lineAt(lines: readonly Line[], ms: number): string {
+  return lines.find((line) => !line.companion && line.fromMs <= ms && ms < line.toMs)?.text ?? "";
+}
+
 interface ScrubberProps {
+  trackId: string;
   positionMs: number;
   durationMs: number;
-  tint: string;
   loop?: { a: number | null; b: number | null };
 }
 
-export function Scrubber({ positionMs, durationMs, tint, loop }: ScrubberProps): JSX.Element {
+const Groove = memo(function Groove({ path }: { path: string }): JSX.Element {
+  return (
+    <>
+      <span className={styles.hair} />
+      {path ? (
+        <svg className={styles.swell} viewBox={`0 0 1000 ${GROOVE_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true">
+          <path d={path} fill="currentColor" />
+        </svg>
+      ) : null}
+    </>
+  );
+});
+
+// the window moves and the line inside moves back, so a position update only recomposites
+function Lit({ path, fraction }: { path: string; fraction: number }): JSX.Element {
+  return (
+    <span className={`${styles.window} ${styles.played}`} data-played="" style={{ transform: `translateX(${(fraction - 1) * 100}%)` }}>
+      <span className={styles.still} style={{ transform: `translateX(${(1 - fraction) * 100}%)` }}>
+        <Groove path={path} />
+      </span>
+    </span>
+  );
+}
+
+export function Scrubber({ trackId, positionMs, durationMs, loop }: ScrubberProps): JSX.Element {
   const { t } = useTranslation();
   const [dragMs, setDragMs] = useState<number | null>(null);
+  const [hover, setHover] = useState<{ ms: number; x: number; width: number } | null>(null);
+  const lines = useLyrics((state) => (state.trackId === trackId && state.synced ? state.lines : null));
 
   const duration = Math.max(0, durationMs);
   const position = dragMs ?? Math.min(positionMs, duration);
   const fraction = duration > 0 ? Math.min(1, Math.max(0, position / duration)) : 0;
   // Background throttling is off for playback, so a minimised window still draws: hold the line
   const visible = useSyncExternalStore(onWindowVisibilityChange, isWindowVisible);
+  const shape = useLoudnessShape(trackId, visible);
+  const centre = hover ? Math.round((hover.x / hover.width) * 500) / 500 : null;
+  const path = useMemo(() => groovePath(lens(shape ?? [], centre)), [shape, centre]);
   const shown = useRef(fraction);
   useLayoutEffect(() => {
     if (visible) shown.current = fraction;
@@ -51,10 +98,10 @@ export function Scrubber({ positionMs, durationMs, tint, loop }: ScrubberProps):
         ? t("ui.island.loop_start", { from: formatTime(loopA) })
         : t("ui.island.loop", { from: formatTime(loopA), to: formatTime(loopB) });
 
-  const at = (event: PointerEvent<HTMLElement>) => {
+  const read = (event: PointerEvent<HTMLElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    const ratio = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0;
-    return Math.round(Math.min(1, Math.max(0, ratio)) * duration);
+    const x = Math.min(rect.width, Math.max(0, event.clientX - rect.left));
+    return { ms: rect.width > 0 ? Math.round((x / rect.width) * duration) : 0, x, width: rect.width };
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -63,6 +110,8 @@ export function Scrubber({ positionMs, durationMs, tint, loop }: ScrubberProps):
     event.preventDefault();
     playerEngine.seek(Math.min(duration, Math.max(0, positionMs + step)));
   };
+
+  const spoken = hover && lines ? lineAt(lines, hover.ms) : "";
 
   return (
     <div
@@ -74,31 +123,50 @@ export function Scrubber({ positionMs, durationMs, tint, loop }: ScrubberProps):
       aria-valuenow={Math.round(position / 1000)}
       aria-valuetext={`${formatTime(position)} / ${formatTime(duration)}${loopText ? `, ${loopText}` : ""}`}
       className={styles.scrubber}
+      data-groove=""
       data-dragging={dragMs !== null ? "" : undefined}
       onPointerDown={(event) => {
         if (duration <= 0 || event.button !== 0) return;
         event.currentTarget.setPointerCapture?.(event.pointerId);
-        setDragMs(at(event));
+        setDragMs(read(event).ms);
       }}
       onPointerMove={(event) => {
-        if (dragMs !== null) setDragMs(at(event));
+        if (duration <= 0) return;
+        const at = read(event);
+        setHover(at);
+        if (dragMs !== null) setDragMs(at.ms);
       }}
+      onPointerLeave={() => setHover(null)}
       onPointerUp={(event) => {
         if (dragMs === null) return;
         setDragMs(null);
-        playerEngine.seek(at(event));
+        playerEngine.seek(read(event).ms);
       }}
       onPointerCancel={() => setDragMs(null)}
       onKeyDown={onKeyDown}
     >
-      <span className={styles.fill} style={{ transform: `translateX(${(drawn - 1) * 100}%)`, "--tint": tint } as CSSProperties} />
+      <span className={styles.line} data-cut={path ? "" : undefined}>
+        <span className={styles.rest}>
+          <Groove path={path} />
+        </span>
+        <Lit path={path} fraction={drawn} />
+      </span>
+      <span className={styles.track} style={{ transform: `translateX(${drawn * 100}%)` }}>
+        <span className={styles.needle} />
+      </span>
       {loopA !== null ? (
         <span
           className={styles.loop}
           data-testid="ab-loop"
           title={loopText ?? undefined}
-          style={{ left: share(loopA), width: loopB === null ? 0 : `calc(${share(loopB)} - ${share(loopA)})`, color: tint }}
+          style={{ left: share(loopA), width: loopB === null ? 0 : `calc(${share(loopB)} - ${share(loopA)})` }}
         />
+      ) : null}
+      {hover ? (
+        <span className={styles.tip} style={{ "--x": `${hover.x}px`, "--far": `${hover.width}px` } as CSSProperties} aria-hidden="true">
+          <span className={styles.time}>{formatTime(hover.ms)}</span>
+          {spoken ? <span className={styles.lyric}>{spoken}</span> : null}
+        </span>
       ) : null}
     </div>
   );

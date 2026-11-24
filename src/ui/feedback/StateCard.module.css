@@ -61,8 +61,8 @@
 
 .title {
   margin: 0;
-  font: 700 26px/1.2 var(--n-font);
-  letter-spacing: -0.025em;
+  font: 660 32px/38px var(--n-font);
+  letter-spacing: var(--n-track-display);
   text-wrap: balance;
 }
 
@@ -70,7 +70,7 @@
   max-width: 38ch;
   margin: var(--n-s-2) 0 var(--n-s-5);
   color: var(--n-ink-2);
-  font: 400 15px/1.5 var(--n-font);
+  font: 420 15px/1.5 var(--n-font);
   text-wrap: pretty;
 }
 

@@ -49,8 +49,8 @@
   cursor: pointer;
   outline: none;
   transition:
-    background-color 150ms var(--n-ease-out),
-    transform 150ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
 }
 
 .option:hover,

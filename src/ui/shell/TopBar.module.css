@@ -87,9 +87,9 @@
   color: var(--n-ink-2);
   cursor: pointer;
   transition:
-    background-color 150ms var(--n-ease-out),
-    box-shadow 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out),
+    box-shadow var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
     transform var(--n-t-quick) var(--n-ease-out);
 }
 
@@ -126,7 +126,7 @@
 
 .pins .item > span {
   opacity: 0.85;
-  transition: opacity 150ms var(--n-ease-out);
+  transition: opacity var(--n-t-quick) var(--n-ease-out);
 }
 
 .pins .item:hover > span {
@@ -156,7 +156,7 @@
   font: 500 13px/1 var(--n-font);
   cursor: pointer;
   transition:
-    background-color 150ms var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out),
     transform var(--n-t-quick) var(--n-ease-out);
 }
 
@@ -171,7 +171,7 @@
 }
 
 .back > svg {
-  transition: transform 150ms var(--n-ease-out);
+  transition: transform var(--n-t-quick) var(--n-ease-out);
 }
 
 .back:hover > svg {

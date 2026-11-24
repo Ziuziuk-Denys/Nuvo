@@ -31,13 +31,10 @@ export function goTo(href: string): void {
 }
 
 // Animates the live page rather than a view transition: a page snapshot paints above the player and hides its glass
-const PAGE_IN: Keyframe[] = [
-  { opacity: 0, transform: "translateY(12px)" },
-  { opacity: 1, transform: "none" },
-];
+const PAGE_IN: Keyframe[] = [{ opacity: 0 }, { opacity: 1 }];
 
 export function navigateWithTransition(navigate: NavigateFunction, to: string): void {
   flushSync(() => void navigate(to));
   if (reducedEffectsNow()) return;
-  document.querySelector<HTMLElement>("[data-page]")?.animate?.(PAGE_IN, { duration: DURATION_MS.page, easing: `cubic-bezier(${EASE.out.join(", ")})` });
+  document.querySelector<HTMLElement>("[data-page]")?.animate?.(PAGE_IN, { duration: DURATION_MS.quick, easing: `cubic-bezier(${EASE.out.join(", ")})` });
 }

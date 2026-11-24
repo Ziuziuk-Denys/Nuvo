@@ -27,9 +27,9 @@
 
 .message {
   max-width: 44ch;
-  margin: var(--n-s-2) 0 0;
+  margin: 10px 0 0;
   color: var(--n-ink-2);
-  font: var(--n-type-body);
+  font: 420 15px/22px var(--n-font);
   text-wrap: pretty;
 }
 

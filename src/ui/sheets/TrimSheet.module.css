@@ -88,8 +88,8 @@
   background: var(--n-ink);
   content: "";
   transition:
-    transform 150ms var(--n-ease-out),
-    box-shadow 150ms var(--n-ease-out);
+    transform var(--n-t-quick) var(--n-ease-out),
+    box-shadow var(--n-t-quick) var(--n-ease-out);
 }
 
 .knob[data-handle="start"]::before {

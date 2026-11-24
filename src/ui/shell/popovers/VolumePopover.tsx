@@ -10,8 +10,8 @@ import styles from "./popovers.module.css";
 const WHEEL_STEP = 5;
 const KEY_STEP = 5;
 const DEFAULT_RESTORE_PERCENT = 70;
-const COLUMN_HEIGHT = 120;
-const WIDTH_PX = 46;
+const COLUMN_HEIGHT = 128;
+const WIDTH_PX = 44;
 let restorePercent = DEFAULT_RESTORE_PERCENT;
 
 const percentOf = (gain: number) => Math.round(toVolumeLevel(gain) * 100);
@@ -113,6 +113,9 @@ function VolumeColumn({ open, anchor, onClose, onWheel, phase }: VolumePopoverPr
       onWheel={onWheel}
       {...{ [LAYER_ATTRIBUTE]: "" }}
     >
+      <span className={styles.percent} aria-hidden="true">
+        {percent}
+      </span>
       <div
         role="slider"
         tabIndex={0}
@@ -123,34 +126,19 @@ function VolumeColumn({ open, anchor, onClose, onWheel, phase }: VolumePopoverPr
         aria-valuenow={percent}
         aria-valuetext={`${percent} %`}
         className={styles.column}
-        style={{ height: COLUMN_HEIGHT }}
-        data-dragging={dragging ? "" : undefined}
+        style={{ height: COLUMN_HEIGHT, "--level": percent / 100 } as CSSProperties}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={() => setDragging(false)}
         onPointerCancel={() => setDragging(false)}
         onKeyDown={onKeyDown}
       >
-        <div className={styles.fill} style={{ height: `${percent}%` }} />
-        <div className={styles.face}>
-          <button
-            type="button"
-            className={styles.mute}
-            aria-label={percent === 0 ? t("ui.volume.unmute") : t("ui.volume.mute")}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={toggleMute}
-          >
-            <Icon name={icon} size={16} />
-          </button>
-          <span className={styles.percent}>{percent}%</span>
-        </div>
-        <div className={`${styles.face} ${styles.faceOnFill}`} style={{ clipPath: `inset(${100 - percent}% 0 0 0)` }} aria-hidden="true">
-          <span className={styles.mute}>
-            <Icon name={icon} size={16} />
-          </span>
-          <span className={styles.percent}>{percent}%</span>
-        </div>
+        <span className={styles.rail} />
+        <span className={styles.knob} />
       </div>
+      <button type="button" className={styles.mute} aria-label={percent === 0 ? t("ui.volume.unmute") : t("ui.volume.mute")} onClick={toggleMute}>
+        <Icon name={icon} size={18} />
+      </button>
     </div>,
     document.body,
   );

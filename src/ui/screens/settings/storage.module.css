@@ -131,7 +131,7 @@
 .ringTrack {
   fill: none;
   stroke: color-mix(in srgb, var(--n-ink) 7%, transparent);
-  stroke-width: 24;
+  stroke-width: 4.4;
 }
 
 .ringValue {
@@ -148,9 +148,8 @@
   left: 50%;
   margin-top: 2px;
   color: var(--n-ink-3);
-  font: 600 10px/1 var(--n-font);
-  letter-spacing: 0;
-  text-transform: uppercase;
+  font: var(--n-type-caption);
+  line-height: 1;
   transform: translateX(-50%);
   white-space: nowrap;
 }
@@ -158,8 +157,7 @@
 .ringCaption {
   margin-top: -4px;
   color: var(--n-ink-3);
-  font: 500 11.5px var(--n-font);
-  letter-spacing: -0.01em;
+  font: var(--n-type-caption);
   text-align: center;
   user-select: none;
 }
@@ -298,8 +296,8 @@
   cursor: pointer;
   font: 500 13px var(--n-font);
   transition:
-    background-color 150ms var(--n-ease-out),
-    opacity 150ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    opacity var(--n-t-quick) var(--n-ease-out);
 }
 
 .primary {
@@ -345,7 +343,7 @@
   margin-bottom: 8px;
   border-radius: 999px;
   background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+  color: var(--n-ink);
 }
 
 .statusTitle {

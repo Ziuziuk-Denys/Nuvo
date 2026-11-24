@@ -10,6 +10,7 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   size?: "m" | "s";
   tone?: "field" | "island" | "solo";
   active?: boolean;
+  filled?: boolean;
   tooltip?: boolean | string;
 }
 
@@ -19,6 +20,7 @@ export function IconButton({
   size = "m",
   tone = "field",
   active,
+  filled = active,
   tooltip = true,
   className,
   type = "button",
@@ -34,7 +36,7 @@ export function IconButton({
         data-active={active ? "" : undefined}
         className={[styles.button, styles[size], styles[tone], className].filter(Boolean).join(" ")}
       >
-        <Icon name={icon} size={size === "m" ? 18 : 16} />
+        <Icon name={icon} size={size === "m" ? 18 : 16} filled={filled} />
       </button>
     </Tooltip>
   );

@@ -19,7 +19,9 @@ import { DURATION_MS, STAGGER_MS } from "../../motion";
 import styles from "./QueuePanel.module.css";
 
 const ROW_HEIGHT = 52;
-const STAGGERED_ROWS = 16;
+const DECK_PX = 72;
+const DECK_BEHIND = 2;
+const STAGGERED_ROWS = 12;
 const ROW_STAGGER_MS = STAGGER_MS / 2;
 const ROWS_SETTLED_MS = DURATION_MS.base + STAGGERED_ROWS * ROW_STAGGER_MS + DURATION_MS.entrance;
 
@@ -54,7 +56,8 @@ export function QueuePanel(): JSX.Element | null {
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const played = Math.max(currentIndex, 0);
-  const start = historyOpen ? 0 : played;
+  const current = currentIndex >= 0 ? queue[currentIndex] : undefined;
+  const start = current ? played + 1 : 0;
   const shown = queue.slice(start);
   const reorder = useListReorder({
     items: shown,
@@ -89,6 +92,32 @@ export function QueuePanel(): JSX.Element | null {
   const listTop = grab.listTop + grab.scrollTop - grab.now;
   const lifted = reorder.dragIndex === null ? 0 : reorder.pointerPos.y - reorder.grabOffset.y - listTop - reorder.dragIndex * ROW_HEIGHT;
 
+  const row = (track: (typeof queue)[number], index: number) => (
+    <Row
+      variant="track"
+      leading={<Cover src={track.coverUrl} size={36} />}
+      title={track.title}
+      badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
+      subtitle={<ArtistLinks track={track} />}
+      meta={formatDuration(track.durationMs)}
+      onActivate={() => playerEngine.playQueueIndex(index)}
+      actions={
+        <>
+          <DislikeButton track={track} size="s" />
+          <IconButton
+            icon="remove"
+            size="s"
+            label={t("ui.queue.remove")}
+            onClick={(event) => {
+              event.stopPropagation();
+              playerEngine.removeQueueIndex(index);
+            }}
+          />
+        </>
+      }
+    />
+  );
+
   const panel = (
     <aside
       ref={panelRef}
@@ -107,6 +136,34 @@ export function QueuePanel(): JSX.Element | null {
         </Button>
         <IconButton icon="close" size="s" label={t("ui.queue.close")} onClick={() => setOpen(false)} />
       </header>
+      {current ? (
+        <div className={styles.now} data-now="">
+          <span className={styles.deck} aria-hidden="true">
+            {queue
+              .slice(currentIndex + 1, currentIndex + 1 + DECK_BEHIND)
+              .reverse()
+              .map((track, depth, behind) => (
+                <span key={`${track.id}:${depth}`} className={styles.behind} style={{ "--depth": behind.length - depth } as CSSProperties}>
+                  <Cover src={track.coverUrl} size={DECK_PX} radius={10} />
+                </span>
+              ))}
+            <span key={`${current.id}:${currentIndex}`} className={styles.front}>
+              <Cover src={current.coverUrl} size={DECK_PX} radius={10} />
+            </span>
+          </span>
+          <span className={styles.nowText}>
+            <span className={styles.nowTitle}>
+              <span>{current.title}</span>
+              {current.explicit ? <Explicit label={t("ui.entity.explicit")} /> : null}
+            </span>
+            <span className={styles.nowArtist}>
+              <ArtistLinks track={current} focusable />
+            </span>
+          </span>
+          <DislikeButton track={current} size="s" />
+          <IconButton icon="remove" size="s" label={t("ui.queue.remove")} onClick={() => playerEngine.removeQueueIndex(currentIndex)} />
+        </div>
+      ) : null}
       <div
         ref={scrollRef}
         className={`${styles.scroll} n-scroll`}
@@ -123,6 +180,16 @@ export function QueuePanel(): JSX.Element | null {
             <Icon name="chevron-down" size={14} className={styles.chevron} />
           </button>
         ) : null}
+        {historyOpen
+          ? queue
+              .slice(0, played)
+              .map((track, index) => (
+                <div key={`${track.id}:${index}`} className={styles.item} data-played="">
+                  {row(track, index)}
+                </div>
+              ))
+              .reverse()
+          : null}
         <div ref={listRef} className={styles.list}>
           {shown.map((track, step) => {
             const index = step + start;
@@ -132,8 +199,6 @@ export function QueuePanel(): JSX.Element | null {
                 key={`${track.id}:${index}`}
                 className={styles.item}
                 style={{ "--i": Math.min(step, STAGGERED_ROWS), transform: shift ? `translateY(${shift}px)` : undefined } as CSSProperties}
-                data-played={index < currentIndex ? "" : undefined}
-                data-current={index === currentIndex ? "" : undefined}
                 data-dragging={reorder.dragIndex === step ? "" : undefined}
                 data-moving={reorder.isDragging ? "" : undefined}
                 onPointerDown={(event) => {
@@ -142,30 +207,7 @@ export function QueuePanel(): JSX.Element | null {
                   reorder.handleCardGrab(step, track, event);
                 }}
               >
-                <Row
-                  variant="track"
-                  leading={<Cover src={track.coverUrl} size={36} />}
-                  title={track.title}
-                  badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
-                  subtitle={<ArtistLinks track={track} />}
-                  meta={formatDuration(track.durationMs)}
-                  active={index === currentIndex}
-                  onActivate={() => playerEngine.playQueueIndex(index)}
-                  actions={
-                    <>
-                      <DislikeButton track={track} size="s" />
-                      <IconButton
-                        icon="remove"
-                        size="s"
-                        label={t("ui.queue.remove")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          playerEngine.removeQueueIndex(index);
-                        }}
-                      />
-                    </>
-                  }
-                />
+                {row(track, index)}
               </div>
             );
           })}

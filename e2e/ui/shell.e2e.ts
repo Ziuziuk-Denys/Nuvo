@@ -454,12 +454,13 @@ describe("shell", () => {
       }, name);
       expect(gap, `${screen}: gap above the player`).toBeCloseTo(POPOVER.islandGap, 0);
       expect(await page.locator('[role="dialog"]').getAttribute("aria-label")).toBe(name);
-      const glass = await page.evaluate(() => {
+      const material = await page.evaluate(() => {
         const dialog = document.querySelector('[role="dialog"]')!;
-        const blurred = (element: Element) => getComputedStyle(element).backdropFilter !== "none";
-        return { panel: blurred(dialog), inside: [...dialog.querySelectorAll("*")].filter(blurred).length };
+        const blurred = [dialog, ...dialog.querySelectorAll("*")].filter((element) => getComputedStyle(element).backdropFilter !== "none");
+        return { blurred: blurred.length, background: getComputedStyle(dialog).backgroundColor };
       });
-      expect(glass, `${screen}: glass with one backdrop layer`).toEqual({ panel: true, inside: 0 });
+      expect(material.blurred, `${screen}: no backdrop blur`).toBe(0);
+      expect(material.background, `${screen}: a solid surface`).toMatch(/^(rgb\(|color\(srgb [^/]+\)$)/);
       if (screen === "island-sound") {
         await shootSoundTab(live, "speed", NUVO_LOOKS, SIZES[0], open);
         await shootSoundTab(live, "sleep", NUVO_LOOKS, SIZES[0], open);
@@ -481,10 +482,10 @@ describe("shell", () => {
 
     await live.setSize(SIZES[0]);
     const bar = await page.locator("[data-island]").boundingBox();
-    await page.mouse.click(bar!.x + bar!.width * 0.75, bar!.y + 6);
+    await page.mouse.click(bar!.x + bar!.width * 0.75, bar!.y + 8);
     await page.waitForTimeout(400);
     const played = await page.evaluate(() => {
-      const fill = document.querySelector<HTMLElement>('[role="slider"][aria-label="Position"] > span')!;
+      const fill = document.querySelector<HTMLElement>('[role="slider"][aria-label="Position"] [data-played]')!;
       return parseFloat(fill.style.transform.replace("translateX(", "")) + 100;
     });
     expect(played, "seek on the bar").toBeGreaterThan(60);

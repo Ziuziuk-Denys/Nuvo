@@ -32,7 +32,7 @@ export function Cover({ src, size, shape = "square", radius, alt = "", fetchPrio
   };
 
   return (
-    <span className={styles.cover} style={style}>
+    <span className={styles.cover} style={style} data-cover={src || undefined}>
       {url && attempt < 2 ? (
         <img
           key={attempt}

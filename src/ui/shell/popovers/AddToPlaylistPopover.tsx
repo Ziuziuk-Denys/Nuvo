@@ -21,7 +21,17 @@ function walkRows(event: KeyboardEvent<HTMLDivElement>): void {
   stops[Math.min(stops.length - 1, Math.max(0, index + (event.key === "ArrowDown" ? 1 : -1)))].focus();
 }
 
-export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; tracks?: readonly Track[]; onDone(): void }): JSX.Element {
+export function AddToPlaylistPopover({
+  track,
+  tracks,
+  onDone,
+  onAdded,
+}: {
+  track: Track;
+  tracks?: readonly Track[];
+  onDone(): void;
+  onAdded?(): void;
+}): JSX.Element {
   const { t } = useTranslation();
   const { data, isLoading } = usePlaylistsList();
   const addTrack = useAddPlaylistTracks();
@@ -57,6 +67,7 @@ export function AddToPlaylistPopover({ track, tracks, onDone }: { track: Track; 
       }
       if (added === 0 && failure) throw failure;
       setOutcome({ playlistId, kind: "added" });
+      onAdded?.();
       closeTimer.current = window.setTimeout(onDone, ADDED_HOLD_MS);
       return;
     } catch (error) {

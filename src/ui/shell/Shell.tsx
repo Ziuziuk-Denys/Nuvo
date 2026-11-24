@@ -18,6 +18,7 @@ import { useScrollActivity } from "../components/useScrollActivity";
 import { Field } from "../field/Field";
 import { railSpace } from "../geometry";
 import { reducedEffectsNow } from "../effects";
+import { arrive, flyToPlayer, watchDepartures } from "../flight";
 import { DURATION_MS, EASE, seconds } from "../motion";
 import { useTranslation } from "../ports/i18n";
 import { bootImports } from "../ports/importsRuntime";
@@ -168,6 +169,16 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     setFullscreen(false);
     if (pathname !== "/recognize") void navigate("/recognize");
   };
+
+  useEffect(() => watchDepartures(), []);
+  useLayoutEffect(() => arrive(), [location.key, pathname, search]);
+
+  const wasFullscreen = useRef(fullscreen);
+  useLayoutEffect(() => {
+    if (wasFullscreen.current === fullscreen) return;
+    wasFullscreen.current = fullscreen;
+    flyToPlayer(fullscreen);
+  }, [fullscreen]);
 
   useHistoryKeys(navigate, () => useGateStore.getState().locked || karaokeShown || modal.searchOpen || hasOpenLayer());
   useDisableButtonFocus();
