@@ -16,16 +16,12 @@ import { createTextRaster, type TextRaster } from "./type/raster";
 
 declare const self: DedicatedWorkerGlobalScope;
 
-const FOOT_EVERY_MS = 500;
-const FOOT_WIDTH = 16;
-const FOOT_DARKEN = 0.38;
 const IMAGE_WAIT_MS = 2_000;
 const LUMA_STEP = 6;
 const LIGHT_ABOVE = 0.62;
 const DARK_BELOW = 0.5;
 
 // the live stage draws off the page's thread, so a busy page never holds back a frame or a word
-let canvas: OffscreenCanvas | null = null;
 let stage: Stage | null = null;
 let raster: TextRaster | null = null;
 let template: Template | null = null;
@@ -38,18 +34,14 @@ let features: SongFeatures | null = null;
 let rate = 0;
 let song: { pcm: Float32Array; sampleRate: number } | null = null;
 let tap: { wave: Float32Array; sampleRate: number } | null = null;
-let mirror: OffscreenCanvasRenderingContext2D | null = null;
-let foot: OffscreenCanvasRenderingContext2D | null = null;
 let size = { width: 1, height: 1 };
 let dirty = true;
 let pictured = false;
 let heldUntil = 0;
 let drawnAtMs = Number.NaN;
 let lastFrame: number | null = null;
-let lastFoot = 0;
 let light = false;
 let lastCells: Uint8Array | null = null;
-let frames = 0;
 let frameId: number | null = null;
 const clock = createStageClock();
 const governor = createGovernor();
@@ -81,20 +73,6 @@ function draw(atMs: number): void {
   // the decoded song never stalls and matches export; the tap covers the seconds before it is decoded
   const input = song ? windowAt(song.pcm, song.sampleRate, atMs, songWindow) : heard.wave.subarray(heard.wave.length - WINDOW);
   paint(stage, raster, template, aspect, lines, atMs, features.at(input, atMs), { reduced, displayLeadMs: DISPLAY_LEAD_MS });
-}
-
-function shareFoot(now: number): void {
-  if (!mirror || !foot || now - lastFoot < FOOT_EVERY_MS) return;
-  lastFoot = now;
-  const source = mirror.canvas;
-  foot.drawImage(source, 0, source.height - 1, source.width, 1, 0, 0, FOOT_WIDTH, 1);
-  const row = foot.getImageData(0, 0, FOOT_WIDTH, 1).data;
-  const rgb = [0, 1, 2].map((channel) => {
-    let total = 0;
-    for (let x = 0; x < FOOT_WIDTH; x++) total += row[x * 4 + channel];
-    return Math.round((total / FOOT_WIDTH) * FOOT_DARKEN);
-  }) as [number, number, number];
-  self.postMessage({ type: "foot", rgb } satisfies FromStage);
 }
 
 // a gap between the two thresholds keeps a frame near the middle from flipping the controls back and forth
@@ -137,10 +115,6 @@ function loop(now: number): void {
   drawnAtMs = atMs;
   draw(atMs);
   shareLuma(true);
-  if (mirror && canvas && frames++ % 2 === 0) {
-    mirror.drawImage(canvas, 0, 0, mirror.canvas.width, mirror.canvas.height);
-    shareFoot(now);
-  }
 }
 
 // shaders compile one per quiet frame, so a scene or song change never waits on the driver
@@ -150,7 +124,6 @@ function prepareOne(): void {
 }
 
 function start(target: OffscreenCanvas): void {
-  canvas = target;
   stage = createStage(target);
   if (!stage) return;
   stage.setCover(new ImageData(new Uint8ClampedArray([20, 22, 28, 255]), 1, 1), DEFAULT_PALETTE);
@@ -174,10 +147,6 @@ self.onmessage = (event: MessageEvent<ToStage>) => {
     case "init":
       reduced = message.reduced;
       start(message.canvas);
-      break;
-    case "mirror":
-      mirror = message.canvas.getContext("2d");
-      foot = new OffscreenCanvas(FOOT_WIDTH, 1).getContext("2d", { willReadFrequently: true });
       break;
     case "template":
       template = message.template;

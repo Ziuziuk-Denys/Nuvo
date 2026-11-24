@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import type { Box } from "./scene";
 
-export type Room = "page" | "karaoke";
+export type Room = "page" | "karaoke" | "studio";
 
 export interface LightObject extends Box {
   radius: number;
@@ -19,6 +19,7 @@ interface RoomState {
 const rooms: Record<Room, RoomState> = {
   page: { sources: new Set(), watchers: new Set() },
   karaoke: { sources: new Set(), watchers: new Set() },
+  studio: { sources: new Set(), watchers: new Set() },
 };
 
 export function lightMoved(room: Room = "page"): void {

@@ -4,7 +4,6 @@ import type { Aspect, Template } from "./template/schema";
 
 export type ToStage =
   | { type: "init"; canvas: OffscreenCanvas; reduced: boolean }
-  | { type: "mirror"; canvas: OffscreenCanvas }
   | { type: "template"; template: Template; aspect: Aspect }
   | { type: "cover"; bitmap: ImageBitmap; palette: Palette }
   | { type: "lyrics"; lines: Line[] }
@@ -18,7 +17,7 @@ export type ToStage =
   | { type: "quality"; light: boolean }
   | { type: "dispose" };
 
-export type FromStage = { type: "foot"; rgb: [number, number, number] } | { type: "tone"; light: boolean } | { type: "luma"; cells: Uint8Array };
+export type FromStage = { type: "tone"; light: boolean } | { type: "luma"; cells: Uint8Array };
 
 // each thread's performance.now starts at its own origin
 export const sharedNow = (): number => performance.timeOrigin + performance.now();

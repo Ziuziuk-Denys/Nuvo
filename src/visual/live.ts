@@ -20,8 +20,6 @@ export interface Live {
   setCover(url: string): void;
   setLyrics(lines: Line[]): void;
   setMedia(media: Media | null): void;
-  setMirror(target: HTMLCanvasElement | null): void;
-  onFoot(listener: ((rgb: [number, number, number]) => void) | null): void;
   onTone(listener: ((light: boolean) => void) | null): void;
   onLuma(listener: ((cells: Uint8Array) => void) | null): void;
   resize(width: number, height: number): void;
@@ -42,13 +40,11 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
   handedOver.add(canvas);
   post({ type: "init", canvas: offscreen, reduced: motion.matches }, [offscreen]);
 
-  let footListener: ((rgb: [number, number, number]) => void) | null = null;
   let toneListener: ((light: boolean) => void) | null = null;
   let lumaListener: ((cells: Uint8Array) => void) | null = null;
   worker.onerror = (event) => console.error("[visual] the stage worker failed:", event.message);
   worker.onmessage = (event: MessageEvent<FromStage>) => {
-    if (event.data.type === "foot") footListener?.(event.data.rgb);
-    else if (event.data.type === "tone") toneListener?.(event.data.light);
+    if (event.data.type === "tone") toneListener?.(event.data.light);
     else lumaListener?.(event.data.cells);
   };
   const onMotion = () => post({ type: "motion", reduced: motion.matches });
@@ -144,15 +140,6 @@ export function createLive(canvas: HTMLCanvasElement, deps: LiveDeps): Live | nu
         if (mediaUrl === media.url) post({ type: "image", source: bitmap, width: bitmap.width, height: bitmap.height }, [bitmap]);
         else bitmap.close();
       }, none);
-    },
-    setMirror(target) {
-      if (!target || handedOver.has(target)) return;
-      handedOver.add(target);
-      const mirror = target.transferControlToOffscreen();
-      post({ type: "mirror", canvas: mirror }, [mirror]);
-    },
-    onFoot(listener) {
-      footListener = listener;
     },
     onTone(listener) {
       toneListener = listener;

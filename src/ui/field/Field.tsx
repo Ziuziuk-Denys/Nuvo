@@ -31,7 +31,7 @@ export function Field(): JSX.Element {
       {wallpaper ? (
         <Wallpaper src={wallpaper} />
       ) : coverGlow ? (
-        <LightCanvas className={styles.light} light={light} scene={scene} dark={dark} base={ground} />
+        <LightCanvas className={options.pinned ? undefined : styles.light} light={light} scene={scene} dark={dark} base={ground} />
       ) : null}
       {options.banner ? <Banner key={options.banner} src={options.banner} portrait={false} /> : null}
       {options.portrait ? <Banner key={options.portrait} src={options.portrait} portrait /> : null}

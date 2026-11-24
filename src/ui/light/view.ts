@@ -28,7 +28,6 @@ const CALM_MS = 240;
 const SWAY_PX = 34;
 const SWAY_EASE = 0.12;
 const BREATH = 0.06;
-const CAP_DARK = 0.105;
 const SLOW_SCALE = 0.3;
 const PLAIN_SCALE = 0.6;
 
@@ -66,7 +65,7 @@ export function createLightView(canvas: HTMLCanvasElement, room: Room): LightVie
     from = shown ? shown.slice() : null;
     to = next;
     startedAt = now;
-    duration = !from || renderer!.slow ? 0 : wanted.reduced ? (turning ? CALM_MS : 0) : turning ? TURN_MS : ms;
+    duration = !from || renderer!.slow ? 0 : wanted.reduced || !wanted.rich ? (turning ? CALM_MS : 0) : turning ? TURN_MS : ms;
   }
 
   function draw(now: number): void {
@@ -104,7 +103,6 @@ export function createLightView(canvas: HTMLCanvasElement, room: Room): LightVie
       scale,
       base,
       dark,
-      cap: CAP_DARK,
       foot: whole ? [view.height * 2, view.height * 3] : [view.height * 0.55, view.height],
       objects,
     };

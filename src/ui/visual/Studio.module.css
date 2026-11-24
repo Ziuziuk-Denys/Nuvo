@@ -13,6 +13,10 @@
   animation: open var(--n-t-page) var(--n-ease-out);
 }
 
+.light {
+  z-index: -1;
+}
+
 .studio[data-state="out"] {
   pointer-events: none;
   animation: close var(--n-t-quick) var(--n-ease-in) both;

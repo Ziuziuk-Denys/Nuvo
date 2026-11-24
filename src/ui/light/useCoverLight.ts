@@ -11,14 +11,14 @@ export async function lightFor(cover: string): Promise<CoverLight> {
   const light = readLight(await coverPixels(cover));
   known.set(cover, light);
   if (known.size > KEPT) known.delete(known.keys().next().value!);
-  return light;
+  return cover ? light : NEUTRAL;
 }
 
 // keeps the last light while a new cover is read, so a song change never flashes neutral
 export function useCoverLight(cover: string | undefined): CoverLight | null {
-  const [light, setLight] = useState<CoverLight | null>(() => (cover ? (known.get(cover) ?? null) : NEUTRAL));
+  const [light, setLight] = useState<CoverLight | null>(() => (cover ? (known.get(cover) ?? null) : null));
   useEffect(() => {
-    if (!cover) return setLight(NEUTRAL);
+    if (!cover) return;
     let live = true;
     lightFor(cover).then(
       (next) => live && setLight(next),
@@ -28,5 +28,5 @@ export function useCoverLight(cover: string | undefined): CoverLight | null {
       live = false;
     };
   }, [cover]);
-  return light;
+  return cover ? light : NEUTRAL;
 }

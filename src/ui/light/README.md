@@ -5,16 +5,16 @@ One WebGL2 context lights every screen from the cover in front of it. A still sc
 ## Lighting a page
 
 ```ts
-usePageBackdrop(cover, { scene?: "room" | "page" | "wall"; banner?: string; portrait?: string }): void
+usePageBackdrop(cover, { scene?: "room" | "page" | "wall"; pinned?: boolean; banner?: string; portrait?: string }): void
 useCalmLight(): void
 ```
 
-`room` is a hero under its own lamp, `page` a header cover, `wall` a quiet lamp without an object. The default is `page`.
+`room` is a hero under its own lamp, `page` a header cover, `wall` a quiet lamp without an object. The default is `page`. `pinned` keeps the light in place while the page scrolls.
 
 ## Objects that cast a shadow
 
 ```ts
-useLightObject(ref, { radius?: number; lift?: number; hero?: boolean; room?: "page" | "karaoke" }): void
+useLightObject(ref, { radius?: number; lift?: number; hero?: boolean; room?: Room }): void
 addLightObjects(source: () => LightObject[], room?): () => void
 lightMoved(room?): void
 ```

@@ -9,34 +9,20 @@ interface StageProps {
   coverUrl: string;
   lines: Line[];
   media?: Media | null;
-  mirror?: HTMLCanvasElement | null;
-  onFoot?: (rgb: [number, number, number]) => void;
   onTone?: (light: boolean) => void;
   onLuma?: (cells: Uint8Array) => void;
   clock?: () => { atMs: number; playing: boolean };
   className?: string;
 }
 
-export function Stage({
-  template,
-  aspect,
-  coverUrl,
-  lines,
-  media: own = null,
-  mirror = null,
-  onFoot,
-  onTone,
-  onLuma,
-  clock,
-  className,
-}: StageProps): JSX.Element {
+export function Stage({ template, aspect, coverUrl, lines, media: own = null, onTone, onLuma, clock, className }: StageProps): JSX.Element {
   const media = mediaFor(template, own);
   const host = useRef<HTMLDivElement>(null);
   const liveRef = useRef<Live | null>(null);
   const light = useVisualQuality() === "performance";
-  const latest = useRef({ template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma, light });
+  const latest = useRef({ template, aspect, coverUrl, lines, media, onTone, onLuma, light });
   useEffect(() => {
-    latest.current = { template, aspect, coverUrl, lines, media, mirror, onFoot, onTone, onLuma, light };
+    latest.current = { template, aspect, coverUrl, lines, media, onTone, onLuma, light };
   });
 
   useEffect(() => {
@@ -53,8 +39,6 @@ export function Stage({
     live?.setCover(now.coverUrl);
     live?.setLyrics(now.lines);
     live?.setMedia(now.media);
-    live?.setMirror(now.mirror);
-    live?.onFoot(now.onFoot ?? null);
     live?.onTone(now.onTone ?? null);
     live?.onLuma(now.onLuma ?? null);
     live?.setLight(now.light);
@@ -74,8 +58,6 @@ export function Stage({
   useEffect(() => liveRef.current?.setCover(coverUrl), [coverUrl]);
   useEffect(() => liveRef.current?.setLyrics(lines), [lines]);
   useEffect(() => liveRef.current?.setMedia(media), [media]);
-  useEffect(() => liveRef.current?.setMirror(mirror), [mirror]);
-  useEffect(() => liveRef.current?.onFoot(onFoot ?? null), [onFoot]);
   useEffect(() => liveRef.current?.onTone(onTone ?? null), [onTone]);
   useEffect(() => liveRef.current?.onLuma(onLuma ?? null), [onLuma]);
   useEffect(() => liveRef.current?.setLight(light), [light]);

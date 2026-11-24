@@ -9,7 +9,6 @@ export interface Frame {
   scale: number;
   base: Vec3;
   dark: boolean;
-  cap: number;
   foot: readonly [number, number];
   objects: readonly LightObject[];
 }
@@ -73,7 +72,7 @@ function create(onRestored: () => void): Renderer | null {
 
   return {
     slow: fast === null,
-    draw({ state, view, scale, base, dark, cap, foot, objects }) {
+    draw({ state, view, scale, base, dark, foot, objects }) {
       const width = Math.round(view.width * scale);
       const height = Math.round(view.height * scale);
       if (!program || width < 1 || height < 1) return null;
@@ -97,7 +96,6 @@ function create(onRestored: () => void): Renderer | null {
       gl.uniform1f(at("scale"), scale);
       gl.uniform3f(at("base"), base[0], base[1], base[2]);
       gl.uniform1f(at("dark"), dark ? 1 : 0);
-      gl.uniform1f(at("cap"), cap);
       gl.uniform2f(at("foot"), foot[0], foot[1]);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       return canvas.transferToImageBitmap();

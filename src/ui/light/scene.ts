@@ -27,8 +27,13 @@ export const AT = {
   screenLift: [16, 1],
   screen: [17, 4],
   lean: [21, 1],
-  cells: [22, GRID * GRID * 3],
+  cap: [22, 1],
+  cells: [23, GRID * GRID * 3],
 } as const;
+
+// the luminance that keeps the quietest text at 4.5:1; a room and karaoke hold only large white text in their core
+const READABLE = 0.055;
+const BRIGHT = 0.105;
 
 export type LightState = Float32Array;
 const LENGTH = AT.cells[0] + AT.cells[1];
@@ -61,6 +66,7 @@ export function lightState(scene: LightScene, view: View, light: CoverLight, her
     screen: [x, y, 1, 1],
     screenLift: [1],
     lean: [0],
+    cap: [scene === "room" || scene === "karaoke" ? BRIGHT : READABLE],
     spill: [0.34],
     beam: [0.9, 0.82],
     spillCone: [0.95, 0.2],

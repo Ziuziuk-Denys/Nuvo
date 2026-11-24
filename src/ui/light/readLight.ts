@@ -68,7 +68,7 @@ export function readLight(pixels: Uint8ClampedArray): CoverLight {
   const total = side * side;
   const hues: Hue[] = Array.from({ length: HUES }, () => ({ weight: 0, a: 0, b: 0 }));
   const lightness = new Float32Array(total);
-  const cells = new Array<number>(GRID * GRID * 3).fill(0);
+  const cells = Array.from({ length: GRID * GRID * 3 }, () => 0);
   const perCell = total / (GRID * GRID);
   let mean = 0;
   for (let i = 0; i < total; i += 1) {
@@ -115,6 +115,6 @@ export function readLight(pixels: Uint8ClampedArray): CoverLight {
   };
 }
 
-export const NEUTRAL: CoverLight = { key: LAMP_WHITE, rim: LAMP_WHITE, from: [0, -0.5], cells: new Array<number>(GRID * GRID * 3).fill(0.05) };
+export const NEUTRAL: CoverLight = { key: LAMP_WHITE, rim: LAMP_WHITE, from: [0, -0.5], cells: Array.from({ length: GRID * GRID * 3 }, () => 0.05) };
 
 export const cssColour = (colour: Vec3): string => `rgb(${colour.map(toScreen).join(" ")})`;

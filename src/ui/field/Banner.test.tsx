@@ -28,8 +28,8 @@ it("shows a small photo first and the sharp one over it", () => {
   expect(soon.hasAttribute("data-shown")).toBe(true);
 });
 
-it("fills the width behind a square portrait", () => {
+it("shows a square portrait twice, small first", () => {
   act(() => root.render(<Banner src="face" portrait />));
-  expect(sources()).toEqual(["face@512", "face@512", "face@640"]);
+  expect(sources()).toEqual(["face@512", "face@640"]);
   expect(host.querySelector("[data-banner]")?.getAttribute("data-banner")).toBe("portrait");
 });

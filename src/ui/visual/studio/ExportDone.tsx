@@ -46,7 +46,6 @@ export function ExportDone({ path, preview, aspect, summary, caption, onClose }:
     <div className={`${theme.dark} ${styles.screen}`} role="dialog" aria-modal="true" aria-label={t("visual.done.title")}>
       <div className={styles.layout}>
         <div className={styles.clip} data-aspect={aspect}>
-          {preview ? <img className={styles.halo} src={preview} alt="" aria-hidden="true" /> : null}
           <span className={styles.frame}>{preview ? <img src={preview} alt="" /> : null}</span>
         </div>
 

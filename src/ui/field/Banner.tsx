@@ -16,7 +16,6 @@ export function Banner({ src, portrait }: { src: string; portrait: boolean }): J
   const shape = portrait ? styles.portrait : styles.photo;
   return (
     <div className={styles.banner} data-banner={portrait ? "portrait" : "wide"}>
-      {portrait ? <Picture src={soon} className={styles.fill} /> : null}
       <Picture src={soon} className={shape} />
       <Picture src={sharp} className={shape} />
       <div className={styles.shade} />
