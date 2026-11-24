@@ -1,5 +1,6 @@
 import type { FallbackInfo, PlayerView, SourceKind, StreamInfo } from "./types";
 import { offlineMode } from "./offlineMode";
+import type { Denied } from "./sources/ports";
 
 export interface StateLine {
   key: "deviceLost" | "playedFrom" | "restarted" | "station" | "sleep" | "bestQuality";
@@ -60,8 +61,9 @@ export interface Translatable {
   vars: Record<string, string | number>;
 }
 
-export function skipNotice(title: string, cause: string, original: string = cause): Translatable {
+export function skipNotice(title: string, cause: string, original: string = cause, denied?: Denied): Translatable {
   const vars = { title };
+  if (denied) return { key: "ui.island.skipped.not_offered", vars };
   if (original === "http_403" || (cause === "blocked" && original === cause)) return { key: "ui.island.skipped.refused", vars };
   if (cause === "offline") return { key: offlineMode.isOn() ? "ui.island.skipped.offline_mode" : "ui.island.skipped.offline", vars };
   if (cause === "timeout") return { key: "ui.island.skipped.timeout", vars };

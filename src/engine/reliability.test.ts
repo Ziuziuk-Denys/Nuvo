@@ -330,6 +330,49 @@ describe("a blocked source", () => {
   });
 });
 
+describe("YouTube refusing song after song", () => {
+  const refused = { attempts: [{ code: "rejected-stream", status: 403 }, { code: "no-formats" }, { code: "rejected-stream", status: 403 }] };
+  const listOf = (names: string[]) => names.map((name) => track(y(name)));
+
+  it("skips two with their own words, then stops with one message", async () => {
+    const h = createHarness();
+    for (const name of ["a", "b", "c", "d"]) h.youtube.fail(y(name), "all-failed", refused);
+    h.engine.playList(listOf(["a", "b", "c", "d"]));
+    await flush();
+    expect(h.notices).toEqual(["ui.island.skipped.not_offered", "ui.island.skipped.not_offered", "ui.island.skipped.refusing"]);
+    expect(view(h)).toMatchObject({ status: "paused", pauseReason: "network" });
+    expect(h.youtube.resolves).not.toContain(y("d"));
+    expect(h.checks).toEqual([]);
+  });
+
+  it("a song that plays in between starts the count again", async () => {
+    const h = createHarness();
+    for (const name of ["a", "b", "d", "e"]) h.youtube.fail(y(name), "all-failed", refused);
+    h.engine.playList(listOf(["a", "b", "c", "d", "e", "f"]));
+    await flush();
+    h.deck.emit("playing");
+    h.engine.next();
+    await flush();
+    expect(h.notices).not.toContain("ui.island.skipped.refusing");
+  });
+
+  it("one refused stream, or a country block, is not a refusing YouTube", async () => {
+    const h = createHarness();
+    h.youtube.fail(y("a"), "all-failed", { attempts: [{ code: "rejected-stream", status: 403 }, { code: "no-formats" }] });
+    for (const name of ["b", "c", "d"])
+      h.youtube.fail(y(name), "all-failed", { attempts: [{ code: "unplayable", text: "The uploader has not made this video available in your country" }] });
+    h.engine.playList(listOf(["a", "b", "c", "d", "e"]));
+    await flush();
+    expect(h.notices).toEqual([
+      "ui.island.skipped.unavailable",
+      "ui.island.skipped.not_offered",
+      "ui.island.skipped.not_offered",
+      "ui.island.skipped.not_offered",
+    ]);
+    expect(view(h).pauseReason).not.toBe("network");
+  });
+});
+
 describe("a pinned version", () => {
   it("plays first, with no marker, after the stand-in was kept", async () => {
     const h = createHarness();
