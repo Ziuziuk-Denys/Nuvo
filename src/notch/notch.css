@@ -11,6 +11,7 @@ body,
 
 .notch-stage {
   --ink: #fff;
+  --n-ink: #fff;
   --ink-2: rgba(255, 255, 255, 0.62);
   --ink-3: rgba(255, 255, 255, 0.5);
   --wash: rgba(255, 255, 255, 0.1);
@@ -75,7 +76,8 @@ body,
 }
 
 .notch-stage button:focus-visible {
-  background-color: var(--wash);
+  outline: none;
+  box-shadow: var(--n-focus-glow);
 }
 
 .island {
@@ -739,7 +741,7 @@ body,
 }
 
 .like[aria-pressed="true"] {
-  color: #ff7088;
+  color: var(--n-like);
   animation: pop 320ms var(--morph-ease);
 }
 

@@ -2,6 +2,7 @@ import type { NotchTrack } from "../../src/notch/contracts";
 import {
   POCKET_MENU_KEYS,
   POCKET_QUEUE_MAX,
+  POCKET_SHAPE_MAX,
   type PocketFace,
   type PocketFeed,
   type PocketLook,
@@ -39,14 +40,17 @@ function validLook(raw: unknown): PocketLook | null {
   return { light: raw.light, field: raw.field, ink: raw.ink };
 }
 
+const isShape = (value: unknown): value is number[] | null =>
+  value === null || (Array.isArray(value) && value.length <= POCKET_SHAPE_MAX && value.every((level) => typeof level === "number" && level >= 0 && level <= 1));
+
 export function validateFeed(raw: unknown): PocketFeed | null {
   if (!isObject(raw)) return null;
-  const { trackId, coverUrl, upNext } = raw;
-  if (!(trackId === null || isText(trackId, MAX_TEXT)) || !isCover(coverUrl)) return null;
+  const { trackId, coverUrl, upNext, shape } = raw;
+  if (!(trackId === null || isText(trackId, MAX_TEXT)) || !isCover(coverUrl) || !isShape(shape)) return null;
   if (!Array.isArray(upNext) || upNext.length > POCKET_QUEUE_MAX) return null;
   const tracks = upNext.map(validTrack);
   const look = validLook(raw.look);
-  return look && tracks.every((track) => track !== null) ? { trackId, coverUrl, upNext: tracks, look } : null;
+  return look && tracks.every((track) => track !== null) ? { trackId, coverUrl, upNext: tracks, shape, look } : null;
 }
 
 export function validateMenu(raw: unknown): PocketMenuRequest | null {

@@ -7,16 +7,18 @@ const track = (id: string, coverUrl = `https://i.ytimg.com/${id}.jpg`) => ({ id,
 describe("pocketFeed", () => {
   it("sends the cover through the daemon and the songs after the current one", () => {
     const queue = Array.from({ length: 30 }, (_, at) => track(`s${at}`));
-    const feed = pocketFeed(queue[2], queue, 2, LOOK);
+    const feed = pocketFeed(queue[2], queue, 2, LOOK, null);
     expect(feed.trackId).toBe("s2");
     expect(feed.coverUrl).toMatch(/^nuvo-core:\/\/local\/v1\/covers\?src=https/);
     expect(feed.upNext).toHaveLength(20);
     expect(feed.upNext[0].id).toBe("s3");
+    expect(pocketFeed(queue[2], queue, 2, LOOK, [0.2, 0.9]).shape).toEqual([0.2, 0.9]);
+    expect(pocketFeed(queue[2], queue, 2, LOOK, []).shape).toBeNull();
   });
 
   it("leaves out covers the other window may not load", () => {
-    expect(pocketFeed(track("a", "http://plain/x.jpg"), [], 0, LOOK).coverUrl).toBeNull();
-    expect(pocketFeed(track("a", "data:image/png;base64,AA"), [], 0, LOOK).coverUrl).toBeNull();
-    expect(pocketFeed(null, [], 0, LOOK)).toEqual({ trackId: null, coverUrl: null, upNext: [], look: LOOK });
+    expect(pocketFeed(track("a", "http://plain/x.jpg"), [], 0, LOOK, null).coverUrl).toBeNull();
+    expect(pocketFeed(track("a", "data:image/png;base64,AA"), [], 0, LOOK, null).coverUrl).toBeNull();
+    expect(pocketFeed(null, [], 0, LOOK, null)).toEqual({ trackId: null, coverUrl: null, upNext: [], shape: null, look: LOOK });
   });
 });

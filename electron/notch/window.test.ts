@@ -142,6 +142,7 @@ describe("withCovers", () => {
     trackId: "t",
     coverUrl: "nuvo-core://local/a",
     upNext: [{ ...track, id: "n", coverUrl: "nuvo-core://local/b" }],
+    shape: null,
     look: { light: false, field: "#000", ink: "#fff" },
   };
 

@@ -3,6 +3,7 @@ import { CORE_BASE_URL } from "@/data/core/request";
 import { coverUrl } from "@/data/covers/coverUrl";
 import type { NotchTrack } from "@/notch/contracts";
 import { POCKET_MAX, POCKET_QUEUE_MAX, type PocketFeed, type PocketLook } from "@/pocket/contracts";
+import { useLoudnessShape } from "../sound/loudnessShape";
 import { useNotchSettingsStore } from "../notch/store/notchSettingsStore";
 import { usePocketStore } from "./pocketStore";
 
@@ -38,10 +39,11 @@ function readLook(): PocketLook {
   return { light: root.dataset.theme === "light", field: style.getPropertyValue("--n-field").trim(), ink: style.getPropertyValue("--n-ink").trim() };
 }
 
-export function pocketFeed(current: PocketTrack | null, queue: readonly PocketTrack[], index: number, look: PocketLook): PocketFeed {
-  if (!current) return { trackId: null, coverUrl: null, upNext: [], look };
+export function pocketFeed(current: PocketTrack | null, queue: readonly PocketTrack[], index: number, look: PocketLook, shape: number[] | null): PocketFeed {
+  if (!current) return { trackId: null, coverUrl: null, upNext: [], shape: null, look };
   return {
     look,
+    shape: shape && shape.length > 1 ? shape : null,
     trackId: current.id,
     coverUrl: cover(current.coverUrl, POCKET_MAX),
     upNext: queue.slice(index + 1, index + 1 + POCKET_QUEUE_MAX).map(row),
@@ -52,6 +54,7 @@ export function usePocketFeed(current: PocketTrack | null, queue: readonly Pocke
   const open = usePocketStore((state) => state.open);
   const notch = useNotchSettingsStore((state) => state.mode !== "off");
   const wanted = open || notch;
+  const shape = useLoudnessShape(current?.id ?? null, open);
   const [look, setLook] = useState<PocketLook | null>(null);
 
   useEffect(() => {
@@ -72,6 +75,6 @@ export function usePocketFeed(current: PocketTrack | null, queue: readonly Pocke
   }, [wanted]);
 
   useEffect(() => {
-    if (wanted && look) window.nuvoShell?.pocketUpdateFeed(pocketFeed(current, queue, index, look));
-  }, [wanted, current, queue, index, look?.light, look?.field, look?.ink]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (wanted && look) window.nuvoShell?.pocketUpdateFeed(pocketFeed(current, queue, index, look, shape));
+  }, [wanted, current, queue, index, shape, look?.light, look?.field, look?.ink]); // eslint-disable-line react-hooks/exhaustive-deps
 }

@@ -32,6 +32,7 @@ import { MORPH_SPRING, simulateSpring } from "./lib/spring";
 import { activeLineIndex, msUntilNextLine, positionAt, predicted, type LyricLine, type PositionSample } from "./lib/playback";
 import type { NotchBridge } from "../../electron/app/preload-notch";
 import "@/ui/fonts/fonts.css";
+import "@/ui/tokens.css";
 import "./notch.css";
 
 /** The Notch window's preload exposes its own channels under the same global name. */
