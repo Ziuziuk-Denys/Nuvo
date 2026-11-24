@@ -136,7 +136,7 @@
 .tip {
   position: absolute;
   bottom: calc(100% + 6px);
-  left: var(--x);
+  left: 0;
   display: flex;
   align-items: baseline;
   gap: 10px;
@@ -148,7 +148,8 @@
   box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
   white-space: nowrap;
-  transform: translateX(clamp(calc(-1 * var(--x)), -50%, calc(var(--far) - var(--x) - 100%)));
+  transform: translateX(clamp(0px, calc(var(--x) - 50%), calc(var(--far) - 100%)));
+  will-change: transform;
   pointer-events: none;
   animation: tip-in var(--n-t-quick) var(--n-ease-out);
 }

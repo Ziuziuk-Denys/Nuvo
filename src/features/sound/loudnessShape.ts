@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { cachedAudio } from "./measureLoudness";
 
-export const SHAPE_BINS = 300;
+export const SHAPE_BINS = 150;
 const SMOOTH_S = 2.4;
 const SHAPE_RATE = 8_000;
 const FLOOR_DB = -24;
