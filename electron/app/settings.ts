@@ -2,6 +2,7 @@
 import { default as fs } from "node:fs";
 import { default as path } from "node:path";
 import { DEFAULT_APPEARANCE, type AppearanceFlags } from "./appearanceSafeMode";
+import { validPlace, type PocketPlace } from "../pocket/place";
 import { validZoom } from "./zoom";
 
 export interface ProxySettings {
@@ -22,6 +23,8 @@ export interface MainSettings {
   menuEntry: boolean;
   appearance: AppearanceFlags;
   zoomLevel: number;
+  pocketOnTop: boolean;
+  pocketPlace: PocketPlace | null;
 }
 
 export interface MainSettingsView extends Omit<MainSettings, "proxy"> {
@@ -45,10 +48,12 @@ export const DEFAULT_MAIN_SETTINGS: MainSettings = {
   menuEntry: true,
   appearance: DEFAULT_APPEARANCE,
   zoomLevel: 0,
+  pocketOnTop: true,
+  pocketPlace: null,
 };
 
 const MAX_USERNAME = 256;
-const BOOLEAN_KEYS = ["keepInTray", "trayHintShown", "trackChangeNotice", "autoUpdate", "updateCheck", "menuEntry"] as const;
+const BOOLEAN_KEYS = ["keepInTray", "trayHintShown", "trackChangeNotice", "autoUpdate", "updateCheck", "menuEntry", "pocketOnTop"] as const;
 
 export function validProxyUrl(url: string): boolean {
   try {
@@ -74,6 +79,7 @@ function repair(raw: Record<string, unknown>, log: (message: string) => void): M
   const out: MainSettings = structuredClone(DEFAULT_MAIN_SETTINGS);
   for (const key of BOOLEAN_KEYS) if (typeof raw[key] === "boolean") out[key] = raw[key] as boolean;
   out.zoomLevel = validZoom(raw.zoomLevel);
+  out.pocketPlace = validPlace(raw.pocketPlace);
   // only a switch the user flipped (chosen) outranks the default; older files stored the old default as a plain false
   const discord = raw.discord as { enabled?: unknown; chosen?: unknown } | undefined;
   if (discord?.chosen === true && typeof discord.enabled === "boolean") out.discord = { enabled: discord.enabled, chosen: true };
@@ -202,6 +208,12 @@ export class MainSettingsStore {
 
   setZoom(level: number): void {
     const next = { ...structuredClone(this.settings), zoomLevel: validZoom(level) };
+    this.write(next);
+    this.settings = next;
+  }
+
+  setPocketPlace(place: PocketPlace): void {
+    const next = { ...structuredClone(this.settings), pocketPlace: place };
     this.write(next);
     this.settings = next;
   }

@@ -17,6 +17,7 @@ import { WallpaperMedia } from "../../field/Field";
 import { MEDIA_REFUSALS, MEDIA_TYPES } from "../../mediaFiles";
 import { FRAME_CAPS, LOOKS, useEffectsStore, type FrameCap } from "../../effects";
 import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
+import { PocketRow } from "./PocketRow";
 import styles from "./sections.module.css";
 
 const PREVIEW_BLUR = 0.25;
@@ -272,6 +273,7 @@ export function PlayerSection(): JSX.Element {
           />
         }
       />
+      <PocketRow />
     </SettingGroup>
   );
 }
