@@ -127,3 +127,52 @@ it("rests after 3 s of play without moving the cover, wakes for the pointer and 
   await page.waitForTimeout(8_000);
   expect(await rest.count()).toBe(0);
 });
+
+it("the ways to get lyrics cover no control, with and without a scene, in English and Russian, down to 1100x705 and at 150 %", async () => {
+  const page = session.page;
+  const offer = page.locator('[class*="offer"][data-hold]');
+  const setZoom = async (zoom: number) => {
+    await session.app.evaluate(({ BrowserWindow }, value) => {
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.setZoomFactor(value);
+    }, zoom);
+    await page.waitForTimeout(400);
+  };
+  const covered = () =>
+    page.evaluate(() => {
+      const parts = [...document.querySelectorAll('[class*="offer"][data-hold] > *')].map((part) => part.getBoundingClientRect());
+      const faults: string[] = [];
+      if (parts.some((part) => part.left < 0 || part.right > innerWidth)) faults.push("leaves the window");
+      for (const control of document.querySelectorAll("section[class*=left] :is(button, [role=slider]), [data-tools] button, [data-window-controls] button")) {
+        const box = control.getBoundingClientRect();
+        if (parts.some((part) => box.left < part.right && box.right > part.left && box.top < part.bottom && box.bottom > part.top))
+          faults.push(control.getAttribute("aria-label") ?? "?");
+      }
+      return faults;
+    });
+  const found: string[] = [];
+  const looks = ["ru", "en"].flatMap((locale) => [true, false].map((stage) => ({ locale, stage })));
+  for (const { locale, stage } of looks) {
+    await page.evaluate(
+      (value) => {
+        localStorage.setItem("nuvo_locale", value.locale);
+        localStorage.setItem("nuvo.karaoke.controls", "always");
+        localStorage.setItem("nuvo.visual", JSON.stringify({ enabled: true, stage: value.stage, template: "emblem", toured: true, chosen: true }));
+      },
+      { locale, stage },
+    );
+    await page.reload();
+    await session.go("#/player");
+    await offer.waitFor({ timeout: 30_000 });
+    for (const size of [...SIZES, { width: 1440, height: 900 }]) {
+      await setZoom(1);
+      await session.setSize(size);
+      for (const zoom of [1, 1.5]) {
+        await setZoom(zoom);
+        // the column flies to the middle of the new width
+        await page.waitForTimeout(700);
+        for (const fault of await covered()) found.push(`${locale} ${stage ? "scene" : "lyrics"} ${size.width}px x${zoom}: ${fault}`);
+      }
+    }
+  }
+  expect(found).toEqual([]);
+});

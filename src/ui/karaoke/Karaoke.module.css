@@ -563,28 +563,33 @@
   pointer-events: auto;
 }
 
-/* over a scene it is one pill, dark over any picture, and it leaves with the controls */
+/* a window this short has no room under the cover either, so the line stands beside it */
+@media (max-height: 700px) {
+  .offer:not([data-stage]) {
+    bottom: 72px;
+    inset-inline: calc(50vw + 224px) 24px;
+    flex-flow: column;
+  }
+
+  .offer:not([data-stage]) .sources {
+    flex-flow: column;
+  }
+}
+
+/* over a scene it is one pill, dark over any picture, clear of the column and the tools */
 .offer[data-stage] {
   --k-ink: #fff;
   --k-ink-2: rgba(255, 255, 255, 0.84);
   --k-ink-3: rgba(255, 255, 255, 0.6);
   --k-hover: rgba(255, 255, 255, 0.1);
   bottom: 32px;
-  flex-flow: wrap;
+  inset-inline: calc(var(--k-left) + 440px) 140px;
+  flex-flow: column;
   width: fit-content;
-  max-width: calc(100vw - 300px);
   margin-inline: auto;
-  padding: 6px 10px 6px 20px;
+  padding: 10px 14px;
   border-radius: 22px;
   background: rgba(11, 13, 21, 0.9);
-  pointer-events: auto;
-}
-
-@media (max-width: 1250px) {
-  .offer[data-stage] {
-    flex-flow: column;
-    padding: 10px 14px;
-  }
 }
 
 .root .sources > .textButton:first-child {
