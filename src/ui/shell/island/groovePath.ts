@@ -1,4 +1,15 @@
 export const GROOVE_HEIGHT = 100;
+const LENS_REST = 0.34;
+const LENS_WIDTH = 0.07;
+
+// around the pointer the line stands at its full height, away from it at a third
+export function lens(shape: readonly number[], centre: number | null): number[] {
+  if (centre === null) return [...shape];
+  return shape.map((value, index) => {
+    const away = (index / (shape.length - 1) - centre) / LENS_WIDTH;
+    return value * (LENS_REST + (1 - LENS_REST) * Math.exp(-away * away));
+  });
+}
 
 // one contour over the top and back under it; midpoints as knots keep it smooth at any width
 export function groovePath(shape: readonly number[]): string {

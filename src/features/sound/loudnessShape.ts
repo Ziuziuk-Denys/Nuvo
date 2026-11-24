@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { cachedAudio } from "./measureLoudness";
 
-export const SHAPE_BINS = 360;
+export const SHAPE_BINS = 300;
+const SMOOTH_S = 2.4;
 const SHAPE_RATE = 8_000;
 const FLOOR_DB = -24;
-const CONTRAST = 2.2;
+const CONTRAST = 2;
 const KEPT = 60;
 const RETRY_MS = 6_000;
 const MAX_TRIES = 20;
@@ -24,12 +25,31 @@ export function loudnessShape(channels: Float32Array[], bins = SHAPE_BINS): numb
   return powers.map((power) => (power > 0 ? Math.max(0, 1 - (10 * Math.log10(power / loudest)) / FLOOR_DB) ** CONTRAST : 0));
 }
 
+export function smooth(shape: number[], radius: number): number[] {
+  const box = (values: number[]) =>
+    values.map((_, at) => {
+      const near = values.slice(Math.max(0, at - radius), at + radius + 1);
+      return near.reduce((sum, value) => sum + value, 0) / near.length;
+    });
+  return radius > 0 ? box(box(shape)) : shape;
+}
+
+// the quiet and loud ends of one song fill the line, unless the song holds one level
+export function stretch(shape: number[]): number[] {
+  const low = Math.min(...shape);
+  const span = Math.max(...shape) - low;
+  return span < 0.08 ? shape : shape.map((value) => 0.06 + (0.94 * (value - low)) / span);
+}
+
 const shapes = new Map<string, number[]>();
 
 async function measure(trackId: string): Promise<number[]> {
   const data = await (await cachedAudio(trackId)).arrayBuffer();
   const shape = await new OfflineAudioContext(1, 1, SHAPE_RATE).decodeAudioData(data).then(
-    (buffer) => loudnessShape(Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i))),
+    (buffer) => {
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+      return stretch(smooth(loudnessShape(channels), Math.round((SMOOTH_S / 2 / buffer.duration) * SHAPE_BINS)));
+    },
     () => [],
   );
   shapes.set(trackId, shape);
