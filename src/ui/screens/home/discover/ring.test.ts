@@ -22,9 +22,9 @@ describe("ringTracks", () => {
 
   it("shows with the first taste: familiar songs fill the ring while new ones are few", () => {
     const young = ringTracks([mix(FOR_YOU, ids("k", 25))]);
-    expect(young.map((item) => item.id)).toEqual(ids("k", MIN_TRACKS));
+    expect(young.map((item) => item.id)).toEqual(ids("k", 14));
     const some = ringTracks([mix(FOR_YOU, ids("k", 25)), mix(DISCOVER, ids("n", 3))]);
-    expect(some.map((item) => item.id)).toEqual(["n0", "n1", "n2", "k0", "k1", "k2", "k3", "k4"]);
+    expect(some.map((item) => item.id)).toEqual(["n0", "n1", "n2", ...ids("k", 11)]);
     expect(ringTracks([mix(FOR_YOU, ["k0", "k1"])])).toHaveLength(2);
     expect(ringTracks([])).toEqual([]);
   });
@@ -74,4 +74,17 @@ it("shows one cover per album art and keeps one artist's songs apart", () => {
   const song = (id: string, artists: string, coverUrl = id) => ({ id, title: id, artists, coverUrl, durationMs: 1 });
   const tracks = [song("a1", "A"), song("a2", "A"), song("b1", "B"), song("b2", "B", "b1"), song("c1", "C")];
   expect(ringTracks([{ id: "daily-mix-discover", title: "", description: "", tracks }]).map((track) => track.id)).toEqual(["a1", "b1", "c1", "a2"]);
+});
+
+it("counts an album as one cover even when its songs carry it under other addresses", () => {
+  const song = (id: string, album?: string): Track => ({
+    id,
+    title: id,
+    artists: id,
+    coverUrl: id,
+    durationMs: 1,
+    ...(album ? { album: { id: album, title: album } } : {}),
+  });
+  const tracks = [song("a1", "A"), song("a2", "A"), song("b"), song("c")];
+  expect(ringTracks([{ id: "daily-mix-discover", title: "", description: "", tracks }]).map((track) => track.id)).toEqual(["a1", "b", "c"]);
 });

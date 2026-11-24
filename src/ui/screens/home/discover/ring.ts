@@ -2,6 +2,7 @@ import type { HomeMix, Track } from "../../../ports/recs";
 import { apart, DISCOVER, homeSongs, onePerArt } from "../homeModel";
 
 export const MIN_TRACKS = 8;
+const FULL_TRACKS = 14;
 const MAX_TRACKS = 24;
 const FAMILIAR_EVERY = 4;
 
@@ -53,7 +54,7 @@ export function ringTracks(mixes: readonly HomeMix[]): Track[] {
     if (tracks.length % FAMILIAR_EVERY === FAMILIAR_EVERY - 1 && next < known.length) tracks.push(known[next++]);
     if (tracks.length < MAX_TRACKS) tracks.push(track);
   }
-  while (tracks.length < MIN_TRACKS && next < known.length) tracks.push(known[next++]);
+  while (tracks.length < FULL_TRACKS && next < known.length) tracks.push(known[next++]);
   return tracks;
 }
 

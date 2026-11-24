@@ -7,7 +7,7 @@ import { playSongs } from "../../../ports/homeShelves";
 import { coverSrc } from "../../../ports/covers";
 import type { Track } from "../../../ports/recs";
 import { useLook } from "../../../ports/theme";
-import { ShelfHeading } from "../ShelfHeading";
+import look from "../../look.module.css";
 import { floorOf, PERSPECTIVE, place, ringFor, ringHeight, ringOffset, ringSlots } from "./ring";
 import { createRoom, type Room, type RoomCard } from "./room";
 import { ArtistLinks } from "../../../shell/ArtistLinks";
@@ -295,11 +295,7 @@ export function DiscoverArc({ tracks, title, compact = false }: { tracks: Track[
   usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { scene: "room" });
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height }}>
-      {compact ? null : (
-        <div className={styles.heading}>
-          <ShelfHeading title={title} />
-        </div>
-      )}
+      {compact ? null : <h1 className={`${look.pageTitle} ${styles.heading}`}>{title}</h1>}
       <div ref={stageRef} className={styles.room} aria-hidden="true" />
       <ul
         className={styles.ring}

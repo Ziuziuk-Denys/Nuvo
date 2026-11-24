@@ -115,8 +115,10 @@ const SIZE_SUFFIX = /=(?:w\d+-h\d+|s\d+)\S*$/;
 export function onePerArt(tracks: readonly Track[]): Track[] {
   const shown = new Set<string>();
   return tracks.filter((track) => {
-    const art = track.coverUrl.replace(SIZE_SUFFIX, "") || track.id;
-    return !shown.has(art) && shown.add(art);
+    const marks = [track.coverUrl.replace(SIZE_SUFFIX, "") || track.id, ...(track.album?.id ? [`album:${track.album.id}`] : [])];
+    const fresh = !marks.some((mark) => shown.has(mark));
+    for (const mark of marks) shown.add(mark);
+    return fresh;
   });
 }
 
