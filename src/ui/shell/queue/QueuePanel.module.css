@@ -31,7 +31,7 @@
   flex: none;
   width: 72px;
   height: 72px;
-  margin-inline-end: 34px;
+  margin-inline-end: 38px;
 }
 
 .front,
@@ -48,7 +48,7 @@
 
 .behind {
   opacity: calc(1 - 0.32 * var(--depth));
-  transform: translateX(calc(var(--depth) * 10px)) scale(calc(1 - 0.1 * var(--depth)));
+  transform: translateX(calc(var(--depth) * 12px)) scale(calc(1 - 0.1 * var(--depth)));
 }
 
 .nowText {
@@ -232,6 +232,6 @@
 
 @keyframes deal {
   from {
-    transform: translateX(10px) scale(0.9);
+    transform: translateX(12px) scale(0.9);
   }
 }
