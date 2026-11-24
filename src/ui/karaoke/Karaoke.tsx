@@ -378,19 +378,8 @@ function LyricsColumn({ track, mode }: { track: LyricsTrack | null; mode: Highli
 }
 
 function StageLyricsHelp({ track }: { track: LyricsTrack | null }): JSX.Element | null {
-  const { t } = useTranslation();
   const status = useLyrics((state) => (state.trackId === track?.id ? state.status : "loading"));
-  if (status !== "none" || !track) return null;
-  return (
-    <>
-      <p role="status" className={styles.noLyrics}>
-        {t("visual.stage.no_lyrics")}
-      </p>
-      <div className={styles.stageLayer} data-stage-reveal="">
-        <AddLyrics track={track} />
-      </div>
-    </>
-  );
+  return status === "none" && track ? <AddLyrics track={track} stage /> : null;
 }
 
 function Timeline({ fallbackMs }: { fallbackMs: number }): JSX.Element {
