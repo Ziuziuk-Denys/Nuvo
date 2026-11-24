@@ -5,7 +5,7 @@
   box-sizing: border-box;
   height: 36px;
   padding: 0 var(--n-s-1) 0 var(--n-s-3);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--n-fill);
   color: var(--n-ink);
 }
@@ -39,7 +39,7 @@
   border: 0;
   background: transparent;
   color: inherit;
-  font: 400 14px/20px var(--n-font);
+  font: 420 14px/20px var(--n-font);
   caret-color: var(--n-accent);
   text-overflow: ellipsis;
   user-select: text;

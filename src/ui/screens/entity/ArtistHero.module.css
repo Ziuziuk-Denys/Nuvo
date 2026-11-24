@@ -58,9 +58,7 @@
   padding: 0 8px 0 20px;
   border-radius: 24px;
   background: var(--n-pop);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
-  box-shadow: var(--n-panel-rim);
+  box-shadow: var(--n-plate-shadow);
   animation: arrive linear both;
   animation-timeline: --page-scroll;
   animation-range: calc(var(--n-hero) - 200px) calc(var(--n-hero) - 140px);
@@ -70,10 +68,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font:
-    564 20px/1.2 system-ui,
-    var(--n-font-fallback),
-    sans-serif;
+  font: 620 20px/1.2 var(--n-font);
   letter-spacing: -0.02em;
   white-space: nowrap;
   text-overflow: ellipsis;

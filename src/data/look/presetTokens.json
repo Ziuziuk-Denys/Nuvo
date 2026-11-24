@@ -4,7 +4,7 @@
     "tokens": {
       "light": {
         "n-field": "#f4f7ff",
-        "n-deep": "#e9eefb",
+        "n-deep": "#f3f4f9",
         "n-raised": "#ffffff",
         "n-ink": "#101320",
         "n-ink-2": "rgba(16, 19, 32, 0.7)",
@@ -15,9 +15,9 @@
         "n-ring": "#4a69b0"
       },
       "dark": {
-        "n-field": "#101320",
-        "n-deep": "#0b0e1a",
-        "n-raised": "#171c31",
+        "n-field": "#0e111a",
+        "n-deep": "#06070c",
+        "n-raised": "#161923",
         "n-ink": "#f4f7ff",
         "n-ink-2": "rgba(244, 247, 255, 0.72)",
         "n-ink-3": "rgba(244, 247, 255, 0.56)",
@@ -33,7 +33,7 @@
     "tokens": {
       "light": {
         "n-field": "#ffffff",
-        "n-deep": "#f4f4f5",
+        "n-deep": "#f6f6f6",
         "n-raised": "#ffffff",
         "n-ink": "#0a0a0a",
         "n-ink-2": "rgba(10, 10, 10, 0.74)",
@@ -44,9 +44,9 @@
         "n-ring": "#0a0a0a"
       },
       "dark": {
-        "n-field": "#0a0a0a",
-        "n-deep": "#000000",
-        "n-raised": "#161616",
+        "n-field": "#0b0b0b",
+        "n-deep": "#050505",
+        "n-raised": "#151515",
         "n-ink": "#f5f5f5",
         "n-ink-2": "rgba(245, 245, 245, 0.74)",
         "n-ink-3": "#a3a3a3",
@@ -62,8 +62,8 @@
     "tokens": {
       "light": {
         "n-field": "#daf5fd",
-        "n-deep": "#ceecf6",
-        "n-raised": "#f1fdff",
+        "n-deep": "#ecf7fa",
+        "n-raised": "#fafdfe",
         "n-ink": "#08232a",
         "n-ink-2": "rgba(8, 35, 42, 0.74)",
         "n-ink-3": "#3f616b",
@@ -74,8 +74,8 @@
       },
       "dark": {
         "n-field": "#001e27",
-        "n-deep": "#00161e",
-        "n-raised": "#002a34",
+        "n-deep": "#02080b",
+        "n-raised": "#071d23",
         "n-ink": "#e5f3f7",
         "n-ink-2": "rgba(229, 243, 247, 0.74)",
         "n-ink-3": "#95b0b8",
@@ -91,8 +91,8 @@
     "tokens": {
       "light": {
         "n-field": "#def6e5",
-        "n-deep": "#d3eedb",
-        "n-raised": "#f3fdf6",
+        "n-deep": "#edf7f0",
+        "n-raised": "#fbfefc",
         "n-ink": "#112418",
         "n-ink-2": "rgba(17, 36, 24, 0.74)",
         "n-ink-3": "#486251",
@@ -103,8 +103,8 @@
       },
       "dark": {
         "n-field": "#02200f",
-        "n-deep": "#001708",
-        "n-raised": "#0c2d1a",
+        "n-deep": "#030905",
+        "n-raised": "#0b1e12",
         "n-ink": "#e8f3ec",
         "n-ink-2": "rgba(232, 243, 236, 0.74)",
         "n-ink-3": "#9cb1a2",
@@ -120,8 +120,8 @@
     "tokens": {
       "light": {
         "n-field": "#ecf4d0",
-        "n-deep": "#e2ecc3",
-        "n-raised": "#f8fcec",
+        "n-deep": "#f3f6ea",
+        "n-raised": "#fcfdfa",
         "n-ink": "#1e220e",
         "n-ink-2": "rgba(30, 34, 14, 0.74)",
         "n-ink-3": "#585e43",
@@ -132,8 +132,8 @@
       },
       "dark": {
         "n-field": "#181c01",
-        "n-deep": "#101400",
-        "n-raised": "#232809",
+        "n-deep": "#060802",
+        "n-raised": "#181b08",
         "n-ink": "#eff2e6",
         "n-ink-2": "rgba(239, 242, 230, 0.74)",
         "n-ink-3": "#a9ae98",
@@ -149,8 +149,8 @@
     "tokens": {
       "light": {
         "n-field": "#ffedca",
-        "n-deep": "#f8e4bb",
-        "n-raised": "#fff9e9",
+        "n-deep": "#faf4e9",
+        "n-raised": "#fefdfa",
         "n-ink": "#271e0a",
         "n-ink-2": "rgba(39, 30, 10, 0.74)",
         "n-ink-3": "#665940",
@@ -161,8 +161,8 @@
       },
       "dark": {
         "n-field": "#231700",
-        "n-deep": "#1b0f00",
-        "n-raised": "#302303",
+        "n-deep": "#0a0602",
+        "n-raised": "#211806",
         "n-ink": "#f5f0e5",
         "n-ink-2": "rgba(245, 240, 229, 0.74)",
         "n-ink-3": "#b4aa95",
@@ -178,8 +178,8 @@
     "tokens": {
       "light": {
         "n-field": "#ffe8d7",
-        "n-deep": "#ffdeca",
-        "n-raised": "#fff7ef",
+        "n-deep": "#fcf2eb",
+        "n-raised": "#fffcfa",
         "n-ink": "#2d1a10",
         "n-ink-2": "rgba(45, 26, 16, 0.74)",
         "n-ink-3": "#6f5446",
@@ -190,8 +190,8 @@
       },
       "dark": {
         "n-field": "#2d1001",
-        "n-deep": "#230900",
-        "n-raised": "#3b1c08",
+        "n-deep": "#0d0503",
+        "n-raised": "#26140b",
         "n-ink": "#faede7",
         "n-ink-2": "rgba(250, 237, 231, 0.74)",
         "n-ink-3": "#bca69a",
@@ -207,8 +207,8 @@
     "tokens": {
       "light": {
         "n-field": "#ffe5f0",
-        "n-deep": "#ffdae7",
-        "n-raised": "#fff5fa",
+        "n-deep": "#fcf1f6",
+        "n-raised": "#fffcfd",
         "n-ink": "#2d1820",
         "n-ink-2": "rgba(45, 24, 32, 0.74)",
         "n-ink-3": "#6f515b",
@@ -219,8 +219,8 @@
       },
       "dark": {
         "n-field": "#2b0e1a",
-        "n-deep": "#210712",
-        "n-raised": "#391926",
+        "n-deep": "#0c0507",
+        "n-raised": "#26131a",
         "n-ink": "#faecf0",
         "n-ink-2": "rgba(250, 236, 240, 0.74)",
         "n-ink-3": "#bca3ab",
@@ -236,8 +236,8 @@
     "tokens": {
       "light": {
         "n-field": "#efeaff",
-        "n-deep": "#e6e1ff",
-        "n-raised": "#faf8ff",
+        "n-deep": "#f5f3fc",
+        "n-raised": "#fdfcff",
         "n-ink": "#201c2f",
         "n-ink-2": "rgba(32, 28, 47, 0.74)",
         "n-ink-3": "#5b5771",
@@ -248,8 +248,8 @@
       },
       "dark": {
         "n-field": "#1a1430",
-        "n-deep": "#130c26",
-        "n-raised": "#261f3f",
+        "n-deep": "#07060d",
+        "n-raised": "#191728",
         "n-ink": "#f0eefa",
         "n-ink-2": "rgba(240, 238, 250, 0.74)",
         "n-ink-3": "#aba8be",

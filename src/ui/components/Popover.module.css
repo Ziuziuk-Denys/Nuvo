@@ -6,12 +6,12 @@
 
 .frame[data-settled] {
   transition:
-    transform var(--n-t-base) var(--n-ease-inout),
-    width var(--n-t-base) var(--n-ease-inout);
+    transform var(--n-t-base) var(--n-spring),
+    width var(--n-t-base) var(--n-spring);
 }
 
 .pop {
-  animation: pop-in var(--n-t-base) var(--n-ease-out) both;
+  animation: pop-in var(--n-t-base) var(--n-spring) both;
 }
 
 .pop[data-state="out"] {
@@ -22,99 +22,37 @@
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: translateY(var(--shift, 0)) scale(0.96);
+    transform: translateY(var(--shift, 0)) scale(0.97);
   }
 }
 
 @keyframes pop-out {
   to {
     opacity: 0;
-    transform: translateY(var(--shift, 0)) scale(0.96);
+    transform: translateY(calc(var(--shift, 0) / 2)) scale(0.985);
   }
 }
 
-/* the entrance clip-path stays applied, so the panel carries only its inner rim, no outer shadow */
 .panel {
-  --radius: 18px;
+  composes: pop;
+  --radius: 16px;
+  --shift: 8px;
   overflow: hidden;
   border-radius: var(--radius);
   background: var(--n-pop);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
-  box-shadow: var(--n-panel-rim);
+  box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
+  transform-origin: var(--nx, 50%) 100%;
   outline: none;
-  animation: shell-in var(--n-t-entrance) var(--n-ease-out) both;
 }
 
-.panel[data-solid] {
-  background: var(--n-pop-solid);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
-.panel[data-state="out"] {
-  animation: shell-out var(--n-t-quick) var(--n-ease-in) both;
-  pointer-events: none;
-}
-
-@keyframes shell-in {
-  from {
-    clip-path: inset(var(--from) round var(--radius));
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  to {
-    clip-path: inset(0 round var(--radius));
-  }
-}
-
-@keyframes shell-out {
-  from {
-    clip-path: inset(0 round var(--radius));
-  }
-  60% {
-    opacity: 1;
-  }
-  to {
-    clip-path: inset(var(--from) round var(--radius));
-    opacity: 0;
-  }
-}
-
-.panel[data-fresh] .header,
-.panel[data-fresh] .body > * > * {
-  animation: shell-rise var(--n-t-entrance) var(--n-ease-out) both;
-  animation-delay: calc(200ms + var(--i, 0) * 45ms);
-}
-
-.panel[data-fresh] .body > * > :nth-child(1) {
-  --i: 1;
-}
-
-.panel[data-fresh] .body > * > :nth-child(2) {
-  --i: 2;
-}
-
-.panel[data-fresh] .body > * > :nth-child(3) {
-  --i: 3;
-}
-
-.panel[data-fresh] .body > * > :nth-child(n + 4) {
-  --i: 4;
-}
-
-@keyframes shell-rise {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
+.panel[data-below] {
+  --shift: -8px;
+  transform-origin: var(--nx, 50%) 0;
 }
 
 .panel[data-settled] {
-  transition: height var(--n-t-base) var(--n-ease-inout);
+  transition: height var(--n-t-base) var(--n-spring);
 }
 
 .scroller {
@@ -142,26 +80,13 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  font: 600 15px/20px var(--n-font);
+  font: 600 16px/20px var(--n-font);
   letter-spacing: -0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel {
-    animation: pop-fade-in var(--n-t-quick) linear both;
-  }
-
-  .panel[data-state="out"] {
-    animation: pop-fade-out var(--n-t-quick) linear both;
-  }
-
-  .panel[data-fresh] .header,
-  .panel[data-fresh] .body > * > * {
-    animation: none;
-  }
-
   .pop {
     animation: pop-fade-in var(--n-t-quick) linear both;
   }

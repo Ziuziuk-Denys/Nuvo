@@ -1,3 +1,9 @@
+.hero {
+  font: var(--n-type-hero);
+  letter-spacing: var(--n-track-hero);
+  text-wrap: balance;
+}
+
 .display {
   font: var(--n-type-display);
   letter-spacing: var(--n-track-display);
@@ -12,6 +18,7 @@
 
 .heading {
   font: var(--n-type-heading);
+  letter-spacing: var(--n-track-heading);
 }
 
 .body {

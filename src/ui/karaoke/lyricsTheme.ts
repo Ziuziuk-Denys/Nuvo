@@ -7,7 +7,7 @@ export function lyricsTheme(lyrics: KaraokeLayout["lyrics"]): string {
     "/* blyrics-long-word-wrap-threshold = 8; */",
     ".blyrics-container {",
     `  --blyrics-font-size: calc(${lyrics.fontSize}px * var(--n-lyrics-scale, 1));`,
-    '  --blyrics-font-family: var(--n-font-lyrics, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable", system-ui, var(--n-font-fallback), sans-serif);',
+    '  --blyrics-font-family: var(--n-font-lyrics, "Onest", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable", system-ui, var(--n-font-fallback), sans-serif);',
     "  --blyrics-font-weight: 600;",
     "  --blyrics-line-height: 1.4;",
     `  --blyrics-lyric-active-color: ${lyrics.activeColor};`,

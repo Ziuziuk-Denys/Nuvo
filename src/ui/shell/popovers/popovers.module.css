@@ -296,9 +296,7 @@
   padding: 4px;
   border-radius: 14px;
   background: var(--n-pop);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
-  box-shadow: var(--n-panel-rim);
+  box-shadow: var(--n-panel-shadow);
   outline: none;
   transform-origin: 50% 100%;
   animation: volume-in var(--n-t-base) var(--n-ease-out) both;

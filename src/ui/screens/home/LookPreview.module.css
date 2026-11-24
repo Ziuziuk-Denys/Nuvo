@@ -11,11 +11,7 @@
   padding: 18px 20px 12px;
   border-radius: 24px;
   background: var(--n-pop);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
-  box-shadow:
-    var(--n-panel-rim),
-    0 18px 40px -18px rgba(8, 10, 20, 0.45);
+  box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
   text-align: center;
   transform: translateX(-50%);

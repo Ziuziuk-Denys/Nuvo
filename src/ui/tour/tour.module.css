@@ -84,7 +84,7 @@
   border-radius: var(--n-r-l);
   /* solid: the dim already quiets the page, and a blur under every card would stack filters */
   background: var(--n-raised);
-  box-shadow: var(--n-shadow-raised);
+  box-shadow: var(--n-plate-shadow);
   color: var(--n-ink);
 }
 

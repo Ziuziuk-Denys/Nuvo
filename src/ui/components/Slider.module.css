@@ -23,10 +23,10 @@
 
 .track {
   position: absolute;
-  top: 8px;
+  top: 9px;
   right: 0;
   left: 0;
-  height: 4px;
+  height: 2px;
   overflow: hidden;
   border-radius: var(--n-r-pill);
   background: var(--n-switch);
@@ -34,7 +34,7 @@
 
 .rail {
   position: absolute;
-  inset: 0 7px;
+  inset: 0 6px;
   transform: translateX(calc(var(--p) * 100%));
   pointer-events: none;
 }
@@ -50,19 +50,25 @@
 
 .knob {
   position: absolute;
-  top: 3px;
-  left: -7px;
-  width: 14px;
-  height: 14px;
+  top: 4px;
+  left: -6px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  background: var(--n-ink);
+  transition: scale var(--n-t-quick) var(--n-ease-out);
+}
+
+.control:hover .knob {
+  scale: 1.17;
+}
+
+.control:active .knob {
+  scale: 1.33;
 }
 
 .control:focus-visible .knob {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    var(--n-focus-glow);
+  box-shadow: var(--n-focus-glow);
 }
 
 .value {

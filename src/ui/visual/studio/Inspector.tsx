@@ -45,7 +45,7 @@ function Swatch({ colour, label, onChange }: { colour: Rgb; label: string; onCha
         <span>{label}</span>
         <code>{toHex(colour).toUpperCase()}</code>
       </button>
-      <Popover open={open} anchor={anchor} onClose={() => setOpen(false)} title={label} width={300} solid className={theme.dark}>
+      <Popover open={open} anchor={anchor} onClose={() => setOpen(false)} title={label} width={300} className={theme.dark}>
         <ColorPicker value={toHex(colour)} translucent={false} label={label} onInput={(hex) => onChange(toRgb(hex))} onCommit={(hex) => onChange(toRgb(hex))} />
       </Popover>
     </>

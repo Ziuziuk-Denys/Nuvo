@@ -11,8 +11,8 @@
   cursor: pointer;
   transition:
     transform var(--n-t-quick) var(--n-ease-out),
-    background-color 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out);
 }
 
 .s {
@@ -56,14 +56,13 @@
 .field[data-active]:hover:not(:disabled),
 .island[data-active],
 .island[data-active]:hover:not(:disabled) {
-  background: var(--bg-toolbox-active);
+  background: var(--n-lens);
   color: var(--n-ink);
 }
 
 .solo {
   border-radius: 50%;
   background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
   color: var(--n-ink-2);
 }
 

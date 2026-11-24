@@ -224,7 +224,7 @@ function ThemeEditor(): JSX.Element | null {
       </footer>
 
       {picking ? (
-        <Popover open solid anchor={anchor} onClose={() => setPicking(null)} title={roleName(picking)} width={300}>
+        <Popover open anchor={anchor} onClose={() => setPicking(null)} title={roleName(picking)} width={300}>
           <ColorPicker
             key={`${picking}-${mode}`}
             value={roles[picking]}

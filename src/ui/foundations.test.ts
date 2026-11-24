@@ -2,7 +2,7 @@ import { default as fs } from "node:fs";
 import { default as path } from "node:path";
 import { expect, it, describe } from "vitest";
 import { CONTENT, ISLAND, contentGutter, coverRadius, islandWidth } from "./geometry";
-import { DURATION_MS, EASE, PRESS_SCALE, PRESS_WIDE_SCALE, entranceDelayMs } from "./motion";
+import { DURATION_MS, EASE, PRESS_SCALE, PRESS_WIDE_SCALE, SPRING, entranceDelayMs } from "./motion";
 
 const read = (relative: string) => fs.readFileSync(path.resolve(__dirname, relative), "utf8");
 
@@ -13,7 +13,7 @@ function cssVar(css: string, name: string): string {
 }
 
 describe("foundations", () => {
-  it("loads no webfonts and marks the document as Nuvo", () => {
+  it("loads no remote fonts and marks the document as Nuvo", () => {
     const html = read("../../index.html");
     expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
     expect(html).toMatch(/<html[^>]*data-ui="nuvo"/);
@@ -30,26 +30,28 @@ describe("foundations", () => {
     expect(cssVar(css, "n-ease-out")).toBe(bezier(EASE.out));
     expect(cssVar(css, "n-ease-inout")).toBe(bezier(EASE.inOut));
     expect(cssVar(css, "n-ease-in")).toBe(bezier(EASE.in));
+    expect(cssVar(css, "n-spring")).toBe(SPRING);
     expect(cssVar(css, "n-press")).toBe(String(PRESS_SCALE));
     expect(cssVar(css, "n-press-wide")).toBe(String(PRESS_WIDE_SCALE));
   });
 
-  it("has exactly the seven type roles, scaled by --n-scale with the reading minimums", () => {
+  it("has exactly the eight type roles, scaled by --n-scale with the reading minimums", () => {
     const css = read("tokens.css");
     const px = (size: number, min?: number) => (min ? `max(${min}px, calc(${size}px * var(--n-scale, 1)))` : `calc(${size}px * var(--n-scale, 1))`);
     const roles = {
-      display: `700 ${px(40)} / ${px(44)}`,
-      title: `600 ${px(24)} / ${px(30)}`,
+      hero: "680 calc(clamp(56px, 6.4vw, 112px) * var(--n-scale, 1)) / 0.96",
+      display: `660 ${px(40)} / ${px(44)}`,
+      title: `640 ${px(26)} / ${px(32)}`,
       heading: `600 ${px(17)} / ${px(22)}`,
-      body: `400 ${px(14, 13)} / ${px(20, 19)}`,
+      body: `420 ${px(14, 13)} / ${px(20, 19)}`,
       label: `500 ${px(13, 12)} / ${px(18, 17)}`,
-      caption: `500 ${px(12, 11)} / ${px(16, 15)}`,
-      numeral: `500 ${px(12, 11)} / ${px(16, 15)}`,
+      caption: `420 ${px(13, 12)} / ${px(17, 16)}`,
+      numeral: `450 ${px(13, 12)} / ${px(17, 16)}`,
     };
     for (const [role, value] of Object.entries(roles)) {
       expect(cssVar(css, `n-type-${role}`)).toBe(`${value} var(--n-font)`);
     }
-    expect(css.match(/--n-type-[a-z]+:/g)).toHaveLength(7);
+    expect(css.match(/--n-type-[a-z]+:/g)).toHaveLength(8);
   });
 
   it("reads the UI font through one variable and derives the focus halo from the ring colour", () => {
@@ -94,6 +96,6 @@ describe("foundations", () => {
   });
 
   it("caps the entrance stagger at six items", () => {
-    expect([0, 1, 5, 6, 12, -1].map(entranceDelayMs)).toEqual([0, 60, 300, 300, 300, 0]);
+    expect([0, 1, 5, 6, 12, -1].map(entranceDelayMs)).toEqual([0, 36, 180, 180, 180, 0]);
   });
 });

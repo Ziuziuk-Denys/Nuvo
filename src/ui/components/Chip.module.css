@@ -8,7 +8,7 @@
   border-radius: 8px;
   background: var(--n-fill);
   color: var(--n-ink);
-  font: 400 13px/1 var(--n-font);
+  font: 500 13px/1 var(--n-font);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   cursor: pointer;

@@ -18,7 +18,7 @@ const BANNER: CSSProperties = {
   padding: "8px 8px 8px 16px",
   borderRadius: 14,
   background: "var(--n-raised)",
-  boxShadow: "var(--n-sheet-shadow)",
+  boxShadow: "var(--n-panel-shadow)",
   color: "var(--n-ink)",
   font: "400 13px/18px var(--n-font)",
 };

@@ -67,8 +67,6 @@
   height: 40px;
   padding: 0 2px;
   border-radius: 20px;
-  background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
 }
 
 .pins {
@@ -153,9 +151,8 @@
   padding: 0 14px 0 12px;
   border: 0;
   border-radius: 19px;
-  background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
-  color: var(--n-ink);
+  background: transparent;
+  color: var(--n-ink-2);
   font: 500 13px/1 var(--n-font);
   cursor: pointer;
   transition:
@@ -164,7 +161,8 @@
 }
 
 .back:hover {
-  background: var(--n-tray-hover);
+  background: var(--n-hover);
+  color: var(--n-ink);
 }
 
 .back:active {

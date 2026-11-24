@@ -1,23 +1,24 @@
 :root[data-ui="nuvo"] {
-  --n-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --n-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --n-ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --n-spring: linear(0, 0.094, 0.274, 0.456, 0.609, 0.727, 0.814, 0.875, 0.918, 0.947, 0.966, 0.979, 0.987, 0.993, 0.996, 0.999, 1);
   --n-ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --n-t-instant: 90ms;
-  --n-t-quick: 160ms;
-  --n-t-base: 240ms;
-  --n-t-page: 420ms;
-  --n-t-entrance: 560ms;
-  --n-t-light: 900ms;
-  --n-stagger: 60ms;
-  --n-press: 0.94;
-  --n-press-wide: 0.96;
+  --n-t-instant: 80ms;
+  --n-t-quick: 140ms;
+  --n-t-base: 220ms;
+  --n-t-page: 360ms;
+  --n-t-entrance: 480ms;
+  --n-t-light: 500ms;
+  --n-stagger: 36ms;
+  --n-press: 0.95;
+  --n-press-wide: 0.98;
 }
 
 /* --n-i is the section index, capped at 5 by the caller */
 @keyframes n-enter {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.98);
+    transform: translateY(10px);
   }
 }
 
@@ -55,15 +56,6 @@
   from {
     opacity: 0;
   }
-}
-
-:root[data-reduce-effects] {
-  --n-glass: var(--n-raised) !important;
-  --n-glass-blur: none !important;
-  --n-glass-thick: none !important;
-  --n-pop: var(--n-raised) !important;
-  --n-pop-solid: var(--n-raised) !important;
-  --n-pop-blur: none !important;
 }
 
 :root[data-reduce-effects] *,

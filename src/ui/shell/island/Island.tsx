@@ -41,7 +41,6 @@ import { ArtistLinks } from "../ArtistLinks";
 import { AddToPlaylistPopover } from "../popovers/AddToPlaylistPopover";
 import { SOUND_TABS, SoundPopover, SoundTrailing, type SoundTab } from "../popovers/SoundPopover";
 import { VolumePopover, wheelVolume } from "../popovers/VolumePopover";
-import { usePageLit } from "../pageLit";
 import { useShellStore } from "../shellStore";
 import { QUEUE_ID } from "../queue/QueuePanel";
 import styles from "./Island.module.css";
@@ -111,7 +110,6 @@ export function Island(): JSX.Element | null {
   const loopB = useAbLoopStore((state) => state.b);
   const saving = useDownloadProgress();
   const look = useLook();
-  const lit = usePageLit();
   const controls = useCustomizationStore((state) => state.playerControls);
   const tint = useCoverTint(track?.coverUrl || undefined, look.mode === "light");
   // shortcut: probed once per track, so a stream that finishes caching mid-play says so from the next play
@@ -222,7 +220,6 @@ export function Island(): JSX.Element | null {
     <div
       className={styles.bar}
       data-island=""
-      data-lit={lit ? "" : undefined}
       data-controls={controls}
       data-notice={notice || player.outputSilent ? "" : undefined}
       {...{ [LAYER_ATTRIBUTE]: "" }}

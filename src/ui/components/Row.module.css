@@ -29,17 +29,17 @@
 
 .row:not(.placeholder):hover,
 .row:not(.placeholder):focus-within {
-  background: var(--border-white-alpha-14);
+  background: var(--n-hover);
 }
 
 .row[data-selected],
 .row[role="button"]:not([aria-disabled]):active {
-  background: var(--bg-toolbox-active);
+  background: var(--n-fill-hover);
 }
 
 .row:not(.placeholder):focus-visible {
   outline: none;
-  background: var(--bg-toolbox-active);
+  background: var(--n-fill-hover);
 }
 
 .row[data-unavailable] {
@@ -149,7 +149,7 @@
   width: 40px;
   height: 40px;
   border-radius: var(--n-r-s);
-  background: var(--border-white-alpha-14);
+  background: var(--n-fill);
 }
 
 .placeholder.compact .leading {
@@ -168,7 +168,7 @@
   height: 10px;
   margin: 5px 0;
   border-radius: var(--n-r-pill);
-  background: var(--border-white-alpha-14);
+  background: var(--n-fill);
 }
 
 .short {

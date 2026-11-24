@@ -1,7 +1,6 @@
 .panel {
   composes: panel from "../../components/Popover.module.css";
   --radius: var(--queue-radius);
-  --from: calc(100% - 1px) 0 0 calc(100% - 44px);
   position: fixed;
   top: 60px;
   right: 8px;
@@ -119,8 +118,8 @@
 .item[data-dragging] {
   position: relative;
   z-index: 1;
-  background: var(--n-pop-solid);
-  box-shadow: var(--n-panel-shadow-s);
+  background: var(--n-pop);
+  box-shadow: var(--n-panel-shadow);
   opacity: 1;
   transition: none;
 }
@@ -151,7 +150,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .panel[data-fresh] .item {
     animation: rise var(--n-t-entrance) var(--n-ease-out) both;
-    animation-delay: calc(var(--n-t-base) + var(--i) * var(--n-stagger) / 2);
+    animation-delay: calc(var(--i) * var(--n-stagger) / 2);
   }
 }
 

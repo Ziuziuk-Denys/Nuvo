@@ -28,9 +28,7 @@
   overflow: hidden;
   border-radius: 12px;
   background: var(--n-pop);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
-  box-shadow: var(--n-panel-shadow-s);
+  box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
   font-family: var(--n-font);
   transform-origin: bottom center;

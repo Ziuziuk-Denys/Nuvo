@@ -8,13 +8,13 @@
   left: 0;
   z-index: 1000;
   max-width: 240px;
-  padding: 4px 10px;
-  border-radius: 10px;
+  padding: 5px 9px;
+  border-radius: 8px;
   /* opaque: tooltips show over open popovers, which own the one backdrop filter */
-  background: color-mix(in srgb, var(--n-island) 86%, #fff);
+  background: color-mix(in srgb, var(--n-island) 88%, #fff);
   box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.45);
   color: var(--n-island-ink);
-  font: 500 12px/1.25 var(--n-font);
+  font: 500 12.5px/1.25 var(--n-font);
   white-space: nowrap;
   pointer-events: none;
   visibility: hidden;

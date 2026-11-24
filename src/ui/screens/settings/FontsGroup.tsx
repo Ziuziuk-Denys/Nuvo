@@ -222,7 +222,6 @@ export function FontsGroup(): JSX.Element {
         <Popover
           open
           anchor={anchor}
-          solid
           title={t(`appearance.fonts.${open}`)}
           width={300}
           onClose={() => {
