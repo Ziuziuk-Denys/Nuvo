@@ -1,4 +1,3 @@
-/* The field has no backdrop of its own: it sits on the blurred cover field, so a tint reads as glass at no GPU cost */
 .field {
   display: flex;
   align-items: center;
@@ -10,11 +9,11 @@
   border-radius: 19px;
   background: var(--n-tray);
   box-shadow: var(--n-tray-edge);
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   cursor: text;
   transition:
-    background-color 200ms var(--n-ease-out),
-    color 200ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out);
 }
 
 .field:hover {
@@ -43,7 +42,7 @@
 }
 
 .input::placeholder {
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   opacity: 1;
 }
 
@@ -57,7 +56,7 @@
   padding: 2px 6px;
   border-radius: 6px;
   background: color-mix(in srgb, var(--n-ink) 7%, transparent);
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
 }
@@ -67,17 +66,11 @@
   z-index: 900;
 }
 
-/* Glass: the one backdrop filter on screen while the palette is open */
 .panel {
   overflow: hidden;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--n-deep) 64%, transparent);
-  -webkit-backdrop-filter: blur(30px) saturate(1.8);
-  backdrop-filter: blur(30px) saturate(1.8);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 5%, transparent),
-    0 28px 70px -12px rgba(0, 0, 0, 0.45);
+  background: var(--n-pop);
+  box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
   animation: drop var(--n-t-base) var(--n-ease-out) both;
 }
@@ -129,7 +122,7 @@
 
 .label {
   padding: 10px 10px 6px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
   letter-spacing: var(--n-track-caption);
 }
@@ -151,11 +144,12 @@
   border: 0;
   border-radius: 14px;
   background: none;
-  color: var(--n-ink-3);
-  font: 500 12.5px/28px var(--n-font);
+  color: var(--n-ink-2);
+  font: var(--n-type-label);
+  line-height: 28px;
   white-space: nowrap;
   cursor: pointer;
-  transition: color 150ms var(--n-ease-out);
+  transition: color var(--n-t-quick) var(--n-ease-out);
 }
 
 .filter:hover,
@@ -182,7 +176,7 @@
 
 .recentLabel {
   margin-inline-end: 4px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
 }
 
@@ -209,7 +203,7 @@
 
 .chip > svg {
   flex: none;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
 }
 
 .chip[data-selected] {
@@ -250,7 +244,7 @@
 .row[data-selected],
 .more[data-selected],
 .top[data-selected] {
-  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  background: var(--n-pop-hover);
   color: var(--n-ink);
 }
 
@@ -269,7 +263,7 @@
   background: rgba(0, 0, 0, 0.38);
   color: #fff;
   opacity: 0;
-  transition: opacity 150ms var(--n-ease-out);
+  transition: opacity var(--n-t-quick) var(--n-ease-out);
 }
 
 .row[data-selected] .over {
@@ -291,17 +285,18 @@
 }
 
 .title {
-  font: var(--n-type-body);
+  font: 500 calc(14px * var(--n-scale, 1)) / 1.35 var(--n-font);
+  letter-spacing: -0.006em;
 }
 
 .meta {
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
 }
 
 .time {
   flex: none;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
 }
@@ -313,7 +308,7 @@
   gap: 2px;
   padding: 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
+  background: var(--n-fill);
   cursor: pointer;
 }
 
@@ -352,7 +347,7 @@
 .line {
   margin: 0;
   padding: 12px 10px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-body);
 }
 
@@ -361,7 +356,7 @@
   gap: 18px;
   padding: 10px 18px 12px;
   border-top: 1px solid var(--n-hair);
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
 }
 

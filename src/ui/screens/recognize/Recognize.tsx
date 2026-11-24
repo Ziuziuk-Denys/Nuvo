@@ -24,12 +24,13 @@ import { MediaRow } from "../MediaRow";
 import look from "../look.module.css";
 import { recognizeText } from "./recognizeText";
 import { useCatalogSong, useRecognize, useRecognizeHistory } from "./useRecognize";
-import { Wave } from "./Wave";
+import { Ring } from "./Ring";
 import styles from "./Recognize.module.css";
 import { useDroppedFile } from "./recognizeDrop";
 
-const COVER_PX = 168;
+const COVER_PX = 400;
 const NO_PEAKS: number[] = [];
+const INPUT_ICON = { microphone: "microphone", system: "output", file: "folder", link: "link" } as const;
 
 function play(track: Track, fromMs = 0): void {
   void playerEngine.playTrack(track, [track]);
@@ -139,7 +140,7 @@ export function Recognize(): JSX.Element {
       onDrop={onDrop}
     >
       <Enter index={0} screen="recognize">
-        <h1 className={styles.title}>{t("ui.recognize.title")}</h1>
+        <h1 className={look.pageTitle}>{t("ui.recognize.title")}</h1>
       </Enter>
       <Enter index={1} screen="recognize">
         <section className={styles.panel} data-dragging={dragging ? "" : undefined} data-recognize={session.phase} aria-label={t("ui.recognize.title")}>
@@ -177,24 +178,32 @@ function Listener({
   const active = session.phase === "listening";
   const text = recognizeText(session, reachable, t);
   return (
-    <div className={styles.listener} aria-busy={active}>
-      <Wave peaks={active ? session.peaks : NO_PEAKS} live={active} />
-      <div role="status" className={styles.words}>
-        <h2 className={styles.state}>{text.title}</h2>
-        <p className={styles.line}>{text.line}</p>
+    <div className={styles.stage} aria-busy={active}>
+      <Ring peaks={active ? session.peaks : NO_PEAKS} live={active}>
+        <Icon name={active ? INPUT_ICON[session.input] : "recognize"} size={24} className={styles.mark} />
+      </Ring>
+      <div className={styles.about}>
+        <div role="status">
+          <h2 className={styles.state}>{text.title}</h2>
+          <p className={styles.line}>{text.line}</p>
+        </div>
+        {active ? (
+          <div className={styles.sources}>
+            <Button onClick={onStop}>{t("ui.recognize.stop")}</Button>
+          </div>
+        ) : (
+          <>
+            {sources}
+            {session.phase === "not_found" && session.more ? (
+              <div className={styles.links}>
+                <Button variant="text" size="s" onClick={onAnotherPart}>
+                  {t("ui.recognize.another_part")}
+                </Button>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
-      {active ? (
-        <Button onClick={onStop}>{t("ui.recognize.stop")}</Button>
-      ) : (
-        <>
-          {session.phase === "not_found" && session.more ? (
-            <Button variant="text" size="s" onClick={onAnotherPart}>
-              {t("ui.recognize.another_part")}
-            </Button>
-          ) : null}
-          {sources}
-        </>
-      )}
     </div>
   );
 }
@@ -213,10 +222,16 @@ function ResultCard({ song, onAgain }: { song: RecognizedSong; onAgain(): void }
   const searchFor = () => navigateWithTransition(navigate, `/search?q=${encodeURIComponent(`${song.artist} ${song.title}`)}`);
 
   return (
-    <div className={`${styles.result} n-enter`} data-recognize-result="">
-      <Cover src={song.coverUrl ?? ""} size={COVER_PX} radius={12} />
-      <div className={styles.about}>
-        <h2 className={styles.song}>{song.title}</h2>
+    <div className={styles.stage} data-recognize-result="">
+      <Ring peaks={NO_PEAKS} live={false} found>
+        <div className={styles.found}>
+          <Cover src={song.coverUrl ?? ""} size={COVER_PX} radius={12} />
+        </div>
+      </Ring>
+      <div className={`${styles.about} n-enter`}>
+        <h2 className={styles.song} data-long={song.title.length > 22 ? "" : undefined}>
+          {song.title}
+        </h2>
         <p className={styles.artist}>
           <ArtistLinks track={{ artists: song.artist }} focusable />
         </p>
