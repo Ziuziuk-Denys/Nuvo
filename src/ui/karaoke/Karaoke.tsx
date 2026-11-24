@@ -1,4 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type JSX, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type JSX,
+  type KeyboardEvent,
+  type MouseEvent,
+  type TransitionEvent,
+  type PointerEvent,
+} from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Menu } from "../components/Menu";
 import { MorphPlayIcon } from "../components/MorphPlayIcon";
@@ -15,6 +27,7 @@ import { ArtistLinks } from "../shell/ArtistLinks";
 import { formatTime } from "../shell/island/Scrubber";
 import { CoverControl } from "./CoverControl";
 import { LightCanvas } from "../light/LightCanvas";
+import { lightMoved } from "../light/objects";
 import { NEUTRAL } from "../light/readLight";
 import { useCoverLight } from "../light/useCoverLight";
 import { lightVars } from "../light/useLightVars";
@@ -38,6 +51,7 @@ import { templateFor } from "../ports/visual";
 import styles from "./Karaoke.module.css";
 import { useControlsMode } from "./controlsMode";
 import { useSceneInk } from "./sceneInk";
+import { useLyricsSide } from "./useLyricsSide";
 import { useRest } from "./useRest";
 
 const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
@@ -360,12 +374,7 @@ function LyricsColumn({ track, mode }: { track: LyricsTrack | null; mode: Highli
   }
   if (status === "none" && track) return <AddLyrics track={track} />;
   const text = status === "none" ? t("ui.karaoke.no_lyrics") : status === "instrumental" ? t("ui.karaoke.instrumental") : lyricsErrorText({ status }, t);
-  if (!text) return null;
-  return (
-    <div className={styles.quiet}>
-      <p>{text}</p>
-    </div>
-  );
+  return text ? <p className={styles.offer}>{text}</p> : null;
 }
 
 function StageLyricsHelp({ track }: { track: LyricsTrack | null }): JSX.Element | null {
@@ -414,6 +423,17 @@ function Timeline({ fallbackMs }: { fallbackMs: number }): JSX.Element {
   );
 }
 
+// the lamp travels with the cover while the column flies between its two places
+function followFlight(event: TransitionEvent<HTMLElement>): void {
+  if (event.target !== event.currentTarget) return;
+  const column = event.currentTarget;
+  const follow = () => {
+    lightMoved("karaoke");
+    if (column.getAnimations().length > 0) requestAnimationFrame(follow);
+  };
+  follow();
+}
+
 export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const { t } = useTranslation();
   // everything but the position: the timeline re-renders on its own as the song plays
@@ -433,6 +453,8 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const like = useLikeTrack();
   const unlike = useUnlikeTrack();
   const { isFullScreen, isMaximized } = useWindowState();
+  const lyricsStatus = useLyrics((state) => (state.trackId === (track?.id ?? null) ? state.status : "loading"));
+  const lyricsSide = useLyricsSide(lyricsStatus);
   const lyricsReady = useLyrics((state) => state.status === "ready" && state.trackId === (track?.id ?? null));
   const wordTimed = useLyrics((state) => state.wordTimed);
   const chosenMode = useHighlightMode();
@@ -555,6 +577,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       data-stage={stageOn ? "" : undefined}
       data-scene-tone={stageOn && lightScene ? "light" : undefined}
       data-choosing={visual.chosen ? undefined : ""}
+      data-centred={lyricsSide || stageOn || !visual.chosen ? undefined : ""}
     >
       {stageOn && !editing ? (
         <Stage
@@ -593,7 +616,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
 
       {stageOn ? <div className={styles.stageDim} /> : null}
       <div className={stageOn ? styles.stageZone : styles.zoneOff}>
-        <section ref={columnRef} className={styles.left} onClick={dropPointerFocus}>
+        <section ref={columnRef} className={styles.left} onClick={dropPointerFocus} onTransitionRun={followFlight}>
           <CoverControl src={track?.coverUrl ?? ""} playing={playing} />
           <h1 className={styles.title}>{track?.title ?? ""}</h1>
           <p className={styles.artist}>{track ? <ArtistLinks track={track} focusable /> : null}</p>

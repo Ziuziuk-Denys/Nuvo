@@ -95,38 +95,35 @@ export function AddLyrics({ track }: { track: LyricsTrack }): JSX.Element {
   const sources = useLyricsSources(track);
   if (offer.kind === "working") {
     return (
-      <div className={styles.quiet}>
+      <div className={styles.offer} data-working="">
         <Working offer={offer} trackId={track.id} />
       </div>
     );
   }
+  const size = offer.kind === "offer" ? offer.downloadMb : null;
   return (
-    <div className={styles.quiet}>
+    <div className={styles.offer} data-hold="">
       <p>{offer.kind === "failed" ? failureText(offer, t) : t("ui.karaoke.no_lyrics")}</p>
-      {offer.kind !== "none" ? (
-        <div className={styles.maker}>
-          <button type="button" className={styles.addLyrics} data-add-lyrics="" onClick={() => void makeLyrics(timing, track.id, "none")}>
-            {t("ui.karaoke.make.write")}
-          </button>
-          <p className={styles.makerNote}>
-            {t("ui.karaoke.make.write_note")}
-            {offer.kind === "offer" && offer.downloadMb ? <span>{t("ui.karaoke.make.download", { mb: offer.downloadMb })}</span> : null}
-          </p>
-        </div>
-      ) : null}
       <div className={styles.sources}>
-        <button
-          type="button"
-          className={offer.kind === "none" ? styles.addLyrics : styles.textButton}
-          data-add-lyrics=""
-          onClick={() => openLyricsTool(track, "find")}
-        >
+        {offer.kind !== "none" ? (
+          <button
+            type="button"
+            className={styles.textButton}
+            data-add-lyrics=""
+            title={t("ui.karaoke.make.write_note") + (size ? " " + t("ui.karaoke.make.download", { mb: size }) : "")}
+            onClick={() => void makeLyrics(timing, track.id, "none")}
+          >
+            {t("ui.karaoke.make.write")}
+            {size ? <span className={styles.size}>{t("ui.karaoke.make.size", { mb: size })}</span> : null}
+          </button>
+        ) : null}
+        <button type="button" className={styles.textButton} data-add-lyrics="" onClick={() => openLyricsTool(track, "find")}>
           {t("ui.lyrics.find")}
         </button>
-        <button type="button" className={offer.kind === "none" ? styles.addLyrics : styles.textButton} data-add-lyrics="" onClick={sources.paste}>
+        <button type="button" className={styles.textButton} data-add-lyrics="" onClick={sources.paste}>
           {t("ui.karaoke.make.paste")}
         </button>
-        <button type="button" className={offer.kind === "none" ? styles.addLyrics : styles.textButton} onClick={sources.pickFile}>
+        <button type="button" className={styles.textButton} onClick={sources.pickFile}>
           {t("ui.karaoke.make.file")}
         </button>
       </div>

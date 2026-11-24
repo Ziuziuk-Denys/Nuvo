@@ -527,8 +527,9 @@ describe("word timing in the lyrics view", () => {
     timing.view = { enabled: false, models: [] };
     timing.made = { models: [] };
     const view = mount(<Karaoke onClose={() => undefined} />);
-    expect(view.host.textContent).toContain("ui.karaoke.make.download");
-    await act(async () => button(view.host, "ui.karaoke.make.write")?.click());
+    const write = view.host.querySelector<HTMLButtonElement>("[data-add-lyrics]")!;
+    expect([write.textContent, write.title]).toEqual(["ui.karaoke.make.writeui.karaoke.make.size", "ui.karaoke.make.write_note ui.karaoke.make.download"]);
+    await act(async () => write.click());
     expect(timing.setWordTiming).not.toHaveBeenCalled();
     expect(timing.request).toHaveBeenCalledWith("POST", "/v1/tracks/t1/lyrics/made", { source: "transcribed", best: true });
     view.unmount();
@@ -536,7 +537,7 @@ describe("word timing in the lyrics view", () => {
     const working = mount(<Karaoke onClose={() => undefined} />);
     expect(working.host.textContent).toContain("ui.karaoke.make.writing");
     expect(working.host.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow")).toBe("25");
-    expect(working.host.textContent).not.toContain("ui.karaoke.make.download");
+    expect(working.host.textContent).not.toContain("ui.karaoke.make.size");
     await act(async () => button(working.host, "ui.karaoke.make.cancel")?.click());
     expect(timing.request).toHaveBeenCalledWith("DELETE", "/v1/tracks/t1/lyrics/made/job");
     expect(timing.cancel).not.toHaveBeenCalled();

@@ -953,6 +953,7 @@
       "make": {
         "write": "Let Nuvo write them",
         "write_note": "Nuvo listens to the song and writes the words down. Close, not perfect: you can edit them.",
+        "size": "{mb} MB",
         "download": "The first time downloads the model, {mb} MB.",
         "time": "Time words",
         "time_hint": "Nuvo listens to the song and times every word. Turns on Word timing in Settings.",

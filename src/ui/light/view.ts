@@ -25,6 +25,8 @@ const TURN_MS = 500;
 const MOVE_MS = 420;
 const REST_MS = 900;
 const CALM_MS = 240;
+// where the karaoke cover stands: followed as it flies, never eased a second time
+const PLACED = [AT.lamp, AT.aim, AT.screen, AT.lean, AT.both] as const;
 const SWAY_PX = 34;
 const SWAY_EASE = 0.12;
 const BREATH = 0.06;
@@ -61,6 +63,11 @@ export function createLightView(canvas: HTMLCanvasElement, room: Room): LightVie
     const hero: Box | null = objects.find((object) => object.hero) ?? null;
     const next = lightState(wanted.scene, { width: canvas.clientWidth, height: canvas.clientHeight }, wanted.light, hero, wanted.awake);
     if (to && next.every((value, i) => Math.abs(value - to![i]) < 1e-4)) return;
+    // a hero that moves during a turn keeps the turn's clock
+    if (to && now < startedAt + duration && !turnsColour(to, next) && to[AT.power[0]] === next[AT.power[0]]) {
+      to = next;
+      return;
+    }
     const turning = shown !== null && turnsColour(shown, next);
     from = shown ? shown.slice() : null;
     to = next;
@@ -75,10 +82,11 @@ export function createLightView(canvas: HTMLCanvasElement, room: Room): LightVie
     const swaying = Math.abs(swayTo - sway) > 0.002;
     if (!animating && !swaying && loudness > 0 && now - drawnAt < 1000 / wanted.fps - 2) return schedule();
     const objects = objectsIn();
-    aimAt(objects, now, MOVE_MS);
+    aimAt(objects, now, room === "karaoke" ? 0 : MOVE_MS);
     if (!to) return;
     const moving = from !== null && now < startedAt + duration;
     shown = moving ? between(from!, to, (now - startedAt) / duration, shown ?? to.slice()) : to.slice();
+    if (room === "karaoke") for (const [start, length] of PLACED) shown.set(to.subarray(start, start + length), start);
     sway = swaying ? sway + (swayTo - sway) * SWAY_EASE : swayTo;
     const state = shown.slice();
     state[AT.lamp[0]] += sway * SWAY_PX;
