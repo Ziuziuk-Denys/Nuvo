@@ -31,7 +31,7 @@
   flex: none;
   width: 72px;
   height: 72px;
-  margin-inline-end: 38px;
+  margin-inline-end: 44px;
 }
 
 .front,
@@ -46,9 +46,17 @@
   box-shadow: 4px 0 14px -4px rgba(var(--n-contact), 0.5);
 }
 
+.behind::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-lamp) 26%, transparent);
+}
+
 .behind {
-  opacity: calc(1 - 0.32 * var(--depth));
-  transform: translateX(calc(var(--depth) * 12px)) scale(calc(1 - 0.1 * var(--depth)));
+  opacity: calc(1 - 0.28 * var(--depth));
+  transform: translateX(calc(var(--depth) * 15px)) scale(calc(1 - 0.1 * var(--depth)));
 }
 
 .nowText {
@@ -232,6 +240,6 @@
 
 @keyframes deal {
   from {
-    transform: translateX(12px) scale(0.9);
+    transform: translateX(15px) scale(0.9);
   }
 }
