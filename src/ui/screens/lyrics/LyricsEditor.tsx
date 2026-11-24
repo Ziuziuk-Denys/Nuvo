@@ -1,7 +1,7 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Sheet, type SheetAction } from "../../components/Sheet";
 import { useTranslation } from "../../ports/i18n";
-import { detectFormat, dropUserLyrics, isPlayingTrack, loadEditable, saveLyrics, startSync, type LyricsTrack, type SyncLine } from "../../ports/lyricsTools";
+import { detectFormat, dropUserLyrics, loadEditable, saveLyrics, startSync, useIsCurrentTrack, type LyricsTrack, type SyncLine } from "../../ports/lyricsTools";
 import styles from "./Lyrics.module.css";
 import { LyricsFinder, useLyricsFinder } from "./LyricsFinder";
 import { TimingStage } from "./TimingStage";
@@ -11,10 +11,11 @@ interface LyricsEditorProps {
   track: LyricsTrack;
   draft?: string | null;
   find?: boolean;
+  time?: boolean;
   onClose(): void;
 }
 
-export function LyricsEditor({ open, track, draft = null, find = false, onClose }: LyricsEditorProps): JSX.Element | null {
+export function LyricsEditor({ open, track, draft = null, find = false, time = false, onClose }: LyricsEditorProps): JSX.Element | null {
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -23,6 +24,8 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
   const [error, setError] = useState<string | null>(null);
   const [finding, setFinding] = useState(false);
   const finder = useLyricsFinder(track);
+  const field = useRef<HTMLTextAreaElement>(null);
+  const playing = useIsCurrentTrack(track.id);
 
   useEffect(() => {
     if (!open) return;
@@ -39,13 +42,19 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
     setLoading(true);
     void loadEditable(track, controller.signal).then(
       (raw) => {
-        setText(raw?.content ?? "");
+        const found = raw?.content ?? "";
+        setText(found);
         setLoading(false);
+        if (time && found.trim() !== "") setSync(startSync(found));
       },
       () => setLoading(false),
     );
     return () => controller.abort();
-  }, [open, track, draft, find]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, track, draft, find, time]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (open && time && !loading) field.current?.focus();
+  }, [open, time, loading]);
 
   const run = async (action: () => Promise<void>) => {
     setError(null);
@@ -78,7 +87,7 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
         { label: t("ui.lyrics.use_found"), onClick: () => void run(() => dropUserLyrics(track)) },
         {
           label: t("ui.lyrics.sync"),
-          disabled: text.trim() === "" || !isPlayingTrack(track.id),
+          disabled: text.trim() === "" || !playing,
           onClick: () => setSync(kept?.text === text ? kept.lines : startSync(text)),
         },
         {
@@ -121,6 +130,7 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
       ) : (
         <>
           <textarea
+            ref={field}
             className={styles.text}
             value={text}
             disabled={loading}
@@ -128,7 +138,10 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
             placeholder={t("ui.lyrics.placeholder")}
             onChange={(event) => setText(event.currentTarget.value)}
           />
-          <p className={styles.note}>{t(format === "lrc" ? "ui.lyrics.detected_synced" : "ui.lyrics.detected_plain")}</p>
+          <p className={styles.note}>
+            {t(format === "lrc" ? "ui.lyrics.detected_synced" : "ui.lyrics.detected_plain")}.{" "}
+            {t(playing ? "ui.lyrics.timing_hint" : "ui.lyrics.timing_hint_play")}
+          </p>
         </>
       )}
       {error ? (

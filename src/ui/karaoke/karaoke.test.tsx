@@ -268,7 +268,7 @@ describe("karaoke view", () => {
     const single = mount(<Karaoke onClose={() => undefined} />);
     act(() => single.host.querySelector<HTMLButtonElement>('[data-tools] button[aria-label="ui.karaoke.version"]')!.click());
     const only = [...document.querySelectorAll<HTMLButtonElement>('[role="menu"] [role="menuitem"]')];
-    expect(only.map((item) => item.textContent)).toEqual(["ui.lyrics.find"]);
+    expect(only.map((item) => item.textContent)).toEqual(["ui.lyrics.find", "ui.lyrics.time_words"]);
     act(() => only[0].click());
     expect(openLyricsTool).toHaveBeenCalledWith(current, "find");
     single.unmount();
@@ -278,8 +278,8 @@ describe("karaoke view", () => {
     expect(button).not.toBeNull();
     act(() => button.click());
     const items = [...document.querySelectorAll<HTMLButtonElement>('[role="menu"] [role="menuitem"]')];
-    expect(items.map((item) => item.textContent)).toEqual(["version line_level", "version word_level", "ui.lyrics.find"]);
-    expect(items.map((item) => item.querySelector("svg") !== null)).toEqual([true, false, false]);
+    expect(items.map((item) => item.textContent)).toEqual(["version line_level", "version word_level", "ui.lyrics.find", "ui.lyrics.time_words"]);
+    expect(items.map((item) => item.querySelector("svg") !== null)).toEqual([true, false, false, false]);
     act(() => items[1].click());
     expect(lyricsCalls.chooseVersion).toHaveBeenCalledWith("amll");
     view.unmount();

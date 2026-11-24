@@ -455,11 +455,11 @@ describe("trackMenuItems", () => {
     expect(labels(undefined)).not.toContain("ui.entity.remove_from_playlist");
   });
 
-  it("offers Find and Edit lyrics only where the screen wires them", () => {
+  it("offers Find, Edit and Time lyrics only where the screen wires them", () => {
     const editLyrics = vi.fn();
     const items = trackMenuItems(mocks.tracks[0], {}, { ...actions, editLyrics });
     const lyrics = items.find((item) => item !== "separator" && item.label === "ui.lyrics.edit_title") as { items: { label: string; onSelect(): void }[] };
-    expect(lyrics.items.map((item) => item.label)).toEqual(["ui.lyrics.find", "ui.lyrics.edit"]);
+    expect(lyrics.items.map((item) => item.label)).toEqual(["ui.lyrics.find", "ui.lyrics.edit", "ui.lyrics.time_words"]);
     lyrics.items[1].onSelect();
     expect(editLyrics).toHaveBeenCalledWith(mocks.tracks[0]);
     expect(labels(undefined)).not.toContain("ui.lyrics.edit_title");

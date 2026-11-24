@@ -132,6 +132,19 @@ describe("LyricsEditor", () => {
     expect(ports.saveTimedFile).toHaveBeenCalledWith(TRACK, "ttml", expect.stringContaining('<span begin="00:01.000"'));
   });
 
+  it("opened to time, it goes straight to the timing of the text", async () => {
+    tools.raw = { format: "lrc", content: "[00:01.00] One two" };
+    await act(async () => root.render(<LyricsEditor open time track={TRACK} onClose={() => undefined} />));
+    expect(document.body.querySelector("ol li")!.textContent).toContain("00:01.00");
+    expect(document.body.querySelector("textarea")).toBeNull();
+  });
+
+  it("opened to time without a text, it waits in the text field", async () => {
+    await act(async () => root.render(<LyricsEditor open time track={TRACK} onClose={() => undefined} />));
+    expect(document.activeElement).toBe(document.body.querySelector("textarea"));
+    expect(document.body.textContent).toContain("ui.lyrics.timing_hint");
+  });
+
   it("Use found lyrics drops the user's text", async () => {
     await act(async () => root.render(<LyricsEditor open track={TRACK} onClose={() => undefined} />));
     await act(async () => button("ui.lyrics.use_found").click());

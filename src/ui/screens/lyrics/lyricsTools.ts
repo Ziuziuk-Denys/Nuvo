@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { toLyricsTrack, type LyricsTrack } from "../../ports/lyricsTools";
 
-export type LyricsTool = "edit" | "find" | "translate";
+export type LyricsTool = "edit" | "find" | "time" | "translate";
 
 interface LyricsToolsState {
   track: LyricsTrack | null;

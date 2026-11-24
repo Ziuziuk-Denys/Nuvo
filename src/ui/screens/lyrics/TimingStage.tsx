@@ -70,13 +70,13 @@ export function TimingStage({ track, start, open, onBack, onSave }: TimingStageP
   const speedBefore = useRef(speed);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !here) return;
     const before = speedBefore.current;
     list.current?.focus();
     const from = lines[cursor.line]?.atMs ?? lines[cursor.line - 1]?.atMs;
     seekPlayback(from === null || from === undefined ? 0 : from - LEAD_IN_MS);
     return () => setPlaybackSpeed(before);
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, here]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open) return;

@@ -3,6 +3,7 @@ import type { MenuAction, MenuItem } from "../../components/Menu";
 import type { TFunction } from "../../ports/i18n";
 import type { Track } from "../../ports/player";
 import type { NotInterestedScope } from "../../ports/recs";
+import { playForTiming } from "../../ports/lyricsTools";
 import { openLyricsTool } from "../lyrics/lyricsTools";
 import { notInterestedItems } from "../../recs/notInterestedItems";
 import { shareItemOf, useShareSheet } from "../../sheets/ShareSheet";
@@ -51,6 +52,13 @@ export function trackMenuItems(track: Track, context: { playlistId?: string }, a
   if (actions.editLyrics) {
     lyrics.push({ label: t("ui.lyrics.find"), onSelect: () => openLyricsTool(track, "find") });
     lyrics.push({ label: t("ui.lyrics.edit"), onSelect: () => actions.editLyrics?.(track) });
+    lyrics.push({
+      label: t("ui.lyrics.time_words"),
+      onSelect: () => {
+        playForTiming(track);
+        openLyricsTool(track, "time");
+      },
+    });
   }
   if (actions.translateLyrics) lyrics.push({ label: t("ui.lyrics.translate"), onSelect: () => actions.translateLyrics?.(track) });
   if (lyrics.length > 1) tools.push({ label: t("ui.lyrics.edit_title"), icon: "lyrics", items: lyrics });
