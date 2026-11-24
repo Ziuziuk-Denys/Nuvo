@@ -6,7 +6,7 @@ import { usePageBackdrop, usePageBackdropStore } from "./backdrop";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 function Screen({ cover }: { cover?: string }) {
-  usePageBackdrop(cover, { blur: 56, dim: 0.22 });
+  usePageBackdrop(cover, { scene: "wall" });
   return null;
 }
 
@@ -14,7 +14,7 @@ describe("page backdrop", () => {
   it("sets the cover while mounted and clears it on unmount", () => {
     const root = createRoot(document.createElement("div"));
     act(() => root.render(<Screen cover="a.jpg" />));
-    expect(usePageBackdropStore.getState()).toMatchObject({ coverUrl: "a.jpg", options: { blur: 56, dim: 0.22 } });
+    expect(usePageBackdropStore.getState()).toMatchObject({ coverUrl: "a.jpg", options: { scene: "wall" } });
     act(() => root.unmount());
     expect(usePageBackdropStore.getState().coverUrl).toBeNull();
   });

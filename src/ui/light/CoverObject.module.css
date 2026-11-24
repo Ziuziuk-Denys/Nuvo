@@ -1,0 +1,142 @@
+.object,
+.body,
+.slab,
+.front,
+.face,
+.picture,
+.ray,
+.sweep,
+.edge {
+  display: block;
+  border-radius: inherit;
+}
+
+.object {
+  position: relative;
+  flex: none;
+  perspective: 900px;
+}
+
+.body {
+  position: absolute;
+  inset: 0;
+  transform: var(--tilt, none);
+  transform-style: preserve-3d;
+  transition: transform 420ms var(--n-spring, var(--n-ease-out));
+}
+
+.object[data-live]:hover .body {
+  transition-duration: 140ms;
+}
+
+.slab {
+  position: absolute;
+  inset: 0;
+  transform: translateZ(-7px);
+  background: color-mix(in srgb, var(--n-lamp) 16%, #17181c);
+  box-shadow:
+    0 1px 2px rgba(var(--n-contact), 0.4),
+    calc(var(--n-light-x) * 3px) calc(var(--n-light-y) * 6px) 12px -4px rgba(var(--n-contact), 0.45);
+}
+
+.front {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  box-shadow: calc(var(--n-light-x) * 0.5px) calc(var(--n-light-y) * 1.5px) 0 color-mix(in srgb, var(--n-lamp) 10%, #0c0d10);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.picture {
+  position: absolute;
+  inset: 0;
+}
+
+.ray {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 18%;
+  border-radius: 0;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.5), transparent);
+  opacity: 0;
+}
+
+.face[data-turning] {
+  animation: uncover var(--n-t-light) var(--n-ease-inout) both;
+}
+
+.face[data-turning] > .picture {
+  animation: hold-still var(--n-t-light) var(--n-ease-inout) both;
+}
+
+.face[data-turning] > .ray {
+  animation: pass var(--n-t-light) linear both;
+}
+
+@keyframes uncover {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes hold-still {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes pass {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+.sweep {
+  position: absolute;
+  inset: -60%;
+  border-radius: 0;
+  background: linear-gradient(
+    118deg,
+    transparent 43%,
+    rgba(255, 255, 255, 0.05) 47%,
+    rgba(255, 255, 255, 0.2) 49.6%,
+    rgba(255, 255, 255, 0.06) 52%,
+    transparent 57%
+  );
+  opacity: 0;
+  transform: translateX(var(--sweep, -40%));
+  transition:
+    opacity var(--n-t-page) var(--n-ease-out),
+    transform 140ms var(--n-ease-out);
+}
+
+.object[data-live]:hover .sweep {
+  opacity: 1;
+}
+
+.edge {
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset calc(var(--n-light-x) * 1px) calc(var(--n-light-y) * 1px) 0 color-mix(in srgb, var(--n-lamp) 40%, rgba(255, 255, 255, 0.42)),
+    inset calc(var(--n-light-x) * -1px) calc(var(--n-light-y) * -1px) 0 color-mix(in srgb, var(--n-lamp-rim, #000) 18%, rgba(0, 0, 0, 0.3));
+}
+
+.face,
+.sweep,
+.edge,
+.ray {
+  pointer-events: none;
+}

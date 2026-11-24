@@ -221,12 +221,12 @@
       },
       "look": {
         "visuals": "Best visuals",
-        "visuals_note": "The sky moves smoothly. A bit more load.",
+        "visuals_note": "The light is drawn at full detail, leans with the pointer and breathes with the song. A bit more load.",
         "performance": "Best performance",
-        "performance_note": "The sky moves, less smoothly. Lighter on this computer.",
+        "performance_note": "The light moves only when the song changes. Lighter on this computer.",
         "later": "Decide later",
         "title": "What suits this computer?",
-        "hint": "Switch and watch the sky.",
+        "hint": "Switch and move the pointer.",
         "keep": "Keep this"
       },
       "mood": {
@@ -2074,8 +2074,8 @@
       }
     },
     "cover_glow": {
-      "title": "Cover glow",
-      "description": "A soft glow of the cover colors behind the player",
+      "title": "Cover light",
+      "description": "The cover lights the room, like a lamp over a picture",
       "disabled_for_wallpaper": "Off while a wallpaper is set"
     },
     "navigation": {
@@ -2322,7 +2322,7 @@
     },
     "frame_rate": {
       "title": "Moving backgrounds",
-      "description": "Frames per second for the karaoke background. Fewer use less power.",
+      "description": "Frames per second for the karaoke light while it breathes with the song. Fewer use less power.",
       "fps": "{fps} fps"
     },
     "page": {
@@ -2520,7 +2520,7 @@
     },
     "look_quality": {
       "title": "Look on this computer",
-      "description": "Auto picks by this computer's hardware. Best visuals plays the Home sky and the karaoke scene as smoothly as it can. Best performance plays them less smoothly. Everything else looks the same.",
+      "description": "Auto picks by this computer's hardware. Best visuals draws the cover light at full detail, lets it follow the pointer and the song, and plays the karaoke scene smoothly. Best performance keeps the light still between songs and plays the scene less smoothly. Everything else looks the same.",
       "auto": "Auto",
       "visuals": "Best visuals",
       "performance": "Best performance"

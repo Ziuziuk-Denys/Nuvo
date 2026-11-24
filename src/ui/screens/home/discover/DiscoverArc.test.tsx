@@ -5,15 +5,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HomeMix, Track } from "../../../ports/recs";
 import { DISCOVER, FOR_YOU } from "../homeModel";
 import { ringTracks } from "./ring";
+import { lightObjects } from "../../../light/objects";
 import { DiscoverArc } from "./DiscoverArc";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const mocks = vi.hoisted(() => ({ playSongs: vi.fn(), backdrop: vi.fn(), moveSky: vi.fn() }));
+const mocks = vi.hoisted(() => ({ playSongs: vi.fn(), backdrop: vi.fn() }));
 vi.mock("../../../ports/homeShelves", () => ({ playSongs: mocks.playSongs }));
 vi.mock("../../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock("../../../ports/backdrop", () => ({ usePageBackdrop: mocks.backdrop }));
-vi.mock("../../../field/Sky", () => ({ moveSky: mocks.moveSky }));
 vi.mock("../../../effects", () => ({ useReducedEffects: () => true }));
 vi.mock("../../../components/Cover", () => ({ Cover: () => null }));
 vi.mock("../ShelfHeading", () => ({ ShelfHeading: ({ title }: { title: string }) => <h2>{title}</h2> }));
@@ -72,8 +72,8 @@ describe("DiscoverArc", () => {
     expect(centre().getAttribute("aria-label")).toBe("Title n0, Artist n0");
     expect(centre().tabIndex).toBe(0);
     expect(host.querySelector("p")?.textContent).toContain("Title n0");
-    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "still" });
-    expect(mocks.moveSky).toHaveBeenCalled();
+    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { scene: "room" });
+    expect(lightObjects("page").filter((object) => object.hero)).toHaveLength(1);
   });
 
   it("plays the centre track on a click", async () => {
@@ -88,7 +88,7 @@ describe("DiscoverArc", () => {
     expect(mocks.playSongs).toHaveBeenCalledWith(expect.any(Array), 2, "home:discover");
     await frames();
     expect(centre()).toBe(buttons()[2]);
-    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n2.jpg", { sky: "still" });
+    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n2.jpg", { scene: "room" });
   });
 
   it("turns with the arrow keys and moves focus with the centre", async () => {
@@ -99,24 +99,5 @@ describe("DiscoverArc", () => {
     expect(centre()).toBe(buttons()[10]);
     expect(document.activeElement).toBe(buttons()[10]);
     expect(mocks.playSongs).not.toHaveBeenCalled();
-  });
-
-  it("keeps the sky live while seen in a focused window and stills it otherwise", async () => {
-    const focus = vi.spyOn(document, "hasFocus").mockReturnValue(true);
-    vi.stubGlobal(
-      "IntersectionObserver",
-      class {
-        constructor(private readonly callback: IntersectionObserverCallback) {}
-        observe() {
-          this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
-        }
-        disconnect() {}
-      },
-    );
-    await render();
-    expect(mocks.backdrop).toHaveBeenLastCalledWith("https://covers/n0.jpg", { sky: "live" });
-    focus.mockReturnValue(false);
-    await act(async () => window.dispatchEvent(new Event("blur")));
-    expect(mocks.backdrop.mock.lastCall?.[1]).toEqual({ sky: "still" });
   });
 });

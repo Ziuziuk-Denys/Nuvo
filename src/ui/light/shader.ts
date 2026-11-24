@@ -17,7 +17,6 @@ uniform float dark;
 uniform float cap;
 uniform vec2 foot;
 uniform vec3 key;
-uniform vec3 rim;
 uniform vec3 lamp;
 uniform vec3 aim;
 uniform vec2 beam;
@@ -77,13 +76,12 @@ vec3 pane(vec2 at) {
   return mix(mix(cell(i.x, i.y), cell(i.x + 1.0, i.y), f.x), mix(cell(i.x, i.y + 1.0), cell(i.x + 1.0, i.y + 1.0), f.x), f.y);
 }
 
-// the cover is a lit window: its light leaves the right edge, spreads and softens with distance
 vec3 fromScreen(vec2 p) {
   float gone = p.x - screen.x - screen.z;
   if (gone < 0.0) return vec3(0.0);
   float far = gone / screenLift;
   float v = (p.y - screen.y - gone * lean) / (screen.w * (1.0 + far * 0.5));
-  float soft = 0.012 + far * 0.36;
+  float soft = 0.012 + far * 0.62;
   float window = smoothstep(-soft, soft, v + 1.0) * smoothstep(-soft, soft, 1.0 - v);
   vec3 tint = pane(vec2(1.0 - far / (far + 2.2), clamp(v * 0.5 + 0.5, 0.0, 1.0)));
   return tint * window / ((1.0 + far * 0.62) * (1.0 + far * 0.62));
@@ -115,12 +113,13 @@ void main() {
     light = ground + c * end * (1.0 - ground);
   } else {
     vec3 tint = key / max(key.r, max(key.g, key.b));
-    float k = 1.0 - exp(-core * 5.0);
-    float day = 1.0 - exp(-wide * 5.0);
-    vec3 wall = ground * mix(vec3(1.0), vec3(0.93, 0.95, 0.985), day * 0.55);
-    vec3 lit = mix(vec3(1.0, 0.988, 0.962), tint, 0.16);
-    wall = mix(wall, lit, k * 0.86 + day * 0.1);
-    wall *= mix(vec3(1.0), vec3(0.70, 0.745, 0.82), shade * (0.45 + 0.4 * k));
+    float k = 1.0 - exp(-core * 7.0);
+    float day = 1.0 - exp(-wide * 7.0);
+    vec3 cool = vec3(0.845, 0.85, 0.861);
+    vec3 wall = ground * mix(vec3(1.0), mix(cool, vec3(0.945, 0.947, 0.95), day), min(1.0, power * 3.2));
+    vec3 sun = mix(vec3(1.0, 0.99, 0.972), tint, 0.4 * (1.0 - k));
+    wall = mix(wall, sun, k * 0.94);
+    wall *= mix(vec3(1.0), vec3(0.66, 0.70, 0.78), shade * (0.4 + 0.5 * k));
     light = mix(ground, wall, end);
   }
   float noise = grain(gl_FragCoord.xy) + grain(gl_FragCoord.xy + vec2(47.0, 17.0)) - 1.0;

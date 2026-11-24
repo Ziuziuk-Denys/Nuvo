@@ -20,7 +20,7 @@ beforeEach(() => {
   localStorage.clear();
   useEffectsStore.setState({ look: "auto", lookAsked: false, reduce: false });
   useTour.setState({ phase: "off" });
-  usePageBackdropStore.setState({ options: { sky: "live" } });
+  usePageBackdropStore.setState({ options: { scene: "room" } });
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
@@ -57,12 +57,12 @@ describe("LookPreview", () => {
     expect(host.innerHTML).toBe("");
   });
 
-  it("waits for a page with a sky, the end of the tour and full motion", () => {
-    usePageBackdropStore.setState({ options: undefined });
+  it("waits for the lit room of Home, the end of the tour and full motion", () => {
+    usePageBackdropStore.setState({ options: {} });
     useTour.setState({ phase: "poster" });
     act(() => root.render(<LookPreview />));
     expect(host.innerHTML).toBe("");
-    act(() => usePageBackdropStore.setState({ options: { sky: "still" } }));
+    act(() => usePageBackdropStore.setState({ options: { scene: "room" } }));
     expect(host.innerHTML).toBe("");
     act(() => useEffectsStore.setState({ reduce: true }));
     act(() => useTour.setState({ phase: "off" }));

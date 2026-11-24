@@ -14,11 +14,18 @@ import { useEffectsStore } from "../effects";
 
 const look = vi.hoisted(() => ({ current: { preset: "nuvo" as PresetId, mode: "dark" as PresetMode } }));
 
-vi.mock("../ports/covers", () => ({ useCoverSrc: (url: string | undefined) => url }));
+vi.mock("../ports/covers", () => ({ useCoverSrc: (url: string | undefined) => url, coverSrc: (url: string) => url }));
 vi.mock("../ports/theme", () => ({ useLook: () => look.current }));
+const lit = vi.hoisted(() => ({ cover: undefined as string | undefined }));
 const playing = vi.hoisted(() => ({ cover: "" }));
 vi.mock("../ports/player", () => ({ usePlayingCover: () => playing.cover }));
-vi.mock("../karaoke/backdrop/Backdrop", () => ({ Backdrop: ({ overlay }: { overlay?: string }) => <div data-overlay={overlay ? "" : undefined} /> }));
+vi.mock("../light/LightCanvas", () => ({ LightCanvas: ({ scene }: { scene: string }) => <div data-light={scene} /> }));
+vi.mock("../light/useCoverLight", () => ({
+  useCoverLight: (cover: string | undefined) => {
+    lit.cover = cover;
+    return null;
+  },
+}));
 
 function Calm() {
   useCalmLight();
@@ -36,7 +43,7 @@ const covers = () => [...host.querySelectorAll("img")].map((img) => img.getAttri
 
 beforeEach(() => {
   look.current = { preset: "nuvo", mode: "dark" };
-  usePageBackdropStore.setState({ coverUrl: undefined, options: undefined });
+  usePageBackdropStore.setState({ coverUrl: null, options: {} });
   useCustomizationStore.setState({ backgroundImage: null, coverGlow: true, backgroundBlur: 10, backgroundDim: 0, backgroundFit: "cover" });
   host = document.createElement("div");
   document.body.append(host);
@@ -52,56 +59,35 @@ afterEach(() => {
 });
 
 describe("Field", () => {
-  it("paints the page's sky over the blurred cover, and only the sky under reduced motion", () => {
-    mount(<Field />);
-    act(() => usePageBackdropStore.setState({ coverUrl: "c1.jpg", options: { sky: "live" } }));
-    expect(covers()).toEqual(["c1.jpg"]);
-    expect(host.querySelector("[data-overlay]")).not.toBeNull();
-    act(() => useEffectsStore.setState({ reduce: true }));
-    expect(covers()).toEqual([]);
-    expect(host.querySelector("[data-overlay]")).not.toBeNull();
-  });
+  const scene = () => host.querySelector("[data-light]")?.getAttribute("data-light");
 
-  it("falls back to the playing song's cover on a page without its own picture", () => {
+  it("lights the page in the scene it asks for, and a wall where no page asks", () => {
     playing.cover = "now.jpg";
     mount(<Field />);
-    expect(covers()).toEqual(["now.jpg"]);
-    act(() => usePageBackdropStore.setState({ coverUrl: "album.jpg" }));
-    expect(covers().at(-1)).toBe("album.jpg");
+    expect([scene(), lit.cover]).toEqual(["wall", "now.jpg"]);
+    act(() => usePageBackdropStore.setState({ coverUrl: "c1.jpg", options: { scene: "room" } }));
+    expect([scene(), lit.cover]).toEqual(["room", "c1.jpg"]);
+    act(() => usePageBackdropStore.setState({ coverUrl: "album.jpg", options: {} }));
+    expect([scene(), lit.cover]).toEqual(["page", "album.jpg"]);
     playing.cover = "";
   });
 
-  it("is a plain canvas without a page cover and hides from assistive tech", () => {
+  it("hides from assistive tech", () => {
     mount(<Field />);
     expect(host.firstElementChild!.getAttribute("aria-hidden")).toBe("true");
-    expect(covers()).toEqual([]);
   });
 
-  it("shows the page cover blurred and keeps at most two covers through rapid changes", () => {
-    mount(<Field />);
-    act(() => usePageBackdropStore.setState({ coverUrl: "c1.jpg" }));
-    expect(covers()).toEqual(["c1.jpg"]);
-    expect(host.querySelector("img")!.style.filter).toBe("blur(32px) saturate(130%)");
-    act(() => {
-      for (let i = 2; i <= 10; i += 1) usePageBackdropStore.setState({ coverUrl: `c${i}.jpg` });
-    });
-    expect(covers().length).toBeLessThanOrEqual(2);
-    expect(covers().at(-1)).toBe("c10.jpg");
-  });
-
-  it("leaves the canvas plain while cover glow is off or a calm screen is mounted", () => {
-    usePageBackdropStore.setState({ coverUrl: "c1.jpg" });
-    useCustomizationStore.setState({ coverGlow: false });
-    mount(<Field />);
-    expect(covers()).toEqual([]);
-    useCustomizationStore.setState({ coverGlow: true });
+  it("dims on a calm screen and goes out with the setting", () => {
+    usePageBackdropStore.setState({ coverUrl: "c1.jpg", options: { scene: "room" } });
     mount(
       <>
         <Calm />
         <Field />
       </>,
     );
-    expect(covers()).toEqual([]);
+    expect(scene()).toBe("calm");
+    act(() => useCustomizationStore.setState({ coverGlow: false }));
+    expect([scene(), lit.cover]).toEqual([undefined, undefined]);
   });
 
   it("shows the wallpaper instead of the cover in both modes, washed with the theme's own ground", () => {

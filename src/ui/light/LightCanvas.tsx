@@ -53,7 +53,12 @@ export function LightCanvas({ light, scene, dark, base, room = "page", awake = t
   useBreath(breathing && rich && !reduced, view);
 
   return (
-    <div className={className ? `${styles.light} ${className}` : styles.light} data-light={scene} data-rich={rich ? "" : undefined} style={{ backgroundColor: base }}>
+    <div
+      className={className ? `${styles.light} ${className}` : styles.light}
+      data-light={scene}
+      data-rich={rich ? "" : undefined}
+      style={{ backgroundColor: base }}
+    >
       <canvas ref={canvas} className={styles.canvas} />
       {drawn ? null : <div className={styles.still} style={{ color: cssColour(light.key) }} />}
     </div>

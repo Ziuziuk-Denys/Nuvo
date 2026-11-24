@@ -17,18 +17,17 @@ export interface View {
 
 export const AT = {
   key: [0, 3],
-  rim: [3, 3],
-  lamp: [6, 3],
-  aim: [9, 3],
-  beam: [12, 2],
-  spillCone: [14, 2],
-  power: [16, 1],
-  spill: [17, 1],
-  emit: [18, 1],
-  screenLift: [19, 1],
-  screen: [20, 4],
-  lean: [24, 1],
-  cells: [25, GRID * GRID * 3],
+  lamp: [3, 3],
+  aim: [6, 3],
+  beam: [9, 2],
+  spillCone: [11, 2],
+  power: [13, 1],
+  spill: [14, 1],
+  emit: [15, 1],
+  screenLift: [16, 1],
+  screen: [17, 4],
+  lean: [21, 1],
+  cells: [22, GRID * GRID * 3],
 } as const;
 
 export type LightState = Float32Array;
@@ -57,7 +56,6 @@ export function lightState(scene: LightScene, view: View, light: CoverLight, her
   const y = hero ? hero.y + hero.height / 2 : 260 * grow;
   const common = {
     key: light.key,
-    rim: light.rim,
     cells: light.cells,
     emit: [0],
     screen: [x, y, 1, 1],
@@ -68,7 +66,12 @@ export function lightState(scene: LightScene, view: View, light: CoverLight, her
     spillCone: [0.95, 0.2],
   };
   if (scene === "room") {
-    return pack({ ...common, lamp: [x + side * Math.min(300, view.width * 0.2), (rise * 20 - 110) * grow, 330 * grow], aim: [x + side * 40, y - 30, 0], power: [0.34] });
+    return pack({
+      ...common,
+      lamp: [x + side * Math.min(300, view.width * 0.2), (rise * 20 - 110) * grow, 330 * grow],
+      aim: [x + side * 40, y - 30, 0],
+      power: [0.34],
+    });
   }
   if (scene === "page") {
     return pack({ ...common, lamp: [x + (100 + side * 150) * grow, (rise * 20 - 110) * grow, 310 * grow], aim: [x + 120 * grow, y, 0], power: [0.3] });
@@ -104,7 +107,6 @@ export const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (2 - 2 * t) **
 export function between(from: LightState, to: LightState, t: number, out: LightState): LightState {
   const e = ease(clamp(t, 0, 1));
   for (let i = 0; i < out.length; i += 1) out[i] = from[i] + (to[i] - from[i]) * e;
-  // the lamp swings over the top and dims on the way, like a lamp being turned
   const arc = Math.sin(Math.PI * e);
   out[AT.power[0]] *= 1 - 0.4 * arc * turned(from, to);
   out[AT.lamp[0] + 1] -= 50 * arc * turned(from, to);

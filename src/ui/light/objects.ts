@@ -53,16 +53,10 @@ export interface LightObjectOptions {
 export function useLightObject(ref: RefObject<HTMLElement | null>, options: LightObjectOptions = {}): void {
   const { radius = 12, lift = 18, hero = false, room = "page" } = options;
   useEffect(() => {
-    const remove = addLightObjects(() => {
+    return addLightObjects(() => {
       const rect = ref.current?.getBoundingClientRect();
       if (!rect || rect.width === 0) return [];
       return [{ x: rect.x, y: rect.y, width: rect.width, height: rect.height, radius, lift, hero }];
     }, room);
-    const observer = new ResizeObserver(() => lightMoved(room));
-    if (ref.current) observer.observe(ref.current);
-    return () => {
-      observer.disconnect();
-      remove();
-    };
   }, [ref, radius, lift, hero, room]);
 }

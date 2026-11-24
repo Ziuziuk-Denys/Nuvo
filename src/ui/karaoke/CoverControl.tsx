@@ -1,6 +1,6 @@
 import { useRef, type JSX, type PointerEvent, type WheelEvent } from "react";
-import { Cover } from "../components/Cover";
 import { MorphPlayIcon } from "../components/MorphPlayIcon";
+import { CoverObject } from "../light/CoverObject";
 import { useLightObject } from "../light/objects";
 import { playerEngine, toVolumeGain, toVolumeLevel, usePlayerStore } from "../ports/player";
 import styles from "./Karaoke.module.css";
@@ -38,7 +38,7 @@ export function CoverControl({ src, playing }: { src: string; playing: boolean }
 
   return (
     <div ref={cover} className={styles.cover} aria-hidden="true" onPointerDownCapture={onPointerDown} onClick={toggle} onWheel={onWheel} data-no-window-drag>
-      <Cover src={src} size={400} radius={12} />
+      <CoverObject src={src} size={400} radius={12} />
       <span ref={glyph} className={styles.mark}>
         <MorphPlayIcon playing={playing} size={72} />
       </span>
