@@ -67,7 +67,7 @@ const frames = () => act(async () => new Promise((resolve) => setTimeout(resolve
 describe("DiscoverArc", () => {
   it("lists every ring track as a button and names the centre one", async () => {
     await render();
-    expect(buttons()).toHaveLength(11);
+    expect(buttons()).toHaveLength(12);
     expect(centre().getAttribute("aria-label")).toBe("Title n0, Artist n0");
     expect(centre().tabIndex).toBe(0);
     expect(host.querySelector("p")?.textContent).toContain("Title n0");
@@ -95,8 +95,8 @@ describe("DiscoverArc", () => {
     centre().focus();
     await act(async () => host.querySelector("ul")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })));
     await frames();
-    expect(centre()).toBe(buttons()[10]);
-    expect(document.activeElement).toBe(buttons()[10]);
+    expect(centre()).toBe(buttons()[11]);
+    expect(document.activeElement).toBe(buttons()[11]);
     expect(mocks.playSongs).not.toHaveBeenCalled();
   });
 });
