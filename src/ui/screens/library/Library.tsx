@@ -206,7 +206,7 @@ export function Library(): JSX.Element {
   const { entries, loading, failed } = useLibraryEntries(t);
   const addMusic = useAddMusic();
   const contentKey = `${tab}:${view}:${loading}`;
-  usePageBackdrop(useLikesCover(), { blur: 56, dim: 0.22 });
+  usePageBackdrop(useLikesCover(), { scene: "wall" });
   const sort = sortOf(sorts, tab);
   const byPlays = sort === "played" || sort === "plays";
   useEffect(() => {

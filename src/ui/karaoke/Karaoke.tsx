@@ -14,7 +14,10 @@ import { isRadioContext, nextRepeatMode, playerEngine, toVolumeGain, toVolumeLev
 import { ArtistLinks } from "../shell/ArtistLinks";
 import { formatTime } from "../shell/island/Scrubber";
 import { CoverControl } from "./CoverControl";
-import { Backdrop } from "./backdrop/Backdrop";
+import { LightCanvas } from "../light/LightCanvas";
+import { NEUTRAL } from "../light/readLight";
+import { useCoverLight } from "../light/useCoverLight";
+import { lightVars } from "../light/useLightVars";
 import { layoutFor } from "./layout";
 import { LyricsPane } from "./LyricsPane";
 import { useRomanization } from "./romanization";
@@ -44,6 +47,7 @@ const MODE_TEXT: Record<HighlightMode, { label: string; hint: string }> = {
   step: { label: "ui.karaoke.highlight_step", hint: "ui.karaoke.highlight_step_hint" },
 };
 const SEEK_STEP_MS = 5_000;
+const KARAOKE_GROUND = "#08090d";
 const VOLUME_STEP = 0.05;
 const DEFAULT_VOLUME_LEVEL = 0.7;
 const COVER_GROWTH = 24;
@@ -472,6 +476,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
     "--k-lyrics": `${along(WIDE.lyrics.x, NARROW.lyrics.x, width)}px`,
     "--k-lines": `${WIDE.lyrics.width}px`,
   } as CSSProperties;
+  const light = useCoverLight(track?.coverUrl || undefined) ?? NEUTRAL;
   const maximized = isMaximized || isFullScreen;
   const stageOn = visual.chosen && visual.enabled && visual.stage;
   const [lightScene, setLightScene] = useState(false);
@@ -504,7 +509,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   );
   const always = useControlsMode() === "always";
   const touring = stageOn && !visual.toured;
-  useRest(rootRef, always || !playing || !visual.chosen || hint || touring || editing);
+  const resting = useRest(rootRef, always || !playing || !visual.chosen || hint || touring || editing);
   const hideHint = useCallback(() => setHint(false), []);
 
   const transport = (
@@ -542,7 +547,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
     <div
       ref={rootRef}
       className={styles.root}
-      style={vars}
+      style={{ ...vars, ...lightVars(light) }}
       data-theme="dark"
       data-scene-tone={stageOn && lightScene ? "light" : undefined}
       data-choosing={visual.chosen ? undefined : ""}
@@ -559,7 +564,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
           onLuma={onLuma}
         />
       ) : (
-        <Backdrop cover={track?.coverUrl ?? ""} open />
+        <LightCanvas light={light} scene="karaoke" room="karaoke" dark base={KARAOKE_GROUND} awake={!resting} breathing={playing} />
       )}
 
       {visual.chosen ? null : <LookChoice light={lightLook} onChosen={choose} />}

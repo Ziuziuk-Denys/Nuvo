@@ -1,114 +1,40 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type JSX } from "react";
+import { useEffect, useRef, useSyncExternalStore, type CSSProperties, type JSX } from "react";
 import { usePageBackdropStore } from "../ports/backdrop";
-import { useCoverSrc } from "../ports/covers";
 import { usePlayingCover } from "../ports/player";
 import { useCustomizationStore, wallpaperKind } from "../ports/settings";
 import { isWindowVisible, onWindowVisibilityChange } from "../ports/window";
 import { useLook } from "../ports/theme";
+import { LightCanvas } from "../light/LightCanvas";
+import { NEUTRAL } from "../light/readLight";
+import { useCoverLight } from "../light/useCoverLight";
+import { useGround } from "../light/useGround";
+import { useLightVars } from "../light/useLightVars";
 import { Banner } from "./Banner";
 import { useCalmStore } from "./calm";
-import { Sky } from "./Sky";
 import { useReducedEffects } from "../effects";
 import styles from "./Field.module.css";
 
-const FADE_MS = 380;
-const FILL_DARKEN = 0.38;
-const SAMPLE_WIDTH = 16;
-const FOOT_SHARE = 0.08;
-
-type Rgb = readonly number[];
-
-function footRow(picture: HTMLImageElement): Uint8ClampedArray | null {
-  const { naturalWidth: width, naturalHeight: height } = picture;
-  if (!width || !height) return null;
-  const sampler = Object.assign(document.createElement("canvas"), { width: SAMPLE_WIDTH, height: 1 }).getContext("2d", { willReadFrequently: true });
-  if (!sampler) return null;
-  const footHeight = Math.max(1, height * FOOT_SHARE);
-  try {
-    sampler.drawImage(picture, 0, height - footHeight, width, footHeight, 0, 0, SAMPLE_WIDTH, 1);
-    return sampler.getImageData(0, 0, SAMPLE_WIDTH, 1).data;
-  } catch {
-    return null;
-  }
-}
-
-function darkenedMean(row: Uint8ClampedArray): Rgb {
-  const totals = [0, 0, 0, 0];
-  row.forEach((byte, offset) => {
-    totals[offset % 4] += byte;
-  });
-  return totals.slice(0, 3).map((total) => Math.round((total / SAMPLE_WIDTH) * FILL_DARKEN));
-}
-
 export function Field(): JSX.Element {
-  const look = useLook();
+  const dark = useLook().mode === "dark";
   const wallpaper = useCustomizationStore((s) => s.backgroundImage);
   const coverGlow = useCustomizationStore((s) => s.coverGlow);
   const calm = useCalmStore((s) => s.count > 0);
-  const reduced = useReducedEffects();
   const pageCover = usePageBackdropStore((s) => s.coverUrl);
   const options = usePageBackdropStore((s) => s.options);
   const playing = usePlayingCover();
-  const sky = options?.sky;
-  const cover = useCoverSrc(coverGlow && !calm && (sky || !reduced) ? (pageCover ?? (playing || undefined)) : undefined);
-  const dark = look.mode === "dark";
+  const ground = useGround();
+  const light = useCoverLight(coverGlow ? pageCover || playing || undefined : undefined) ?? NEUTRAL;
+  useLightVars(light);
+  const scene = calm ? "calm" : pageCover ? (options.scene ?? "page") : "wall";
   return (
-    <div className={styles.field} aria-hidden="true" data-mode={look.mode}>
+    <div className={styles.field} aria-hidden="true" data-mode={dark ? "dark" : "light"}>
       {wallpaper ? (
         <Wallpaper src={wallpaper} />
-      ) : cover ? (
-        <>
-          {reduced ? null : <Backdrop src={cover} dark={dark} blur={options?.blur ?? 32} dim={options?.dim ?? 0} tall={sky !== undefined} />}
-          {sky ? <Sky cover={cover} mode={sky} dark={dark} /> : null}
-        </>
+      ) : coverGlow ? (
+        <LightCanvas className={options.pinned ? undefined : styles.light} light={light} scene={scene} dark={dark} base={ground} />
       ) : null}
-      {options?.banner ? <Banner key={options.banner} src={options.banner} portrait={false} /> : null}
-      {options?.portrait ? <Banner key={options.portrait} src={options.portrait} portrait /> : null}
-    </div>
-  );
-}
-
-// Generations only grow, so a cover that comes back still gets a fresh element
-type CoverLayer = { generation: number; src: string };
-
-const COVER_IMG = { alt: "", crossOrigin: "anonymous", draggable: false, decoding: "async" } as const;
-
-function Backdrop({ src, dark, blur, dim, tall }: { src: string; dark: boolean; blur: number; dim: number; tall: boolean }) {
-  const [stack, setStack] = useState<CoverLayer[]>([{ generation: 0, src }]);
-  const [visible, setVisible] = useState(-1);
-  const [foot, setFoot] = useState<Rgb | null>(null);
-  const top = stack[stack.length - 1];
-
-  if (top.src !== src) setStack([top, { generation: top.generation + 1, src }]);
-
-  const reveal = (layer: CoverLayer, picture: HTMLImageElement) => {
-    if (layer.generation !== top.generation) return;
-    const row = footRow(picture);
-    setFoot(row ? darkenedMean(row) : null);
-    setVisible(layer.generation);
-    window.setTimeout(() => setStack((now) => now.filter((kept) => kept.generation >= layer.generation)), FADE_MS + 60);
-  };
-
-  // the cover's colour is mixed into the theme's own field, so every preset still shows under the glow
-  const tint = foot ? `color-mix(in oklab, rgb(${foot.join(" ")}) ${dark ? 40 : 30}%, var(--n-deep))` : undefined;
-  const filter = `blur(${blur}px) saturate(${dark ? 130 : 170}%)`;
-
-  return (
-    <div className={styles.backdrop} style={{ backgroundColor: tint }}>
-      <div className={styles.cover} data-tall={tall ? "" : undefined} style={{ "--blur": `${blur}px` } as CSSProperties}>
-        {stack.map((layer) => (
-          <img
-            {...COVER_IMG}
-            key={layer.generation}
-            src={layer.src}
-            style={{ filter }}
-            data-shown={visible === layer.generation ? "" : undefined}
-            onLoad={(event) => reveal(layer, event.currentTarget)}
-          />
-        ))}
-        {dark && dim > 0 ? <div className={styles.dim} style={{ opacity: dim }} /> : null}
-      </div>
-      {dark ? null : <div className={styles.veil} />}
+      {options.banner ? <Banner key={options.banner} src={options.banner} portrait={false} /> : null}
+      {options.portrait ? <Banner key={options.portrait} src={options.portrait} portrait /> : null}
     </div>
   );
 }

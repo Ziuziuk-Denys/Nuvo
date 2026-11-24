@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { pushLayer } from "../components/layers";
 import { Menu } from "../components/Menu";
 import { Icon } from "../icons/Icon";
+import { LightCanvas } from "../light/LightCanvas";
+import { NEUTRAL } from "../light/readLight";
+import { useCoverLight } from "../light/useCoverLight";
 import { MEDIA_REFUSALS } from "../mediaFiles";
 import { useTranslation } from "../ports/i18n";
 import { lyricsCommands, useLyrics } from "../ports/lyrics";
@@ -11,7 +14,6 @@ import { chooseScene, setVisualSettings, useVisualSettings, visualSettings } fro
 import { setStudioOpen } from "./studioOpen";
 import { Assets } from "./studio/Assets";
 import { ExportClip } from "./studio/ExportClip";
-import { Glow } from "./studio/Glow";
 import { Inspector } from "./studio/Inspector";
 import { Player } from "./studio/Player";
 import { Rail } from "./studio/Rail";
@@ -26,6 +28,7 @@ import { useStudioKeys } from "./studio/useStudioKeys";
 import { MAX_CLIP_MS, MIN_CLIP_MS } from "./studio/Timeline";
 import styles from "./Studio.module.css";
 
+const STUDIO_GROUND = "#0c0c0e";
 const START: Selection = SCENES[0].selection;
 const MAX_EFFECTS = 3;
 const NOTICE_MS = 3_200;
@@ -102,8 +105,6 @@ export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
   const lines = useLyrics((state) => state.lines);
   const [category, setCategory] = useState<Category>("scenes");
   const [aspect, setAspect] = useState<Aspect>("tall");
-  const [mirror, setMirror] = useState<HTMLCanvasElement | null>(null);
-  const [foot, setFoot] = useState<[number, number, number] | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const noticeTimer = useRef<number | undefined>(undefined);
   const showNotice = (text: string) => {
@@ -124,6 +125,7 @@ export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
   const scene = useMemo(() => sceneOf(selection), [selection]);
   const history = useHistory(selection, chooseScene);
   const coverUrl = track?.coverUrl ?? "";
+  const light = useCoverLight(coverUrl || undefined) ?? NEUTRAL;
 
   useFullscreenLayer();
   useHoldTrack();
@@ -165,7 +167,7 @@ export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
 
   return (
     <div className={`${theme.dark} ${styles.studio}`} data-state={phase} role="dialog" aria-modal="true" aria-label={t("visual.studio.title")}>
-      <Glow foot={foot} onMirror={setMirror} />
+      <LightCanvas className={styles.light} light={light} scene="wall" room="studio" dark base={STUDIO_GROUND} />
       <TopBar
         category={category}
         effects={{ used: scene.selection.atmosphere.length, max: MAX_EFFECTS }}
@@ -212,7 +214,7 @@ export function Studio({ phase }: { phase: "in" | "out" }): JSX.Element {
             full={category === "atmosphere" && scene.selection.atmosphere.length >= MAX_EFFECTS}
           />
         </div>
-        <Player template={scene.template} aspect={aspect} coverUrl={coverUrl} lines={lines} media={media} mirror={mirror} onFoot={setFoot} range={range} />
+        <Player template={scene.template} aspect={aspect} coverUrl={coverUrl} lines={lines} media={media} range={range} />
         <Inspector scene={scene} parts={inspected} coverUrl={coverUrl} media={media} onChange={save} />
       </div>
       {track ? (

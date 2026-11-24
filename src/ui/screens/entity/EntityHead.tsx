@@ -1,6 +1,7 @@
-import { useState, type JSX, type ReactNode } from "react";
+import { useRef, useState, type JSX, type ReactNode } from "react";
 import { Menu, type MenuItem } from "../../components/Menu";
 import { Icon } from "../../icons/Icon";
+import { useLightObject } from "../../light/objects";
 import { useTranslation } from "../../ports/i18n";
 import look from "../look.module.css";
 import styles from "./EntityHead.module.css";
@@ -109,11 +110,15 @@ export function EntityHead({
   idle,
 }: EntityHeadProps): JSX.Element {
   const { t } = useTranslation();
+  const art = useRef<HTMLDivElement>(null);
+  useLightObject(art, { hero: true, radius: shape === "circle" ? 84 : 12 });
   const trailing = search || sort || onQueue;
 
   return (
     <header className={styles.head} data-shape={shape}>
-      <div className={styles.cover}>{cover}</div>
+      <div ref={art} className={styles.cover}>
+        {cover}
+      </div>
       <div className={styles.column}>
         <div className={styles.titleLine}>
           <h1 className={styles.title} data-size={title.length > 28 ? "s" : title.length > 16 ? "m" : undefined}>

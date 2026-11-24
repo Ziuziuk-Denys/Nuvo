@@ -17,13 +17,13 @@ const EN: Record<string, string> = {
   "ui.palette.tour": "Show the tour again",
   "ui.palette.setting": "Settings: {title}",
   "settings.autoplay_similar.title": "Autoplay similar tracks",
-  "settings.cover_glow.title": "Cover glow",
+  "settings.cover_glow.title": "Cover light",
 };
 const RU: Record<string, string> = {
   "ui.palette.repeat": "Сменить режим повтора",
   "ui.palette.lyrics": "Открыть текст песни",
   "ui.palette.tour": "Показать тур ещё раз",
-  "settings.cover_glow.title": "Свечение обложки",
+  "settings.cover_glow.title": "Свет обложки",
 };
 
 const BINDINGS: Record<string, string> = {
@@ -97,7 +97,7 @@ describe("buildCommands", () => {
     expect(shortcut("Search")).toBe("/");
     expect(shortcut("Toggle full screen")).toBe("F11");
     expect(shortcut("Go to Home")).toBeUndefined();
-    expect(commands.at(-1)?.title).toBe("Settings: Cover glow");
+    expect(commands.at(-1)?.title).toBe("Settings: Cover light");
   });
 
   it("shows the tour again, found in English and Russian", () => {
@@ -113,7 +113,7 @@ describe("buildCommands", () => {
   it("opens a settings entry on its section", () => {
     const d = deps();
     buildCommands(d)
-      .find((command) => command.title === "Settings: Cover glow")!
+      .find((command) => command.title === "Settings: Cover light")!
       .run();
     expect(d.openSettings).toHaveBeenCalledWith("Player", "settings.cover_glow.title");
   });
@@ -131,7 +131,7 @@ describe("rankCommands", () => {
 
   it("finds a command through its translations in other languages", () => {
     expect(titles("повт")).toEqual(["Change repeat"]);
-    expect(titles("СВЕЧ")).toEqual(["Settings: Cover glow"]);
+    expect(titles("СВЕТ ОБ")).toEqual(["Settings: Cover light"]);
   });
 
   it("ranks substring matches after word-prefix matches, stable within a rank", () => {

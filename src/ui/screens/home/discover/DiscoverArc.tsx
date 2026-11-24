@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent, type PointerEvent } from "react";
 import { Cover } from "../../../components/Cover";
 import { useReducedEffects } from "../../../effects";
-import { useSkyFollows, useSkyMode } from "../../../field/useSky";
+import { addLightObjects, lightMoved } from "../../../light/objects";
 import { usePageBackdrop } from "../../../ports/backdrop";
 import { playSongs } from "../../../ports/homeShelves";
 import { coverSrc } from "../../../ports/covers";
@@ -50,12 +50,12 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
   const drag = useRef<Drag | null>(null);
   const swallowClick = useRef(false);
   const hover = useRef({ x: 0, y: 0, on: false, tilt: { x: 0, y: 0, amount: 0 } });
+  const placed = useRef<RoomCard[]>([]);
   const stageRef = useRef<HTMLDivElement>(null);
   const room = useRef<Room | null>(null);
   const [width, setWidth] = useState(0);
   const [centre, setCentre] = useState(0);
   const [settled, setSettled] = useState(0);
-  const sky = useSkyMode(rootRef);
   const count = ringSlots(tracks.length);
   const slots = useMemo(() => Array.from({ length: count }, (_, slot) => tracks[slot % tracks.length]), [count, tracks]);
   const ring = useMemo(() => ringFor(width, ringHeight(width), CLEAR_TOP), [width]);
@@ -76,6 +76,8 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
       item.style.opacity = String(spot.shown);
       cards.push({ slot: index, offset, spot });
     });
+    placed.current = cards;
+    lightMoved();
     if (!room.current || width === 0) return false;
     if (cards.every((card) => room.current!.settled(card.slot % tracks.length))) rootRef.current?.setAttribute("data-room", "");
     return room.current.draw(
@@ -164,7 +166,27 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
     [],
   );
 
-  useSkyFollows(rootRef);
+  useEffect(
+    () =>
+      addLightObjects(() => {
+        const frame = rootRef.current!.getBoundingClientRect();
+        return placed.current.map(({ offset, spot }) => {
+          const size = ring.cover * spot.scale;
+          const wide = size * Math.cos((spot.turn * Math.PI) / 180);
+          const away = Math.abs(offset);
+          return {
+            x: frame.x + spot.x - wide / 2,
+            y: frame.y + spot.y - size / 2,
+            width: wide,
+            height: size,
+            radius: 10,
+            lift: 20 + away * 6,
+            hero: away < 0.5,
+          };
+        });
+      }),
+    [ring],
+  );
 
   useEffect(() => {
     const root = rootRef.current!;
@@ -265,7 +287,7 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
   };
 
   const current = slots[Math.min(centre, count - 1)];
-  usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { sky });
+  usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { scene: "room" });
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height }}>
       <div className={styles.heading}>

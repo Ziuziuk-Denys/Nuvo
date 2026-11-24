@@ -22,7 +22,7 @@ async function homeState(live: NuvoSession) {
     mixes: [...document.querySelectorAll<HTMLElement>("[data-mix]")].map((card) => card.dataset.mix),
     picks: document.querySelectorAll("[data-pick]").length,
     shelf: document.querySelectorAll("[data-shelf] [data-song]").length,
-    glow: document.querySelector("[data-mode] img, [data-mode] [data-overlay]") !== null,
+    glow: document.querySelector('[data-mode] [data-light="room"]') !== null,
     coldStart: document.querySelector("[data-slot=cold-start]") !== null,
   }));
 }

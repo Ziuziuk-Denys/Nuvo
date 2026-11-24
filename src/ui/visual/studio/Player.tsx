@@ -16,12 +16,10 @@ interface PlayerProps {
   coverUrl: string;
   lines: Line[];
   media: Media | null;
-  mirror: HTMLCanvasElement | null;
-  onFoot(rgb: [number, number, number]): void;
   range: [number, number];
 }
 
-export function Player({ template, aspect, coverUrl, lines, media, mirror, onFoot, range }: PlayerProps): JSX.Element {
+export function Player({ template, aspect, coverUrl, lines, media, range }: PlayerProps): JSX.Element {
   const { t } = useTranslation();
   const status = usePlayerStore((state) => state.status);
   const positionMs = usePlayerStore((state) => state.positionMs);
@@ -32,16 +30,7 @@ export function Player({ template, aspect, coverUrl, lines, media, mirror, onFoo
     <section className={theme.panel} data-tour="studio-player">
       <div className={styles.viewport}>
         <div className={styles.frame} data-aspect={aspect}>
-          <Stage
-            className={styles.canvas}
-            template={template}
-            aspect={aspect}
-            coverUrl={coverUrl}
-            lines={lines}
-            media={media}
-            mirror={mirror}
-            onFoot={onFoot}
-          />
+          <Stage className={styles.canvas} template={template} aspect={aspect} coverUrl={coverUrl} lines={lines} media={media} />
           <WatermarkPreview />
         </div>
       </div>

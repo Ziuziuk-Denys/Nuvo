@@ -594,11 +594,11 @@ describe("shell", () => {
     expect(await field.inputValue(), "palette: Escape clears the field").toBe("");
     expect(await page.evaluate(() => location.hash), "palette: Escape stays on the page").toBe("#/library");
 
-    await openWith("cover glow")();
+    await openWith("cover light")();
     await palette.locator('[role="option"]', { hasText: "Echo" }).first().waitFor({ timeout: 10_000 });
-    expect(await palette.locator('[role="option"]').first().textContent(), "palette: the setting comes before a song with its name").toContain("Cover glow");
+    expect(await palette.locator('[role="option"]').first().textContent(), "palette: the setting comes before a song with its name").toContain("Cover light");
     await page.keyboard.press("Enter");
-    await page.getByText("Cover glow", { exact: true }).first().waitFor({ timeout: 5_000 });
+    await page.getByText("Cover light", { exact: true }).first().waitFor({ timeout: 5_000 });
     await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
 

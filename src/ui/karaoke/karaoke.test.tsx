@@ -97,7 +97,8 @@ vi.mock("../ports/lyrics", () => ({
   romanizerFor: (texts: string[]) =>
     texts.some((text) => /[가-힣]/.test(text)) ? (text: string) => text : texts.some((text) => /[ぁ-ん]/.test(text)) ? romanizeKana : null,
 }));
-vi.mock("./backdrop/Backdrop", () => ({ Backdrop: () => null }));
+vi.mock("../light/LightCanvas", () => ({ LightCanvas: () => null }));
+vi.mock("../light/useCoverLight", () => ({ useCoverLight: () => null }));
 vi.mock("../visual/Stage", () => ({ Stage: () => null }));
 vi.mock("./sceneInk", () => ({ useSceneInk: () => () => undefined }));
 vi.mock("../ports/wordTiming", () => ({

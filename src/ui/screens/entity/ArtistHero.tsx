@@ -1,6 +1,5 @@
-import { useRef, type CSSProperties, type JSX, type ReactNode } from "react";
+import { type CSSProperties, type JSX, type ReactNode } from "react";
 import { Icon } from "../../icons/Icon";
-import { useSkyFollows, useSkyMode } from "../../field/useSky";
 import { usePageBackdrop } from "../../ports/backdrop";
 import { useTranslation } from "../../ports/i18n";
 import { useLikedTracks } from "../../ports/library";
@@ -19,12 +18,9 @@ export interface ArtistHeroProps {
 }
 
 export function ArtistHero({ name, banner, cover, actions, aside }: ArtistHeroProps): JSX.Element {
-  const root = useRef<HTMLElement>(null);
-  const sky = useSkyMode(root);
-  useSkyFollows(root);
-  usePageBackdrop(banner || cover || undefined, { sky, banner, portrait: banner ? undefined : cover || undefined });
+  usePageBackdrop(banner || cover || undefined, { scene: "wall", banner, portrait: banner ? undefined : cover || undefined });
   return (
-    <header ref={root} className={styles.hero}>
+    <header className={styles.hero}>
       <h1 className={`${look.pageTitle} ${styles.name}`} style={{ "--name": nameWidth(name) } as CSSProperties}>
         {name}
       </h1>
