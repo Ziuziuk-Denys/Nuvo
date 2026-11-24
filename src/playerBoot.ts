@@ -94,7 +94,7 @@ export async function bootPlayer(ports: () => Promise<PlayerBootPorts>): Promise
     covers: {
       warm: (url) => {
         const image = new Image();
-        image.src = url;
+        image.src = coverUrl(CORE, url, ARTWORK_PX, 1);
         void image.decode().catch(() => undefined);
       },
       drawn: (url) => coverUrl(CORE, url, ARTWORK_PX, 1),

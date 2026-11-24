@@ -597,7 +597,7 @@ function isValidPlaylists(value: unknown): value is NotchPlaylists {
         isText(item.id) &&
         isText(item.title) &&
         Number.isInteger(item.trackCount) &&
-        (item.coverUrl === null || (isText(item.coverUrl, MAX_COVER_URL) && item.coverUrl.startsWith("https://"))),
+        (item.coverUrl === null || (isText(item.coverUrl, MAX_COVER_URL) && item.coverUrl.startsWith("nuvo-core://local/"))),
     ) &&
     (outcome === null || (isText(outcome?.trackId) && isText(outcome.playlistId) && OUTCOMES.includes(outcome.kind)))
   );
