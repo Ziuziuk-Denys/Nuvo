@@ -152,20 +152,10 @@ body,
 
 .shade {
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto;
+  height: 66px;
   pointer-events: none;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.42) 26px, rgba(0, 0, 0, 0.16) 46px, transparent 66px),
-    linear-gradient(
-      to top,
-      rgba(0, 0, 0, 0.9),
-      rgba(0, 0, 0, 0.88) 64px,
-      rgba(0, 0, 0, 0.78) 98px,
-      rgba(0, 0, 0, 0.6) 122px,
-      rgba(0, 0, 0, 0.32) 148px,
-      rgba(0, 0, 0, 0.11) 172px,
-      transparent 194px
-    );
+  background: linear-gradient(rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.47) 21px, rgba(0, 0, 0, 0.22) 42px, transparent);
 }
 
 .corners {
@@ -190,6 +180,27 @@ body,
   display: flex;
   flex-direction: column;
   padding: 10px var(--pad) 8px;
+  isolation: isolate;
+}
+
+.deck::before {
+  content: "";
+  position: absolute;
+  inset: -76px 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    transparent,
+    rgba(0, 0, 0, 0.02) 14px,
+    rgba(0, 0, 0, 0.07) 28px,
+    rgba(0, 0, 0, 0.16) 42px,
+    rgba(0, 0, 0, 0.29) 56px,
+    rgba(0, 0, 0, 0.43) 70px,
+    rgba(0, 0, 0, 0.56) 84px,
+    rgba(0, 0, 0, 0.66) 104px,
+    rgba(0, 0, 0, 0.74) 136px,
+    rgba(0, 0, 0, 0.8)
+  );
 }
 
 .now-title,
