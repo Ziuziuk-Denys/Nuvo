@@ -190,9 +190,15 @@
 .left {
   position: absolute;
   left: var(--k-left);
+  transition: transform 560ms var(--n-spring);
   top: max(66px, calc(50% - 286px));
   width: 400px;
   height: 590px;
+}
+
+/* with nothing to sing the cover is the lamp in the middle of the room */
+.root[data-centred] .left {
+  transform: translateX(calc(50vw - 200px - var(--k-left)));
 }
 
 .cover {
@@ -533,51 +539,51 @@
   width: var(--k-lines);
 }
 
-.quiet {
+.offer {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: var(--k-lyrics);
-  right: 40px;
+  z-index: 1;
+  bottom: max(12px, calc(50% - 380px));
+  inset-inline: 24px;
   display: flex;
-  flex-direction: column;
+  flex-flow: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-}
-
-.quiet p {
-  max-width: 260px;
+  gap: 6px;
   margin: 0;
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 21px;
+  font-size: 14px;
+  line-height: 20px;
   text-align: center;
-  color: var(--k-ink-3);
+  color: var(--k-ink-2);
+  pointer-events: none;
+  animation: settle 320ms var(--n-ease-out) 260ms both;
 }
 
-.root .addLyrics {
-  height: 32px;
-  padding: 0 16px;
-  background: var(--k-hover);
-  font-size: 13px;
-  font-weight: 500;
+.offer > * {
+  margin: 0;
+  pointer-events: auto;
+}
+
+.root .sources > .textButton:first-child {
   color: var(--k-ink);
 }
 
-.root .addLyrics:hover {
-  background: var(--k-on);
+/* no room for two rows under the controls */
+@media (max-height: 800px) {
+  .offer {
+    flex-flow: wrap;
+  }
 }
 
-.maker,
-.sources,
-.working,
+.root[data-rest] .offer[data-hold] {
+  opacity: 0;
+  translate: 0 4px;
+  transition:
+    opacity 600ms var(--n-ease-out),
+    translate 600ms var(--n-ease-out);
+}
+
 .made {
   animation: settle 220ms var(--n-ease-out) both;
-}
-
-.sources {
-  animation-delay: 40ms;
 }
 
 @keyframes settle {
@@ -587,27 +593,34 @@
   }
 }
 
-.maker,
+.root .offer .textButton {
+  display: inline-flex;
+  font-size: 14px;
+  align-items: center;
+  gap: 7px;
+}
+
+.size {
+  color: var(--k-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
 .working {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }
 
-.quiet .makerNote {
-  max-width: 290px;
-  font-size: 13px;
-  line-height: 19px;
-}
-
-.makerNote span {
-  display: block;
+.working > p {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .sources {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
 }
 
 .root .textButton {
@@ -615,11 +628,6 @@
   padding: 0 12px;
   font-size: 13px;
   font-weight: 500;
-}
-
-.quiet .working p {
-  color: var(--k-ink-2);
-  font-variant-numeric: tabular-nums;
 }
 
 .meter {
@@ -694,6 +702,7 @@
   }
 
   .root[data-rest] .seek .track,
+  .left,
   .track {
     transition: none;
   }
@@ -702,9 +711,7 @@
     transition: none;
   }
 
-  .maker,
-  .sources,
-  .working,
+  .offer,
   .made {
     animation-name: fade;
   }

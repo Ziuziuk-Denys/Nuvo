@@ -28,7 +28,8 @@ export const AT = {
   screen: [17, 4],
   lean: [21, 1],
   cap: [22, 1],
-  cells: [23, GRID * GRID * 3],
+  both: [23, 1],
+  cells: [24, GRID * GRID * 3],
 } as const;
 
 // the luminance that keeps the quietest text at 4.5:1; a room and karaoke hold only large white text in their core
@@ -66,6 +67,7 @@ export function lightState(scene: LightScene, view: View, light: CoverLight, her
     screen: [x, y, 1, 1],
     screenLift: [1],
     lean: [0],
+    both: [0],
     cap: [scene === "room" || scene === "karaoke" ? BRIGHT : READABLE],
     spill: [0.34],
     beam: [0.9, 0.82],
@@ -83,6 +85,8 @@ export function lightState(scene: LightScene, view: View, light: CoverLight, her
     return pack({ ...common, lamp: [x + (100 + side * 150) * grow, (rise * 20 - 110) * grow, 310 * grow], aim: [x + 120 * grow, y, 0], power: [0.3] });
   }
   if (scene === "karaoke") {
+    // a cover in the middle has no lyrics beside it, so it lights both sides of the room
+    const middle = clamp(1 - Math.abs(x - view.width / 2) / (view.width * 0.2), 0, 1);
     const box = hero ?? { x: view.width * 0.1, y: view.height * 0.16, width: 400, height: 400 };
     return pack({
       ...common,
@@ -90,11 +94,12 @@ export function lightState(scene: LightScene, view: View, light: CoverLight, her
       aim: [x, y - 60 * grow, 0],
       beam: [0.93, 0.86],
       spillCone: [0.95, 0.3],
-      power: [awake ? 0.17 : 0],
+      power: [awake ? 0.17 : 0.06 * middle],
       emit: [(awake ? 0.3 : 0.56) * exposure(light)],
       screen: [x, y, box.width / 2, box.height / 2],
       screenLift: [300 * grow],
-      lean: [0.06 - rise * 0.12],
+      lean: [(0.06 - rise * 0.12) * (1 - middle)],
+      both: [middle],
     });
   }
   const power = scene === "calm" ? 0.07 : 0.15;

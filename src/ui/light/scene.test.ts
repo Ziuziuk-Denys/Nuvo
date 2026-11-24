@@ -17,11 +17,17 @@ describe("lightState", () => {
   });
 
   it("makes the cover the only lamp of karaoke at rest", () => {
-    const awake = lightState("karaoke", VIEW, BLUE, HERO, true);
-    const rest = lightState("karaoke", VIEW, BLUE, HERO, false);
+    const awake = lightState("karaoke", VIEW, BLUE, { ...HERO, x: 200 }, true);
+    const rest = lightState("karaoke", VIEW, BLUE, { ...HERO, x: 200 }, false);
     expect(read(awake, "power")[0]).toBeGreaterThan(0);
     expect(read(rest, "power")).toEqual([0]);
-    expect(read(rest, "screen")).toEqual([700, 400, 100, 100]);
+    expect(read(rest, "screen")).toEqual([300, 400, 100, 100]);
+  });
+
+  it("lights both sides of the room from a cover in the middle", () => {
+    const both = (x: number) => read(lightState("karaoke", VIEW, BLUE, { ...HERO, x }, false), "both")[0];
+    expect([both(200), both(620)]).toEqual([0, 1]);
+    expect(both(480)).toBeGreaterThan(0);
   });
 
   it("keeps dark and bright covers at a similar brightness in karaoke", () => {

@@ -27,6 +27,7 @@ uniform float emit;
 uniform vec4 screen;
 uniform float screenLift;
 uniform float lean;
+uniform float both;
 uniform vec3 cells[${GRID * GRID}];
 uniform int count;
 uniform vec4 box[${MAX_OBJECTS}];
@@ -77,14 +78,16 @@ vec3 pane(vec2 at) {
 }
 
 vec3 fromScreen(vec2 p) {
-  float gone = p.x - screen.x - screen.z;
+  float side = sign(p.x - screen.x);
+  float gone = abs(p.x - screen.x) - screen.z;
   if (gone < 0.0) return vec3(0.0);
   float far = gone / screenLift;
   float v = (p.y - screen.y - gone * lean) / (screen.w * (1.0 + far * 0.5));
   float soft = 0.012 + far * 0.62;
   float window = smoothstep(-soft, soft, v + 1.0) * smoothstep(-soft, soft, 1.0 - v);
-  vec3 tint = pane(vec2(1.0 - far / (far + 2.2), clamp(v * 0.5 + 0.5, 0.0, 1.0)));
-  return tint * window / ((1.0 + far * 0.62) * (1.0 + far * 0.62));
+  vec3 tint = pane(vec2(0.5 + side * (0.5 - far / (far + 2.2)), clamp(v * 0.5 + 0.5, 0.0, 1.0)));
+  tint = mix(tint, pane(vec2(0.5 - side * (0.5 - far / (far + 2.2)), clamp(v * 0.5 + 0.5, 0.0, 1.0))), 0.45 * both);
+  return tint * (side < 0.0 ? both : 1.0) * window / ((1.0 + far * 0.62) * (1.0 + far * 0.62));
 }
 
 void main() {
