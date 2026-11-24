@@ -137,7 +137,7 @@ export function QueuePanel(): JSX.Element | null {
         <IconButton icon="close" size="s" label={t("ui.queue.close")} onClick={() => setOpen(false)} />
       </header>
       {current ? (
-        <div className={styles.now} data-now="">
+        <div className={styles.now} data-now="" aria-current="true">
           <span className={styles.deck} aria-hidden="true">
             {queue
               .slice(currentIndex + 1, currentIndex + 1 + DECK_BEHIND)
