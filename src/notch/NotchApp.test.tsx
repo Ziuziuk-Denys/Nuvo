@@ -247,7 +247,7 @@ describe("NotchApp", () => {
     expect(button("Pause")).not.toBeNull();
   });
 
-  it("grows the input shape at once with room for the overshoot, shrinks it after the morph", async () => {
+  it("grows the input shape at once, shrinks it after the morph", async () => {
     const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
     await mount();
     harness.pushState(makeState());
@@ -258,7 +258,6 @@ describe("NotchApp", () => {
     click(island());
     const padded = grownRect(ISLAND_SIZES.live, ISLAND_SIZES.expanded, OVERSHOOT);
     expect(shape).toHaveBeenLastCalledWith(padded);
-    expect(padded.height).toBeGreaterThan(islandRect(ISLAND_SIZES.expanded).height + 5);
     advance(MORPH_MS);
     expect(shape).toHaveBeenLastCalledWith(islandRect(ISLAND_SIZES.expanded));
     enter();
@@ -367,7 +366,9 @@ describe("NotchApp", () => {
     click(host.querySelector(".deck-next")!);
     expect(view()).toBe("upNext");
     expect(sheets()).toBe(0);
-    expect(host.querySelector(".deck-next")).toBeNull();
+    expect(host.querySelector(".deck-next")!.textContent).toBe("Lyrics");
+    click(host.querySelector(".deck-next")!);
+    expect(view()).toBe("lyrics");
     click(cover());
     expect(view()).toBe("now");
     expect(harness.api.notchAction).not.toHaveBeenCalled();
@@ -486,25 +487,24 @@ describe("NotchApp", () => {
     expect(nudging()).toBe(false);
   });
 
-  it("runs requestAnimationFrame only while expanded and playing", async () => {
-    const raf = vi.spyOn(window, "requestAnimationFrame");
+  it("moves the clock only while expanded and playing", async () => {
+    const clock = () => host.querySelector(".scrubber-time")!.textContent;
     const harness = installApi({ state: null, lyrics: null, settings: DEFAULT_NOTCH_SETTINGS });
     await mount();
-    harness.pushState(makeState());
-    advance(1000);
-    expect(raf).not.toHaveBeenCalled();
     await expand(harness, makeState({ status: "paused" }));
-    advance(1000);
-    expect(raf).not.toHaveBeenCalled();
-    harness.pushState(makeState({ status: "playing" }));
-    advance(100);
-    expect(raf).toHaveBeenCalled();
+    const paused = clock();
+    advance(5000);
+    expect(clock()).toBe(paused);
+    harness.pushState(makeState({ status: "playing", sampledAt: Date.now() }));
+    advance(3000);
+    const moved = clock();
+    expect(moved).not.toBe(paused);
     leave();
     advance(200);
     expect(mode()).toBe("live");
-    raf.mockClear();
-    advance(1000);
-    expect(raf).not.toHaveBeenCalled();
+    const left = clock();
+    advance(5000);
+    expect(clock()).toBe(left);
   });
 
   it("renders the marquee only in hover mode", async () => {

@@ -1,6 +1,6 @@
 import { useTranslation } from "@/i18n";
+import { Icon } from "@/ui/icons/Icon";
 import { Cover } from "./Cover";
-import { BackIcon } from "./icons";
 import type { NotchTrack } from "./contracts";
 import type { NotchPage } from "./lib/geometry";
 
@@ -10,13 +10,14 @@ interface DeckProps {
   track: NotchTrack;
   page: NotchPage;
   next: NotchPage | null;
+  beside: NotchPage | null;
   ahead: number;
   nudge: boolean;
   onPage: (page: NotchPage) => void;
   onFocusApp: () => void;
 }
 
-export function Deck({ track, page, next, ahead, nudge, onPage, onFocusApp }: DeckProps) {
+export function Deck({ track, page, next, beside, ahead, nudge, onPage, onFocusApp }: DeckProps) {
   const { t } = useTranslation();
   const front = page === "now";
   const coverLabel = !front ? t("ui.notch.back") : next ? t("ui.notch.show", { page: t(NAMES[next]) }) : t("ui.notch.open_app");
@@ -31,14 +32,14 @@ export function Deck({ track, page, next, ahead, nudge, onPage, onFocusApp }: De
         <span key={depth} className="sheet" data-depth={depth} data-on={depth <= ahead} aria-hidden="true" />
       ))}
       <button type="button" className="deck-cover" aria-label={coverLabel} onClick={onCover}>
-        <Cover src={track.coverUrl} size={100} radius={16} />
+        <Cover src={track.coverUrl} size={100} radius={14} />
         {next && (
           <span className="deck-name" aria-hidden="true">
             {t(NAMES[next])}
           </span>
         )}
         <span className="deck-back" aria-hidden="true">
-          <BackIcon size={54} />
+          <Icon name="back" size={26} />
         </span>
       </button>
       <div className="deck-row" aria-hidden={front}>
@@ -46,9 +47,9 @@ export function Deck({ track, page, next, ahead, nudge, onPage, onFocusApp }: De
           <span>{track.title}</span>
           <span>{track.artist}</span>
         </button>
-        {next && !front && (
-          <button type="button" className="deck-next" onClick={() => onPage(next)}>
-            {t(NAMES[next])}
+        {beside && !front && (
+          <button type="button" className="deck-next" onClick={() => onPage(beside)}>
+            {t(NAMES[beside])}
           </button>
         )}
       </div>

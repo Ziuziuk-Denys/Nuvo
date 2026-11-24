@@ -4,8 +4,7 @@ export interface Spring {
   mass: number;
 }
 
-// Morph spring: about 0.30 s with a slight overshoot
-export const MORPH_SPRING: Spring = { stiffness: 439, damping: 27, mass: 1 };
+export const MORPH_SPRING: Spring = { stiffness: 560, damping: 47, mass: 1 };
 
 const STEP_S = 1 / 600;
 const REST_DISPLACEMENT = 0.001;

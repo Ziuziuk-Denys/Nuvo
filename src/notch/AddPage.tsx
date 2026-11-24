@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/i18n";
+import { Icon } from "@/ui/icons/Icon";
 import { Cover } from "./Cover";
-import { CheckIcon, PlusIcon } from "./icons";
 import type { NotchAction, NotchPlaylists } from "./contracts";
 
 const ADDED_HOLD_MS = 1200;
@@ -59,7 +59,7 @@ export function AddPage({ trackId, playlists, accent, onAction, onDone }: AddPag
                     <span className="row-meta">{meta(item.id, item.trackCount)}</span>
                   </span>
                   <span className="row-mark" data-done={done} style={done ? { color: accent } : undefined}>
-                    {done ? <CheckIcon size={17} /> : <PlusIcon size={17} />}
+                    <Icon name={done ? "check" : "add"} size={18} />
                   </span>
                 </button>
               </li>

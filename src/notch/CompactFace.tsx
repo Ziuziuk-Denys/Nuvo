@@ -1,6 +1,6 @@
+import { Icon } from "@/ui/icons/Icon";
 import { Bars } from "./Bars";
 import { Cover } from "./Cover";
-import { NuvoGlyph } from "./icons";
 import { Marquee } from "./Marquee";
 import type { NotchTrack } from "./contracts";
 import type { IslandMode } from "./lib/geometry";
@@ -19,7 +19,7 @@ export function CompactFace({ mode, split, track, playing, accent, onAccent, onF
   if (!track) {
     return (
       <div className="compact compact-idle">
-        <NuvoGlyph className="idle-glyph" size={18} />
+        <Icon name="nuvo-mark" className="idle-glyph" size={18} />
       </div>
     );
   }

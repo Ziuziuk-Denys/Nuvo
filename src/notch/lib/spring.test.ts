@@ -2,13 +2,12 @@ import { describe, expect, it } from "vitest";
 import { MORPH_SPRING, simulateSpring, springEasing } from "./spring";
 
 describe("spring easing", () => {
-  it("settles at 1 with a slight overshoot in about 0.3-0.5 s", () => {
+  it("settles at 1 without overshoot in under half a second", () => {
     const { values, durationMs } = simulateSpring(MORPH_SPRING);
     expect(values.at(-1)).toBeCloseTo(1, 2);
-    expect(Math.max(...values)).toBeGreaterThan(1.01);
-    expect(Math.max(...values)).toBeLessThan(1.1);
+    expect(Math.max(...values)).toBeLessThan(1.002);
     expect(durationMs).toBeGreaterThan(250);
-    expect(durationMs).toBeLessThan(600);
+    expect(durationMs).toBeLessThan(500);
   });
 
   it("emits a CSS linear() function that starts at 0 and ends at 1", () => {
