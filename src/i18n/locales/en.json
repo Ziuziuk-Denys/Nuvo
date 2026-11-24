@@ -1371,7 +1371,7 @@
         "new_playlist": "Create a playlist here",
         "presets": "Pick a theme and try it right here",
         "queue": "The queue shows what plays next",
-        "scrubber": "The whole bar is the timeline: press or drag anywhere on it to jump",
+        "scrubber": "The line is the song: press or drag it to jump. Hover it to see the time and the lyric",
         "sleep": "The sleep timer stops playback for you",
         "speed": "Change speed and pitch here",
         "recognize_sources": "Listen through the microphone, catch what this computer plays, pick a file, or paste a link to a video",
