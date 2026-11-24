@@ -16,8 +16,8 @@ export const clampSize = (size: number) => Math.min(POCKET_MAX, Math.max(POCKET_
 // Linux gives a frameless window no shadow; the page draws one in this margin.
 export const pocketMargin = (session: NotchSession) => (session === "windows" || session === "macos" ? 0 : 10);
 
-export function pocketTop(session: NotchSession): PocketTop {
-  if (session === "gnome-wayland") return "window-menu";
+export function pocketTop(session: NotchSession, heldByShell = false): PocketTop {
+  if (session === "gnome-wayland") return heldByShell ? "app" : "window-menu";
   return session === "other-wayland" ? "none" : "app";
 }
 

@@ -26,6 +26,7 @@ describe("validPlace", () => {
 describe("what a desktop allows", () => {
   it("is told apart per session", () => {
     expect(pocketTop("gnome-wayland")).toBe("window-menu");
+    expect(pocketTop("gnome-wayland", true)).toBe("app");
     expect(pocketTop("other-wayland")).toBe("none");
     for (const session of ["x11", "windows", "macos", "kde-wayland", "hyprland", "sway"] as const) expect(pocketTop(session)).toBe("app");
     expect(remembersPlace("kde-wayland")).toBe(false);

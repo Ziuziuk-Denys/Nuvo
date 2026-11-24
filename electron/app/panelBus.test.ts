@@ -39,9 +39,10 @@ function setup(now = () => 0) {
   const bus = fakeBus();
   const command = vi.fn();
   const show = vi.fn();
-  const service = new PanelService(bus, { mprisName: "org.mpris.MediaPlayer2.chromium.instance1", command, show, now });
+  const pocketHeld = vi.fn();
+  const service = new PanelService(bus, { mprisName: "org.mpris.MediaPlayer2.chromium.instance1", command, show, pocketHeld, now });
   const call = (member: string, iface = INTERFACE, body: unknown[] = []) => bus.onCall({ type: 1, path: OBJECT_PATH, interface: iface, member, body });
-  return { bus, command, show, service, call };
+  return { bus, command, show, pocketHeld, service, call };
 }
 
 describe("PanelService", () => {
@@ -64,6 +65,17 @@ describe("PanelService", () => {
     const { show, call } = setup();
     call("Show");
     expect(show).toHaveBeenCalledOnce();
+  });
+
+  it("tells the shell whether the pocket player stays on top, and hears when the shell holds it", () => {
+    const { service, bus, pocketHeld, call } = setup();
+    service.setPocketOnTop(true);
+    expect(bus.signals.at(-1)?.body?.[1]).toEqual([["PocketOnTop", ["b", true]]]);
+    service.update(playing());
+    expect(service.properties.PocketOnTop).toBe(true);
+    call("HoldPocket", INTERFACE, [true]);
+    call("HoldPocket", INTERFACE, ["yes"]);
+    expect(pocketHeld.mock.calls).toEqual([[true], [false]]);
   });
 
   it("exposes the current track, synced lyrics, and up-next queue", () => {
@@ -175,6 +187,7 @@ describe("PanelService", () => {
           ["LyricsLine", ["s", ""]],
           ["LyricsJson", ["s", "[]"]],
           ["UpNextJson", ["s", "[]"]],
+          ["PocketOnTop", ["b", false]],
         ],
       ],
     });
@@ -205,6 +218,7 @@ describe.skipIf(!has("dbus-daemon") || !has("gdbus"))("quest.nuvo.Nuvo.Player on
   let panel: PanelBus | null;
   const commands: unknown[] = [];
   let shown = 0;
+  let pocketHeld = false;
 
   const gdbus = async (...args: string[]) =>
     (await execFileAsync("gdbus", args, { env: { ...process.env, DBUS_SESSION_BUS_ADDRESS: address }, timeout: 5000 })).stdout.trim();
@@ -221,7 +235,13 @@ describe.skipIf(!has("dbus-daemon") || !has("gdbus"))("quest.nuvo.Nuvo.Player on
     });
     await new Promise<void>((resolve) => daemon.stdout!.once("data", () => resolve()));
     panel = await startPanelBus(
-      { mprisName: "org.mpris.MediaPlayer2.chromium.instance42", command: (c) => commands.push(c), show: () => shown++, now: Date.now },
+      {
+        mprisName: "org.mpris.MediaPlayer2.chromium.instance42",
+        command: (c) => commands.push(c),
+        show: () => shown++,
+        pocketHeld: (held) => (pocketHeld = held),
+        now: Date.now,
+      },
       { DBUS_SESSION_BUS_ADDRESS: address },
     );
   });
@@ -236,7 +256,7 @@ describe.skipIf(!has("dbus-daemon") || !has("gdbus"))("quest.nuvo.Nuvo.Player on
     expect(panel).not.toBeNull();
     panel!.service.update(playing({ liked: true }));
     expect(await callMethod("org.freedesktop.DBus.Properties.GetAll", INTERFACE)).toBe(
-      "({'MprisName': <'org.mpris.MediaPlayer2.chromium.instance42'>, 'TrackId': <'t1'>, 'Liked': <true>, 'LyricsLine': <''>, 'LyricsJson': <'[]'>, 'UpNextJson': <'[]'>},)",
+      "({'MprisName': <'org.mpris.MediaPlayer2.chromium.instance42'>, 'TrackId': <'t1'>, 'Liked': <true>, 'LyricsLine': <''>, 'LyricsJson': <'[]'>, 'UpNextJson': <'[]'>, 'PocketOnTop': <false>},)",
     );
     expect(await callMethod("org.freedesktop.DBus.Properties.Get", INTERFACE, "Liked")).toBe("(<true>,)");
     expect(await gdbus("introspect", "--session", "--dest", BUS_NAME, "--object-path", OBJECT_PATH)).toContain("ToggleLike");
@@ -247,7 +267,9 @@ describe.skipIf(!has("dbus-daemon") || !has("gdbus"))("quest.nuvo.Nuvo.Player on
     await callMethod(`${INTERFACE}.Dislike`);
     await callMethod(`${INTERFACE}.Show`);
     expect(commands).toEqual([{ type: "unlike" }, { type: "dislike" }]);
+    await callMethod(`${INTERFACE}.HoldPocket`, "true");
     expect(shown).toBe(1);
+    expect(pocketHeld).toBe(true);
     await expect(callMethod(`${INTERFACE}.Nope`)).rejects.toThrow(/UnknownMethod/);
   });
 
@@ -265,7 +287,7 @@ describe.skipIf(!has("dbus-daemon") || !has("gdbus"))("quest.nuvo.Nuvo.Player on
 
   it("a second owner stays out", async () => {
     const second = await startPanelBus(
-      { mprisName: "x", command: () => undefined, show: () => undefined, now: Date.now },
+      { mprisName: "x", command: () => undefined, show: () => undefined, pocketHeld: () => undefined, now: Date.now },
       { DBUS_SESSION_BUS_ADDRESS: address },
     );
     expect(second).toBeNull();

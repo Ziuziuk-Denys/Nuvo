@@ -13,6 +13,7 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 
 const NUVO_NAME = "quest.nuvo.Nuvo.Player";
 const NUVO_PATH = "/quest/nuvo/Nuvo/Player";
+const POCKET_TITLE = "Nuvo Pocket";
 const MPRIS_PATH = "/org/mpris/MediaPlayer2";
 const PLAYER_IFACE = "org.mpris.MediaPlayer2.Player";
 // the Nuvo accent of the dark preset, for songs without a colourful cover
@@ -26,9 +27,11 @@ const NuvoProxy = Gio.DBusProxy.makeProxyWrapper(`<node>
     <property name="MprisName" type="s" access="read"/>
     <property name="Liked" type="b" access="read"/>
     <property name="LyricsLine" type="s" access="read"/>
+    <property name="PocketOnTop" type="b" access="read"/>
     <method name="ToggleLike"/>
     <method name="Dislike"/>
     <method name="Show"/>
+    <method name="HoldPocket"><arg type="b" direction="in"/></method>
   </interface>
 </node>`);
 
@@ -41,6 +44,67 @@ const PlayerProxy = Gio.DBusProxy.makeProxyWrapper(`<node>
     <property name="Metadata" type="a{sv}" access="read"/>
   </interface>
 </node>`);
+
+// A Wayland client cannot raise itself above the others; the shell can do it for Nuvo's small window
+class PocketHolder {
+  constructor() {
+    this._onTop = false;
+    this._window = null;
+    global.display.connectObject("window-created", (_display, window) => this._watch(window), this);
+    for (const actor of global.get_window_actors()) this._watch(actor.meta_window);
+  }
+
+  setOnTop(onTop) {
+    this._onTop = onTop;
+    this._apply();
+  }
+
+  _watch(window) {
+    if (window.title === POCKET_TITLE) {
+      this._hold(window);
+      return;
+    }
+    window.connectObject(
+      "notify::title",
+      () => {
+        if (window.title !== POCKET_TITLE) return;
+        window.disconnectObject(this);
+        this._hold(window);
+      },
+      this,
+    );
+  }
+
+  _hold(window) {
+    this._window = window;
+    window.connectObject(
+      "unmanaging",
+      () => {
+        window.disconnectObject(this);
+        if (this._window === window) this._window = null;
+      },
+      this,
+    );
+    this._apply();
+  }
+
+  _apply() {
+    if (!this._window) return;
+    if (this._onTop) {
+      this._window.make_above();
+      this._window.stick();
+    } else {
+      this._window.unmake_above();
+      this._window.unstick();
+    }
+  }
+
+  destroy() {
+    global.display.disconnectObject(this);
+    for (const actor of global.get_window_actors()) actor.meta_window.disconnectObject(this);
+    this._window = null;
+  }
+}
 
 function coverGlow(uri) {
   try {
@@ -133,6 +197,7 @@ const NuvoIndicator = GObject.registerClass(
       box.add_child(this._label);
       this.add_child(box);
 
+      this._pocket = new PocketHolder();
       this._buildCard();
       this.menu.connectObject("open-state-changed", (_menu, open) => this._followPosition(open), this);
 
@@ -201,11 +266,13 @@ const NuvoIndicator = GObject.registerClass(
       this._nuvo = new NuvoProxy(Gio.DBus.session, NUVO_NAME, NUVO_PATH, (proxy, error) => {
         if (error || this._nuvo !== proxy) return;
         proxy.connectObject("g-properties-changed", () => this._onNuvoChanged(), this);
+        proxy.HoldPocketAsync(true).catch(() => {});
         this._onNuvoChanged();
       });
     }
 
     _onNuvoChanged() {
+      this._pocket.setOnTop(this._nuvo?.PocketOnTop ?? false);
       const name = this._nuvo?.MprisName ?? "";
       if (name && this._player?.g_name !== name) this._connectPlayer(name);
       this._sync();
@@ -340,6 +407,8 @@ const NuvoIndicator = GObject.registerClass(
 
     destroy() {
       this._followPosition(false);
+      this._pocket.destroy();
+      this._nuvo?.HoldPocketAsync(false).catch(() => {});
       if (this._watch) {
         Gio.bus_unwatch_name(this._watch);
         this._watch = 0;
