@@ -49,10 +49,10 @@ describe("app icon", () => {
   it("sends the preset's icon, stock only for nuvo", async () => {
     useLookStore.setState({ preset: "amber" });
     await mount();
-    expect(applyIcon).toHaveBeenCalledWith("data:image/png;base64,AAAA", { stock: false });
+    expect(applyIcon).toHaveBeenCalledWith("data:image/png;base64,AAAA", { stock: false, small: "data:image/png;base64,AAAA" });
     applyIcon.mockClear();
     await act(async () => useLookStore.setState({ preset: "nuvo" }));
-    expect(applyIcon).toHaveBeenCalledWith("data:image/png;base64,AAAA", { stock: true });
+    expect(applyIcon).toHaveBeenCalledWith("data:image/png;base64,AAAA", { stock: true, small: "data:image/png;base64,AAAA" });
   });
 });
 

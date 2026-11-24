@@ -12,7 +12,7 @@ const STATES: IconName[][] = [
   ["repeat", "repeat-one"],
   ["volume-mute", "volume-low", "volume-high"],
   ["playlist-add", "playlist-added"],
-  ["download", "downloaded"],
+  ["add", "check"],
 ];
 
 interface Layer {

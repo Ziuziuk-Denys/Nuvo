@@ -1,7 +1,7 @@
 import { useContext, type JSX } from "react";
 import { useTranslation } from "../../ports/i18n";
 import { useAppEdition, useAppVersion } from "../../ports/settings";
-import { presetIconSvg, useLook } from "../../ports/theme";
+import { presetIconSrc, useLook } from "../../ports/theme";
 import { SearchQuery, SettingBlock, SettingGroup } from "./controls";
 import { matchesQuery } from "./sections";
 import styles from "./sections.module.css";
@@ -24,14 +24,7 @@ export function AboutSection(): JSX.Element {
     <>
       {matchesQuery(query, ["settings.about.nuvo", "settings.about.tagline"], [version]) ? (
         <div className={styles.about}>
-          <img
-            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(presetIconSvg(preset, mode))}`}
-            alt=""
-            width={56}
-            height={56}
-            className={styles.aboutLogo}
-            draggable={false}
-          />
+          <img src={presetIconSrc(preset, mode)} alt="" width={56} height={56} className={styles.aboutLogo} draggable={false} />
           <div className={styles.aboutText}>
             <span className={styles.aboutName}>{t("settings.about.nuvo")}</span>
             <span className={styles.version}>{version}</span>

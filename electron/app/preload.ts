@@ -30,7 +30,7 @@ const shell: NuvoShell = {
   onBeforeQuit: on("app:before-quit"),
   quitReady: () => ipcRenderer.send("app:quit-ready"),
   notify: (title, body) => invoke("app:notify", { title, body }),
-  applyIcon: (pngDataUrl, { stock }) => invoke("icon:apply", { pngDataUrl, stock }),
+  applyIcon: (pngDataUrl, { stock, small }) => invoke("icon:apply", { pngDataUrl, stock, small }),
   reveal: (path) => invoke("shell:reveal", { path }),
   saveTextFile: (name, text) => invoke("file:save-text", { name, text }),
   addMusicFolder: () => invoke("local:add-folder"),

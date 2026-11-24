@@ -1,0 +1,10 @@
+.sleeve {
+  display: block;
+  width: 200px;
+  aspect-ratio: 448 / 399;
+  background: url("./art/sleeve-light.webp") center / contain no-repeat;
+}
+
+:global(:root[data-theme="dark"]) .sleeve {
+  background-image: url("./art/sleeve-dark.webp");
+}

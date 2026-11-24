@@ -578,6 +578,14 @@ describe("app icon", () => {
     expect(t.refreshes).toHaveLength(1);
   });
 
+  it("the smallest theme file comes from the small drawing", async () => {
+    const home = tempDir();
+    const t = installer(home);
+    await t.i.apply(png(1), false, png(9));
+    expect(fs.readFileSync(file(home, 16))).toEqual(Buffer.from([0x89, 0x50, 9, 16]));
+    expect(fs.readFileSync(file(home, 32))).toEqual(Buffer.from([0x89, 0x50, 1, 32]));
+  });
+
   it("the same bytes twice write nothing", async () => {
     const home = tempDir();
     const t = installer(home);

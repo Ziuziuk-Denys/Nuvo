@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyPresetTokens, applyTokens } from "./apply";
-import { PRESETS, PRESET_IDS, getPreset, presetIconSvg, resolvePresetMode } from "./presets";
+import { PRESETS, PRESET_IDS, getPreset, presetIconSrc, presetSmallIconSrc, resolvePresetMode } from "./presets";
 
 describe("presets", () => {
   it("has the nine presets in order, each mode with the same token names", () => {
@@ -21,16 +21,17 @@ describe("presets", () => {
     expect(resolvePresetMode(getPreset("nuvo"), "light")).toBe("light");
   });
 
-  it("every preset has its own icon per mode, a light tile in light mode and a dark one in dark", () => {
-    const icons = new Set<string>();
+  it("every preset has its own rendered icon and flat small icon per mode", () => {
     const luma = (hex: string) => [0, 2, 4].reduce((sum, at, i) => sum + parseInt(hex.slice(1 + at, 3 + at), 16) * [0.2126, 0.7152, 0.0722][i], 0);
+    const icons = new Set<string>();
     for (const preset of PRESETS) {
       for (const mode of preset.modes) {
-        const svg = presetIconSvg(preset.id, mode);
-        expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
+        const src = presetIconSrc(preset.id, mode);
+        expect(src).toMatch(preset.id === "nuvo" ? /^data:image\/svg/ : new RegExp(`${preset.id}-${mode}`));
+        icons.add(src);
+        const svg = decodeURIComponent(presetSmallIconSrc(preset.id, mode));
         const tileTop = /id="bg"[^>]*><stop offset="0" stop-color="(#[0-9a-fA-F]{6})"/.exec(svg)![1];
         expect(luma(tileTop) > 128).toBe(mode === "light");
-        icons.add(svg);
       }
     }
     expect(icons.size).toBe(PRESETS.length * 2);

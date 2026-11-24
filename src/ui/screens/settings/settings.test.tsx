@@ -188,7 +188,7 @@ vi.mock("../../ports/theme", () => ({
     { id: "nuvo", modes: ["light", "dark"] },
     { id: "amber", modes: ["light", "dark"] },
   ],
-  presetIconSvg: () => "<svg></svg>",
+  presetIconSrc: () => "data:image/svg+xml,",
   revealThemeChange: (apply: () => void) => apply(),
   useLook: () => mocks.look,
   useThemeMode: () => "light",
