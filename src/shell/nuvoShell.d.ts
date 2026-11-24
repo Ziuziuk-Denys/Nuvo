@@ -108,7 +108,7 @@ export interface NuvoShell {
   quit(): Promise<void>;
   onBeforeQuit(cb: (info: { deadlineMs: number }) => void): Off;
   quitReady(): void;
-  applyIcon(pngDataUrl: string, options: { stock: boolean; flat?: string[] }): Promise<void>;
+  applyIcon(pngDataUrl: string, options: { stock: boolean; frames?: string[] }): Promise<void>;
   reveal(path: string): Promise<boolean>;
   saveTextFile(name: string, text: string): Promise<boolean>;
   chromiumUsage(): Promise<ChromiumUsage>;

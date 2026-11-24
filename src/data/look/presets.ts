@@ -29,6 +29,11 @@ export function presetIconSrc(id: PresetId, mode: PresetMode, size: 128 | 512 = 
   return presetRenderUrl(id, resolvePresetMode(getPreset(id), mode), size);
 }
 
+export function presetFrameSrc(id: PresetId, mode: PresetMode, size: number): string {
+  if (size > 48) return presetIconSrc(id, mode, size > 128 ? 512 : 128);
+  return presetFlatSrc(id, mode, size < 24 ? 16 : size < 48 ? 32 : 48);
+}
+
 export function presetFlatSrc(id: PresetId, mode: PresetMode, size: FlatSize): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(presetFlatSvg(id, resolvePresetMode(getPreset(id), mode), size))}`;
 }

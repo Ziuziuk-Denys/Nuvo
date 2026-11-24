@@ -84,6 +84,9 @@ jobs:
       - name: The taskbar takes the thumbnail buttons and every icon loads at its size
         shell: bash
         run: pnpm exec electron "$RUNNER_TEMP/probe/thumbar.mjs"
+      - name: The window takes a frame of its own from the ico for each size
+        shell: bash
+        run: pnpm exec electron "$RUNNER_TEMP/probe/window-icon.mjs"
 
   # The helper tools are fetched per platform; Linux runs the full suite above
   core-portable:
