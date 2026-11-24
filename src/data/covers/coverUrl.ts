@@ -1,3 +1,5 @@
+import { CORE_BASE_URL } from "@/data/core/request";
+
 export const COVER_BUCKETS = [64, 128, 256, 512, 1024, 2048] as const;
 const DEFAULT_BUCKET = 512;
 
@@ -16,4 +18,9 @@ export function coverUrl(base: string, src: string, cssPx: number, dpr: number):
   // the daemon fetches https only, so a plain-http cover shows the placeholder without a request
   if (scheme === "http") return "";
   return src;
+}
+
+export function windowCover(src: string, cssPx: number): string | null {
+  const url = coverUrl(CORE_BASE_URL, src, cssPx, 2);
+  return url.startsWith(`${CORE_BASE_URL}/`) && url.length <= 2048 ? url : null;
 }

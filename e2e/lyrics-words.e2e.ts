@@ -608,7 +608,7 @@ it("with the user's own lyrics saved, the version menu lists both and switches b
   await main.locator('[data-tools] button[aria-label="Версия текста"]').click();
   const items = main.locator('[role="menu"] [role="menuitem"]');
   await items.first().waitFor();
-  expect(await items.allTextContents()).toEqual(["Ваш текст", "С временем по словам", "Найти текст"]);
+  expect(await items.allTextContents()).toEqual(["Ваш текст", "С временем по словам", "Найти текст", "Разметить по словам"]);
   await main.waitForTimeout(300);
   await main.screenshot({ path: path.join(SHOTS, "karaoke-versions-ru-1100.png") });
   await items.nth(1).click();
