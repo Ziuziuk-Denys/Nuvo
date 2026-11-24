@@ -30,6 +30,7 @@ export interface PocketDeps {
   bridge: OverlayPlacer | null;
   loadKwin: (script: string) => Promise<boolean>;
   unloadKwin: () => Promise<void>;
+  heldByShell: () => boolean;
   onTop: () => boolean;
   setOnTop: (onTop: boolean) => void;
   place: () => PocketPlace | null;
@@ -61,12 +62,12 @@ export class PocketWindow {
 
   status(): PocketStatus {
     const { session } = this.deps;
-    return { open: this.isOpen, session, top: pocketTop(session), remembersPlace: remembersPlace(session) };
+    return { open: this.isOpen, session, top: pocketTop(session, this.deps.heldByShell()), remembersPlace: remembersPlace(session) };
   }
 
   hello(): PocketHello {
     const { state, lyrics, feed, margin } = this;
-    return { state, lyrics, feed, margin, top: pocketTop(this.deps.session), onTop: this.deps.onTop() };
+    return { state, lyrics, feed, margin, top: pocketTop(this.deps.session, this.deps.heldByShell()), onTop: this.deps.onTop() };
   }
 
   setState(state: NotchState): void {
@@ -107,12 +108,13 @@ export class PocketWindow {
     if (!win || win.isDestroyed()) return;
     const above = this.deps.onTop();
     const { session } = this.deps;
+    if (session === "gnome-wayland") return;
     if (session === "kde-wayland") {
       await this.deps.loadKwin(kwinAboveScript(POCKET_TITLE, above));
     } else if (session === "hyprland" || session === "sway") {
       const { width, height } = win.getBounds();
       await this.deps.bridge?.placeOverlay({ title: POCKET_TITLE, width, height, anchor: "top-right", pinned: above, margin: 24, bounds: "workArea" });
-    } else if (pocketTop(session) === "app") {
+    } else if (pocketTop(session, this.deps.heldByShell()) === "app") {
       win.setVisibleOnAllWorkspaces(above, { visibleOnFullScreen: above, skipTransformProcessType: true });
       win.setAlwaysOnTop(above, "floating");
       // Mutter drops always-on-top asked for before the window is mapped, so it is asked again until it holds.
@@ -127,7 +129,7 @@ export class PocketWindow {
   popMenu({ labels, face, faces }: PocketMenuRequest): void {
     const win = this.win;
     if (!win || win.isDestroyed()) return;
-    const top = pocketTop(this.deps.session);
+    const top = pocketTop(this.deps.session, this.deps.heldByShell());
     const show = (next: PocketFace) => this.webContents?.send("pocket:face", next);
     const sizes: PocketSize[] = ["small", "medium", "large"];
     const size = win.getBounds().width - this.margin * 2;

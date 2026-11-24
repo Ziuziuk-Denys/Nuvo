@@ -148,6 +148,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   const iconFile = (size: number) => path.join(app.getAppPath(), "build", "icons", `${size}x${size}.png`);
   let notch: NotchWindow | null = null;
   let pocket: PocketWindow | null = null;
+  let pocketHeld = false;
   let panelBus: PanelBus | null = null;
   let youtube: YoutubeService | null = null;
   let tray: TrayController | null = null;
@@ -413,6 +414,11 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     if (!app.isPackaged) (globalThis as { nuvoNotch?: NotchWindow }).nuvoNotch = notch;
   }
 
+  function applyPocketOnTop(): void {
+    void pocket?.applyOnTop();
+    panelBus?.service.setPocketOnTop(settings.value.pocketOnTop);
+  }
+
   function startPocket(): void {
     const { session } = notch!;
     const plugin = "nuvo-pocket";
@@ -424,8 +430,9 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       bridge: createCompositorBridge(compositor, process.env, process.pid, log, trackedExec),
       loadKwin: (script) => loadKwinScript(script, undefined, undefined, plugin),
       unloadKwin: () => unloadKwinScript(undefined, plugin),
+      heldByShell: () => pocketHeld,
       onTop: () => settings.value.pocketOnTop,
-      setOnTop: (onTop) => void settings.set("pocketOnTop", onTop).then(() => pocket?.applyOnTop()),
+      setOnTop: (onTop) => void settings.set("pocketOnTop", onTop).then(applyPocketOnTop),
       place: () => settings.value.pocketPlace,
       savePlace: (place) => settings.setPocketPlace(place),
       openApp: () => windows.show(),
@@ -469,8 +476,12 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       mprisName: `org.mpris.MediaPlayer2.chromium.instance${process.pid}`,
       command: (command) => sendToMain(CHANNELS.playerCommand, command),
       show: () => windows.show(),
+      pocketHeld: (held) => {
+        pocketHeld = held;
+      },
       now: Date.now,
     });
+    panelBus?.service.setPocketOnTop(settings.value.pocketOnTop);
     panelBus?.service.update(relay.latest);
   }
 
@@ -587,7 +598,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       if (result.ok && key === "updateCheck") updater.checksChanged();
       if (result.ok && key === "menuEntry") void syncMenuEntry();
       if (result.ok && key === "keepInTray") tray?.sync();
-      if (result.ok && key === "pocketOnTop") void pocket?.applyOnTop();
+      if (result.ok && key === "pocketOnTop") applyPocketOnTop();
       return result;
     });
     ipc.handle(CHANNELS.discordStatus, "main", () => discord.current);

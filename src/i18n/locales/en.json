@@ -1257,7 +1257,7 @@
       },
       "pocket_on_top": "Keep the pocket player on top",
       "pocket_top_app": "It stays above other windows",
-      "pocket_top_window-menu": "On GNOME only you can do this: click the pocket player, press Alt+Space and choose Always on Top",
+      "pocket_top_window-menu": "GNOME lets only you do this: click the pocket player, press Alt+Space and choose Always on Top. With the Nuvo panel widget installed, Nuvo does it for you",
       "pocket_top_none": "This desktop does not let an app keep a window on top",
       "pocket_place_kept": "It opens where you left it",
       "pocket_size_kept": "It keeps its size; this desktop chooses the place"
