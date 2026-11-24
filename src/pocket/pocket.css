@@ -16,6 +16,7 @@ body,
   --wash: color-mix(in srgb, var(--ink) 10%, transparent);
   --room: color-mix(in srgb, var(--field) 42%, #050506);
   --glow: 40%;
+  --beam: var(--light);
   --radius: 18px;
   --cover: 0.5;
   --out: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -52,8 +53,9 @@ body,
 }
 
 .pocket[data-mode="light"] {
-  --room: color-mix(in srgb, var(--field) 80%, #fff);
-  --glow: 46%;
+  --room: color-mix(in srgb, var(--field) 66%, #d5dbe4);
+  --glow: 82%;
+  --beam: color-mix(in srgb, var(--light) 22%, #fff);
 }
 
 :where(.pocket button) {
@@ -116,10 +118,10 @@ body,
 
 .room {
   --fall:
-    color-mix(in srgb, var(--light) var(--glow), transparent) 0%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.92), transparent) 15%,
-    color-mix(in srgb, var(--light) calc(var(--glow) * 0.75), transparent) 30%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.57), transparent) 45%,
-    color-mix(in srgb, var(--light) calc(var(--glow) * 0.41), transparent) 60%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.26), transparent) 75%,
-    color-mix(in srgb, var(--light) calc(var(--glow) * 0.11), transparent) 90%, transparent 100%;
+    color-mix(in srgb, var(--beam) var(--glow), transparent) 0%, color-mix(in srgb, var(--beam) calc(var(--glow) * 0.92), transparent) 15%,
+    color-mix(in srgb, var(--beam) calc(var(--glow) * 0.75), transparent) 30%, color-mix(in srgb, var(--beam) calc(var(--glow) * 0.57), transparent) 45%,
+    color-mix(in srgb, var(--beam) calc(var(--glow) * 0.41), transparent) 60%, color-mix(in srgb, var(--beam) calc(var(--glow) * 0.26), transparent) 75%,
+    color-mix(in srgb, var(--beam) calc(var(--glow) * 0.11), transparent) 90%, transparent 100%;
 
   position: absolute;
   inset: 0;
