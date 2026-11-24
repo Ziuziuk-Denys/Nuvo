@@ -563,6 +563,30 @@
   pointer-events: auto;
 }
 
+/* over a scene it is one pill, dark over any picture, and it leaves with the controls */
+.offer[data-stage] {
+  --k-ink: #fff;
+  --k-ink-2: rgba(255, 255, 255, 0.84);
+  --k-ink-3: rgba(255, 255, 255, 0.6);
+  --k-hover: rgba(255, 255, 255, 0.1);
+  bottom: 32px;
+  flex-flow: wrap;
+  width: fit-content;
+  max-width: calc(100vw - 300px);
+  margin-inline: auto;
+  padding: 6px 10px 6px 20px;
+  border-radius: 22px;
+  background: rgba(11, 13, 21, 0.9);
+  pointer-events: auto;
+}
+
+@media (max-width: 1250px) {
+  .offer[data-stage] {
+    flex-flow: column;
+    padding: 10px 14px;
+  }
+}
+
 .root .sources > .textButton:first-child {
   color: var(--k-ink);
 }
@@ -572,6 +596,11 @@
   .offer {
     flex-flow: wrap;
   }
+}
+
+.root[data-rest] .offer[data-hold],
+.root[data-rest] .offer[data-hold] > * {
+  pointer-events: none;
 }
 
 .root[data-rest] .offer[data-hold] {
@@ -869,19 +898,4 @@
 
 :where(.root [data-ink]) {
   color: var(--k-ink);
-}
-
-.noLyrics {
-  position: absolute;
-  z-index: 1;
-  bottom: 40px;
-  left: 50%;
-  margin: 0;
-  padding: 10px 18px;
-  border-radius: var(--n-r-pill);
-  background: rgba(11, 13, 21, 0.9);
-  color: #fff;
-  font: var(--n-type-label);
-  translate: -50% 0;
-  pointer-events: none;
 }

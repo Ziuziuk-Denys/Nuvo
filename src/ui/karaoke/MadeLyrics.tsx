@@ -88,22 +88,24 @@ function Working({ offer, trackId }: { offer: Extract<MakerOffer, { kind: "worki
   );
 }
 
-export function AddLyrics({ track }: { track: LyricsTrack }): JSX.Element {
+export function AddLyrics({ track, stage = false }: { track: LyricsTrack; stage?: boolean }): JSX.Element {
   const { t } = useTranslation();
   const timing = useWordTiming();
   const offer = makerOffer(timing, useMadeLyrics(), track.id, "none");
   const sources = useLyricsSources(track);
   if (offer.kind === "working") {
     return (
-      <div className={styles.offer} data-working="">
+      <div className={styles.offer} data-stage={stage ? "" : undefined} data-working="">
         <Working offer={offer} trackId={track.id} />
       </div>
     );
   }
   const size = offer.kind === "offer" ? offer.downloadMb : null;
   return (
-    <div className={styles.offer} data-hold="">
-      <p>{offer.kind === "failed" ? failureText(offer, t) : t("ui.karaoke.no_lyrics")}</p>
+    <div className={styles.offer} data-stage={stage ? "" : undefined} data-hold="">
+      <p role={stage ? "status" : undefined}>
+        {offer.kind === "failed" ? failureText(offer, t) : t(stage ? "visual.stage.no_lyrics" : "ui.karaoke.no_lyrics")}
+      </p>
       <div className={styles.sources}>
         {offer.kind !== "none" ? (
           <button
