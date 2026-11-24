@@ -56,6 +56,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
       const spot = width > 0 ? place(ring, offset) : null;
       item.style.visibility = spot ? "" : "hidden";
       if (!spot) return;
+      item.style.opacity = String(spot.shown);
       item.style.zIndex = String(100 - Math.round(Math.abs(offset) * 4));
       item.style.transform = `translate(${spot.x - ring.cover / 2}px, ${spot.y - ring.cover / 2}px) scale(${spot.scale}) perspective(${PERSPECTIVE}px) rotateY(${spot.turn}deg) rotateZ(${spot.tilt}rad)`;
     });

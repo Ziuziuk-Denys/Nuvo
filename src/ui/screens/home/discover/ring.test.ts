@@ -89,6 +89,26 @@ describe("place", () => {
     }
   });
 
+  it("fades a cover out over the last step before the widest point, so none folds back", () => {
+    for (const width of [1100, 1440, 1920, 2560]) {
+      const ring = ringFor(width, 460, 64);
+      let out = 0;
+      let shown = 1;
+      for (let offset = 0; offset < 20; offset += 0.02) {
+        const spot = place(ring, offset);
+        if (!spot) break;
+        expect(spot.x + (ring.cover * spot.scale * Math.cos((spot.turn * Math.PI) / 180)) / 2).toBeGreaterThanOrEqual(offset < 1 ? 0 : out - 0.2);
+        expect(shown - spot.shown).toBeLessThan(0.03);
+        expect(spot.shown === 1).toBe(offset * ring.step <= ring.widest - ring.step);
+        out = spot.x + (ring.cover * spot.scale * Math.cos((spot.turn * Math.PI) / 180)) / 2;
+        shown = spot.shown;
+      }
+      expect(shown).toBeLessThan(0.03);
+    }
+    const narrow = ringFor(640, 460, 64);
+    expect(place(narrow, 4)!.shown).toBe(1);
+  });
+
   it("runs covers off both edges and leaves the centre one largest", () => {
     const ring = ringFor(1100, 460, 64);
     const centre = place(ring, 0)!;
