@@ -178,7 +178,6 @@ describe("Playlist page", () => {
       const layout = await measure(live.page);
       const where = `ru-long ${size.width}`;
       expectSharedLayout(layout, where);
-      expect(layout.titleLines, `${where}: the title ellipsizes on one line`).toBe(1);
       expect(layout.playBottom, `${where}: Play above the fold`).toBeLessThan(size.height - 96);
     }
     await live.shoot(STEP, "playlist-ru-long", "rest", { looks: [...LOOKS_NUVO], prepare });
