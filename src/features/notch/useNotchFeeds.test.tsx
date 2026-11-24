@@ -48,7 +48,7 @@ describe("Notch feeds under the new shell", () => {
     act(() => view.root.unmount());
   });
 
-  it("sends the playlists newest first with a public cover, and every answer to an add", () => {
+  it("sends the playlists newest first with a cover from the core, and every answer to an add", () => {
     const notchUpdatePlaylists = vi.fn();
     (window as unknown as { nuvoShell: object }).nuvoShell = { notchUpdateLyrics: vi.fn(), notchUpdatePlaylists, notchUpdateSettings: vi.fn() };
     const view = mount({ trackId: null, lyricsTrackId: null, lines: [] }, [
@@ -58,7 +58,7 @@ describe("Notch feeds under the new shell", () => {
     expect(notchUpdatePlaylists).toHaveBeenLastCalledWith({
       items: [
         { id: "new", title: "New", coverUrl: null, trackCount: 0 },
-        { id: "old", title: "Old", coverUrl: "https://c.test/1.jpg", trackCount: 2 },
+        { id: "old", title: "Old", coverUrl: "nuvo-core://local/v1/covers?src=https%3A%2F%2Fc.test%2F1.jpg&size=128", trackCount: 2 },
       ],
       outcome: null,
     });

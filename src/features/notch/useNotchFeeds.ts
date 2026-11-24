@@ -1,9 +1,11 @@
 import { useEffect } from "react";
+import { windowCover } from "@/data/covers/coverUrl";
 import type { NotchLyrics, NotchPlaylist, NotchSettings } from "@/notch/contracts";
 import { usePlaylistAdds } from "./playlistAdds";
 import { useNotchSettingsStore } from "./store/notchSettingsStore";
 
 const MAX_PLAYLISTS = 30;
+const PLAYLIST_COVER_PX = 34;
 
 export interface NotchLyricsInput {
   trackId: string | null;
@@ -32,7 +34,7 @@ function latest(playlists: readonly NotchPlaylistInput[]): NotchPlaylist[] {
     .map(({ id, title, coverUrl, coverUrls, trackCount }) => ({
       id,
       title: title.slice(0, 256),
-      coverUrl: [coverUrl, ...coverUrls].find((url) => url.startsWith("https://")) ?? null,
+      coverUrl: [coverUrl, ...coverUrls].map((url) => windowCover(url, PLAYLIST_COVER_PX)).find((url) => url !== null) ?? null,
       trackCount,
     }));
 }

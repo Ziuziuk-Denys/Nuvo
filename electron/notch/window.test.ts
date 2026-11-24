@@ -780,13 +780,14 @@ describe("registerNotchIpc", () => {
     await notch.ready;
     registerNotchIpc(notch, { onAction: vi.fn() });
     const send = electron.ipcOn.get("notch:playlists")!;
-    const item = { id: "p", title: "Focus", coverUrl: "https://c.test/1.jpg", trackCount: 3 };
+    const item = { id: "p", title: "Focus", coverUrl: "nuvo-core://local/v1/covers?src=1", trackCount: 3 };
     const playlists = { items: [item], outcome: { trackId: "t", playlistId: "p", kind: "added" } };
     send({ sender: lastWindow().webContents }, playlists);
     for (const bad of [
       null,
       { items: "x", outcome: null },
       { items: [{ ...item, coverUrl: "file:///etc/passwd" }], outcome: null },
+      { items: [{ ...item, coverUrl: "https://c.test/1.jpg" }], outcome: null },
       { items: [{ ...item, trackCount: "3" }], outcome: null },
       { items: Array(101).fill(item), outcome: null },
       { items: [], outcome: { trackId: "t", playlistId: "p", kind: "maybe" } },

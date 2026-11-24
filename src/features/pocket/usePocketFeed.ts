@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { CORE_BASE_URL } from "@/data/core/request";
-import { coverUrl } from "@/data/covers/coverUrl";
+import { windowCover } from "@/data/covers/coverUrl";
 import type { NotchTrack } from "@/notch/contracts";
 import { POCKET_MAX, POCKET_QUEUE_MAX, type PocketFeed, type PocketLook } from "@/pocket/contracts";
 import { useNotchSettingsStore } from "../notch/store/notchSettingsStore";
@@ -17,17 +16,12 @@ export interface PocketTrack {
 const ROW_COVER_PX = 40;
 const MAX_TEXT = 256;
 
-function cover(src: string, px: number): string | null {
-  const url = coverUrl(CORE_BASE_URL, src, px, 2);
-  return url.startsWith("nuvo-core://local/") && url.length <= 2048 ? url : null;
-}
-
 function row(track: PocketTrack): NotchTrack {
   return {
     id: track.id,
     title: track.title.slice(0, MAX_TEXT),
     artist: track.artists.slice(0, MAX_TEXT),
-    coverUrl: cover(track.coverUrl, ROW_COVER_PX),
+    coverUrl: windowCover(track.coverUrl, ROW_COVER_PX),
     durationMs: Math.max(0, track.durationMs || 0),
   };
 }
@@ -43,7 +37,7 @@ export function pocketFeed(current: PocketTrack | null, queue: readonly PocketTr
   return {
     look,
     trackId: current.id,
-    coverUrl: cover(current.coverUrl, POCKET_MAX),
+    coverUrl: windowCover(current.coverUrl, POCKET_MAX),
     upNext: queue.slice(index + 1, index + 1 + POCKET_QUEUE_MAX).map(row),
   };
 }
