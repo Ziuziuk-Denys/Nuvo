@@ -8,7 +8,7 @@ const FLOOR_DB = -24;
 const CONTRAST = 2;
 const KEPT = 60;
 const RETRY_MS = 6_000;
-const MAX_TRIES = 20;
+const MAX_TRIES = 6;
 
 export function loudnessShape(channels: Float32Array[], bins = SHAPE_BINS): number[] {
   const length = channels[0]?.length ?? 0;
@@ -74,7 +74,7 @@ export function useLoudnessShape(trackId: string | null, visible: boolean): numb
         },
         () => {
           tries += 1;
-          if (live && tries < MAX_TRIES) timer = window.setTimeout(run, RETRY_MS);
+          if (live && tries < MAX_TRIES) timer = window.setTimeout(run, RETRY_MS * 2 ** (tries - 1));
         },
       );
     };
