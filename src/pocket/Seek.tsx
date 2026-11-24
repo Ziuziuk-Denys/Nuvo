@@ -3,6 +3,7 @@ import { useTranslation } from "@/i18n";
 import { formatTime, positionAt, type PositionSample } from "@/notch/lib/playback";
 
 const KEY_STEP_MS = 5000;
+const TICK_MS = 250;
 
 export function Seek({ sample, live, onSeek }: { sample: PositionSample; live: boolean; onSeek: (positionMs: number) => void }) {
   const { t } = useTranslation();
@@ -12,11 +13,9 @@ export function Seek({ sample, live, onSeek }: { sample: PositionSample; live: b
 
   useEffect(() => {
     if (!live) return;
-    let frame = requestAnimationFrame(function tick() {
-      setNow(Date.now());
-      frame = requestAnimationFrame(tick);
-    });
-    return () => cancelAnimationFrame(frame);
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), TICK_MS);
+    return () => clearInterval(timer);
   }, [live]);
 
   const dragged = drag && (drag.held || drag.sample === sample) ? drag.ms : null;
