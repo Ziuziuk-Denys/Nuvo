@@ -81,7 +81,7 @@ export function ExportClip({
         <Icon name="export" size={16} />
         {t("visual.export.open")}
       </button>
-      <Popover open={open} anchor={anchor} onClose={close} title={t("visual.export.title")} width={320} solid className={theme.dark}>
+      <Popover open={open} anchor={anchor} onClose={close} title={t("visual.export.title")} width={320} className={theme.dark}>
         <div className={styles.sheet}>
           <div className={styles.clip}>
             <span className={styles.frame} data-aspect={aspect}>

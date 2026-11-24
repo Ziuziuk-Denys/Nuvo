@@ -117,7 +117,7 @@ describe("Popover", () => {
     expect(dialogs()).toHaveLength(0);
   });
 
-  it("pours out of a 44 px sliver at the anchor's centre, on the anchor's side", () => {
+  it("grows from the anchor's centre, on the anchor's side", () => {
     const rect = vi
       .spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockReturnValue({ left: 400, width: 40, top: 700, bottom: 740, right: 440, height: 40, x: 400, y: 700, toJSON: () => ({}) });
@@ -125,11 +125,7 @@ describe("Popover", () => {
     const panel = dialogs()[0];
     // 160 = anchor centre (420) minus panel start (260)
     expect(panel.style.getPropertyValue("--nx")).toBe("160px");
-    expect(panel.style.getPropertyValue("--from")).toBe("calc(100% - 1px) 138px 0 138px");
     expect(panel.hasAttribute("data-below")).toBe(false);
-    expect(panel.hasAttribute("data-fresh")).toBe(true);
-    act(() => vi.advanceTimersByTime(1000));
-    expect(panel.hasAttribute("data-fresh")).toBe(false);
     rect.mockRestore();
   });
 

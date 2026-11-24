@@ -13,6 +13,7 @@ import { useDeeplinks } from "./links";
 import { useNowPlayingReport } from "./nowPlaying";
 import { AppRoutes } from "./routes";
 import { useEffectsMark } from "../effects";
+import "../fonts/fonts.css";
 import "../tokens.css";
 import "../motion.css";
 import "./base.css";

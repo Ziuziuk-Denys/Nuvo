@@ -1,6 +1,5 @@
 .menu {
   composes: pop from "./Popover.module.css";
-  animation-duration: 180ms;
   position: fixed;
   z-index: 900;
   display: flex;
@@ -11,9 +10,7 @@
   padding: 5px;
   border-radius: 14px;
   background: var(--n-pop);
-  -webkit-backdrop-filter: var(--n-pop-blur);
-  backdrop-filter: var(--n-pop-blur);
-  box-shadow: var(--n-panel-shadow-s);
+  box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
   outline: none;
 }
@@ -27,9 +24,9 @@
   background: var(--n-pop-hover);
   pointer-events: none;
   transition:
-    transform 140ms var(--n-ease-out),
-    height 140ms var(--n-ease-out),
-    background-color 140ms var(--n-ease-out);
+    transform var(--n-t-quick) var(--n-ease-out),
+    height var(--n-t-quick) var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out);
 }
 
 .lit[data-danger] {
@@ -73,7 +70,7 @@
   width: 16px;
   height: 16px;
   color: var(--n-ink-2);
-  transition: color 140ms var(--n-ease-out);
+  transition: color var(--n-t-quick) var(--n-ease-out);
 }
 
 .label {
@@ -88,7 +85,7 @@
   margin-right: -2px;
   color: var(--n-ink-3);
   transform: rotate(-90deg);
-  transition: transform 180ms var(--n-ease-out);
+  transition: transform var(--n-t-quick) var(--n-ease-out);
 }
 
 .item[aria-expanded="true"] .chevron {
@@ -136,7 +133,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .children[data-open] .item {
-    animation: unfold 180ms var(--n-ease-out) both;
+    animation: unfold var(--n-t-quick) var(--n-ease-out) both;
   }
 
   .children[data-open] .item:nth-child(2) {

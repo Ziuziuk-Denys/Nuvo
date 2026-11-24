@@ -20,7 +20,8 @@
 .title {
   margin: 0;
   color: var(--n-ink);
-  font: var(--n-type-heading);
+  font: var(--n-type-title);
+  letter-spacing: var(--n-track-title);
   text-wrap: balance;
 }
 

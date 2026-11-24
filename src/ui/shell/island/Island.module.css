@@ -8,7 +8,8 @@
   grid-template-columns: 312px minmax(0, 1fr) 260px;
   height: 64px;
   border-radius: 12px;
-  background: var(--n-field);
+  background: var(--n-plate);
+  box-shadow: var(--n-rim);
   color: var(--n-ink);
   font-family: var(--n-font);
   cursor: pointer;
@@ -42,12 +43,6 @@
 
 .bar[data-controls="side"] .actions {
   grid-area: actions;
-}
-
-.bar[data-lit] {
-  background: var(--n-glass);
-  -webkit-backdrop-filter: var(--n-glass-thick);
-  backdrop-filter: var(--n-glass-thick);
 }
 
 .now,
@@ -102,16 +97,16 @@
 }
 
 .title {
-  font: 400 16px/18px var(--n-font);
+  font: 500 15px/18px var(--n-font);
   letter-spacing: 0;
 }
 
 .artist {
   position: relative;
   z-index: 1;
-  margin-top: 4px;
-  color: var(--n-ink-3);
-  font: 300 13px/15px var(--n-font);
+  margin-top: 3px;
+  color: var(--n-ink-2);
+  font: 420 13px/16px var(--n-font);
 }
 
 .rate,
@@ -121,10 +116,6 @@
   flex: none;
   align-items: center;
   box-sizing: border-box;
-  padding: 2px;
-  border-radius: 999px;
-  background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
   cursor: default;
   pointer-events: auto;
 }

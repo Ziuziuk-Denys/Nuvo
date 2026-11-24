@@ -128,7 +128,7 @@
   --k-ink: #fff;
   --n-pop: rgba(20, 20, 24, 0.9);
   --n-pop-hover: rgba(255, 255, 255, 0.12);
-  --n-panel-rim: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 16px 40px rgba(0, 0, 0, 0.45);
+  --n-panel-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 16px 40px rgba(0, 0, 0, 0.45);
   --n-ink: #fff;
   --n-ink-2: rgba(255, 255, 255, 0.7);
 }

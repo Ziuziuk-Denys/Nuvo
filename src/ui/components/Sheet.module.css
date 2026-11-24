@@ -36,13 +36,13 @@
 
 .panel {
   composes: pop from "./Popover.module.css";
-  --shift: 4px;
+  --shift: 6px;
   position: relative;
   box-sizing: border-box;
   width: 100%;
   max-width: 480px;
-  padding: 20px;
-  border-radius: 20px;
+  padding: 22px;
+  border-radius: 18px;
   /* opaque, so a menu or popover opened from the sheet stays the one backdrop filter on screen */
   background: var(--n-sheet);
   box-shadow: var(--n-panel-shadow);
@@ -53,7 +53,7 @@
 
 .title {
   margin: 0;
-  font: 600 calc(18px * var(--n-scale, 1)) / 1.25 var(--n-font);
+  font: 620 calc(19px * var(--n-scale, 1)) / 1.25 var(--n-font);
   letter-spacing: var(--n-track-title);
   text-wrap: balance;
 }
@@ -61,7 +61,7 @@
 .body {
   margin-top: 6px;
   color: var(--n-ink-2);
-  font: 400 13px/1.45 var(--n-font);
+  font: 420 14px/1.45 var(--n-font);
 }
 
 .actions {

@@ -202,10 +202,8 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--n-raised) 70%, transparent);
-  -webkit-backdrop-filter: blur(60px) saturate(1.5);
-  backdrop-filter: blur(60px) saturate(1.5);
-  box-shadow: var(--n-sheet-shadow);
+  background: var(--n-sheet);
+  box-shadow: var(--n-panel-shadow);
   color: var(--n-ink);
   font-family: var(--n-font);
   animation: editor-in 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;

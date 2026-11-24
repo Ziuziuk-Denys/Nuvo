@@ -24,8 +24,8 @@
   --n-fill: rgba(255, 255, 255, 0.08);
   --n-hair: rgba(255, 255, 255, 0.08);
   --n-focus-glow: 0 0 0 3px rgba(41, 151, 255, 0.35);
-  --n-pop-solid: #1c1c20;
-  --n-panel-rim: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 48px rgba(0, 0, 0, 0.55);
+  --n-pop: #1c1c20;
+  --n-panel-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 48px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
 }
 

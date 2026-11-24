@@ -23,7 +23,6 @@ async function homeState(live: NuvoSession) {
     picks: document.querySelectorAll("[data-pick]").length,
     shelf: document.querySelectorAll("[data-shelf] [data-song]").length,
     glow: document.querySelector("[data-mode] img, [data-mode] [data-overlay]") !== null,
-    glass: document.querySelector("[data-island][data-lit]") !== null,
     coldStart: document.querySelector("[data-slot=cold-start]") !== null,
   }));
 }
@@ -37,7 +36,7 @@ async function shootRussian(live: NuvoSession, state: string): Promise<void> {
 }
 
 describe("home", () => {
-  it("seeded: For you leads the mixes, recommendations only follow, the page glows and the bar turns to glass", async () => {
+  it("seeded: For you leads the mixes, recommendations only follow and the page glows", async () => {
     const live = await launchNuvo({ profile: "seeded" });
     session = live;
     await live.go("#/");
@@ -47,7 +46,6 @@ describe("home", () => {
     expect(state.picks).toBe(0);
     expect(state.shelf).toBeGreaterThan(0);
     expect(state.glow).toBe(true);
-    expect(state.glass).toBe(true);
     expect(state.coldStart).toBe(false);
     expect(await live.shoot(STEP, "home", "seeded", { looks: MATRIX, sizes: [W1200] })).toHaveLength(MATRIX.length);
     await shootRussian(live, "seeded-ru");

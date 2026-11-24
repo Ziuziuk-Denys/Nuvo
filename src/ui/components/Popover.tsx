@@ -15,7 +15,6 @@ export interface PopoverProps {
   width: 300 | 320 | 380 | 440 | 560;
   trailing?: ReactNode;
   showClose?: boolean;
-  solid?: boolean;
   className?: string;
   onWheel?: (event: WheelEvent<HTMLDivElement>) => void;
   children: ReactNode;
@@ -49,9 +48,6 @@ export function placeOn(anchor: HTMLElement | null, width: number, height: numbe
   return { left, edge, below, originX: centre - left, room: Math.max(0, below ? roomBelow : roomAbove) };
 }
 
-const SLIVER_PX = 44;
-const FRESH_MS = 1000;
-
 export function Popover(props: PopoverProps): JSX.Element | null {
   const phase = usePresence(props.open);
   return phase === null ? null : <PopoverPanel {...props} phase={phase} />;
@@ -65,7 +61,6 @@ function PopoverPanel({
   width,
   trailing,
   showClose = false,
-  solid = false,
   className,
   onWheel,
   children,
@@ -79,13 +74,7 @@ function PopoverPanel({
   const [place, setPlace] = useState<Place | null>(null);
   // transitions start only after the first placement has painted, so the opening never slides in from 0
   const [settled, setSettled] = useState(false);
-  const [fresh, setFresh] = useState(true);
   const opening = useRef(true);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setFresh(false), FRESH_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useLayer(open, panelRef, { onEscape: onClose, returnTo: anchor, onOutside: onClose });
 
@@ -127,13 +116,10 @@ function PopoverPanel({
     transform: `translateX(${place?.left ?? 0}px)`,
     ...(place?.below ? { top: place.edge } : { bottom: place?.edge ?? 0 }),
   };
-  const originX = place?.originX ?? width / 2;
-  const sliver = place?.below ? "0 VAR calc(100% - 1px) VAR" : "calc(100% - 1px) VAR 0 VAR";
   const capped = height !== null && place !== null && height > place.room;
   const panelStyle = {
     height: capped ? place.room : (height ?? undefined),
-    "--nx": `${originX}px`,
-    "--from": sliver.replace("VAR", `${Math.max(0, width - originX - SLIVER_PX / 2)}px`).replace("VAR", `${Math.max(0, originX - SLIVER_PX / 2)}px`),
+    "--nx": `${place?.originX ?? width / 2}px`,
   } as CSSProperties;
 
   return createPortal(
@@ -153,8 +139,6 @@ function PopoverPanel({
         data-state={phase}
         data-settled={settled ? "" : undefined}
         data-below={place?.below ? "" : undefined}
-        data-fresh={fresh ? "" : undefined}
-        data-solid={solid ? "" : undefined}
         onKeyDown={(event) => trapTab(event, event.currentTarget)}
         onWheel={onWheel}
       >
