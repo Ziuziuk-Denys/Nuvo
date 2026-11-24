@@ -6,7 +6,7 @@ import { useLookStore } from "@/data/look/lookStore";
 import { getPreset, resolvePresetMode, type PresetId, type PresetMode } from "@/data/look/presets";
 
 export type { PresetId, PresetMode };
-export { PRESETS, getPreset, presetIconSvg } from "@/data/look/presets";
+export { PRESETS, getPreset, presetIconSrc } from "@/data/look/presets";
 export { revealThemeChange } from "@/data/look/reveal";
 export { useLookSync } from "@/data/look/useLookSync";
 export { useAppIconSync } from "@/data/look/appIcon";

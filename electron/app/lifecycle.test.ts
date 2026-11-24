@@ -603,6 +603,15 @@ describe("app icon", () => {
     expect(t.refreshes).toHaveLength(1);
   });
 
+  it("the theme files up to 48 px are the flat drawings as sent", async () => {
+    const home = tempDir();
+    const t = installer(home);
+    await t.i.apply(png(1), false, [png(7), png(8), png(9)]);
+    expect(fs.readFileSync(file(home, 16))).toEqual(Buffer.from([0x89, 0x50, 7]));
+    expect(fs.readFileSync(file(home, 48))).toEqual(Buffer.from([0x89, 0x50, 9]));
+    expect(fs.readFileSync(file(home, 64))).toEqual(Buffer.from([0x89, 0x50, 1, 64]));
+  });
+
   it("the same bytes twice write nothing", async () => {
     const home = tempDir();
     const t = installer(home);

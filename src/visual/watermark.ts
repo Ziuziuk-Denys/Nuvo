@@ -1,10 +1,9 @@
+import { FENNEC_32 } from "@/data/look/fennec";
 import { fontFor } from "./type/raster";
 
-// the Nuvo mark, drawn in a 256 box with the shape inside 32..224
-const MARK_PATH =
-  "M32 62 A30 30 0 0 1 62 32 L87.92 32 A14 14 0 0 1 100.04 39 L130.14 91.14 A16 16 0 0 0 160 83.14 L160 50 A18 18 0 0 1 178 32 L194 32 A30 30 0 0 1 224 62 L224 194 A30 30 0 0 1 194 224 L168.08 224 A14 14 0 0 1 155.96 217 L125.86 164.86 A16 16 0 0 0 96 172.86 L96 206 A18 18 0 0 1 78 224 L62 224 A30 30 0 0 1 32 194 Z";
-const MARK_BOX = 192;
-const MARK_OFFSET = 32;
+const MARK_LEFT = 14;
+const MARK_WIDTH = 228;
+const MARK_MIDDLE = 126.75;
 const SIZE_SHARE = 0.038;
 const BOTTOM_SHARE = 0.045;
 
@@ -42,9 +41,9 @@ export function drawWatermark(ctx: Ctx2d, width: number, height: number): void {
     ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
     ctx.save();
     ctx.translate(left, middle - markSize / 2);
-    ctx.scale(markSize / MARK_BOX, markSize / MARK_BOX);
-    ctx.translate(-MARK_OFFSET, -MARK_OFFSET);
-    ctx.fill(new Path2D(MARK_PATH));
+    ctx.scale(markSize / MARK_WIDTH, markSize / MARK_WIDTH);
+    ctx.translate(-MARK_LEFT, MARK_WIDTH / 2 - MARK_MIDDLE);
+    ctx.fill(new Path2D(FENNEC_32), "evenodd");
     ctx.restore();
     ctx.textBaseline = "middle";
     ctx.font = titleFont;

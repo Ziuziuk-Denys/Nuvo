@@ -80,13 +80,18 @@ export function validateSurfaceState(raw: unknown): SurfaceState | null {
   };
 }
 
-export function validateIcon(raw: unknown): { pngDataUrl: string; stock: boolean } | null {
-  if (!isObject(raw) || typeof raw.stock !== "boolean" || typeof raw.pngDataUrl !== "string") return null;
+function isIconPng(value: unknown): value is string {
   const prefix = "data:image/png;base64,";
-  if (!raw.pngDataUrl.startsWith(prefix)) return null;
-  const base64 = raw.pngDataUrl.slice(prefix.length);
-  if (Math.floor((base64.length * 3) / 4) > ICON_MAX_BYTES || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) return null;
-  return { pngDataUrl: raw.pngDataUrl, stock: raw.stock };
+  if (typeof value !== "string" || !value.startsWith(prefix)) return false;
+  const base64 = value.slice(prefix.length);
+  return Math.floor((base64.length * 3) / 4) <= ICON_MAX_BYTES && /^[A-Za-z0-9+/]*={0,2}$/.test(base64);
+}
+
+export function validateIcon(raw: unknown): { pngDataUrl: string; stock: boolean; flat?: string[] } | null {
+  if (!isObject(raw) || typeof raw.stock !== "boolean" || !isIconPng(raw.pngDataUrl)) return null;
+  if (raw.flat === undefined) return { pngDataUrl: raw.pngDataUrl, stock: raw.stock };
+  if (!Array.isArray(raw.flat) || raw.flat.length !== 3 || !raw.flat.every(isIconPng)) return null;
+  return { pngDataUrl: raw.pngDataUrl, stock: raw.stock, flat: raw.flat };
 }
 
 export function validateBindings(raw: unknown): Binding[] | null {
