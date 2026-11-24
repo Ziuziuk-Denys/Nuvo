@@ -75,3 +75,16 @@ it("shows one cover per album art and keeps one artist's songs apart", () => {
   const tracks = [song("a1", "A"), song("a2", "A"), song("b1", "B"), song("b2", "B", "b1"), song("c1", "C")];
   expect(ringTracks([{ id: "daily-mix-discover", title: "", description: "", tracks }]).map((track) => track.id)).toEqual(["a1", "b1", "c1", "a2"]);
 });
+
+it("counts an album as one cover even when its songs carry it under other addresses", () => {
+  const song = (id: string, album?: string): Track => ({
+    id,
+    title: id,
+    artists: id,
+    coverUrl: id,
+    durationMs: 1,
+    ...(album ? { album: { id: album, title: album } } : {}),
+  });
+  const tracks = [song("a1", "A"), song("a2", "A"), song("b"), song("c")];
+  expect(ringTracks([{ id: "daily-mix-discover", title: "", description: "", tracks }]).map((track) => track.id)).toEqual(["a1", "b", "c"]);
+});

@@ -16,7 +16,6 @@ vi.mock("../../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string
 vi.mock("../../../ports/backdrop", () => ({ usePageBackdrop: mocks.backdrop }));
 vi.mock("../../../effects", () => ({ useReducedEffects: () => true }));
 vi.mock("../../../components/Cover", () => ({ Cover: () => null }));
-vi.mock("../ShelfHeading", () => ({ ShelfHeading: ({ title }: { title: string }) => <h2>{title}</h2> }));
 
 const track = (id: string) => ({ id, title: `Title ${id}`, artists: `Artist ${id}`, coverUrl: `https://covers/${id}.jpg`, durationMs: 1 }) as Track;
 const mix = (id: string, ids: string[]) => ({ id, title: id, description: "", tracks: ids.map(track) }) as unknown as HomeMix;

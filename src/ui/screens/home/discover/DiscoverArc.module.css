@@ -9,7 +9,7 @@
 
 .heading {
   position: absolute;
-  inset: 16px var(--n-gutter, 12px) auto;
+  inset: 0 var(--n-gutter, 12px) auto;
   z-index: 200;
 }
 
