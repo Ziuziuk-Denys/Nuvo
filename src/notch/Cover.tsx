@@ -1,24 +1,6 @@
 import { useState } from "react";
-import { NuvoGlyph } from "./icons";
-import { accentFromPixels } from "./lib/accent";
-
-const SAMPLE = 16;
-const FALLBACK_ACCENT = "#ffffff";
-
-function sampleAccent(img: HTMLImageElement): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = SAMPLE;
-  canvas.height = SAMPLE;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return FALLBACK_ACCENT;
-  try {
-    context.drawImage(img, 0, 0, SAMPLE, SAMPLE);
-    return accentFromPixels(context.getImageData(0, 0, SAMPLE, SAMPLE).data);
-  } catch {
-    // A cover served without CORS headers taints the canvas.
-    return FALLBACK_ACCENT;
-  }
-}
+import { Icon } from "@/ui/icons/Icon";
+import { coverLight, NEUTRAL_LIGHT } from "./lib/coverLight";
 
 interface CoverProps {
   src: string | null;
@@ -33,7 +15,7 @@ export function Cover({ src, size, radius, onAccent }: CoverProps) {
   if (!src || failedSrc === src) {
     return (
       <span className="cover cover-placeholder" style={style}>
-        <NuvoGlyph size={Math.round(size * 0.42)} />
+        <Icon name="nuvo-mark" size={size > 60 ? 26 : 14} />
       </span>
     );
   }
@@ -47,10 +29,10 @@ export function Cover({ src, size, radius, onAccent }: CoverProps) {
       style={style}
       crossOrigin="anonymous"
       draggable={false}
-      onLoad={onAccent ? (event) => onAccent(sampleAccent(event.currentTarget)) : undefined}
+      onLoad={onAccent ? (event) => onAccent(coverLight(event.currentTarget)) : undefined}
       onError={() => {
         setFailedSrc(src);
-        onAccent?.(FALLBACK_ACCENT);
+        onAccent?.(NEUTRAL_LIGHT);
       }}
     />
   );
