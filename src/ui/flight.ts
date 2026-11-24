@@ -139,13 +139,16 @@ export function watchDepartures(): () => void {
     const pressed = event.target instanceof Element ? event.target.closest(PRESSABLE) : null;
     departure = depart(pressed?.querySelector<HTMLElement>(COVER));
   };
-  const onPop = () => {
+  // popstate comes after the router has drawn the page, so a step back is read from the event before it
+  const onTraverse = (event: Event) => {
+    if ((event as Event & { navigationType?: string }).navigationType !== "traverse") return;
     departure = depart(document.querySelector<HTMLElement>(`[data-page] ${HERO} ${COVER}`));
   };
+  const entries = (window as { navigation?: EventTarget }).navigation;
   window.addEventListener("click", onClick, true);
-  window.addEventListener("popstate", onPop, true);
+  entries?.addEventListener("navigate", onTraverse);
   return () => {
     window.removeEventListener("click", onClick, true);
-    window.removeEventListener("popstate", onPop, true);
+    entries?.removeEventListener("navigate", onTraverse);
   };
 }
