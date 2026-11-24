@@ -1,4 +1,5 @@
 import type { ShaderSpec } from "../../template/schema";
+import { engraving } from "./engraving";
 
 export interface ShaderDef extends ShaderSpec {
   body: string;
@@ -968,4 +969,5 @@ export const SHADERS: Record<string, ShaderDef> = {
   glass,
   smoke,
   print,
+  engraving,
 };
