@@ -135,6 +135,8 @@ export class DeckController implements DeckPort {
   private spanResolver: SpanResolver = (_id, durationMs) => ({ startMs: 0, endMs: durationMs });
   private lastFadeMs = GAPLESS_MS;
   private pauseTimer: ReturnType<typeof setTimeout> | null = null;
+  // the place a loading song will start from; a seek moves it until the element is on the new file
+  private starting: { token: number; positionMs: number } | null = null;
   private resolvePause: (() => void) | null = null;
   private readonly loose = new Set<ReturnType<typeof setTimeout>>();
   private readonly unbind: Array<() => void> = [];
@@ -235,6 +237,8 @@ export class DeckController implements DeckPort {
     this.resolvePause = null;
     const deck = this.active;
     const previous = deck.source;
+    const start = { token: load.token, positionMs: load.positionMs };
+    this.starting = start;
     deck.token = load.token;
     deck.trackId = load.trackId;
     deck.source = load.source;
@@ -263,11 +267,14 @@ export class DeckController implements DeckPort {
     if (previous && previous !== load.source) previous.release();
     this.applyTempo(element, load.tempo);
     element.volume = this.volume;
-    const seekTo = load.positionMs / 1000;
-    if (seekTo > 0 || sameSource) {
-      if (sameSource || element.readyState >= 1) element.currentTime = seekTo;
-      else element.addEventListener("loadedmetadata", () => deck.token === load.token && (element.currentTime = seekTo), { once: true });
-    }
+    const place = () => {
+      if (this.starting !== start) return;
+      this.starting = null;
+      element.currentTime = start.positionMs / 1000;
+    };
+    if (start.positionMs === 0 && !sameSource) this.starting = null;
+    else if (sameSource || element.readyState >= 1) place();
+    else element.addEventListener("loadedmetadata", place, { once: true });
     if (!load.play) return;
     await element.play();
     if (wasPlaying && deck.token === load.token) this.onElementEvent(deck, "playing");
@@ -313,7 +320,8 @@ export class DeckController implements DeckPort {
   seek(positionMs: number): void {
     const deck = this.active;
     if (this.switching && this.outgoing) this.cancelTransition(true);
-    deck.element.currentTime = positionMs / 1000;
+    if (this.starting?.token === deck.token) this.starting.positionMs = positionMs;
+    else deck.element.currentTime = positionMs / 1000;
   }
 
   reset(): void {
