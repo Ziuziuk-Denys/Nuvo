@@ -180,6 +180,7 @@ export function createRoom(canvas: HTMLCanvasElement, changed: () => void): Room
         const turn = card.spot.turn + view.lean + view.tilt.x * view.tilt.amount * centre;
         gl.uniform1f(cards.at.mirrorGain, MIRROR);
         gl.uniform1f(cards.at.ready, bind(card));
+        gl.uniform1f(cards.at.lit, centre);
         gl.uniform1f(cards.at.shown, card.spot.shown);
         gl.uniform1f(cards.at.blur, far * FAR_BLUR);
         gl.uniform1f(cards.at.dim, 1 - far * (view.light ? 0.1 : 0.5));

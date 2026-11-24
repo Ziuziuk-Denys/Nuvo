@@ -1,0 +1,52 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: clamp(16px, 5cqh, 56px);
+  text-align: center;
+}
+
+.title {
+  max-width: 22ch;
+  margin: 0;
+  color: var(--n-ink);
+  font: 660 calc(clamp(38px, 4vw, 60px) * var(--n-scale, 1)) / 1.04 var(--n-font);
+  letter-spacing: var(--n-track-display);
+  text-wrap: balance;
+}
+
+.message {
+  max-width: 46ch;
+  margin: 12px 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.stage {
+  position: relative;
+  align-self: stretch;
+  margin: -8px calc(-1 * var(--n-gutter, 12px)) 0;
+  animation: lit 700ms var(--n-ease-out);
+}
+
+.stage > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.below {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -64px;
+}
+
+@keyframes lit {
+  from {
+    opacity: 0;
+  }
+}

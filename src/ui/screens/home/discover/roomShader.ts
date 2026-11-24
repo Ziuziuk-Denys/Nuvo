@@ -49,6 +49,7 @@ uniform vec3 sweep;
 uniform float mirrorGain;
 uniform float bright;
 uniform float shown;
+uniform float lit;
 out vec4 color;
 
 float noise(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
@@ -79,15 +80,17 @@ void main() {
   float aa = max(0.75 / (scale * ratio), soft);
   float inside = 1.0 - smoothstep(-aa, aa * 0.6, d);
   if (inside < 0.002) discard;
-  vec3 paint = mix(vec3(0.085), sampleArt(uv, soft), ready);
+  vec3 bare = mix(vec3(0.07), vec3(0.93), bright);
+  bare += (1.0 - bright) * lit * 0.2 * exp(-dot(uv - vec2(0.5, 0.0), uv - vec2(0.5, 0.0)) * 3.2);
+  vec3 paint = mix(bare, sampleArt(uv, soft), ready);
   if (slab > 0.0) {
-    paint = mix(textureLod(art, clamp(uv, 0.02, 0.98), 4.0).rgb, vec3(0.5), 0.25) * ready;
-    float lit = 0.35 + 0.65 * max(0.0, dot(normalize(uv - 0.5 + 1e-4), lamp));
-    paint *= mix(0.22, 0.6, lit) * mix(1.0, 1.5, bright);
+    paint = mix(mix(vec3(0.3), vec3(0.8), bright), mix(textureLod(art, clamp(uv, 0.02, 0.98), 4.0).rgb, vec3(0.5), 0.25), ready);
+    float facing = 0.35 + 0.65 * max(0.0, dot(normalize(uv - 0.5 + 1e-4), lamp));
+    paint *= mix(0.22, 0.6, facing) * mix(1.0, 1.75, bright);
   } else {
     float rim = 1.0 - smoothstep(0.0, 1.3, -d - 0.2);
-    vec2 facing = normalize((uv - 0.5) * abs(uv - 0.5) + 1e-4);
-    paint += rim * max(0.0, dot(facing, lamp)) * 0.32 * (1.0 - bright * 0.6);
+    vec2 outward = normalize((uv - 0.5) * abs(uv - 0.5) + 1e-4);
+    paint += rim * max(0.0, dot(outward, lamp)) * 0.32 * (1.0 - bright * 0.6);
     float band = dot(uv - 0.5, vec2(0.82, 0.57)) - sweep.x;
     paint += sweep.z * (0.11 * exp(-band * band * 46.0) + 0.07 * exp(-band * band * 900.0));
     paint *= 1.0 + sweep.z * 0.05 * (0.5 - uv.y);
@@ -118,7 +121,7 @@ void main() {
   float r2 = dot(p, p);
   float window = max(0.0, 1.0 - r2);
   float fall = window * window / (1.0 + 9.0 * r2);
-  vec3 tint = textureLod(art, vec2(0.5, 0.8), 7.0).rgb * ready;
+  vec3 tint = mix(vec3(0.5), textureLod(art, vec2(0.5, 0.8), 7.0).rgb, ready);
   vec3 light = tint * fall * pool.x;
   vec2 c = p * vec2(1.35, 5.5);
   float contact = exp(-dot(c, c) * 2.2) * pool.y;

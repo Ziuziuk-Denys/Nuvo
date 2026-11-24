@@ -58,7 +58,7 @@ afterEach(() => {
 });
 
 async function render() {
-  await act(async () => root.render(<DiscoverArc tracks={ringTracks(MIXES)} />));
+  await act(async () => root.render(<DiscoverArc title="Something new" tracks={ringTracks(MIXES)} />));
 }
 
 const buttons = () => [...host.querySelectorAll<HTMLButtonElement>("li button")];

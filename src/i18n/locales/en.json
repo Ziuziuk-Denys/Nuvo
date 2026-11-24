@@ -215,7 +215,8 @@
       },
       "offline": {
         "title": "You’re offline",
-        "message": "Songs you save or add from this computer play here without a connection."
+        "message": "Songs you save or add from this computer play here without a connection.",
+        "ring": "On this computer"
       },
       "look": {
         "visuals": "Best visuals",

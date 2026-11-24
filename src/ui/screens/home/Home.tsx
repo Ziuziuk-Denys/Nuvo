@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/Button";
-import { EmptyState } from "../../components/EmptyState";
 import { Enter } from "../../components/Enter";
 import { offlineMixes, offlineSongs } from "../../ports/homeShelves";
 import { useTranslation } from "../../ports/i18n";
@@ -12,6 +11,7 @@ import { navigateWithTransition } from "../../shell/navigate";
 import { useImportsUi } from "../imports/importsUi";
 import { useAddMusic } from "../local/addMusic";
 import { DiscoverArc } from "./discover/DiscoverArc";
+import { EmptyRoom } from "./discover/EmptyRoom";
 import { ringTracks } from "./discover/ring";
 import { ArrangeHome } from "./arrange/ArrangeHome";
 import { useHomeLayout, type SectionId } from "./arrange/homeLayout";
@@ -86,7 +86,8 @@ export function Home(): JSX.Element | null {
     sections.push({ key: "cold-start", node: <ColdStartSlot />, own: true });
     for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
   }
-  if (ring.length > 0) sections.push({ key: "discover", node: <DiscoverArc tracks={ring} /> });
+  if (ring.length > 0)
+    sections.push({ key: "discover", node: <DiscoverArc tracks={ring} title={t(offline ? "ui.home.offline.ring" : "ui.recs.home.discover")} /> });
   const [firstArtist, secondArtist] = offline ? [] : likeArtists(mixes, LIKE_SHELVES);
   const parts: Record<SectionId, Array<{ key: string; node: ReactNode }>> = {
     mixes:
@@ -126,11 +127,11 @@ export function Home(): JSX.Element | null {
     sections.push({
       key: "offline",
       node: (
-        <EmptyState
-          title={t("ui.home.offline.title")}
-          message={t("ui.home.offline.message")}
-          actions={[{ label: t("ui.local.add_files"), primary: true, onClick: () => void addMusic() }]}
-        />
+        <EmptyRoom title={t("ui.home.offline.title")} message={t("ui.home.offline.message")}>
+          <Button variant="primary" onClick={() => void addMusic()}>
+            {t("ui.local.add_files")}
+          </Button>
+        </EmptyRoom>
       ),
     });
   } else if (!starter && !offline && libraryEmpty) {

@@ -5,7 +5,6 @@ import { useSkyFollows, useSkyMode } from "../../../field/useSky";
 import { usePageBackdrop } from "../../../ports/backdrop";
 import { playSongs } from "../../../ports/homeShelves";
 import { coverSrc } from "../../../ports/covers";
-import { useTranslation } from "../../../ports/i18n";
 import type { Track } from "../../../ports/recs";
 import { useThemeMode } from "../../../ports/theme";
 import { ShelfHeading } from "../ShelfHeading";
@@ -39,8 +38,7 @@ interface Drag {
   velocity: number;
 }
 
-export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
-  const { t } = useTranslation();
+export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string }): JSX.Element {
   const reduced = useReducedEffects();
   const light = useThemeMode() === "light";
   const rootRef = useRef<HTMLElement>(null);
@@ -268,7 +266,6 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
 
   const current = slots[Math.min(centre, count - 1)];
   usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { sky });
-  const title = t("ui.recs.home.discover");
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>
       <div className={styles.heading}>
