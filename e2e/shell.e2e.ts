@@ -603,6 +603,40 @@ describe("shell e2e", () => {
     15 * 60_000,
   );
 
+  it("a cover on any host reaches the accent, the karaoke background and the scene through the core alone", async () => {
+    let asked = 0;
+    await main.route(/\/v1\/covers\?/, (route) => {
+      asked += 1;
+      const body = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#c33"/></svg>';
+      return route.fulfill({ contentType: "image/svg+xml", headers: { "Access-Control-Allow-Origin": "*" }, body });
+    });
+    await putTone(main, "e2ecover", 60);
+    for (const stage of [false, true]) {
+      await main.evaluate((value) => {
+        localStorage.setItem("nuvo.visual", JSON.stringify({ chosen: true, enabled: true, stage: value, template: "engraving", toured: true }));
+      }, stage);
+      await main.reload();
+      await main.waitForFunction(() => Boolean((window as unknown as { __nuvoPlayer?: unknown }).__nuvoPlayer));
+      await main.evaluate(() => {
+        const blocked: string[] = [];
+        Object.assign(window, { blocked, handle: () => (window as unknown as { __nuvoPlayer: unknown }).__nuvoPlayer });
+        document.addEventListener("securitypolicyviolation", (event) => blocked.push(event.blockedURI));
+      });
+      asked = 0;
+      await main.evaluate((t) => handle().engine.playList([t]), {
+        ...track("e2ecover", 60),
+        coverUrl: `https://is1-ssl.mzstatic.com/image/thumb/Music/cover-${stage}.jpg/1000x1000bb.jpg`,
+      });
+      await main.evaluate(() => (location.hash = "#/player"));
+      await main.locator("section[class*=left]").waitFor({ state: "attached", timeout: 15_000 });
+      await main.waitForTimeout(2_000);
+      expect(await main.evaluate(() => (window as unknown as { blocked: string[] }).blocked), `scene ${stage}`).toEqual([]);
+      expect(asked).toBeGreaterThan(1);
+    }
+    await main.unroute(/\/v1\/covers\?/);
+    await main.evaluate(() => (location.hash = "#/"));
+  });
+
   it("disposing the engine twice is safe and leaves no page error", async () => {
     const errorsBefore = problems.filter((text) => text.startsWith("pageerror")).length;
     const result = await main.evaluate(() => {
