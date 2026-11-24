@@ -193,6 +193,37 @@ it("the visual player draws a lit scene in the karaoke view at 60 fps", async ()
   await page.locator('button[aria-label="Show the scene"]').waitFor({ timeout: 5_000 });
 });
 
+it("the live scene plays without a WebGL warning or error", async () => {
+  const page = session.page;
+  // the stage draws in a worker, whose console only the main process hears
+  await session.app.evaluate(({ BrowserWindow }) => {
+    const heard: string[] = [];
+    (globalThis as { heardGl?: string[] }).heardGl = heard;
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.on("console-message", ({ message }) => {
+        if (/READ-usage|WebGL|GL_INVALID|GL ERROR/.test(message)) heard.push(message);
+      });
+    }
+  });
+  for (const template of ["engraving", "poster"]) {
+    await page.evaluate((value) => {
+      localStorage.setItem("nuvo.e2e", "1");
+      const stored = JSON.parse(localStorage.getItem("nuvo.visual") ?? "{}");
+      localStorage.setItem("nuvo.visual", JSON.stringify({ ...stored, enabled: true, stage: true, template: value, toured: true, chosen: true }));
+    }, template);
+    await page.reload();
+    await session.go("#/player");
+    await page.locator('button[aria-label="Show the lyrics"]').waitFor({ timeout: 15_000 });
+    await cacheSong();
+    await page.evaluate(() => {
+      const { engine } = (window as unknown as { __nuvoPlayer: { engine: { playList(tracks: unknown[]): void } } }).__nuvoPlayer;
+      engine.playList([{ id: "seed-0001", title: "Quiet", artists: "Nova", coverUrl: "", durationMs: 70_000 }]);
+    });
+    await page.waitForTimeout(4_000);
+  }
+  expect(await session.app.evaluate(() => [...new Set((globalThis as { heardGl?: string[] }).heardGl)])).toEqual([]);
+});
+
 it("the Poster scene plays in the karaoke view at 60 fps", async () => {
   const page = session.page;
   await page.evaluate(() => {
