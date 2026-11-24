@@ -210,6 +210,31 @@ describe("start-up", () => {
     expect(lines).toEqual(["Nuvo is already running"]);
   });
 
+  it("brings the window forward at once when the desktop gives it the focus", async () => {
+    const t = controller();
+    t.c.show();
+    const win = t.windows[0];
+    win.hide();
+    await t.c.bringForward();
+    expect([win.visible, win.isFocused()]).toEqual([true, true]);
+  });
+
+  it("maps the window anew when the desktop refuses the focus", async () => {
+    vi.useFakeTimers();
+    const t = controller();
+    t.c.show();
+    const win = t.windows[0];
+    win.focused = false;
+    win.focus = () => false;
+    const hide = vi.spyOn(win, "hide");
+    const show = vi.spyOn(win, "show");
+    const done = t.c.bringForward();
+    await vi.advanceTimersByTimeAsync(500);
+    await done;
+    expect(hide).toHaveBeenCalledOnce();
+    expect(show).toHaveBeenCalledOnce();
+  });
+
   it("show restores, shows or recreates the window", () => {
     const t = controller();
     t.c.show();

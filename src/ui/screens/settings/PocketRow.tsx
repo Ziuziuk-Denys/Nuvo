@@ -35,7 +35,7 @@ export function PocketRow(): JSX.Element | null {
   return (
     <SettingRow
       title={t(TITLE)}
-      description={`${t(`ui.settings.pocket_top_${status.top}`)}. ${t(status.remembersPlace ? "ui.settings.pocket_place_kept" : "ui.settings.pocket_size_kept")}`}
+      description={`${t(`ui.settings.pocket_top_${status.top}`)}. ${t(status.remembersPlace ? "ui.settings.pocket_place_kept" : "ui.settings.pocket_size_kept")}. ${t("ui.settings.pocket_window_back")}`}
       titleKey={TITLE}
       explained
       control={<Switch label={t(TITLE)} checked={on && able} disabled={!able} onChange={change} />}

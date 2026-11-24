@@ -90,6 +90,9 @@ export interface MainWindowDeps {
   log(message: string): void;
 }
 
+const FOCUS_WAIT_MS = 400;
+const FOCUS_POLL_MS = 40;
+
 export class MainWindowController {
   private win: WindowLike | null = null;
 
@@ -104,6 +107,20 @@ export class MainWindowController {
     const win = this.win!;
     if (win.isMinimized()) win.restore();
     if (!win.isVisible()) win.show();
+    win.focus();
+  }
+
+  /** Shows the window; a desktop that refuses the focus gets it mapped anew, which brings it forward. */
+  async bringForward(): Promise<void> {
+    this.show();
+    for (let waited = 0; waited < FOCUS_WAIT_MS; waited += FOCUS_POLL_MS) {
+      if (this.window?.isFocused()) return;
+      await new Promise((resolve) => setTimeout(resolve, FOCUS_POLL_MS));
+    }
+    const win = this.window;
+    if (!win || win.isFocused()) return;
+    win.hide();
+    win.show();
     win.focus();
   }
 

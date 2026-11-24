@@ -419,6 +419,10 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     panelBus?.service.setPocketOnTop(settings.value.pocketOnTop);
   }
 
+  function expandPocket(): void {
+    void windows.bringForward().then(() => pocket?.close());
+  }
+
   function startPocket(): void {
     const { session } = notch!;
     const plugin = "nuvo-pocket";
@@ -435,7 +439,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       setOnTop: (onTop) => void settings.set("pocketOnTop", onTop).then(applyPocketOnTop),
       place: () => settings.value.pocketPlace,
       savePlace: (place) => settings.setPocketPlace(place),
-      openApp: () => windows.show(),
+      openApp: expandPocket,
       openChanged: (open) => {
         sendToMain(CHANNELS.pocketOpen, open);
         const hidden = windows.window && !windows.window.isVisible();
@@ -459,7 +463,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     ipc.on(CHANNELS.pocketAction, "pocket", (payload) => {
       const action = validateNotchAction(payload);
       if (!action) return refusals.refuse(CHANNELS.pocketAction, "shape");
-      if (action.type === "focusApp") return windows.show();
+      if (action.type === "focusApp") return expandPocket();
       const command = notchActionToCommand(action, relay.latest.liked);
       if (command) sendToMain(CHANNELS.playerCommand, command);
     });
