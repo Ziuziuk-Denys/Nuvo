@@ -111,6 +111,7 @@ export const ICON_NAMES = [
   "window-restore",
   "window-close",
   "nuvo-mark",
+  "nuvo-mark-16",
   "rail-home",
   "rail-search",
   "rail-library",

@@ -1,24 +1,25 @@
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useLookStore } from "./lookStore";
-import { getPreset, presetIconSvg, resolvePresetMode } from "./presets";
+import { FLAT_SIZES } from "./presetIcons";
+import { getPreset, presetFlatSrc, presetIconSrc, resolvePresetMode } from "./presets";
 
 const ICON_SIZE = 512;
 
-export async function iconPng(svg: string): Promise<string> {
+export async function iconPng(src: string, size = ICON_SIZE): Promise<string> {
   const image = new Image();
-  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  image.src = src;
   await image.decode();
   const canvas = document.createElement("canvas");
-  canvas.width = ICON_SIZE;
-  canvas.height = ICON_SIZE;
+  canvas.width = size;
+  canvas.height = size;
   const context = canvas.getContext("2d");
   if (!context) return "";
-  context.drawImage(image, 0, 0, ICON_SIZE, ICON_SIZE);
+  context.drawImage(image, 0, 0, size, size);
   return canvas.toDataURL("image/png");
 }
 
-// Drawing takes 40-160 ms on the main thread, so it waits until after the first paint
+// Drawing blocks the main thread, so it waits until after the first paint
 function whenIdle(run: () => void): () => void {
   if (typeof requestIdleCallback !== "function") {
     run();
@@ -35,10 +36,10 @@ export function useAppIconSync(): void {
     const mode = resolvePresetMode(getPreset(preset), resolvedTheme === "light" ? "light" : "dark");
     let live = true;
     const cancel = whenIdle(() => {
-      iconPng(presetIconSvg(preset, mode))
-        .then((png) => {
-          if (!live || !png) return;
-          void window.nuvoShell?.applyIcon(png, { stock: preset === "nuvo" }).catch(() => undefined);
+      Promise.all([iconPng(presetIconSrc(preset, mode, ICON_SIZE)), ...FLAT_SIZES.map((size) => iconPng(presetFlatSrc(preset, mode, size), size))])
+        .then(([png, ...flat]) => {
+          if (!live || !png || flat.includes("")) return;
+          void window.nuvoShell?.applyIcon(png, { stock: preset === "nuvo", flat }).catch(() => undefined);
           let favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
           if (!favicon) {
             favicon = document.createElement("link");
