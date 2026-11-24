@@ -12,6 +12,7 @@ import { useLightVars } from "../light/useLightVars";
 import { Banner } from "./Banner";
 import { useCalmStore } from "./calm";
 import { useReducedEffects } from "../effects";
+import { useWallpaperFloor } from "./wallpaperFloor";
 import styles from "./Field.module.css";
 
 export function Field(): JSX.Element {
@@ -43,6 +44,7 @@ function Wallpaper({ src }: { src: string }) {
   const blur = useCustomizationStore((s) => s.backgroundBlur);
   const dim = useCustomizationStore((s) => s.backgroundDim);
   const fit = useCustomizationStore((s) => s.backgroundFit);
+  const wash = Math.max(dim / 100, useWallpaperFloor(src));
   const visible = useSyncExternalStore(onWindowVisibilityChange, isWindowVisible);
   const reduced = useReducedEffects();
   // the picture overhangs by two blur radii so the blur never fades its own edges
@@ -56,7 +58,7 @@ function Wallpaper({ src }: { src: string }) {
   return (
     <>
       <WallpaperMedia src={src} moving={visible && !reduced} className={styles.wallpaper} style={style} />
-      {dim > 0 && <div className={styles.wash} style={{ opacity: dim / 100 }} />}
+      {wash > 0 && <div className={styles.wash} style={{ opacity: wash }} />}
     </>
   );
 }

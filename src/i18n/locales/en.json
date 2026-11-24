@@ -2097,6 +2097,7 @@
       "wallpaper_description": "A photo, GIF or video behind every screen",
       "wallpaper_blur": "Blur",
       "wallpaper_dim": "Fade",
+      "wallpaper_dim_hint": "At least as much as the text needs to stay readable",
       "wallpaper_fit": "Fit",
       "fit_cover": "Fill",
       "fit_contain": "Show all",

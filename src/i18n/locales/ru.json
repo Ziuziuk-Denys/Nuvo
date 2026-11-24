@@ -2207,6 +2207,7 @@
       "wallpaper_description": "Фото, GIF или видео за всеми экранами",
       "wallpaper_blur": "Размытие",
       "wallpaper_dim": "Приглушение",
+      "wallpaper_dim_hint": "Не меньше, чем нужно, чтобы текст читался",
       "wallpaper_fit": "Масштаб",
       "fit_cover": "Заполнить",
       "fit_contain": "Целиком",

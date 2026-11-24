@@ -100,6 +100,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
   const gated = useGateStore((store) => store.locked);
   const trackLoaded = useSyncExternalStore(watchEngine, engineHasTrack, () => false);
   const side = useCustomizationStore((state) => state.navigation) === "side";
+  const wallpaper = useCustomizationStore((state) => state.backgroundImage !== null);
   const railOpen = useCustomizationStore((state) => state.railOpen);
   const space = railSpace(side, railOpen);
   const pageLit = usePageLit();
@@ -223,6 +224,7 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
       className={styles.shell}
       data-edge={edgeToEdge ? "" : undefined}
       data-nav={side ? "side" : "top"}
+      data-wallpaper={wallpaper ? "" : undefined}
       style={side ? ({ "--rail-space": `${space}px` } as CSSProperties) : undefined}
       onScroll={pinWindow}
     >
