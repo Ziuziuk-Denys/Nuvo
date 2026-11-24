@@ -11,6 +11,14 @@ describe("the template a song gets", () => {
     }
   });
 
+  it("prints an engraving on paper in a light theme, unless the scene sets its own", () => {
+    const own = { background: "engraving", atmosphere: [], centrepiece: null, lyrics: "caption" };
+    const paper = (light: boolean, params?: Record<string, Record<string, number>>) =>
+      templateFor("own", "", false, { ...own, params }, light).background.params.paper;
+    expect([paper(false), paper(true)]).toEqual([undefined, 1]);
+    expect(paper(true, { engraving: { "engraving.paper": 0 } })).toBe(0);
+  });
+
   it("in own mode is the owner's scene", () => {
     const scene = SCENES.find((item) => item.id === "glass")!.selection;
     expect(templateFor("own", "track-1", false, scene)).toEqual(sceneOf(scene).template);

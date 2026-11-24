@@ -2397,6 +2397,10 @@
         "title": "Fogged glass",
         "description": "Rain drops on a fogged window"
       },
+      "engraving": {
+        "title": "Engraving",
+        "description": "The cover in engraved lines that swell with the song"
+      },
       "print": {
         "title": "Print",
         "description": "The cover in two flat tones, cut on the beat"
@@ -2465,6 +2469,10 @@
         "title": "Line",
         "description": "The current line, clean and large"
       },
+      "caption": {
+        "title": "Caption",
+        "description": "A thin italic line cut into the engraving"
+      },
       "whisper": {
         "title": "Whisper",
         "description": "A small italic line below"
@@ -2515,6 +2523,8 @@
       }
     },
     "param": {
+      "paper": "Ink on paper",
+      "travel": "Sound in the lines",
       "dim": "Brightness",
       "bloom": "Glow on bass",
       "speed": "Speed",
@@ -2599,6 +2609,7 @@
       "pick_calm": "{part} would cover the centre, so the text is {calm} for now."
     },
     "scene": {
+      "engraving": "Engraving",
       "kinetic-ice": "Ice",
       "emblem": "Emblem",
       "ascii": "Signal",
