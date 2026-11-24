@@ -1,6 +1,8 @@
 import { useEffect, useState, type PointerEvent } from "react";
 import { formatTime, positionAt, type PositionSample } from "./lib/playback";
 
+const TICK_MS = 250;
+
 interface ScrubberProps {
   sample: PositionSample;
   live: boolean;
@@ -16,11 +18,9 @@ export function Scrubber({ sample, live, accent, onSeek, onHold }: ScrubberProps
 
   useEffect(() => {
     if (!live) return;
-    let frame = requestAnimationFrame(function tick() {
-      setNow(Date.now());
-      frame = requestAnimationFrame(tick);
-    });
-    return () => cancelAnimationFrame(frame);
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), TICK_MS);
+    return () => clearInterval(timer);
   }, [live]);
 
   const duration = sample.durationMs;
