@@ -76,6 +76,7 @@ export function History(): JSX.Element {
   } else if (state === "ready" && items.length === 0) {
     content = (
       <EmptyState
+        art={filter === "all"}
         title={t(filter === "all" ? "ui.history.empty" : "ui.history.empty_filter")}
         actions={filter === "all" ? [{ label: t("ui.stats.empty_action"), primary: true, onClick: () => navigateWithTransition(navigate, "/library") }] : []}
       />

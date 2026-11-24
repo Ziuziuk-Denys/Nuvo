@@ -78,6 +78,7 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
     return (
       <div className={styles.empty}>
         <EmptyState
+          art
           title={t("ui.local.empty_title")}
           message={t("ui.local.empty_message")}
           actions={[

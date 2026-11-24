@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { EmptyArt } from "../icons/EmptyArt";
 import { Button } from "./Button";
 import styles from "./EmptyState.module.css";
 
@@ -13,14 +14,16 @@ export interface EmptyStateProps {
   message?: string;
   actions?: EmptyStateAction[];
   tour?: string;
+  art?: boolean;
 }
 
-export function EmptyState({ title, message, actions = [], tour }: EmptyStateProps): JSX.Element {
+export function EmptyState({ title, message, actions = [], tour, art = false }: EmptyStateProps): JSX.Element {
   const ordered = actions.slice(0, 2).sort((a, b) => Number(!!a.primary) - Number(!!b.primary));
 
   return (
     <div className={styles.area} data-empty-state="">
       <div className={styles.empty} data-tour={tour}>
+        {art ? <EmptyArt /> : null}
         <h2 className={styles.title}>{title}</h2>
         {message ? <p className={styles.message}>{message}</p> : null}
         {ordered.length > 0 ? (
