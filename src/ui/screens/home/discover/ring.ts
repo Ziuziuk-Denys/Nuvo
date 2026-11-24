@@ -2,6 +2,8 @@ import type { HomeMix, Track } from "../../../ports/recs";
 import { DISCOVER, homeSongs } from "../homeModel";
 
 export const MIN_TRACKS = 8;
+// 11 covers a side reach the widest point of the arc on a 2560 px window
+export const FULL_TRACKS = 23;
 const MAX_TRACKS = 24;
 const FAMILIAR_EVERY = 4;
 
@@ -18,6 +20,7 @@ export interface Ring {
   step: number;
   depth: number;
   edge: number;
+  widest: number;
   centreY: number;
   vanishY: number;
   rise: number;
@@ -29,6 +32,11 @@ export interface Placement {
   scale: number;
   turn: number;
   tilt: number;
+  shown: number;
+}
+
+function artOf(track: Track): string[] {
+  return [track.album?.id ?? "", track.coverUrl].filter(Boolean);
 }
 
 export function ringTracks(mixes: readonly HomeMix[]): Track[] {
@@ -46,7 +54,14 @@ export function ringTracks(mixes: readonly HomeMix[]): Track[] {
     if (tracks.length % FAMILIAR_EVERY === FAMILIAR_EVERY - 1 && next < known.length) tracks.push(known[next++]);
     if (tracks.length < MAX_TRACKS) tracks.push(track);
   }
-  while (tracks.length < MIN_TRACKS && next < known.length) tracks.push(known[next++]);
+  const shown = new Set(tracks.flatMap(artOf));
+  for (const track of known.slice(next)) {
+    if (tracks.length >= FULL_TRACKS) break;
+    const art = artOf(track);
+    if (art.some((mark) => shown.has(mark))) continue;
+    for (const mark of art) shown.add(mark);
+    tracks.push(track);
+  }
   return tracks;
 }
 
@@ -70,20 +85,26 @@ export function ringFor(width: number, height: number, clearTop: number): Ring {
   const centreY = height * 0.62;
   const half = cover / 2;
   let edge = 0;
+  let reach = 0;
+  let widest = Infinity;
   while (edge < Math.PI / 2) {
     const scale = depthScale({ depth }, edge);
+    const out = (radius * Math.sin(edge) + half * Math.cos((edge * TURN_DEG * Math.PI) / 180)) * scale;
+    if (out < reach) widest = Math.min(widest, edge);
+    reach = out;
     if (width / 2 + radius * Math.sin(edge) * scale - half * scale >= width) break;
     edge += 0.01;
   }
   const scale = depthScale({ depth }, edge);
   const vanishY = height * VANISH;
   const room = (vanishY + (centreY - vanishY) * scale - half * scale - clearTop) / ((1 - Math.cos(edge)) * scale);
-  return { width, cover, radius, step: (cover * 0.95) / radius, depth, edge, centreY, vanishY, rise: Math.max(0, Math.min(height * 2, room)) };
+  return { width, cover, radius, step: (cover * 0.95) / radius, depth, edge, widest, centreY, vanishY, rise: Math.max(0, Math.min(height * 2, room)) };
 }
 
 export function place(ring: Ring, offset: number): Placement | null {
   const angle = offset * ring.step;
-  if (Math.abs(angle) > ring.edge) return null;
+  const shown = Math.min(1, (ring.widest - Math.abs(angle)) / ring.step);
+  if (Math.abs(angle) > ring.edge || shown <= 0) return null;
   const scale = depthScale(ring, angle);
   const x = ring.width / 2 + ring.radius * Math.sin(angle) * scale;
   return {
@@ -92,5 +113,6 @@ export function place(ring: Ring, offset: number): Placement | null {
     scale: scale * (1 + CENTRE_LIFT * Math.max(0, 1 - Math.abs(offset))),
     turn: -angle * TURN_DEG,
     tilt: -Math.atan2(ring.rise * Math.sin(angle), ring.radius * Math.cos(angle)) * TILT,
+    shown,
   };
 }
