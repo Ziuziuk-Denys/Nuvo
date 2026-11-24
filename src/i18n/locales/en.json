@@ -677,7 +677,8 @@
       "hint_section": "next section",
       "hint_close": "close",
       "moving_on": "Turn moving sound on",
-      "moving_off": "Turn moving sound off"
+      "moving_off": "Turn moving sound off",
+      "pocket": "Pocket player"
     },
     "recs": {
       "home": {
@@ -1157,7 +1158,13 @@
       "launch_check": {
         "title": "Check for updates at launch",
         "description": "Nuvo asks github.com for a new version when it starts. When off, it asks only when you press Check now."
-      }
+      },
+      "pocket_on_top": "Keep the pocket player on top",
+      "pocket_top_app": "It stays above other windows",
+      "pocket_top_window-menu": "On GNOME only you can do this: click the pocket player, press Alt+Space and choose Always on Top",
+      "pocket_top_none": "This desktop does not let an app keep a window on top",
+      "pocket_place_kept": "It opens where you left it",
+      "pocket_size_kept": "It keeps its size; this desktop chooses the place"
     },
     "status": {
       "failed": "Your library stopped",
@@ -1588,6 +1595,25 @@
       "later": "Later",
       "restart": "Restart",
       "update": "Update"
+    },
+    "pocket": {
+      "title": "Pocket player",
+      "open": "Pocket player",
+      "put_away": "Put away the pocket player",
+      "nothing": "Nothing playing",
+      "position": "Position",
+      "turn_back": "Back to the cover",
+      "menu_cover": "Cover",
+      "menu_lyrics": "Lyrics",
+      "menu_queue": "Up next",
+      "menu_onTop": "Keep on top",
+      "menu_onTopHint": "On top: Alt+Space, Always on Top",
+      "menu_size": "Size",
+      "menu_small": "Small",
+      "menu_medium": "Medium",
+      "menu_large": "Large",
+      "menu_openApp": "Open Nuvo",
+      "menu_close": "Put away"
     }
   },
   "appearance": {
@@ -2051,7 +2077,8 @@
       "loop_b": "Set loop end",
       "loop_clear": "Clear the loop",
       "quick_like_song": "Like the playing song",
-      "recognize": "Recognize a song"
+      "recognize": "Recognize a song",
+      "pocket": "Pocket player"
     },
     "storage": {
       "usage_title": "Used",
@@ -2326,7 +2353,8 @@
       "proxy": "vpn, socks, http",
       "tools": "yt-dlp, ffmpeg, deno",
       "help": "bug, issue, support, feedback",
-      "look_quality": "performance, visuals, quality, battery, smooth, cpu, slow, lag"
+      "look_quality": "performance, visuals, quality, battery, smooth, cpu, slow, lag",
+      "pocket": "pocket, mini player, small window, always on top, float"
     },
     "look_quality": {
       "title": "Look on this computer",

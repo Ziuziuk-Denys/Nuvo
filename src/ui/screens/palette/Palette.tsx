@@ -40,6 +40,7 @@ import {
   type SearchHistoryItem,
   type SearchResult,
 } from "../../ports/search";
+import { togglePocket } from "../../ports/pocket";
 import { shortcutKeycaps, useRecorderState, useShortcutBindings } from "../../ports/shortcuts";
 import { applyTempo, BUILT_IN_PRESETS, TEMPO_PRESETS, useSoundStore, type TempoPresetKey } from "../../ports/sound";
 import { ArtistLinks } from "../../shell/ArtistLinks";
@@ -437,6 +438,7 @@ function PalettePanel({
         playerEngine.setRepeat(nextRepeatMode(snapshot.repeat, isRadioContext(snapshot.playbackContext)));
       },
       fullscreen: toggleWindowFullscreen,
+      pocket: togglePocket,
       tour: () => useTour.getState().replay(),
     },
   });

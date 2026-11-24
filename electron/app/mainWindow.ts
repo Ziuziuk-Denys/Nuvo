@@ -76,6 +76,7 @@ export interface MainWindowDeps {
   quitting(): boolean;
   keepInTray(): boolean;
   trayAvailable(): boolean;
+  pocketOpen(): boolean;
   trayHintShown(): boolean;
   markTrayHintShown(): void;
   notify(text: string): void;
@@ -144,7 +145,12 @@ export class MainWindowController {
   }
 
   private onClose(event: { preventDefault(): void }): void {
-    const decision = closeDecision({ quitting: this.deps.quitting(), keepInTray: this.deps.keepInTray(), trayAvailable: this.deps.trayAvailable() });
+    const decision = closeDecision({
+      quitting: this.deps.quitting(),
+      keepInTray: this.deps.keepInTray(),
+      trayAvailable: this.deps.trayAvailable(),
+      pocketOpen: this.deps.pocketOpen(),
+    });
     if (decision === "close") return;
     event.preventDefault();
     if (decision === "quit") {
@@ -152,7 +158,7 @@ export class MainWindowController {
       return;
     }
     this.win?.hide();
-    if (!this.deps.trayHintShown()) {
+    if (!this.deps.pocketOpen() && !this.deps.trayHintShown()) {
       this.deps.notify("Nuvo keeps playing in the tray.");
       this.deps.markTrayHintShown();
     }

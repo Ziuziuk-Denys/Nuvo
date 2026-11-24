@@ -47,6 +47,7 @@ export default defineConfig({
       preload: [
         preload("preload", "electron/app/preload.ts"),
         preload("preload-notch", "electron/app/preload-notch.ts"),
+        preload("preload-pocket", "electron/app/preload-pocket.ts"),
         // fflate's node build needs the `module` built-in, which a sandboxed preload cannot load
         preload("youtube-worker", "electron/youtube/worker/preload.ts", { fflate: "fflate/browser" }),
       ],

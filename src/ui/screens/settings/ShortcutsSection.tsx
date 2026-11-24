@@ -25,6 +25,7 @@ const ACTIONS: { id: string; scope: ShortcutScope; action: string; icon: IconNam
   { id: "nav.queue", scope: "app", action: "toggleQueue", icon: "queue" },
   { id: "nav.lyrics", scope: "app", action: "toggleFullscreen", icon: "expand" },
   { id: "nav.recognize", scope: "app", action: "recognize", icon: "recognize" },
+  { id: "app.pocket", scope: "app", action: "pocket", icon: "pocket" },
   { id: "loop.set-a", scope: "app", action: "loopA", icon: "loop" },
   { id: "loop.set-b", scope: "app", action: "loopB", icon: "loop" },
   { id: "loop.clear", scope: "app", action: "loopClear", icon: "loop" },

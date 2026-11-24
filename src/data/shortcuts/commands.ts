@@ -28,6 +28,7 @@ export interface LoopControls {
 export interface AppControls {
   quit(): void;
   toggleFullscreen(): void;
+  togglePocket(): void;
 }
 
 export interface NavControls {
@@ -99,6 +100,7 @@ export function coreCommands(deps: { player: PlayerControls; likes: LikeControls
     command("loop.clear", "sound", () => loop.clear()),
     command("app.quit", "app", () => app.quit()),
     command("app.fullscreen", "app", () => app.toggleFullscreen()),
+    command("app.pocket", "app", () => app.togglePocket()),
   ];
 }
 

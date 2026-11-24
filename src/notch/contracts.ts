@@ -19,7 +19,7 @@ export interface NotchState {
 
 export interface NotchLyrics {
   trackId: string;
-  lines: Array<{ timeMs: number; text: string }>;
+  lines: Array<{ timeMs: number; text: string; words?: Array<{ timeMs: number; text: string }> }>;
 }
 
 export interface NotchPlaylist {

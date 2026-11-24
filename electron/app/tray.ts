@@ -6,7 +6,7 @@ export const PROBE_TIMEOUT_MS = 2000;
 export const REBUILD_DEBOUNCE_MS = 250;
 export const TITLE_MAX = 60;
 
-export type TrayItemId = "title" | "toggle" | "next" | "previous" | "like" | "separator" | "show" | "resetAppearance" | "quit";
+export type TrayItemId = "title" | "toggle" | "next" | "previous" | "like" | "separator" | "show" | "pocket" | "resetAppearance" | "quit";
 
 export interface TrayMenuItem {
   id: TrayItemId;
@@ -25,6 +25,7 @@ export interface TrayLabels {
   like: string;
   unlike: string;
   show: string;
+  pocket: string;
   resetAppearance: string;
   quit: string;
 }
@@ -39,6 +40,7 @@ export const TRAY_LABELS_EN: TrayLabels = {
   like: "Like",
   unlike: "Unlike",
   show: "Show Nuvo",
+  pocket: "Pocket player",
   resetAppearance: "Reset appearance (safe mode)",
   quit: "Quit Nuvo",
 };
@@ -59,6 +61,7 @@ export function trayMenu(state: SurfaceState, labels: TrayLabels = TRAY_LABELS_E
     { id: "like", label: state.liked ? labels.unlike : labels.like, enabled: hasTrack, kind: "item" },
     { id: "separator", label: "", enabled: true, kind: "separator" },
     { id: "show", label: labels.show, enabled: true, kind: "item" },
+    { id: "pocket", label: labels.pocket, enabled: true, kind: "item" },
     { id: "resetAppearance", label: labels.resetAppearance, enabled: true, kind: "item" },
     { id: "quit", label: labels.quit, enabled: true, kind: "item" },
   ];

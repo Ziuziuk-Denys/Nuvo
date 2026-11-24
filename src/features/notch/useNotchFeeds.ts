@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { NotchPlaylist, NotchSettings } from "@/notch/contracts";
+import type { NotchLyrics, NotchPlaylist, NotchSettings } from "@/notch/contracts";
 import { usePlaylistAdds } from "./playlistAdds";
 import { useNotchSettingsStore } from "./store/notchSettingsStore";
 
@@ -8,7 +8,7 @@ const MAX_PLAYLISTS = 30;
 export interface NotchLyricsInput {
   trackId: string | null;
   lyricsTrackId: string | null;
-  lines: Array<{ timeMs: number; text: string }>;
+  lines: NotchLyrics["lines"];
 }
 
 export interface NotchPlaylistInput {
@@ -43,7 +43,10 @@ export function useNotchFeeds(lyrics: NotchLyricsInput, playlists: readonly Notc
 
   useEffect(() => {
     if (!trackId || lyricsTrackId !== trackId) return;
-    window.nuvoShell?.notchUpdateLyrics({ trackId, lines: lines.filter((line) => line.text.trim() !== "").map(({ timeMs, text }) => ({ timeMs, text })) });
+    window.nuvoShell?.notchUpdateLyrics({
+      trackId,
+      lines: lines.filter((line) => line.text.trim() !== "").map(({ timeMs, text, words }) => ({ timeMs, text, ...(words ? { words } : {}) })),
+    });
   }, [trackId, lyricsTrackId, lines]);
 
   useEffect(() => {
