@@ -4,11 +4,21 @@ import { CUSTOM_PREFIX, useAppearanceStore } from "../../ports/appearance";
 import { useTranslation } from "../../ports/i18n";
 import { LOCALE_OPTIONS, PRIMARY_LOCALES, useCustomizationStore, type Locale } from "../../ports/settings";
 import { presetIconSrc, PRESETS, revealThemeChange, useLook, useSetThemeMode, useThemeMode, type ThemeMode } from "../../ports/theme";
+import { Button } from "../../components/Button";
+import { useModalStore } from "../../ports/navigation";
+import { goTo } from "../../shell/navigate";
+import { useHomeLayout } from "../home/arrange/homeLayout";
 import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
 import { CustomCssBlock, ResetAppearanceRow } from "./CustomCssBlock";
 import { ResetAllRow } from "./CustomizationSection";
 import { ThemeLibrary } from "./ThemeLibrary";
 import styles from "./sections.module.css";
+
+function arrangeHome(): void {
+  useModalStore.getState().closeSettings();
+  goTo("/");
+  useHomeLayout.getState().arrange(true);
+}
 
 const COLUMNS = 3;
 const MODES: ThemeMode[] = ["system", "light", "dark"];
@@ -238,6 +248,13 @@ export function ThemeSection(): JSX.Element {
               onChange={setNavigation}
             />
           }
+        />
+        <SettingRow
+          title={t("ui.home.arrange.title")}
+          description={t("ui.home.arrange.hint")}
+          titleKey="ui.home.arrange.title"
+          descKey="ui.home.arrange.hint"
+          control={<Button onClick={arrangeHome}>{t("ui.home.arrange.open")}</Button>}
         />
       </SettingGroup>
       <SettingGroup label={t("settings.page.colour")}>
