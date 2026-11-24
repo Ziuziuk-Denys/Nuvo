@@ -55,7 +55,8 @@ function SessionObject({ session, now }: { session: Session; now: number }): JSX
   const title = t(`ui.home.when.${when.key}`, { day: when.day ?? "" });
   const { source } = session;
   const about = source.kind === "artists" ? t("ui.home.shuffle_names", { names: source.names.join(", ") }) : source.name;
-  const length = t("ui.home.continue.length", { count: Math.max(1, Math.round(session.listenedMs / 60_000)) });
+  const clock = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(session.startedAt);
+  const length = t("ui.home.continue.length", { time: clock, count: Math.max(1, Math.round(session.listenedMs / 60_000)) });
   const context = `home:session:${session.id}`;
   const front = session.songs.slice(-FANNED).reverse();
   const resume = () => void continueFrom(session.songs, { completed: session.lastCompleted, playlistId: session.playlistId }, context);

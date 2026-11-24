@@ -20,7 +20,9 @@ export function completeOrder(saved: unknown): SectionId[] {
   const known = (Array.isArray(saved) ? saved : []).filter((id, index, all): id is SectionId => SECTIONS.includes(id) && all.indexOf(id) === index);
   for (const [index, id] of SECTIONS.entries()) {
     if (known.includes(id)) continue;
-    const before = SECTIONS.slice(0, index).reverse().find((earlier) => known.includes(earlier));
+    const before = SECTIONS.slice(0, index)
+      .reverse()
+      .find((earlier) => known.includes(earlier));
     known.splice(before ? known.indexOf(before) + 1 : 0, 0, id);
   }
   return known;

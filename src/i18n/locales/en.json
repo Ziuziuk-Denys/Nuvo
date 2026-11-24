@@ -255,8 +255,8 @@
       "continue": {
         "title": "Continue",
         "resume": "Continue, {when}",
-        "length_one": "{count} minute",
-        "length_other": "{count} minutes"
+        "length_one": "{time}, {count} minute",
+        "length_other": "{time}, {count} minutes"
       },
       "when": {
         "last_night": "Last night",

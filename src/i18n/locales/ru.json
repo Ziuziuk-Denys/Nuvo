@@ -265,10 +265,10 @@
       "continue": {
         "title": "Продолжить",
         "resume": "Продолжить, {when}",
-        "length_one": "{count} минута",
-        "length_few": "{count} минуты",
-        "length_many": "{count} минут",
-        "length_other": "{count} минуты"
+        "length_one": "{time}, {count} минута",
+        "length_few": "{time}, {count} минуты",
+        "length_many": "{time}, {count} минут",
+        "length_other": "{time}, {count} минуты"
       },
       "when": {
         "last_night": "Этой ночью",

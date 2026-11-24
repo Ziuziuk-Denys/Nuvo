@@ -6,10 +6,10 @@ const BIGGEST = 50;
 const SMALLEST = 26;
 const CLEAR_OF_LAMP = 30;
 const GAP = 5;
-const RELAX_STEPS = 5;
+const RELAX_STEPS = 24;
 const GLIDE_MS = 110;
 const DOT = 2.2;
-const POOL = 0.62;
+const POOL = 0.78;
 const SHADOW_THROW = 0.09;
 const EDGE = 8;
 
@@ -42,6 +42,10 @@ function toneOf(image: HTMLImageElement): [number, number, number] {
   const tone: [number, number, number] = [red * lift, green * lift, blue * lift];
   tones.set(image.src, tone);
   return tone;
+}
+
+function vivid(tone: readonly number[]): number {
+  return (Math.max(...tone) - Math.min(...tone)) / Math.max(...tone);
 }
 
 export function createMoodField(canvas: HTMLCanvasElement, changed: () => void): MoodField {
@@ -117,11 +121,11 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
     const reach = side * POOL;
     const gradient = context.createRadialGradient(x, y, 0, x, y, reach);
     const [red, green, blue] = tone.map(Math.round);
-    const peak = dark ? 0.5 : 0.42;
+    const peak = dark ? 0.82 : 0.6;
     for (let stop = 0; stop <= 16; stop += 1) {
       const r = stop / 16;
       const window = (1 - r * r) ** 2;
-      gradient.addColorStop(r, `rgba(${red}, ${green}, ${blue}, ${((peak * window) / (1 + 14 * r * r)).toFixed(4)})`);
+      gradient.addColorStop(r, `rgba(${red}, ${green}, ${blue}, ${((peak * window) / (1 + 11 * r * r)).toFixed(4)})`);
     }
     context.fillStyle = gradient;
     context.fillRect(0, 0, side, side);
@@ -178,10 +182,14 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
       last = now;
       const wanted = targets();
       let moving = false;
-      const mixed = lit.map((index) => items[index].tone).filter((found) => found !== null);
-      if (mixed.length > 0) {
+      const mixed = lit.flatMap((index, rank) => {
+        const found = items[index].tone;
+        return found ? [{ found, weight: (1 + 3 * vivid(found)) / (1 + rank) }] : [];
+      });
+      const whole = mixed.reduce((sum, { weight }) => sum + weight, 0);
+      if (whole > 0) {
         for (const channel of [0, 1, 2] as const) {
-          const goal = mixed.reduce((sum, one, rank) => sum + one[channel] * (mixed.length - rank), 0) / ((mixed.length * (mixed.length + 1)) / 2);
+          const goal = mixed.reduce((sum, { found, weight }) => sum + found[channel] * weight, 0) / whole;
           if (Math.abs(goal - tone[channel]) > 0.6) moving = true;
           tone[channel] += (goal - tone[channel]) * ease;
         }

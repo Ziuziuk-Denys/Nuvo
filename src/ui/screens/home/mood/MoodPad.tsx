@@ -188,7 +188,15 @@ function Pad({ map }: { map: MoodMap }): JSX.Element {
   );
 }
 
-function MoodSong({ track, onPlay, onContextMenu }: { track: Track; onPlay(): void; onContextMenu: JSX.IntrinsicElements["li"]["onContextMenu"] }): JSX.Element {
+function MoodSong({
+  track,
+  onPlay,
+  onContextMenu,
+}: {
+  track: Track;
+  onPlay(): void;
+  onContextMenu: JSX.IntrinsicElements["li"]["onContextMenu"];
+}): JSX.Element {
   return (
     <li className={styles.song} data-song={track.id} onContextMenu={onContextMenu}>
       <button type="button" className={styles.start} aria-label={`${track.title}, ${track.artists}`} onClick={onPlay}>

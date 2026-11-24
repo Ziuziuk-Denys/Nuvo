@@ -12,14 +12,8 @@
 
 .title {
   margin: 0;
-  font-family: var(--n-font);
-  font-size: 24px;
-  font-weight: 564;
-  font-variation-settings:
-    "wdth" 134,
-    "opsz" 144;
-  line-height: 1;
-  letter-spacing: -0.025em;
+  font: var(--n-type-title);
+  letter-spacing: var(--n-track-title);
 }
 
 .row {

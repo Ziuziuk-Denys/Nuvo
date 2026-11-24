@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { useImportsUi } from "../imports/importsUi";
+import { useHomeLayout } from "./arrange/homeLayout";
 import { Home } from "./Home";
 import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCovers, starterGenres } from "./homeModel";
 
@@ -427,4 +428,16 @@ describe("Home refresh", () => {
     await act(async () => refreshOf("like").click());
     expect(shelfSongs("like")).toEqual(by("Other", "b", 6).map((track) => track.id));
   });
+});
+
+it("shows the parts in the arranged order and leaves the switched off ones out", async () => {
+  mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 12) }]);
+  await mount();
+  const parts = () => [...host.querySelectorAll("[data-mix], [data-shelf=songs]")].map((node) => (node.matches("[data-mix]") ? "mixes" : "songs"));
+  expect(parts()).toEqual(["mixes", "songs"]);
+  act(() => useHomeLayout.getState().move(useHomeLayout.getState().order.indexOf("songs"), 0));
+  expect(parts()).toEqual(["songs", "mixes"]);
+  act(() => useHomeLayout.getState().toggle("songs"));
+  expect(parts()).toEqual(["mixes"]);
+  act(() => useHomeLayout.getState().reset());
 });
