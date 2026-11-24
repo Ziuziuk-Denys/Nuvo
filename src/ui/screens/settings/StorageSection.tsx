@@ -177,13 +177,13 @@ export function StorageSection(): JSX.Element {
           <div className={styles.ringWrap}>
             <div className={styles.ring}>
               <svg viewBox="0 0 200 200" width={136} height={136} aria-hidden="true">
-                <circle cx="100" cy="100" r="70" className={styles.ringTrack} />
+                <circle cx="100" cy="100" r="81" className={styles.ringTrack} />
                 {selectedBytes > 0
                   ? slices.map((slice) => (
                       <path
                         key={slice.id}
-                        d={hovered === slice.id ? ringSegment(57.5, 83.5, slice.from, slice.to) : ringSegment(58, 82, slice.from, slice.to)}
-                        fill={slice.color}
+                        d={hovered === slice.id ? ringSegment(74, 88, slice.from, slice.to) : ringSegment(76, 86, slice.from, slice.to)}
+                        style={{ fill: slice.color }}
                         onMouseEnter={() => setHovered(slice.id)}
                         onMouseLeave={() => setHovered(null)}
                       />

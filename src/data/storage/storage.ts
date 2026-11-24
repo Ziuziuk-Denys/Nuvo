@@ -24,7 +24,11 @@ interface CacheStatus {
 
 export const STORAGE_REFRESH_MS = 5_000;
 const ORDER: StorageCategoryId[] = ["audio", "covers", "web"];
-const COLORS: Record<StorageCategoryId, string> = { audio: "#0071e3", covers: "#34c759", web: "#ff9f0a" };
+const COLORS: Record<StorageCategoryId, string> = {
+  audio: "var(--n-ink)",
+  covers: "color-mix(in srgb, var(--n-ink) 34%, var(--n-sheet))",
+  web: "color-mix(in srgb, var(--n-ink) 62%, var(--n-sheet))",
+};
 const LABELS: Record<StorageCategoryId, string> = {
   audio: "ui.settings.storage_audio",
   covers: "ui.settings.storage_covers",

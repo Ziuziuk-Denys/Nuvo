@@ -177,3 +177,20 @@
   height: 8px;
   margin: 4px 0;
 }
+
+/* opacity only, so a list that waits costs one composited layer per row */
+.placeholder {
+  animation: wait 1.1s var(--n-ease-inout) infinite alternate;
+}
+
+@keyframes wait {
+  from {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder {
+    animation: none;
+  }
+}

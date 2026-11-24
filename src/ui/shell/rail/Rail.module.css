@@ -74,7 +74,7 @@
   text-align: start;
   text-decoration: none;
   cursor: pointer;
-  transition: color 150ms var(--n-ease-out);
+  transition: color var(--n-t-quick) var(--n-ease-out);
 }
 
 .item:hover,

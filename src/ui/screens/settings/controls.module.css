@@ -27,6 +27,10 @@
   font: 420 13.5px/1.45 var(--n-font);
 }
 
+.stack > .groupNote {
+  margin: -6px 0 0;
+}
+
 .panel {
   display: flex;
   flex-direction: column;
@@ -34,6 +38,10 @@
 
 .panel > * + * {
   border-top: 1px solid color-mix(in srgb, var(--n-ink) 8%, transparent);
+}
+
+.panel > input + * {
+  border-top: 0;
 }
 
 .row {

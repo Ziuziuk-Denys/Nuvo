@@ -125,15 +125,15 @@
   cursor: pointer;
   outline: none;
   transition:
-    background-color 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out),
-    transform 150ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
+    transform var(--n-t-quick) var(--n-ease-out);
 }
 
 .quiet > svg {
   flex: none;
   color: var(--n-ink-3);
-  transition: color 150ms var(--n-ease-out);
+  transition: color var(--n-t-quick) var(--n-ease-out);
 }
 
 .quiet:hover,

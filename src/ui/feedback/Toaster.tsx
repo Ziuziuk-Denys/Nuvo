@@ -2,10 +2,9 @@ import { useEffect, useState, type JSX } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Icon } from "../icons/Icon";
 import { useStatusLine } from "./statusLine";
+import { LAYOUT_SPRING } from "../motion";
 import { STICKY, useToastStore, visibleToast, type ToastVariant } from "./toastStore";
 import styles from "./Toaster.module.css";
-
-const EASE_OUT = [0.2, 0.7, 0.2, 1] as const;
 
 // work with a known end shows its line instead of a spinner, so nothing spins for minutes
 function Glyph({ variant, measured }: { variant: ToastVariant; measured: boolean }): JSX.Element {
@@ -57,7 +56,7 @@ export function Toaster(): JSX.Element {
             data-action={toast.action ? "" : undefined}
             data-progress={toast.progress !== undefined ? "" : undefined}
             initial={still ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: EASE_OUT } }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: LAYOUT_SPRING }}
             exit={still ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: 4, scale: 0.98, transition: { duration: 0.15, ease: "easeIn" } }}
             onMouseEnter={() => setHoveredId(toast.id)}
             onMouseLeave={() => setHoveredId(null)}

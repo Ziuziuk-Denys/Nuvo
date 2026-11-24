@@ -21,8 +21,8 @@
   border-radius: 50%;
   color: var(--n-ink-2);
   transition:
-    background-color 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
     transform var(--n-t-quick) var(--n-ease-out);
 }
 
@@ -90,7 +90,7 @@
   box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.16);
   color: var(--light-glyph);
   cursor: default;
-  transition: background-color 120ms var(--n-ease-out);
+  transition: background-color var(--n-t-quick) var(--n-ease-out);
 }
 
 /* A 20 px target around the 12 px light, edge to edge with its neighbours */

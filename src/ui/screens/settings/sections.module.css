@@ -668,7 +668,7 @@
   color: var(--n-field);
   cursor: pointer;
   font: 500 13px var(--n-font);
-  transition: opacity 150ms var(--n-ease-out);
+  transition: opacity var(--n-t-quick) var(--n-ease-out);
 }
 
 .accountAction:hover:not(:disabled) {
@@ -767,7 +767,7 @@
   flex: none;
   color: var(--n-ink-3);
   transition:
-    color 150ms var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
     transform 200ms var(--n-ease-out);
 }
 
