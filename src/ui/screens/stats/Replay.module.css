@@ -1,7 +1,6 @@
 .page {
   display: flex;
   flex-direction: column;
-  --replay-giant: clamp(96px, min(25cqw, 36cqh), 600px);
   --replay-title: clamp(44px, 5.4cqw, 132px);
   --replay-heading: clamp(36px, 4.1cqw, 100px);
   --replay-line: calc(clamp(19px, 1.75cqw, 38px) * var(--n-scale, 1));
@@ -132,10 +131,17 @@
 .giant {
   margin: 0 0 0 -0.045em;
   color: var(--n-ink);
-  font: 680 var(--replay-giant) / 0.86 var(--n-font);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.055em;
+  font: 680 clamp(64px, min(25cqw, 36cqh, 98cqw / var(--len)), 600px) / 0.86 var(--n-font);
+  font-variant-numeric: proportional-nums;
+  font-kerning: normal;
+  letter-spacing: -0.045em;
+  word-spacing: -0.06em;
+  padding-bottom: 0.06em;
   white-space: nowrap;
+}
+
+.giant[data-lead="1"] {
+  margin-left: -0.012em;
 }
 
 .line {
