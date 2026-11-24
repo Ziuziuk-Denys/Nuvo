@@ -15,7 +15,7 @@ import { EmptyRoom } from "./discover/EmptyRoom";
 import { ringTracks } from "./discover/ring";
 import { ArrangeHome } from "./arrange/ArrangeHome";
 import { useHomeLayout, type SectionId } from "./arrange/homeLayout";
-import { arrangeMixes, likeArtists, mixNames, mixText, starterGenres } from "./homeModel";
+import { arrangeMixes, likeArtists, mixCovers, mixNames, mixText, starterGenres } from "./homeModel";
 import { MixCard } from "./MixCard";
 import { Continue } from "./moments/Continue";
 import { Memory } from "./moments/Memory";
@@ -89,6 +89,7 @@ export function Home(): JSX.Element | null {
   if (ring.length > 0)
     sections.push({ key: "discover", node: <DiscoverArc tracks={ring} title={t(offline ? "ui.home.offline.ring" : "ui.recs.home.discover")} /> });
   const [firstArtist, secondArtist] = offline ? [] : likeArtists(mixes, LIKE_SHELVES);
+  const covers = mixCovers(mixes);
   const parts: Record<SectionId, Array<{ key: string; node: ReactNode }>> = {
     mixes:
       mixes.length === 0
@@ -102,6 +103,7 @@ export function Home(): JSX.Element | null {
                     <MixCard
                       key={mix.id}
                       mix={mix}
+                      cover={covers[index]}
                       number={index + 1}
                       lead={index === 0}
                       names={index === 0 ? mixNames(mix, t) : undefined}

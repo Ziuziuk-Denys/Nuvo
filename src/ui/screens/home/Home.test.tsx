@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { useImportsUi } from "../imports/importsUi";
 import { useHomeLayout } from "./arrange/homeLayout";
 import { Home } from "./Home";
-import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCovers, starterGenres } from "./homeModel";
+import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mixCovers, mosaicCovers, starterGenres } from "./homeModel";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 globalThis.ResizeObserver = class {
@@ -146,10 +146,10 @@ describe("Home mixes", () => {
     expect(host.querySelector("[data-discover-stub]")?.textContent).toBe("5");
   });
 
-  it("draws the For you cover as a 2 x 2 collage", async () => {
-    mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 8) }]);
-    await mount();
-    expect(host.querySelectorAll("[data-mix=daily-mix-for-you] [data-mosaic] img")).toHaveLength(4);
+  it("gives each mix a cover of its own while there is one left", () => {
+    const mix = (id: string, songs: ReturnType<typeof tracks>) => ({ id, title: "", description: "", tracks: songs });
+    const shared = tracks("f", 2);
+    expect(mixCovers([mix("a", shared), mix("b", shared), mix("c", shared), mix("d", [])])).toEqual(["cover-f0", "cover-f1", "cover-f0", ""]);
   });
 });
 

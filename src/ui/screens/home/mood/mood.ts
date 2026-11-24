@@ -16,7 +16,7 @@ const FRESH_SHARE = 0.9;
 
 export function tasteRanks(points: readonly MoodPoint[]): number[] {
   const order = points.map((_, index) => index).sort((left, right) => points[left].taste - points[right].taste);
-  const ranks = new Array<number>(points.length);
+  const ranks: number[] = Array.from({ length: points.length }, () => 0);
   order.forEach((index, place) => {
     ranks[index] = points.length > 1 ? place / (points.length - 1) : 1;
   });

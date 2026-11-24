@@ -99,3 +99,13 @@ export function mixNames(mix: HomeMix, t: TFunction): string {
   const names = [...new Set(mix.tracks.map((track) => firstArtist(track)).filter(Boolean))].slice(0, 3);
   return names.length > 1 ? t("ui.home.shuffle_names", { names: names.join(", ") }) : "";
 }
+
+export function mixCovers(mixes: readonly HomeMix[]): string[] {
+  const used = new Set<string>();
+  return mixes.map((mix) => {
+    const covers = mix.tracks.map((track) => track.coverUrl).filter(Boolean);
+    const cover = covers.find((url) => !used.has(url)) ?? covers[0] ?? "";
+    used.add(cover);
+    return cover;
+  });
+}
