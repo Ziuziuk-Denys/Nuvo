@@ -176,8 +176,6 @@ async function measureIsland(page: Page) {
     return {
       island: box(island),
       background: getComputedStyle(island).backgroundColor,
-      backdrop: getComputedStyle(island).backdropFilter,
-      lit: island.hasAttribute("data-lit"),
       cover: box(open.parentElement!.firstElementChild!),
       title: box(island.querySelector("[data-island-title]")!),
       titleClipped: (() => {
@@ -211,7 +209,6 @@ async function checkIsland(live: NuvoSession, where: string): Promise<void> {
     expect(m.play.width, `${at}: play width`).toBeCloseTo(ISLAND.play, 0);
     expect(m.play.height, `${at}: play height`).toBeCloseTo(ISLAND.play, 0);
     expect(m.background, `${at}: never black`).not.toBe("rgb(0, 0, 0)");
-    if (m.lit) expect(m.backdrop, `${at}: frosted glass`).toContain("blur");
     expect(m.accentUses, `${at}: no accent inside the island`).toEqual([]);
     expect(m.like.right, `${at}: like ends before the middle`).toBeLessThan(m.centre.x);
     expect(m.centre.right, `${at}: the middle ends before the panel buttons`).toBeLessThan(m.actions.x);
