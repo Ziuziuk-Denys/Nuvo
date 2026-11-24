@@ -112,9 +112,6 @@ export function createStage(canvas: GlCanvas): Stage | null {
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, lumaTexture, 0);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   const lumaBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, lumaBuffer);
-  gl.bufferData(gl.PIXEL_PACK_BUFFER, LUMA_COLS * LUMA_ROWS * 4, gl.STREAM_READ);
-  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
   const lumaPixels = new Uint8Array(LUMA_COLS * LUMA_ROWS * 4);
   let lumaFence: WebGLSync | null = null;
 
@@ -474,6 +471,8 @@ export function createStage(canvas: GlCanvas): Stage | null {
       gl.uniform1i(lumaProgram.uniforms.get("uScene")!, 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindBuffer(gl.PIXEL_PACK_BUFFER, lumaBuffer);
+      // fresh storage each time: Chromium warns on every reuse of a read buffer, even one that was read
+      gl.bufferData(gl.PIXEL_PACK_BUFFER, LUMA_COLS * LUMA_ROWS * 4, gl.STREAM_READ);
       gl.readPixels(0, 0, LUMA_COLS, LUMA_ROWS, gl.RGBA, gl.UNSIGNED_BYTE, 0);
       gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
       lumaFence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
