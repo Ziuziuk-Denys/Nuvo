@@ -3,6 +3,8 @@ import type { PresetId, PresetMode } from "./presets";
 
 export const FLAT_SIZES = [16, 32, 48] as const;
 export type FlatSize = (typeof FLAT_SIZES)[number];
+// the frames of a Windows ico and of the Linux icon theme; electron/app/windowIcon.ts holds the same list
+export const FRAME_SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256] as const;
 
 const RENDERS = import.meta.glob<string>("./presetIcons/*.webp", { query: "?url", import: "default", eager: true });
 

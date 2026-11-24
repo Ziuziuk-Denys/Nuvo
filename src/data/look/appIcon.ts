@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useLookStore } from "./lookStore";
-import { FLAT_SIZES } from "./presetIcons";
-import { getPreset, presetFlatSrc, presetIconSrc, resolvePresetMode } from "./presets";
+import { FRAME_SIZES } from "./presetIcons";
+import { getPreset, presetFrameSrc, presetIconSrc, resolvePresetMode } from "./presets";
 
 const ICON_SIZE = 512;
 
@@ -15,6 +15,7 @@ export async function iconPng(src: string, size = ICON_SIZE): Promise<string> {
   canvas.height = size;
   const context = canvas.getContext("2d");
   if (!context) return "";
+  context.imageSmoothingQuality = "high";
   context.drawImage(image, 0, 0, size, size);
   return canvas.toDataURL("image/png");
 }
@@ -36,10 +37,10 @@ export function useAppIconSync(): void {
     const mode = resolvePresetMode(getPreset(preset), resolvedTheme === "light" ? "light" : "dark");
     let live = true;
     const cancel = whenIdle(() => {
-      Promise.all([iconPng(presetIconSrc(preset, mode, ICON_SIZE)), ...FLAT_SIZES.map((size) => iconPng(presetFlatSrc(preset, mode, size), size))])
-        .then(([png, ...flat]) => {
-          if (!live || !png || flat.includes("")) return;
-          void window.nuvoShell?.applyIcon(png, { stock: preset === "nuvo", flat }).catch(() => undefined);
+      Promise.all([iconPng(presetIconSrc(preset, mode, ICON_SIZE)), ...FRAME_SIZES.map((size) => iconPng(presetFrameSrc(preset, mode, size), size))])
+        .then(([png, ...frames]) => {
+          if (!live || !png || frames.includes("")) return;
+          void window.nuvoShell?.applyIcon(png, { stock: preset === "nuvo", frames }).catch(() => undefined);
           let favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
           if (!favicon) {
             favicon = document.createElement("link");

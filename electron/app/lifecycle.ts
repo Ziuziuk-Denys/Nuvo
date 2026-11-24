@@ -2,6 +2,7 @@ import { default as fs } from "node:fs";
 import { default as os } from "node:os";
 import { default as path } from "node:path";
 import type { Status } from "../../src/engine/types";
+import { ICON_FRAMES } from "./windowIcon";
 
 export const QUIT_HANDSHAKE_MS = 800;
 export const WATCHDOG_MS = 4000;
@@ -10,7 +11,6 @@ export const STEP_TIMEOUT_MS = 1000;
 export const DAEMON_BUDGET_MS = 2700;
 export const CRASH_WINDOW_MS = 60_000;
 export const ICON_SIZES = [16, 32, 48, 64, 128, 256, 512];
-const FLAT_SIZES = [16, 32, 48];
 export const ICON_CACHE_TIMEOUT_MS = 5000;
 
 export interface ShutdownDeps {
@@ -119,7 +119,7 @@ export interface IconDeps {
   iconName: string;
   scale(png: Buffer, size: number): Buffer;
   refreshCache(themeDir: string): Promise<void>;
-  setWindowIcon(png: Buffer): void;
+  setWindowIcon(png: Buffer, frames: Buffer[]): void;
 }
 
 export class IconInstaller {
@@ -132,15 +132,15 @@ export class IconInstaller {
     return path.join(this.deps.dataHome, "icons", "hicolor", `${size}x${size}`, "apps", `${this.deps.iconName}.png`);
   }
 
-  apply(pngDataUrl: string, stock: boolean, flat: string[] = []): Promise<void> {
-    const job = this.queue.then(() => this.run(pngDataUrl, stock, flat));
+  apply(pngDataUrl: string, stock: boolean, frames: string[] = []): Promise<void> {
+    const job = this.queue.then(() => this.run(pngDataUrl, stock, frames));
     this.queue = job.catch(() => undefined);
     return job;
   }
 
-  private async run(pngDataUrl: string, stock: boolean, flat: string[]): Promise<void> {
-    const [png, ...flatPngs] = [pngDataUrl, ...flat].map((url) => Buffer.from(url.slice("data:image/png;base64,".length), "base64"));
-    this.deps.setWindowIcon(png);
+  private async run(pngDataUrl: string, stock: boolean, frames: string[]): Promise<void> {
+    const [png, ...framePngs] = [pngDataUrl, ...frames].map((url) => Buffer.from(url.slice("data:image/png;base64,".length), "base64"));
+    this.deps.setWindowIcon(png, framePngs);
     if (!this.deps.packaged || this.deps.platform !== "linux") return;
     const themeDir = path.join(this.deps.dataHome, "icons", "hicolor");
     if (stock) {
@@ -160,7 +160,7 @@ export class IconInstaller {
       fs.mkdirSync(path.dirname(this.file(size)), { recursive: true });
       // A half-written icon is what the desktop would keep showing after a crash here.
       const temporary = `${this.file(size)}.${process.pid}.tmp`;
-      fs.writeFileSync(temporary, size === 512 ? png : (flatPngs[FLAT_SIZES.indexOf(size)] ?? this.deps.scale(png, size)));
+      fs.writeFileSync(temporary, size === 512 ? png : (framePngs[ICON_FRAMES.indexOf(size)] ?? this.deps.scale(png, size)));
       fs.renameSync(temporary, this.file(size));
     }
     this.lastBytes = png;

@@ -1,6 +1,7 @@
 import type { NotchAction } from "../../src/notch/contracts";
 import type { SurfaceState } from "../../src/engine/types";
 import { MAX_ACCELERATOR, MAX_BINDINGS, type Binding } from "./shortcuts";
+import { ICON_FRAMES } from "./windowIcon";
 
 const STATUSES = ["idle", "loading", "playing", "paused"] as const;
 const PAUSE_REASONS = ["user", "device_lost", "autoplay_blocked", "sign_in", "network", "sleep"] as const;
@@ -87,11 +88,11 @@ function isIconPng(value: unknown): value is string {
   return Math.floor((base64.length * 3) / 4) <= ICON_MAX_BYTES && /^[A-Za-z0-9+/]*={0,2}$/.test(base64);
 }
 
-export function validateIcon(raw: unknown): { pngDataUrl: string; stock: boolean; flat?: string[] } | null {
+export function validateIcon(raw: unknown): { pngDataUrl: string; stock: boolean; frames?: string[] } | null {
   if (!isObject(raw) || typeof raw.stock !== "boolean" || !isIconPng(raw.pngDataUrl)) return null;
-  if (raw.flat === undefined) return { pngDataUrl: raw.pngDataUrl, stock: raw.stock };
-  if (!Array.isArray(raw.flat) || raw.flat.length !== 3 || !raw.flat.every(isIconPng)) return null;
-  return { pngDataUrl: raw.pngDataUrl, stock: raw.stock, flat: raw.flat };
+  if (raw.frames === undefined) return { pngDataUrl: raw.pngDataUrl, stock: raw.stock };
+  if (!Array.isArray(raw.frames) || raw.frames.length !== ICON_FRAMES.length || !raw.frames.every(isIconPng)) return null;
+  return { pngDataUrl: raw.pngDataUrl, stock: raw.stock, frames: raw.frames };
 }
 
 export function validateBindings(raw: unknown): Binding[] | null {

@@ -20,6 +20,7 @@ import {
 } from "./mainWindow";
 import { PlayerRelay } from "./relay";
 import { frameOptions, onScreenBounds } from "./windowRules";
+import { ICON_FRAMES } from "./windowIcon";
 
 class FakeWindow extends EventEmitter {
   destroyed = false;
@@ -603,13 +604,18 @@ describe("app icon", () => {
     expect(t.refreshes).toHaveLength(1);
   });
 
-  it("the theme files up to 48 px are the flat drawings as sent", async () => {
+  it("the theme files are the frames as sent, the 512 one is the large drawing", async () => {
     const home = tempDir();
     const t = installer(home);
-    await t.i.apply(png(1), false, [png(7), png(8), png(9)]);
-    expect(fs.readFileSync(file(home, 16))).toEqual(Buffer.from([0x89, 0x50, 7]));
-    expect(fs.readFileSync(file(home, 48))).toEqual(Buffer.from([0x89, 0x50, 9]));
-    expect(fs.readFileSync(file(home, 64))).toEqual(Buffer.from([0x89, 0x50, 1, 64]));
+    await t.i.apply(
+      png(1),
+      false,
+      ICON_FRAMES.map((_, at) => png(10 + at)),
+    );
+    expect(fs.readFileSync(file(home, 16))).toEqual(Buffer.from([0x89, 0x50, 10]));
+    expect(fs.readFileSync(file(home, 48))).toEqual(Buffer.from([0x89, 0x50, 15]));
+    expect(fs.readFileSync(file(home, 256))).toEqual(Buffer.from([0x89, 0x50, 18]));
+    expect(fs.readFileSync(file(home, 512))).toEqual(Buffer.from([0x89, 0x50, 1]));
   });
 
   it("the same bytes twice write nothing", async () => {

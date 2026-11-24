@@ -51,13 +51,13 @@ describe("app icon", () => {
     await mount();
     expect(applyIcon).toHaveBeenCalledWith("data:image/png;base64,AAAA", {
       stock: false,
-      flat: ["data:image/png;base64,AAAA", "data:image/png;base64,AAAA", "data:image/png;base64,AAAA"],
+      frames: Array(9).fill("data:image/png;base64,AAAA"),
     });
     applyIcon.mockClear();
     await act(async () => useLookStore.setState({ preset: "nuvo" }));
     expect(applyIcon).toHaveBeenCalledWith("data:image/png;base64,AAAA", {
       stock: true,
-      flat: ["data:image/png;base64,AAAA", "data:image/png;base64,AAAA", "data:image/png;base64,AAAA"],
+      frames: Array(9).fill("data:image/png;base64,AAAA"),
     });
   });
 });

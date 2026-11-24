@@ -78,6 +78,7 @@ import { systemMuted, unmuteSystem } from "./systemSound";
 import { Thumbar, thumbarIconFile, thumbarIconSize, validateThumbarLabels, type ThumbarButton } from "./thumbar";
 import { probeWatcher, TrayController, trayIconStyle, trayWanted, type TrayItemId } from "./tray";
 import { RateGate, RefusalLog, validateBindings, validateIcon, validateNotchAction, validateNotice, validateSurfaceState } from "./validate";
+import { ICON_FRAMES, writeIco } from "./windowIcon";
 import { nextZoom, zoomKey } from "./zoom";
 import { activateWindow, DEFAULT_SIZE, frameOptions, MIN_SIZE, navigationDecision, onScreenBounds } from "./windowRules";
 
@@ -155,9 +156,13 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   let trayIcon: Tray | null = null;
   const thumbar = process.platform === "win32" ? new Thumbar(applyThumbar) : null;
   let presetIcon: Buffer | null = null;
+  let windowsIcon: string | null = null;
+  // without an icon of its own a Windows window takes the one in the exe, which has every size
+  const firstIcon = () => (process.platform === "win32" && app.isPackaged ? undefined : nativeImage.createFromPath(iconFile(512)));
   const trayImage = () => {
     const style = trayIconStyle(process.env.XDG_CURRENT_DESKTOP ?? "", nativeTheme.shouldUseDarkColors);
     if (style !== "app") return nativeImage.createFromPath(path.join(app.getAppPath(), "build", "icons", "tray", `nuvo-tray-${style.slice(5)}-32.png`));
+    if (windowsIcon) return nativeImage.createFromPath(windowsIcon);
     if (presetIcon) return nativeImage.createFromBuffer(presetIcon).resize({ width: 32, height: 32, quality: "best" });
     return nativeImage.createFromPath(iconFile(32));
   };
@@ -188,7 +193,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         ...frameOptions(process.platform),
         fullscreenable: true,
         show: false,
-        icon: nativeImage.createFromPath(iconFile(512)),
+        icon: firstIcon(),
         webPreferences: {
           preload: path.join(import.meta.dirname, "preload.cjs"),
           contextIsolation: true,
@@ -339,7 +344,14 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     iconName: "nuvo",
     scale: (png, size) => nativeImage.createFromBuffer(png).resize({ width: size, height: size, quality: "best" }).toPNG(),
     refreshCache: (dir) => trackedExec("gtk-update-icon-cache", ["-f", "-t", dir], 5000).then(() => undefined),
-    setWindowIcon: (png) => windows.window && (windows.window as unknown as BrowserWindow).setIcon(nativeImage.createFromBuffer(png)),
+    setWindowIcon: (png, frames) => {
+      const win = windows.window as unknown as BrowserWindow | null;
+      if (process.platform !== "win32" || frames.length === 0) return win?.setIcon(nativeImage.createFromBuffer(png));
+      // one bitmap would be scaled down by the taskbar; an ico holds a drawing for each size
+      windowsIcon = writeIco(path.join(app.getPath("userData"), "icon"), frames);
+      win?.setIcon(windowsIcon);
+      trayIcon?.setImage(trayImage());
+    },
   });
 
   // an AppImage has no installer: Nuvo writes its own menu entry so the desktop can match the window to an icon
@@ -381,7 +393,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     if (notch) return;
     notch = new NotchWindow({
       preloadPath: path.join(import.meta.dirname, "preload-notch.cjs"),
-      icon: nativeImage.createFromPath(iconFile(512)),
+      icon: firstIcon(),
       loadPage: (win) => (devServerUrl ? win.loadURL(`${devServerUrl}#/notch`) : win.loadFile(appFile, { hash: "/notch" })),
       session: detectNotchSession(
         process.env,
@@ -428,7 +440,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     const plugin = "nuvo-pocket";
     pocket = new PocketWindow({
       preloadPath: path.join(import.meta.dirname, "preload-pocket.cjs"),
-      icon: nativeImage.createFromPath(iconFile(512)),
+      icon: firstIcon(),
       loadPage: (win) => (devServerUrl ? win.loadURL(`${devServerUrl}#/pocket`) : win.loadFile(appFile, { hash: "/pocket" })),
       session,
       bridge: createCompositorBridge(compositor, process.env, process.pid, log, trackedExec),
@@ -541,9 +553,11 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     ipc.handle(CHANNELS.iconApply, "main", (payload) => {
       const icon = validateIcon(payload);
       if (!icon) return refusals.refuse(CHANNELS.iconApply, "shape");
-      presetIcon = icon.stock ? null : Buffer.from((icon.flat?.[1] ?? icon.pngDataUrl).slice("data:image/png;base64,".length), "base64");
+      presetIcon = icon.stock
+        ? null
+        : Buffer.from((icon.frames?.[ICON_FRAMES.indexOf(32)] ?? icon.pngDataUrl).slice("data:image/png;base64,".length), "base64");
       trayIcon?.setImage(trayImage());
-      return icons.apply(icon.pngDataUrl, icon.stock, icon.flat);
+      return icons.apply(icon.pngDataUrl, icon.stock, icon.frames);
     });
     ipc.handle(CHANNELS.shellReveal, "main", (payload) => {
       const target = revealTarget((payload as { path?: unknown } | null)?.path, homeRoots(app.getPath("downloads"), lastSaveDir));

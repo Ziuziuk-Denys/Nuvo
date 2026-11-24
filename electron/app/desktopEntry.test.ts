@@ -56,6 +56,17 @@ describe("entry text", () => {
 });
 
 describe("syncDesktopEntry", () => {
+  it("an update that changes the icons replaces the old files, though the entry stays the same", async () => {
+    const { deps, icon, refreshCache } = setup();
+    expect(await syncDesktopEntry(true, deps)).toBe("written");
+    refreshCache.mockClear();
+    const updated = { ...deps, icon: (size: number) => Buffer.from(`new${size}`) };
+    expect(await syncDesktopEntry(true, updated)).toBe("written");
+    for (const size of ENTRY_SIZES) expect(readFileSync(icon(size), "utf8")).toBe(`new${size}`);
+    expect(refreshCache).toHaveBeenCalledTimes(1);
+    expect(await syncDesktopEntry(true, updated)).toBe("current");
+  });
+
   it("writes the entry and every icon size once, rewrites Exec when the AppImage moves, and removes only its own files", async () => {
     const { deps, entry, icon, refreshCache } = setup();
     expect(await syncDesktopEntry(true, deps)).toBe("written");
