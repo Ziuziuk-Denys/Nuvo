@@ -13,28 +13,38 @@ import pinyon from "./fonts/pinyon-script.woff2?url";
 
 const CYRILLIC = "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116";
 
-const FACES: [string, string, FontFaceDescriptors][] = [
-  ["Nuvo Sans", instrumentSans, { weight: "400 700" }],
-  ["Nuvo Condensed", archivo, { weight: "100 900", stretch: "62% 125%" }],
-  ["Nuvo Serif", instrumentSerif, { style: "italic" }],
-  ["Nuvo Neutral", arimo, {}],
-  ["Nuvo Rounded", nunito, { weight: "800 900" }],
-  ["Nuvo Script", pinyon, {}],
-  // the Latin faces have no Cyrillic, so a close Cyrillic face joins each family for those letters only
-  ["Nuvo Sans", manropeCyrillic, { weight: "400 800", unicodeRange: CYRILLIC }],
-  ["Nuvo Condensed", oswaldCyrillic, { weight: "200 700", unicodeRange: CYRILLIC }],
-  ["Nuvo Serif", cormorantCyrillic, { style: "italic", weight: "400 700", unicodeRange: CYRILLIC }],
-  ["Nuvo Neutral", arimoCyrillic, { weight: "400 700", unicodeRange: CYRILLIC }],
-  ["Nuvo Rounded", nunitoCyrillic, { weight: "800 900", unicodeRange: CYRILLIC }],
-  ["Nuvo Script", marckCyrillic, { unicodeRange: CYRILLIC }],
+// faces of one family merge into one font only when these are identical, or one face hides the other
+const STYLES = {
+  "Nuvo Sans": { weight: "400 700" },
+  "Nuvo Condensed": { weight: "100 900", stretch: "62% 125%" },
+  "Nuvo Serif": { weight: "400 700", style: "italic" },
+  "Nuvo Neutral": { weight: "400 700" },
+  "Nuvo Rounded": { weight: "800 900" },
+  "Nuvo Script": {},
+} satisfies Record<string, FontFaceDescriptors>;
+
+// the Latin faces have no Cyrillic, so a close Cyrillic face joins each family for those letters only
+const FACES: [keyof typeof STYLES, string, string?][] = [
+  ["Nuvo Sans", instrumentSans],
+  ["Nuvo Sans", manropeCyrillic, CYRILLIC],
+  ["Nuvo Condensed", archivo],
+  ["Nuvo Condensed", oswaldCyrillic, CYRILLIC],
+  ["Nuvo Serif", instrumentSerif],
+  ["Nuvo Serif", cormorantCyrillic, CYRILLIC],
+  ["Nuvo Neutral", arimo],
+  ["Nuvo Neutral", arimoCyrillic, CYRILLIC],
+  ["Nuvo Rounded", nunito],
+  ["Nuvo Rounded", nunitoCyrillic, CYRILLIC],
+  ["Nuvo Script", pinyon],
+  ["Nuvo Script", marckCyrillic, CYRILLIC],
 ];
 
 let loading: Promise<void> | null = null;
 
 export function loadVisualFonts(): Promise<void> {
   loading ??= Promise.all(
-    FACES.map(async ([family, url, descriptors]) => {
-      const face = await new FontFace(family, `url(${url})`, descriptors).load();
+    FACES.map(async ([family, url, unicodeRange]) => {
+      const face = await new FontFace(family, `url(${url})`, { ...STYLES[family], ...(unicodeRange ? { unicodeRange } : {}) }).load();
       // the live stage draws in a worker, which has its own font set
       (typeof document === "undefined" ? (self as unknown as { fonts: FontFaceSet }).fonts : document.fonts).add(face);
     }),

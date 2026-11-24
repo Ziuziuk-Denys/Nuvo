@@ -34,9 +34,19 @@ export type { Aspect, Live, Media, Part, Scene, Selection, Slot, Template };
 export { mediaFor, partsFor, sceneOf, SCENES, WEIGHT_BUDGET };
 
 export const VISUAL_TEMPLATES: Template[] = [...TEMPLATES, ...PRESETS];
-const WHOLE_STEPS = new Set(["count", "levels", "lines", "thorns"]);
+const WHOLE_STEPS = new Set(["count", "levels", "lines", "paper", "thorns"]);
 
-export function templateFor(choice: string, trackKey: string, hasWordTiming: boolean, scene: Selection | null): Template {
+// an engraving is ink on paper in a light theme, unless the scene sets its own
+function inLook(template: Template, light: boolean): Template {
+  const { shader, params } = template.background;
+  return light && shader === "engraving" && params.paper === undefined ? { ...template, background: { shader, params: { ...params, paper: 1 } } } : template;
+}
+
+export function templateFor(choice: string, trackKey: string, hasWordTiming: boolean, scene: Selection | null, light = false): Template {
+  return inLook(chosen(choice, trackKey, hasWordTiming, scene), light);
+}
+
+function chosen(choice: string, trackKey: string, hasWordTiming: boolean, scene: Selection | null): Template {
   if (choice === "own" && scene) return sceneOf(scene).template;
   // random mode deals only the curated scenes, never the early study templates
   if (choice === "random") return trackKey ? pickTemplate(trackKey, PRESETS, hasWordTiming) : PRESETS[0];

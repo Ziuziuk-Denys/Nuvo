@@ -18,6 +18,7 @@ export const SCENES: { id: string; selection: Selection }[] = [
     selection: { background: "duo", atmosphere: [], centrepiece: null, lyrics: "kinetic", colors: { a: [0, 0.88, 1], b: [0.04, 0.06, 0.19] } },
   },
   { id: "poster", selection: { background: "print", atmosphere: [], centrepiece: null, lyrics: "poster" } },
+  { id: "engraving", selection: { background: "engraving", atmosphere: [], centrepiece: null, lyrics: "caption" } },
   { id: "emblem", selection: { background: "dusk", atmosphere: ["dust", "streak"], centrepiece: "emblem", lyrics: null } },
   { id: "ascii", selection: { background: "ascii", atmosphere: [], centrepiece: null, lyrics: "collage" } },
   { id: "glass", selection: { background: "glass", atmosphere: [], centrepiece: null, lyrics: "wipe" } },
