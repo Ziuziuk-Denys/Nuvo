@@ -11,6 +11,7 @@ import { Front } from "./Front";
 import { useAwake } from "./useAwake";
 import { grain } from "./grain";
 import "@/ui/fonts/fonts.css";
+import "@/ui/tokens.css";
 import "./pocket.css";
 
 const bridge = () => (window as unknown as { nuvoPocket?: PocketBridge }).nuvoPocket;
@@ -113,6 +114,11 @@ export default function PocketApp() {
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   }, []);
+
+  const lightMode = feed?.look.light ?? false;
+  useEffect(() => {
+    document.documentElement.dataset.theme = lightMode ? "light" : "dark";
+  }, [lightMode]);
 
   const onWheel = (event: WheelEvent) => {
     if (face !== "cover") return;

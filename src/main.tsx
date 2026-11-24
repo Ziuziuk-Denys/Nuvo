@@ -54,6 +54,7 @@ async function mainWindow(): Promise<React.ReactElement> {
 }
 
 async function notchWindow(): Promise<React.ReactElement> {
+  document.documentElement.dataset.theme = "dark";
   const [{ default: NotchApp }] = await Promise.all([import("./notch/NotchApp"), prepareLocale()]);
   window.addEventListener("storage", (event) => {
     if (event.key === LOCALE_BOOT_KEY && event.newValue) void setLocale(event.newValue);

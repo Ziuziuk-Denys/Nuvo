@@ -11,6 +11,7 @@ body,
 .pocket {
   --field: #0b0e1a;
   --ink: #fff;
+  --n-ink: var(--ink);
   --ink-2: color-mix(in srgb, var(--ink) 66%, transparent);
   --ink-3: color-mix(in srgb, var(--ink) 40%, transparent);
   --wash: color-mix(in srgb, var(--ink) 10%, transparent);
@@ -289,15 +290,11 @@ body,
 }
 
 .tool.like[aria-pressed="true"] {
-  color: #ff7088;
-}
-
-.pocket[data-mode="light"] .tool.like[aria-pressed="true"] {
-  color: #e0405e;
+  color: var(--n-like);
 }
 
 .tool:focus-visible {
-  background: var(--wash);
+  box-shadow: var(--n-focus-glow);
 }
 
 .tool:active {
@@ -649,7 +646,7 @@ body,
 
 .word:focus-visible,
 .back-cover:focus-visible {
-  background: var(--wash);
+  box-shadow: var(--n-focus-glow);
 }
 
 .back-play {
