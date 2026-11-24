@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type JSX, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cover } from "../../components/Cover";
+import { CoverObject } from "../../light/CoverObject";
 import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
 import { playerEngine, usePlayerStore } from "../../ports/player";
@@ -138,9 +139,7 @@ export function SongScreen({ stats }: ScreenProps): JSX.Element {
   const play = usePlay(stats.top.tracks);
   return (
     <div className={styles.song}>
-      <div className={styles.object} style={{ "--size": "min(58cqh, 40cqw)" } as CSSProperties}>
-        <Cover src={top.coverUrl ?? ""} size={560} fetchPriority="high" />
-      </div>
+      <CoverObject src={top.coverUrl ?? ""} size={560} className={styles.hero} />
       <div className={styles.songText}>
         <h2 className={styles.songTitle} data-long={top.title.length > 22 ? "" : undefined}>
           {top.title}

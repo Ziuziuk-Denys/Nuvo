@@ -15,9 +15,7 @@
   height: 232px;
   border-radius: 12px;
   background: var(--n-fill);
-  box-shadow:
-    0 2px 6px rgba(var(--n-contact), 0.16),
-    calc(var(--n-light-x) * 10px) calc(var(--n-light-y) * 22px) 48px -18px rgba(var(--n-contact), 0.5);
+  box-shadow: 0 2px 6px rgba(var(--n-contact), 0.16);
 }
 
 .cover > * {

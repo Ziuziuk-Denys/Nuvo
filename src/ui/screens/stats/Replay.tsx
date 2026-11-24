@@ -203,7 +203,7 @@ export function Replay(): JSX.Element {
   const { paused, setPaused } = useStatsPaused();
   const [lit, setLit] = useState<string | undefined>();
   const [sharing, setSharing] = useState(false);
-  usePageBackdrop(lit ?? data?.top.tracks[0]?.coverUrl);
+  usePageBackdrop(lit ?? data?.top.tracks[0]?.coverUrl, { scene: "wall", pinned: true });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

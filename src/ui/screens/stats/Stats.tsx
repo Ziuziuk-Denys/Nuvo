@@ -492,7 +492,7 @@ export function Stats(): JSX.Element {
   const [customAnchor, setCustomAnchor] = useState<HTMLElement | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [deleting, setDeleting] = useState<"range" | "all" | null>(null);
-  usePageBackdrop(data?.top.tracks[0]?.coverUrl);
+  usePageBackdrop(data?.top.tracks[0]?.coverUrl, { scene: "wall" });
 
   const pick = (key: RangeKey, anchor: HTMLElement) => {
     if (key === "custom") {

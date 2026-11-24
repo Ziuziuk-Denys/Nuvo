@@ -1,7 +1,7 @@
 import { playlistHref } from "../../app/hrefs";
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Cover } from "../../components/Cover";
+import { CoverObject } from "../../light/CoverObject";
 import { EmptyState } from "../../components/EmptyState";
 import { Menu, type MenuItem } from "../../components/Menu";
 import { Popover } from "../../components/Popover";
@@ -419,7 +419,15 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
         kind="playlist"
         head={
           <EntityHead
-            cover={liked ? <LikedTile /> : cover ? <Cover src={cover} size={232} alt="" /> : <Icon name="playlist" size={24} className={pageStyles.glyph} />}
+            cover={
+              liked ? (
+                <LikedTile />
+              ) : cover ? (
+                <CoverObject src={cover} size={232} radius={12} />
+              ) : (
+                <Icon name="playlist" size={24} className={pageStyles.glyph} />
+              )
+            }
             title={data.title}
             description={own ? <DescriptionLine id={id} text={data.description} editing={editingDescription} onEditing={setEditingDescription} /> : undefined}
             chips={
