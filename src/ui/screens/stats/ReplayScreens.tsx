@@ -9,6 +9,7 @@ import { rowTrack, type StatsOverview, type StatsRow } from "../../ports/stats";
 import { navigateWithTransition } from "../../shell/navigate";
 import { useUnavailable } from "../entity/EntityTracks";
 import look from "../look.module.css";
+import { usePlayingTint } from "../playingTint";
 import { arcPath, artistArcs, dayRows, minutesOf, type DayMark, type ReplayPeriod } from "./replayModel";
 import { artistHref, trackHref, useSongMenu } from "./StatsRows";
 import { buckets, dateOf, dayProfile, filled, formatDay, formatTime, isoDate, MIN_CHART_BUCKETS, MIN_CHART_DAYS, peakIndex, weekdays } from "./statsModel";
@@ -167,9 +168,10 @@ export function SongsScreen({ stats, onLit }: ScreenProps & { onLit: (cover: str
   const currentId = usePlayerStore((state) => state.currentTrack?.id ?? null);
   const play = usePlay(stats.top.tracks);
   const menu = useSongMenu();
+  const tint = usePlayingTint(rows.some((row) => row.id === currentId));
   const shown = rows[Math.min(at, rows.length - 1)];
   return (
-    <div className={styles.songs}>
+    <div className={styles.songs} style={tint}>
       <div className={styles.songsList}>
         <h2 className={styles.heading}>{t("ui.replay.songs")}</h2>
         <ol>
