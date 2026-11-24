@@ -76,6 +76,18 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.5.2" date="2026-11-25">
+      <description>
+        <p>A fennec and a pocket player.</p>
+        <ul>
+          <li>A new mark, and an illustrated scene for each of the nine themes</li>
+          <li>The pocket player, a small window made of the cover</li>
+          <li>Lyrics timed by hand, word by word, with LRC and TTML files</li>
+          <li>Scene: Engraving, the cover in engraved lines</li>
+          <li>A clearer Notch, and covers that went missing in Scene, karaoke and the player bar</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.10" date="2026-11-07">
       <description>
         <p>The first public version of Nuvo.</p>

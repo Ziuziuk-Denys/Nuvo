@@ -30,7 +30,7 @@ body:
     attributes:
       label: Nuvo version
       description: Settings, About Nuvo.
-      placeholder: 0.5.1
+      placeholder: 0.5.2
     validations:
       required: true
   - type: dropdown
