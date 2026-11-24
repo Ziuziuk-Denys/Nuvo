@@ -123,7 +123,12 @@ describe("LyricsEditor", () => {
     const list = await openTiming("One");
     await tapAt(list, 1000);
     await act(async () => button("ui.lyrics.timing_export").click());
-    await act(async () => (document.body.querySelectorAll<HTMLElement>("[role=menuitem]")[1] as HTMLElement).click());
+    const item = document.body.querySelectorAll<HTMLElement>("[role=menuitem]")[1];
+    await act(async () => {
+      item.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+      item.click();
+    });
+    expect(document.body.querySelector("ol")).not.toBeNull();
     expect(ports.saveTimedFile).toHaveBeenCalledWith(TRACK, "ttml", expect.stringContaining('<span begin="00:01.000"'));
   });
 

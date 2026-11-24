@@ -8,8 +8,6 @@
 
 .panel {
   composes: panel from "../../components/Sheet.module.css";
-  max-width: 920px;
-  padding: 0;
   overflow: hidden;
 }
 

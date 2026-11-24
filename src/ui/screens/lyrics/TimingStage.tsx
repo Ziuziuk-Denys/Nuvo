@@ -210,124 +210,128 @@ export function TimingStage({ track, start, open, onBack, onSave }: TimingStageP
         : t(unit === "word" ? "ui.lyrics.timing_every_word" : "ui.lyrics.timing_every_line");
 
   return (
-    <ModalPanel open={open} onClose={() => onBack(lines)} labelledBy={titleId} classes={styles}>
-      <div
-        className={styles.stage}
-        onKeyDown={onKeyDown}
-        onKeyUp={(event) => {
-          if (event.code === "Space" && event.target === list.current) release();
-        }}
-      >
-        <header className={styles.head}>
-          <div className={styles.names}>
-            <h2 id={titleId}>{track.title}</h2>
-            <p>{track.artists}</p>
-          </div>
-          <Segmented
-            label={t("ui.lyrics.timing_unit")}
-            value={unit}
-            onChange={changeUnit}
-            options={[
-              { value: "word", label: t("ui.lyrics.timing_words") },
-              { value: "line", label: t("ui.lyrics.timing_lines") },
-            ]}
-          />
-          <Segmented
-            label={t("ui.lyrics.timing_mode")}
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: "tap", label: t("ui.lyrics.timing_tap") },
-              { value: "check", label: t("ui.lyrics.timing_check") },
-            ]}
-          />
-        </header>
-
-        <ol ref={list} tabIndex={0} className={`${styles.lines} n-scroll`} data-mode={mode} data-unit={unit} aria-label={t("ui.lyrics.sync_list")}>
-          {lines.map((line, at) => (
-            <Row
-              key={at}
-              line={line}
-              at={at}
-              current={at === focusLine}
-              near={Math.abs(at - focusLine) === 1}
-              word={mode === "tap" && at === cursor.line ? cursor.word : -1}
-              picked={mode === "check" && at === cursor.line ? cursor.word : -1}
-              sung={sounding?.line === at ? sounding.word : -1}
-              tapping={mode === "tap"}
-              wordly={unit === "word"}
-              onSelect={select}
+    <>
+      <ModalPanel open={open} onClose={() => onBack(lines)} labelledBy={titleId} classes={styles} style={{ maxWidth: 920, padding: 0 }}>
+        <div
+          className={styles.stage}
+          onKeyDown={onKeyDown}
+          onKeyUp={(event) => {
+            if (event.code === "Space" && event.target === list.current) release();
+          }}
+        >
+          <header className={styles.head}>
+            <div className={styles.names}>
+              <h2 id={titleId}>{track.title}</h2>
+              <p>{track.artists}</p>
+            </div>
+            <Segmented
+              label={t("ui.lyrics.timing_unit")}
+              value={unit}
+              onChange={changeUnit}
+              options={[
+                { value: "word", label: t("ui.lyrics.timing_words") },
+                { value: "line", label: t("ui.lyrics.timing_lines") },
+              ]}
             />
-          ))}
-        </ol>
+            <Segmented
+              label={t("ui.lyrics.timing_mode")}
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: "tap", label: t("ui.lyrics.timing_tap") },
+                { value: "check", label: t("ui.lyrics.timing_check") },
+              ]}
+            />
+          </header>
 
-        <div className={styles.transport}>
-          <IconButton icon={playing ? "pause" : "play"} label={t(playing ? "ui.island.pause" : "ui.island.play")} onClick={togglePlayback} />
-          <IconButton icon="replay" label={t("ui.lyrics.timing_replay")} onClick={replay} />
-          <span ref={clockText} className={styles.clock}>
-            0:00
-          </span>
-          <div className={styles.track} onPointerDown={seekTo} role="presentation">
-            <span className={styles.rail}>
-              <span ref={played} className={styles.played} />
-              {lines.map((line, at) =>
-                line.atMs !== null && track.durationMs > 0 ? <i key={at} style={{ left: `${Math.min(100, (line.atMs / track.durationMs) * 100)}%` }} /> : null,
-              )}
+          <ol ref={list} tabIndex={0} className={`${styles.lines} n-scroll`} data-mode={mode} data-unit={unit} aria-label={t("ui.lyrics.sync_list")}>
+            {lines.map((line, at) => (
+              <Row
+                key={at}
+                line={line}
+                at={at}
+                current={at === focusLine}
+                near={Math.abs(at - focusLine) === 1}
+                word={mode === "tap" && at === cursor.line ? cursor.word : -1}
+                picked={mode === "check" && at === cursor.line ? cursor.word : -1}
+                sung={sounding?.line === at ? sounding.word : -1}
+                tapping={mode === "tap"}
+                wordly={unit === "word"}
+                onSelect={select}
+              />
+            ))}
+          </ol>
+
+          <div className={styles.transport}>
+            <IconButton icon={playing ? "pause" : "play"} label={t(playing ? "ui.island.pause" : "ui.island.play")} onClick={togglePlayback} />
+            <IconButton icon="replay" label={t("ui.lyrics.timing_replay")} onClick={replay} />
+            <span ref={clockText} className={styles.clock}>
+              0:00
             </span>
+            <div className={styles.track} onPointerDown={seekTo} role="presentation">
+              <span className={styles.rail}>
+                <span ref={played} className={styles.played} />
+                {lines.map((line, at) =>
+                  line.atMs !== null && track.durationMs > 0 ? (
+                    <i key={at} style={{ left: `${Math.min(100, (line.atMs / track.durationMs) * 100)}%` }} />
+                  ) : null,
+                )}
+              </span>
+            </div>
+            <span className={styles.clock}>{formatDuration(track.durationMs)}</span>
+            <Segmented
+              label={t("ui.lyrics.timing_speed")}
+              value={String(speed)}
+              onChange={(next) => setPlaybackSpeed(Number(next))}
+              options={SPEEDS.map((value) => ({ value: String(value), label: `${value}×` }))}
+            />
           </div>
-          <span className={styles.clock}>{formatDuration(track.durationMs)}</span>
-          <Segmented
-            label={t("ui.lyrics.timing_speed")}
-            value={String(speed)}
-            onChange={(next) => setPlaybackSpeed(Number(next))}
-            options={SPEEDS.map((value) => ({ value: String(value), label: `${value}×` }))}
-          />
+
+          {mode === "tap" ? (
+            <button
+              type="button"
+              tabIndex={-1}
+              className={styles.pad}
+              data-pressed={pressed || undefined}
+              disabled={finished || !here}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                press();
+              }}
+              onPointerUp={release}
+              onPointerLeave={release}
+            >
+              {padText}
+            </button>
+          ) : null}
+
+          <footer className={styles.foot}>
+            <p className={styles.note} role={failed ? "alert" : undefined}>
+              {failed ? t("ui.lyrics.save_failed") : mode === "tap" ? t("ui.lyrics.timing_keys") : t("ui.lyrics.timing_check_keys")}
+            </p>
+            <span className={styles.count}>{t("ui.lyrics.timing_progress", { done: count.done, total: count.total })}</span>
+            <Button variant="secondary" onClick={() => onBack(lines)}>
+              {t("ui.lyrics.back")}
+            </Button>
+            <Button variant="secondary" disabled={!isComplete(lines)} aria-haspopup="menu" onClick={(event) => setMenu(event.currentTarget)}>
+              {t("ui.lyrics.timing_export")}
+            </Button>
+            <Button variant="primary" disabled={!isComplete(lines) || saving} onClick={() => void save()}>
+              {t("ui.lyrics.save_synced")}
+            </Button>
+          </footer>
         </div>
-
-        {mode === "tap" ? (
-          <button
-            type="button"
-            tabIndex={-1}
-            className={styles.pad}
-            data-pressed={pressed || undefined}
-            disabled={finished || !here}
-            onPointerDown={(event) => {
-              event.preventDefault();
-              press();
-            }}
-            onPointerUp={release}
-            onPointerLeave={release}
-          >
-            {padText}
-          </button>
-        ) : null}
-
-        <footer className={styles.foot}>
-          <p className={styles.note} role={failed ? "alert" : undefined}>
-            {failed ? t("ui.lyrics.save_failed") : mode === "tap" ? t("ui.lyrics.timing_keys") : t("ui.lyrics.timing_check_keys")}
-          </p>
-          <span className={styles.count}>{t("ui.lyrics.timing_progress", { done: count.done, total: count.total })}</span>
-          <Button variant="secondary" onClick={() => onBack(lines)}>
-            {t("ui.lyrics.back")}
-          </Button>
-          <Button variant="secondary" disabled={!isComplete(lines)} aria-haspopup="menu" onClick={(event) => setMenu(event.currentTarget)}>
-            {t("ui.lyrics.timing_export")}
-          </Button>
-          <Button variant="primary" disabled={!isComplete(lines) || saving} onClick={() => void save()}>
-            {t("ui.lyrics.save_synced")}
-          </Button>
-        </footer>
-        <Menu
-          open={menu !== null}
-          anchor={menu}
-          onClose={() => setMenu(null)}
-          items={[
-            { label: t("ui.lyrics.timing_export_lrc"), onSelect: () => void saveTimedFile(track, "lrc", toLrc(lines)) },
-            { label: t("ui.lyrics.timing_export_ttml"), onSelect: () => void saveTimedFile(track, "ttml", toTtml(lines, track.durationMs)) },
-          ]}
-        />
-      </div>
-    </ModalPanel>
+      </ModalPanel>
+      <Menu
+        open={menu !== null}
+        anchor={menu}
+        onClose={() => setMenu(null)}
+        items={[
+          { label: t("ui.lyrics.timing_export_lrc"), onSelect: () => void saveTimedFile(track, "lrc", toLrc(lines)) },
+          { label: t("ui.lyrics.timing_export_ttml"), onSelect: () => void saveTimedFile(track, "ttml", toTtml(lines, track.durationMs)) },
+        ]}
+      />
+    </>
   );
 }
 

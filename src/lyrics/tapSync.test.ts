@@ -150,6 +150,7 @@ describe("timed lyrics out and back", () => {
     const text = toTtml(timed, 10_000);
     expect(text).toContain('<p begin="00:01.000" end="00:02.500">One</p>');
     expect(text).not.toContain("<span");
+    expect(text).toContain('<p begin="00:02.500" end="00:07.500">Two</p>');
   });
 });
 

@@ -203,8 +203,8 @@ const clock = (ms: number) => `${formatStamp(ms).slice(1, 6)}.${String(ms % 1000
 export function toTtml(lines: SyncLine[], durationMs: number): string {
   const timed = lines.filter(lineTimed);
   const rows = timed.map((line, index) => {
-    const next = timed[index + 1]?.atMs ?? Math.max(durationMs, line.atMs! + LAST_LINE_MS);
-    const end = line.endMs ?? next;
+    const lastStart = line.words.at(-1)?.atMs ?? line.atMs!;
+    const end = line.endMs ?? timed[index + 1]?.atMs ?? Math.max(lastStart, Math.min(durationMs, lastStart + LAST_LINE_MS));
     const starts = wordsTimed(line) ? line.words.map((word) => word.atMs!) : [];
     const body = starts.length
       ? line.words
@@ -213,9 +213,8 @@ export function toTtml(lines: SyncLine[], durationMs: number): string {
       : xml(line.text);
     return `      <p begin="${clock(line.atMs!)}" end="${clock(end)}">${body}</p>`;
   });
-  const kind = timed.some(wordsTimed) ? "Word" : "Line";
   return `<?xml version="1.0" encoding="UTF-8"?>
-<tt xmlns="http://www.w3.org/ns/ttml" xmlns:itunes="http://music.apple.com/lyric-ttml-internal" itunes:timing="${kind}">
+<tt xmlns="http://www.w3.org/ns/ttml">
   <body dur="${clock(Math.max(0, Math.round(durationMs)))}">
     <div>
 ${rows.join("\n")}
