@@ -1,38 +1,40 @@
+.preview {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 44px;
+  padding: 10px 10px 0;
+}
+
 .head {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding-right: 8px;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
 }
 
 .stack {
   position: relative;
-  width: 80px;
-  height: 60px;
+  width: 300px;
+  height: 220px;
   flex: none;
-}
-
-.stack[data-count="1"] {
-  width: 56px;
-  height: 56px;
 }
 
 .pending {
-  width: 56px;
-  height: 56px;
+  width: 220px;
+  height: 220px;
   flex: none;
   border-radius: 12px;
-  background: var(--n-pop-hover);
+  background: var(--n-fill);
 }
 
 .card {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   border-radius: 12px;
-  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.4);
-  transform-origin: 50% 100%;
-  animation: fan 320ms var(--n-ease-out) 60ms both;
+  box-shadow: calc(var(--n-light-x) * 8px) calc(var(--n-light-y) * 18px) 36px -14px rgba(var(--n-contact), 0.6);
+  transform-origin: 100% 50%;
+  animation: fan 320ms var(--n-spring) 60ms both;
 }
 
 .card:nth-child(1) {
@@ -42,19 +44,17 @@
 
 .card:nth-child(2) {
   z-index: 2;
-  --fan: translate(10px, -2px) rotate(8deg);
-  transform: var(--fan) scale(0.94);
+  transform: translateX(44px) scale(0.87);
 }
 
 .card:nth-child(3) {
   z-index: 1;
-  --fan: translate(18px, -4px) rotate(16deg);
-  transform: var(--fan) scale(0.88);
-  opacity: 0.85;
+  transform: translateX(80px) scale(0.74);
 }
 
 @keyframes fan {
   from {
+    opacity: 0;
     transform: none;
   }
 }
@@ -71,7 +71,7 @@
   margin: 0;
   overflow: hidden;
   color: var(--n-ink);
-  font: 600 calc(19px * var(--n-scale, 1)) / 1.25 var(--n-font);
+  font: var(--n-type-title);
   letter-spacing: var(--n-track-title);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
@@ -98,7 +98,7 @@
   margin: 0;
   padding: 9px 12px;
   border-radius: 14px;
-  background: var(--n-pop-hover);
+  background: var(--n-fill);
   color: var(--n-ink-2);
   font: var(--n-type-caption);
   text-wrap: pretty;
@@ -125,7 +125,7 @@
 }
 
 .songs[data-open] {
-  max-height: max(170px, calc(100vh - 470px));
+  max-height: min(480px, calc(100vh - 220px));
   overflow-y: auto;
   overscroll-behavior: contain;
   mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
@@ -135,10 +135,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 34px;
+  height: 38px;
   padding: 0 10px;
   border-radius: 10px;
-  transition: background-color 150ms var(--n-ease-out);
+  transition: background-color var(--n-t-quick) var(--n-ease-out);
   animation: row-in 220ms var(--n-ease-out) both;
   animation-delay: calc(var(--i, 0) * 30ms + 80ms);
 }

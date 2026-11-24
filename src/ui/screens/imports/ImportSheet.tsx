@@ -182,7 +182,6 @@ export function ImportSheet({
             search={searchSongs}
             notice={listing.notice ? message(noticeMessage(listing.notice, listing.source)) : undefined}
           />
-          <p className={glass.caption}>{t("ui.imports.honesty")}</p>
         </>
       );
       break;
@@ -309,7 +308,7 @@ export function ImportSheet({
   }
 
   return (
-    <GlassSheet open={open} onClose={close} labelledBy={headingId} width={phase.kind === "preview" ? 440 : 420}>
+    <GlassSheet open={open} onClose={close} labelledBy={headingId} width={phase.kind === "preview" ? 920 : 520}>
       {body}
       <div className={glass.footer}>
         {footerStart}

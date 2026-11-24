@@ -53,6 +53,24 @@ fn history_cursor_pages_without_overlap() {
 }
 
 #[test]
+fn history_follows_the_time_of_play_not_the_order_of_writing() {
+    let (_dir, conn) = common::open();
+    for (id, age) in [("d", 4), ("a", 1), ("c", 3), ("b", 2), ("b2", 2)] {
+        play(&conn, id, "X", json!({"startedAt": NOW - age * DAY, "listeningSessionId": id}));
+    }
+    let ids = |page: &nuvo_contracts::PlaybackHistoryResponse| page.items.iter().map(|item| item.track["id"].as_str().unwrap().to_string()).collect::<Vec<_>>();
+    let first = events::history(&conn, 2, None, None, None).unwrap();
+    let second = events::history(&conn, 2, first.next_cursor.as_deref(), None, None).unwrap();
+    let third = events::history(&conn, 2, second.next_cursor.as_deref(), None, None).unwrap();
+    assert_eq!([ids(&first), ids(&second), ids(&third)].concat(), ["a", "b2", "b", "c", "d"]);
+    assert!(third.next_cursor.is_none());
+    let range = Some((NOW - 3 * DAY, NOW - DAY));
+    let first = events::history(&conn, 2, None, None, range).unwrap();
+    let second = events::history(&conn, 2, first.next_cursor.as_deref(), None, range).unwrap();
+    assert_eq!([ids(&first), ids(&second)].concat(), ["b2", "b", "c"]);
+}
+
+#[test]
 fn end_reason_is_derived_for_old_clients_and_validated_for_new_ones() {
     let (_dir, conn) = common::open();
     play(&conn, "a", "X", json!({}));
