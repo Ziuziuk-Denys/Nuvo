@@ -36,7 +36,20 @@ const VISUAL_PARTS = PARTS.map((part) => part.id);
 const VISUAL_PARAMS = [...new Set(PARTS.flatMap((part) => (part.controls ?? []).map((control) => control.split(".")[1])))];
 
 const DYNAMIC: Record<string, string[]> = {
-  "ui.island.skipped.": ["refused", "offline", "offline_mode", "timeout", "drm", "sign_in_required", "blocked", "stall", "media_error", "unavailable"],
+  "ui.island.skipped.": [
+    "refused",
+    "refusing",
+    "not_offered",
+    "offline",
+    "offline_mode",
+    "timeout",
+    "drm",
+    "sign_in_required",
+    "blocked",
+    "stall",
+    "media_error",
+    "unavailable",
+  ],
   "ui.island.fallback_reason.": ["drm", "sign_in_required", "blocked", "timeout", "stall", "http_403", "media_error", "unavailable"],
   "visual.part.": VISUAL_PARTS.flatMap((id) => [`${id}.title`, `${id}.description`]),
   "visual.param.": VISUAL_PARAMS,
