@@ -72,6 +72,11 @@
   color: var(--n-ink);
 }
 
+.button[data-liked],
+.button[data-liked]:hover:not(:disabled) {
+  color: var(--n-like);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button:active:not(:disabled) {
     transform: none;

@@ -58,7 +58,7 @@
 
 .latestCover:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--n-focus-halo);
+  box-shadow: var(--n-focus-glow);
 }
 
 .latestLine {
@@ -116,7 +116,7 @@
 }
 
 .face:focus-visible .art {
-  box-shadow: 0 0 0 3px var(--n-focus-halo);
+  box-shadow: var(--n-focus-glow);
 }
 
 .shelfTitle {
@@ -153,7 +153,7 @@
 }
 
 .card:focus-visible .art {
-  box-shadow: 0 0 0 3px var(--n-focus-halo);
+  box-shadow: var(--n-focus-glow);
 }
 
 .art {

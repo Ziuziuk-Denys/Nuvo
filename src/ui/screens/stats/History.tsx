@@ -143,7 +143,7 @@ export function History(): JSX.Element {
                   setFilter(key);
                 }}
               >
-                {key === filter ? <Lens group="history-filter" value={filter} radius={16} className={look.solidLens} /> : null}
+                {key === filter ? <Lens group="history-filter" value={filter} radius={10} className={look.solidLens} /> : null}
                 {t(`ui.history.filter_${key}`)}
               </button>
             ))}

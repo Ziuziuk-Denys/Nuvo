@@ -256,7 +256,7 @@ function Top({ stats }: { stats: StatsOverview }): JSX.Element {
               setAll(false);
             }}
           >
-            {item === shownKind ? <Lens group="stats-top" value={shownKind} radius={16} className={look.solidLens} /> : null}
+            {item === shownKind ? <Lens group="stats-top" value={shownKind} radius={10} className={look.solidLens} /> : null}
             {t(`ui.stats.top_${item}`)}
           </button>
         ))}
@@ -570,7 +570,7 @@ export function Stats(): JSX.Element {
                 className={`${look.pill} ${key === range ? look.solid : look.glass}`}
                 onClick={(event) => pick(key, event.currentTarget)}
               >
-                {key === range ? <Lens group="stats-range" value={range} radius={16} className={look.solidLens} /> : null}
+                {key === range ? <Lens group="stats-range" value={range} radius={10} className={look.solidLens} /> : null}
                 {key === "custom" ? customLabel : t(`ui.stats.range_${key}`)}
               </button>
             ))}

@@ -62,7 +62,6 @@
   --n-tray: color-mix(in srgb, var(--n-ink) 6%, transparent);
   --n-tray-hover: color-mix(in srgb, var(--n-ink) 10%, transparent);
   --n-tray-item-hover: color-mix(in srgb, var(--n-ink) 7%, transparent);
-  --n-tray-edge: none;
   --n-fill: color-mix(in srgb, var(--n-ink) 6%, transparent);
   --n-fill-hover: color-mix(in srgb, var(--n-ink) 10%, transparent);
   --n-switch: color-mix(in srgb, var(--n-ink) 16%, transparent);
@@ -76,6 +75,7 @@
   --n-focus-halo: color-mix(in srgb, var(--n-ring, var(--n-accent)) 38%, transparent);
   /* focus is a soft fill or glow, never a ring */
   --n-danger-ink: #d1342b;
+  --n-like: #d63a58;
   --n-focus-fill: color-mix(in srgb, var(--n-ink) 14%, transparent);
   --n-focus-glow: 0 0 0 4px color-mix(in srgb, var(--n-ink) 16%, transparent);
   --n-lens: #fff;
@@ -94,6 +94,7 @@
   --n-lens: color-mix(in srgb, var(--n-ink) 12%, transparent);
   --n-lens-shadow: inset calc(var(--n-light-x) * 1px) calc(var(--n-light-y) * 1px) 0 color-mix(in srgb, var(--n-ink) 9%, transparent);
   --n-danger-ink: #ff7b72;
+  --n-like: #ff7088;
   --n-dim: rgba(0, 0, 0, 0.56);
 }
 
@@ -105,7 +106,7 @@
 /* Zero specificity in the base layer, so components and Tailwind outline-none can override it */
 @layer base {
   :where(:root[data-ui="nuvo"] :focus-visible) {
-    outline: 3px solid var(--n-focus-halo);
+    outline: 2px solid var(--n-focus-halo);
     outline-offset: 1px;
   }
 }

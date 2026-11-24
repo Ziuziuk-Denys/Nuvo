@@ -37,7 +37,7 @@
 }
 
 .tile:focus-visible .art {
-  box-shadow: 0 0 0 3px var(--n-focus-halo);
+  box-shadow: var(--n-focus-glow);
 }
 
 .art {

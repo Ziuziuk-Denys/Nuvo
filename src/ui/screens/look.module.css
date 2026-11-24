@@ -7,17 +7,17 @@
   box-sizing: border-box;
   height: 32px;
   margin: 0;
-  padding: 0 16px;
+  padding: 0 14px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 10px;
   color: var(--n-ink);
-  font: 500 13.5px/normal var(--n-font);
+  font: 500 14px/normal var(--n-font);
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
   transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out,
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
     transform var(--n-t-quick) var(--n-ease-out);
 }
 
@@ -27,7 +27,7 @@
 }
 
 .pill:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
 }
 
@@ -35,7 +35,7 @@
 .icon:focus-visible,
 .tab:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--n-focus-halo);
+  box-shadow: var(--n-focus-glow);
 }
 
 .wide {
@@ -53,12 +53,11 @@
 }
 
 .solid:hover:not(:disabled) {
-  opacity: 0.9;
+  background: color-mix(in srgb, var(--btn-primary-bg) 88%, var(--btn-primary-text));
 }
 
 .glass {
   background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
 }
 
 .glass:hover:not(:disabled) {
@@ -84,12 +83,11 @@
   border: 0;
   border-radius: 50%;
   background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
   color: var(--n-ink-2);
   cursor: pointer;
   transition:
-    background-color 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
     transform var(--n-t-quick) var(--n-ease-out);
 }
 
@@ -121,7 +119,7 @@
   margin: 0;
   padding: 0 14px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 10px;
   background: transparent;
   color: var(--n-ink-2);
   font: 500 13.5px/32px var(--n-font);
@@ -129,8 +127,8 @@
   cursor: pointer;
   user-select: none;
   transition:
-    background-color 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out);
 }
 
 .tab:hover {
@@ -155,10 +153,10 @@
   gap: 6px;
   height: 26px;
   padding: 0 11px;
-  border-radius: 13px;
+  border-radius: 8px;
   background: var(--n-fill);
   color: var(--n-ink);
-  font: 400 12px/normal var(--n-font);
+  font: 500 12.5px/normal var(--n-font);
   white-space: nowrap;
   user-select: none;
 }
@@ -185,7 +183,7 @@
   width: 220px;
   height: 32px;
   padding: 0 10px 0 12px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--n-tray);
   color: var(--n-ink);
   cursor: text;
@@ -266,7 +264,7 @@
   color: var(--n-ink-2);
   font: 500 13px/normal var(--n-font);
   cursor: pointer;
-  transition: color 150ms ease-out;
+  transition: color var(--n-t-quick) ease-out;
 }
 
 .sectionLink:hover {

@@ -380,7 +380,7 @@ export function Search(): JSX.Element {
       <div className={`${styles.tablist} ${look.segments}`} role="tablist" aria-label={t("ui.search.tabs")}>
         {SEARCH_FILTERS.filter((id) => !soundCloudOnly || id === "all" || id === "songs").map((id) => (
           <button key={id} type="button" role="tab" aria-selected={id === filter} className={look.tab} onClick={() => setFilter(id)}>
-            {id === filter ? <Lens group="search-filter" value={filter} radius={16} className={look.fillLens} /> : null}
+            {id === filter ? <Lens group="search-filter" value={filter} radius={10} className={look.fillLens} /> : null}
             {t(`ui.search.tab_${id}`)}
           </button>
         ))}

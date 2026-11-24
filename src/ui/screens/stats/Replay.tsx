@@ -293,7 +293,7 @@ export function Replay(): JSX.Element {
                   className={`${look.pill} ${kind === period.kind ? look.solid : look.glass}`}
                   onClick={() => open(kind)}
                 >
-                  {kind === period.kind ? <Lens group="replay-kind" value={kind} radius={16} className={look.solidLens} /> : null}
+                  {kind === period.kind ? <Lens group="replay-kind" value={kind} radius={10} className={look.solidLens} /> : null}
                   {t(`ui.stats.range_${kind}`)}
                 </button>
               ))}

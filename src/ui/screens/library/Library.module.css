@@ -64,13 +64,15 @@
   isolation: isolate;
   gap: 2px;
   padding: 2px;
-  border-radius: 18px;
+  border-radius: 10px;
   background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
 }
 
 .views > button[aria-pressed] {
   position: relative;
+  width: 34px;
+  height: 28px;
+  border-radius: 8px;
   background: transparent;
   box-shadow: none;
 }

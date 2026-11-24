@@ -258,6 +258,7 @@ function ResultCard({ song, onAgain }: { song: RecognizedSong; onAgain(): void }
                 icon={liked ? "liked" : "like"}
                 label={liked ? t("ui.island.unlike") : t("ui.island.like")}
                 data-recognize-like=""
+                data-liked={liked ? "" : undefined}
                 onClick={() => (liked ? unlike.mutate(track.id) : like.mutate(track))}
               />
               <IconButton
