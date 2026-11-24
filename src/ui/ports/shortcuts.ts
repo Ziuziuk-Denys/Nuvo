@@ -11,6 +11,7 @@ import { clock, gainFromSlider, player, sliderFromGain } from "@/engine";
 import { setLoopPointHere, useAbLoopStore } from "@/features/sound/useAbLoop";
 import { bootedLibrary } from "@/playerBoot";
 import { isEscapeGuarded } from "./escape";
+import { togglePocket } from "./pocket";
 
 export type { ShellShortcutOptions } from "@/data/shortcuts/useShellShortcuts";
 
@@ -72,7 +73,7 @@ export const shortcuts = createShortcuts({
       },
     },
     loop: { setA: () => setLoopPointHere("a"), setB: () => setLoopPointHere("b"), clear: () => useAbLoopStore.getState().clear() },
-    app: { quit: () => void window.nuvoShell?.quit(), toggleFullscreen: () => void window.nuvoShell?.toggleFullscreen() },
+    app: { quit: () => void window.nuvoShell?.quit(), toggleFullscreen: () => void window.nuvoShell?.toggleFullscreen(), togglePocket },
   }),
 });
 

@@ -22,6 +22,7 @@ export const ICON_NAMES = [
   "lyrics",
   "playlist-add",
   "now-playing",
+  "pocket",
   "equalizer",
   "speed",
   "sleep",

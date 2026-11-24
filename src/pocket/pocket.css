@@ -1,0 +1,731 @@
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.pocket {
+  --field: #0b0e1a;
+  --ink: #fff;
+  --ink-2: color-mix(in srgb, var(--ink) 66%, transparent);
+  --ink-3: color-mix(in srgb, var(--ink) 40%, transparent);
+  --wash: color-mix(in srgb, var(--ink) 10%, transparent);
+  --room: color-mix(in srgb, var(--field) 42%, #050506);
+  --glow: 40%;
+  --radius: 18px;
+  --cover: 0.5;
+  --out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --glide: cubic-bezier(0.32, 0.72, 0, 1);
+
+  position: fixed;
+  inset: var(--margin);
+  aspect-ratio: 1;
+  max-width: calc(100vw - 2 * var(--margin));
+  max-height: calc(100vh - 2 * var(--margin));
+  container-type: size;
+  perspective: 1600px;
+  outline: none;
+  color: var(--ink);
+  font-family:
+    "Onest",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "Segoe UI Variable",
+    "Segoe UI",
+    Cantarell,
+    Ubuntu,
+    "Noto Sans CJK JP",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+.pocket[data-native] {
+  --radius: 9px;
+}
+
+.pocket[data-mode="light"] {
+  --room: color-mix(in srgb, var(--field) 80%, #fff);
+  --glow: 46%;
+}
+
+:where(.pocket button) {
+  all: unset;
+  box-sizing: border-box;
+  color: inherit;
+  font: inherit;
+  -webkit-app-region: no-drag;
+}
+
+.pocket-card {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 560ms var(--glide);
+}
+
+.pocket:not([data-face="cover"]) .pocket-card {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  backface-visibility: hidden;
+  background: var(--room);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 6px 14px rgba(0, 0, 0, 0.32);
+}
+
+.face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 9%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.pocket[data-native] .face {
+  border-radius: 0;
+}
+
+/* a ring that keeps mouse events, so leaving the window is always seen */
+.pocket[data-awake="true"] .face::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  -webkit-app-region: drag;
+}
+
+.back {
+  transform: rotateY(180deg);
+}
+
+.room {
+  --fall:
+    color-mix(in srgb, var(--light) var(--glow), transparent) 0%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.92), transparent) 15%,
+    color-mix(in srgb, var(--light) calc(var(--glow) * 0.75), transparent) 30%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.57), transparent) 45%,
+    color-mix(in srgb, var(--light) calc(var(--glow) * 0.41), transparent) 60%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.26), transparent) 75%,
+    color-mix(in srgb, var(--light) calc(var(--glow) * 0.11), transparent) 90%, transparent 100%;
+
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(96cqw 74cqw at 50% 18%, var(--fall));
+  transition: opacity 480ms var(--out);
+}
+
+.room::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--grain);
+  mix-blend-mode: overlay;
+}
+
+.pocket[data-awake="true"] .front .room {
+  opacity: 1;
+}
+
+.pocket[data-awake="true"]:not([data-playing="true"]) .front .room {
+  opacity: 0.4;
+}
+
+.back .room {
+  opacity: 1;
+  background: radial-gradient(130cqw 100cqw at 6% 100%, var(--fall));
+}
+
+.pocket:not([data-playing="true"]) .back .room {
+  opacity: 0.4;
+}
+
+.object {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 0;
+  transition: transform 520ms var(--glide);
+}
+
+.pocket[data-awake="true"] .object {
+  transform: translateY(7.5cqw) scale(var(--cover));
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink) 8%, var(--room));
+  transform: perspective(900px) rotateY(calc(var(--lean) * 9deg));
+  transition: transform 420ms var(--out);
+}
+
+.pocket[data-native][data-awake="false"] .art {
+  border-radius: 0;
+}
+
+.object-shadow {
+  position: absolute;
+  inset: 12% 4% -9%;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.62);
+  filter: blur(26px);
+  opacity: 0;
+  transition: opacity 420ms var(--out);
+}
+
+.pocket[data-mode="light"] .object-shadow {
+  background: rgba(16, 19, 32, 0.34);
+}
+
+.pocket[data-awake="true"] .object-shadow {
+  opacity: 1;
+}
+
+.art-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  background: inherit;
+}
+
+.art-layer svg {
+  width: 22%;
+  height: 22%;
+}
+
+.art-layer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.art-layer[data-top="false"] {
+  animation: art-out 560ms var(--glide) both;
+}
+
+.art-layer[data-top="true"]:not([data-first]) {
+  animation: art-in 560ms var(--glide) both;
+}
+
+@keyframes art-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes art-out {
+  to {
+    transform: translateX(-22%);
+    opacity: 0.35;
+  }
+}
+
+.art-edge {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.controls {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 160ms var(--out),
+    transform 320ms var(--out);
+}
+
+.pocket[data-awake="true"] .controls {
+  opacity: 1;
+  transform: none;
+  transition-delay: 90ms;
+}
+
+.tool {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    color 140ms var(--out),
+    background-color 140ms var(--out),
+    transform 140ms var(--out);
+}
+
+.tool:hover,
+.tool:focus-visible,
+.tool[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+.tool:focus-visible {
+  background: var(--wash);
+}
+
+.tool:active {
+  transform: scale(0.92);
+}
+
+.tool:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.tool.play {
+  color: var(--ink);
+}
+
+.corner-left,
+.corner-right {
+  position: absolute;
+  top: 6px;
+  width: 30px;
+  height: 30px;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+
+.corner-left:hover,
+.corner-right:hover {
+  color: var(--ink);
+}
+
+.corner-left {
+  left: 6px;
+}
+
+.corner-right {
+  right: 6px;
+}
+
+.now {
+  position: absolute;
+  top: calc(11.2cqw + var(--cover) * 100cqw);
+  left: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.now-title,
+.now-artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.now-title {
+  font-size: clamp(13px, 5.2cqw, 19px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+}
+
+.now-artist {
+  font-size: clamp(12px, 4.1cqw, 14px);
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.seek {
+  position: absolute;
+  bottom: calc(3cqw + 38px);
+  left: 20px;
+  right: 20px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  outline: none;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+}
+
+.seek-line {
+  position: relative;
+  flex: 1;
+  height: 1.5px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  transition: transform 160ms var(--out);
+}
+
+.seek:hover .seek-line,
+.seek:focus-visible .seek-line,
+.seek[data-held] .seek-line {
+  transform: scaleY(2.4);
+}
+
+.seek-played {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink) 62%, transparent);
+  transform-origin: 0 50%;
+  transition: background-color 140ms var(--out);
+}
+
+.seek:hover .seek-played,
+.seek[data-held] .seek-played {
+  background: var(--ink);
+}
+
+.seek-time {
+  position: absolute;
+  bottom: 13px;
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  opacity: 0;
+  transition: opacity 140ms var(--out);
+}
+
+.seek-time:last-child {
+  right: 0;
+}
+
+.seek:hover .seek-time,
+.seek:focus-visible .seek-time,
+.seek[data-held] .seek-time {
+  opacity: 1;
+}
+
+.transport {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 3cqw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-inline: auto;
+}
+
+.lines {
+  position: absolute;
+  inset: 0 0 48px;
+  overflow: hidden;
+  mask-image: linear-gradient(transparent, #000 22%, #000 76%, transparent);
+}
+
+.lines ol {
+  position: absolute;
+  top: 46%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0 20px;
+  list-style: none;
+  transition: transform 520ms var(--glide);
+}
+
+.lines button {
+  display: block;
+  width: 100%;
+  padding: 1.9cqw 0;
+  font-size: clamp(17px, 7.4cqw, 28px);
+  font-weight: 600;
+  line-height: 1.16;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  opacity: 0.34;
+  cursor: pointer;
+  text-wrap: balance;
+  transition: opacity 320ms var(--out);
+}
+
+.lines button:hover {
+  opacity: 0.6;
+}
+
+.lines [data-at="now"] button {
+  opacity: 1;
+}
+
+.lines [data-at="far"] button {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.sung {
+  white-space: pre-wrap;
+  opacity: 0.42;
+  transition: opacity 180ms linear;
+}
+
+.sung[data-on="true"] {
+  opacity: 1;
+}
+
+.queue {
+  position: absolute;
+  inset: 0 0 48px;
+  margin: 0;
+  padding: 12px 10px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-width: none;
+  mask-image: linear-gradient(transparent, #000 14px, #000 calc(100% - 30px), transparent);
+  -webkit-app-region: no-drag;
+}
+
+.pocket .queue-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  height: 48px;
+  padding: 0 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: box-shadow 140ms var(--out);
+}
+
+.queue-row:hover,
+.queue-row:focus-visible {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 16%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.queue-row img,
+.queue-blank {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  object-fit: cover;
+  background: var(--wash);
+}
+
+.queue-text {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.queue-text span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 17px;
+  letter-spacing: -0.005em;
+}
+
+.queue-text span:last-child {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 15px;
+  color: var(--ink-2);
+}
+
+.back-row {
+  position: absolute;
+  left: 14px;
+  right: 8px;
+  bottom: 8px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  transition: opacity 200ms var(--out);
+}
+
+.pocket[data-awake="true"] .back-row,
+.back-row:focus-within {
+  opacity: 1;
+}
+
+.pocket .back-cover {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--wash);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 140ms var(--out);
+}
+
+.back-cover:hover {
+  transform: scale(1.08);
+}
+
+.back-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pocket .word {
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color 140ms var(--out);
+}
+
+.word[aria-pressed="true"],
+.word:hover {
+  color: var(--ink);
+}
+
+.word:focus-visible,
+.back-cover:focus-visible {
+  background: var(--wash);
+}
+
+.back-play {
+  margin-left: auto;
+}
+
+.pocket-volume {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 64px;
+  height: 3px;
+  margin-left: -32px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.pocket-volume::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  border-radius: inherit;
+  background: #fff;
+  transform: translateX(75%);
+  animation: volume-up 620ms var(--out) both;
+}
+
+.pocket-volume[data-louder="false"]::after {
+  animation-name: volume-down;
+}
+
+@keyframes volume-up {
+  to {
+    transform: translateX(150%);
+  }
+}
+
+@keyframes volume-down {
+  to {
+    transform: none;
+  }
+}
+
+@container (max-width: 250px) {
+  .now {
+    gap: 0;
+  }
+
+  .seek {
+    bottom: calc(3cqw + 33px);
+    height: 12px;
+  }
+
+  .tool {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@container (min-width: 360px) {
+  .pocket-card {
+    --cover: 0.57;
+  }
+
+  .tool {
+    width: 44px;
+    height: 44px;
+  }
+
+  .corner-left,
+  .corner-right {
+    width: 34px;
+    height: 34px;
+  }
+
+  .transport {
+    left: 32px;
+    right: 32px;
+  }
+
+  .transport svg {
+    scale: 1.15;
+  }
+
+  .seek {
+    left: 32px;
+    right: 32px;
+    bottom: calc(3cqw + 48px);
+  }
+
+  .queue-row {
+    height: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pocket-card,
+  .object,
+  .art,
+  .lines ol,
+  .controls {
+    transition-duration: 1ms;
+    transition-delay: 0s;
+  }
+
+  .art-layer[data-top="true"],
+  .art-layer[data-top="false"] {
+    animation: none !important;
+  }
+
+  .art {
+    transform: none;
+  }
+}

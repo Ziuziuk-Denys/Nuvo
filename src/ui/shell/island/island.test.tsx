@@ -475,6 +475,7 @@ describe("Island", () => {
       "ui.island.add",
       "ui.island.volume",
       "player.open_player",
+      "ui.pocket.open",
       "ui.island.queue",
     ]);
   });

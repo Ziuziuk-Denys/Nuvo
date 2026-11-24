@@ -24,7 +24,7 @@ describe("loadKwinScript", () => {
       return args.includes("org.kde.kwin.Scripting.loadScript") ? "(7,)\n" : "()\n";
     };
     expect(await loadKwinScript("// script", run, dir)).toBe(true);
-    const file = path.join(dir, "notch-kwin.js");
+    const file = path.join(dir, "nuvo-notch.js");
     expect(readFileSync(file, "utf8")).toBe("// script");
     expect(calls).toEqual([
       ["gdbus", [...base, "--object-path", "/Scripting", "--method", "org.kde.kwin.Scripting.unloadScript", "nuvo-notch"]],

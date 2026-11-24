@@ -61,9 +61,18 @@ async function notchWindow(): Promise<React.ReactElement> {
   return <NotchApp />;
 }
 
+async function pocketWindow(): Promise<React.ReactElement> {
+  const [{ default: PocketApp }] = await Promise.all([import("./pocket/PocketApp"), prepareLocale()]);
+  window.addEventListener("storage", (event) => {
+    if (event.key === LOCALE_BOOT_KEY && event.newValue) void setLocale(event.newValue);
+  });
+  return <PocketApp />;
+}
+
 const rootElement = document.getElementById("root");
 if (rootElement) {
-  void (location.hash.startsWith("#/notch") ? notchWindow() : mainWindow()).then((root) => {
+  const boot = location.hash.startsWith("#/notch") ? notchWindow : location.hash.startsWith("#/pocket") ? pocketWindow : mainWindow;
+  void boot().then((root) => {
     ReactDOM.createRoot(rootElement).render(<React.StrictMode>{root}</React.StrictMode>);
   });
 }

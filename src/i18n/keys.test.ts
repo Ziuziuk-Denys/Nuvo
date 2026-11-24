@@ -3,6 +3,7 @@ import { default as fs } from "node:fs";
 import { PARTS } from "../visual/template/parts";
 import { SCENES } from "../visual/template/templates";
 import { SCENE_TOUR } from "../ui/visual/tour/steps";
+import { POCKET_MENU_KEYS } from "../pocket/contracts";
 import { default as path } from "node:path";
 import { expect, it, describe } from "vitest";
 import en from "./locales/en.json";
@@ -21,6 +22,7 @@ const ROOTS = [
   "imports",
   "data",
   "notch",
+  "pocket",
   "shell",
   "local",
   "lyrics",
@@ -36,6 +38,8 @@ const VISUAL_PARTS = PARTS.map((part) => part.id);
 const VISUAL_PARAMS = [...new Set(PARTS.flatMap((part) => (part.controls ?? []).map((control) => control.split(".")[1])))];
 
 const DYNAMIC: Record<string, string[]> = {
+  "ui.pocket.menu_": [...POCKET_MENU_KEYS],
+  "ui.settings.pocket_top_": ["app", "window-menu", "none"],
   "ui.island.skipped.": ["refused", "offline", "offline_mode", "timeout", "drm", "sign_in_required", "blocked", "stall", "media_error", "unavailable"],
   "ui.island.fallback_reason.": ["drm", "sign_in_required", "blocked", "timeout", "stall", "http_403", "media_error", "unavailable"],
   "visual.part.": VISUAL_PARTS.flatMap((id) => [`${id}.title`, `${id}.description`]),
@@ -71,6 +75,7 @@ const DYNAMIC: Record<string, string[]> = {
     "toggle_queue",
     "toggle_fullscreen",
     "recognize",
+    "pocket",
     "loop_a",
     "loop_b",
     "loop_clear",
@@ -226,6 +231,7 @@ const DYNAMIC: Record<string, string[]> = {
     "shuffle",
     "repeat",
     "fullscreen",
+    "pocket",
     "tour",
   ],
   "ui.recs.notice.": ["exact", "work", "artist", "artist_forever"],

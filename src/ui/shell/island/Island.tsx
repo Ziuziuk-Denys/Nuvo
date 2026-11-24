@@ -30,6 +30,7 @@ import { recsEnabled, useCurrentPick } from "../../ports/recs";
 import { useCustomizationStore } from "../../ports/settings";
 import { useAbLoopStore, useSleepTimer } from "../../ports/sound";
 import { useDownloadProgress } from "../../ports/exports";
+import { PocketButton } from "../../pocket/PocketButton";
 import { DislikeButton } from "../../recs/DislikeButton";
 import { NotInterestedMenu } from "../../recs/NotInterestedMenu";
 import { useNotInterestedStore } from "../../recs/notInterested";
@@ -327,6 +328,7 @@ export function Island(): JSX.Element | null {
           <IconButton icon="playlist-add" label={t("ui.island.add")} {...expanded("add")} data-tour="add" onClick={toggle("add")} />
           <VolumeLadder level={volumeLevel} label={t("ui.island.volume")} {...expanded("volume")} onClick={toggle("volume")} onWheel={onVolumeWheel} />
           <IconButton icon="now-playing" label={t("player.open_player")} onClick={openPlayer} />
+          <PocketButton />
           <span className={styles.divider} aria-hidden="true" />
           <IconButton
             icon="queue"
