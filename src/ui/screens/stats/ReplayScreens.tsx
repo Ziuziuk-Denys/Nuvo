@@ -64,6 +64,7 @@ export function TimeScreen({ stats, period, name, against }: ScreenProps): JSX.E
   const { t, locale } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
   const minutes = minutesOf(stats.totals.listenedMs);
+  const figure = minutes.toLocaleString(locale);
   const items = useMemo(() => (stats.days.length > 0 ? buckets(stats.days, firstHeard(stats), stats.range.to, locale) : []), [stats, locale]);
   const max = Math.max(1, ...items.map((item) => item.listenedMs));
   const peak = peakIndex(items.map((item) => item.listenedMs));
@@ -80,8 +81,8 @@ export function TimeScreen({ stats, period, name, against }: ScreenProps): JSX.E
     <>
       <div className={styles.time}>
         <div className={styles.timeText}>
-          <p className={styles.giant} data-testid="replay-minutes">
-            {minutes.toLocaleString(locale)}
+          <p className={styles.giant} data-testid="replay-minutes" data-lead={figure[0]} style={{ "--len": figure.length } as CSSProperties}>
+            {figure}
           </p>
           <h2 className={styles.line}>
             {t(period.kind === "all" ? "ui.replay.minutes_all" : period.kind === "week" ? "ui.replay.minutes_week" : "ui.replay.minutes", {

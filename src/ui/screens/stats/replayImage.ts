@@ -121,6 +121,7 @@ export function wrapText(ctx: Pick<Context, "measureText">, text: string, width:
 function write(ctx: Context, text: string, x: number, y: number, size: number, weight: number, color: string, font: string, tracking = 0): void {
   ctx.font = `${weight} ${size}px ${font}`;
   ctx.letterSpacing = `${size * tracking}px`;
+  ctx.wordSpacing = tracking < 0 ? `${size * -0.06}px` : "0px";
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
 }
@@ -172,12 +173,12 @@ function drawSong(ctx: Context, image: ReplayImage, cover: HTMLImageElement | nu
 function drawTime(ctx: Context, image: ReplayImage, covers: (HTMLImageElement | null)[], height: number): void {
   const story = image.format === "story";
   const width = WIDTH - EDGE * 2;
-  const size = fitSize(ctx, image.minutes, 700, image.font, width, story ? 380 : 260, -0.05);
+  const size = fitSize(ctx, image.minutes, 700, image.font, width, story ? 380 : 260, -0.045);
   const y = (story ? 330 : 190) + size * 0.74;
-  write(ctx, image.minutes, EDGE - size * 0.04, y, size, 700, INK, image.font, -0.05);
+  write(ctx, image.minutes, EDGE - size * (image.minutes.startsWith("1") ? 0.012 : 0.04), y, size, 700, INK, image.font, -0.045);
   ctx.font = `500 ${story ? 46 : 36}px ${image.font}`;
   ctx.letterSpacing = "0px";
-  write(ctx, fitText(ctx, image.minutesLine, width), EDGE, y + (story ? 96 : 70), story ? 46 : 36, 500, INK, image.font);
+  write(ctx, fitText(ctx, image.minutesLine, width), EDGE, y + Math.max(story ? 96 : 70, size * 0.34), story ? 46 : 36, 500, INK, image.font);
   const rows = image.list.slice(0, story ? 5 : 3);
   const rowHeight = story ? 148 : 116;
   const art = story ? 112 : 88;
