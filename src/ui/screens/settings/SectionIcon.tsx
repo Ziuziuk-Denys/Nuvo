@@ -3,34 +3,37 @@ import { Icon } from "../../icons/Icon";
 import type { IconName } from "../../icons";
 import type { SectionId } from "./sections";
 
-const GLYPHS: Record<SectionId, IconName> = {
-  Language: "globe",
-  Startup: "window-restore",
-  Updates: "refresh",
-  Playback: "play",
-  BetweenSongs: "queue",
-  Sound: "equalizer",
-  Spatial: "reverb",
-  Lyrics: "lyrics",
-  Theme: "palette",
-  Fonts: "studio-text",
-  Background: "gallery",
-  Player: "now-playing",
-  Motion: "studio-effects",
-  Notch: "widget",
-  Shortcuts: "keyboard",
+const files = import.meta.glob<string>("./sectionGlyphs/*.svg", { query: "?raw", import: "default", eager: true });
+
+const MARKS: Partial<Record<SectionId, IconName>> = {
   Youtube: "youtube",
   Lastfm: "lastfm",
   Discord: "discord",
-  Privacy: "lock",
-  Storage: "database",
-  Network: "link",
-  Tools: "tools",
   About: "nuvo-mark",
 };
 
+const GLYPHS = new Map(
+  Object.entries(files).map(([path, svg]) => [path.slice("./sectionGlyphs/".length, -".svg".length), { __html: svg.replace(/^<svg[^>]*>|<\/svg>\s*$/g, "") }]),
+);
+
 export function SectionIcon({ id }: { id: SectionId }): JSX.Element {
-  return <Icon name={GLYPHS[id]} size={18} />;
+  const mark = MARKS[id];
+  if (mark) return <Icon name={mark} size={18} />;
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={18}
+      height={18}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.85}
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      // the markup is our own SVG files, bundled at build time
+      dangerouslySetInnerHTML={GLYPHS.get(id)}
+    />
+  );
 }
 
 export function ClearGlyph(): JSX.Element {
