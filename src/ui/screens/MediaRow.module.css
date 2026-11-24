@@ -12,7 +12,7 @@
   outline: none;
   cursor: pointer;
   user-select: none;
-  transition: background-color 150ms ease-out;
+  transition: background-color var(--n-t-quick) var(--n-ease-out);
 }
 
 .row[data-short] {
@@ -54,8 +54,8 @@
   justify-content: center;
   width: 48px;
   height: 36px;
-  color: var(--n-ink-3);
-  font: 400 14px/1.2 var(--n-font);
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
 }
 
@@ -81,7 +81,8 @@
 
 .title {
   color: var(--n-ink);
-  font: 400 15px/1.3 var(--n-font);
+  font: 500 calc(15px * var(--n-scale, 1)) / 1.3 var(--n-font);
+  letter-spacing: -0.008em;
 }
 
 .row[data-active] .title {
@@ -96,13 +97,9 @@
   max-width: min(52vw, 560px);
 }
 
-.title[data-strong] {
-  font-weight: 500;
-}
-
 .subtitle {
   color: var(--n-ink-2);
-  font: 400 13px/1.3 var(--n-font);
+  font: var(--n-type-caption);
 }
 
 .end {
@@ -121,15 +118,14 @@
 
 .row:hover :is(.end [data-row-action], .dots),
 .row:focus-within :is(.end [data-row-action], .dots),
-.row[data-selected] :is(.end [data-row-action], .dots),
-.row[data-active] :is(.end [data-row-action], .dots) {
+.row[data-selected] :is(.end [data-row-action], .dots) {
   opacity: 1;
 }
 
 .meta {
-  min-width: 36px;
-  color: var(--n-ink-3);
-  font: 400 13px/normal var(--n-font);
+  min-width: 40px;
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -139,7 +135,7 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  margin: 0 -4px 0 0;
+  margin: 0;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -147,9 +143,9 @@
   color: var(--n-ink-2);
   cursor: pointer;
   transition:
-    opacity 150ms var(--n-ease-out),
-    background-color 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out),
+    opacity var(--n-t-quick) var(--n-ease-out),
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out),
     transform var(--n-t-quick) var(--n-ease-out);
 }
 

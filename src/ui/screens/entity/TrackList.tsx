@@ -44,10 +44,27 @@ function stop(event: SyntheticEvent) {
   event.stopPropagation();
 }
 
+function PlayingMark({ playing }: { playing: boolean }) {
+  return (
+    <span className={styles.playing} data-playing={playing ? "" : undefined} aria-hidden="true">
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
 function IndexCell({ number, current, playing, onToggle, t }: { number: number; current: boolean; playing: boolean; onToggle?: () => void; t: TFunction }) {
   return (
     <span className={styles.index} data-current={current ? "" : undefined}>
       <span className={styles.number}>{number}</span>
+      {current ? (
+        <PlayingMark playing={playing} />
+      ) : (
+        <span className={styles.hoverPlay}>
+          <Icon name="play" size={16} />
+        </span>
+      )}
       {current && onToggle ? (
         <button
           type="button"
@@ -62,16 +79,6 @@ function IndexCell({ number, current, playing, onToggle, t }: { number: number; 
           <Icon name={playing ? "pause" : "play"} size={16} />
         </button>
       ) : null}
-    </span>
-  );
-}
-
-function PlayingMark({ playing }: { playing: boolean }) {
-  return (
-    <span className={styles.playing} data-playing={playing ? "" : undefined} aria-hidden="true">
-      <i />
-      <i />
-      <i />
     </span>
   );
 }
@@ -218,7 +225,13 @@ export function TrackList({
                   ) : (
                     <span className={styles.art}>
                       <Cover src={track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />
-                      {marks && current ? <PlayingMark playing={playing} /> : null}
+                      {current ? (
+                        <PlayingMark playing={playing} />
+                      ) : (
+                        <span className={styles.hoverPlay}>
+                          <Icon name="play" size={20} />
+                        </span>
+                      )}
                     </span>
                   )
                 }

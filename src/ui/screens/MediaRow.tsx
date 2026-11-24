@@ -75,26 +75,22 @@ export function MediaRow({
       <span className={styles.text}>
         {badge ? (
           <span className={styles.titleLine}>
-            <span className={styles.title} data-strong={number && !subtitle ? "" : undefined}>
-              {title}
-            </span>
+            <span className={styles.title}>{title}</span>
             {badge}
           </span>
         ) : (
-          <span className={styles.title} data-strong={number && !subtitle ? "" : undefined}>
-            {title}
-          </span>
+          <span className={styles.title}>{title}</span>
         )}
         {subtitle ? <span className={styles.subtitle}>{subtitle}</span> : null}
       </span>
       <span className={styles.end} onClick={stop} onKeyDown={stop}>
         {extra}
-        {meta ? <span className={styles.meta}>{meta}</span> : null}
         {onMenu && menuLabel ? (
           <button type="button" className={styles.dots} aria-label={menuLabel} onClick={(event) => onMenu(event.currentTarget)}>
             <Icon name="vertical-dots" size={24} />
           </button>
         ) : null}
+        {meta ? <span className={styles.meta}>{meta}</span> : null}
       </span>
     </div>
   );

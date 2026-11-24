@@ -142,7 +142,7 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
       </span>
     );
   } else if (cover) {
-    art = <Cover src={cover} size={168} alt="" />;
+    art = <Cover src={cover} size={232} alt="" />;
   }
 
   return (

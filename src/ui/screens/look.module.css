@@ -145,14 +145,8 @@
 .pageTitle {
   margin: 0;
   color: var(--n-ink);
-  font-family: var(--n-font);
-  font-size: 32px;
-  font-weight: 600;
-  font-variation-settings:
-    "wdth" 134,
-    "opsz" 144;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
 }
 
 .chip {
@@ -182,7 +176,6 @@
   background: color-mix(in srgb, var(--n-ink-2) 50%, transparent);
 }
 
-/* Quiet glass like the top bar's field: a tint and a top highlight over the cover glow, no backdrop filter */
 .field {
   display: flex;
   flex: none;
@@ -193,17 +186,14 @@
   height: 32px;
   padding: 0 10px 0 12px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 4%, transparent);
+  background: var(--n-tray);
   color: var(--n-ink);
   cursor: text;
   transition: background-color 200ms var(--n-ease-out);
 }
 
 .field:hover {
-  background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  background: var(--n-tray-hover);
 }
 
 .field:focus-within {
@@ -229,7 +219,7 @@
 }
 
 .fieldInput::placeholder {
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   opacity: 1;
 }
 
@@ -264,14 +254,8 @@
 .sectionTitle {
   margin: 0;
   color: var(--n-ink);
-  font-family: var(--n-font);
-  font-size: 24px;
-  font-weight: 564;
-  font-variation-settings:
-    "wdth" 134,
-    "opsz" 144;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  font: var(--n-type-title);
+  letter-spacing: var(--n-track-title);
 }
 
 .sectionLink {
