@@ -78,6 +78,7 @@ export const ICON_NAMES = [
   "microphone",
   "grid",
   "list",
+  "drag",
   "expand",
   "warning",
   "info",
