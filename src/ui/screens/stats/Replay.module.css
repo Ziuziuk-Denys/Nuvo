@@ -296,6 +296,16 @@
   pointer-events: none;
 }
 
+.hero {
+  width: min(58cqh, 40cqw) !important;
+  height: min(58cqh, 40cqw) !important;
+}
+
+.hero span:has(> img) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .song {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

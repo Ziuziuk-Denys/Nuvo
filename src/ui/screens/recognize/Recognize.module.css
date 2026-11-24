@@ -137,18 +137,14 @@
 
 .found {
   width: 100%;
-  aspect-ratio: 1;
-  border-radius: 3.2%;
-  box-shadow:
-    0 2px 6px rgba(var(--n-contact), 0.2),
-    calc(var(--n-light-x) * 14px) calc(var(--n-light-y) * 30px) 72px -20px rgba(var(--n-contact), 0.6);
+  height: 100%;
   animation: arrive var(--n-t-entrance) var(--n-spring) both;
 }
 
-.found > span {
+.object,
+.object span:has(> img) {
   width: 100% !important;
   height: 100% !important;
-  border-radius: inherit !important;
 }
 
 @keyframes arrive {

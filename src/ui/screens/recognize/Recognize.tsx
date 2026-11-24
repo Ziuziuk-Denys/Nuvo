@@ -7,6 +7,8 @@ import { IconButton } from "../../components/IconButton";
 import { Menu } from "../../components/Menu";
 import { Popover } from "../../components/Popover";
 import { TextField } from "../../components/TextField";
+import { CoverObject } from "../../light/CoverObject";
+import { useLightObject } from "../../light/objects";
 import { Icon } from "../../icons/Icon";
 import { usePageBackdrop } from "../../ports/backdrop";
 import { useTranslation } from "../../ports/i18n";
@@ -52,7 +54,7 @@ export function Recognize(): JSX.Element {
   const [linkOpen, setLinkOpen] = useState(false);
   const [link, setLink] = useState("");
   const picker = useRef<HTMLInputElement>(null);
-  usePageBackdrop(found?.song.coverUrl);
+  usePageBackdrop(found?.song.coverUrl, { scene: "room" });
   const dropped = useDroppedFile((state) => state.file);
   useEffect(() => {
     const file = dropped ? useDroppedFile.getState().take() : null;
@@ -217,6 +219,8 @@ function ResultCard({ song, onAgain }: { song: RecognizedSong; onAgain(): void }
   const unlike = useUnlikeTrack();
   const [addAnchor, setAddAnchor] = useState<HTMLElement | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const art = useRef<HTMLDivElement>(null);
+  useLightObject(art, { hero: true, radius: 14 });
   const facts = songFacts(song);
   const from = moment(song);
   const searchFor = () => navigateWithTransition(navigate, `/search?q=${encodeURIComponent(`${song.artist} ${song.title}`)}`);
@@ -224,8 +228,8 @@ function ResultCard({ song, onAgain }: { song: RecognizedSong; onAgain(): void }
   return (
     <div className={styles.stage} data-recognize-result="">
       <Ring peaks={NO_PEAKS} live={false} found>
-        <div className={styles.found}>
-          <Cover src={song.coverUrl ?? ""} size={COVER_PX} radius={12} />
+        <div ref={art} className={styles.found}>
+          <CoverObject src={song.coverUrl ?? ""} size={COVER_PX} radius={14} className={styles.object} />
         </div>
       </Ring>
       <div className={`${styles.about} n-enter`}>

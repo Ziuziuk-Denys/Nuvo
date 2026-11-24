@@ -1,6 +1,7 @@
 import { useDeferredValue, useMemo, useState, type JSX } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Cover } from "../../components/Cover";
+import { CoverObject } from "../../light/CoverObject";
 import { EmptyState } from "../../components/EmptyState";
 import { Menu, type MenuItem } from "../../components/Menu";
 import { Icon } from "../../icons/Icon";
@@ -152,7 +153,7 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
       </span>
     );
   } else if (cover) {
-    art = <Cover src={cover} size={232} alt="" />;
+    art = <CoverObject src={cover} size={232} radius={12} />;
   }
 
   return (
