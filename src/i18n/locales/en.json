@@ -503,7 +503,9 @@
         "blocked": "{title} skipped. It is blocked.",
         "stall": "{title} skipped. It stalled.",
         "media_error": "{title} skipped. It could not be decoded.",
-        "unavailable": "{title} skipped. No source could play it."
+        "unavailable": "{title} skipped. No source could play it.",
+        "not_offered": "{title} skipped. YouTube does not offer it in your country or on this network, and there is no other copy.",
+        "refusing": "YouTube is refusing songs on this connection right now. Playback waits; try again later."
       },
       "fallback_hover": "{source}: {reason}. Matched by title, artist and length (score {score}). May be a different recording.",
       "fallback_restarted": "Restarted: different length.",
