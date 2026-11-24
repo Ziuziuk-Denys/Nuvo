@@ -6,7 +6,7 @@ import { usePageBackdrop } from "../../../ports/backdrop";
 import { playSongs } from "../../../ports/homeShelves";
 import { coverSrc } from "../../../ports/covers";
 import type { Track } from "../../../ports/recs";
-import { useThemeMode } from "../../../ports/theme";
+import { useLook } from "../../../ports/theme";
 import { ShelfHeading } from "../ShelfHeading";
 import { floorOf, PERSPECTIVE, place, ringFor, ringHeight, ringOffset, ringSlots } from "./ring";
 import { createRoom, type Room, type RoomCard } from "./room";
@@ -39,7 +39,7 @@ interface Drag {
 
 export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string }): JSX.Element {
   const reduced = useReducedEffects();
-  const light = useThemeMode() === "light";
+  const light = useLook().mode === "light";
   const rootRef = useRef<HTMLElement>(null);
   const items = useRef<Array<HTMLLIElement | null>>([]);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);

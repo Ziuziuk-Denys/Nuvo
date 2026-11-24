@@ -8,7 +8,7 @@ import { kept, moodMap, type MoodMap } from "../../../ports/homeMoments";
 import { playSongs } from "../../../ports/homeShelves";
 import { useTranslation } from "../../../ports/i18n";
 import { recsChanged, type Track } from "../../../ports/recs";
-import { useThemeMode } from "../../../ports/theme";
+import { useLook } from "../../../ports/theme";
 import { firstArtist } from "../../../recs/notInterestedItems";
 import { ArtistLinks } from "../../../shell/ArtistLinks";
 import { useTrackMenu } from "../../entity/useTrackMenu";
@@ -73,7 +73,7 @@ export function MoodPad({ offline }: { offline: boolean }): JSX.Element | null {
 
 function Pad({ map }: { map: MoodMap }): JSX.Element {
   const { t } = useTranslation();
-  const dark = useThemeMode() === "dark";
+  const dark = useLook().mode === "dark";
   const still = useReducedEffects();
   const menu = useTrackMenu();
   const { points } = map;

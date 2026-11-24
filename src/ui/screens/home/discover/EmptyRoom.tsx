@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type JSX, type ReactNode } from "react";
-import { useThemeMode } from "../../../ports/theme";
+import { useLook } from "../../../ports/theme";
 import { floorOf, place, ringFor } from "./ring";
 import { createRoom, type Room, type RoomCard } from "./room";
 import styles from "./EmptyRoom.module.css";
@@ -16,13 +16,22 @@ function slabs(ring: ReturnType<typeof ringFor>): RoomCard[] {
   });
 }
 
-function paint(room: Room, width: number, light: boolean): void {
+function paperOf(stage: HTMLElement): [number, number, number] {
+  const context = document.createElement("canvas").getContext("2d")!;
+  context.fillStyle = getComputedStyle(stage).color;
+  context.fillRect(0, 0, 1, 1);
+  const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+  return [red / 255, green / 255, blue / 255];
+}
+
+function paint(room: Room, stage: HTMLElement, width: number, light: boolean): void {
   const ring = ringFor(width, RING_HEIGHT, CLEAR_TOP);
-  room.draw({ ring, floor: floorOf(ring), cards: slabs(ring), lean: 0, tilt: { x: 0, y: 0, amount: 0 }, light }, 0);
+  room.draw({ ring, floor: floorOf(ring), cards: slabs(ring), lean: 0, tilt: { x: 0, y: 0, amount: 0 }, light, paper: paperOf(stage) }, 0);
 }
 
 export function EmptyRoom({ title, message, children }: { title: string; message?: string; children?: ReactNode }): JSX.Element {
-  const light = useThemeMode() === "light";
+  const { preset, mode } = useLook();
+  const light = mode === "light";
   const stage = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -33,7 +42,7 @@ export function EmptyRoom({ title, message, children }: { title: string; message
       const { width } = entry.contentRect;
       if (!room || width === 0) return;
       room.resize(width, HEIGHT, window.devicePixelRatio);
-      paint(room, width, light);
+      paint(room, stage.current!, width, light);
     });
     observer.observe(stage.current!);
     return () => {
@@ -41,7 +50,7 @@ export function EmptyRoom({ title, message, children }: { title: string; message
       room?.dispose();
       canvas.remove();
     };
-  }, [light]);
+  }, [light, preset]);
   return (
     <section className={styles.empty} aria-labelledby={titleId} data-empty-state="">
       <h2 id={titleId} className={styles.title}>

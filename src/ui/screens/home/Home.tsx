@@ -123,7 +123,8 @@ export function Home(): JSX.Element | null {
     style: [{ key: "style", node: <StyleShelf /> }],
   };
   for (const id of order) if (!hidden.includes(id)) sections.push(...parts[id]);
-  if (offline && mixes.length === 0 && (kept?.songs.length ?? 0) < OFFLINE_MIN_SONGS) {
+  const nothingHere = offline && mixes.length === 0 && (kept?.songs.length ?? 0) < OFFLINE_MIN_SONGS;
+  if (nothingHere) {
     sections.push({
       key: "offline",
       node: (
@@ -157,7 +158,7 @@ export function Home(): JSX.Element | null {
         ),
       )}
       <HiddenLinkSlot />
-      {starter ? null : <ArrangeHome />}
+      {starter || nothingHere ? null : <ArrangeHome />}
     </div>
   );
 }

@@ -26,6 +26,7 @@
 .stage {
   position: relative;
   align-self: stretch;
+  color: color-mix(in srgb, var(--n-raised) 88%, var(--n-field));
   margin: -8px calc(-1 * var(--n-gutter, 12px)) 0;
   animation: lit 700ms var(--n-ease-out);
 }
