@@ -126,6 +126,8 @@ const DYNAMIC: Record<string, string[]> = {
   "ui.recognize.no_access_title_": ["microphone", "system"],
   "ui.tour.brief.": ["search", "search_line", "recognize", "recognize_line", "sound", "sound_line", "library", "library_line", "look", "look_line"],
   "ui.tour.chapters.": ["search", "recognize", "player", "sound", "playlists", "library", "home", "look"],
+  "ui.replay.card_": ["song", "time", "hours"],
+  "ui.replay.format_": ["story", "square", "story_size", "square_size"],
   "ui.stats.": [
     ...["playlist", "album", "artist", "radio", "mix", "search", "local", "other"].map((kind) => `source.${kind}`),
     ...["stream", "cache", "local", "other"].map((kind) => `origin.${kind}`),

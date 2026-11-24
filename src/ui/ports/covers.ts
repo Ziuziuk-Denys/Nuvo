@@ -2,6 +2,8 @@ import { CORE_BASE_URL } from "@/data/core/request";
 import { mixCardColors, useCoverColors } from "@/data/covers/colors";
 import { coverUrl } from "@/data/covers/coverUrl";
 
+export { colorsFor } from "@/data/covers/colors";
+
 export function coverSrc(src: string, cssPx: number, dpr: number): string {
   return coverUrl(CORE_BASE_URL, src, cssPx, dpr);
 }

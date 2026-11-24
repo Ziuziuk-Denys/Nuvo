@@ -1,0 +1,100 @@
+.layer {
+  composes: layer from "../../components/Sheet.module.css";
+}
+
+.backdrop {
+  composes: backdrop from "../../components/Sheet.module.css";
+}
+
+.panel {
+  composes: panel from "../../components/Sheet.module.css";
+  display: grid;
+  grid-template-columns: auto 260px;
+  gap: 32px;
+  width: auto;
+  max-width: none;
+  padding: 24px;
+}
+
+.stage {
+  display: grid;
+  place-items: center;
+  width: calc(min(64vh, 620px) * 9 / 16);
+  height: min(64vh, 620px);
+}
+
+.canvas {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity var(--n-t-base) var(--n-ease-out);
+}
+
+.canvas[data-drawn] {
+  opacity: 1;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin: 4px 0 20px;
+  font: var(--n-type-title);
+  letter-spacing: var(--n-track-title);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 -12px 20px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--n-ink-2);
+  font: 500 15px/1 var(--n-font);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out);
+}
+
+.option:hover {
+  color: var(--n-ink);
+}
+
+.option[aria-checked="true"] {
+  background: var(--n-fill);
+  color: var(--n-ink);
+}
+
+.option > span {
+  color: var(--n-ink-2);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: auto 0 16px;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -89,7 +89,7 @@ async function open(live: Live, range: string): Promise<number> {
     (value) =>
       new Promise<number>((resolve) => {
         const started = performance.now();
-        location.hash = `#/stats?range=${value}`;
+        location.hash = `#/stats/all?range=${value}`;
         const frame = () => {
           if (!document.querySelector("[data-testid=stats-lead]")) return requestAnimationFrame(frame);
           requestAnimationFrame(() => requestAnimationFrame(() => resolve(performance.now() - started)));
