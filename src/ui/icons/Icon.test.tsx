@@ -52,20 +52,26 @@ describe("Icon", () => {
     expect(svg().getAttribute("class")).toBe("x");
   });
 
-  it("gives every masked glyph its own mask id", () => {
-    act(() =>
-      root.render(
-        <>
-          <Icon name="library" />
-          <Icon name="library" />
-        </>,
-      ),
-    );
-    const masks = [...host.querySelectorAll("mask")].map((mask) => mask.id);
-    expect(new Set(masks).size).toBe(2);
-    for (const svgNode of host.querySelectorAll("svg")) {
-      const id = svgNode.querySelector("mask")!.id;
-      expect(svgNode.querySelector("[mask]")!.getAttribute("mask")).toBe(`url(#${id})`);
-    }
+  it("draws every layered state from shared shapes", () => {
+    act(() => root.render(<Icon name="volume-high" />));
+    const shown = () => [...svg().querySelectorAll("g > g:not([data-off])")].length;
+    const first = svg().querySelector("g > g");
+    expect(shown()).toBe(3);
+    act(() => root.render(<Icon name="volume-mute" />));
+    expect(shown()).toBe(2);
+    expect(svg().querySelector("g > g")).toBe(first);
+  });
+
+  it("swaps an outline for its filled twin", () => {
+    act(() => root.render(<Icon name="home" />));
+    const on = () => [...svg().querySelectorAll("g > g:not([data-off]) path")].map((path) => path.getAttribute("fill"));
+    expect(on()).not.toContain("currentColor");
+    act(() => root.render(<Icon name="home" filled />));
+    expect(on()).toEqual(["currentColor"]);
+  });
+
+  it("ignores filled where no twin is drawn", () => {
+    act(() => root.render(<Icon name="check" filled />));
+    expect(svg().querySelectorAll("path").length).toBeGreaterThan(0);
   });
 });

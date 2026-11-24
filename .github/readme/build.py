@@ -132,7 +132,7 @@ class Art:
         return drawn, len(rows)
 
     def icon(self, name, x, y, size, color):
-        return f'<g transform="translate({x:.1f} {y:.1f}) scale({size / 24:.3f})" color="{color}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{inner_svg(ICONS / f"{name}.svg")}</g>'
+        return f'<g transform="translate({x:.1f} {y:.1f}) scale({size / 24:.3f})" color="{color}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">{inner_svg(ICONS / f"{name}.svg")}</g>'
 
     def brand(self, name, x, y, size, color):
         return f'<g transform="translate({x:.1f} {y:.1f}) scale({size / 24:.3f})" color="{color}" fill="{color}">{inner_svg(BRANDS / f"{name}.svg")}</g>'
