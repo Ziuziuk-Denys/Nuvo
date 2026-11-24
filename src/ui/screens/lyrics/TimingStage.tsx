@@ -263,7 +263,7 @@ export function TimingStage({ track, start, open, onBack, onSave }: TimingStageP
 
         <div className={styles.transport}>
           <IconButton icon={playing ? "pause" : "play"} label={t(playing ? "ui.island.pause" : "ui.island.play")} onClick={togglePlayback} />
-          <IconButton icon="undo" label={t("ui.lyrics.timing_replay")} onClick={replay} />
+          <IconButton icon="replay" label={t("ui.lyrics.timing_replay")} onClick={replay} />
           <span ref={clockText} className={styles.clock}>
             0:00
           </span>
