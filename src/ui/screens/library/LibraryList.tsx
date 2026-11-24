@@ -18,6 +18,7 @@ export interface EntryViewProps {
   entries: LibraryEntry[];
   selected: string | null;
   playing: string | null;
+  round: boolean;
   onActivate: (entry: LibraryEntry) => void;
   onMenu: (entry: LibraryEntry, anchor: HTMLElement | null, at?: { x: number; y: number }) => void;
   t: TFunction;
@@ -29,13 +30,13 @@ export function entryMeta(entry: LibraryEntry, t: TFunction): string | undefined
   return t(entry.kind === "liked" || entry.kind === "local" ? "common.songs" : "common.tracks", { count: entry.count });
 }
 
-export function EntryArt({ entry, size }: { entry: LibraryEntry; size?: number }): JSX.Element {
+export function EntryArt({ entry, size, round }: { entry: LibraryEntry; size?: number; round: boolean }): JSX.Element {
   if (entry.kind === "liked") return <LikedTile size={size} />;
   if (entry.kind === "local") return <LocalTile size={size} />;
-  return <Cover src={entry.cover ?? ""} size={size ?? 200} radius={8} shape={entry.kind === "artist" ? "circle" : "square"} />;
+  return <Cover src={entry.cover ?? ""} size={size ?? 200} radius={8} shape={round ? "circle" : "square"} />;
 }
 
-export function LibraryList({ entries, selected, playing, onActivate, onMenu, t }: EntryViewProps): JSX.Element {
+export function LibraryList({ entries, selected, playing, round, onActivate, onMenu, t }: EntryViewProps): JSX.Element {
   const scroller = useShellScroller();
   const listRef = useRef<HTMLDivElement>(null);
   const scrollMargin = useScrollMargin(listRef);
@@ -60,7 +61,7 @@ export function LibraryList({ entries, selected, playing, onActivate, onMenu, t 
               <MediaRow
                 className={styles.entry}
                 data-selected={selected === key ? "" : undefined}
-                leading={<EntryArt entry={entry} size={48} />}
+                leading={<EntryArt entry={entry} size={48} round={round} />}
                 title={entry.title}
                 subtitle={entry.subtitle}
                 meta={entryMeta(entry, t)}

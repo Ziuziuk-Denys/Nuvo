@@ -19,6 +19,7 @@ import { ArtistHero, PersonalLine, SlimBar } from "./ArtistHero";
 import { latestRelease } from "./artistModel";
 import { EntityButtons } from "./EntityHead";
 import { EntityLoading, EntityPage } from "./EntityPage";
+import { ReleaseCard, Shelf } from "./ReleaseShelf";
 import { EntityTracks, entityPlayback, useUnavailable } from "./EntityTracks";
 
 const TOP = 6;
@@ -50,29 +51,6 @@ function onResize(change: () => void): () => void {
 
 function useWidePage(): boolean {
   return useSyncExternalStore(onResize, () => window.innerWidth >= WIDE_PAGE_PX);
-}
-
-function Shelf({ title, children }: { title: string; children: ReactNode }): JSX.Element {
-  return (
-    <section className={styles.section}>
-      <h2 className={`${look.sectionTitle} ${styles.shelfTitle}`}>{title}</h2>
-      <div className={styles.shelf}>{children}</div>
-    </section>
-  );
-}
-
-function ReleaseCard({ release, onOpen }: { release: ArtistAlbumViewModel; onOpen: (id: string) => void }): JSX.Element {
-  return (
-    <button type="button" className={styles.card} onClick={() => onOpen(release.id)}>
-      <span className={styles.art}>
-        <Cover src={release.coverUrl} size={180} radius={10} />
-      </span>
-      <span className={styles.cardText}>
-        <span className={styles.cardTitle}>{release.title}</span>
-        {release.releaseDate ? <span className={styles.cardSubtitle}>{release.releaseDate}</span> : null}
-      </span>
-    </button>
-  );
 }
 
 function Latest({ release, onOpen }: { release: ArtistAlbumViewModel; onOpen: (id: string) => void }): JSX.Element {

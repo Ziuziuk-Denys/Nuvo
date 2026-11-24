@@ -90,7 +90,7 @@ function tracksOf(items: RawItem[]): Track[] {
   const tracks: Track[] = [];
   for (const item of items) {
     const track = fromSnapshot(item.track);
-    if (track) tracks.push({ ...track, playlistItemId: item.id });
+    if (track) tracks.push({ ...track, playlistItemId: item.id, ...(item.addedAt ? { addedAt: item.addedAt } : {}) });
   }
   return tracks;
 }

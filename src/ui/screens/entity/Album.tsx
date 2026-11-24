@@ -5,8 +5,9 @@ import { EmptyState } from "../../components/EmptyState";
 import { Menu, type MenuItem } from "../../components/Menu";
 import { Icon } from "../../icons/Icon";
 import { usePageBackdrop } from "../../ports/backdrop";
-import { useCollection, type CollectionPageData } from "../../ports/catalog";
+import { loadedReleases, useCollection, type CollectionPageData } from "../../ports/catalog";
 import { useTranslation } from "../../ports/i18n";
+import { useExternalItems, useLikedTracks } from "../../ports/library";
 import { playerEngine, type Track } from "../../ports/player";
 import { useHomeMix } from "../../ports/recs";
 import { ArtistLinks } from "../../shell/ArtistLinks";
@@ -20,6 +21,8 @@ import { EntityLoading, EntityPage } from "./EntityPage";
 import { formatTotal, matchTracks, orderTracks, totalMs, type TrackOrder } from "./entityModel";
 import pageStyles from "./EntityPage.module.css";
 import { EntityTracks, entityPlayback, useUnavailable } from "./EntityTracks";
+import { moreBy } from "./moreBy";
+import { ReleaseCard, Shelf } from "./ReleaseShelf";
 
 const NO_TRACKS: Track[] = [];
 const SORTS: TrackOrder[] = ["default", "title", "duration"];
@@ -62,6 +65,13 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
   const by = data?.artists?.map((artist) => artist.name).join(", ") || data?.author;
   usePageBackdrop(cover || undefined);
 
+  const lead = kind === "album" ? data?.artists?.[0] : undefined;
+  const savedAlbums = useExternalItems("album").data;
+  const liked = useLikedTracks().data.tracks;
+  const more = useMemo(
+    () => (lead ? moreBy({ albumId: id, artist: lead, loaded: lead.id ? loadedReleases(lead.id) : [], saved: savedAlbums, liked }) : []),
+    [lead, id, savedAlbums, liked],
+  );
   const unavailable = useUnavailable(tracks);
   const { playable, play, playAll, shuffle } = entityPlayback(tracks, unavailable, context, cover);
   const sorted = useMemo(() => orderTracks([...tracks], sort), [tracks, sort]);
@@ -142,7 +152,7 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
       </span>
     );
   } else if (cover) {
-    art = <Cover src={cover} size={168} alt="" />;
+    art = <Cover src={cover} size={232} alt="" />;
   }
 
   return (
@@ -165,14 +175,30 @@ function AlbumPage({ kind, id }: { kind: "album" | "playlist"; id: string }): JS
           />
         }
         tracks={
-          <EntityTracks
-            shown={shown}
-            tracks={sorted}
-            unavailable={unavailable}
-            onPlay={play}
-            numbered={kind === "album" && sort === "default"}
-            hideArtists={oneArtist}
-          />
+          <>
+            <EntityTracks
+              shown={shown}
+              tracks={sorted}
+              unavailable={unavailable}
+              onPlay={play}
+              numbered={kind === "album" && sort === "default"}
+              hideArtists={oneArtist}
+              withAlbum={kind === "playlist"}
+            />
+            {more.length > 0 ? (
+              <div className={pageStyles.more}>
+                <Shelf title={t("ui.entity.more_by", { artist: lead?.name ?? "" })}>
+                  {more.map((release) => (
+                    <ReleaseCard
+                      key={release.id}
+                      release={release}
+                      onOpen={(albumId) => navigateWithTransition(navigate, `/collection?type=album&id=${encodeURIComponent(albumId)}`)}
+                    />
+                  ))}
+                </Shelf>
+              </div>
+            ) : null}
+          </>
         }
       />
       <Menu

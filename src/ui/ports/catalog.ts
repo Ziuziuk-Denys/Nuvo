@@ -8,6 +8,7 @@ export {
   useArtist,
   warmArtist,
   useCollection,
+  loadedReleases,
   type ArtistPageData,
   type CollectionPageData,
   type ArtistRelease as ArtistAlbumViewModel,

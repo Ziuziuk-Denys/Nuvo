@@ -10,9 +10,13 @@
 .tracks {
   flex: 1;
   box-sizing: border-box;
-  min-height: calc(100vh - 360px);
-  margin: 24px -8px 0 -12px;
+  min-height: calc(100vh - 432px);
+  margin: 32px -16px 0;
   padding: 0 8px 24px;
+}
+
+.more {
+  margin: 48px 8px 0;
 }
 
 .page[data-entity="artist"] .tracks {
@@ -29,9 +33,9 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: calc(100vh - 380px);
+  min-height: calc(100vh - 452px);
   margin: 0;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: 400 13px/1.4 var(--n-font);
   text-align: center;
   overflow-wrap: anywhere;
@@ -54,7 +58,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: 400 12px/1.4 var(--n-font);
   cursor: pointer;
 }
@@ -65,19 +69,19 @@
 
 .placeholderHead {
   display: flex;
-  height: 168px;
+  height: 232px;
 }
 
 .placeholderCover {
-  width: 168px;
-  height: 168px;
+  width: 232px;
+  height: 232px;
   border-radius: 12px;
   background: var(--n-fill);
 }
 
 .placeholderCover[data-shape="circle"] {
-  width: 144px;
-  height: 144px;
+  width: 232px;
+  height: 232px;
   border-radius: 50%;
 }
 

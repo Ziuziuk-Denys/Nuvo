@@ -138,7 +138,7 @@ export function SongScreen({ stats }: ScreenProps): JSX.Element {
   const play = usePlay(stats.top.tracks);
   return (
     <div className={styles.song}>
-      <div className={styles.object} data-hero-cover="" style={{ "--size": "min(58cqh, 40cqw)" } as CSSProperties}>
+      <div className={styles.object} style={{ "--size": "min(58cqh, 40cqw)" } as CSSProperties}>
         <Cover src={top.coverUrl ?? ""} size={560} fetchPriority="high" />
       </div>
       <div className={styles.songText}>

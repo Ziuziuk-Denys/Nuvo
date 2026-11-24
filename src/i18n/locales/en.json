@@ -162,7 +162,8 @@
       "sort_artist": "Artist",
       "sort_album": "Album",
       "updated": "Updated {when}",
-      "explicit": "Explicit"
+      "explicit": "Explicit",
+      "more_by": "More by {artist}"
     },
     "eq": {
       "bands": {

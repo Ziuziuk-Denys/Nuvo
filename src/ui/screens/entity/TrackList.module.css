@@ -16,8 +16,8 @@
 .slot[data-lifted] {
   z-index: 1;
   border-radius: var(--n-r-m);
-  background: var(--n-field);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--n-ink) 14%, transparent);
+  background: var(--n-plate);
+  box-shadow: var(--n-panel-shadow);
   cursor: grabbing;
 }
 
@@ -26,23 +26,49 @@
   display: grid;
 }
 
-.playing {
+.playing,
+.hoverPlay {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.5);
+}
+
+.art > .playing,
+.art > .hoverPlay {
+  background: rgba(0, 0, 0, 0.56);
+  color: #fff;
+}
+
+.hoverPlay {
+  opacity: 0;
+  transition: opacity var(--n-t-quick) var(--n-ease-out);
+}
+
+.row:hover .hoverPlay,
+.row:focus-visible .hoverPlay {
+  opacity: 1;
+}
+
+.row:hover .index:not([data-current]) .number,
+.row:focus-visible .index:not([data-current]) .number {
+  opacity: 0;
+}
+
+.playing {
+  gap: 2.5px;
+  color: var(--n-row-ink);
 }
 
 .playing > i {
-  width: 3px;
-  height: 18px;
-  border-radius: 2px;
-  background: #fff;
-  transform: scaleY(0.35);
+  width: 2.5px;
+  height: 14px;
+  border-radius: 1.25px;
+  background: currentColor;
+  transform: scaleY(0.28);
+  transition: transform var(--n-t-base) var(--n-ease-out);
 }
 
 .playing[data-playing] > i {
@@ -50,7 +76,7 @@
 }
 
 .playing > i:nth-child(2) {
-  transform: scaleY(0.7);
+  transform: scaleY(0.5);
 }
 
 .playing[data-playing] > i:nth-child(2) {
@@ -63,11 +89,29 @@
 
 @keyframes beat {
   from {
-    transform: scaleY(0.3);
+    transform: scaleY(0.28);
   }
   to {
     transform: scaleY(1);
   }
+}
+
+.album,
+.added {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album {
+  flex: 1;
+}
+
+.added {
+  flex: none;
+  width: 132px;
+  font-variant-numeric: tabular-nums;
 }
 
 .liked {
@@ -84,8 +128,12 @@
   justify-content: center;
 }
 
+.number {
+  transition: opacity var(--n-t-quick) var(--n-ease-out);
+}
+
 .index[data-current] .number {
-  color: var(--n-accent);
+  opacity: 0;
 }
 
 .glyph {
@@ -97,12 +145,12 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--n-accent);
+  color: var(--n-row-ink);
   cursor: pointer;
 }
 
-.row:hover .index[data-current] .number {
-  visibility: hidden;
+.row:hover .index[data-current] .playing {
+  opacity: 0;
 }
 
 .row:hover .glyph {

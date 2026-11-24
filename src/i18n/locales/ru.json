@@ -168,7 +168,8 @@
       "sort_artist": "По исполнителю",
       "sort_album": "По альбому",
       "updated": "Обновлён {when}",
-      "explicit": "Ненормативная лексика"
+      "explicit": "Ненормативная лексика",
+      "more_by": "Ещё: {artist}"
     },
     "eq": {
       "bands": {

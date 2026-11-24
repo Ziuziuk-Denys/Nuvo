@@ -419,7 +419,7 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
         kind="playlist"
         head={
           <EntityHead
-            cover={liked ? <LikedTile /> : cover ? <Cover src={cover} size={168} alt="" /> : <Icon name="playlist" size={24} className={pageStyles.glyph} />}
+            cover={liked ? <LikedTile /> : cover ? <Cover src={cover} size={232} alt="" /> : <Icon name="playlist" size={24} className={pageStyles.glyph} />}
             title={data.title}
             description={own ? <DescriptionLine id={id} text={data.description} editing={editingDescription} onEditing={setEditingDescription} /> : undefined}
             chips={
@@ -460,6 +460,8 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
               onPlay={play}
               unavailable={unavailable}
               onTogglePlay={() => playerEngine.togglePlayPause()}
+              withAlbum
+              withAdded={sortMode === "added"}
               onReorder={own && sortMode === "manual" && !filtering ? move : undefined}
               selection={selection}
               selectedKey={menu && menuOpen ? menu.key : null}

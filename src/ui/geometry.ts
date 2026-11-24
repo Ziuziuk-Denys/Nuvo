@@ -59,7 +59,7 @@ export const CONTROL = { chip: 28, toggleWidth: 40, toggleHeight: 22, sliderTrac
 
 export const ROW = { list: 64, track: 64, numbered: 44, cover: 48, pinnedMax: 8 } as const;
 
-export const COVER = { hero: 168, gridMin: 165, mix: 160 } as const;
+export const COVER = { hero: 232, gridMin: 165, mix: 160 } as const;
 
 export const ENTITY_OFFSET = { x: 4, y: 8 } as const;
 

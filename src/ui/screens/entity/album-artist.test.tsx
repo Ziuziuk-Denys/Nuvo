@@ -52,7 +52,7 @@ vi.mock("../../ports/i18n", () => ({
   }),
 }));
 vi.mock("../../ports/importsRuntime", () => ({ useImportSummaries: () => [] }));
-vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
+vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src, useCoverColors: () => ({ color1: "rgb(0, 0, 0)", color2: "rgb(90, 120, 200)" }) }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: vi.fn() }));
 vi.mock("../../ports/stats", () => ({ useStatsDetail: () => ({ data: mocks.state.stats, failed: false }) }));
 vi.mock("../../ports/network", () => ({ useStreamingReachable: () => mocks.state.online, useOnline: () => mocks.state.online, useOfflineMode: () => false }));
@@ -62,12 +62,14 @@ vi.mock("../../ports/player", () => ({
   }),
   playerEngine: mocks.engine,
   isSoundCloudId: (id: string) => id.startsWith("sc:"),
+  usePlayingCover: () => "cover.jpg",
 }));
 vi.mock("../../ports/catalog", () => ({
   useCollection: (...args: unknown[]) => {
     mocks.useCollection(...args);
     return mocks.state.collection;
   },
+  loadedReleases: () => [],
   useArtist: () => mocks.state.artist,
   useCachedTrackIds: (_ids: string[], enabled: boolean) => (enabled ? mocks.state.cached : null),
   startArtistRadio: mocks.radio,

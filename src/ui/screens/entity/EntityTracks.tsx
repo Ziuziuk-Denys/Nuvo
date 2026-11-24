@@ -71,9 +71,10 @@ export interface EntityTracksProps {
   hideArtists?: boolean;
   subtitle?: TrackListProps["subtitle"];
   marks?: boolean;
+  withAlbum?: boolean;
 }
 
-export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hideArtists, subtitle, marks }: EntityTracksProps): JSX.Element {
+export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hideArtists, subtitle, marks, withAlbum }: EntityTracksProps): JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const currentTrack = usePlayerStore((state) => state.currentTrack);
@@ -115,6 +116,7 @@ export function EntityTracks({ shown, tracks, unavailable, onPlay, numbered, hid
         hideArtists={hideArtists}
         subtitle={subtitle}
         marks={marks}
+        withAlbum={withAlbum}
         currentId={currentTrack?.id ?? null}
         playing={status === "playing" || status === "loading"}
         onPlay={(index) => {

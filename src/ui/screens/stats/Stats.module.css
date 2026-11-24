@@ -11,8 +11,8 @@
 .title {
   margin: 0;
   color: var(--n-ink);
-  font: 700 26px/1.25 var(--n-font);
-  letter-spacing: -0.025em;
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
 }
 
 .bar {
@@ -57,7 +57,7 @@
 
 .private {
   margin: 56px 0 0;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
 }
 
@@ -76,15 +76,14 @@
 .leadNumber {
   margin: 0;
   color: var(--n-ink);
-  font: 700 clamp(56px, 8.2cqw, 88px) / 1 var(--n-font);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.035em;
+  font: var(--n-type-hero);
+  letter-spacing: var(--n-track-hero);
 }
 
 .leadLine {
   margin: 12px 0 0;
   color: var(--n-ink);
-  font: 500 17px/1.4 var(--n-font);
+  font: 600 18px/1.4 var(--n-font);
 }
 
 .leadDelta {
@@ -129,7 +128,7 @@
 
 .leadSongLabel,
 .leadSongMeta {
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-caption);
 }
 
@@ -186,9 +185,8 @@
   align-items: baseline;
   gap: 2px 8px;
   color: var(--n-ink);
-  font: 600 24px/1.2 var(--n-font);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  font: 640 28px/1.2 var(--n-font);
+  letter-spacing: -0.025em;
 }
 
 .figureLabel {
@@ -198,7 +196,7 @@
 }
 
 .delta {
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
 }
@@ -219,7 +217,8 @@
 .sectionTitle {
   margin: 0;
   color: var(--n-ink);
-  font: 500 22px/1.25 var(--n-font);
+  font: var(--n-type-title);
+  letter-spacing: var(--n-track-title);
 }
 
 .subTitle {
@@ -251,7 +250,7 @@
   position: absolute;
   top: -2px;
   left: 0;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   pointer-events: none;
 }
@@ -286,11 +285,11 @@
 }
 
 .columnBar[data-peak] {
-  background: var(--n-accent);
+  background: var(--n-ink);
 }
 
 .column:hover .columnBar {
-  background: color-mix(in srgb, var(--n-accent) 72%, var(--n-ink) 10%);
+  background: color-mix(in srgb, var(--n-ink) 70%, transparent);
 }
 
 @keyframes bar-rise {
@@ -309,7 +308,7 @@
 .ticks {
   display: flex;
   margin-top: 6px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
 }
 
@@ -341,7 +340,7 @@
   gap: 3px;
   margin-left: 30px;
   height: 16px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
 }
 
@@ -361,8 +360,8 @@
   grid-template-rows: repeat(7, minmax(0, 1fr));
   gap: 3px;
   width: 24px;
-  color: var(--n-ink-3);
-  font: 500 10px/1 var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 12px/1 var(--n-font);
 }
 
 .calendarDays span {
@@ -392,19 +391,19 @@
 }
 
 .cell[data-level="1"] {
-  background: color-mix(in srgb, var(--n-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--n-ink) 28%, transparent);
 }
 
 .cell[data-level="2"] {
-  background: color-mix(in srgb, var(--n-accent) 50%, transparent);
+  background: color-mix(in srgb, var(--n-ink) 50%, transparent);
 }
 
 .cell[data-level="3"] {
-  background: color-mix(in srgb, var(--n-accent) 74%, transparent);
+  background: color-mix(in srgb, var(--n-ink) 74%, transparent);
 }
 
 .cell[data-level="4"] {
-  background: var(--n-accent);
+  background: var(--n-ink);
 }
 
 .cell[data-out] {
@@ -417,7 +416,7 @@
   justify-content: flex-end;
   gap: 4px;
   margin-top: 6px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
 }
 
@@ -463,11 +462,11 @@
 }
 
 .wedge[data-peak] {
-  fill: var(--n-accent);
+  fill: var(--n-ink);
 }
 
 .wedge[data-on] {
-  fill: color-mix(in srgb, var(--n-accent) 72%, var(--n-ink) 10%);
+  fill: color-mix(in srgb, var(--n-ink) 70%, transparent);
 }
 
 .wedgeHit {
@@ -475,7 +474,7 @@
 }
 
 .clockHour {
-  fill: var(--n-ink-3);
+  fill: var(--n-ink-2);
   font: 500 10px var(--n-font);
 }
 
@@ -521,7 +520,7 @@
 }
 
 .shareNote {
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
 }
@@ -543,7 +542,7 @@
   width: calc(var(--w) * 100%);
   height: 100%;
   border-radius: 2px;
-  background: var(--n-accent);
+  background: var(--n-ink);
 }
 
 .topTabs {
@@ -565,7 +564,7 @@
 .rank {
   flex: none;
   width: 30px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: 500 14px/1 var(--n-font);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -581,7 +580,7 @@
   gap: 1px;
   min-width: 40px;
   justify-content: flex-end;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
 }
@@ -709,12 +708,12 @@
 }
 
 .curveArea {
-  fill: color-mix(in srgb, var(--n-accent) 12%, transparent);
+  fill: color-mix(in srgb, var(--n-ink) 12%, transparent);
 }
 
 .curveLine {
   fill: none;
-  stroke: var(--n-accent);
+  stroke: var(--n-ink);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;

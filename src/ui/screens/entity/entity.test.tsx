@@ -70,7 +70,7 @@ vi.mock("../../ports/importsRuntime", () => ({
   useImportSummaries: () => mocks.imports,
   getImports: () => ({ daemon: { rows: mocks.importRows } }),
 }));
-vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
+vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src, useCoverColors: () => ({ color1: "rgb(0, 0, 0)", color2: "rgb(90, 120, 200)" }) }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: vi.fn() }));
 vi.mock("../../ports/network", () => ({ useStreamingReachable: () => true, useOnline: () => true, useOfflineMode: () => false }));
 vi.mock("../../ports/catalog", () => ({ useCachedTrackIds: () => null }));
@@ -78,6 +78,7 @@ vi.mock("../../ports/player", () => ({
   usePlayerStore: mocks.usePlayerStore,
   playerEngine: mocks.engine,
   isSoundCloudId: (id: string) => id.startsWith("sc:"),
+  usePlayingCover: () => "cover.jpg",
 }));
 vi.mock("../../ports/playlistTools", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../ports/playlistTools")>()),
@@ -256,11 +257,12 @@ describe("Playlist", () => {
     expect(document.querySelector('[role="toolbar"]')).toBeNull();
   });
 
-  it("marks the current track's row in the accent", () => {
+  it("marks the current track's row and lights it in its cover's colour", () => {
     mocks.player.currentTrack = mocks.tracks[1];
     render();
     expect(rows()[1].hasAttribute("data-active")).toBe(true);
     expect(rows()[0].hasAttribute("data-active")).toBe(false);
+    expect(rows()[1].closest<HTMLElement>("[style*='--n-playing']")).not.toBeNull();
   });
 
   it("Alt+ArrowDown moves the row one down through the reorder mutation", async () => {

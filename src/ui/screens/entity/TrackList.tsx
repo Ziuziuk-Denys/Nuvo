@@ -11,8 +11,10 @@ import { useIsTrackLiked, useListReorder } from "../../ports/library";
 import type { Track } from "../../ports/player";
 import { ArtistLinks } from "../../shell/ArtistLinks";
 import { useShellScroller } from "../../shell/scroller";
+import { AlbumLink } from "../../shell/AlbumLink";
 import { MediaRow } from "../MediaRow";
-import { formatDuration, type TrackMatch } from "./entityModel";
+import { usePlayingTint } from "../playingTint";
+import { formatDuration, formatUpdated, type TrackMatch } from "./entityModel";
 import type { TrackSelection } from "./trackSelection";
 import styles from "./TrackList.module.css";
 
@@ -25,6 +27,8 @@ export interface TrackListProps {
   hideArtists?: boolean;
   subtitle?: (track: Track) => ReactNode;
   marks?: boolean;
+  withAlbum?: boolean;
+  withAdded?: boolean;
   currentId: string | null;
   playing?: boolean;
   onPlay: (index: number) => void;
@@ -44,10 +48,27 @@ function stop(event: SyntheticEvent) {
   event.stopPropagation();
 }
 
+function PlayingMark({ playing }: { playing: boolean }) {
+  return (
+    <span className={styles.playing} data-playing={playing ? "" : undefined} aria-hidden="true">
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
 function IndexCell({ number, current, playing, onToggle, t }: { number: number; current: boolean; playing: boolean; onToggle?: () => void; t: TFunction }) {
   return (
     <span className={styles.index} data-current={current ? "" : undefined}>
       <span className={styles.number}>{number}</span>
+      {current ? (
+        <PlayingMark playing={playing} />
+      ) : (
+        <span className={styles.hoverPlay}>
+          <Icon name="play" size={16} />
+        </span>
+      )}
       {current && onToggle ? (
         <button
           type="button"
@@ -62,16 +83,6 @@ function IndexCell({ number, current, playing, onToggle, t }: { number: number; 
           <Icon name={playing ? "pause" : "play"} size={16} />
         </button>
       ) : null}
-    </span>
-  );
-}
-
-function PlayingMark({ playing }: { playing: boolean }) {
-  return (
-    <span className={styles.playing} data-playing={playing ? "" : undefined} aria-hidden="true">
-      <i />
-      <i />
-      <i />
     </span>
   );
 }
@@ -91,6 +102,8 @@ export function TrackList({
   hideArtists = false,
   subtitle,
   marks = false,
+  withAlbum = false,
+  withAdded = false,
   currentId,
   playing = false,
   onPlay,
@@ -102,7 +115,8 @@ export function TrackList({
   selection,
 }: TrackListProps): JSX.Element {
   const rowPx = numbered && hideArtists ? SHORT_ROW_PX : ROW_PX;
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const tint = usePlayingTint(currentId !== null && tracks.some((match) => match.track.id === currentId));
   const scroller = useShellScroller();
   const listRef = useRef<HTMLDivElement>(null);
   const scrollMargin = useScrollMargin(listRef);
@@ -189,7 +203,7 @@ export function TrackList({
 
   return (
     <Flip token={tracks} target={listRef} scroller={scroller}>
-      <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize() }} data-dragging={drag.isDragging ? "" : undefined}>
+      <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize(), ...tint }} data-dragging={drag.isDragging ? "" : undefined}>
         {virtualizer.getVirtualItems().map((item) => {
           const match = tracks[item.index];
           const { track, index } = match;
@@ -218,13 +232,27 @@ export function TrackList({
                   ) : (
                     <span className={styles.art}>
                       <Cover src={track.coverUrl ?? ""} size={48} radius={8} fetchPriority="low" />
-                      {marks && current ? <PlayingMark playing={playing} /> : null}
+                      {current ? (
+                        <PlayingMark playing={playing} />
+                      ) : (
+                        <span className={styles.hoverPlay}>
+                          <Icon name="play" size={20} />
+                        </span>
+                      )}
                     </span>
                   )
                 }
                 title={track.title}
                 badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
                 subtitle={hideArtists ? undefined : subtitle ? subtitle(track) : <ArtistLinks track={track} />}
+                detail={
+                  withAlbum ? (
+                    <>
+                      <span className={styles.album}>{track.album?.title ? <AlbumLink album={track.album} /> : null}</span>
+                      {withAdded ? <span className={styles.added}>{formatUpdated(track.addedAt, locale)}</span> : null}
+                    </>
+                  ) : undefined
+                }
                 meta={formatDuration(track.durationMs)}
                 extra={
                   <>
