@@ -1,0 +1,78 @@
+.art,
+.layer {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  transition:
+    opacity 140ms linear,
+    transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.layer[data-off] {
+  opacity: 0;
+  transition-duration: 90ms, 160ms;
+}
+
+.stack[data-icon="like"] .layer:last-child[data-off] {
+  transform: scale(0.5);
+}
+
+.stack[data-icon="like"][data-state="like"] .layer:first-child,
+.stack[data-icon="like"] .layer:last-child:not([data-off]) {
+  transition-timing-function: linear, cubic-bezier(0.22, 1, 0.36, 1);
+  transition-duration: 110ms, 280ms;
+}
+
+.stack[data-icon="repeat"] .layer:first-child {
+  transition-duration: 140ms, 320ms;
+}
+
+.stack[data-icon="repeat"][data-state="repeat-one"] .layer:first-child {
+  transform: rotate(180deg);
+}
+
+.stack[data-icon="repeat"] .layer:last-child[data-off] {
+  transform: translateY(2px) scale(0.7);
+}
+
+.stack[data-icon="volume-mute"] .layer[data-off] {
+  transform: translateX(-2.5px);
+}
+
+.stack[data-icon="volume-mute"] .layer:nth-child(4) {
+  transition-delay: 40ms;
+}
+
+.stack[data-icon="playlist-add"] .layer:nth-child(2) {
+  transform-origin: 17.2px 16.5px;
+}
+
+.stack[data-icon="playlist-add"] .layer:nth-child(2)[data-off] {
+  transform: rotate(90deg) scale(0.6);
+}
+
+.stack[data-icon="playlist-add"] .layer:nth-child(3)[data-off] {
+  transform: translateX(-4px);
+}
+
+.stack[data-icon="download"][data-state="downloaded"] .layer:first-child {
+  transform: translateY(5px);
+}
+
+.stack[data-icon="download"] .layer:last-child[data-off] {
+  transform: scale(0.8);
+}
+
+svg[data-filled] .stack[data-state$="-fill"] .layer[data-off] {
+  transform: scale(1.04);
+}
+
+svg[data-filled] .art[data-icon="shuffle"] {
+  transform: scaleY(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art,
+  .layer {
+    transition: none;
+  }
+}
