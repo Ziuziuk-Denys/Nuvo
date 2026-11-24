@@ -111,7 +111,7 @@ export function EntityHead({
 }: EntityHeadProps): JSX.Element {
   const { t } = useTranslation();
   const art = useRef<HTMLDivElement>(null);
-  useLightObject(art, { hero: true, radius: shape === "circle" ? 84 : 12 });
+  useLightObject(art, { hero: true, radius: shape === "circle" ? 116 : 12 });
   const trailing = search || sort || onQueue;
 
   return (

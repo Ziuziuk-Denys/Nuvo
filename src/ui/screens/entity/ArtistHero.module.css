@@ -18,6 +18,12 @@
   user-select: text;
 }
 
+:root[data-theme="light"] .hero[data-photo] .name {
+  margin: 0 0 12px;
+  padding-inline-start: 18px;
+  color: #fff;
+}
+
 .foot {
   display: flex;
   flex-wrap: wrap;
