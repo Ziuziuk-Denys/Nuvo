@@ -39,7 +39,7 @@ describe("QueuePanel", () => {
     expect(history.textContent).toContain("1");
     act(() => history.click());
     expect(disliked()).toEqual(["b", "a"]);
-    expect(document.body.querySelector('[data-now] [data-dislike="b"]')).not.toBeNull();
+    expect(document.body.querySelector('[aria-current="true"] [data-dislike="b"]')).not.toBeNull();
     act(() => root.unmount());
     mocks.state.currentIndex = 0;
   });
