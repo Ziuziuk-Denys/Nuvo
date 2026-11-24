@@ -531,6 +531,10 @@ function isValidSettings(value: unknown): value is NotchSettings {
 
 const MAX_LYRIC_LINES = 5000;
 const MAX_LYRIC_TEXT = 1000;
+const MAX_LINE_WORDS = 200;
+
+const isTimedText = (value: { timeMs: number; text: string } | null) =>
+  Boolean(value) && typeof value === "object" && Number.isFinite(value!.timeMs) && typeof value!.text === "string" && value!.text.length <= MAX_LYRIC_TEXT;
 
 function isValidLyrics(value: unknown): value is NotchLyrics {
   if (!value || typeof value !== "object") return false;
@@ -541,7 +545,8 @@ function isValidLyrics(value: unknown): value is NotchLyrics {
     Array.isArray(l.lines) &&
     l.lines.length <= MAX_LYRIC_LINES &&
     l.lines.every(
-      (line) => line && typeof line === "object" && Number.isFinite(line.timeMs) && typeof line.text === "string" && line.text.length <= MAX_LYRIC_TEXT,
+      (line) =>
+        isTimedText(line) && (line.words === undefined || (Array.isArray(line.words) && line.words.length <= MAX_LINE_WORDS && line.words.every(isTimedText))),
     )
   );
 }

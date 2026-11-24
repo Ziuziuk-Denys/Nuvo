@@ -1,5 +1,6 @@
 import type { RemoteCommand, SurfaceState } from "../engine/types";
 import type { NotchLyrics, NotchPlaylists, NotchSettings } from "../notch/contracts";
+import type { PocketFeed, PocketStatus } from "../pocket/contracts";
 
 export type CoreStatus = "starting" | "ready" | "restarting" | "failed";
 export interface WinState {
@@ -45,6 +46,7 @@ export interface MainSettingsView {
   updateCheck: boolean;
   menuEntry: boolean;
   menuEntryAvailable?: boolean;
+  pocketOnTop: boolean;
   discord: { enabled: boolean };
   proxy: { mode: "system" | "none" | "manual"; url?: string; username?: string; hasPassword: boolean; passwordStorable: boolean };
   appearance: { safe: boolean; failedStarts: number };
@@ -134,6 +136,10 @@ export interface NuvoShell {
   notchUpdateLyrics(lyrics: NotchLyrics): void;
   notchUpdatePlaylists(playlists: NotchPlaylists): void;
   notchUpdateSettings(settings: NotchSettings): void;
+  togglePocket(): Promise<void>;
+  getPocketStatus(): Promise<PocketStatus | null>;
+  onPocketOpen(cb: (open: boolean) => void): Off;
+  pocketUpdateFeed(feed: PocketFeed): void;
   getPanelStatus(): Promise<PanelStatus>;
   installPanelWidget(): Promise<PanelInstallResult>;
   enablePanelWidget(): Promise<PanelInstallResult>;

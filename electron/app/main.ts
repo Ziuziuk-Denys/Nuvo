@@ -33,6 +33,8 @@ import { cutoutFor, parseScreens, SCREENS_SCRIPT } from "../notch/cutout";
 import { NotchWindow, notchDisplays, registerNotchIpc } from "../notch/window";
 import { canPlaceNotch, detectNotchSession } from "../notch/session";
 import { loadKwinScript, unloadKwinScript } from "../notch/kwin";
+import { validateFeed, validateMenu } from "../pocket/validate";
+import { PocketWindow } from "../pocket/window";
 import { createCompositorBridge, detectCompositor, type Exec } from "./compositor";
 import { findLinkArg, LinkInbox } from "./deeplink";
 import { countsAsFailedStart, isShiftAtStart, SAFE_FLAG, StartWatch } from "./appearanceSafeMode";
@@ -145,6 +147,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   // build/ is outside the default electron-builder files; package.json lists build/icons explicitly
   const iconFile = (size: number) => path.join(app.getAppPath(), "build", "icons", `${size}x${size}.png`);
   let notch: NotchWindow | null = null;
+  let pocket: PocketWindow | null = null;
   let panelBus: PanelBus | null = null;
   let youtube: YoutubeService | null = null;
   let tray: TrayController | null = null;
@@ -240,6 +243,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     quitting: () => shutdown.quitting,
     keepInTray: () => settings.value.keepInTray,
     trayAvailable: () => tray?.isAvailable ?? false,
+    pocketOpen: () => pocket?.isOpen ?? false,
     trayHintShown: () => settings.value.trayHintShown,
     markTrayHintShown: () => void settings.set("trayHintShown", true),
     notify: (text) => new Notification({ title: "Nuvo", body: text }).show(),
@@ -357,6 +361,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     steps: [
       ["daemon", () => core.stop()],
       ["notch", () => notch?.destroy()],
+      ["pocket", () => pocket?.destroy()],
       ["discord", () => discord.stop()],
       ["panel", () => panelBus?.close()],
       ["youtube", () => youtube?.dispose()],
@@ -398,11 +403,64 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
         const command = notchActionToCommand(action, relay.latest.liked);
         if (command) sendToMain(CHANNELS.playerCommand, command);
       },
-      onLyrics: (lyrics) => panelBus?.service.setLyrics(lyrics),
+      onLyrics: (lyrics) => {
+        panelBus?.service.setLyrics(lyrics);
+        pocket?.setLyrics(lyrics);
+      },
     });
     notch.setState(toNotchState(relay.latest));
     // e2e tests read lastShape and ready through app.evaluate
     if (!app.isPackaged) (globalThis as { nuvoNotch?: NotchWindow }).nuvoNotch = notch;
+  }
+
+  function startPocket(): void {
+    const { session } = notch!;
+    const plugin = "nuvo-pocket";
+    pocket = new PocketWindow({
+      preloadPath: path.join(import.meta.dirname, "preload-pocket.cjs"),
+      icon: nativeImage.createFromPath(iconFile(512)),
+      loadPage: (win) => (devServerUrl ? win.loadURL(`${devServerUrl}#/pocket`) : win.loadFile(appFile, { hash: "/pocket" })),
+      session,
+      bridge: createCompositorBridge(compositor, process.env, process.pid, log, trackedExec),
+      loadKwin: (script) => loadKwinScript(script, undefined, undefined, plugin),
+      unloadKwin: () => unloadKwinScript(undefined, plugin),
+      onTop: () => settings.value.pocketOnTop,
+      setOnTop: (onTop) => void settings.set("pocketOnTop", onTop).then(() => pocket?.applyOnTop()),
+      place: () => settings.value.pocketPlace,
+      savePlace: (place) => settings.setPocketPlace(place),
+      openApp: () => windows.show(),
+      openChanged: (open) => {
+        sendToMain(CHANNELS.pocketOpen, open);
+        const hidden = windows.window && !windows.window.isVisible();
+        if (!open && hidden && !shutdown.quitting && !(settings.value.keepInTray && tray?.isAvailable)) windows.show();
+      },
+    });
+    pocket.setState(toNotchState(relay.latest));
+    if (!app.isPackaged) (globalThis as { nuvoPocket?: PocketWindow }).nuvoPocket = pocket;
+  }
+
+  function registerPocketIpc(ipc: IpcRegistry): void {
+    ipc.handle(CHANNELS.pocketToggle, "main", () => pocket?.toggle());
+    ipc.handle(CHANNELS.pocketStatus, "main", () => pocket?.status() ?? null);
+    ipc.on(CHANNELS.pocketFeed, "main", (payload) => {
+      const feed = validateFeed(payload);
+      if (feed) pocket?.setFeed(feed);
+      else refusals.refuse(CHANNELS.pocketFeed, "shape");
+    });
+    ipc.handle(CHANNELS.pocketHello, "pocket", () => pocket?.hello() ?? null);
+    ipc.on(CHANNELS.pocketAction, "pocket", (payload) => {
+      const action = validateNotchAction(payload);
+      if (!action) return refusals.refuse(CHANNELS.pocketAction, "shape");
+      if (action.type === "focusApp") return windows.show();
+      const command = notchActionToCommand(action, relay.latest.liked);
+      if (command) sendToMain(CHANNELS.playerCommand, command);
+    });
+    ipc.on(CHANNELS.pocketMenu, "pocket", (payload) => {
+      const request = validateMenu(payload);
+      if (request) pocket?.popMenu(request);
+      else refusals.refuse(CHANNELS.pocketMenu, "shape");
+    });
+    ipc.on(CHANNELS.pocketClose, "pocket", () => pocket?.close());
   }
 
   async function startPanel(): Promise<void> {
@@ -436,7 +494,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
 
   function registerIpc(): void {
     const ipc = new IpcRegistry(ipcMain, {
-      contents: (who) => (who === "main" ? mainContents() : (notch?.webContents ?? null)),
+      contents: (who) => (who === "main" ? mainContents() : ((who === "notch" ? notch : pocket)?.webContents ?? null)),
       page: () => ({ fileUrl: appFileUrl, devOrigin: devServerUrl }),
       refused: (channel) => refusals.refuse(channel, "sender"),
     });
@@ -528,6 +586,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       if (result.ok && key === "updateCheck") updater.checksChanged();
       if (result.ok && key === "menuEntry") void syncMenuEntry();
       if (result.ok && key === "keepInTray") tray?.sync();
+      if (result.ok && key === "pocketOnTop") void pocket?.applyOnTop();
       return result;
     });
     ipc.handle(CHANNELS.discordStatus, "main", () => discord.current);
@@ -615,6 +674,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
       return bindings ? shortcuts.set(bindings) : [];
     });
     registerAppearanceIpc(ipc);
+    registerPocketIpc(ipc);
   }
 
   function registerAppearanceIpc(ipc: IpcRegistry): void {
@@ -740,6 +800,7 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
   function onTrayClick(id: TrayItemId): void {
     const latest = relay.latest;
     if (id === "show") return windows.show();
+    if (id === "pocket") return pocket?.toggle();
     if (id === "quit") return void shutdown.run();
     if (id === "resetAppearance") {
       startWatch.forceSafe();
@@ -959,8 +1020,10 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     registerIpc();
     // before the window loads: the renderer sends the Notch settings as soon as it mounts
     startNotch();
+    startPocket();
     relay.read((state) => {
       notch?.setState(toNotchState(state));
+      pocket?.setState(toNotchState(state));
       panelBus?.service.update(state);
       tray?.update(state);
       thumbar?.update(state);

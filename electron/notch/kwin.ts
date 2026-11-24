@@ -15,21 +15,22 @@ function call(objectPath: string, method: string, ...args: string[]): string[] {
   return ["call", "--session", "--dest", "org.kde.KWin", "--object-path", objectPath, "--method", method, ...args];
 }
 
-export async function unloadKwinScript(run: (cmd: string, args: string[]) => Promise<string> = gdbus): Promise<void> {
-  await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.unloadScript", PLUGIN)).catch(() => "");
+export async function unloadKwinScript(run: (cmd: string, args: string[]) => Promise<string> = gdbus, plugin = PLUGIN): Promise<void> {
+  await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.unloadScript", plugin)).catch(() => "");
 }
 
 export async function loadKwinScript(
   script: string,
   run: (cmd: string, args: string[]) => Promise<string> = gdbus,
   dir = path.join(process.env.XDG_RUNTIME_DIR ?? "/tmp", "nuvo"),
+  plugin = PLUGIN,
 ): Promise<boolean> {
   try {
-    const file = path.join(dir, "notch-kwin.js");
+    const file = path.join(dir, `${plugin}.js`);
     await mkdir(dir, { recursive: true });
     await writeFile(file, script);
-    await unloadKwinScript(run);
-    const loaded = await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.loadScript", file, PLUGIN));
+    await unloadKwinScript(run, plugin);
+    const loaded = await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.loadScript", file, plugin));
     if (!/^\(\d+,\)$/.test(loaded.trim())) return false;
     // KWin reuses script ids after an unload, so /Scripting/Script<id> can belong to another script.
     await run("gdbus", call("/Scripting", "org.kde.kwin.Scripting.start"));

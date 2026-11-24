@@ -58,7 +58,7 @@ jobs:
           status=0
           case "$SET" in
             "smoke 1/2")
-              e2e e2e/smoke.e2e.ts e2e/shell.e2e.ts e2e/ui/search.e2e.ts e2e/local-import.e2e.ts e2e/ui/library-toolbar.e2e.ts e2e/ui/import-open.e2e.ts || status=1
+              e2e e2e/smoke.e2e.ts e2e/shell.e2e.ts e2e/pocket.e2e.ts e2e/ui/search.e2e.ts e2e/local-import.e2e.ts e2e/ui/library-toolbar.e2e.ts e2e/ui/import-open.e2e.ts || status=1
               e2e e2e/ui/shell.e2e.ts -t "on Ctrl\+K" || status=1
               e2e e2e/ui/home.e2e.ts -t "seeded: For you leads" || status=1
               ;;

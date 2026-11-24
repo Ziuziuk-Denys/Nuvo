@@ -98,6 +98,7 @@ function controller(options: { quitting?: boolean; keepInTray?: boolean; tray?: 
     quitting: () => options.quitting ?? false,
     keepInTray: () => options.keepInTray ?? true,
     trayAvailable: () => options.tray ?? true,
+    pocketOpen: () => false,
     trayHintShown: () => hint,
     markTrayHintShown: () => (hint = true),
     notify: (t) => notes.push(t),
