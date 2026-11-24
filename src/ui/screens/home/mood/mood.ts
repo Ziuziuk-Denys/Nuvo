@@ -10,6 +10,7 @@ export interface Place {
 export const MIX_SIZE = 25;
 const REACH = 0.17;
 const PER_ARTIST = 3;
+const REPEAT_ARTIST = 0.6;
 const TASTE_SHARE = 0.3;
 const FRESH_SHARE = 0.9;
 
@@ -23,22 +24,23 @@ export function tasteRanks(points: readonly MoodPoint[]): number[] {
 }
 
 export function pickMix(points: readonly MoodPoint[], ranks: readonly number[], at: Place, size = MIX_SIZE): number[] {
-  const scored = points
-    .map((point, index) => {
-      const distance = Math.hypot(point.energy - at.x, point.brightness - at.y);
-      const near = Math.exp(-(distance * distance) / (2 * REACH * REACH));
-      return { index, score: near * (1 - TASTE_SHARE + TASTE_SHARE * ranks[index]) * (point.fresh ? FRESH_SHARE : 1) };
-    })
-    .sort((left, right) => right.score - left.score);
-  const perArtist = new Map<string, number>();
+  const scored = points.map((point, index) => {
+    const distance = Math.hypot(point.energy - at.x, point.brightness - at.y);
+    const near = Math.exp(-(distance * distance) / (2 * REACH * REACH));
+    const score = near * (1 - TASTE_SHARE + TASTE_SHARE * ranks[index]) * (point.fresh ? FRESH_SHARE : 1);
+    return { index, artist: firstArtist(point.track).toLocaleLowerCase(), score };
+  });
+  const used = new Map<string, number>();
   const picked: number[] = [];
-  for (const { index } of scored) {
-    const artist = firstArtist(points[index].track).toLocaleLowerCase();
-    const used = perArtist.get(artist) ?? 0;
-    if (artist && used >= PER_ARTIST) continue;
-    perArtist.set(artist, used + 1);
+  while (picked.length < size && scored.length > 0) {
+    let best = 0;
+    for (let index = 1; index < scored.length; index += 1) if (scored[index].score > scored[best].score) best = index;
+    if (scored[best].score === 0) break;
+    const [{ index, artist }] = scored.splice(best, 1);
     picked.push(index);
-    if (picked.length === size) break;
+    const count = (used.get(artist) ?? 0) + 1;
+    used.set(artist, count);
+    for (const other of scored) if (artist && other.artist === artist) other.score *= count < PER_ARTIST ? REPEAT_ARTIST : 0;
   }
   return picked;
 }
@@ -57,4 +59,11 @@ export function startPlace(points: readonly MoodPoint[]): Place {
 
 export function moodTracks(points: readonly MoodPoint[], picked: readonly number[]): Track[] {
   return picked.map((index) => points[index].track);
+}
+
+// A row keeps its song while the song stays near the top, so a moving light swaps rows instead of shuffling them
+export function steady(before: readonly number[], picked: readonly number[], rows: number): number[] {
+  const top = picked.slice(0, rows * 2);
+  const left = top.filter((index) => !before.includes(index));
+  return Array.from({ length: Math.min(rows, picked.length) }, (_, row) => (top.includes(before[row]) ? before[row] : left.shift()!));
 }

@@ -36,13 +36,18 @@ export interface Placement {
 }
 
 export function ringTracks(mixes: readonly HomeMix[]): Track[] {
-  const fresh = mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? [];
+  const shown = new Set<string>();
+  const unseen = (track: Track) => {
+    const art = track.coverUrl || track.id;
+    return !shown.has(art) && shown.add(art);
+  };
+  const fresh = (mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? []).filter(unseen);
   const known = homeSongs(
     mixes.filter((mix) => mix.id !== DISCOVER),
     Infinity,
   )
     .map((song) => song.track)
-    .filter((track) => !fresh.some((other) => other.id === track.id));
+    .filter(unseen);
   const tracks: Track[] = [];
   let next = 0;
   for (const track of fresh) {

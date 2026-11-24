@@ -13,12 +13,13 @@ import { firstArtist } from "../../../recs/notInterestedItems";
 import { ArtistLinks } from "../../../shell/ArtistLinks";
 import { useTrackMenu } from "../../entity/useTrackMenu";
 import { ShelfHeading } from "../ShelfHeading";
-import { moodName, moodTracks, pickMix, startPlace, tasteRanks, type Place } from "./mood";
-import { createMoodField, type MoodField } from "./moodField";
+import { moodName, moodTracks, pickMix, startPlace, steady, tasteRanks, type Place } from "./mood";
+import { createMoodField, INSET, type MoodField } from "./moodField";
 import styles from "./MoodPad.module.css";
 
 const LISTED = 5;
 const KEY_STEP = 0.04;
+const WHILE_MEASURING_MS = 30_000;
 const COVER_PX = 96;
 const CONTEXT = "mix:mood-pad";
 
@@ -29,15 +30,20 @@ function useMoodMap(offline: boolean): MoodMap | null {
   const [map, setMap] = useState<MoodMap | null>(null);
   useEffect(() => {
     let live = true;
+    let timer = 0;
     const load = async () => {
+      clearTimeout(timer);
       const found = await moodMap();
       const here = found && offline ? await kept(found.points.map((point) => point.track)) : null;
-      if (live && found) setMap(here ? { ...found, points: found.points.filter((point) => here.has(point.track.id)) } : found);
+      if (!live || !found) return;
+      setMap(here ? { ...found, points: found.points.filter((point) => here.has(point.track.id)) } : found);
+      if (found.waiting > 0) timer = window.setTimeout(() => void load(), WHILE_MEASURING_MS);
     };
     void load();
     recsChanged.addEventListener("change", load);
     return () => {
       live = false;
+      clearTimeout(timer);
       recsChanged.removeEventListener("change", load);
     };
   }, [offline]);
@@ -62,7 +68,7 @@ export function MoodPad({ offline }: { offline: boolean }): JSX.Element | null {
     );
   }
   if (map.points.length < map.needed) return null;
-  return <Pad key={map.points.length} map={map} />;
+  return <Pad map={map} />;
 }
 
 function Pad({ map }: { map: MoodMap }): JSX.Element {
@@ -75,6 +81,9 @@ function Pad({ map }: { map: MoodMap }): JSX.Element {
   const [at, setAt] = useState<Place>(() => startPlace(points));
   const picked = useMemo(() => pickMix(points, ranks, at), [points, ranks, at]);
   const tracks = useMemo(() => moodTracks(points, picked), [points, picked]);
+  const [rows, setRows] = useState({ points, picked, shown: steady([], picked, LISTED) });
+  if (rows.picked !== picked) setRows({ points, picked, shown: steady(rows.points === points ? rows.shown : [], picked, LISTED) });
+  const [pointed, setPointed] = useState<{ index: number; x: number; y: number; size: number } | null>(null);
   const name = t(moodName(at));
   const names = [...new Set(tracks.map((track) => firstArtist(track)))].slice(0, 3).join(", ");
 
@@ -118,7 +127,8 @@ function Pad({ map }: { map: MoodMap }): JSX.Element {
 
   const aimAt = (event: PointerEvent<HTMLElement>) => {
     const box = padRef.current!.getBoundingClientRect();
-    setAt({ x: clamp((event.clientX - box.left) / box.width), y: clamp(1 - (event.clientY - box.top) / box.height) });
+    const room = box.width - 2 * INSET;
+    setAt({ x: clamp((event.clientX - box.left - INSET) / room), y: clamp(1 - (event.clientY - box.top - INSET) / room) });
   };
   const onPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0) return;
@@ -126,7 +136,13 @@ function Pad({ map }: { map: MoodMap }): JSX.Element {
     aimAt(event);
   };
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) aimAt(event);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      setPointed(null);
+      return aimAt(event);
+    }
+    const box = padRef.current!.getBoundingClientRect();
+    const found = field.current!.hit(event.clientX - box.left, event.clientY - box.top);
+    if (found?.index !== pointed?.index) setPointed(found);
   };
   const play = (index = 0) => playSongs(tracks, index, CONTEXT);
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -147,14 +163,25 @@ function Pad({ map }: { map: MoodMap }): JSX.Element {
           className={styles.pad}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
+          onPointerLeave={() => setPointed(null)}
           onDoubleClick={() => play()}
-          style={{ "--x": at.x, "--y": 1 - at.y } as CSSProperties}
+          style={{ "--x": at.x, "--y": 1 - at.y, "--inset": `${INSET}px` } as CSSProperties}
         >
           <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
           <span className={`${styles.axis} ${styles.top}`}>{t("ui.home.mood.bright")}</span>
           <span className={`${styles.axis} ${styles.bottom}`}>{t("ui.home.mood.dark")}</span>
           <span className={`${styles.axis} ${styles.left}`}>{t("ui.home.mood.calm")}</span>
           <span className={`${styles.axis} ${styles.right}`}>{t("ui.home.mood.energetic")}</span>
+          {pointed && points[pointed.index] ? (
+            <span
+              className={styles.tip}
+              data-below={pointed.y < 64 ? "" : undefined}
+              style={{ left: `clamp(84px, ${pointed.x}px, calc(100% - 84px))`, top: pointed.y + (pointed.y < 64 ? 1 : -1) * (pointed.size / 2 + 8) }}
+            >
+              <span className={styles.title}>{points[pointed.index].track.title}</span>
+              <span className={styles.artist}>{firstArtist(points[pointed.index].track)}</span>
+            </span>
+          ) : null}
           <div
             role="slider"
             tabIndex={0}
@@ -173,14 +200,20 @@ function Pad({ map }: { map: MoodMap }): JSX.Element {
           </h3>
           <p className={styles.names}>{t("ui.home.mood.close_to", { names })}</p>
           <ol className={styles.songs}>
-            {tracks.slice(0, LISTED).map((track, index) => (
-              <MoodSong key={track.id} track={track} onPlay={() => play(index)} onContextMenu={menu.onContextMenu(track)} />
+            {rows.shown.map((index, row) => (
+              <MoodSong
+                key={row}
+                track={points[index].track}
+                onPlay={() => play(picked.indexOf(index))}
+                onContextMenu={menu.onContextMenu(points[index].track)}
+              />
             ))}
           </ol>
           <Button variant="primary" className={styles.play} onClick={() => play()}>
             <Icon name="play" size={16} />
             {t("ui.home.mood.play", { count: tracks.length })}
           </Button>
+          {map.waiting > 0 ? <p className={styles.measuring}>{t("ui.home.mood.measuring", { count: map.waiting })}</p> : null}
         </div>
       </div>
       {menu.element}
@@ -199,10 +232,10 @@ function MoodSong({
 }): JSX.Element {
   return (
     <li className={styles.song} data-song={track.id} onContextMenu={onContextMenu}>
-      <button type="button" className={styles.start} aria-label={`${track.title}, ${track.artists}`} onClick={onPlay}>
+      <button key={track.id} type="button" className={styles.start} aria-label={`${track.title}, ${track.artists}`} onClick={onPlay}>
         <Cover src={track.coverUrl} size={40} radius={5} />
       </button>
-      <span className={styles.text}>
+      <span key={`${track.id}:text`} className={styles.text}>
         <span className={styles.title}>{track.title}</span>
         <span className={styles.artist}>
           <ArtistLinks track={track} />

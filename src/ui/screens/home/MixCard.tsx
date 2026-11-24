@@ -1,6 +1,8 @@
 import type { JSX } from "react";
+import { Button } from "../../components/Button";
 import { Cover } from "../../components/Cover";
 import { Icon } from "../../icons/Icon";
+import { useTranslation } from "../../ports/i18n";
 import { useCoverFluidColors } from "../../ports/covers";
 import type { HomeMix } from "../../ports/recs";
 import { mosaicCovers } from "./homeModel";
@@ -12,6 +14,7 @@ export interface MixCardProps {
   title: string;
   subtitle: string;
   lead?: boolean;
+  names?: string;
   onOpen(): void;
   onPlay(): void;
 }
@@ -19,10 +22,11 @@ export interface MixCardProps {
 const LEAD_SIZE = 240;
 const DAILY_SIZE = 175;
 
-export function MixCard({ mix, number, title, subtitle, lead = false, onOpen, onPlay }: MixCardProps): JSX.Element {
+export function MixCard({ mix, number, title, subtitle, lead = false, names, onOpen, onPlay }: MixCardProps): JSX.Element {
   const size = lead ? LEAD_SIZE : DAILY_SIZE;
   const covers = mosaicCovers(mix.tracks);
   const cell = covers.length === 4 ? Math.floor(size / 2) : size;
+  const { t } = useTranslation();
   const { color1, logoColor } = useCoverFluidColors(covers[0]);
 
   return (
@@ -37,7 +41,7 @@ export function MixCard({ mix, number, title, subtitle, lead = false, onOpen, on
       }}
       onDoubleClick={onPlay}
       onKeyDown={(event) => {
-        if (event.key === "Enter") onOpen();
+        if (event.key === "Enter" && event.target === event.currentTarget) onOpen();
       }}
     >
       <div className={styles.cover} style={{ width: size, height: size }}>
@@ -60,7 +64,19 @@ export function MixCard({ mix, number, title, subtitle, lead = false, onOpen, on
           <h2 className={styles.leadTitle} data-tour="mixes">
             {title}
           </h2>
-          <span className={styles.subtitle}>{subtitle}</span>
+          <p className={styles.leadLine}>{subtitle}</p>
+          {names ? <p className={styles.leadLine}>{names}</p> : null}
+          <Button
+            variant="primary"
+            className={styles.play}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPlay();
+            }}
+          >
+            <Icon name="play" size={16} />
+            {t("ui.entity.play")}
+          </Button>
         </div>
       ) : (
         <div className={styles.caption}>

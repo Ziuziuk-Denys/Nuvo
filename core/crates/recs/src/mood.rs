@@ -64,13 +64,14 @@ pub fn measure(samples: &[f32]) -> Option<Sound> {
     (frames > 0 && weight_sum > 0.0).then(|| Sound { loudness: db_sum / frames as f64, punch: flux_sum / frames as f64, brightness: octave_sum / weight_sum })
 }
 
+const DUE: &str = "FROM tracks t LEFT JOIN cache_entries c ON c.track_id = t.id
+ WHERE (c.track_id IS NOT NULL OR t.id IN (SELECT track_id FROM local_files))
+   AND (t.id IN (SELECT track_id FROM liked_tracks) OR t.id IN (SELECT track_id FROM play_events) OR t.id IN (SELECT track_id FROM playlist_items))
+   AND t.id NOT IN (SELECT track_id FROM track_moods)";
+
 pub fn next_due(conn: &Connection) -> Result<Option<String>, StoreError> {
-    let sql = "SELECT t.id FROM tracks t LEFT JOIN cache_entries c ON c.track_id = t.id
-               WHERE (c.track_id IS NOT NULL OR t.id IN (SELECT track_id FROM local_files))
-                 AND (t.id IN (SELECT track_id FROM liked_tracks) OR t.id IN (SELECT track_id FROM play_events) OR t.id IN (SELECT track_id FROM playlist_items))
-                 AND t.id NOT IN (SELECT track_id FROM track_moods)
-               ORDER BY coalesce(c.last_played_at, 0) DESC, t.id LIMIT 1";
-    Ok(conn.query_row(sql, [], |r| r.get(0)).optional()?)
+    let sql = format!("SELECT t.id {DUE} ORDER BY coalesce(c.last_played_at, 0) DESC, t.id LIMIT 1");
+    Ok(conn.query_row(&sql, [], |r| r.get(0)).optional()?)
 }
 
 pub fn store(conn: &Connection, track_id: &str, sound: Option<Sound>, now: i64) -> Result<(), StoreError> {
@@ -116,12 +117,13 @@ pub fn map(conn: &Connection, now: i64) -> Result<MoodMap, StoreError> {
         })
         .collect();
     let analysed = points.len();
+    let waiting = conn.query_row(&format!("SELECT count(*) {DUE}"), [], |r| r.get(0))?;
     if analysed < MIN_SONGS {
-        return Ok(MoodMap { analysed, needed: MIN_SONGS, points: Vec::new() });
+        return Ok(MoodMap { analysed, needed: MIN_SONGS, waiting, points: Vec::new() });
     }
     points.truncate(MAX_LIBRARY);
     points.extend(fresh(conn, now, &places, &affinity)?);
-    Ok(MoodMap { analysed, needed: MIN_SONGS, points })
+    Ok(MoodMap { analysed, needed: MIN_SONGS, waiting, points })
 }
 
 // An unheard song has no sound on this device yet: it stands between the measured songs it was listed with

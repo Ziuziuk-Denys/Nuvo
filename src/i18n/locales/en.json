@@ -250,13 +250,17 @@
           "high_low": "Heavy hours",
           "high_mid": "Full stride",
           "high_high": "Broad daylight"
-        }
+        },
+        "measuring_one": "{count} more song is being measured on this computer",
+        "measuring_other": "{count} more songs are being measured on this computer"
       },
       "continue": {
         "title": "Continue",
-        "resume": "Continue, {when}",
-        "length_one": "{time}, {count} minute",
-        "length_other": "{time}, {count} minutes"
+        "resume": "Continue {name}",
+        "length_one": "{count} minute",
+        "length_other": "{count} minutes",
+        "artists": "{name} and more",
+        "time": "{when}, {time}"
       },
       "when": {
         "last_night": "Last night",

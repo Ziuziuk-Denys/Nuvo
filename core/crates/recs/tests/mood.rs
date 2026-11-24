@@ -70,6 +70,7 @@ fn only_kept_audio_without_a_measure_is_due() {
             .unwrap();
         }
     }
+    assert_eq!(mood::map(&conn, NOW).unwrap().waiting, 2);
     assert_eq!(mood::next_due(&conn).unwrap().as_deref(), Some("newer"));
     mood::store(&conn, "newer", None, NOW).unwrap();
     assert_eq!(mood::next_due(&conn).unwrap().as_deref(), Some("older"));

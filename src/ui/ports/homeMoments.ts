@@ -16,6 +16,7 @@ export interface MoodPoint {
 export interface MoodMap {
   analysed: number;
   needed: number;
+  waiting: number;
   points: MoodPoint[];
 }
 
@@ -41,7 +42,7 @@ const HISTORY_LIMIT = 200;
 
 export async function moodMap(): Promise<MoodMap | null> {
   try {
-    const body = await coreRequest<{ analysed: number; needed: number; points: Array<Omit<MoodPoint, "track"> & { track: unknown }> }>("GET", "/v1/recs/mood");
+    const body = await coreRequest<Omit<MoodMap, "points"> & { points: Array<Omit<MoodPoint, "track"> & { track: unknown }> }>("GET", "/v1/recs/mood");
     const points = body.points.flatMap((point) => {
       const track = fromSnapshot(point.track);
       return track ? [{ ...point, track }] : [];

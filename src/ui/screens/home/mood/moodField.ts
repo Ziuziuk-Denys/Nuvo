@@ -1,17 +1,20 @@
 import type { MoodPoint } from "../../../ports/homeMoments";
 import type { Place } from "./mood";
 
-const LIT = 9;
-const BIGGEST = 50;
-const SMALLEST = 26;
-const CLEAR_OF_LAMP = 30;
-const GAP = 5;
-const RELAX_STEPS = 24;
+const LIT = 12;
+const BIGGEST = 56;
+const SMALLEST = 40;
+const CLEAR_OF_LAMP = 22;
+const GAP = 6;
+const RELAX_STEPS = 70;
 const GLIDE_MS = 110;
-const DOT = 2.2;
+const CHIP = 7;
+const CHIPS = 36;
+const CHIP_REACH = 0.42;
+const RAISED = 12;
 const POOL = 0.78;
 const SHADOW_THROW = 0.09;
-const EDGE = 8;
+export const INSET = 38;
 
 interface Item {
   x: number;
@@ -25,6 +28,7 @@ export interface MoodField {
   resize(side: number, ratio: number): void;
   points(points: readonly MoodPoint[], coverUrl: (cover: string) => string): void;
   aim(at: Place, picked: readonly number[]): void;
+  hit(x: number, y: number): { index: number; x: number; y: number; size: number } | null;
   draw(now: number, look: { dark: boolean; ink: string; still: boolean }): boolean;
 }
 
@@ -57,10 +61,12 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
   let url = (cover: string) => cover;
   let aim: Place = { x: 0.5, y: 0.5 };
   let lit: number[] = [];
+  let chips = new Map<number, number>();
   let tone: [number, number, number] = [150, 150, 160];
   let last = 0;
 
-  const home = (point: MoodPoint) => ({ x: point.energy * side, y: (1 - point.brightness) * side });
+  const at = (x: number, y: number) => ({ x: INSET + x * (side - 2 * INSET), y: INSET + (1 - y) * (side - 2 * INSET) });
+  const home = (point: MoodPoint) => at(point.energy, point.brightness);
 
   const load = (item: Item, cover: string) => {
     if (item.image || !cover) return;
@@ -78,7 +84,7 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
   };
 
   const targets = () => {
-    const lamp = { x: aim.x * side, y: (1 - aim.y) * side };
+    const lamp = at(aim.x, aim.y);
     const spots = lit.map((index, rank) => ({ index, size: BIGGEST - ((BIGGEST - SMALLEST) * rank) / Math.max(1, LIT - 1), ...home(shown[index]) }));
     for (let step = 0; step < RELAX_STEPS; step += 1) {
       for (const [a, one] of spots.entries()) {
@@ -107,17 +113,19 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
           one.x = lamp.x + ((dx || 1) / distance) * clear;
           one.y = lamp.y + (dy / distance) * clear;
         }
-        const half = one.size / 2 + EDGE;
+        const half = one.size / 2 + INSET - 4;
         one.x = Math.max(half, Math.min(side - half, one.x));
         one.y = Math.max(half, Math.min(side - half, one.y));
       }
     }
-    return new Map(spots.map((spot) => [spot.index, spot]));
+    const clear = spots.filter((spot, rank) =>
+      spots.slice(0, rank).every((other) => Math.max(Math.abs(spot.x - other.x), Math.abs(spot.y - other.y)) >= (spot.size + other.size) / 2),
+    );
+    return new Map(clear.map((spot) => [spot.index, spot]));
   };
 
   const pool = (dark: boolean) => {
-    const x = aim.x * side;
-    const y = (1 - aim.y) * side;
+    const { x, y } = at(aim.x, aim.y);
     const reach = side * POOL;
     const gradient = context.createRadialGradient(x, y, 0, x, y, reach);
     const [red, green, blue] = tone.map(Math.round);
@@ -132,10 +140,9 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
   };
 
   const cover = (item: Item, dark: boolean) => {
-    const lampX = aim.x * side;
-    const lampY = (1 - aim.y) * side;
-    const dx = item.x - lampX;
-    const dy = item.y - lampY;
+    const lamp = at(aim.x, aim.y);
+    const dx = item.x - lamp.x;
+    const dy = item.y - lamp.y;
     const fall = 1 / (1 + (Math.hypot(dx, dy) / (side * 0.34)) ** 2);
     const corner = Math.max(3, item.size * 0.12);
     const box = () => {
@@ -172,10 +179,27 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
       shown = points;
       items = points.map((point) => ({ ...home(point), size: 0, tone: null, image: null }));
     },
-    aim(at, picked) {
-      aim = at;
-      lit = picked.slice(0, LIT);
+    aim(place, picked) {
+      aim = place;
+      const arts = new Set<string>();
+      lit = picked.filter((index) => !arts.has(shown[index].track.coverUrl) && arts.add(shown[index].track.coverUrl)).slice(0, LIT);
+      chips = new Map(
+        shown
+          .map((point, index): [number, number] => [index, Math.hypot(point.energy - place.x, point.brightness - place.y)])
+          .filter(([index, away]) => away < CHIP_REACH && !lit.includes(index))
+          .sort((left, right) => left[1] - right[1])
+          .slice(0, CHIPS),
+      );
       for (const index of lit) load(items[index], shown[index].track.coverUrl);
+    },
+    hit(x, y) {
+      let best: { index: number; x: number; y: number; size: number } | null = null;
+      for (const [index, { x: itemX, y: itemY, size }] of items.entries()) {
+        const reach = Math.max(size, 14) / 2;
+        if (size < 2 || Math.abs(x - itemX) > reach || Math.abs(y - itemY) > reach) continue;
+        if (!best || size > best.size) best = { index, x: itemX, y: itemY, size };
+      }
+      return best;
     },
     draw(now, { dark, ink, still }) {
       const ease = still || last === 0 ? 1 : 1 - Math.exp(-Math.min(50, now - last) / GLIDE_MS);
@@ -200,21 +224,20 @@ export function createMoodField(canvas: HTMLCanvasElement, changed: () => void):
       context.fillStyle = ink;
       for (const [index, item] of items.entries()) {
         const spot = wanted.get(index);
-        const ready = item.tone !== null;
-        const goal = spot && ready ? spot : { ...home(shown[index]), size: 0 };
+        const goal = spot && item.tone ? spot : { ...home(shown[index]), size: chips.has(index) ? CHIP * (shown[index].fresh ? 0.7 : 1) : 0 };
         if (Math.abs(goal.x - item.x) + Math.abs(goal.y - item.y) + Math.abs(goal.size - item.size) > 0.2) moving = true;
         item.x += (goal.x - item.x) * ease;
         item.y += (goal.y - item.y) * ease;
         item.size += (goal.size - item.size) * ease;
-        if (item.size > 6) continue;
-        const away = Math.hypot(shown[index].energy - aim.x, shown[index].brightness - aim.y);
-        context.globalAlpha = (0.2 + 0.6 * Math.exp(-away * away * 12)) * (shown[index].fresh ? 0.6 : 1);
+        if (item.size > RAISED || item.size < 1) continue;
+        const near = 1 - (chips.get(index) ?? CHIP_REACH) / CHIP_REACH;
+        context.globalAlpha = 0.08 + 0.34 * Math.max(0, near);
         context.beginPath();
-        context.arc(item.x, item.y, shown[index].fresh ? DOT * 0.75 : DOT, 0, Math.PI * 2);
+        context.roundRect(item.x - item.size / 2, item.y - item.size / 2, item.size, item.size, 1.5);
         context.fill();
       }
       context.globalAlpha = 1;
-      const raised = items.filter((item) => item.size > 6).sort((left, right) => left.size - right.size);
+      const raised = items.filter((item) => item.size > RAISED).sort((left, right) => left.size - right.size);
       for (const item of raised) cover(item, dark);
       return moving;
     },

@@ -7,6 +7,7 @@ const SLAB_DEPTH = 7;
 const RADIUS = 8;
 const FADE_MS = 260;
 const FAR_BLUR = 5;
+const MIRROR = 0.12;
 
 export interface RoomCard {
   slot: number;
@@ -177,7 +178,7 @@ export function createRoom(canvas: HTMLCanvasElement, changed: () => void): Room
         const far = Math.min(1, Math.max(0, Math.abs(card.offset) - 0.6) / 4.4);
         const centre = Math.max(0, 1 - Math.abs(card.offset));
         const turn = card.spot.turn + view.lean + view.tilt.x * view.tilt.amount * centre;
-        gl.uniform1f(cards.at.mirrorGain, (view.light ? 0.34 : 0.5) * (1 - 0.5 * centre));
+        gl.uniform1f(cards.at.mirrorGain, MIRROR);
         gl.uniform1f(cards.at.ready, bind(card));
         gl.uniform1f(cards.at.shown, card.spot.shown);
         gl.uniform1f(cards.at.blur, far * FAR_BLUR);

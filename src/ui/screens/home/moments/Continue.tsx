@@ -8,7 +8,7 @@ import { ShelfHeading } from "../ShelfHeading";
 import { sessionsOf, whenOf, type Session } from "./moments";
 import styles from "./Continue.module.css";
 
-const SESSIONS = 4;
+const SESSIONS = 8;
 const FANNED = 5;
 const COVER = 148;
 
@@ -52,11 +52,11 @@ export function Continue({ offline }: { offline: boolean }): JSX.Element | null 
 function SessionObject({ session, now }: { session: Session; now: number }): JSX.Element {
   const { t, locale } = useTranslation();
   const when = whenOf(session.endedAt, now, locale);
-  const title = t(`ui.home.when.${when.key}`, { day: when.day ?? "" });
   const { source } = session;
-  const about = source.kind === "artists" ? t("ui.home.shuffle_names", { names: source.names.join(", ") }) : source.name;
+  const title = source.kind === "artists" ? t("ui.home.continue.artists", { name: source.names[0] }) : source.name;
   const clock = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(session.startedAt);
-  const length = t("ui.home.continue.length", { time: clock, count: Math.max(1, Math.round(session.listenedMs / 60_000)) });
+  const time = t("ui.home.continue.time", { when: t(`ui.home.when.${when.key}`, { day: when.day ?? "" }), time: clock });
+  const length = t("ui.home.continue.length", { count: Math.max(1, Math.round(session.listenedMs / 60_000)) });
   const context = `home:session:${session.id}`;
   const front = session.songs.slice(-FANNED).reverse();
   const resume = () => void continueFrom(session.songs, { completed: session.lastCompleted, playlistId: session.playlistId }, context);
@@ -70,7 +70,7 @@ function SessionObject({ session, now }: { session: Session; now: number }): JSX
             className={styles.sleeve}
             style={{ "--i": index, zIndex: FANNED - index } as CSSProperties}
             tabIndex={index === 0 ? 0 : -1}
-            aria-label={index === 0 ? t("ui.home.continue.resume", { when: title }) : `${track.title}, ${track.artists}`}
+            aria-label={index === 0 ? t("ui.home.continue.resume", { name: title }) : `${track.title}, ${track.artists}`}
             title={index === 0 ? undefined : `${track.title}, ${track.artists}`}
             onClick={index === 0 ? resume : () => playSongs(session.songs, session.songs.indexOf(track), context)}
           >
@@ -79,8 +79,8 @@ function SessionObject({ session, now }: { session: Session; now: number }): JSX
         ))}
       </div>
       <button type="button" className={styles.label} tabIndex={-1} onClick={resume}>
-        <span className={styles.when}>{title}</span>
-        <span className={styles.about}>{about}</span>
+        <span className={styles.title}>{title}</span>
+        <span className={styles.about}>{time}</span>
         <span className={styles.about}>{length}</span>
       </button>
     </div>

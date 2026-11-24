@@ -260,15 +260,21 @@
           "high_low": "Тяжёлый час",
           "high_mid": "Полный шаг",
           "high_high": "Ясный день"
-        }
+        },
+        "measuring_one": "Ещё {count} песня измеряется на этом компьютере",
+        "measuring_few": "Ещё {count} песни измеряются на этом компьютере",
+        "measuring_many": "Ещё {count} песен измеряются на этом компьютере",
+        "measuring_other": "Ещё {count} песни измеряются на этом компьютере"
       },
       "continue": {
         "title": "Продолжить",
-        "resume": "Продолжить, {when}",
-        "length_one": "{time}, {count} минута",
-        "length_few": "{time}, {count} минуты",
-        "length_many": "{time}, {count} минут",
-        "length_other": "{time}, {count} минуты"
+        "resume": "Продолжить: {name}",
+        "length_one": "{count} минута",
+        "length_few": "{count} минуты",
+        "length_many": "{count} минут",
+        "length_other": "{count} минуты",
+        "artists": "{name} и другие",
+        "time": "{when}, {time}"
       },
       "when": {
         "last_night": "Этой ночью",

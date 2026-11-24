@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { MoodPoint } from "../../../ports/homeMoments";
-import { moodName, pickMix, startPlace, tasteRanks } from "./mood";
+import { moodName, pickMix, startPlace, steady, tasteRanks } from "./mood";
 
 const point = (id: string, energy: number, brightness: number, extra: Partial<MoodPoint> & { artist?: string } = {}): MoodPoint => {
   const { artist = `artist ${id}`, ...rest } = extra;
@@ -30,4 +30,10 @@ it("names the place and starts among the liked songs", () => {
   expect(moodName({ x: 0.5, y: 1 })).toBe("ui.home.mood.name.mid_high");
   const points = Array.from({ length: 8 }, (_, index) => point(`s${index}`, index < 5 ? 0.2 : 1, 0.4, { taste: index < 5 ? 1 : 0 }));
   expect(startPlace(points).x).toBeCloseTo(0.2);
+});
+
+it("keeps a row's song while it stays near the top", () => {
+  expect(steady([], [4, 7, 1, 9], 2)).toEqual([4, 7]);
+  expect(steady([4, 7], [1, 4, 9, 2], 2)).toEqual([4, 1]);
+  expect(steady([4, 7], [1], 2)).toEqual([1]);
 });

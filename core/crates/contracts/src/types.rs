@@ -872,6 +872,7 @@ pub struct MoodPoint {
 pub struct MoodMap {
     pub analysed: usize,
     pub needed: usize,
+    pub waiting: i64,
     pub points: Vec<MoodPoint>,
 }
 

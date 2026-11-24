@@ -15,7 +15,7 @@ import { DiscoverArc } from "./discover/DiscoverArc";
 import { ringTracks } from "./discover/ring";
 import { ArrangeHome } from "./arrange/ArrangeHome";
 import { useHomeLayout, type SectionId } from "./arrange/homeLayout";
-import { arrangeMixes, likeArtists, mixText, starterGenres } from "./homeModel";
+import { arrangeMixes, likeArtists, mixNames, mixText, starterGenres } from "./homeModel";
 import { MixCard } from "./MixCard";
 import { Continue } from "./moments/Continue";
 import { Memory } from "./moments/Memory";
@@ -103,6 +103,7 @@ export function Home(): JSX.Element | null {
                       mix={mix}
                       number={index + 1}
                       lead={index === 0}
+                      names={index === 0 ? mixNames(mix, t) : undefined}
                       {...mixText(mix, t)}
                       onOpen={() => open(`/collection?type=playlist&id=${encodeURIComponent(mix.id)}`)}
                       onPlay={() => playMix(mix.id, mix.tracks, 0)}

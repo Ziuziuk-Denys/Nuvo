@@ -7,7 +7,12 @@
 }
 
 .lead {
-  width: 240px;
+  display: flex;
+  flex: 1 0 auto;
+  gap: 28px;
+  align-items: flex-end;
+  width: auto;
+  max-width: 720px;
 }
 
 .cover {
@@ -101,14 +106,29 @@
 }
 
 .leadCaption {
-  margin-top: 10px;
+  flex: 1;
+  width: 250px;
+  padding-bottom: 4px;
 }
 
 .leadTitle {
-  margin: 0;
+  margin: 0 0 10px;
   color: var(--n-ink);
-  font: var(--n-type-title);
-  letter-spacing: var(--n-track-title);
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
+}
+
+.leadLine {
+  margin: 0 0 4px;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.play {
+  align-self: flex-start;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .title {
@@ -126,8 +146,4 @@
   font: var(--n-type-caption);
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-.leadCaption .subtitle {
-  margin-top: 4px;
 }

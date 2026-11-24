@@ -1,8 +1,12 @@
 .row {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
-  gap: 24px 20px;
+  grid-auto-rows: 0;
+  grid-template-rows: auto;
+  gap: 0 20px;
   margin-top: 16px;
+  overflow: clip;
+  overflow-clip-margin: 24px;
 }
 
 .session {
@@ -80,7 +84,11 @@
   cursor: pointer;
 }
 
-.when {
+.title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--n-ink);
   font: var(--n-type-heading);
   letter-spacing: var(--n-track-title);
