@@ -26,6 +26,14 @@ const WIPE: LyricStyle = {
   motion: "cut",
 };
 
+const CAPTION: LyricStyle = {
+  mode: "line",
+  voices: [{ family: "serif", weight: 400, italic: true, upper: false }],
+  size: 0.082,
+  leading: 1.08,
+  align: "centre",
+  motion: "rise",
+};
 const PRINT: Record<string, ParamValue> = {
   drift: { base: 0.2, bind: [{ feature: "level", amount: 0.5 }] },
   blur: { base: 0.1, bind: [{ feature: "level", amount: 0.7 }] },
@@ -139,6 +147,17 @@ export const PARTS: Part[] = [
     ink: "light",
     drawsText: true,
     layers: [{ shader: "glass", params: {} }],
+  },
+
+  {
+    id: "engraving",
+    controls: ["engraving.paper", "engraving.lines", "engraving.travel", "engraving.tint"],
+    slot: "background",
+    weight: 2,
+    zone: "full",
+    ink: "light",
+    drawsText: true,
+    layers: [{ shader: "engraving", params: {} }],
   },
 
   {
@@ -265,6 +284,7 @@ export const PARTS: Part[] = [
 
   { id: "line", slot: "lyrics", weight: 1, zone: "lower", animation: "flow", style: LINE, layers: [] },
   { id: "whisper", slot: "lyrics", weight: 1, zone: "lower", animation: "flow", style: WHISPER, layers: [] },
+  { id: "caption", slot: "lyrics", weight: 1, zone: "lower", animation: "flow", style: CAPTION, requires: ["engraving"], layers: [] },
   { id: "paper", slot: "lyrics", weight: 2, zone: "full", animation: "paper", calm: "line", layers: [] },
   { id: "kinetic", slot: "lyrics", weight: 3, zone: "full", animation: "kinetic", calm: "line", layers: [] },
   { id: "collage", slot: "lyrics", weight: 3, zone: "full", animation: "collage", requires: ["ascii", "columns"], calm: "line", layers: [] },

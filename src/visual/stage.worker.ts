@@ -28,6 +28,7 @@ const DARK_BELOW = 0.5;
 let canvas: OffscreenCanvas | null = null;
 let stage: Stage | null = null;
 let raster: TextRaster | null = null;
+let fontsReady = false;
 let template: Template | null = null;
 let aspect: Aspect = "wide";
 let lines: Line[] = [];
@@ -63,7 +64,8 @@ function applySize(): void {
   const width = Math.max(1, Math.round(size.width * scale));
   const height = Math.max(1, Math.round(size.height * scale));
   stage.resize(width, height);
-  raster = createTextRaster(width, height);
+  // a worker keeps the fallback a font string resolved to before its face came, so no text is drawn until then
+  raster = fontsReady ? createTextRaster(width, height) : null;
   dirty = true;
 }
 
@@ -154,7 +156,11 @@ function start(target: OffscreenCanvas): void {
   stage = createStage(target);
   if (!stage) return;
   stage.setCover(new ImageData(new Uint8ClampedArray([20, 22, 28, 255]), 1, 1), DEFAULT_PALETTE);
-  void loadVisualFonts().then(() => (dirty = true));
+  const ready = () => {
+    fontsReady = true;
+    applySize();
+  };
+  void loadVisualFonts().then(ready, ready);
   applySize();
   frameId = self.requestAnimationFrame(loop);
 }
