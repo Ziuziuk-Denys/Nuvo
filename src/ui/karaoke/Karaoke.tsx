@@ -463,7 +463,11 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const editing = useStudioOpen();
   const lines = useLyrics((state) => state.lines);
   const timedWords = lines.some((line) => line.words?.length);
-  const scene = useMemo(() => templateFor(visual.template, track?.id ?? "", timedWords, visual.scene), [visual.template, track?.id, timedWords, visual.scene]);
+  const lightLook = useLook().mode === "light";
+  const scene = useMemo(
+    () => templateFor(visual.template, track?.id ?? "", timedWords, visual.scene, lightLook),
+    [visual.template, track?.id, timedWords, visual.scene, lightLook],
+  );
   const level = toVolumeLevel(player.volume ?? 1);
   const setLevel = (next: number) => {
     const clamped = Math.min(1, Math.max(0, next));
@@ -485,7 +489,6 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
   const headerRef = useRef<HTMLElement>(null);
   const onLuma = useSceneInk(rootRef, columnRef, headerRef, stageOn && !editing, `${track?.id ?? ""}:${liked}`);
   const [hint, setHint] = useState(false);
-  const lightLook = useLook().mode === "light";
   const beforeDemo = useRef<Playback | null | undefined>(undefined);
   const choose = useCallback(
     (view: LookView) => {
@@ -549,6 +552,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
       className={styles.root}
       style={{ ...vars, ...lightVars(light) }}
       data-theme="dark"
+      data-stage={stageOn ? "" : undefined}
       data-scene-tone={stageOn && lightScene ? "light" : undefined}
       data-choosing={visual.chosen ? undefined : ""}
     >
@@ -605,7 +609,7 @@ export function Karaoke({ onClose }: { onClose(): void }): JSX.Element {
               <GlyphButton
                 icon={liked ? "liked" : "like"}
                 label={t(liked ? "ui.karaoke.unlike" : "ui.karaoke.like")}
-                className={styles.like}
+                className={liked ? `${styles.like} ${styles.liked}` : styles.like}
                 onClick={() => (liked ? unlike.mutate(track.id) : like.mutate(track))}
               />
             </div>

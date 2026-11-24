@@ -262,6 +262,11 @@
   height: 36px;
 }
 
+/* over a scene the heart keeps the ink that reads there */
+.root:not([data-stage]) .liked {
+  color: var(--n-like, #ff5c7a);
+}
+
 .bar {
   position: relative;
   height: 24px;
