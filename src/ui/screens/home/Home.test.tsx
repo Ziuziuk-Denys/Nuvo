@@ -346,7 +346,12 @@ describe("Home variety shelves", () => {
     mocks.librarySongs.mockResolvedValue([...tracks("f", 5), ...tracks("l", 20)]);
     await mount();
     expect(host.querySelector("[data-shelf=shuffle] h2")?.textContent).toBe("ui.home.shuffle");
-    expect(shelfSongs("shuffle")).toEqual(["l19", "l18", "l17", "l16"]);
+    expect(shelfSongs("shuffle")).toEqual(
+      tracks("l", 20)
+        .reverse()
+        .slice(0, 12)
+        .map((track) => track.id),
+    );
     expect(host.querySelector("[data-shelf=shuffle]")?.textContent).toContain("ui.home.shuffle_names:A");
     act(() => [...host.querySelectorAll<HTMLElement>("[data-shelf=shuffle] button")].find((button) => button.textContent === "ui.entity.play")!.click());
     expect(mocks.playSongs).toHaveBeenCalledWith(tracks("l", 20).reverse().slice(0, 12), 0, "home:shuffle");
@@ -413,7 +418,7 @@ describe("Home refresh", () => {
       const before = shelfSongs(name);
       await act(async () => refreshOf(name).click());
       const after = shelfSongs(name);
-      expect(after).toHaveLength(name === "shuffle" ? 4 : 12);
+      expect(after).toHaveLength(12);
       expect(after.filter((id) => before.includes(id))).toEqual([]);
     }
     act(() => host.querySelector<HTMLElement>("[data-shelf=songs] [data-song]")!.click());

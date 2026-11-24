@@ -99,8 +99,8 @@ export function ArtistLead({ name, cover, size, onPlay }: { name: string; cover:
   );
 }
 
-const STACK = 4;
-const STACK_SIZE = 148;
+const DEALT_SIZE = 148;
+const LEANS = [-3, 2, -1.5, 4, -4, 1, 3, -2, 2.5, -3.5, 1.5, -1];
 
 export function ShuffleCard({
   title,
@@ -120,29 +120,31 @@ export function ShuffleCard({
     <section className={shelf.shelf} aria-label={title} data-shelf="shuffle">
       <ShelfHeading title={title} busy={state.busy} onRefresh={state.refresh} />
       <div className={styles.shuffle}>
-        <div key={state.round} className={rowClass(state, styles.stack)} style={{ width: STACK_SIZE + (STACK - 1) * 36, height: STACK_SIZE }}>
-          {songs.slice(0, STACK).map((track, index) => (
-            <button
-              key={track.id}
-              type="button"
-              className={styles.stacked}
-              style={{ ...order(index), zIndex: STACK - index, left: index * 36 }}
-              data-song={track.id}
-              aria-label={`${track.title}, ${track.artists}`}
-              onClick={() => onPlay(index)}
-              onContextMenu={menu.onContextMenu(track)}
-            >
-              <Cover src={track.coverUrl} size={STACK_SIZE - index * 12} />
-            </button>
-          ))}
-        </div>
         <div className={styles.about}>
           <span className={styles.from}>{t("ui.home.shuffle_from")}</span>
           <span className={styles.names}>{t("ui.home.shuffle_names", { names })}</span>
-          <Button variant="primary" className={styles.play} onClick={() => onPlay(0)}>
+          <Button variant="primary" className={styles.start} onClick={() => onPlay(0)}>
             <Icon name="play" size={16} />
             {t("ui.entity.play")}
           </Button>
+        </div>
+        <div key={state.round} className={rowClass(state, styles.dealt)} style={{ height: DEALT_SIZE }}>
+          {songs.map((track, index) => (
+            <span key={track.id} className={styles.seat} style={order(index)}>
+              <button
+                type="button"
+                className={styles.card}
+                style={{ "--lean": `${LEANS[index % LEANS.length]}deg` } as CSSProperties}
+                data-song={track.id}
+                aria-label={`${track.title}, ${track.artists}`}
+                title={`${track.title}, ${track.artists}`}
+                onClick={() => onPlay(index)}
+                onContextMenu={menu.onContextMenu(track)}
+              >
+                <Cover src={track.coverUrl} size={DEALT_SIZE} radius={6} />
+              </button>
+            </span>
+          ))}
         </div>
       </div>
       {menu.element}
