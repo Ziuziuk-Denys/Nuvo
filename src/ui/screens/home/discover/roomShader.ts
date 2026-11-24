@@ -92,8 +92,8 @@ void main() {
     float rim = 1.0 - smoothstep(0.0, 1.3, -d - 0.2);
     vec2 outward = normalize((uv - 0.5) * abs(uv - 0.5) + 1e-4);
     paint += rim * max(0.0, dot(outward, lamp)) * 0.32 * (1.0 - bright * 0.6);
-    float band = dot(uv - 0.5, vec2(0.82, 0.57)) - sweep.x;
-    paint += sweep.z * (0.11 * exp(-band * band * 46.0) + 0.07 * exp(-band * band * 900.0));
+    float band = dot(uv - 0.5, vec2(0.883, 0.469)) - sweep.x;
+    paint += sweep.z * 0.2 * exp(-band * band * 141.0);
     paint *= 1.0 + sweep.z * 0.05 * (0.5 - uv.y);
   }
   paint *= dim;
