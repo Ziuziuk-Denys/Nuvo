@@ -6,6 +6,5 @@
   aspect-ratio: 1;
   border-radius: 8px;
   background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
   color: var(--n-ink-2);
 }

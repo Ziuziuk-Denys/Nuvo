@@ -401,7 +401,7 @@
 
 .songRow:focus-visible {
   border-radius: 8px;
-  outline: 3px solid var(--n-focus-halo);
+  outline: 2px solid var(--n-focus-halo);
 }
 
 .layer {
@@ -525,7 +525,7 @@
 }
 
 .artist:focus-visible {
-  outline: 3px solid var(--n-focus-halo);
+  outline: 2px solid var(--n-focus-halo);
   outline-offset: 3px;
 }
 

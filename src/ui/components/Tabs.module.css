@@ -50,8 +50,8 @@ a.tab[aria-current="page"] {
   height: 32px;
   padding: 0 16px;
   border-radius: 10px;
-  background: var(--n-fill);
-  color: var(--n-ink);
+  background: transparent;
+  color: var(--n-ink-2);
   font: 500 14px/32px var(--n-font);
   transition:
     color var(--n-t-quick) var(--n-ease-out),
@@ -59,16 +59,17 @@ a.tab[aria-current="page"] {
 }
 
 .tabs[role="tablist"] .tab:hover {
-  background: var(--n-fill-hover);
+  background: transparent;
+  color: var(--n-ink);
 }
 
 .tabs[role="tablist"] .tab[aria-selected="true"] {
   background: transparent;
-  color: var(--btn-primary-text);
+  color: var(--n-ink);
 }
 
 .tabs[role="tablist"] .lens {
-  background: var(--btn-primary-bg);
+  background: var(--n-fill);
   box-shadow: none;
 }
 

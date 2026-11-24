@@ -136,14 +136,14 @@ export function History(): JSX.Element {
                 type="button"
                 role="tab"
                 aria-selected={key === filter}
-                className={`${look.pill} ${key === filter ? look.solid : look.glass}`}
+                className={look.tab}
                 onClick={() => {
                   if (key === filter) return;
                   setState("loading");
                   setFilter(key);
                 }}
               >
-                {key === filter ? <Lens group="history-filter" value={filter} radius={16} className={look.solidLens} /> : null}
+                {key === filter ? <Lens group="history-filter" value={filter} radius={10} className={look.fillLens} /> : null}
                 {t(`ui.history.filter_${key}`)}
               </button>
             ))}

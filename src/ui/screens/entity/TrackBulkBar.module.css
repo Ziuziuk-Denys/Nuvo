@@ -10,7 +10,7 @@
   flex-wrap: wrap;
   margin: var(--n-s-4) auto 0;
   padding: var(--n-s-2) var(--n-s-3);
-  border-radius: 22px;
+  border-radius: 14px;
   background: var(--n-pop);
   box-shadow: var(--n-plate-shadow);
   animation: rise 150ms var(--n-ease-out);

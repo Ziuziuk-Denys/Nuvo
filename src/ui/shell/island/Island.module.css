@@ -157,22 +157,17 @@
 }
 
 .heart {
-  --heart: #e0405e;
   border-radius: 50%;
-}
-
-:root[data-theme="dark"] .heart {
-  --heart: #ff7088;
 }
 
 .heart[data-liked],
 .heart[data-liked]:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--heart) 14%, transparent);
-  color: var(--heart);
+  background: color-mix(in srgb, var(--n-like) 14%, transparent);
+  color: var(--n-like);
 }
 
 .heart[data-liked]:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--heart) 20%, transparent);
+  background: color-mix(in srgb, var(--n-like) 20%, transparent);
 }
 
 .heart[data-pop] > svg {

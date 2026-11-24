@@ -149,6 +149,11 @@ export function Shell({ children, overlays }: ShellProps): JSX.Element {
     if (emptyKaraoke) leaveKaraoke();
   }, [emptyKaraoke, leaveKaraoke]);
 
+  const settingsOpen = useModalStore((store) => store.settingsOpen);
+  useEffect(() => {
+    if (settingsOpen) setQueueOpen(false);
+  }, [settingsOpen, setQueueOpen]);
+
   const { closeSearch } = modal;
   useEffect(() => {
     if (!karaokeShown) return;

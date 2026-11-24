@@ -324,7 +324,7 @@ export function Library(): JSX.Element {
           <div className={styles.tabs} role="tablist" aria-label={t("ui.library.tabs")} data-tour="library-tabs">
             {tabs.map((item) => (
               <button key={item.id} type="button" role="tab" aria-selected={item.id === tab} className={look.tab} onClick={() => setTab(item.id)}>
-                {item.id === tab ? <Lens group="library-tab" value={tab} radius={16} className={styles.tabLens} /> : null}
+                {item.id === tab ? <Lens group="library-tab" value={tab} radius={10} className={styles.tabLens} /> : null}
                 {item.label}
               </button>
             ))}
@@ -342,7 +342,7 @@ export function Library(): JSX.Element {
                   aria-pressed={view === "grid"}
                   onClick={() => changeView("grid")}
                 >
-                  {view === "grid" ? <Lens group="library-view" value={view} radius={16} /> : null}
+                  {view === "grid" ? <Lens group="library-view" value={view} radius={8} /> : null}
                   <Icon name="grid" size={16} />
                 </button>
                 <button
@@ -352,7 +352,7 @@ export function Library(): JSX.Element {
                   aria-pressed={view === "list"}
                   onClick={() => changeView("list")}
                 >
-                  {view === "list" ? <Lens group="library-view" value={view} radius={16} /> : null}
+                  {view === "list" ? <Lens group="library-view" value={view} radius={8} /> : null}
                   <Icon name="list" size={16} />
                 </button>
               </div>

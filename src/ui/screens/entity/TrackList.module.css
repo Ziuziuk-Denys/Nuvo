@@ -117,7 +117,7 @@
 .liked {
   display: inline-flex;
   margin-inline-end: 4px;
-  color: var(--n-ink-3);
+  color: var(--n-like);
 }
 
 .index {

@@ -661,7 +661,7 @@ function Filters({ filter, onFilter }: { filter: SearchFilter; onFilter(next: Se
     <div role="group" aria-label={t("ui.search.tabs")} className={styles.filters}>
       {SEARCH_FILTERS.map((id) => (
         <button key={id} type="button" tabIndex={-1} aria-pressed={id === filter} className={styles.filter} onClick={() => onFilter(id)}>
-          {id === filter ? <Lens group="palette-filter" value={filter} radius={14} className={look.fillLens} /> : null}
+          {id === filter ? <Lens group="palette-filter" value={filter} radius={10} className={look.fillLens} /> : null}
           {t(`ui.search.tab_${id}`)}
         </button>
       ))}

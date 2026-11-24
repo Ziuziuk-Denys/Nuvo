@@ -47,7 +47,6 @@
   left: calc(6px + var(--rail-space, 0px));
   border-radius: 12px;
   background: color-mix(in srgb, var(--n-deep) 16%, transparent);
-  box-shadow: var(--n-tray-edge);
   pointer-events: none;
 }
 

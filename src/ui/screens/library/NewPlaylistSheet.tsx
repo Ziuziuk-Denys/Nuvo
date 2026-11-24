@@ -100,7 +100,7 @@ export function NewPlaylistSheet(): JSX.Element | null {
     <GlassSheet open={open} onClose={close} labelledBy={titleId} width={440}>
       <div className={styles.head} onKeyDown={onKeyDown} aria-busy={pending}>
         <div className={styles.fields}>
-          <h2 id={titleId} className={styles.eyebrow}>
+          <h2 id={titleId} className={styles.title}>
             {t("ui.new_playlist.title")}
           </h2>
           <label className={styles.name}>

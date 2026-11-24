@@ -29,7 +29,6 @@
   border: 0;
   border-radius: var(--n-r-pill);
   background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
   color: var(--n-ink);
   font: 600 calc(16px * var(--n-scale, 1)) / 1 var(--n-font);
   white-space: nowrap;

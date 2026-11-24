@@ -39,7 +39,7 @@
 }
 
 .card:focus-visible .cover {
-  outline: 3px solid var(--n-focus-halo);
+  outline: 2px solid var(--n-focus-halo);
   outline-offset: 2px;
 }
 

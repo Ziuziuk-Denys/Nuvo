@@ -19,7 +19,6 @@
   padding: 2px;
   border-radius: 10px;
   background: var(--n-tray);
-  box-shadow: var(--n-tray-edge);
 }
 
 .segment {
