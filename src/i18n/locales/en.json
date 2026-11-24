@@ -1182,7 +1182,8 @@
       "pocket_top_window-menu": "GNOME lets only you do this: click the pocket player, press Alt+Space and choose Always on Top. With the Nuvo panel widget installed, Nuvo does it for you",
       "pocket_top_none": "This desktop does not let an app keep a window on top",
       "pocket_place_kept": "It opens where you left it",
-      "pocket_size_kept": "It keeps its size; this desktop chooses the place"
+      "pocket_size_kept": "It keeps its size; this desktop chooses the place",
+      "pocket_window_back": "Closing Nuvo's window while it is open keeps the music playing. Its corner arrows bring the window back"
     },
     "status": {
       "failed": "Your library stopped",
