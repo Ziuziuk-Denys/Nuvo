@@ -101,8 +101,8 @@ describe("home", () => {
       })),
     );
     console.log("home shelves:", JSON.stringify(shelves.map(({ name, title, songs }) => ({ name, title, songs: songs.length }))));
-    expect(shelves.map((shelf) => shelf.name)).toEqual(["songs", "like", "shuffle", "like"]);
-    const [, like, shuffle] = shelves;
+    expect(shelves.map((shelf) => shelf.name)).toEqual(["songs", "like", "like", "shuffle"]);
+    const [, like, , shuffle] = shelves;
     expect(shuffle.title).toBe("A shuffle of your music");
     expect(shuffle.songs).toHaveLength(4);
     expect(shuffle.songs.every((id) => /^seed-\d{4}$/.test(id))).toBe(true);
