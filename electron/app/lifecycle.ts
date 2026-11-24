@@ -10,6 +10,7 @@ export const STEP_TIMEOUT_MS = 1000;
 export const DAEMON_BUDGET_MS = 2700;
 export const CRASH_WINDOW_MS = 60_000;
 export const ICON_SIZES = [16, 32, 48, 64, 128, 256, 512];
+const SMALL_ICON_MAX = 24;
 export const ICON_CACHE_TIMEOUT_MS = 5000;
 
 export interface ShutdownDeps {
@@ -131,14 +132,14 @@ export class IconInstaller {
     return path.join(this.deps.dataHome, "icons", "hicolor", `${size}x${size}`, "apps", `${this.deps.iconName}.png`);
   }
 
-  apply(pngDataUrl: string, stock: boolean): Promise<void> {
-    const job = this.queue.then(() => this.run(pngDataUrl, stock));
+  apply(pngDataUrl: string, stock: boolean, small = pngDataUrl): Promise<void> {
+    const job = this.queue.then(() => this.run(pngDataUrl, stock, small));
     this.queue = job.catch(() => undefined);
     return job;
   }
 
-  private async run(pngDataUrl: string, stock: boolean): Promise<void> {
-    const png = Buffer.from(pngDataUrl.slice("data:image/png;base64,".length), "base64");
+  private async run(pngDataUrl: string, stock: boolean, small: string): Promise<void> {
+    const [png, smallPng] = [pngDataUrl, small].map((url) => Buffer.from(url.slice("data:image/png;base64,".length), "base64"));
     this.deps.setWindowIcon(png);
     if (!this.deps.packaged || this.deps.platform !== "linux") return;
     const themeDir = path.join(this.deps.dataHome, "icons", "hicolor");
@@ -159,7 +160,7 @@ export class IconInstaller {
       fs.mkdirSync(path.dirname(this.file(size)), { recursive: true });
       // A half-written icon is what the desktop would keep showing after a crash here.
       const temporary = `${this.file(size)}.${process.pid}.tmp`;
-      fs.writeFileSync(temporary, size === 512 ? png : this.deps.scale(png, size));
+      fs.writeFileSync(temporary, size === 512 ? png : this.deps.scale(size <= SMALL_ICON_MAX ? smallPng : png, size));
       fs.renameSync(temporary, this.file(size));
     }
     this.lastBytes = png;

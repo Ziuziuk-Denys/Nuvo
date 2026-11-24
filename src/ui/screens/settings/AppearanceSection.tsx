@@ -3,7 +3,7 @@ import { Icon } from "../../icons/Icon";
 import { CUSTOM_PREFIX, useAppearanceStore } from "../../ports/appearance";
 import { useTranslation } from "../../ports/i18n";
 import { LOCALE_OPTIONS, PRIMARY_LOCALES, useCustomizationStore, type Locale } from "../../ports/settings";
-import { presetIconSvg, PRESETS, revealThemeChange, useLook, useSetThemeMode, useThemeMode, type ThemeMode } from "../../ports/theme";
+import { presetIconSrc, PRESETS, revealThemeChange, useLook, useSetThemeMode, useThemeMode, type ThemeMode } from "../../ports/theme";
 import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
 import { CustomCssBlock, ResetAppearanceRow } from "./CustomCssBlock";
 import { ResetAllRow } from "./CustomizationSection";
@@ -56,14 +56,7 @@ export function PresetGrid(): JSX.Element {
             className={styles.preset}
             onClick={() => revealThemeChange(() => pick(preset.id))}
           >
-            <img
-              src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(presetIconSvg(preset.id, mode))}`}
-              alt=""
-              width={64}
-              height={64}
-              draggable={false}
-              className={styles.presetIcon}
-            />
+            <img src={presetIconSrc(preset.id, mode)} alt="" width={64} height={64} draggable={false} className={styles.presetIcon} />
             <span className={styles.presetName}>{t(`settings.preset.names.${preset.id}`)}</span>
           </button>
         );
