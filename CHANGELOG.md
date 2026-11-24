@@ -62,6 +62,7 @@ Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on 
 - A Scene file that does not play, or is too big, says so and keeps the current background
 - The Poster cover turned into a mosaic after a seek back or a song change
 - A recommended song's player line leads to its artist too
+- Songs that YouTube refused through its web client can play again
 
 ## 0.5.0
 

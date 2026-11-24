@@ -132,7 +132,8 @@ afterAll(async () => {
 
 it("pausing keeps the sung line where it is and resuming goes on from there", { retry: 0, timeout: 60_000 }, async () => {
   await player("seekTo(26000)");
-  await main.waitForTimeout(3_000);
+  await expect.poll(async () => (await sample()).lit, { timeout: 10_000 }).toBe(11);
+  await main.waitForTimeout(800);
   const before = await sample();
   expect(before.lit).toBeGreaterThan(0);
   await player("pause()");
