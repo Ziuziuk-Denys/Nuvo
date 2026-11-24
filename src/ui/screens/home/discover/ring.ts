@@ -10,6 +10,8 @@ const TURN_DEG = 50;
 const TILT = 0.4;
 const CENTRE_LIFT = 0.12;
 const VANISH = 0.2;
+const FADE_FROM = 0.72;
+const FADE_TO = 0.98;
 
 export interface Ring {
   width: number;
@@ -29,6 +31,7 @@ export interface Placement {
   scale: number;
   turn: number;
   tilt: number;
+  shown: number;
 }
 
 export function ringTracks(mixes: readonly HomeMix[]): Track[] {
@@ -59,6 +62,10 @@ export function ringOffset(index: number, position: number, count: number): numb
   return offset > count / 2 ? offset - count : offset;
 }
 
+export function floorOf(ring: Pick<Ring, "centreY" | "cover">): number {
+  return ring.centreY + ring.cover / 2 + 2;
+}
+
 function depthScale(ring: Pick<Ring, "depth">, angle: number): number {
   return PERSPECTIVE / (PERSPECTIVE + ring.depth * (1 - Math.cos(angle)));
 }
@@ -83,14 +90,16 @@ export function ringFor(width: number, height: number, clearTop: number): Ring {
 
 export function place(ring: Ring, offset: number): Placement | null {
   const angle = offset * ring.step;
-  if (Math.abs(angle) > ring.edge) return null;
+  if (Math.abs(angle) >= Math.min(ring.edge, FADE_TO)) return null;
   const scale = depthScale(ring, angle);
   const x = ring.width / 2 + ring.radius * Math.sin(angle) * scale;
+  const lift = CENTRE_LIFT * Math.max(0, 1 - Math.abs(offset));
   return {
     x,
-    y: ring.vanishY + (ring.centreY - ring.rise * (1 - Math.cos(angle)) - ring.vanishY) * scale,
-    scale: scale * (1 + CENTRE_LIFT * Math.max(0, 1 - Math.abs(offset))),
+    y: ring.vanishY + (ring.centreY - ring.rise * (1 - Math.cos(angle)) - ring.vanishY) * scale - (ring.cover / 2) * scale * lift,
+    scale: scale * (1 + lift),
     turn: -angle * TURN_DEG,
     tilt: -Math.atan2(ring.rise * Math.sin(angle), ring.radius * Math.cos(angle)) * TILT,
+    shown: Math.min(1, (FADE_TO - Math.abs(angle)) / (FADE_TO - FADE_FROM)),
   };
 }
