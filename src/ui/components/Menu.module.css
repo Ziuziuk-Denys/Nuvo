@@ -5,9 +5,9 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  min-width: 200px;
-  max-width: 280px;
-  padding: 5px;
+  min-width: 216px;
+  max-width: 300px;
+  padding: 6px;
   border-radius: 14px;
   background: var(--n-pop);
   box-shadow: var(--n-panel-shadow);
@@ -18,8 +18,8 @@
 .lit {
   position: absolute;
   top: 0;
-  right: 5px;
-  left: 5px;
+  right: 6px;
+  left: 6px;
   border-radius: 9px;
   background: var(--n-pop-hover);
   pointer-events: none;
@@ -43,16 +43,15 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 10px;
-  height: 30px;
+  gap: 12px;
+  height: 32px;
   padding: 0 10px;
   overflow: hidden;
   border: 0;
   border-radius: 9px;
   background: transparent;
   color: var(--n-ink);
-  font: var(--n-type-label);
-  font-weight: 400;
+  font: var(--n-type-body);
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -105,7 +104,7 @@
 }
 
 .item[data-nested] {
-  padding-left: 36px;
+  padding-left: 38px;
 }
 
 .children {
@@ -127,7 +126,7 @@
 .separator {
   flex: none;
   height: 1px;
-  margin: 4px 10px;
+  margin: 6px 10px;
   background: color-mix(in srgb, var(--n-ink) 8%, transparent);
 }
 

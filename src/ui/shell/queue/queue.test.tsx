@@ -27,7 +27,7 @@ afterEach(() => {
 vi.mock("../../recs/DislikeButton", () => ({ DislikeButton: ({ track }: { track: { id: string } }) => <button data-dislike={track.id} /> }));
 
 describe("QueuePanel", () => {
-  it("offers a dislike on every row, the playing one marked so it stays in view", () => {
+  it("offers a dislike on every row and on the playing song above them", () => {
     mocks.state.queue = [track("a"), track("b")];
     mocks.state.currentIndex = 1;
     useShellStore.setState({ queueOpen: true });
@@ -38,8 +38,8 @@ describe("QueuePanel", () => {
     const history = document.body.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
     expect(history.textContent).toContain("1");
     act(() => history.click());
-    expect(disliked()).toEqual(["a", "b"]);
-    expect(document.body.querySelector('[data-active] [data-dislike="b"]')).not.toBeNull();
+    expect(disliked()).toEqual(["b", "a"]);
+    expect(document.body.querySelector('[data-now] [data-dislike="b"]')).not.toBeNull();
     act(() => root.unmount());
     mocks.state.currentIndex = 0;
   });
@@ -82,7 +82,7 @@ describe("QueuePanel", () => {
     act(() => root.render(<QueuePanel />));
     const rows = document.body.querySelectorAll<HTMLElement>('[class*="item"] [role], [class*="item"] > div');
     act(() => rows[0]?.click());
-    expect(mocks.play).toHaveBeenCalledWith(0);
+    expect(mocks.play).toHaveBeenCalledWith(1);
     const removeButtons = [...document.body.querySelectorAll<HTMLButtonElement>("button")].filter(
       (button) => button.getAttribute("aria-label") === "Remove from queue",
     );
@@ -116,7 +116,7 @@ describe("QueuePanel", () => {
     mocks.state.currentIndex = 2;
     act(() => root.render(<QueuePanel />));
     act(() => window.dispatchEvent(new PointerEvent("pointerup")));
-    expect(mocks.reorder).toHaveBeenCalledWith(1, 2);
+    expect(mocks.reorder).toHaveBeenCalledWith(2, 3);
     act(() => root.unmount());
     mocks.state.currentIndex = 0;
   });
@@ -143,7 +143,7 @@ describe("QueuePanel", () => {
     act(() => root.render(<QueuePanel />));
     const marks = [...document.body.querySelectorAll('[role="img"][aria-label="Explicit"]')];
     expect(marks).toHaveLength(1);
-    expect(marks[0].closest("[data-active], [role=button]")?.textContent).toContain("Song a");
+    expect(marks[0].closest("[data-now]")?.textContent).toContain("Song a");
     act(() => root.unmount());
   });
 });
