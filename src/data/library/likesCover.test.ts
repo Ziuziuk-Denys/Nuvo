@@ -1,32 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "@/data/color/contrast";
 import presetTokens from "@/data/look/presetTokens.json";
-import { likesCoverColors, likesCoverSvg } from "./likesCover";
+import { likesCoverSvg, likesCoverTones } from "./likesCover";
 
 describe("likes cover", () => {
-  it("puts the accent under light lines in a light theme", () => {
-    expect(likesCoverColors("#4a69b0", "#f4f7ff")).toEqual({ ground: "#4a69b0", line: "#f4f7ff" });
+  it("sets a white heart on the accent in a light theme", () => {
+    const tones = likesCoverTones("#4a69b0", "#f4f7ff");
+    expect(tones[1]).toBe("#4a69b0");
+    expect(tones[4]).toBe("#ffffff");
   });
 
-  it("keeps a deep ground lit by the accent in a dark theme", () => {
-    const { ground, line } = likesCoverColors("#afc8f7", "#101320");
-    expect(line).toBe("#afc8f7");
-    expect(ground).not.toBe("#101320");
-    expect(contrastRatio(line, ground)).toBeGreaterThan(4);
+  it("sets an accent heart on a deep wall in a dark theme", () => {
+    const tones = likesCoverTones("#afc8f7", "#101320");
+    expect(tones[3]).toBe("#afc8f7");
   });
 
   it("draws a readable heart in every preset", () => {
     for (const preset of Object.values(presetTokens)) {
       for (const tokens of Object.values(preset.tokens)) {
-        const { ground, line } = likesCoverColors(tokens["n-accent"], tokens["n-field"]);
-        expect(contrastRatio(line, ground)).toBeGreaterThan(3);
+        const [, wall, , heart] = likesCoverTones(tokens["n-accent"], tokens["n-field"]);
+        expect(contrastRatio(heart, wall)).toBeGreaterThan(3);
       }
     }
   });
 
   it("encodes a self-contained svg", () => {
-    const svg = decodeURIComponent(likesCoverSvg({ ground: "#000000", line: "#ffffff" }).split(",")[1]);
-    expect(svg).toMatch(/^<svg [^>]*viewBox="0 0 64 64"/);
-    expect(svg.match(/<use /g)).toHaveLength(7);
+    const svg = decodeURIComponent(likesCoverSvg(likesCoverTones("#afc8f7", "#101320")).split(",").slice(1).join(","));
+    expect(svg).toMatch(/^<svg [^>]*viewBox="0 0 512 512"/);
+    expect(svg).toContain('href="data:image/webp;base64,');
+    expect(svg.match(/type="table"/g)).toHaveLength(3);
   });
 });
