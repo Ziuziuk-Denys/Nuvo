@@ -2,7 +2,6 @@ import type { Line } from "@/lyrics";
 import type { LoadedCover } from "./cover";
 import { paint } from "./paint";
 import { drawWatermark } from "./watermark";
-import { DEFAULT_PALETTE } from "./render/palette";
 import { createStage } from "./render/stage";
 import { analyse } from "./signal/offline";
 import type { Aspect, Template } from "./template/schema";
@@ -116,7 +115,7 @@ export async function renderClip(
   stage.resize(width, height);
   stage.setTemplate(job.template, job.aspect);
   if (job.cover) stage.setCover(job.cover.bitmap, job.cover.palette);
-  else stage.setCover(new ImageData(new Uint8ClampedArray([20, 22, 28, 255]), 1, 1), DEFAULT_PALETTE);
+  else stage.setCover(new ImageData(new Uint8ClampedArray([20, 22, 28, 255]), 1, 1), null);
   let shown: TexImageSource | null = null;
   const showBackdrop = async (clipMs: number) => {
     if (!job.backdrop) return;

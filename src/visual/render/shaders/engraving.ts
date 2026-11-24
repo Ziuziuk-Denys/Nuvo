@@ -72,11 +72,15 @@ vec4 layer() {
   float fine = mix(shape, tone(held, 1), inside);
   float t = clamp((fine - 0.5) * 1.18 + 0.5 + (fine - middle) * 0.5, 0.0, 1.0);
   float amount = mix(1.0 - t, t, dark);
+  // a song without a cover gets a quiet sheet of drawn lines: long swells, light tones, no hatching
+  float calm = 1.0 - uHasCover;
+  float swells = sin(p.x * 2.3 + p.y * 1.1 + uTime * 0.06) * 0.6 + sin(p.x * 0.9 - p.y * 3.1 - uTime * 0.045) * 0.4;
+  amount = mix(amount, (0.26 + 0.16 * swells) * smoothstep(1.2, 0.2, length(p * vec2(0.75, 1.1))), calm);
 
   float turn = -0.34;
   vec2 across = vec2(-sin(turn), cos(turn));
   vec2 along = vec2(cos(turn), sin(turn));
-  float bend = u_relief * (0.05 * (shape - 0.5) + 0.014 * (middle - shape));
+  float bend = u_relief * mix(0.05 * (shape - 0.5) + 0.014 * (middle - shape), 0.024 * swells, calm);
   float d = dot(p, across) + bend;
   float pulse = u_travel * swell(clamp(dot(p, across) * 0.6 + 0.5, 0.0, 1.0), (dot(p, along) + 1.0) * 0.2);
   float w = mix(0.03, 0.4, pow(amount, 1.15)) * (1.0 + 0.5 * pulse);

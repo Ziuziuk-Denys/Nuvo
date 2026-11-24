@@ -1,3 +1,5 @@
+import { CORE_BASE_URL } from "@/data/core/request";
+import { coverUrl } from "@/data/covers/coverUrl";
 import { paletteFrom, type Palette } from "./render/palette";
 
 const PALETTE_PX = 32;
@@ -13,10 +15,13 @@ export function centreSquare(width: number, height: number): { x: number; y: num
   return { x: (width - side) / 2, y: (height - side) / 2, side };
 }
 
+// the page policy names few picture hosts, so every outside cover comes through the core's cache
 export async function loadCover(url: string): Promise<LoadedCover> {
+  const source = coverUrl(CORE_BASE_URL, url, COVER_PX, 1);
+  if (!source) throw new Error("no cover");
   const image = new Image();
   image.crossOrigin = "anonymous";
-  image.src = url;
+  image.src = source;
   await image.decode();
   const { x, y, side } = centreSquare(image.naturalWidth, image.naturalHeight);
   const small = new OffscreenCanvas(PALETTE_PX, PALETTE_PX).getContext("2d")!;
