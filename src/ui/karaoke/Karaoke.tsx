@@ -205,6 +205,7 @@ function VersionButton({ track }: { track: LyricsTrack | null }): JSX.Element | 
           ...improve,
           "separator" as const,
           { label: t("ui.lyrics.find"), onSelect: () => openLyricsTool(track, "find") },
+          { label: t("ui.lyrics.time_words"), onSelect: () => openLyricsTool(track, "time") },
         ].filter((item, at) => at > 0 || item !== "separator")}
       />
     </>

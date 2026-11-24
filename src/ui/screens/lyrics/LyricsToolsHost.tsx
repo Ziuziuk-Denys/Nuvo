@@ -8,7 +8,14 @@ export function LyricsToolsHost(): JSX.Element | null {
   if (!track) return null;
   return (
     <>
-      <LyricsEditor open={tool === "edit" || tool === "find"} find={tool === "find"} track={track} draft={draft} onClose={close} />
+      <LyricsEditor
+        open={tool === "edit" || tool === "find" || tool === "time"}
+        find={tool === "find"}
+        time={tool === "time"}
+        track={track}
+        draft={draft}
+        onClose={close}
+      />
       <TranslationSheet open={tool === "translate"} track={track} onClose={close} />
     </>
   );

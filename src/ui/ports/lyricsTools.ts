@@ -65,12 +65,17 @@ export async function dropUserLyrics(track: LyricsTrack): Promise<void> {
   await reloadShown(track);
 }
 
-export function isPlayingTrack(trackId: string): boolean {
-  return usePlayerStore.getState().currentTrack?.id === trackId;
-}
-
 export function playbackPositionMs(): number {
   return playerRuntime.getCurrentTimeMs();
+}
+
+/** Timing follows the playback, so the song has to be the one that plays. The queue keeps its songs. */
+export function playForTiming(track: Track): void {
+  const { currentTrack } = usePlayerStore.getState();
+  if (currentTrack?.id === track.id) return;
+  if (!currentTrack) return void playerEngine.playTrack(track, [track]);
+  playerEngine.playNext(track);
+  void playerEngine.skipNext();
 }
 
 export const seekPlayback = (ms: number): void => playerEngine.seek(Math.max(0, ms));

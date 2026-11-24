@@ -1004,7 +1004,10 @@
       "timing_export": "Save as file",
       "timing_export_lrc": "LRC file",
       "timing_export_ttml": "TTML file",
-      "timing_other_song": "Another song is playing now"
+      "timing_other_song": "Another song is playing now",
+      "timing_hint": "Set timing: press Space on every word while the song plays.",
+      "timing_hint_play": "Play this song to set its timing.",
+      "time_words": "Time words by hand"
     },
     "settings": {
       "auto_gain_desc": "Lowers the level before boosts so they don't clip",
