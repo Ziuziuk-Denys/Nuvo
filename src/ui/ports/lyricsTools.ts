@@ -1,22 +1,28 @@
-import { playerRuntime, usePlayerStore } from "@/engine/compat";
+import { playerEngine, playerRuntime, usePlayerStore } from "@/engine/compat";
 import type { Track } from "@/engine/types";
 import { lyrics } from "@/lyrics";
 import { deleteUserLyrics, editableLyrics, ensureTranslator, findLyrics, putUserLyrics, translateLines, type FoundLyrics } from "@/lyrics/stream";
 import { targetLanguage, textLines } from "@/lyrics/translation";
 
 export {
-  clearStamp,
   detectFormat,
   editableText,
+  endLine,
+  firstOpen,
   formatStamp,
   isComplete,
-  markEnd,
   nudge,
-  stamp,
+  soundingAt,
   startSync,
   stretchedToFit,
+  tap,
+  timedCount,
   toLrc,
+  toTtml,
+  untap,
+  type SyncCursor,
   type SyncLine,
+  type SyncUnit,
 } from "@/lyrics/tapSync";
 export type { Candidate as FoundVersion } from "@/lyrics/types";
 export { formatDuration } from "@/imports/report";
@@ -65,6 +71,23 @@ export function isPlayingTrack(trackId: string): boolean {
 
 export function playbackPositionMs(): number {
   return playerRuntime.getCurrentTimeMs();
+}
+
+export const seekPlayback = (ms: number): void => playerEngine.seek(Math.max(0, ms));
+export const togglePlayback = (): void => void playerEngine.togglePlayPause();
+export const setPlaybackSpeed = (rate: number): void => playerEngine.setPlaybackRate(rate);
+export const useIsCurrentTrack = (trackId: string): boolean => usePlayerStore((state) => state.currentTrack?.id === trackId);
+export const useIsPlaying = (): boolean => usePlayerStore((state) => state.status === "playing");
+export const usePlaybackSpeed = (): number => usePlayerStore((state) => state.playbackRate);
+
+export function saveTimedFile(track: LyricsTrack, format: "lrc" | "ttml", text: string): Promise<boolean> {
+  const name =
+    `${track.artists} - ${track.title}`
+      .replace(/[\\/:*?"<>|]/g, " ")
+      .replace(/^\.+/, "")
+      .slice(0, 100)
+      .trim() || "lyrics";
+  return window.nuvoShell?.saveTextFile(`${name}.${format}`, text) ?? Promise.resolve(false);
 }
 
 // shortcut: LM Studio's default address only; add a Settings field when another local server is wanted

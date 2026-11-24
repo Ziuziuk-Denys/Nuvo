@@ -20,6 +20,13 @@ vi.mock("../../ports/lyricsTools", async () => {
     dropUserLyrics: vi.fn(async () => undefined),
     isPlayingTrack: () => true,
     playbackPositionMs: () => tools.position,
+    seekPlayback: vi.fn(),
+    togglePlayback: vi.fn(),
+    setPlaybackSpeed: vi.fn(),
+    useIsPlaying: () => true,
+    useIsCurrentTrack: () => true,
+    usePlaybackSpeed: () => 1,
+    saveTimedFile: vi.fn(async () => true),
     searchLyrics: vi.fn(async () => tools.found),
     formatDuration: (ms: number) => `${Math.round(ms / 1000)}s`,
   };
@@ -45,7 +52,7 @@ afterEach(() => {
 });
 
 const button = (text: string) => [...document.body.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === text)!;
-const key = (target: Element, name: string) => target.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true }));
+const key = (target: Element, name: string, code: string) => target.dispatchEvent(new KeyboardEvent("keydown", { key: name, code, bubbles: true }));
 
 function type(area: HTMLTextAreaElement, value: string): void {
   Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(area, value);
@@ -71,17 +78,53 @@ describe("LyricsEditor", () => {
     expect(document.body.textContent).toContain("ui.lyrics.detected_synced");
   });
 
-  it("syncs plain lines with Space and saves them as LRC", async () => {
+  const tapAt = (list: Element, ms: number) =>
+    act(async () => {
+      tools.position = ms;
+      key(list, " ", "Space");
+      list.dispatchEvent(new KeyboardEvent("keyup", { key: " ", code: "Space", bubbles: true }));
+    });
+
+  async function openTiming(text: string): Promise<HTMLOListElement> {
     await act(async () => root.render(<LyricsEditor open track={TRACK} onClose={() => undefined} />));
-    await act(async () => type(document.body.querySelector("textarea")!, "One\nTwo"));
+    await act(async () => type(document.body.querySelector("textarea")!, text));
     await act(async () => button("ui.lyrics.sync").click());
-    const list = document.body.querySelector("ol")!;
-    tools.position = 1000;
-    await act(async () => key(list, " "));
-    tools.position = 4000;
-    await act(async () => key(list, " "));
+    return document.body.querySelector("ol")!;
+  }
+
+  it("times every word with Space and saves word LRC", async () => {
+    const list = await openTiming("One two\nThree");
+    for (const ms of [1000, 1500, 4000]) await tapAt(list, ms);
     await act(async () => button("ui.lyrics.save_synced").click());
-    expect(ports.saveLyrics).toHaveBeenCalledWith(TRACK, { format: "lrc", content: "[00:01.00] One\n[00:04.00] Two" });
+    expect(ports.saveLyrics).toHaveBeenCalledWith(TRACK, { format: "lrc", content: "[00:01.00]<00:01.00>One <00:01.50>two\n[00:04.00]<00:04.00>Three" });
+  });
+
+  it("times lines, takes a tap back and nudges", async () => {
+    const list = await openTiming("One\nTwo");
+    await act(async () => button("ui.lyrics.timing_lines").click());
+    await tapAt(list, 1000);
+    await tapAt(list, 2000);
+    await act(async () => key(list, "Backspace", "Backspace"));
+    await act(async () => key(list, "ArrowRight", "ArrowRight"));
+    await tapAt(list, 4000);
+    await act(async () => button("ui.lyrics.save_synced").click());
+    expect(ports.saveLyrics).toHaveBeenCalledWith(TRACK, { format: "lrc", content: "[00:01.10] One\n[00:04.00] Two" });
+  });
+
+  it("keeps the taps when the user goes back to the text and returns", async () => {
+    const list = await openTiming("One\nTwo");
+    await tapAt(list, 1000);
+    await act(async () => button("ui.lyrics.back").click());
+    await act(async () => button("ui.lyrics.sync").click());
+    expect(document.body.querySelector("ol li")!.textContent).toContain("00:01.00");
+  });
+
+  it("saves the timed song as a file", async () => {
+    const list = await openTiming("One");
+    await tapAt(list, 1000);
+    await act(async () => button("ui.lyrics.timing_export").click());
+    await act(async () => (document.body.querySelectorAll<HTMLElement>("[role=menuitem]")[1] as HTMLElement).click());
+    expect(ports.saveTimedFile).toHaveBeenCalledWith(TRACK, "ttml", expect.stringContaining('<span begin="00:01.000"'));
   });
 
   it("Use found lyrics drops the user's text", async () => {
