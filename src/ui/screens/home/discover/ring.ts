@@ -2,6 +2,8 @@ import type { HomeMix, Track } from "../../../ports/recs";
 import { DISCOVER, homeSongs } from "../homeModel";
 
 export const MIN_TRACKS = 8;
+// 11 covers a side reach the widest point of the arc on a 2560 px window
+export const FULL_TRACKS = 23;
 const MAX_TRACKS = 24;
 const FAMILIAR_EVERY = 4;
 
@@ -31,6 +33,10 @@ export interface Placement {
   tilt: number;
 }
 
+function artOf(track: Track): string[] {
+  return [track.album?.id ?? "", track.coverUrl].filter(Boolean);
+}
+
 export function ringTracks(mixes: readonly HomeMix[]): Track[] {
   const fresh = mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? [];
   const known = homeSongs(
@@ -46,7 +52,14 @@ export function ringTracks(mixes: readonly HomeMix[]): Track[] {
     if (tracks.length % FAMILIAR_EVERY === FAMILIAR_EVERY - 1 && next < known.length) tracks.push(known[next++]);
     if (tracks.length < MAX_TRACKS) tracks.push(track);
   }
-  while (tracks.length < MIN_TRACKS && next < known.length) tracks.push(known[next++]);
+  const shown = new Set(tracks.flatMap(artOf));
+  for (const track of known.slice(next)) {
+    if (tracks.length >= FULL_TRACKS) break;
+    const art = artOf(track);
+    if (art.some((mark) => shown.has(mark))) continue;
+    for (const mark of art) shown.add(mark);
+    tracks.push(track);
+  }
   return tracks;
 }
 
