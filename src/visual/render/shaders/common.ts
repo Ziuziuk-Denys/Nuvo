@@ -44,6 +44,7 @@ uniform sampler2D uRing;
 uniform sampler2D uBackdrop;
 uniform float uImageAspect;
 uniform float uHasImage;
+uniform float uHasCover;
 uniform float uGlyphCount;
 
 const float PI = 3.14159265;

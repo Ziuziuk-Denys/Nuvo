@@ -1,7 +1,6 @@
 import type { Line } from "@/lyrics";
 import type { LoadedCover } from "./cover";
 import { paint } from "./paint";
-import { DEFAULT_PALETTE } from "./render/palette";
 import { createStage, type Stage } from "./render/stage";
 import { BANDS, WAVE, type Features } from "./signal/features";
 import { analyse } from "./signal/offline";
@@ -56,7 +55,7 @@ async function prepared(
   stage.setTemplate(template, aspect);
   stage.reset();
   if (cover) stage.setCover(cover.bitmap, cover.palette);
-  else stage.setCover(new ImageData(new Uint8ClampedArray([40, 44, 56, 255]), 1, 1), DEFAULT_PALETTE);
+  else stage.setCover(new ImageData(new Uint8ClampedArray([40, 44, 56, 255]), 1, 1), null);
   stage.setImage(still, still?.width ?? 1, still?.height ?? 1);
   return { stage, canvas };
 }
