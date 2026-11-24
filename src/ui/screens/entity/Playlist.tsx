@@ -460,6 +460,8 @@ function PlaylistPage({ id }: { id: string | null }): JSX.Element {
               onPlay={play}
               unavailable={unavailable}
               onTogglePlay={() => playerEngine.togglePlayPause()}
+              withAlbum
+              withAdded={sortMode === "added"}
               onReorder={own && sortMode === "manual" && !filtering ? move : undefined}
               selection={selection}
               selectedKey={menu && menuOpen ? menu.key : null}

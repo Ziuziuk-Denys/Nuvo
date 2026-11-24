@@ -15,6 +15,10 @@
   padding: 0 8px 24px;
 }
 
+.more {
+  margin: 48px 8px 0;
+}
+
 .page[data-entity="artist"] .tracks {
   min-height: 0;
   margin: 28px 0 0;

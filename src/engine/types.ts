@@ -11,6 +11,7 @@ export interface Track {
   explicit?: boolean;
   releaseDate?: string;
   playlistItemId?: string;
+  addedAt?: string;
   permalinkUrl?: string;
 }
 

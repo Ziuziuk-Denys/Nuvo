@@ -28,7 +28,7 @@ export function TilePlaceholders(): JSX.Element {
   );
 }
 
-function Tile({ entry, selected, playing, onActivate, onMenu, t }: Omit<EntryViewProps, "entries"> & { entry: LibraryEntry }): JSX.Element {
+function Tile({ entry, selected, playing, round, onActivate, onMenu, t }: Omit<EntryViewProps, "entries"> & { entry: LibraryEntry }): JSX.Element {
   const key = entryKey(entry);
   const subtitle = entry.kind === "artist" ? entry.subtitle : (entryMeta(entry, t) ?? entry.subtitle);
   return (
@@ -39,6 +39,7 @@ function Tile({ entry, selected, playing, onActivate, onMenu, t }: Omit<EntryVie
       data-selected={selected === key ? "" : undefined}
       data-playing={playing === key ? "" : undefined}
       data-kind={entry.kind}
+      data-round={round ? "" : undefined}
       onClick={() => onActivate(entry)}
       onContextMenu={(event) => {
         event.preventDefault();
@@ -46,7 +47,7 @@ function Tile({ entry, selected, playing, onActivate, onMenu, t }: Omit<EntryVie
       }}
     >
       <span className={styles.art}>
-        <EntryArt entry={entry} />
+        <EntryArt entry={entry} round={round} />
       </span>
       <span className={styles.text}>
         <span className={styles.title}>{entry.title}</span>

@@ -212,6 +212,11 @@ function useCatalogPage<T>(key: string | null, id: string | null, load: Loader<T
 
 const artistKey = (id: string) => `artist:${id}`;
 
+export function loadedReleases(artistId: string): ArtistRelease[] {
+  const page = cache.get(artistKey(artistId)) as ArtistPageData | undefined;
+  return page ? [...page.albums, ...page.singles] : [];
+}
+
 export function useArtist(id: string | null, name: string | null = null): CatalogPage<ArtistPageData> {
   const byName = !id && name ? name : null;
   return useCatalogPage(id ? artistKey(id) : byName && `artist-name:${byName}`, id || byName, id ? loadArtist : loadArtistByName);

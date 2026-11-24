@@ -9,6 +9,7 @@ export interface MediaRowProps extends Omit<HTMLAttributes<HTMLDivElement>, "tit
   title: string;
   badge?: ReactNode;
   subtitle?: ReactNode;
+  detail?: ReactNode;
   meta?: string;
   menuLabel?: string;
   onMenu?: (anchor: HTMLElement) => void;
@@ -29,6 +30,7 @@ export function MediaRow({
   title,
   badge,
   subtitle,
+  detail,
   meta,
   menuLabel,
   onMenu,
@@ -83,6 +85,7 @@ export function MediaRow({
         )}
         {subtitle ? <span className={styles.subtitle}>{subtitle}</span> : null}
       </span>
+      {detail ? <span className={styles.detail}>{detail}</span> : null}
       <span className={styles.end} onClick={stop} onKeyDown={stop}>
         {extra}
         {onMenu && menuLabel ? (

@@ -51,7 +51,7 @@
     box-shadow var(--n-t-base) var(--n-ease-out);
 }
 
-.tile[data-kind="artist"] .art {
+.tile[data-round] .art {
   border-radius: 50%;
 }
 
@@ -78,11 +78,7 @@
   min-width: 0;
 }
 
-.tile[data-kind="liked"] .text {
-  gap: 4px;
-}
-
-.tile[data-kind="artist"] .text {
+.tile[data-round] .text {
   align-items: center;
   text-align: center;
 }

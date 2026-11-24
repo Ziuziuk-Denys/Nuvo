@@ -1,4 +1,5 @@
 .row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -85,8 +86,47 @@
   letter-spacing: -0.008em;
 }
 
+.row[data-active] {
+  --n-row-ink: oklch(from var(--n-playing, var(--n-accent)) 0.46 clamp(0.04, c, 0.15) h);
+}
+
+:root[data-theme="dark"] .row[data-active] {
+  --n-row-ink: oklch(from var(--n-playing, var(--n-accent)) 0.83 clamp(0.04, c, 0.13) h);
+}
+
 .row[data-active] .title {
-  color: var(--n-accent);
+  color: var(--n-row-ink);
+}
+
+.row[data-active]::before {
+  content: "";
+  position: absolute;
+  inset: 14px auto 14px 0;
+  width: 1px;
+  background: linear-gradient(transparent, var(--n-row-ink) 22%, var(--n-row-ink) 78%, transparent);
+}
+
+.row[data-active][data-short]::before {
+  inset-block: 8px;
+}
+
+.detail {
+  display: none;
+}
+
+@container (min-width: 1150px) {
+  .detail {
+    display: flex;
+    flex: none;
+    gap: 24px;
+    width: 34cqw;
+    color: var(--n-ink-2);
+    font: var(--n-type-body);
+  }
+
+  .row:has(> .detail) :is(.title, .subtitle, .titleLine) {
+    max-width: 100%;
+  }
 }
 
 .titleLine {

@@ -255,6 +255,7 @@ export function Library(): JSX.Element {
   };
   const viewProps = {
     entries: shown,
+    round: tab === "artists",
     selected: menu && menuOpen ? entryKey(menu.entry) : null,
     playing,
     onActivate: activate,

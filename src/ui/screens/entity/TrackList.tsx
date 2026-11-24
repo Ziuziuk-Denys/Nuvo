@@ -11,8 +11,10 @@ import { useIsTrackLiked, useListReorder } from "../../ports/library";
 import type { Track } from "../../ports/player";
 import { ArtistLinks } from "../../shell/ArtistLinks";
 import { useShellScroller } from "../../shell/scroller";
+import { AlbumLink } from "../../shell/AlbumLink";
 import { MediaRow } from "../MediaRow";
-import { formatDuration, type TrackMatch } from "./entityModel";
+import { usePlayingTint } from "../playingTint";
+import { formatDuration, formatUpdated, type TrackMatch } from "./entityModel";
 import type { TrackSelection } from "./trackSelection";
 import styles from "./TrackList.module.css";
 
@@ -25,6 +27,8 @@ export interface TrackListProps {
   hideArtists?: boolean;
   subtitle?: (track: Track) => ReactNode;
   marks?: boolean;
+  withAlbum?: boolean;
+  withAdded?: boolean;
   currentId: string | null;
   playing?: boolean;
   onPlay: (index: number) => void;
@@ -98,6 +102,8 @@ export function TrackList({
   hideArtists = false,
   subtitle,
   marks = false,
+  withAlbum = false,
+  withAdded = false,
   currentId,
   playing = false,
   onPlay,
@@ -109,7 +115,8 @@ export function TrackList({
   selection,
 }: TrackListProps): JSX.Element {
   const rowPx = numbered && hideArtists ? SHORT_ROW_PX : ROW_PX;
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const tint = usePlayingTint(currentId !== null && tracks.some((match) => match.track.id === currentId));
   const scroller = useShellScroller();
   const listRef = useRef<HTMLDivElement>(null);
   const scrollMargin = useScrollMargin(listRef);
@@ -196,7 +203,7 @@ export function TrackList({
 
   return (
     <Flip token={tracks} target={listRef} scroller={scroller}>
-      <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize() }} data-dragging={drag.isDragging ? "" : undefined}>
+      <div ref={listRef} className={styles.list} style={{ height: virtualizer.getTotalSize(), ...tint }} data-dragging={drag.isDragging ? "" : undefined}>
         {virtualizer.getVirtualItems().map((item) => {
           const match = tracks[item.index];
           const { track, index } = match;
@@ -238,6 +245,14 @@ export function TrackList({
                 title={track.title}
                 badge={track.explicit ? <Explicit label={t("ui.entity.explicit")} /> : undefined}
                 subtitle={hideArtists ? undefined : subtitle ? subtitle(track) : <ArtistLinks track={track} />}
+                detail={
+                  withAlbum ? (
+                    <>
+                      <span className={styles.album}>{track.album?.title ? <AlbumLink album={track.album} /> : null}</span>
+                      {withAdded ? <span className={styles.added}>{formatUpdated(track.addedAt, locale)}</span> : null}
+                    </>
+                  ) : undefined
+                }
                 meta={formatDuration(track.durationMs)}
                 extra={
                   <>

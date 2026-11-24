@@ -59,7 +59,7 @@
 
 .playing {
   gap: 2.5px;
-  color: var(--n-accent);
+  color: var(--n-row-ink);
 }
 
 .playing > i {
@@ -96,6 +96,24 @@
   }
 }
 
+.album,
+.added {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album {
+  flex: 1;
+}
+
+.added {
+  flex: none;
+  width: 132px;
+  font-variant-numeric: tabular-nums;
+}
+
 .liked {
   display: inline-flex;
   margin-inline-end: 4px;
@@ -127,7 +145,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--n-accent);
+  color: var(--n-row-ink);
   cursor: pointer;
 }
 
