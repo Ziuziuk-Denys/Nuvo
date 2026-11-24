@@ -3,7 +3,7 @@ import type { HomeMix, Track } from "../../../ports/recs";
 import { DISCOVER, FOR_YOU } from "../homeModel";
 import { MIN_TRACKS, place, ringFor, ringOffset, ringSlots, ringTracks } from "./ring";
 
-const track = (id: string) => ({ id, title: id, artists: [], coverUrl: "" }) as unknown as Track;
+const track = (id: string): Track => ({ id, title: id, artists: "", coverUrl: "", durationMs: 1 });
 const mix = (id: string, ids: string[]) => ({ id, title: id, description: "", tracks: ids.map(track) }) as unknown as HomeMix;
 const ids = (prefix: string, count: number) => Array.from({ length: count }, (_, index) => `${prefix}${index}`);
 
