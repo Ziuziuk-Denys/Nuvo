@@ -21,8 +21,12 @@ vi.mock("../../ports/stats", () => ({
 vi.mock("../../ports/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key, locale: "en" }) }));
 vi.mock("../../ports/backdrop", () => ({ usePageBackdrop: () => undefined }));
 vi.mock("../../ports/library", () => ({ useCreatePlaylist: () => ({}), useAddPlaylistTracks: () => ({}) }));
-vi.mock("../../ports/player", () => ({ playerEngine: { playTrack: mocks.play }, usePlayerStore: () => null }));
-vi.mock("../../ports/covers", () => ({ coverSrc: () => "", colorsFor: () => Promise.resolve({ color2: "rgb(1, 2, 3)" }) }));
+vi.mock("../../ports/player", () => ({ playerEngine: { playTrack: mocks.play }, usePlayerStore: () => null, usePlayingCover: () => "" }));
+vi.mock("../../ports/covers", () => ({
+  coverSrc: () => "",
+  colorsFor: () => Promise.resolve({ color2: "rgb(1, 2, 3)" }),
+  useCoverColors: () => ({ color2: "" }),
+}));
 vi.mock("../entity/EntityTracks", () => ({ useUnavailable: () => (track: { id: string }) => (track.id === "t3" ? "gone" : null) }));
 vi.mock("./StatsRows", () => ({ artistHref: () => "", trackHref: () => "", useSongMenu: () => ({ open: () => undefined, layers: null }) }));
 vi.mock("./ReplayShare", () => ({ ReplayShare: () => null }));

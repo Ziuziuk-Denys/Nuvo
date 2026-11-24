@@ -1,7 +1,7 @@
 .page {
   display: flex;
   flex-direction: column;
-  --replay-giant: clamp(120px, 25cqw, 600px);
+  --replay-giant: clamp(96px, min(25cqw, 36cqh), 600px);
   --replay-title: clamp(44px, 5.4cqw, 132px);
   --replay-heading: clamp(36px, 4.1cqw, 100px);
   --replay-line: calc(clamp(19px, 1.75cqw, 38px) * var(--n-scale, 1));
@@ -175,6 +175,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 40px;
+  padding-bottom: 20px;
 }
 
 .timeText {
@@ -269,9 +270,9 @@
   border-radius: 3.2%;
   background: var(--n-fill);
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.28),
-    0 calc(var(--size) * 0.03) calc(var(--size) * 0.06) calc(var(--size) * -0.01) rgba(0, 0, 0, 0.3),
-    0 calc(var(--size) * 0.1) calc(var(--size) * 0.2) calc(var(--size) * -0.04) rgba(0, 0, 0, 0.45);
+    0 1px 3px rgba(var(--n-contact), 0.2),
+    calc(var(--n-light-x) * var(--size) * 0.04) calc(var(--n-light-y) * var(--size) * 0.09) calc(var(--size) * 0.18) calc(var(--size) * -0.05)
+      rgba(var(--n-contact), 0.42);
 }
 
 .object span:has(> img) {
@@ -376,7 +377,11 @@
 }
 
 .songRow[data-current] .songName {
-  color: var(--n-accent);
+  color: oklch(from var(--n-playing, var(--n-accent)) 0.46 clamp(0.04, c, 0.15) h);
+}
+
+:global(:root[data-theme="dark"]) .songRow[data-current] .songName {
+  color: oklch(from var(--n-playing, var(--n-accent)) 0.83 clamp(0.04, c, 0.13) h);
 }
 
 .songBy {
