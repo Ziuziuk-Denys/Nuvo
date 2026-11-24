@@ -86,7 +86,7 @@ export function History(): JSX.Element {
         {byDay(items).map((group) => (
           <section key={group.day} className={styles.section} aria-label={dayLabel(group.day, today, locale, t)}>
             <h2 className={styles.sectionTitle}>{dayLabel(group.day, today, locale, t)}</h2>
-            <div className={styles.rows}>
+            <div className={`${styles.rows} ${styles.flush}`}>
               {group.items.map((item) => (
                 <MediaRow
                   key={item.id}

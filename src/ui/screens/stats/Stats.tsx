@@ -62,6 +62,11 @@ function percentChange(delta: number, locale: string): string {
 }
 
 const MAX_DELTA = 300;
+const MIN_PREVIOUS_DAYS = 5;
+
+function fair({ previous }: StatsOverview): StatsOverview["previous"] {
+  return previous && previous.activeDays >= MIN_PREVIOUS_DAYS ? previous : null;
+}
 
 const count = (value: number, locale: string) => value.toLocaleString(locale);
 
@@ -102,7 +107,7 @@ function story(stats: StatsOverview, t: TFunction): string | null {
 function Lead({ stats, range }: { stats: StatsOverview; range: RangeKey }): JSX.Element {
   const { t, locale } = useTranslation();
   const top = stats.top.tracks[0];
-  const delta = change(stats.totals.listenedMs, stats.previous?.listenedMs);
+  const delta = change(stats.totals.listenedMs, fair(stats)?.listenedMs);
   const sentence = story(stats, t);
   const track = top ? rowTrack(top.track) : null;
   const navigate = useNavigate();
@@ -137,7 +142,8 @@ function Lead({ stats, range }: { stats: StatsOverview; range: RangeKey }): JSX.
 
 function Figures({ stats }: { stats: StatsOverview }): JSX.Element {
   const { t, locale } = useTranslation();
-  const { totals, previous } = stats;
+  const { totals } = stats;
+  const previous = fair(stats);
   return (
     <div className={styles.figures}>
       <Figure value={count(totals.plays, locale)} label={t("ui.stats.label_plays")} delta={<Delta now={totals.plays} before={previous?.plays} />} />
@@ -273,7 +279,8 @@ function Top({ stats }: { stats: StatsOverview }): JSX.Element {
 
 function Habits({ stats }: { stats: StatsOverview }): JSX.Element {
   const { t, locale } = useTranslation();
-  const { totals, previous, sessions } = stats;
+  const { totals, sessions } = stats;
+  const previous = fair(stats);
   const percent = (rate: number) => new Intl.NumberFormat(locale, { style: "percent" }).format(rate);
   const total = (list: StatsShare[]) => list.reduce((sum, share) => sum + share.listenedMs, 0);
   const shares = (list: StatsShare[], prefix: string): ShareItem[] =>
