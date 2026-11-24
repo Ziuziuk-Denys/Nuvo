@@ -41,7 +41,7 @@ vi.mock("../../ports/i18n", () => ({
     t: (key: string, vars?: Record<string, string | number>) => (vars ? `${key}(${Object.values(vars).join(",")})` : key),
   }),
 }));
-vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src }));
+vi.mock("../../ports/covers", () => ({ coverSrc: (src: string) => src, useCoverColors: () => ({ color1: "rgb(0, 0, 0)", color2: "rgb(90, 120, 200)" }) }));
 vi.mock("../../ports/network", () => ({
   useStreamingReachable: () => mocks.state.online,
   useOnline: () => mocks.state.browserOnline ?? mocks.state.online,

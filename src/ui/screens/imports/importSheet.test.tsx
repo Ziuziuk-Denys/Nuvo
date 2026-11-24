@@ -85,7 +85,7 @@ describe("ImportSheet", () => {
     expect(document.body.textContent).toContain("Northbound");
     expect(document.body.textContent).toContain('ui.imports.songs {"count":7}');
     expect(document.body.textContent).toContain("ui.imports.honesty");
-    expect(document.querySelectorAll("li")).toHaveLength(4);
+    expect(document.querySelectorAll("li")).toHaveLength(6);
     await click("ui.imports.target_liked");
     await click("ui.imports.import");
     expect(actions.post).toHaveBeenCalledWith(LISTING, { kind: "liked" });
@@ -113,7 +113,7 @@ describe("ImportSheet", () => {
     expect(document.querySelectorAll("li")).toHaveLength(7);
     expect(toggle().getAttribute("aria-expanded")).toBe("true");
     await act(async () => toggle().click());
-    expect(document.querySelectorAll("li")).toHaveLength(4);
+    expect(document.querySelectorAll("li")).toHaveLength(6);
   });
 
   it("stacks up to three distinct song covers", () => {

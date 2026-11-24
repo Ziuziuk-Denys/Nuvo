@@ -10,7 +10,7 @@ import glass from "../../sheets/GlassSheet.module.css";
 import { formatDuration } from "../entity/entityModel";
 import styles from "./ImportPreview.module.css";
 
-const SHORT_ROWS = 4;
+const SHORT_ROWS = 6;
 /** A likes import can list 20,000 rows; past this many the open list says how many more there are. */
 const LONG_ROWS = 200;
 const STACK = 3;
@@ -70,7 +70,7 @@ function CoverStack({ covers }: { covers: string[] | null }): JSX.Element | null
     <span className={styles.stack} data-count={covers.length} aria-hidden="true">
       {covers.map((url) => (
         <span key={url} className={styles.card}>
-          <Cover src={url} size={56} radius={12} />
+          <Cover src={url} size={220} radius={12} />
         </span>
       ))}
     </span>
@@ -100,7 +100,7 @@ export function ImportPreview({
   const hidden = rows.length - shown.length;
 
   return (
-    <>
+    <div className={styles.preview}>
       <div className={styles.head}>
         <CoverStack covers={covers} />
         <div className={styles.headText}>
@@ -114,13 +114,14 @@ export function ImportPreview({
             </span>
           </p>
         </div>
+        {notice ? (
+          <p className={styles.notice}>
+            <Icon name="info" size={16} />
+            <span>{notice}</span>
+          </p>
+        ) : null}
+        <p className={glass.caption}>{t("ui.imports.honesty")}</p>
       </div>
-      {notice ? (
-        <p className={styles.notice}>
-          <Icon name="info" size={16} />
-          <span>{notice}</span>
-        </p>
-      ) : null}
       <div className={styles.list}>
         <ol ref={listRef} className={`${styles.songs} n-scroll`} data-open={open ? "" : undefined}>
           {shown.map((row, index) => (
@@ -141,6 +142,6 @@ export function ImportPreview({
           </button>
         ) : null}
       </div>
-    </>
+    </div>
   );
 }

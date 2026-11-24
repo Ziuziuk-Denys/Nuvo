@@ -78,7 +78,7 @@ function drawRoom(ctx: Context, color: string, lampX: number, lampY: number, rea
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < WIDTH; x += 1) {
       const distance = Math.hypot(x - lampX, y - lampY) / reach;
-      const light = 0.5 / (1 + distance * distance * 5);
+      const light = 0.64 / (1 + distance * distance * 5);
       // without grain eight bits show bands
       const grain = Math.random() + Math.random() - 1;
       const at = (y * WIDTH + x) * 4;

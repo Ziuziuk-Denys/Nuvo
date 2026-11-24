@@ -5,13 +5,14 @@
 }
 
 .panel {
-  --ring: min(58cqh, 40cqw);
+  --ring: min(58cqh, 36cqw);
 }
 
 .stage {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, max(42cqw, 600px));
   align-items: center;
+  justify-content: center;
   gap: clamp(36px, 5cqw, 96px);
   box-sizing: border-box;
   min-height: max(400px, calc(100cqh - 160px));

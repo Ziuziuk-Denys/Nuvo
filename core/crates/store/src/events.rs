@@ -63,8 +63,12 @@ pub fn record(conn: &Connection, event: &RecordPlaybackEvent, now: i64) -> Resul
 
 pub fn history(conn: &Connection, limit: usize, cursor: Option<&str>, filter: Option<&str>, range: Option<(i64, i64)>) -> Result<PlaybackHistoryResponse, StoreError> {
     let limit = limit.clamp(1, 200);
-    let before: Option<i64> = cursor
-        .map(|c| c.parse().map_err(|_| StoreError::Invalid("bad cursor".into())))
+    let before: Option<(i64, i64)> = cursor
+        .map(|c| {
+            let (started_at, id) = c.split_once(':')?;
+            Some((started_at.parse().ok()?, id.parse().ok()?))
+        })
+        .map(|c| c.ok_or_else(|| StoreError::Invalid("bad cursor".into())))
         .transpose()?;
     let reason = match filter {
         None | Some("all") => None,
@@ -77,11 +81,12 @@ pub fn history(conn: &Connection, limit: usize, cursor: Option<&str>, filter: Op
         "SELECT e.id, e.session_id, t.snapshot_json, e.played_ms, e.duration_ms, e.end_reason, e.loop_count,
                 e.seek_back, e.context, e.context_id, e.started_at
          FROM play_events e JOIN tracks t ON t.id = e.track_id AND (e.played_ms >= 3000 OR e.end_reason = 'complete')
-         WHERE (?1 IS NULL OR e.id < ?1) AND (?3 IS NULL OR e.end_reason = ?3)
-           AND (?4 IS NULL OR e.started_at >= ?4) AND (?5 IS NULL OR e.started_at < ?5) ORDER BY e.id DESC LIMIT ?2",
+         WHERE (?1 IS NULL OR (e.started_at, e.id) < (?1, ?2)) AND (?3 IS NULL OR e.end_reason = ?3)
+           AND (?4 IS NULL OR e.started_at >= ?4) AND (?5 IS NULL OR e.started_at < ?5)
+         ORDER BY e.started_at DESC, e.id DESC LIMIT ?6",
     )?;
     let rows = stmt
-        .query_map(params![before, limit as i64 + 1, reason, range.map(|r| r.0), range.map(|r| r.1)], |row| {
+        .query_map(params![before.map(|b| b.0), before.map(|b| b.1), reason, range.map(|r| r.0), range.map(|r| r.1), limit as i64 + 1], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
                 row.get::<_, String>(1)?,
@@ -97,7 +102,7 @@ pub fn history(conn: &Connection, limit: usize, cursor: Option<&str>, filter: Op
             ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
-    let next_cursor = (rows.len() > limit).then(|| rows[limit - 1].0.to_string());
+    let next_cursor = (rows.len() > limit).then(|| format!("{}:{}", rows[limit - 1].10, rows[limit - 1].0));
     let items = rows
         .into_iter()
         .take(limit)

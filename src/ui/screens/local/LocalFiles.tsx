@@ -150,6 +150,7 @@ export function LocalFiles({ query, sort = "artist" }: { query: string; sort?: L
           shown={shown}
           tracks={tracks}
           unavailable={unavailable}
+          withAlbum
           onPlay={(track) => void playerEngine.playTrack(track, playable, "local:library", "")}
         />
       </div>

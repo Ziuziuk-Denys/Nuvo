@@ -570,6 +570,10 @@
   text-align: right;
 }
 
+.flush {
+  margin-inline: -8px;
+}
+
 .mediaRow {
   flex: 1 1 auto;
 }
