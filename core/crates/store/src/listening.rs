@@ -2,7 +2,7 @@ use std::cmp::Reverse;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use nuvo_contracts::{
-    StatsContextPlays, StatsDay, StatsDetail, StatsMonth, StatsOverview, StatsRange, StatsRow, StatsSessions, StatsShare, StatsStreak, StatsTop, StatsTotals, iso_day,
+    StatsArtistDays, StatsContextPlays, StatsDay, StatsDetail, StatsMonth, StatsOverview, StatsRange, StatsRow, StatsSessions, StatsShare, StatsStreak, StatsTop, StatsTotals, iso_day,
     iso_from_ms, local_day,
 };
 use rusqlite::{Connection, OptionalExtension, Row, params};
@@ -14,6 +14,7 @@ const COUNTED_MS: i64 = 30_000;
 const CALENDAR_DAYS: i64 = 53 * 7;
 const TOP_ROWS: usize = 50;
 const SIDE_ROWS: usize = 12;
+const ARTIST_DAYS_ROWS: usize = 5;
 const REPEAT_WINDOW_DAYS: i64 = 14;
 const REPEAT_MIN_PLAYS: i64 = 3;
 const FORGOTTEN_MIN_PLAYS: i64 = 5;
@@ -443,7 +444,10 @@ pub fn overview(conn: &Connection, history: &mut History, period: Period) -> Res
     let mut sessions_before: HashSet<u32> = HashSet::new();
     let mut first_ms = i64::MAX;
     let mut first_day = i64::MAX;
+    let mut opener: Option<(i64, u32)> = None;
+    let mut closer: Option<(i64, u32)> = None;
 
+    let metas_have = |track: u32| history.metas[track as usize].is_some();
     for event in &history.events {
         let Event { started_at, played_ms, day, session, .. } = *event;
         let loops = i64::from(event.loops);
@@ -495,6 +499,11 @@ pub fn overview(conn: &Connection, history: &mut History, period: Period) -> Res
                 sessions_before.insert(session);
             }
             continue;
+        }
+        if plays > 0 && metas_have(event.track) {
+            let heard = (started_at, event.track);
+            opener = Some(opener.map_or(heard, |known| known.min(heard)));
+            closer = Some(closer.map_or(heard, |known| known.max(heard)));
         }
         by_hour[usize::from(event.hour)] += played_ms;
         by_weekday[usize::from(event.weekday)] += played_ms;
@@ -642,6 +651,8 @@ pub fn overview(conn: &Connection, history: &mut History, period: Period) -> Res
             })
             .collect(),
     );
+    let mut first_song = opener.and_then(|(at, track)| Some(StatsRow { first_played_at: Some(iso_from_ms(at)), ..track_row(track as usize)? }));
+    let mut last_song = closer.and_then(|(at, track)| Some(StatsRow { last_played_at: Some(iso_from_ms(at)), ..track_row(track as usize)? }));
     attach_snapshots(
         conn,
         top_tracks
@@ -650,14 +661,34 @@ pub fn overview(conn: &Connection, history: &mut History, period: Period) -> Res
             .chain(&mut most_replayed)
             .chain(&mut on_repeat)
             .chain(&mut discoveries)
-            .chain(&mut forgotten),
+            .chain(&mut forgotten)
+            .chain(&mut first_song)
+            .chain(&mut last_song),
     )?;
+
+    let top_artists = ranked(artists.into_values().collect(), has_previous, TOP_ROWS);
+    let leaders: HashMap<&str, usize> = top_artists.iter().take(ARTIST_DAYS_ROWS).enumerate().map(|(index, row)| (row.id.as_str(), index)).collect();
+    let leader_of: Vec<Option<usize>> =
+        metas.iter().map(|meta| meta.as_ref()?.artist_group.as_deref().and_then(|key| leaders.get(key).copied())).collect();
+    let mut leader_days: Vec<BTreeMap<i64, DayTally>> = leaders.iter().map(|_| BTreeMap::new()).collect();
+    for event in history.events.iter().filter(|event| in_now(event.day)) {
+        if let Some(index) = leader_of[event.track as usize] {
+            let tally = leader_days[index].entry(event.day).or_default();
+            tally.ms += event.played_ms;
+            tally.plays += listens(event.reason == REASON_COMPLETE, event.played_ms, i64::from(event.loops));
+        }
+    }
 
     let new_tracks = tallies.iter().filter(|t| t.now.plays > 0 && in_now(t.first_day)).count() as i64;
 
     let mut day_rows: Vec<(i64, &DayTally)> = days.iter().map(|(day, tally)| (*day, tally)).collect();
     day_rows.sort_unstable_by_key(|(day, _)| *day);
     let day_row = |(day, tally): &(i64, &DayTally)| StatsDay { day: iso_day(*day), listened_ms: tally.ms, plays: tally.plays };
+    let artist_days = top_artists
+        .iter()
+        .zip(&leader_days)
+        .map(|(row, days)| StatsArtistDays { id: row.id.clone(), days: days.iter().map(|(day, tally)| day_row(&(*day, tally))).collect() })
+        .collect();
     let start = from.unwrap_or(if first_day == i64::MAX { end } else { first_day });
 
     Ok(StatsOverview {
@@ -684,7 +715,7 @@ pub fn overview(conn: &Connection, history: &mut History, period: Period) -> Res
         sessions: session_rows,
         top: StatsTop {
             tracks: top_tracks,
-            artists: ranked(artists.into_values().collect(), has_previous, TOP_ROWS),
+            artists: top_artists,
             albums: ranked(albums.into_values().collect(), has_previous, TOP_ROWS),
             playlists: playlist_rows(conn, playlists, &history.playlists.in_order(), has_previous)?,
             genres: ranked(genres.into_values().collect(), has_previous, SIDE_ROWS),
@@ -694,6 +725,9 @@ pub fn overview(conn: &Connection, history: &mut History, period: Period) -> Res
         on_repeat,
         discoveries,
         forgotten,
+        first_song,
+        last_song,
+        artist_days,
     })
 }
 

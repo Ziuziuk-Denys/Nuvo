@@ -180,7 +180,7 @@ async function shot(live: NuvoSession, name: string, size: { width: number; heig
 }
 
 const openStats = async (live: NuvoSession, range = "month"): Promise<void> => {
-  await live.go(`#/stats?range=${range}`);
+  await live.go(`#/stats/all?range=${range}`);
   await live.page.locator("[data-testid=stats-page]").waitFor({ timeout: 15_000 });
   await live.page.waitForTimeout(400);
 };
@@ -252,6 +252,51 @@ describe("the Statistics page", () => {
     await shot(live, "year-light", W1200, true);
     await shot(live, "year-light", W1100, true);
     await shot(live, "year-light", W1600, true);
+  });
+
+  it("replays the year one idea at a time and draws it as a picture", async () => {
+    const live = session!;
+    await live.go("#/stats?kind=year");
+    await live.page.locator("[data-testid=replay-minutes]").waitFor({ timeout: 15_000 });
+    const screens = await live.page.locator("[data-replay-screen]").evaluateAll((nodes) => nodes.map((node) => (node as HTMLElement).dataset.replayScreen));
+    expect(screens).toEqual(["time", "song", "songs", "artists", "hours", "days", "ends", "close"]);
+    for (const size of [W1100, W1600]) {
+      await live.setSize(size);
+      const spill = await live.page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>("[data-replay-screen]")]
+          .filter((node) => node.scrollWidth > node.clientWidth + 1)
+          .map((node) => node.dataset.replayScreen),
+      );
+      expect(spill, `${size.width}: nothing runs past the edge`).toEqual([]);
+    }
+    await live.setSize(W1200);
+    const scrolled = () => live.page.evaluate(() => document.querySelector(".n-scroll")!.scrollTop);
+    await live.page.mouse.move(600, 400);
+    await live.page.mouse.wheel(0, 240);
+    await live.page.waitForTimeout(600);
+    expect(await scrolled(), "a small turn of the wheel stays where it was put").toBeGreaterThan(200);
+    await live.page.keyboard.press("PageDown");
+    await expect.poll(() => live.page.evaluate(() => (document.activeElement as HTMLElement).dataset.replayScreen), { timeout: 5_000 }).toBe("song");
+    await shot(live, "replay-light", W1200);
+    await live.page.getByRole("button", { name: "Share image", exact: true }).first().click();
+    const canvas = live.page.locator("canvas[data-drawn]");
+    await canvas.waitFor({ timeout: 15_000 });
+    const size = () => canvas.evaluate((node) => [(node as HTMLCanvasElement).width, (node as HTMLCanvasElement).height]);
+    expect(await size()).toEqual([1080, 1920]);
+    await live.page.getByRole("radio", { name: /Square/ }).click();
+    await expect.poll(size, { timeout: 10_000 }).toEqual([1080, 1080]);
+    const png = await canvas.evaluate((node) => (node as HTMLCanvasElement).toDataURL("image/png").length);
+    expect(png).toBeGreaterThan(50_000);
+    await live.page.keyboard.press("Escape");
+    const minutes = Number((await live.page.locator("[data-testid=replay-minutes]").innerText()).replace(/\D/g, ""));
+    const best = await live.page.locator("[data-replay-screen=song] h2").innerText();
+    const asked = live.page.waitForResponse((response) => response.url().includes("/v1/stats/overview"));
+    await live.page.getByRole("button", { name: "All numbers", exact: true }).first().click();
+    await live.page.locator("[data-testid=stats-lead]").waitFor({ timeout: 15_000 });
+    const numbers = (await (await asked).json()) as { totals: { listenedMs: number } };
+    expect(Math.round(numbers.totals.listenedMs / 60_000), "the same minutes in All numbers").toBe(minutes);
+    await expect.poll(() => live.page.locator("[data-stats-section=top] [data-stats-row]").first().innerText(), { timeout: 10_000 }).toContain(best);
+    await openStats(live, "year");
   });
 
   it("switches range and compares with the period before", async () => {

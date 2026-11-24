@@ -153,6 +153,26 @@ fn tops_rank_and_move_against_the_previous_period() {
 }
 
 #[test]
+fn the_period_knows_its_first_and_last_song_and_the_days_of_its_top_artists() {
+    let (_dir, conn) = open();
+    play(&conn, "before", "s0", JULY - DAY, 60_000, "next", json!({}));
+    play(&conn, "late", "s2", JULY + DAY, 90_000, "next", json!({}));
+    play(&conn, "skipped", "s1", JULY, 2_000, "skip", json!({}));
+    play(&conn, "early", "s1", JULY + HOUR, 60_000, "next", json!({}));
+    play(&conn, "early", "s1", JULY + 2 * HOUR, 60_000, "next", json!({}));
+    keys(&conn);
+    let stats = overview(&conn, period("2026-07-01", "2026-07-07", "2026-07-07")).unwrap();
+    let first = stats.first_song.unwrap();
+    assert_eq!((first.id.as_str(), first.first_played_at.as_deref()), ("early", Some("2026-07-01T01:00:00.000Z")));
+    assert_eq!(first.track.unwrap()["id"], "early");
+    assert_eq!(stats.last_song.unwrap().id, "late");
+    assert_eq!(stats.artist_days.len(), 1);
+    assert_eq!(stats.artist_days[0].id, stats.top.artists[0].id);
+    let days: Vec<_> = stats.artist_days[0].days.iter().map(|d| (d.day.as_str(), d.listened_ms, d.plays)).collect();
+    assert_eq!(days, [("2026-07-01", 122_000, 2), ("2026-07-02", 90_000, 1)]);
+}
+
+#[test]
 fn nothing_is_new_without_a_previous_listen() {
     let (_dir, conn) = open();
     play(&conn, "a", "s1", JULY, 60_000, "next", json!({}));
@@ -252,6 +272,8 @@ fn an_empty_store_gives_a_quiet_answer() {
     assert_eq!(stats.totals.plays, 0);
     assert_eq!(stats.range.from, None);
     assert_eq!(stats.first_played_at, None);
+    assert_eq!(stats.first_song, None);
+    assert!(stats.artist_days.is_empty());
     assert_eq!(stats.by_hour.len(), 24);
 }
 

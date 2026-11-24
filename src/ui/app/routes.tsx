@@ -8,6 +8,7 @@ import { Library } from "../screens/library/Library";
 import { Recognize } from "../screens/recognize/Recognize";
 import { Search } from "../screens/search/Search";
 import { Specimen } from "../screens/specimen/Specimen";
+import { Replay } from "../screens/stats/Replay";
 import { Stats } from "../screens/stats/Stats";
 import { History } from "../screens/stats/History";
 import { StatsArtist, StatsTrack } from "../screens/stats/StatsDetail";
@@ -22,7 +23,8 @@ export function AppRoutes(): JSX.Element {
       <Route path="/library/playlist" element={<Playlist />} />
       <Route path="/collection" element={<Album />} />
       <Route path="/artist" element={<Artist />} />
-      <Route path="/stats" element={<Stats />} />
+      <Route path="/stats" element={<Replay />} />
+      <Route path="/stats/all" element={<Stats />} />
       <Route path="/stats/track" element={<StatsTrack />} />
       <Route path="/stats/artist" element={<StatsArtist />} />
       <Route path="/stats/history" element={<History />} />

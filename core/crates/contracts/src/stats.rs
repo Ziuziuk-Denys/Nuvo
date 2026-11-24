@@ -134,6 +134,16 @@ pub struct StatsOverview {
     pub on_repeat: Vec<StatsRow>,
     pub discoveries: Vec<StatsRow>,
     pub forgotten: Vec<StatsRow>,
+    pub first_song: Option<StatsRow>,
+    pub last_song: Option<StatsRow>,
+    pub artist_days: Vec<StatsArtistDays>,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct StatsArtistDays {
+    pub id: String,
+    pub days: Vec<StatsDay>,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]

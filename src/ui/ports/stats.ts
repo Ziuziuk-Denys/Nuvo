@@ -68,6 +68,9 @@ export interface StatsOverview {
   onRepeat: StatsRow[];
   discoveries: StatsRow[];
   forgotten: StatsRow[];
+  firstSong: StatsRow | null;
+  lastSong: StatsRow | null;
+  artistDays: { id: string; days: StatsDay[] }[];
 }
 
 export interface StatsDetail {
