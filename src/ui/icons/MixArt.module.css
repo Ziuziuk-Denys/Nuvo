@@ -1,0 +1,51 @@
+.art {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: var(--size);
+  height: var(--size);
+  background: radial-gradient(
+    120% 120% at 14% 4%,
+    color-mix(in oklab, var(--key) 92%, #fff) 0%,
+    color-mix(in oklab, var(--key) 78%, #000) 30%,
+    color-mix(in oklab, var(--key) 50%, #000) 62%,
+    color-mix(in oklab, var(--key) 30%, #000) 100%
+  );
+}
+
+.number {
+  position: absolute;
+  top: calc(var(--size) * 0.045);
+  left: calc(var(--size) * 0.055);
+  color: color-mix(in oklab, var(--key) 22%, #fff);
+  font-family: var(--n-font);
+  font-size: calc(var(--size) * 0.56);
+  font-weight: 640;
+  font-variant-numeric: lining-nums;
+  line-height: 0.82;
+  letter-spacing: -0.055em;
+  pointer-events: none;
+}
+
+.slab {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  translate: calc(var(--size) * -0.07) calc(var(--size) * -0.07);
+  overflow: hidden;
+  border-radius: calc(var(--size) * 0.022);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.5),
+    calc(var(--size) * 0.018) calc(var(--size) * 0.028) calc(var(--size) * 0.05) rgb(0 0 0 / 0.42),
+    calc(var(--size) * 0.05) calc(var(--size) * 0.08) calc(var(--size) * 0.13) rgb(0 0 0 / 0.36);
+}
+
+.slab::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0.75px 0.75px 0 rgb(255 255 255 / 0.36),
+    inset -0.75px -0.75px 0 rgb(0 0 0 / 0.3);
+  content: "";
+}
