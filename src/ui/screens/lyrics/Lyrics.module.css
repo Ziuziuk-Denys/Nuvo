@@ -31,37 +31,6 @@
   font: var(--n-type-caption);
 }
 
-.lines {
-  max-height: calc(var(--n-s-8) * 5);
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  color: var(--n-ink-2);
-  font: var(--n-type-body);
-  list-style: none;
-  outline: none;
-}
-
-.lines li {
-  padding: var(--n-s-1) var(--n-s-2);
-  border-radius: var(--n-r-s);
-}
-
-.lines li[aria-current="true"] {
-  background: var(--n-select);
-  color: var(--n-ink);
-}
-
-.lines:focus-visible li[aria-current="true"] {
-  background: var(--n-focus);
-}
-
-.stamp {
-  display: inline-block;
-  width: calc(var(--n-s-8) + var(--n-s-3));
-  font-variant-numeric: tabular-nums;
-}
-
 .pair {
   display: flex;
   flex-direction: column;

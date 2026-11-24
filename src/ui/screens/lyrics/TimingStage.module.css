@@ -1,0 +1,309 @@
+.layer {
+  composes: layer from "../../components/Sheet.module.css";
+}
+
+.backdrop {
+  composes: backdrop from "../../components/Sheet.module.css";
+}
+
+.panel {
+  composes: panel from "../../components/Sheet.module.css";
+  overflow: hidden;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  height: min(700px, calc(100vh - 2 * var(--n-s-5)));
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px 14px;
+}
+
+.names {
+  flex: 1;
+  min-width: 0;
+}
+
+.names h2,
+.names p {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.names h2 {
+  font: 620 calc(19px * var(--n-scale, 1)) / 1.25 var(--n-font);
+  letter-spacing: var(--n-track-title);
+}
+
+.names p {
+  color: var(--n-ink-2);
+  font: var(--n-type-label);
+}
+
+.lines {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 22px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  list-style: none;
+  outline: none;
+  mask-image: linear-gradient(transparent, #000 28px, #000 86%, transparent);
+}
+
+.lines::before,
+.lines::after {
+  content: "";
+  display: block;
+  height: 28px;
+}
+
+.lines::after {
+  height: var(--lead);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 6px 0;
+}
+
+.row p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 0.28em;
+  margin: 0;
+  font: 500 calc(17px * var(--n-scale, 1)) / 1.35 var(--n-font);
+  letter-spacing: -0.01em;
+  transform-origin: 0 50%;
+  opacity: 0.6;
+  transition:
+    transform var(--n-t-base) var(--n-ease-out),
+    opacity var(--n-t-base) var(--n-ease-out);
+}
+
+.row[data-near] p {
+  opacity: 0.85;
+}
+
+.row[data-current] {
+  padding: 16px 0;
+}
+
+.row[data-current] p {
+  font-size: calc(29px * var(--n-scale, 1));
+  font-weight: 620;
+  line-height: 1.28;
+  letter-spacing: -0.022em;
+  opacity: 1;
+}
+
+.stamp {
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+  line-height: calc(17px * var(--n-scale, 1) * 1.35);
+}
+
+.row[data-current] .stamp {
+  line-height: calc(29px * var(--n-scale, 1) * 1.28);
+}
+
+.word {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: color-mix(in srgb, var(--n-ink) 52%, transparent);
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: color var(--n-t-quick) var(--n-ease-out);
+}
+
+.word[data-timed],
+.word[data-next],
+.word:hover {
+  color: var(--n-ink);
+}
+
+.row[data-current] .word:not([data-timed], [data-next]) {
+  font-weight: 400;
+}
+
+/* Holds the width of the heavier weight, so a tap never moves the line. */
+.row[data-current] .word::before {
+  content: attr(data-text);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 620;
+}
+
+.word::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -3px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--n-ink);
+  opacity: 0;
+  transform: scaleX(0.2);
+  transform-origin: 0 50%;
+  transition:
+    transform var(--n-t-quick) var(--n-ease-out),
+    opacity var(--n-t-quick) var(--n-ease-out);
+}
+
+.word[data-next]::after,
+.word[data-picked]::after {
+  opacity: 1;
+  transform: none;
+}
+
+.lines[data-mode="check"] .word {
+  color: color-mix(in srgb, var(--n-ink) 52%, transparent);
+}
+
+.lines[data-mode="check"] .word[data-sung],
+.lines[data-mode="check"] .word:has(~ .word[data-sung]),
+.lines[data-mode="check"] .word:hover {
+  color: var(--n-ink);
+}
+
+.word:focus-visible {
+  outline: none;
+  color: var(--n-ink);
+  background: var(--n-focus-fill);
+  border-radius: 4px;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+}
+
+.clock {
+  min-width: 34px;
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  cursor: pointer;
+}
+
+.rail {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--n-ink) 14%, transparent);
+}
+
+.rail i {
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  height: 10px;
+  background: color-mix(in srgb, var(--n-ink) 34%, transparent);
+}
+
+.played {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--n-ink) 72%, transparent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.pad {
+  margin: 4px 22px 0;
+  height: 46px;
+  flex: none;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 10%, transparent);
+  color: var(--n-ink-2);
+  font: 500 14px/1 var(--n-font);
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  touch-action: none;
+  transition:
+    color var(--n-t-entrance) var(--n-ease-out),
+    box-shadow var(--n-t-entrance) var(--n-ease-out);
+}
+
+.pad:hover:not(:disabled) {
+  color: var(--n-ink);
+}
+
+.pad[data-pressed] {
+  color: var(--n-ink);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--n-ink) 62%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 30%, transparent);
+  transition-duration: 0ms;
+}
+
+.pad:disabled {
+  color: var(--n-ink-2);
+  cursor: default;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px 18px;
+}
+
+.note {
+  flex: 1;
+  margin: 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
+}
+
+.count {
+  margin-right: 6px;
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lines {
+    scroll-behavior: auto;
+  }
+
+  .row p,
+  .word,
+  .word::after,
+  .pad {
+    transition: none;
+  }
+}
