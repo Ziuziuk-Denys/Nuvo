@@ -131,7 +131,7 @@
 .ringTrack {
   fill: none;
   stroke: color-mix(in srgb, var(--n-ink) 7%, transparent);
-  stroke-width: 10;
+  stroke-width: 4.4;
 }
 
 .ringValue {

@@ -81,11 +81,9 @@ export function StorageSection(): JSX.Element {
     let angle = 0;
     return parts.map((category) => {
       const span = (category.bytes / selectedBytes) * 360;
-      const gap = Math.min(2, span * 0.35);
-      const from = angle + gap / 2;
-      const to = Math.max(from + 0.8, angle + span - gap / 2);
+      const from = angle;
       angle += span;
-      return { ...category, from, to };
+      return { ...category, from, to: Math.max(from + 0.8, angle) };
     });
   }, [analytics, selected, selectedBytes]);
 
@@ -177,12 +175,12 @@ export function StorageSection(): JSX.Element {
           <div className={styles.ringWrap}>
             <div className={styles.ring}>
               <svg viewBox="0 0 200 200" width={136} height={136} aria-hidden="true">
-                <circle cx="100" cy="100" r="81" className={styles.ringTrack} />
+                <circle cx="100" cy="100" r="85.2" className={styles.ringTrack} />
                 {selectedBytes > 0
                   ? slices.map((slice) => (
                       <path
                         key={slice.id}
-                        d={hovered === slice.id ? ringSegment(74, 88, slice.from, slice.to) : ringSegment(76, 86, slice.from, slice.to)}
+                        d={hovered === slice.id ? ringSegment(80, 90, slice.from, slice.to) : ringSegment(83, 87.4, slice.from, slice.to)}
                         style={{ fill: slice.color }}
                         onMouseEnter={() => setHovered(slice.id)}
                         onMouseLeave={() => setHovered(null)}
