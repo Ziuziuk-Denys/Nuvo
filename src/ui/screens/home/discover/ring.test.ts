@@ -69,3 +69,9 @@ describe("place", () => {
     expect(shown.some((spot) => spot!.x + (ring.cover * spot!.scale) / 2 > 1100)).toBe(true);
   });
 });
+
+it("shows one cover per album art and keeps one artist's songs apart", () => {
+  const song = (id: string, artists: string, coverUrl = id) => ({ id, title: id, artists, coverUrl, durationMs: 1 });
+  const tracks = [song("a1", "A"), song("a2", "A"), song("b1", "B"), song("b2", "B", "b1"), song("c1", "C")];
+  expect(ringTracks([{ id: "daily-mix-discover", title: "", description: "", tracks }]).map((track) => track.id)).toEqual(["a1", "b1", "c1", "a2"]);
+});

@@ -8,13 +8,12 @@ import { coverSrc } from "../../../ports/covers";
 import type { Track } from "../../../ports/recs";
 import { useThemeMode } from "../../../ports/theme";
 import { ShelfHeading } from "../ShelfHeading";
-import { floorOf, PERSPECTIVE, place, ringFor, ringOffset, ringSlots } from "./ring";
+import { floorOf, PERSPECTIVE, place, ringFor, ringHeight, ringOffset, ringSlots } from "./ring";
 import { createRoom, type Room, type RoomCard } from "./room";
 import { ArtistLinks } from "../../../shell/ArtistLinks";
 import styles from "./DiscoverArc.module.css";
 
-const HEIGHT = 480;
-const RING_HEIGHT = 460;
+const FLOOR_ROOM = 20;
 const CLEAR_TOP = 64;
 const STIFFNESS = 15;
 const LONGEST_STEP_S = 1 / 30;
@@ -59,7 +58,8 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
   const sky = useSkyMode(rootRef);
   const count = ringSlots(tracks.length);
   const slots = useMemo(() => Array.from({ length: count }, (_, slot) => tracks[slot % tracks.length]), [count, tracks]);
-  const ring = useMemo(() => ringFor(width, RING_HEIGHT, CLEAR_TOP), [width]);
+  const ring = useMemo(() => ringFor(width, ringHeight(width), CLEAR_TOP), [width]);
+  const height = ringHeight(width) + FLOOR_ROOM;
   const wrap = (index: number) => ((index % count) + count) % count;
 
   const paint = (now = performance.now()): boolean => {
@@ -152,10 +152,10 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
 
   useEffect(() => {
     if (width === 0) return;
-    room.current?.resize(width, HEIGHT, window.devicePixelRatio);
+    room.current?.resize(width, height, window.devicePixelRatio);
     tracks.forEach((track, slot) => room.current?.load(slot, coverSrc(track.coverUrl, ring.cover * 1.12, window.devicePixelRatio)));
     paintRef.current();
-  }, [width, ring, tracks]);
+  }, [width, height, ring, tracks]);
 
   useEffect(
     () => () => {
@@ -267,7 +267,7 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
   const current = slots[Math.min(centre, count - 1)];
   usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { sky });
   return (
-    <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>
+    <section ref={rootRef} className={styles.arc} data-arc="" style={{ height }}>
       <div className={styles.heading}>
         <ShelfHeading title={title} />
       </div>

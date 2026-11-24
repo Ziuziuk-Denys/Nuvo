@@ -1,4 +1,5 @@
 import type { HomeMix, Track } from "../../../ports/recs";
+import { firstArtist } from "../../../recs/notInterestedItems";
 import { DISCOVER, homeSongs } from "../homeModel";
 
 export const MIN_TRACKS = 8;
@@ -10,6 +11,8 @@ const TURN_DEG = 50;
 const TILT = 0.4;
 const CENTRE_LIFT = 0.12;
 const VANISH = 0.2;
+const DEEPEST = 780;
+const WIDE_FROM = 1400;
 const FADE_FROM = 0.72;
 const FADE_TO = 0.98;
 
@@ -35,19 +38,32 @@ export interface Placement {
   shown: number;
 }
 
+// Singles often share their album's art under another address, so one artist's songs stand far apart
+function apart(tracks: readonly Track[]): Track[] {
+  const heard = new Map<string, number>();
+  const rounds = tracks.map((track) => {
+    const round = heard.get(firstArtist(track)) ?? 0;
+    heard.set(firstArtist(track), round + 1);
+    return round;
+  });
+  return tracks
+    .map((track, index) => ({ track, round: rounds[index] }))
+    .sort((left, right) => left.round - right.round)
+    .map(({ track }) => track);
+}
+
 export function ringTracks(mixes: readonly HomeMix[]): Track[] {
   const shown = new Set<string>();
   const unseen = (track: Track) => {
     const art = track.coverUrl || track.id;
     return !shown.has(art) && shown.add(art);
   };
-  const fresh = (mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? []).filter(unseen);
-  const known = homeSongs(
+  const fresh = apart((mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? []).filter(unseen));
+  const rest = homeSongs(
     mixes.filter((mix) => mix.id !== DISCOVER),
     Infinity,
-  )
-    .map((song) => song.track)
-    .filter(unseen);
+  );
+  const known = apart(rest.map((song) => song.track).filter(unseen));
   const tracks: Track[] = [];
   let next = 0;
   for (const track of fresh) {
@@ -76,10 +92,19 @@ function depthScale(ring: Pick<Ring, "depth">, angle: number): number {
   return PERSPECTIVE / (PERSPECTIVE + ring.depth * (1 - Math.cos(angle)));
 }
 
+function coverFor(width: number): number {
+  const wide = Math.max(0, width - WIDE_FROM) * 0.08;
+  return Math.round(Math.min(236, Math.min(172, Math.max(132, width * 0.15)) + wide));
+}
+
+export function ringHeight(width: number): number {
+  return 460 + Math.round((coverFor(width) - coverFor(WIDE_FROM)) * 1.1 * Number(width > WIDE_FROM));
+}
+
 export function ringFor(width: number, height: number, clearTop: number): Ring {
-  const cover = Math.round(Math.min(172, Math.max(132, width * 0.15)));
+  const cover = coverFor(width);
   const radius = width * 0.8;
-  const depth = radius * 0.7;
+  const depth = Math.min(DEEPEST, radius * 0.7);
   const centreY = height * 0.62;
   const half = cover / 2;
   let edge = 0;
