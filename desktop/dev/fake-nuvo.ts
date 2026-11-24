@@ -101,6 +101,7 @@ const panel = await startPanelBus({
   mprisName,
   now: Date.now,
   show: () => console.log("[fake] Show"),
+  pocketHeld: (held) => console.log("[fake] HoldPocket", held),
   command: (command) => {
     console.log("[fake] command", command.type);
     const id = songs[index].id;
@@ -111,6 +112,7 @@ const panel = await startPanelBus({
   },
 });
 if (!panel) throw new Error("quest.nuvo.Nuvo.Player is taken: is a real Nuvo running on this bus?");
+panel.service.setPocketOnTop(true);
 
 function state(): SurfaceState {
   const song = songs[index];
