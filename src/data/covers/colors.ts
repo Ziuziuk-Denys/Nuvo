@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { contrastRatio } from "@/data/color/contrast";
+import { CORE_BASE_URL } from "@/data/core/request";
+import { coverUrl } from "./coverUrl";
 
 export interface CoverColors {
   color1: string;
@@ -158,7 +160,7 @@ export async function readCoverPixels(url: string): Promise<Uint8ClampedArray> {
   const image = new Image();
   image.crossOrigin = "anonymous";
   image.decoding = "async";
-  image.src = url;
+  image.src = coverUrl(CORE_BASE_URL, url, SAMPLE_PX, 1);
   await image.decode();
   const canvas = document.createElement("canvas");
   canvas.width = SAMPLE_PX;

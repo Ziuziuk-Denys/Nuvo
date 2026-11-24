@@ -9,6 +9,7 @@ import { Tooltip } from "../../components/Tooltip";
 import { ISLAND, POPOVER } from "../../geometry";
 import { useCachedTrackIds } from "../../ports/catalog";
 import { coverAccent } from "../../ports/color";
+import { coverSrc } from "../../ports/covers";
 import { useTranslation } from "../../ports/i18n";
 import { MorphPlayIcon } from "../../ports/karaoke";
 import { useIsTrackLiked, useLikeTrack, useUnlikeTrack } from "../../ports/library";
@@ -60,6 +61,8 @@ export function coverWash(accent: string, light: boolean): string {
   return `color-mix(in srgb, ${accent} ${light ? 9 : 18}%, transparent)`;
 }
 
+const TINT_PX = 64;
+
 function useCoverTint(url: string | undefined, light: boolean): string {
   const fallback = light ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)";
   const [tint, setTint] = useState<{ key: string; value: string } | null>(null);
@@ -73,17 +76,17 @@ function useCoverTint(url: string | undefined, light: boolean): string {
     image.onload = () => {
       try {
         const canvas = document.createElement("canvas");
-        canvas.width = 64;
-        canvas.height = 64;
+        canvas.width = TINT_PX;
+        canvas.height = TINT_PX;
         const context = canvas.getContext("2d", { willReadFrequently: true });
         if (!context || !live) return;
-        context.drawImage(image, 0, 0, 64, 64);
-        setTint({ key, value: coverWash(coverAccent(context.getImageData(0, 0, 64, 64).data, light), light) });
+        context.drawImage(image, 0, 0, TINT_PX, TINT_PX);
+        setTint({ key, value: coverWash(coverAccent(context.getImageData(0, 0, TINT_PX, TINT_PX).data, light), light) });
       } catch {
         // a tainted canvas keeps the grey wash
       }
     };
-    image.src = url;
+    image.src = coverSrc(url, TINT_PX, 1);
     return () => {
       live = false;
     };

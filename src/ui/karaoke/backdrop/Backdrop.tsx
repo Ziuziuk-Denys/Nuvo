@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from "react";
-import { sizedCoverUrl } from "@/ui/components/coverUrl";
+import { coverSrc } from "@/ui/ports/covers";
 import { DEFAULT_COVER_COLORS, colorsFor, isWindowVisible, onWindowVisibilityChange } from "@/ui/ports/karaokeBackdrop";
 import { RENDER_SCALE, shouldAnimate, stillBackground } from "./flow";
 import { useEffectsStore, useReducedEffects } from "../../effects";
@@ -104,7 +104,7 @@ export function Backdrop({ cover, open, fps: ownFps, overlay, uniforms }: Backdr
     let live = true;
     const image = new Image();
     image.crossOrigin = "anonymous";
-    image.src = sizedCoverUrl(cover, COVER_PX, 1);
+    image.src = coverSrc(cover, COVER_PX, 1);
     image.decode().then(
       () => {
         const renderer = rendererRef.current;
