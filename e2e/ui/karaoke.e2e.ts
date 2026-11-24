@@ -46,7 +46,9 @@ it("with the background hidden, both sizes differ from the references by at most
   await page.evaluate(() => localStorage.setItem("nuvo.hint.dislike", "1"));
   await session.go("#/player");
   await session.setLook(DARK);
-  await page.addStyleTag({ content: "* { font-family: Arimo !important } canvas, [data-add-lyrics] { visibility: hidden !important }" });
+  await page.addStyleTag({
+    content: "* { font-family: Arimo !important } canvas { visibility: hidden !important } [data-add-lyrics] { display: none !important }",
+  });
   await page.getByText(NO_LYRICS).waitFor({ timeout: 30_000 });
   await page.waitForTimeout(2_000);
   const files = await session.shoot("1-karaoke", "karaoke", "dark", { looks: [DARK] });
