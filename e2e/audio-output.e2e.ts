@@ -1,5 +1,5 @@
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
@@ -77,6 +77,8 @@ describe.skipIf(!linux)("audio output", () => {
   let page: Page;
   let guard: ReturnType<typeof setInterval> | undefined;
   let strayStream = "";
+  let childEnd = "alive";
+  let childErrors = "";
   const binary = PACKAGED || ELECTRON;
 
   beforeAll(async () => {
@@ -90,12 +92,12 @@ describe.skipIf(!linux)("audio output", () => {
       env: { ...isolation.env, PULSE_SINK: SINK },
       stdio: ["ignore", "ignore", "pipe"],
     });
+    child.on("exit", (code, signal) => (childEnd = `${new Date().toISOString()} exit ${code} signal ${signal}`));
     const endpoint = await new Promise<string>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("no DevTools endpoint")), 60_000);
-      let text = "";
       child.stderr!.on("data", (chunk: Buffer) => {
-        text += chunk.toString();
-        const found = /DevTools listening on (ws:\/\/\S+)/.exec(text);
+        childErrors += chunk.toString();
+        const found = /DevTools listening on (ws:\/\/\S+)/.exec(childErrors);
         if (found) {
           clearTimeout(timer);
           resolve(found[1]);
@@ -107,7 +109,7 @@ describe.skipIf(!linux)("audio output", () => {
       try {
         const stray = appInputs(isolation.userData).find((input) => input.sink !== sinkIndex);
         if (stray && !strayStream) {
-          strayStream = `stream ${stray.index} on sink ${stray.sink}`;
+          strayStream = `${new Date().toISOString()} test sink ${sinkIndex}, stream ${JSON.stringify(stray)}`;
           stopApp(isolation.userData, "KILL");
         }
       } catch {}
@@ -128,6 +130,7 @@ describe.skipIf(!linux)("audio output", () => {
 
   afterAll(async () => {
     if (guard) clearInterval(guard);
+    console.log(`app: ${childEnd}; stray: ${strayStream || "none"}`);
     await browser?.close().catch(() => undefined);
     if (isolation) {
       stopApp(isolation.userData, "TERM");
@@ -140,6 +143,7 @@ describe.skipIf(!linux)("audio output", () => {
       const kept = path.join(ROOT, "e2e", "artifacts", "failures");
       mkdirSync(kept, { recursive: true });
       if (existsSync(log)) copyFileSync(log, path.join(kept, "audio-output-core.log"));
+      writeFileSync(path.join(kept, "audio-output-stderr.log"), childErrors.slice(-64_000));
     }
     isolation?.dispose();
   });
