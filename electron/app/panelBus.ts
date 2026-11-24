@@ -18,10 +18,12 @@ export const INTROSPECTION = `<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS O
     <property name="LyricsLine" type="s" access="read"/>
     <property name="LyricsJson" type="s" access="read"/>
     <property name="UpNextJson" type="s" access="read"/>
+    <property name="PocketOnTop" type="b" access="read"/>
     <method name="ToggleLike"/>
     <method name="PlayUpNext"><arg type="s" direction="in"/></method>
     <method name="Dislike"/>
     <method name="Show"/>
+    <method name="HoldPocket"><arg type="b" direction="in"/></method>
   </interface>
   <interface name="${PROPERTIES}">
     <method name="Get"><arg type="s" direction="in"/><arg type="s" direction="in"/><arg type="v" direction="out"/></method>
@@ -48,6 +50,7 @@ export interface PanelDeps {
   mprisName: string;
   command(command: RemoteCommand): void;
   show(): void;
+  pocketHeld(held: boolean): void;
   now(): number;
 }
 
@@ -58,6 +61,7 @@ interface Exposed {
   LyricsLine: string;
   LyricsJson: string;
   UpNextJson: string;
+  PocketOnTop: boolean;
 }
 
 const TYPES: Record<keyof Exposed, string> = {
@@ -67,6 +71,7 @@ const TYPES: Record<keyof Exposed, string> = {
   LyricsLine: "s",
   LyricsJson: "s",
   UpNextJson: "s",
+  PocketOnTop: "b",
 };
 const PANEL_LYRIC_LINES_MAX = 500;
 const PANEL_LYRIC_TEXT_MAX = 120;
@@ -81,7 +86,7 @@ export class PanelService {
     private readonly bus: PanelBusLike,
     private readonly deps: PanelDeps,
   ) {
-    this.exposed = { MprisName: deps.mprisName, TrackId: "", Liked: false, LyricsLine: "", LyricsJson: "[]", UpNextJson: "[]" };
+    this.exposed = { MprisName: deps.mprisName, TrackId: "", Liked: false, LyricsLine: "", LyricsJson: "[]", UpNextJson: "[]", PocketOnTop: false };
     bus.onCall = (call) => this.handle(call);
   }
 
@@ -97,6 +102,10 @@ export class PanelService {
   setLyrics(lyrics: NotchLyrics): void {
     this.lyrics = lyrics;
     this.refresh();
+  }
+
+  setPocketOnTop(onTop: boolean): void {
+    this.publish({ ...this.exposed, PocketOnTop: onTop });
   }
 
   dispose(): void {
@@ -135,6 +144,7 @@ export class PanelService {
       })),
     );
     this.publish({
+      ...this.exposed,
       MprisName: this.deps.mprisName,
       TrackId: hasTrack ? state!.trackId! : "",
       Liked: hasTrack && Boolean(state?.liked),
@@ -190,6 +200,9 @@ export class PanelService {
       }
       case `${INTERFACE}.Dislike`:
         if (this.state?.trackId) this.deps.command({ type: "dislike" });
+        return bus.reply(call);
+      case `${INTERFACE}.HoldPocket`:
+        this.deps.pocketHeld(args[0] === true);
         return bus.reply(call);
       case `${INTERFACE}.Show`:
         this.deps.show();

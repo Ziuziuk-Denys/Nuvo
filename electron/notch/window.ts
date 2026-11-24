@@ -11,6 +11,7 @@ import {
   type NotchState,
   type ShapeRect,
 } from "../../src/notch/contracts";
+import type { PocketFeed } from "../../src/pocket/contracts";
 import { ISLAND_SIZES, capturesPointer, islandRect, notchWindow } from "../../src/notch/lib/geometry";
 import { overlayOrigin } from "../app/compositor";
 import { kwinScript, type DisplayBounds } from "./placement";
@@ -40,6 +41,18 @@ const RAISE_MS = 1_000;
 const FOCUS_SETTLE_MS = 50;
 const LEAVE_MS = 160;
 
+// The public state leaves local and custom covers out; the app's own windows may show them.
+export function withCovers(state: NotchState, feed: PocketFeed | null): NotchState {
+  const { track } = state;
+  if (!track || feed?.trackId !== track.id) return state;
+  const covers = new Map(feed.upNext.map((next) => [next.id, next.coverUrl]));
+  return {
+    ...state,
+    track: { ...track, coverUrl: track.coverUrl ?? feed.coverUrl },
+    upNext: state.upNext.map((next) => ({ ...next, coverUrl: next.coverUrl ?? covers.get(next.id) ?? null })),
+  };
+}
+
 export interface NotchDeps {
   preloadPath: string;
   icon?: NativeImage;
@@ -59,6 +72,7 @@ export class NotchWindow {
   private main: BrowserWindow | null = null;
   private settings = DEFAULT_NOTCH_SETTINGS;
   private state: NotchState | null = null;
+  private feed: PocketFeed | null = null;
   private lyrics: NotchLyrics | null = null;
   private playlists: NotchPlaylists | null = null;
   private cutout: Cutout | null = null;
@@ -141,7 +155,12 @@ export class NotchWindow {
 
   setState(state: NotchState): void {
     this.state = state;
-    this.send("notch:state", state);
+    this.send("notch:state", withCovers(state, this.feed));
+  }
+
+  setFeed(feed: PocketFeed): void {
+    this.feed = feed;
+    if (this.state) this.send("notch:state", withCovers(this.state, feed));
   }
 
   setLyrics(lyrics: NotchLyrics): void {
@@ -192,7 +211,14 @@ export class NotchWindow {
   }
 
   hello(): NotchHello {
-    return { state: this.state, lyrics: this.lyrics, playlists: this.playlists, settings: this.settings, cutout: this.cutout, presence: this.presence };
+    return {
+      state: this.state && withCovers(this.state, this.feed),
+      lyrics: this.lyrics,
+      playlists: this.playlists,
+      settings: this.settings,
+      cutout: this.cutout,
+      presence: this.presence,
+    };
   }
 
   focusApp(): void {

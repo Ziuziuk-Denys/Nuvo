@@ -1,26 +1,10 @@
-import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Sheet, type SheetAction } from "../../components/Sheet";
 import { useTranslation } from "../../ports/i18n";
-import {
-  clearStamp,
-  detectFormat,
-  dropUserLyrics,
-  formatStamp,
-  isComplete,
-  isPlayingTrack,
-  loadEditable,
-  markEnd,
-  nudge,
-  playbackPositionMs,
-  saveLyrics,
-  stamp,
-  startSync,
-  toLrc,
-  type LyricsTrack,
-  type SyncLine,
-} from "../../ports/lyricsTools";
+import { detectFormat, dropUserLyrics, isPlayingTrack, loadEditable, saveLyrics, startSync, type LyricsTrack, type SyncLine } from "../../ports/lyricsTools";
 import styles from "./Lyrics.module.css";
 import { LyricsFinder, useLyricsFinder } from "./LyricsFinder";
+import { TimingStage } from "./TimingStage";
 
 interface LyricsEditorProps {
   open: boolean;
@@ -35,15 +19,15 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sync, setSync] = useState<SyncLine[] | null>(null);
-  const [index, setIndex] = useState(0);
+  const [kept, setKept] = useState<{ text: string; lines: SyncLine[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [finding, setFinding] = useState(false);
   const finder = useLyricsFinder(track);
-  const list = useRef<HTMLOListElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setSync(null);
+    setKept(null);
     setFinding(find);
     if (find) finder.start();
     if (draft !== null) {
@@ -63,10 +47,6 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
     return () => controller.abort();
   }, [open, track, draft, find]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (sync) list.current?.focus();
-  }, [sync !== null]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const run = async (action: () => Promise<void>) => {
     setError(null);
     try {
@@ -75,34 +55,6 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
     } catch {
       setError(t("ui.lyrics.save_failed"));
     }
-  };
-
-  const onSyncKey = (event: KeyboardEvent<HTMLOListElement>) => {
-    if (!sync) return;
-    const step = event.shiftKey ? 1000 : 100;
-    const keys: Record<string, () => void> = {
-      " ": () => {
-        const done = stamp(sync, index, playbackPositionMs());
-        setSync(done.lines);
-        setIndex(done.next);
-      },
-      Enter: () => {
-        const done = markEnd(sync, index - 1, playbackPositionMs());
-        setSync(done.lines);
-        setIndex(done.next);
-      },
-      ArrowUp: () => setIndex(Math.max(0, index - 1)),
-      ArrowDown: () => setIndex(Math.min(sync.length, index + 1)),
-      ArrowLeft: () => setSync(nudge(sync, index, -step)),
-      ArrowRight: () => setSync(nudge(sync, index, step)),
-      Backspace: () => setSync(clearStamp(sync, index)),
-    };
-    const handle = keys[event.key];
-    if (!handle) return;
-    // Space must stamp, not reach the player's play/pause shortcut
-    event.preventDefault();
-    event.stopPropagation();
-    handle();
   };
 
   const format = detectFormat(text);
@@ -115,40 +67,45 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
         { label: t("ui.lyrics.back"), onClick: closeFinder },
         { label: t("ui.lyrics.find_search"), primary: true, disabled: !finder.ready, onClick: finder.run },
       ]
-    : sync
-      ? [
-          { label: t("ui.lyrics.back"), onClick: () => setSync(null) },
-          {
-            label: t("ui.lyrics.save_synced"),
-            primary: true,
-            disabled: !isComplete(sync),
-            onClick: () => void run(() => saveLyrics(track, { format: "lrc", content: toLrc(sync) })),
+    : [
+        {
+          label: t("ui.lyrics.find"),
+          onClick: () => {
+            setFinding(true);
+            finder.start();
           },
-        ]
-      : [
-          {
-            label: t("ui.lyrics.find"),
-            onClick: () => {
-              setFinding(true);
-              finder.start();
-            },
-          },
-          { label: t("ui.lyrics.use_found"), onClick: () => void run(() => dropUserLyrics(track)) },
-          {
-            label: t("ui.lyrics.sync"),
-            disabled: format !== "plain" || text.trim() === "" || !isPlayingTrack(track.id),
-            onClick: () => {
-              setSync(startSync(text));
-              setIndex(0);
-            },
-          },
-          {
-            label: t("ui.lyrics.save"),
-            primary: true,
-            disabled: text.trim() === "",
-            onClick: () => void run(() => saveLyrics(track, { format, content: text })),
-          },
-        ];
+        },
+        { label: t("ui.lyrics.use_found"), onClick: () => void run(() => dropUserLyrics(track)) },
+        {
+          label: t("ui.lyrics.sync"),
+          disabled: text.trim() === "" || !isPlayingTrack(track.id),
+          onClick: () => setSync(kept?.text === text ? kept.lines : startSync(text)),
+        },
+        {
+          label: t("ui.lyrics.save"),
+          primary: true,
+          disabled: text.trim() === "",
+          onClick: () => void run(() => saveLyrics(track, { format, content: text })),
+        },
+      ];
+
+  if (sync) {
+    return (
+      <TimingStage
+        open={open}
+        track={track}
+        start={sync}
+        onBack={(lines) => {
+          setKept({ text, lines });
+          setSync(null);
+        }}
+        onSave={async (content) => {
+          await saveLyrics(track, { format: "lrc", content });
+          onClose();
+        }}
+      />
+    );
+  }
 
   return (
     <Sheet open={open} onClose={onClose} title={t("ui.lyrics.edit_title")} actions={actions}>
@@ -161,18 +118,6 @@ export function LyricsEditor({ open, track, draft = null, find = false, onClose 
             closeFinder();
           }}
         />
-      ) : sync ? (
-        <>
-          <ol ref={list} tabIndex={0} className={styles.lines} aria-label={t("ui.lyrics.sync_list")} onKeyDown={onSyncKey}>
-            {sync.map((line, at) => (
-              <li key={at} aria-current={at === index ? "true" : undefined}>
-                <span className={styles.stamp}>{line.atMs === null ? "--:--.--" : formatStamp(line.atMs).slice(1, -1)}</span>
-                {line.text}
-              </li>
-            ))}
-          </ol>
-          <p className={styles.note}>{t("ui.lyrics.sync_hint")}</p>
-        </>
       ) : (
         <>
           <textarea

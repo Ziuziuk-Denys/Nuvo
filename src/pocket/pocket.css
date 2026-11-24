@@ -16,6 +16,7 @@ body,
   --wash: color-mix(in srgb, var(--ink) 10%, transparent);
   --room: color-mix(in srgb, var(--field) 42%, #050506);
   --glow: 40%;
+  --beam: var(--n-lamp);
   --radius: 18px;
   --cover: 0.5;
   --out: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -52,8 +53,9 @@ body,
 }
 
 .pocket[data-mode="light"] {
-  --room: color-mix(in srgb, var(--field) 80%, #fff);
-  --glow: 46%;
+  --room: color-mix(in srgb, var(--field) 66%, #d5dbe4);
+  --glow: 82%;
+  --beam: color-mix(in srgb, var(--n-lamp) 22%, #fff);
 }
 
 :where(.pocket button) {
@@ -116,16 +118,16 @@ body,
 
 .room {
   --fall:
-    color-mix(in srgb, var(--light) var(--glow), transparent) 0%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.92), transparent) 15%,
-    color-mix(in srgb, var(--light) calc(var(--glow) * 0.75), transparent) 30%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.57), transparent) 45%,
-    color-mix(in srgb, var(--light) calc(var(--glow) * 0.41), transparent) 60%, color-mix(in srgb, var(--light) calc(var(--glow) * 0.26), transparent) 75%,
-    color-mix(in srgb, var(--light) calc(var(--glow) * 0.11), transparent) 90%, transparent 100%;
+    color-mix(in srgb, var(--beam) var(--glow), transparent) 0%, color-mix(in srgb, var(--beam) calc(var(--glow) * 0.92), transparent) 15%,
+    color-mix(in srgb, var(--beam) calc(var(--glow) * 0.75), transparent) 30%, color-mix(in srgb, var(--beam) calc(var(--glow) * 0.57), transparent) 45%,
+    color-mix(in srgb, var(--beam) calc(var(--glow) * 0.41), transparent) 60%, color-mix(in srgb, var(--beam) calc(var(--glow) * 0.26), transparent) 75%,
+    color-mix(in srgb, var(--beam) calc(var(--glow) * 0.11), transparent) 90%, transparent 100%;
 
   position: absolute;
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  background: radial-gradient(96cqw 74cqw at 50% 18%, var(--fall));
+  background: radial-gradient(96cqw 74cqw at calc(50% - var(--n-light-x) * 14%) calc(26% - var(--n-light-y) * 12%), var(--fall));
   transition: opacity 480ms var(--out);
 }
 
@@ -185,6 +187,7 @@ body,
   border-radius: var(--radius);
   background: rgba(0, 0, 0, 0.62);
   filter: blur(26px);
+  transform: translateX(calc(var(--n-light-x) * 5%));
   opacity: 0;
   transition: opacity 420ms var(--out);
 }
@@ -243,8 +246,8 @@ body,
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    inset calc(var(--n-light-x) * 1px) calc(var(--n-light-y) * 1px) 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 -1px 0 rgba(0, 0, 0, 0.3);
 }
 
@@ -283,6 +286,14 @@ body,
 .tool:focus-visible,
 .tool[aria-pressed="true"] {
   color: var(--ink);
+}
+
+.tool.like[aria-pressed="true"] {
+  color: #ff7088;
+}
+
+.pocket[data-mode="light"] .tool.like[aria-pressed="true"] {
+  color: #e0405e;
 }
 
 .tool:focus-visible {

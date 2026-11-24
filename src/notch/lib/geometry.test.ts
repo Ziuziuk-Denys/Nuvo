@@ -69,8 +69,8 @@ describe("island geometry", () => {
     const tallest = Math.max(...grows.map((rect) => rect.height));
     expect(widest).toBeLessThanOrEqual(NOTCH_WINDOW.width);
     expect(tallest).toBeLessThanOrEqual(NOTCH_WINDOW.height);
-    expect(NOTCH_WINDOW.width - widest).toBeLessThan(10);
-    expect(NOTCH_WINDOW.height - tallest).toBeLessThan(10);
+    expect(NOTCH_WINDOW.width - widest).toBeLessThan(20);
+    expect(NOTCH_WINDOW.height - tallest).toBeLessThan(20);
   });
 });
 

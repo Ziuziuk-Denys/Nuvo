@@ -5,21 +5,24 @@ import { default as path } from "node:path";
 export const MAX_SAVE_TEXT_CHARS = 32 * 1024 * 1024;
 const MAX_NAME_CHARS = 120;
 
+const FILTERS: Record<string, string> = { csv: "CSV", txt: "Text", lrc: "LRC", ttml: "TTML" };
+
 export interface SaveText {
   name: string;
   text: string;
 }
 
 export function saveFilter(name: string): { name: string; extensions: string[] } {
-  return name.toLowerCase().endsWith(".txt") ? { name: "Text", extensions: ["txt"] } : { name: "CSV", extensions: ["csv"] };
+  const extension = path.extname(name).slice(1).toLowerCase();
+  return { name: FILTERS[extension] ?? "Text", extensions: [extension] };
 }
 
-/** A `.csv` or `.txt` base name (no folders, no hidden files) and text under the cap; null otherwise. */
+/** A `.csv`, `.txt`, `.lrc` or `.ttml` base name (no folders, no hidden files) and text under the cap; null otherwise. */
 export function validateSaveText(payload: unknown): SaveText | null {
   const { name, text } = (payload ?? {}) as { name?: unknown; text?: unknown };
   if (typeof name !== "string" || typeof text !== "string" || text.length > MAX_SAVE_TEXT_CHARS) return null;
   const base = name.replace(/[\\/]/g, " ").trim();
-  if (!base || base.length > MAX_NAME_CHARS || base.startsWith(".") || !/\.(csv|txt)$/i.test(base)) return null;
+  if (!base || base.length > MAX_NAME_CHARS || base.startsWith(".") || !/\.(csv|txt|lrc|ttml)$/i.test(base)) return null;
   return { name: base, text };
 }
 
