@@ -14,6 +14,8 @@ import { ArtistLinks } from "../../../shell/ArtistLinks";
 import styles from "./DiscoverArc.module.css";
 
 const FLOOR_ROOM = 20;
+const COMPACT_HEIGHT = 330;
+const CAPTION_ROOM = 84;
 const CLEAR_TOP = 64;
 const STIFFNESS = 15;
 const LONGEST_STEP_S = 1 / 30;
@@ -28,6 +30,7 @@ const WHEEL_SETTLE_MS = 140;
 const DRAG_SLOP = 4;
 const THROW_MS = 240;
 const CONTEXT = "home:discover";
+const STARTER_CONTEXT = "home:starter";
 
 interface Drag {
   x: number;
@@ -38,7 +41,7 @@ interface Drag {
   velocity: number;
 }
 
-export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string }): JSX.Element {
+export function DiscoverArc({ tracks, title, compact = false }: { tracks: Track[]; title: string; compact?: boolean }): JSX.Element {
   const reduced = useReducedEffects();
   const light = useLook().mode === "light";
   const rootRef = useRef<HTMLElement>(null);
@@ -59,8 +62,8 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
   const [settled, setSettled] = useState(0);
   const count = ringSlots(tracks.length);
   const slots = useMemo(() => Array.from({ length: count }, (_, slot) => tracks[slot % tracks.length]), [count, tracks]);
-  const ring = useMemo(() => ringFor(width, ringHeight(width), CLEAR_TOP), [width]);
-  const height = ringHeight(width) + FLOOR_ROOM;
+  const ring = useMemo(() => (compact ? ringFor(width, COMPACT_HEIGHT, 0) : ringFor(width, ringHeight(width), CLEAR_TOP)), [compact, width]);
+  const height = compact ? floorOf(ring) + CAPTION_ROOM : ringHeight(width) + FLOOR_ROOM;
   const wrap = (index: number) => ((index % count) + count) % count;
 
   const paint = (now = performance.now()): boolean => {
@@ -284,16 +287,18 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
       return;
     }
     if (index !== centre) turnTo(index);
-    playSongs(tracks, index % tracks.length, CONTEXT);
+    playSongs(tracks, index % tracks.length, compact ? STARTER_CONTEXT : CONTEXT);
   };
 
   const current = slots[Math.min(centre, count - 1)];
   usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { scene: "room" });
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height }}>
-      <div className={styles.heading}>
-        <ShelfHeading title={title} />
-      </div>
+      {compact ? null : (
+        <div className={styles.heading}>
+          <ShelfHeading title={title} />
+        </div>
+      )}
       <div ref={stageRef} className={styles.room} aria-hidden="true" />
       <ul
         className={styles.ring}

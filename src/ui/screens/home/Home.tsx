@@ -15,12 +15,13 @@ import { EmptyRoom } from "./discover/EmptyRoom";
 import { ringTracks } from "./discover/ring";
 import { ArrangeHome } from "./arrange/ArrangeHome";
 import { useHomeLayout, type SectionId } from "./arrange/homeLayout";
-import { arrangeMixes, likeArtists, mixCovers, mixNames, mixText, starterGenres } from "./homeModel";
+import { arrangeMixes, likeArtists, mixCovers, mixNames, mixText } from "./homeModel";
 import { MixCard } from "./MixCard";
 import { Continue } from "./moments/Continue";
 import { Memory } from "./moments/Memory";
 import { MoodPad } from "./mood/MoodPad";
 import { GenreShelf, LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
+import { useStarters } from "./useStarters";
 import { ColdStartSlot, HiddenLinkSlot } from "./slots";
 import styles from "./Home.module.css";
 
@@ -77,14 +78,16 @@ export function Home(): JSX.Element | null {
   const mixes = offline ? (kept?.mixes ?? null) : all;
   const ring = useMemo(() => (mixes ? ringTracks(mixes) : []), [mixes]);
 
+  const starter = !offline && mixes?.length === 0;
+  const starters = useStarters(starter, locale);
+
   if (mixes === null) return null;
   const open = (href: string) => navigateWithTransition(navigate, href);
 
   const sections: Array<{ key: string; node: ReactNode; own?: boolean }> = [];
-  const starter = !offline && mixes.length === 0;
   if (starter) {
-    sections.push({ key: "cold-start", node: <ColdStartSlot />, own: true });
-    for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
+    sections.push({ key: "cold-start", node: <ColdStartSlot ring={starters.ring} />, own: true });
+    for (const { genre, pool } of starters.genres) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} pool={pool} /> });
   }
   if (ring.length > 0)
     sections.push({ key: "discover", node: <DiscoverArc tracks={ring} title={t(offline ? "ui.home.offline.ring" : "ui.recs.home.discover")} /> });
@@ -130,11 +133,13 @@ export function Home(): JSX.Element | null {
     sections.push({
       key: "offline",
       node: (
-        <EmptyRoom title={t("ui.home.offline.title")} message={t("ui.home.offline.message")}>
-          <Button variant="primary" onClick={() => void addMusic()}>
-            {t("ui.local.add_files")}
-          </Button>
-        </EmptyRoom>
+        <div data-tour="home-start">
+          <EmptyRoom title={t("ui.home.offline.title")} message={t("ui.home.offline.message")}>
+            <Button variant="primary" onClick={() => void addMusic()}>
+              {t("ui.local.add_files")}
+            </Button>
+          </EmptyRoom>
+        </div>
       ),
     });
   } else if (!starter && !offline && libraryEmpty) {

@@ -5,9 +5,9 @@ import { createRoom, type Room, type RoomCard } from "./room";
 import styles from "./EmptyRoom.module.css";
 
 const RING_HEIGHT = 330;
-const HEIGHT = 380;
+const HEIGHT = 340;
 const CLEAR_TOP = 40;
-const SLABS = 9;
+const SLABS = 3;
 
 function slabs(ring: ReturnType<typeof ringFor>): RoomCard[] {
   return Array.from({ length: SLABS }, (_, slot) => slot - (SLABS - 1) / 2).flatMap((offset) => {
@@ -29,35 +29,49 @@ function paint(room: Room, stage: HTMLElement, width: number, light: boolean): v
   room.draw({ ring, floor: floorOf(ring), cards: slabs(ring), lean: 0, tilt: { x: 0, y: 0, amount: 0 }, light, paper: paperOf(stage) }, 0);
 }
 
-export function EmptyRoom({ title, message, children }: { title: string; message?: string; children?: ReactNode }): JSX.Element {
+function Frames(): JSX.Element {
   const { preset, mode } = useLook();
   const light = mode === "light";
   const stage = useRef<HTMLDivElement>(null);
-  const titleId = useId();
   useEffect(() => {
+    const host = stage.current!;
     const canvas = document.createElement("canvas");
-    stage.current!.append(canvas);
+    host.append(canvas);
     const room = createRoom(canvas, () => undefined);
     const observer = new ResizeObserver(([entry]) => {
       const { width } = entry.contentRect;
       if (!room || width === 0) return;
       room.resize(width, HEIGHT, window.devicePixelRatio);
-      paint(room, stage.current!, width, light);
+      paint(room, host, width, light);
     });
-    observer.observe(stage.current!);
+    observer.observe(host);
     return () => {
       observer.disconnect();
       room?.dispose();
       canvas.remove();
     };
   }, [light, preset]);
+  return <div ref={stage} className={styles.frames} aria-hidden="true" />;
+}
+
+interface EmptyRoomProps {
+  title: string;
+  message?: string;
+  stage?: ReactNode;
+  children?: ReactNode;
+}
+
+export function EmptyRoom({ title, message, stage = <Frames />, children }: EmptyRoomProps): JSX.Element {
+  const titleId = useId();
   return (
     <section className={styles.empty} aria-labelledby={titleId} data-empty-state="">
       <h2 id={titleId} className={styles.title}>
         {title}
       </h2>
       {message ? <p className={styles.message}>{message}</p> : null}
-      <div ref={stage} className={styles.stage} style={{ height: HEIGHT }} aria-hidden="true" />
+      <div className={styles.stage} style={{ minHeight: HEIGHT }}>
+        {stage}
+      </div>
       <div className={styles.below}>{children}</div>
     </section>
   );

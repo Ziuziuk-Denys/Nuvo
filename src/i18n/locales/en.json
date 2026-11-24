@@ -205,7 +205,8 @@
         "from": "Bring your playlists from",
         "or": "or",
         "files": "add files from this computer",
-        "drop": "You can also drop songs and folders anywhere in the window"
+        "drop": "You can also drop songs and folders anywhere in the window",
+        "songs": "Songs to start with"
       },
       "genre": {
         "russian": "Russian hits",

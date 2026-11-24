@@ -1,8 +1,8 @@
 import { useRef, useState, type JSX } from "react";
 import { useTranslation } from "../../ports/i18n";
-import { genreSongs, librarySongs, localStyle, playSongs, shuffled, songsLike } from "../../ports/homeShelves";
+import { librarySongs, localStyle, playSongs, shuffled, songsLike } from "../../ports/homeShelves";
 import { playMix, type HomeMix, type Track } from "../../ports/recs";
-import { byOthers, freshFirst, homeSongs, type LikeArtist } from "./homeModel";
+import { apart, byOthers, freshFirst, homeSongs, onePerArt, type LikeArtist } from "./homeModel";
 import { ArtistLead, CoverShelf, ShelfPlaceholder, ShuffleCard } from "./SongCovers";
 import { SongsShelf } from "./SongsShelf";
 import { useShelf } from "./useShelf";
@@ -94,13 +94,11 @@ export function StyleShelf(): JSX.Element | null {
   );
 }
 
-export function GenreShelf({ genre, query }: { genre: string; query: string }): JSX.Element | null {
+export function GenreShelf({ genre, pool }: { genre: string; pool(): Promise<Track[]> }): JSX.Element | null {
   const { t } = useTranslation();
   const context = `home:genre:${genre}`;
-  const pool = useRef<Promise<Track[]> | null>(null);
   const shelf = useShelf(context, async (shown, taken) => {
-    pool.current ??= genreSongs(query);
-    return freshFirst((await pool.current).filter(notIn(taken())), shown, SHELF_SIZE);
+    return freshFirst(apart(onePerArt(await pool())).filter(notIn(taken())), shown, SHELF_SIZE);
   });
   const { songs } = shelf;
   if (!shelf.ready) return <ShelfPlaceholder name="genre" title={t(`ui.home.genre.${genre}`)} size={STYLE_COVER} />;

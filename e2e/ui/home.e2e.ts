@@ -185,7 +185,7 @@ describe("home", () => {
     expect(await live.shoot("home-refresh", "home", "refresh-ru", { looks: [LIGHT, DARK], sizes: [W1100, WIDE], prepare: headingInView })).toHaveLength(4);
   }, 900_000);
 
-  it("fresh: the cold-start slot alone, no glow", async () => {
+  it("fresh: the cold-start slot alone", async () => {
     const live = await launchNuvo({ profile: "fresh" });
     session = live;
     await passFirstRun(live.page);
@@ -195,10 +195,9 @@ describe("home", () => {
     expect(state.mixes).toEqual([]);
     expect(state.picks).toBe(0);
     expect(state.coldStart).toBe(true);
-    expect(state.glow).toBe(false);
     const bring = live.page.locator("[data-bring][data-tour=home-start]");
     await bring.getByRole("heading").waitFor();
-    expect(await bring.getByRole("button").count(), "three sources and add files").toBe(4);
+    expect(await bring.locator("[data-source]").count()).toBe(3);
     expect(await live.shoot(STEP, "home", "fresh", { looks: MATRIX, sizes: [W1200] })).toHaveLength(MATRIX.length);
     await shootRussian(live, "fresh-ru");
   }, 900_000);

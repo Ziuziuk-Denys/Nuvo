@@ -1,6 +1,5 @@
 import type { HomeMix, Track } from "../../../ports/recs";
-import { firstArtist } from "../../../recs/notInterestedItems";
-import { DISCOVER, homeSongs } from "../homeModel";
+import { apart, DISCOVER, homeSongs, onePerArt } from "../homeModel";
 
 export const MIN_TRACKS = 8;
 const MAX_TRACKS = 24;
@@ -38,32 +37,15 @@ export interface Placement {
   shown: number;
 }
 
-// Singles often share their album's art under another address, so one artist's songs stand far apart
-function apart(tracks: readonly Track[]): Track[] {
-  const heard = new Map<string, number>();
-  const rounds = tracks.map((track) => {
-    const round = heard.get(firstArtist(track)) ?? 0;
-    heard.set(firstArtist(track), round + 1);
-    return round;
-  });
-  return tracks
-    .map((track, index) => ({ track, round: rounds[index] }))
-    .sort((left, right) => left.round - right.round)
-    .map(({ track }) => track);
-}
-
 export function ringTracks(mixes: readonly HomeMix[]): Track[] {
-  const shown = new Set<string>();
-  const unseen = (track: Track) => {
-    const art = track.coverUrl || track.id;
-    return !shown.has(art) && shown.add(art);
-  };
-  const fresh = apart((mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? []).filter(unseen));
+  const discover = mixes.find((mix) => mix.id === DISCOVER)?.tracks ?? [];
   const rest = homeSongs(
     mixes.filter((mix) => mix.id !== DISCOVER),
     Infinity,
   );
-  const known = apart(rest.map((song) => song.track).filter(unseen));
+  const all = onePerArt([...discover, ...rest.map((song) => song.track)]);
+  const fresh = apart(all.filter((track) => discover.includes(track)));
+  const known = apart(all.filter((track) => !discover.includes(track)));
   const tracks: Track[] = [];
   let next = 0;
   for (const track of fresh) {

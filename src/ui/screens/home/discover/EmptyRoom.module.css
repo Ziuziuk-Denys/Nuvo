@@ -26,12 +26,17 @@
 .stage {
   position: relative;
   align-self: stretch;
+  margin-top: -8px;
+}
+
+.frames {
+  position: absolute;
+  inset: 0 calc(-1 * var(--n-gutter, 12px));
   color: color-mix(in srgb, var(--n-raised) 88%, var(--n-field));
-  margin: -8px calc(-1 * var(--n-gutter, 12px)) 0;
   animation: lit 700ms var(--n-ease-out);
 }
 
-.stage > canvas {
+.frames > canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -43,7 +48,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: -64px;
+  margin-top: 4px;
 }
 
 @keyframes lit {
