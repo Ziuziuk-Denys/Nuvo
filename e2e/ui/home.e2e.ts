@@ -104,7 +104,7 @@ describe("home", () => {
     expect(shelves.map((shelf) => shelf.name)).toEqual(["songs", "like", "like", "shuffle"]);
     const [, like, , shuffle] = shelves;
     expect(shuffle.title).toBe("A shuffle of your music");
-    expect(shuffle.songs).toHaveLength(4);
+    expect(shuffle.songs).toHaveLength(12);
     expect(shuffle.songs.every((id) => /^seed-\d{4}$/.test(id))).toBe(true);
     const artist = like.title!.replace("More like ", "");
     expect(like.songs.length).toBeGreaterThanOrEqual(4);
@@ -159,7 +159,12 @@ describe("home", () => {
             const giveUp = performance.now() + 30_000;
             const look = () => {
               const rows = songs();
-              if (rows.length > 0 && rows.map((row) => row.dataset.song!).join() !== old) return resolve(Number(getComputedStyle(rows.at(-1)!).opacity));
+              if (rows.length > 0 && rows.map((row) => row.dataset.song!).join() !== old) {
+                let shown = 1;
+                for (let node: Element | null = rows.at(-1)!; node && !node.matches("[data-shelf]"); node = node.parentElement)
+                  shown *= Number(getComputedStyle(node).opacity);
+                return resolve(shown);
+              }
               if (performance.now() > giveUp) return reject(new Error(`${shelf} did not change`));
               requestAnimationFrame(look);
             };
