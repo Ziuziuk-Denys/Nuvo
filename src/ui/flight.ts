@@ -157,7 +157,7 @@ const PLAYER = "[data-phase]";
 // the view rises with the cover in it, so its resting place is read inside the view
 export function flyToPlayer(open: boolean): void {
   const bar = document.querySelector<HTMLElement>(`[data-island] ${COVER}`);
-  const stage = document.querySelector<HTMLElement>(`${PLAYER} ${COVER}`);
+  const stage = [...document.querySelectorAll<HTMLElement>(`${PLAYER} ${COVER}`)].at(-1);
   const view = stage?.closest(PLAYER)?.getBoundingClientRect();
   if (!bar || !stage || !view || !stage.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return;
   const from = depart(open ? bar : stage);
