@@ -314,6 +314,7 @@ describe("tray", () => {
       ["Like", false],
       ["", true],
       ["Show Nuvo", true],
+      ["Pocket player", true],
       ["Reset appearance (safe mode)", true],
       ["Quit Nuvo", true],
     ]);

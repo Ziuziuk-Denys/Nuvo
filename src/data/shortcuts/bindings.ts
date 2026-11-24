@@ -28,6 +28,7 @@ export const DEFAULT_BINDINGS: Record<string, DefaultBinding> = {
   "app.quit": { app: "Control+Q", global: null },
   "app.fullscreen": { app: "F11", global: null },
   "app.show": { app: null, global: null },
+  "app.pocket": { app: "Control+Shift+P", global: null },
 };
 
 export const LEGACY_SHORTCUTS_KEY = "nuvo_shortcuts_settings_v1";

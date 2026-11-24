@@ -12,7 +12,7 @@ export interface IpcMainLike {
   on(channel: string, listener: (event: IpcEventLike, ...args: unknown[]) => void): void;
 }
 
-export type Who = "main" | "notch";
+export type Who = "main" | "notch" | "pocket";
 
 export interface IpcGuard {
   contents(who: Who): unknown;
@@ -113,6 +113,14 @@ export const CHANNELS = {
   updateInstall: "update:install",
   updateOpenRelease: "update:open-release",
   shortcutsSetGlobal: "shortcuts:set-global",
+  pocketToggle: "pocket:toggle",
+  pocketStatus: "pocket:status",
+  pocketFeed: "pocket:feed",
+  pocketOpen: "pocket:open",
+  pocketHello: "pocket:hello",
+  pocketAction: "pocket:action",
+  pocketMenu: "pocket:menu",
+  pocketClose: "pocket:close",
   notchLyrics: "notch:lyrics",
   notchSettings: "notch:settings",
   panelGetStatus: "panel:get-status",

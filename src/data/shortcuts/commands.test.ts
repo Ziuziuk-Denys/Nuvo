@@ -32,7 +32,12 @@ beforeEach(() => {
   };
   liked = false;
   likes = { currentLiked: () => liked, like: vi.fn(), unlike: vi.fn() };
-  commands = coreCommands({ player, likes, loop: { setA: vi.fn(), setB: vi.fn(), clear: vi.fn() }, app: { quit: vi.fn(), toggleFullscreen: vi.fn() } });
+  commands = coreCommands({
+    player,
+    likes,
+    loop: { setA: vi.fn(), setB: vi.fn(), clear: vi.fn() },
+    app: { quit: vi.fn(), toggleFullscreen: vi.fn(), togglePocket: vi.fn() },
+  });
 });
 
 describe("core commands", () => {
@@ -66,7 +71,12 @@ describe("core commands", () => {
     expect(player.level).toBe(0);
     run("player.mute");
     expect(player.level).toBe(40);
-    const fresh = coreCommands({ player, likes, loop: { setA: vi.fn(), setB: vi.fn(), clear: vi.fn() }, app: { quit: vi.fn(), toggleFullscreen: vi.fn() } });
+    const fresh = coreCommands({
+      player,
+      likes,
+      loop: { setA: vi.fn(), setB: vi.fn(), clear: vi.fn() },
+      app: { quit: vi.fn(), toggleFullscreen: vi.fn(), togglePocket: vi.fn() },
+    });
     player.level = 0;
     fresh.find((command) => command.id === "player.mute")!.run("key");
     expect(player.level).toBe(70);

@@ -25,6 +25,7 @@ export type ActionId =
   | "shuffle"
   | "repeat"
   | "fullscreen"
+  | "pocket"
   | "tour";
 
 export interface CommandDeps {
@@ -50,6 +51,7 @@ const ACTIONS: { id: ActionId; group: CommandGroup; shortcut?: string }[] = [
   { id: "shuffle", group: "playback" },
   { id: "repeat", group: "playback" },
   { id: "fullscreen", group: "window", shortcut: "app.fullscreen" },
+  { id: "pocket", group: "window", shortcut: "app.pocket" },
   { id: "tour", group: "window" },
 ];
 
