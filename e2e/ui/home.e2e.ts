@@ -151,18 +151,22 @@ describe("home", () => {
     await live.page.emulateMedia({ reducedMotion: "no-preference" });
     for (const name of ["songs", "shuffle", "like"]) {
       const before = await songsOf(name);
-      await live.page.locator(`[data-shelf="${name}"] [data-refresh]`).first().click();
-      await live.page.waitForFunction(
-        ([shelf, old]) => {
-          const ids = [...document.querySelector(`[data-shelf="${shelf}"]`)!.querySelectorAll<HTMLElement>("[data-song]")].map((row) => row.dataset.song!);
-          return ids.length > 0 && ids.join() !== old;
-        },
-        [name, before.join()] as const,
-        { timeout: 30_000 },
-      );
+      await live.page.locator(`[data-shelf="${name}"] [data-refresh]`).first().hover();
       const opacity = await live.page.evaluate(
-        (shelf) => Number(getComputedStyle(document.querySelector(`[data-shelf="${shelf}"] [data-song]:last-child`)!).opacity),
-        name,
+        ([shelf, old]) =>
+          new Promise<number>((resolve, reject) => {
+            const songs = () => [...document.querySelector(`[data-shelf="${shelf}"]`)!.querySelectorAll<HTMLElement>("[data-song]")];
+            const giveUp = performance.now() + 30_000;
+            const look = () => {
+              const rows = songs();
+              if (rows.length > 0 && rows.map((row) => row.dataset.song!).join() !== old) return resolve(Number(getComputedStyle(rows.at(-1)!).opacity));
+              if (performance.now() > giveUp) return reject(new Error(`${shelf} did not change`));
+              requestAnimationFrame(look);
+            };
+            document.querySelector<HTMLElement>(`[data-shelf="${shelf}"] [data-refresh]`)!.click();
+            requestAnimationFrame(look);
+          }),
+        [name, before.join()] as const,
       );
       expect(opacity).toBeLessThan(1);
       const after = await songsOf(name);
