@@ -125,7 +125,7 @@ export function AddLyrics({ track, stage = false }: { track: LyricsTrack; stage?
         <button type="button" className={styles.textButton} data-add-lyrics="" onClick={sources.paste}>
           {t("ui.karaoke.make.paste")}
         </button>
-        <button type="button" className={styles.textButton} onClick={sources.pickFile}>
+        <button type="button" className={styles.textButton} data-add-lyrics="" onClick={sources.pickFile}>
           {t("ui.karaoke.make.file")}
         </button>
       </div>
