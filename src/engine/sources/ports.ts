@@ -28,7 +28,7 @@ export interface YtErrorLike {
   code: string;
   status?: number;
   botCheck?: boolean;
-  attempts?: Array<{ code: string; status?: number }>;
+  attempts?: Array<{ code: string; status?: number; text?: string }>;
 }
 
 export interface ScDescriptor {
@@ -107,10 +107,12 @@ export interface MatchPort {
   ): Promise<{ track: Track; score: number } | null>;
 }
 
+export type Denied = "refused" | "region";
+
 export class SourceFailure extends Error {
   constructor(
     readonly cause: Cause,
-    readonly detail: { botCheck?: boolean; signIn?: boolean; httpStatus?: number; original?: FallbackInfo["cause"] } = {},
+    readonly detail: { botCheck?: boolean; signIn?: boolean; httpStatus?: number; original?: FallbackInfo["cause"]; denied?: Denied } = {},
   ) {
     super(cause);
   }
@@ -118,6 +120,15 @@ export class SourceFailure extends Error {
 
 export function isAbort(error: unknown): boolean {
   return error instanceof DOMException ? error.name === "AbortError" : (error as { name?: string })?.name === "AbortError";
+}
+
+const REFUSED_CLIENTS = 2;
+
+function deniedBy(attempts: Array<{ code: string; status?: number; text?: string }>): Denied | undefined {
+  if (attempts.some((attempt) => attempt.code === "unplayable")) {
+    return attempts.some((attempt) => /country|region/i.test(attempt.text ?? "")) ? "region" : undefined;
+  }
+  return attempts.filter((attempt) => attempt.status === 403).length >= REFUSED_CLIENTS ? "refused" : undefined;
 }
 
 export function youtubeCause(error: unknown, online: boolean): SourceFailure {
@@ -150,7 +161,7 @@ export function youtubeCause(error: unknown, online: boolean): SourceFailure {
         return new SourceFailure("blocked", { httpStatus: 403 });
       if (attempts.some((attempt) => attempt?.status === 429)) return new SourceFailure("rate_limited");
       if (every((attempt) => attempt?.code === "unreachable" || attempt?.code === "worker-timeout")) return new SourceFailure("blocked");
-      return new SourceFailure("unavailable");
+      return new SourceFailure("unavailable", { denied: deniedBy(attempts) });
     }
     default:
       return new SourceFailure(online ? "unavailable" : "offline");
