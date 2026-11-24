@@ -247,7 +247,7 @@ describe("look", () => {
 
       await openSection(live, "appearance");
       await shoot("appearance");
-      await page.getByRole("button", { name: t("appearance.theme.customize") }).click();
+      await page.getByRole("button", { name: t("appearance.theme.customize"), exact: true }).click();
       await editor.waitFor();
       await editor.getByRole("button", { name: t("appearance.editor.edit_role", { role: t("appearance.roles.field.name") }) }).click();
       await page.getByLabel(t("appearance.picker.hex")).waitFor();
