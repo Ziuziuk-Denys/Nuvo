@@ -115,7 +115,7 @@ The full list is in [the release notes](https://github.com/Ziuziuk-Denys/Nuvo/re
 
 <picture><source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset=".github/readme/feature-scene-narrow-dark.svg"><source media="(max-width: 600px)" srcset=".github/readme/feature-scene-narrow-light.svg"><source media="(prefers-color-scheme: dark)" srcset=".github/readme/feature-scene-dark.svg"><img src=".github/readme/feature-scene-light.svg" width="100%" alt="A clip studio in the player. The clip studio: scenes on the left, a 9:16 preview of &quot;Already There&quot; in the middle, the timeline with a clip range below."></picture>
 
-- Thirteen ready scenes, or your own from a background, up to three effects, a centrepiece and a text style. The background can be your photo or video
+- Fourteen ready scenes, or your own from a background, up to three effects, a centrepiece and a text style. The background can be your photo or video
 - The stage runs on its own thread and its own clock, so a busy app never makes a lyric late
 - A clip studio with a timeline, a waveform and live frames: pick the moment, tune each part and see it at once
 - MP4 export in 9:16, 1:1 or 16:9, from 720p to 4K at 30 or 60 fps, the whole song or a cut, with fades. Your EQ, reverb and speed stay in the sound

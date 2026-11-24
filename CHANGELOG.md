@@ -1,5 +1,66 @@
 # Changelog
 
+## 0.5.2
+
+A fennec and a pocket player. Nuvo has a new mark, and every theme has its own picture. A small window made of the cover keeps the song at hand, you can time lyrics word by word, and covers from more places show up in Scene.
+
+- **A fennec for Nuvo.** The app icon, the tray and the marks inside the app are new. Each of the nine themes is an illustrated scene, in dark and light.
+- **Pocket player.** A small window of the cover: the controls come with the pointer, and it turns to the lyrics or the queue. Open it from the player bar, the tray or with Ctrl+Shift+P. On GNOME with Wayland it stays above other windows with the Nuvo panel widget; without it, press Alt+Space on it and choose Always on Top.
+- **Time words by hand.** Tap Space on every word while the song plays, check it, and save LRC or TTML. It is in the Lyrics menu of a song and in karaoke.
+- **Scene gets an Engraving.** The cover as engraved lines that swell with the song: ink on paper in light themes, light on black in dark ones. That makes 14 ready scenes.
+- **A clearer Notch.** Light from the cover, its own type and sharper motion. The buttons and the pages stay where they were.
+- **Covers that went missing are back.** Songs from Recognize and some imports have their cover in Scene, behind karaoke and in the player bar.
+- **A seek is kept.** Moving to another place right after a song starts no longer gets lost.
+
+**Updating from 0.5.1.** Your settings stay as they are. An installed GNOME panel widget updates with Nuvo and works after the next login.
+
+Tell us what works and what breaks in [the chat](https://t.me/getnuvo_chat), on [Discord](https://discord.gg/rHz3dg9S9T) or on [GitHub Issues](https://github.com/Ziuziuk-Denys/Nuvo/issues).
+
+### По-русски
+
+Фенек и карманный плеер. У Nuvo новый знак, а у каждой темы своя картина. Маленькое окно из обложки держит песню под рукой, слова можно разметить вручную, а обложки из новых мест видны в сцене.
+
+- **Фенек теперь знак Nuvo.** Новые иконка, трей и знаки внутри приложения. Каждая из девяти тем стала нарисованной сценой, тёмной и светлой.
+- **Карманный плеер.** Маленькое окно из обложки: кнопки появляются под мышкой, и оно поворачивается текстом или очередью. Открывается с панели плеера, из трея и по Ctrl+Shift+P. В GNOME на Wayland он держится поверх окон с виджетом Nuvo на панели, а без него нажмите на нём Alt+Пробел и выберите «На переднем плане».
+- **Разметка по словам.** Пробел на каждом слове, пока играет песня, затем проверка и сохранение в LRC или TTML. Это есть в меню песни, в разделе текста, и в караоке.
+- **В сцене появилась «Гравюра».** Обложка в гравированных линиях, которые дышат песней: чернила на бумаге в светлых темах, свет на чёрном в тёмных. Готовых сцен теперь 14.
+- **Нотч стал яснее.** Свет от обложки, свой шрифт и чёткое движение. Кнопки и страницы остались на местах.
+- **Пропавшие обложки вернулись.** У песен из «Что играет» и части импортов обложка видна в сцене, за караоке и в панели плеера.
+- **Перемотка не теряется.** Переход в другое место сразу после начала песни больше не пропадает.
+
+**Обновление с 0.5.1.** Ваши настройки не меняются. Установленный виджет панели GNOME обновится вместе с Nuvo и заработает после следующего входа в систему.
+
+### All changes
+
+#### New
+
+- The fennec mark: the app icon, the tray, the panel glyphs, the mix covers and the watermark of exported clips
+- Nine themes drawn as scenes in dark and light, with flat drawings for small icons
+- Pocket player: the cover, lyrics or queue, the size, on top of other windows where the desktop allows it, from the player bar, the tray, Ctrl+K and Ctrl+Shift+P
+- The GNOME panel widget keeps the pocket player above other windows
+- Lyrics timing by words or lines, with a check mode, half and three-quarter speed, and LRC and TTML files
+- Time words by hand in the song menu and in karaoke
+- Scene: Engraving, with the number of lines, the sound and the cover tint
+- New section icons in Settings
+
+#### Better
+
+- Notch: light from the cover, its own type, no blur in motion, covers of local files
+- The Home ring is full and even when new songs are few, and its ends no longer fold back
+- One message when YouTube refuses several songs in a row, and playback waits instead of skipping through the list
+- A song YouTube does not offer in your country says so
+
+#### Fixed
+
+- A seek right after a song starts was lost
+- Covers from Recognize and some imports did not show in Scene, behind karaoke and in the player bar, and did not set the accent
+- Playlist covers on the Notch's Add to playlist page did not always show
+- Covers that are not square were squashed in Scene
+- Scene text could fall back to a system font
+- Listening history was out of order when plays were written late
+- The menu entry of an AppImage kept the icons of the version that wrote it
+- A Windows window and the tray had one picture scaled to every size
+
 ## 0.5.1
 
 Artist pages and quicker search. Click any artist's name and land on a new artist page, see search answers while you type, and let the karaoke buttons step aside while a song plays. The Notch, the side navigation and your own Scene backgrounds are fixed and better too.
