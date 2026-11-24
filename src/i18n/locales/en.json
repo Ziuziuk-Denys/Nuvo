@@ -226,6 +226,78 @@
         "title": "What suits this computer?",
         "hint": "Switch and watch the sky.",
         "keep": "Keep this"
+      },
+      "mood": {
+        "title": "Mood",
+        "bright": "Bright",
+        "dark": "Dark",
+        "calm": "Calm",
+        "energetic": "Energetic",
+        "handle": "Mood light",
+        "value": "Energy {energy} %, brightness {brightness} %",
+        "close_to": "Close to {names}",
+        "play_one": "Play {count} song",
+        "play_other": "Play {count} songs",
+        "learning_one": "Nuvo measures how your songs sound, on this computer only. {count} more song and the mood pad opens.",
+        "learning_other": "Nuvo measures how your songs sound, on this computer only. {count} more songs and the mood pad opens.",
+        "name": {
+          "low_low": "Lights out",
+          "low_mid": "Quiet room",
+          "low_high": "Morning window",
+          "mid_low": "Slow burn",
+          "mid_mid": "Even ground",
+          "mid_high": "Open air",
+          "high_low": "Heavy hours",
+          "high_mid": "Full stride",
+          "high_high": "Broad daylight"
+        }
+      },
+      "continue": {
+        "title": "Continue",
+        "resume": "Continue, {when}",
+        "length_one": "{count} minute",
+        "length_other": "{count} minutes"
+      },
+      "when": {
+        "last_night": "Last night",
+        "this_morning": "This morning",
+        "this_afternoon": "This afternoon",
+        "this_evening": "This evening",
+        "yesterday_night": "The night before",
+        "yesterday_morning": "Yesterday morning",
+        "yesterday_afternoon": "Yesterday afternoon",
+        "yesterday_evening": "Yesterday evening",
+        "weekday_night": "{day} night",
+        "weekday_morning": "{day} morning",
+        "weekday_afternoon": "{day} afternoon",
+        "weekday_evening": "{day} evening",
+        "date": "{day}"
+      },
+      "memory": {
+        "years_one": "A year ago",
+        "years_other": "{count} years ago",
+        "half_year": "Half a year ago",
+        "season": "Three months ago",
+        "month": "A month ago",
+        "week": "A week ago"
+      },
+      "arrange": {
+        "open": "Arrange Home",
+        "title": "Arrange Home",
+        "hint": "Drag to reorder, switch off what you do not use.",
+        "reset": "Reset",
+        "done": "Done",
+        "move": "Move {name}",
+        "section": {
+          "mixes": "Mixes",
+          "continue": "Continue",
+          "mood": "Mood pad",
+          "songs": "Songs for you",
+          "memory": "From this day",
+          "like": "More like your artists",
+          "shuffle": "Shuffle of your music",
+          "style": "Your local style"
+        }
       }
     },
     "imports": {

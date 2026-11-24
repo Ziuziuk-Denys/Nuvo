@@ -1,0 +1,108 @@
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 24px 20px;
+  margin-top: 16px;
+}
+
+.session {
+  --step: 24px;
+  min-width: 0;
+}
+
+.stack {
+  position: relative;
+  perspective: 900px;
+  perspective-origin: 20% 40%;
+}
+
+.sleeve {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  transform: translateX(calc(var(--i) * var(--step))) translateZ(calc(var(--i) * -70px)) rotateY(-16deg);
+  transform-origin: left center;
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sleeve::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #000;
+  box-shadow: 0 14px 28px -10px rgb(0 0 0 / 0.5);
+  opacity: calc(var(--i) * 0.13);
+  pointer-events: none;
+  transition: opacity 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.session:hover .sleeve,
+.stack:focus-within .sleeve {
+  transform: translateX(calc(var(--i) * var(--step) * 1.5)) translateZ(calc(var(--i) * -60px)) rotateY(-30deg);
+}
+
+.session:hover .sleeve:first-child,
+.stack:focus-within .sleeve:first-child {
+  transform: translateZ(10px) rotateY(-6deg);
+}
+
+.session:hover .sleeve::after {
+  opacity: calc(var(--i) * 0.07);
+}
+
+.session .sleeve:not(:first-child):hover::after {
+  opacity: 0;
+}
+
+.sleeve:focus-visible {
+  outline: 3px solid var(--n-focus-halo);
+  outline-offset: 2px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  max-width: 100%;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.when {
+  color: var(--n-ink);
+  font: var(--n-type-heading);
+  letter-spacing: var(--n-track-title);
+}
+
+.about {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sleeve,
+  .sleeve::after {
+    transition: none;
+  }
+}
+
+:global(:root[data-reduce-effects]) .sleeve,
+:global(:root[data-reduce-effects]) .sleeve::after {
+  transition: none;
+}

@@ -272,7 +272,7 @@ export function DiscoverArc({ tracks }: { tracks: Track[] }): JSX.Element {
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height: HEIGHT }}>
       <div className={styles.heading}>
-        <ShelfHeading icon="radio" title={title} />
+        <ShelfHeading title={title} />
       </div>
       <div ref={stageRef} className={styles.room} aria-hidden="true" />
       <ul

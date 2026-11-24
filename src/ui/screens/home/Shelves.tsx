@@ -33,7 +33,7 @@ export function SongsForYou({ mixes }: { mixes: HomeMix[] }): JSX.Element | null
     const song = all.find((candidate) => candidate.track.id === songs[index].id)!;
     playMix(song.mixId, mixes.find((mix) => mix.id === song.mixId)!.tracks, song.index);
   };
-  return <SongsShelf name="songs" title={t("ui.home.songs_for_you")} icon="track" shelf={shelf} songs={songs} onPlay={play} />;
+  return <SongsShelf name="songs" title={t("ui.home.songs_for_you")} shelf={shelf} songs={songs} onPlay={play} />;
 }
 
 export function ShuffleShelf({ songs: from }: { songs?: Track[] } = {}): JSX.Element | null {
@@ -62,7 +62,6 @@ export function LikeShelf({ artist }: { artist: LikeArtist }): JSX.Element | nul
     <CoverShelf
       name="like"
       title={t("ui.home.more_like", { name: artist.name })}
-      icon="radio"
       shelf={shelf}
       songs={songs}
       size={LIKE_COVER}
@@ -87,7 +86,6 @@ export function StyleShelf(): JSX.Element | null {
     <CoverShelf
       name="style"
       title={t("ui.home.style_for_you", { style: genre })}
-      icon="album"
       shelf={shelf}
       songs={songs}
       size={STYLE_COVER}
@@ -105,13 +103,12 @@ export function GenreShelf({ genre, query }: { genre: string; query: string }): 
     return freshFirst((await pool.current).filter(notIn(taken())), shown, SHELF_SIZE);
   });
   const { songs } = shelf;
-  if (!shelf.ready) return <ShelfPlaceholder name="genre" title={t(`ui.home.genre.${genre}`)} icon="album" size={STYLE_COVER} />;
+  if (!shelf.ready) return <ShelfPlaceholder name="genre" title={t(`ui.home.genre.${genre}`)} size={STYLE_COVER} />;
   if (songs.length < MIN_SONGS) return null;
   return (
     <CoverShelf
       name="genre"
       title={t(`ui.home.genre.${genre}`)}
-      icon="album"
       shelf={shelf}
       songs={songs}
       size={STYLE_COVER}

@@ -13,8 +13,13 @@ import { useImportsUi } from "../imports/importsUi";
 import { useAddMusic } from "../local/addMusic";
 import { DiscoverArc } from "./discover/DiscoverArc";
 import { ringTracks } from "./discover/ring";
+import { ArrangeHome } from "./arrange/ArrangeHome";
+import { useHomeLayout, type SectionId } from "./arrange/homeLayout";
 import { arrangeMixes, likeArtists, mixText, starterGenres } from "./homeModel";
 import { MixCard } from "./MixCard";
+import { Continue } from "./moments/Continue";
+import { Memory } from "./moments/Memory";
+import { MoodPad } from "./mood/MoodPad";
 import { GenreShelf, LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
 import { ColdStartSlot, HiddenLinkSlot } from "./slots";
 import styles from "./Home.module.css";
@@ -67,6 +72,7 @@ export function Home(): JSX.Element | null {
   const addMusic = useAddMusic();
   const { data: likedCount } = useLikedTrackCount();
   const playlists = usePlaylistsList();
+  const { order, hidden } = useHomeLayout();
   const libraryEmpty = likedCount === 0 && !playlists.isLoading && playlists.data.playlists.length === 0;
   const mixes = offline ? (kept?.mixes ?? null) : all;
   const ring = useMemo(() => (mixes ? ringTracks(mixes) : []), [mixes]);
@@ -81,32 +87,40 @@ export function Home(): JSX.Element | null {
     for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
   }
   if (ring.length > 0) sections.push({ key: "discover", node: <DiscoverArc tracks={ring} /> });
-  if (mixes.length > 0) {
-    sections.push({
-      key: "mixes",
-      node: (
-        <div className={styles.mixes}>
-          {mixes.map((mix, index) => (
-            <MixCard
-              key={mix.id}
-              mix={mix}
-              number={index + 1}
-              lead={index === 0}
-              {...mixText(mix, t)}
-              onOpen={() => open(`/collection?type=playlist&id=${encodeURIComponent(mix.id)}`)}
-              onPlay={() => playMix(mix.id, mix.tracks, 0)}
-            />
-          ))}
-        </div>
-      ),
-    });
-  }
-  sections.push({ key: "songs", node: <SongsForYou mixes={mixes} /> });
   const [firstArtist, secondArtist] = offline ? [] : likeArtists(mixes, LIKE_SHELVES);
-  if (firstArtist) sections.push({ key: `like:${firstArtist.name}`, node: <LikeShelf artist={firstArtist} /> });
-  sections.push({ key: offline ? "shuffle:offline" : "shuffle", node: <ShuffleShelf songs={kept?.songs} /> });
-  if (secondArtist) sections.push({ key: `like:${secondArtist.name}`, node: <LikeShelf artist={secondArtist} /> });
-  sections.push({ key: "style", node: <StyleShelf /> });
+  const parts: Record<SectionId, Array<{ key: string; node: ReactNode }>> = {
+    mixes:
+      mixes.length === 0
+        ? []
+        : [
+            {
+              key: "mixes",
+              node: (
+                <div className={styles.mixes}>
+                  {mixes.map((mix, index) => (
+                    <MixCard
+                      key={mix.id}
+                      mix={mix}
+                      number={index + 1}
+                      lead={index === 0}
+                      {...mixText(mix, t)}
+                      onOpen={() => open(`/collection?type=playlist&id=${encodeURIComponent(mix.id)}`)}
+                      onPlay={() => playMix(mix.id, mix.tracks, 0)}
+                    />
+                  ))}
+                </div>
+              ),
+            },
+          ],
+    continue: [{ key: "continue", node: <Continue offline={offline} /> }],
+    mood: [{ key: "mood", node: <MoodPad offline={offline} /> }],
+    songs: [{ key: "songs", node: <SongsForYou mixes={mixes} /> }],
+    memory: [{ key: "memory", node: <Memory offline={offline} /> }],
+    like: [firstArtist, secondArtist].filter(Boolean).map((artist) => ({ key: `like:${artist.name}`, node: <LikeShelf artist={artist} /> })),
+    shuffle: [{ key: offline ? "shuffle:offline" : "shuffle", node: <ShuffleShelf songs={kept?.songs} /> }],
+    style: [{ key: "style", node: <StyleShelf /> }],
+  };
+  for (const id of order) if (!hidden.includes(id)) sections.push(...parts[id]);
   if (offline && mixes.length === 0 && (kept?.songs.length ?? 0) < OFFLINE_MIN_SONGS) {
     sections.push({
       key: "offline",
@@ -141,6 +155,7 @@ export function Home(): JSX.Element | null {
         ),
       )}
       <HiddenLinkSlot />
+      {starter ? null : <ArrangeHome />}
     </div>
   );
 }

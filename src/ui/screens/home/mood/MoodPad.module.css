@@ -1,0 +1,192 @@
+.row {
+  display: grid;
+  grid-template-columns: clamp(340px, 34vw, 460px) minmax(0, 1fr);
+  gap: clamp(32px, 4vw, 64px);
+  align-items: center;
+  margin-top: 16px;
+}
+
+.pad {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--n-deep) 82%, #000);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 7%, transparent);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+:global(:root[data-theme="light"]) .pad {
+  background: color-mix(in srgb, var(--n-deep) 30%, #fff);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--n-ink);
+}
+
+.axis {
+  position: absolute;
+  color: var(--n-ink-2);
+  font: var(--n-type-label);
+  pointer-events: none;
+}
+
+.top {
+  top: 12px;
+  left: 50%;
+  translate: -50%;
+}
+
+.bottom {
+  bottom: 12px;
+  left: 50%;
+  translate: -50%;
+}
+
+.left {
+  top: 50%;
+  left: 14px;
+  translate: 0 -50%;
+}
+
+.right {
+  top: 50%;
+  right: 14px;
+  translate: 0 -50%;
+}
+
+.lamp {
+  position: absolute;
+  top: calc(var(--y) * 100%);
+  left: calc(var(--x) * 100%);
+  width: 18px;
+  height: 18px;
+  margin: -9px;
+  border-radius: 50%;
+  outline: none;
+  background: #fff;
+  box-shadow:
+    0 0 0 5px rgb(255 255 255 / 0.16),
+    0 6px 14px rgb(0 0 0 / 0.35);
+  cursor: grab;
+  transition: scale 180ms var(--n-ease-out);
+}
+
+.lamp:active {
+  cursor: grabbing;
+  scale: 1.12;
+}
+
+.lamp:focus-visible {
+  box-shadow:
+    0 0 0 5px var(--n-focus-halo),
+    0 6px 14px rgb(0 0 0 / 0.35);
+}
+
+.mix {
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  color: var(--n-ink);
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
+  animation: named 220ms var(--n-ease-out);
+}
+
+@keyframes named {
+  from {
+    opacity: 0.2;
+    transform: translateY(6px);
+  }
+}
+
+.names,
+.learning {
+  max-width: 46ch;
+  margin: 8px 0 0;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+}
+
+.songs {
+  display: grid;
+  gap: 2px;
+  max-width: 460px;
+  margin: 20px 0 20px -8px;
+  padding: 0;
+  list-style: none;
+}
+
+.song {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.song:hover {
+  background: var(--n-hover);
+}
+
+.start {
+  display: flex;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title,
+.artist {
+  overflow: hidden;
+  font: var(--n-type-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  color: var(--n-ink);
+  font-weight: 500;
+}
+
+.artist {
+  color: var(--n-ink-2);
+}
+
+.play {
+  gap: 8px;
+}
+
+.steps {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.steps > span {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--n-fill);
+}
+
+.steps > span[data-on] {
+  background: var(--n-ink);
+}

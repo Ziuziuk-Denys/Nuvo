@@ -3,7 +3,6 @@ import { Button } from "../../components/Button";
 import { Cover } from "../../components/Cover";
 import { coverRadius } from "../../geometry";
 import { Icon } from "../../icons/Icon";
-import type { IconName } from "../../icons";
 import { useTranslation } from "../../ports/i18n";
 import type { Track } from "../../ports/recs";
 import { firstArtist } from "../../recs/notInterestedItems";
@@ -42,10 +41,10 @@ function SongCard({ track, size, index, onPlay, onContextMenu }: SongCardProps):
 
 const WAITING_CARDS = 8;
 
-export function ShelfPlaceholder({ name, title, icon, size }: { name: string; title: string; icon: IconName; size: number }): JSX.Element {
+export function ShelfPlaceholder({ name, title, size }: { name: string; title: string; size: number }): JSX.Element {
   return (
     <section className={shelf.shelf} aria-label={title} aria-busy="true" data-shelf-waiting={name}>
-      <ShelfHeading icon={icon} title={title} />
+      <ShelfHeading title={title} />
       <div className={shelf.row} aria-hidden="true">
         <div className={styles.covers}>
           {Array.from({ length: WAITING_CARDS }, (_, index) => (
@@ -64,7 +63,6 @@ export function ShelfPlaceholder({ name, title, icon, size }: { name: string; ti
 export interface CoverShelfProps {
   name: string;
   title: string;
-  icon: IconName;
   shelf: ShelfState;
   songs: Track[];
   size: number;
@@ -72,11 +70,11 @@ export interface CoverShelfProps {
   onPlay(index: number): void;
 }
 
-export function CoverShelf({ name, title, icon, shelf: state, songs, size, lead, onPlay }: CoverShelfProps): JSX.Element {
+export function CoverShelf({ name, title, shelf: state, songs, size, lead, onPlay }: CoverShelfProps): JSX.Element {
   const menu = useTrackMenu();
   return (
     <section className={shelf.shelf} aria-label={title} data-shelf={name}>
-      <ShelfHeading icon={icon} title={title} busy={state.busy} onRefresh={state.refresh} />
+      <ShelfHeading title={title} busy={state.busy} onRefresh={state.refresh} />
       <div className={shelf.row}>
         {lead}
         <div key={state.round} className={rowClass(state, styles.covers)}>
@@ -120,7 +118,7 @@ export function ShuffleCard({
   const names = [...new Set(songs.map((track) => firstArtist(track)).filter(Boolean))].slice(0, 3).join(", ");
   return (
     <section className={shelf.shelf} aria-label={title} data-shelf="shuffle">
-      <ShelfHeading icon="shuffle" title={title} busy={state.busy} onRefresh={state.refresh} />
+      <ShelfHeading title={title} busy={state.busy} onRefresh={state.refresh} />
       <div className={styles.shuffle}>
         <div key={state.round} className={rowClass(state, styles.stack)} style={{ width: STACK_SIZE + (STACK - 1) * 36, height: STACK_SIZE }}>
           {songs.slice(0, STACK).map((track, index) => (
