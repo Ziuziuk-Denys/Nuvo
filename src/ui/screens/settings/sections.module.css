@@ -1,8 +1,8 @@
 .note {
   margin: 0;
   padding: 12px 0;
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
   text-wrap: pretty;
 }
 
@@ -12,8 +12,8 @@
   gap: 8px;
   margin: 0;
   padding: 11px 0 12px;
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
   text-wrap: pretty;
 }
 
@@ -62,8 +62,8 @@
 .serviceAdvice {
   grid-column: 1 / -1;
   margin: 2px 0 0;
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
 }
 
 .button {
@@ -506,8 +506,8 @@
 
 .currentHint {
   max-width: 300px;
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
   text-wrap: pretty;
 }
 
@@ -647,8 +647,8 @@
 
 .accountSub {
   overflow: hidden;
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -725,8 +725,8 @@
 }
 
 .edition {
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
 }
 
 .progress {

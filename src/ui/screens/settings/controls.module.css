@@ -9,10 +9,10 @@
 
 .groupLabel {
   margin: 0;
-  padding: 0 4px 8px;
-  color: var(--n-ink-3);
-  font: var(--n-type-caption);
-  letter-spacing: var(--n-track-caption);
+  padding: 0 0 6px;
+  color: var(--n-ink);
+  font: var(--n-type-heading);
+  letter-spacing: var(--n-track-heading);
 }
 
 .stack {
@@ -22,42 +22,34 @@
 }
 
 .groupNote {
-  margin: -14px 0 0;
-  padding: 0 4px;
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  margin: -24px 0 0;
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
 }
 
 .panel {
   display: flex;
   flex-direction: column;
-  padding: 0 16px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
-}
-
-:global(:root[data-theme="dark"]) .panel {
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
 }
 
 .panel > * + * {
-  border-top: 1px solid color-mix(in srgb, var(--n-ink) 7%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--n-ink) 8%, transparent);
 }
 
 .row {
   display: flex;
-  min-height: 56px;
+  min-height: 66px;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 11px 0;
+  gap: 24px;
+  padding: 14px 0;
 }
 
 .block {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px 0 16px;
+  gap: 14px;
+  padding: 16px 0 20px;
 }
 
 .rowIcon {
@@ -85,15 +77,15 @@
 
 .title {
   color: var(--n-ink);
-  font: 500 14px/1.375 var(--n-font);
+  font: 500 15px/1.35 var(--n-font);
   text-wrap: pretty;
 }
 
 .description,
 .blockDescription {
-  max-width: 440px;
-  color: var(--n-ink-3);
-  font: 400 12.5px/1.45 var(--n-font);
+  max-width: 460px;
+  color: var(--n-ink-2);
+  font: 420 13.5px/1.45 var(--n-font);
   text-wrap: pretty;
 }
 
@@ -125,11 +117,11 @@
   background: transparent;
   color: var(--n-ink-2);
   cursor: pointer;
-  font: 500 12.5px/28px var(--n-font);
+  font: 500 13px/28px var(--n-font);
   white-space: nowrap;
   transition:
-    background-color 150ms var(--n-ease-out),
-    color 150ms var(--n-ease-out);
+    background-color var(--n-t-quick) var(--n-ease-out),
+    color var(--n-t-quick) var(--n-ease-out);
 }
 
 .segment:hover:not(:disabled, [aria-pressed="true"]) {
@@ -174,7 +166,7 @@
   border-radius: 12px;
   background: var(--n-select);
   content: "";
-  inset: 2px -10px;
+  inset: 4px -14px;
   pointer-events: none;
   animation: found 1600ms var(--n-ease-out) both;
 }
