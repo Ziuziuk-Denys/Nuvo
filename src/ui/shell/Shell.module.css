@@ -33,6 +33,12 @@
   scroll-timeline: --page-scroll;
 }
 
+/* captions over a wallpaper keep 4.5:1 with a lighter dim, see wallpaperFloor.ts */
+.shell[data-wallpaper] .column {
+  --n-ink-2: color-mix(in srgb, var(--n-ink) 92%, transparent);
+  --n-ink-3: color-mix(in srgb, var(--n-ink) 86%, transparent);
+}
+
 .sheet {
   position: absolute;
   top: 6px;

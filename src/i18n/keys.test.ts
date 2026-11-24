@@ -287,6 +287,7 @@ const JOINED = [
   "upload_title",
   "wallpaper_blur",
   "wallpaper_dim",
+  "wallpaper_dim_hint",
   "wallpaper_fit",
 ].map((name) => `settings.customization.${name}`);
 

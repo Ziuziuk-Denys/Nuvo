@@ -14,6 +14,7 @@ import {
   type WallpaperFit,
 } from "../../ports/settings";
 import { WallpaperMedia } from "../../field/Field";
+import { useWallpaperFloor } from "../../field/wallpaperFloor";
 import { MEDIA_REFUSALS, MEDIA_TYPES } from "../../mediaFiles";
 import { FRAME_CAPS, LOOKS, useEffectsStore, type FrameCap } from "../../effects";
 import { Segmented, SettingBlock, SettingGroup, SettingRow, Switch } from "./controls";
@@ -67,6 +68,7 @@ function CurrentWallpaper(props: {
 }): JSX.Element {
   const { t, image, busy, onPick, onFile, onRemove, onBroken } = props;
   const look = useCustomizationStore(useShallow((store) => ({ blur: store.backgroundBlur, dim: store.backgroundDim, fit: store.backgroundFit })));
+  const wash = Math.max(look.dim / 100, useWallpaperFloor(image));
   const drop = useDropFile(onFile);
   const kind = wallpaperKind(image);
 
@@ -80,7 +82,7 @@ function CurrentWallpaper(props: {
           style={{ objectFit: look.fit, filter: look.blur > 0 ? `blur(${look.blur * PREVIEW_BLUR}px)` : undefined }}
           onError={onBroken}
         />
-        {look.dim > 0 ? <span className={styles.thumbWash} style={{ opacity: look.dim / 100 }} /> : null}
+        {wash > 0 ? <span className={styles.thumbWash} style={{ opacity: wash }} /> : null}
       </span>
       <span className={styles.currentText}>
         <span className={styles.currentKind}>{t(KEYS + "kind_" + kind)}</span>
@@ -137,6 +139,7 @@ function WallpaperRows({ t }: { t: TFunction }): JSX.Element {
       />
       <SettingRow
         title={dimLabel}
+        description={t(KEYS + "wallpaper_dim_hint")}
         control={
           <span className={styles.rowSlider}>
             <Slider label={dimLabel} value={look.dim} min={0} max={MAX_WALLPAPER_DIM} step={1} format={(share) => share + "%"} onChange={look.setDim} />
