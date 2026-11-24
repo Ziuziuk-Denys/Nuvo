@@ -70,8 +70,17 @@ describe("Icon", () => {
     expect(on()).toEqual(["currentColor"]);
   });
 
+  it("turns a plus into a check in place", () => {
+    act(() => root.render(<Icon name="add" />));
+    const layers = [...svg().querySelectorAll("g > g")];
+    expect(layers.map((layer) => layer.hasAttribute("data-off"))).toEqual([false, true]);
+    act(() => root.render(<Icon name="check" />));
+    expect([...svg().querySelectorAll("g > g")]).toEqual(layers);
+    expect(layers.map((layer) => layer.hasAttribute("data-off"))).toEqual([true, false]);
+  });
+
   it("ignores filled where no twin is drawn", () => {
-    act(() => root.render(<Icon name="check" filled />));
+    act(() => root.render(<Icon name="undo" filled />));
     expect(svg().querySelectorAll("path").length).toBeGreaterThan(0);
   });
 });

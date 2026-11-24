@@ -54,12 +54,12 @@
   transform: translateX(-4px);
 }
 
-.stack[data-icon="download"][data-state="downloaded"] .layer:first-child {
-  transform: translateY(5px);
+.stack[data-icon="add"] .layer:first-child[data-off] {
+  transform: rotate(45deg) scale(0.6);
 }
 
-.stack[data-icon="download"] .layer:last-child[data-off] {
-  transform: scale(0.8);
+.stack[data-icon="add"] .layer:last-child[data-off] {
+  transform: translateX(-3px) scale(0.8);
 }
 
 svg[data-filled] .stack[data-state$="-fill"] .layer[data-off] {
