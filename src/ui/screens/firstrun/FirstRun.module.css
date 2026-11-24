@@ -38,8 +38,8 @@
 .title {
   margin: 0;
   color: var(--n-ink);
-  font: 700 28px/1.2 var(--n-font);
-  letter-spacing: -0.025em;
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
   text-wrap: balance;
 }
 
@@ -47,39 +47,40 @@
   max-width: 50ch;
   margin: var(--n-s-2) 0 0;
   color: var(--n-ink-2);
-  font: 400 15px/1.5 var(--n-font);
+  font: var(--n-type-body);
   text-wrap: pretty;
 }
 
 .words {
   display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(6, auto);
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  gap: 0 var(--n-s-5);
   margin: var(--n-s-5) 0 0;
-  padding: 10px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--n-ink) 4%, transparent);
+  padding: var(--n-s-4) var(--n-s-5);
+  border-radius: var(--n-r-l);
+  background: var(--n-plate);
+  box-shadow: var(--n-plate-shadow);
   list-style: none;
 }
 
 .word {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
-  padding: 9px 12px;
-  border-radius: var(--n-r-m);
-  background: var(--n-raised);
+  padding: 9px 0;
 }
 
-:root[data-theme="dark"] .word {
-  background: color-mix(in srgb, var(--n-ink) 6%, transparent);
+.word:not(:nth-child(6n)) {
+  border-bottom: 1px solid color-mix(in srgb, var(--n-ink) 8%, transparent);
 }
 
 .index {
   flex: none;
   width: 18px;
-  color: var(--n-ink-3);
+  color: var(--n-ink-2);
   font: var(--n-type-numeral);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -89,7 +90,8 @@
 .wordText {
   overflow: hidden;
   color: var(--n-ink);
-  font: 500 15px/20px var(--n-font);
+  font: var(--n-type-body);
+  font-weight: 550;
   text-overflow: ellipsis;
   user-select: text;
 }
@@ -97,8 +99,8 @@
 .note {
   margin: var(--n-s-4) auto 0;
   max-width: 60ch;
-  color: var(--n-ink-3);
-  font: 400 13px/1.45 var(--n-font);
+  color: var(--n-ink-2);
+  font: var(--n-type-caption);
   text-align: center;
   text-wrap: pretty;
 }
@@ -107,7 +109,7 @@
   min-height: 16px;
   margin: var(--n-s-3) 0 0;
   color: var(--n-ink-2);
-  font: 500 12px/16px var(--n-font);
+  font: var(--n-type-caption);
   text-align: center;
 }
 

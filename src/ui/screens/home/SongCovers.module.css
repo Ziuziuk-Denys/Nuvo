@@ -31,34 +31,51 @@
 }
 
 .shuffle {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 40px;
   align-items: center;
-  gap: 36px;
-  margin-top: 12px;
-  padding: 24px 28px;
-  border-radius: var(--n-r-l, 14px);
-  background: var(--n-fill);
+  margin-top: 24px;
+  padding-bottom: 12px;
 }
 
-.stack {
+.dealt {
+  display: flex;
+  padding-inline-end: 110px;
+}
+
+.seat {
   position: relative;
-  flex: none;
+  flex: 0 1 132px;
+  min-width: 0;
 }
 
-.stacked {
+.seat:hover,
+.seat:focus-within {
+  z-index: 1;
+}
+
+.seat > .card {
   position: absolute;
-  top: 50%;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  translate: 0 -50%;
-  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.16));
-  transition: translate var(--n-t-base) var(--n-ease-out);
+  top: 0;
+  left: 0;
+  border-radius: 6px;
+  box-shadow: 0 10px 24px -10px rgb(0 0 0 / 0.55);
+  rotate: var(--lean);
+  transition:
+    translate 260ms var(--n-ease-out),
+    rotate 260ms var(--n-ease-out);
 }
 
-.stacked:hover {
-  translate: 0 calc(-50% - 4px);
+.seat:hover > .card,
+.seat > .card:focus-visible {
+  rotate: 0deg;
+  translate: 0 -10px;
+}
+
+.seat > .card:focus-visible {
+  outline: 3px solid var(--n-focus-halo);
+  outline-offset: 2px;
 }
 
 .about {
@@ -66,32 +83,34 @@
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
-  gap: 4px;
+  gap: 6px;
 }
 
 .from {
   color: var(--n-ink-2);
-  font: 400 13px/1.4 var(--n-font);
+  font: var(--n-type-body);
 }
 
 .names {
-  overflow: hidden;
-  max-width: 100%;
   color: var(--n-ink);
-  font: 500 17px/1.35 var(--n-font);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  font: var(--n-type-heading);
+  letter-spacing: var(--n-track-heading);
+  text-wrap: balance;
 }
 
-.play {
+.start {
+  gap: 8px;
   margin-top: 12px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stacked,
-  .stacked:hover {
+  .seat > .card {
     transition: none;
   }
+}
+
+:global(:root[data-reduce-effects]) .seat > .card {
+  transition: none;
 }
 
 .waiting {

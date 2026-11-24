@@ -68,16 +68,16 @@ pub fn moods(conn: &Connection) -> Result<HashMap<String, &'static str>, StoreEr
         .collect())
 }
 
-struct Scored {
-    id: String,
-    snapshot: Value,
-    artist_key: String,
+pub(crate) struct Scored {
+    pub(crate) id: String,
+    pub(crate) snapshot: Value,
+    pub(crate) artist_key: String,
     artist_name: String,
-    taste: f64,
+    pub(crate) taste: f64,
     score: f64,
 }
 
-fn library(conn: &Connection, now: i64, affinity: &Affinity, repeat_from_home: &HashSet<String>) -> Result<Vec<Scored>, StoreError> {
+pub(crate) fn library(conn: &Connection, now: i64, affinity: &Affinity, repeat_from_home: &HashSet<String>) -> Result<Vec<Scored>, StoreError> {
     let suppressions = Suppressions::load(conn, now)?;
     let mut stmt = conn.prepare(
         "SELECT t.id, t.snapshot_json, t.artist FROM tracks t

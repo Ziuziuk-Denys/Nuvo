@@ -390,4 +390,12 @@ INSERT INTO lyrics_made (track_id, source, source_hash, model, content, created_
   SELECT track_id, 'synced', source_hash, model, content, created_at FROM lyrics_words;
 DROP TABLE lyrics_words;
 ALTER TABLE lyrics_made RENAME TO lyrics_words;
+"#, r#"
+CREATE TABLE IF NOT EXISTS track_moods (
+  track_id TEXT PRIMARY KEY,
+  loudness REAL,
+  punch REAL,
+  brightness REAL,
+  analysed_at INTEGER NOT NULL
+);
 "#];

@@ -860,6 +860,23 @@ pub struct DailyMixItem {
 }
 
 #[derive(Serialize, Debug)]
+pub struct MoodPoint {
+    pub track: Value,
+    pub energy: f64,
+    pub brightness: f64,
+    pub taste: f64,
+    pub fresh: bool,
+}
+
+#[derive(Serialize, Debug)]
+pub struct MoodMap {
+    pub analysed: usize,
+    pub needed: usize,
+    pub waiting: i64,
+    pub points: Vec<MoodPoint>,
+}
+
+#[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DailyMixesResponse {
     pub items: Vec<DailyMixItem>,

@@ -27,6 +27,8 @@ struct HistoryQuery {
     limit: Option<usize>,
     cursor: Option<String>,
     filter: Option<String>,
+    from: Option<i64>,
+    to: Option<i64>,
 }
 
 #[derive(Deserialize)]
@@ -62,7 +64,8 @@ async fn record(State(state): State<AppState>, JsonBody(event): JsonBody<RecordP
 
 async fn history(State(state): State<AppState>, Query(q): Query<HistoryQuery>) -> Result<Json<PlaybackHistoryResponse>, ApiError> {
     let data = state.data()?;
-    Ok(Json(data.db.call(move |c| events::history(c, q.limit.unwrap_or(30), q.cursor.as_deref(), q.filter.as_deref())).await?))
+    let range = q.from.zip(q.to);
+    Ok(Json(data.db.call(move |c| events::history(c, q.limit.unwrap_or(30), q.cursor.as_deref(), q.filter.as_deref(), range)).await?))
 }
 
 async fn daily_mixes(State(state): State<AppState>) -> Result<Json<DailyMixesResponse>, ApiError> {

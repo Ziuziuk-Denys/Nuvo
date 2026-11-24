@@ -1,7 +1,7 @@
 mod common;
 
 use nuvo_store::lyrics_words::{self, ALIGNED, SYNCED, TRANSCRIBED, Timing};
-use nuvo_store::{MIGRATIONS, open_connection};
+use nuvo_store::open_connection;
 
 fn timing(model: &str, confidence: Option<f64>) -> Timing {
     Timing { source_hash: "a".into(), model: model.into(), confidence, content: format!("<tt>{model}</tt>") }
@@ -43,7 +43,7 @@ fn word_timing_stored_before_sources_becomes_synced() {
          INSERT INTO lyrics_words VALUES ('t', 'h', 'whisper-base', '<tt/>', 5);",
     )
     .unwrap();
-    conn.pragma_update(None, "user_version", MIGRATIONS.len() as i64 - 1).unwrap();
+    conn.pragma_update(None, "user_version", 22).unwrap();
     drop(conn);
     let conn = open_connection(&dir.path().join("library.db"), &common::KEY, &dir.path().join("backups")).unwrap();
     let kept = Timing { source_hash: "h".into(), model: "whisper-base".into(), confidence: None, content: "<tt/>".into() };

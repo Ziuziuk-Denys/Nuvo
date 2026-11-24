@@ -94,3 +94,8 @@ export function starterGenres(locale: string): Array<{ genre: string; query: str
     .slice(0, STARTER_SHELVES)
     .map(({ genre, query }) => ({ genre, query }));
 }
+
+export function mixNames(mix: HomeMix, t: TFunction): string {
+  const names = [...new Set(mix.tracks.map((track) => firstArtist(track)).filter(Boolean))].slice(0, 3);
+  return names.length > 1 ? t("ui.home.shuffle_names", { names: names.join(", ") }) : "";
+}

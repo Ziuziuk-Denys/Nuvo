@@ -30,7 +30,7 @@ fn records_and_lists_history_newest_first() {
     let (_dir, conn) = common::open();
     play(&conn, "a", "X", json!({"context": {"type": "playlist", "id": "p1"}, "startedAt": NOW - 2000}));
     play(&conn, "b", "X", json!({"completed": false, "skipped": true, "playedDurationMs": 5000, "startedAt": NOW - 1000}));
-    let page = events::history(&conn, 10, None, None).unwrap();
+    let page = events::history(&conn, 10, None, None, None).unwrap();
     assert_eq!(page.items.len(), 2);
     assert_eq!(page.items[0].track["id"], "b");
     assert!(page.items[0].skipped && !page.items[0].completed);
@@ -45,11 +45,11 @@ fn history_cursor_pages_without_overlap() {
     for i in 0..5 {
         play(&conn, &format!("t{i}"), "X", json!({}));
     }
-    let first = events::history(&conn, 3, None, None).unwrap();
-    let second = events::history(&conn, 3, first.next_cursor.as_deref(), None).unwrap();
+    let first = events::history(&conn, 3, None, None, None).unwrap();
+    let second = events::history(&conn, 3, first.next_cursor.as_deref(), None, None).unwrap();
     assert_eq!(first.items.len() + second.items.len(), 5);
     assert!(second.next_cursor.is_none());
-    assert!(matches!(events::history(&conn, 3, Some("x"), None).unwrap_err(), StoreError::Invalid(_)));
+    assert!(matches!(events::history(&conn, 3, Some("x"), None, None).unwrap_err(), StoreError::Invalid(_)));
 }
 
 #[test]
@@ -133,7 +133,7 @@ fn most_saved_lists_saved_albums_and_playlists() {
 fn empty_library_yields_empty_feeds() {
     let (_dir, conn) = common::open();
     assert!(stats::popular_tracks(&conn, "7d", 10, NOW).unwrap().items.is_empty());
-    assert!(events::history(&conn, 10, None, None).unwrap().items.is_empty());
+    assert!(events::history(&conn, 10, None, None, None).unwrap().items.is_empty());
 }
 
 #[test]
@@ -145,15 +145,15 @@ fn history_filters_completed_and_skipped_across_pages() {
     }
     play(&conn, "stopped", "X", json!({"completed": false, "skipped": false}));
 
-    let first = events::history(&conn, 2, None, Some("skipped")).unwrap();
-    let second = events::history(&conn, 2, first.next_cursor.as_deref(), Some("skipped")).unwrap();
+    let first = events::history(&conn, 2, None, Some("skipped"), None).unwrap();
+    let second = events::history(&conn, 2, first.next_cursor.as_deref(), Some("skipped"), None).unwrap();
     let skipped: Vec<_> = first.items.iter().chain(&second.items).map(|i| i.track["id"].as_str().unwrap().to_string()).collect();
     assert_eq!(skipped, ["t5", "t3", "t1"]);
     assert!(second.next_cursor.is_none());
 
-    let completed = events::history(&conn, 10, None, Some("completed")).unwrap();
+    let completed = events::history(&conn, 10, None, Some("completed"), None).unwrap();
     assert!(completed.items.iter().all(|i| i.completed));
     assert_eq!(completed.items.len(), 3);
-    assert_eq!(events::history(&conn, 10, None, Some("all")).unwrap().items.len(), 7);
-    assert!(matches!(events::history(&conn, 10, None, Some("loved")).unwrap_err(), StoreError::Invalid(_)));
+    assert_eq!(events::history(&conn, 10, None, Some("all"), None).unwrap().items.len(), 7);
+    assert!(matches!(events::history(&conn, 10, None, Some("loved"), None).unwrap_err(), StoreError::Invalid(_)));
 }

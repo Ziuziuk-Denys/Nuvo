@@ -4,10 +4,16 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { useImportsUi } from "../imports/importsUi";
+import { useHomeLayout } from "./arrange/homeLayout";
 import { Home } from "./Home";
 import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCovers, starterGenres } from "./homeModel";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 const mocks = vi.hoisted(() => ({
   homeMixes: vi.fn(),
@@ -340,7 +346,12 @@ describe("Home variety shelves", () => {
     mocks.librarySongs.mockResolvedValue([...tracks("f", 5), ...tracks("l", 20)]);
     await mount();
     expect(host.querySelector("[data-shelf=shuffle] h2")?.textContent).toBe("ui.home.shuffle");
-    expect(shelfSongs("shuffle")).toEqual(["l19", "l18", "l17", "l16"]);
+    expect(shelfSongs("shuffle")).toEqual(
+      tracks("l", 20)
+        .reverse()
+        .slice(0, 12)
+        .map((track) => track.id),
+    );
     expect(host.querySelector("[data-shelf=shuffle]")?.textContent).toContain("ui.home.shuffle_names:A");
     act(() => [...host.querySelectorAll<HTMLElement>("[data-shelf=shuffle] button")].find((button) => button.textContent === "ui.entity.play")!.click());
     expect(mocks.playSongs).toHaveBeenCalledWith(tracks("l", 20).reverse().slice(0, 12), 0, "home:shuffle");
@@ -407,7 +418,7 @@ describe("Home refresh", () => {
       const before = shelfSongs(name);
       await act(async () => refreshOf(name).click());
       const after = shelfSongs(name);
-      expect(after).toHaveLength(name === "shuffle" ? 4 : 12);
+      expect(after).toHaveLength(12);
       expect(after.filter((id) => before.includes(id))).toEqual([]);
     }
     act(() => host.querySelector<HTMLElement>("[data-shelf=songs] [data-song]")!.click());
@@ -427,4 +438,16 @@ describe("Home refresh", () => {
     await act(async () => refreshOf("like").click());
     expect(shelfSongs("like")).toEqual(by("Other", "b", 6).map((track) => track.id));
   });
+});
+
+it("shows the parts in the arranged order and leaves the switched off ones out", async () => {
+  mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 12) }]);
+  await mount();
+  const parts = () => [...host.querySelectorAll("[data-mix], [data-shelf=songs]")].map((node) => (node.matches("[data-mix]") ? "mixes" : "songs"));
+  expect(parts()).toEqual(["mixes", "songs"]);
+  act(() => useHomeLayout.getState().move(useHomeLayout.getState().order.indexOf("songs"), 0));
+  expect(parts()).toEqual(["songs", "mixes"]);
+  act(() => useHomeLayout.getState().toggle("songs"));
+  expect(parts()).toEqual(["mixes"]);
+  act(() => useHomeLayout.getState().reset());
 });

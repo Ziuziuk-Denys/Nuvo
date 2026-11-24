@@ -1,7 +1,7 @@
 .home {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 52px;
 }
 
 .textAction {
@@ -16,8 +16,12 @@
   display: flex;
   align-items: flex-end;
   gap: 28px;
-  margin: 0 calc(-1 * var(--n-gutter, 12px)) 25px;
+  margin: 0 calc(-1 * var(--n-gutter, 12px));
   padding: 0 var(--n-gutter, 12px) 2px;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+.home > :has(> [data-arc]) + * {
+  margin-top: -28px;
 }

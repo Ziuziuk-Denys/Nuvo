@@ -7,7 +7,12 @@
 }
 
 .lead {
-  width: 240px;
+  display: flex;
+  flex: 1 0 auto;
+  gap: 28px;
+  align-items: flex-end;
+  width: auto;
+  max-width: 720px;
 }
 
 .cover {
@@ -101,26 +106,36 @@
 }
 
 .leadCaption {
-  margin-top: 10px;
+  flex: 1;
+  width: 250px;
+  padding-bottom: 4px;
 }
 
 .leadTitle {
-  margin: 0;
+  margin: 0 0 10px;
   color: var(--n-ink);
-  font-family: var(--n-font);
-  font-size: 24px;
-  font-weight: 564;
-  font-variation-settings:
-    "wdth" 134,
-    "opsz" 144;
-  line-height: 1;
-  letter-spacing: -0.025em;
+  font: var(--n-type-display);
+  letter-spacing: var(--n-track-display);
+}
+
+.leadLine {
+  margin: 0 0 4px;
+  color: var(--n-ink-2);
+  font: var(--n-type-body);
+  text-wrap: pretty;
+}
+
+.play {
+  align-self: flex-start;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .title {
   overflow: hidden;
   color: var(--n-ink);
-  font: 500 14px/1.4 var(--n-font);
+  font: var(--n-type-body);
+  font-weight: 500;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -128,11 +143,7 @@
 .subtitle {
   overflow: hidden;
   color: var(--n-ink-2);
-  font: 400 13px/1.4 var(--n-font);
+  font: var(--n-type-caption);
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-.leadCaption .subtitle {
-  margin-top: 4px;
 }

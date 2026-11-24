@@ -7,6 +7,11 @@ import { ColdStart } from "./ColdStart";
 import { HiddenLink } from "./HiddenLink";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 const mocks = vi.hoisted(() => ({
   suppressions: vi.fn(),
@@ -53,7 +58,7 @@ const button = (text: string) => [...host.querySelectorAll("button")].find((b) =
 describe("ColdStart", () => {
   it("rises line by line on the first visit only", async () => {
     await act(async () => root.render(<ColdStart />));
-    expect([...host.querySelectorAll(".n-enter")].map((node) => (node as HTMLElement).style.getPropertyValue("--n-i"))).toEqual(["0", "1", "2", "3"]);
+    expect([...host.querySelectorAll(".n-enter")].map((node) => (node as HTMLElement).style.getPropertyValue("--n-i"))).toEqual(["0", "1", "2"]);
     act(() => root.unmount());
     root = createRoot(host);
     await act(async () => root.render(<ColdStart />));

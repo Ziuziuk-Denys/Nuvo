@@ -15,6 +15,7 @@ pub mod scrobbler;
 pub mod socket;
 pub mod state;
 pub mod tool_update;
+pub mod mood;
 pub mod word_timing;
 
 use axum::Router;
@@ -79,6 +80,7 @@ pub async fn run(config: Config, keystore: Box<dyn KeyStore>) -> Result<(), Boot
                 let state = state.clone();
                 let updater = state.clone();
                 routes::stats::spawn_warm_up(state.clone());
+                mood::spawn(state.clone());
                 tokio::spawn(async move { deps::refresh(&state).await });
                 tool_update::spawn(updater);
             } else {

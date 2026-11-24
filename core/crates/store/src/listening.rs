@@ -997,6 +997,7 @@ pub fn delete(conn: &Connection, range: Option<(i64, i64)>) -> Result<i64, Store
              AND NOT EXISTS(SELECT 1 FROM served x WHERE x.track_id = d.track_id)
              AND NOT EXISTS(SELECT 1 FROM rec_starters x WHERE x.track_id = d.track_id);
          DELETE FROM track_keys WHERE track_id IN (SELECT id FROM temp.stats_orphans);
+         DELETE FROM track_moods WHERE track_id IN (SELECT id FROM temp.stats_orphans);
          DELETE FROM tracks WHERE id IN (SELECT id FROM temp.stats_orphans);
          DROP TABLE temp.stats_orphans;
          DROP TABLE temp.stats_doomed;",
