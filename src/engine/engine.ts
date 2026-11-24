@@ -18,7 +18,7 @@ import * as Q from "./queue";
 import type { Random } from "./shuffle";
 import { displayCause, type TriggerCause } from "./sources/fallbackPlan";
 import { skipNotice } from "./stateLine";
-import { isAbort, SourceFailure } from "./sources/ports";
+import { isAbort, SourceFailure, type Denied } from "./sources/ports";
 import type { AttachedSource, Resolved, ResolveOptions } from "./sources/resolver";
 import { CROSSFADE_MAX_S } from "./audio/transitionPolicy";
 import { clampVolume, nextTempo, type Tempo } from "./tempo";
@@ -46,6 +46,7 @@ export const BUFFERING_AFTER_MS = 300;
 export const NATURAL_END_WINDOW_MS = 1500;
 export const EXPIRY_MARGIN_MS = 15_000;
 export const NETWORK_STREAK_LIMIT = 3;
+export const REFUSED_STREAK_LIMIT = 3;
 export const RETRY_REFILL_MS = 3000;
 export const STALL_MS = 8000;
 export const RESOLVE_MS = 10_000;
@@ -152,6 +153,7 @@ export class Engine {
   private readonly retryOwed = new Map<string, number>();
   private readonly retried = new Set<string>();
   private networkStreak = 0;
+  private refusedStreak = 0;
   private readonly checkedCauses = new Set<Cause | "http_403">();
   private passFailures = new Set<string>();
   private nextPair: string | null = null;
@@ -403,7 +405,10 @@ export class Engine {
     if (this.status === "playing" || this.status === "loading") return;
     const entry = Q.current(this.queue);
     if (!entry) return;
-    if (this.pauseReason === "network") this.networkStreak = 0;
+    if (this.pauseReason === "network") {
+      this.networkStreak = 0;
+      this.refusedStreak = 0;
+    }
     if (this.status === "idle" || this.needsReload()) {
       this.startEntry(this.queue.index, { positionMs: this.status === "idle" ? undefined : this.positionMs, keepPlay: this.status !== "idle" });
       return;
@@ -923,15 +928,17 @@ export class Engine {
       this.deps.askForSignIn();
       return;
     }
-    this.skipFailed(load, entry, failure.cause, failure.detail.original);
+    this.skipFailed(load, entry, failure.cause, failure.detail.original, failure.detail.denied);
   }
 
-  private skipFailed(load: LoadState, entry: QueueEntry, cause: Cause, reportReason: string = cause): void {
+  private skipFailed(load: LoadState, entry: QueueEntry, cause: Cause, reportReason: string = cause, denied?: Denied): void {
     if (this.load !== load) return;
     this.notice = { kind: "skipped", title: entry.track.title, cause };
+    this.refusedStreak = denied === "refused" ? this.refusedStreak + 1 : 0;
+    const refusing = this.refusedStreak >= REFUSED_STREAK_LIMIT;
     if (!this.retried.has(entry.entryId)) {
       this.retryOwed.set(entry.entryId, this.deps.now());
-      this.deps.notify({ kind: "info", ...skipNotice(entry.track.title, cause, reportReason) });
+      if (!refusing) this.deps.notify({ kind: "info", ...skipNotice(entry.track.title, cause, reportReason, denied) });
     }
     this.tracker.setSource(this.stream?.source ?? primarySource(entry.track.id), reportReason);
     this.endPlay("error");
@@ -940,6 +947,11 @@ export class Engine {
     this.clearTimers();
     if (NETWORK_CAUSES.has(cause)) this.checkNetwork(reportReason === "http_403" ? "http_403" : cause);
     const step = Q.nextStep(this.queue, this.prefs.repeat === "one" ? "off" : this.prefs.repeat, this.station, false);
+    if (refusing) {
+      this.deps.notify({ kind: "info", key: "ui.island.skipped.refusing", vars: {} });
+      this.stopAt(step);
+      return;
+    }
     if (this.networkStreak >= NETWORK_STREAK_LIMIT) {
       this.stopForNetwork(step, cause);
       return;
@@ -949,6 +961,11 @@ export class Engine {
   }
 
   private stopForNetwork(step: Q.NextStep, cause: Cause, positionMs = 0): void {
+    this.stopAt(step, positionMs, { kind: "network", cause });
+    this.checkNetwork(cause);
+  }
+
+  private stopAt(step: Q.NextStep, positionMs = 0, notice: Notice | null = null): void {
     if (step.kind === "index") this.queue = { entries: this.queue.entries, index: step.index };
     else if (step.kind === "wrap") this.queue = { entries: this.queue.entries, index: 0 };
     this.clearTimers();
@@ -960,8 +977,7 @@ export class Engine {
     this.positionMs = positionMs;
     this.durationMs = Q.current(this.queue)?.track.durationMs ?? 0;
     this.setStatus("paused", "network");
-    this.notice = { kind: "network", cause };
-    this.checkNetwork(cause);
+    this.notice = notice;
     this.publish();
     this.writer.flush();
   }
@@ -1031,6 +1047,7 @@ export class Engine {
     if (this.disposed) return;
     this.deps.resolver.networkChanged();
     this.networkStreak = 0;
+    this.refusedStreak = 0;
     this.checkedCauses.clear();
     if (!this.deps.online()) return;
     if (this.status === "paused" && this.pauseReason === "network") {
@@ -1064,6 +1081,7 @@ export class Engine {
         if (load.pausedMeanwhile || this.status === "paused") return;
         this.setStatus("playing");
         this.networkStreak = 0;
+        this.refusedStreak = 0;
         this.passFailures.clear();
         this.retryOwed.delete(load.entryId);
         this.armStall(load);

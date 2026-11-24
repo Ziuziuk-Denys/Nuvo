@@ -297,7 +297,12 @@ export class SourceResolver {
       if (failure.detail.botCheck && this.deps.offerSignIn()) throw new SourceFailure("sign_in_required", { botCheck: true, signIn: true });
       if (!isFallbackTrigger(failure.cause)) throw failure;
       if (this.primaryKind(track) === "youtube") this.noteBlocked(failure.cause);
-      return this.runFallback(track, failure.cause, this.primaryKind(track), budget ?? new FallbackBudget(this.deps.now), tried, options, false);
+      try {
+        return await this.runFallback(track, failure.cause, this.primaryKind(track), budget ?? new FallbackBudget(this.deps.now), tried, options, false);
+      } catch (last) {
+        if (!failure.detail.denied || !(last instanceof SourceFailure)) throw last;
+        throw new SourceFailure(last.cause, { ...last.detail, denied: failure.detail.denied });
+      }
     }
   }
 
