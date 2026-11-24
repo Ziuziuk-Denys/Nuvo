@@ -4,6 +4,7 @@ import type { NotchState, NotchTrack } from "@/notch/contracts";
 import type { PositionSample } from "@/notch/lib/playback";
 import { Icon } from "@/ui/icons/Icon";
 import { MorphPlayIcon } from "@/ui/components/MorphPlayIcon";
+import type { CoverLight } from "@/ui/light/readLight";
 import { Art } from "./Art";
 import type { PocketAction, PocketFace } from "./contracts";
 import { Seek } from "./Seek";
@@ -18,7 +19,7 @@ interface FrontProps {
   turnTo: PocketFace | null;
   onAction: (action: PocketAction) => void;
   onFace: (face: PocketFace) => void;
-  onLight: (color: string) => void;
+  onLight: (light: CoverLight) => void;
   onClose: () => void;
 }
 
@@ -60,7 +61,7 @@ export function Front(props: FrontProps) {
         <div className="transport" aria-disabled={!track || undefined}>
           <button
             type="button"
-            className="tool"
+            className="tool like"
             aria-label={t(state?.liked ? "ui.island.unlike" : "ui.island.like")}
             aria-pressed={state?.liked ?? false}
             disabled={!track}

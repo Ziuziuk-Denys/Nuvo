@@ -37,6 +37,7 @@ export function ExpandedFace(props: ExpandedFaceProps) {
   const { t } = useTranslation();
   const index = pages.indexOf(page);
   const next = index >= 0 ? (pages[index + 1] ?? null) : null;
+  const beside = next ?? (index > 1 ? pages[index - 1] : null);
   const swipe = useRef<{ x: number; y: number } | null>(null);
 
   const [turn, setTurn] = useState({ page, index, count: 0, from: "cover", forward: true });
@@ -98,6 +99,7 @@ export function ExpandedFace(props: ExpandedFaceProps) {
           track={state.track}
           page={page}
           next={next}
+          beside={beside}
           ahead={index >= 0 ? pages.length - 1 - index : 0}
           nudge={props.nudge}
           onPage={onPage}
@@ -151,7 +153,6 @@ function NowPage({ state, sample, live, accent, onAction, onHold }: ExpandedFace
           className="icon-button opinion like"
           aria-label={t("ui.island.like")}
           aria-pressed={state.liked}
-          style={state.liked ? { color: accent } : undefined}
           onClick={() => onAction({ type: "like" })}
         >
           <Icon name={state.liked ? "liked" : "like"} size={20} />

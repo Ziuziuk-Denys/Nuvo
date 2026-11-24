@@ -1,29 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { coverLight } from "@/notch/lib/coverLight";
 import { Icon } from "@/ui/icons/Icon";
-import { lampColor } from "./lamp";
-
-const SAMPLE = 24;
-
-function colorOf(image: HTMLImageElement): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = SAMPLE;
-  canvas.height = SAMPLE;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return "#ffffff";
-  try {
-    context.drawImage(image, 0, 0, SAMPLE, SAMPLE);
-    return lampColor(context.getImageData(0, 0, SAMPLE, SAMPLE).data);
-  } catch {
-    return "#ffffff";
-  }
-}
+import { NEUTRAL, type CoverLight } from "@/ui/light/readLight";
 
 interface Layer {
   key: number;
   src: string | null;
 }
 
-export function Art({ src, onLight }: { src: string | null; onLight?: (color: string) => void }) {
+export function Art({ src, onLight }: { src: string | null; onLight?: (light: CoverLight) => void }) {
   const [layers, setLayers] = useState<Layer[]>([{ key: 0, src: null }]);
   const count = useRef(0);
 
@@ -44,12 +29,12 @@ export function Art({ src, onLight }: { src: string | null; onLight?: (color: st
     image.decode().then(
       () => {
         if (!live) return;
-        onLight?.(colorOf(image));
+        onLight?.(coverLight(image) ?? NEUTRAL);
         show();
       },
       () => {
         if (!live) return;
-        onLight?.("#ffffff");
+        onLight?.(NEUTRAL);
         setLayers((now) => [now.at(-1)!, { key: (count.current += 1), src: null }]);
       },
     );

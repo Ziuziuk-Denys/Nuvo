@@ -739,6 +739,7 @@ body,
 }
 
 .like[aria-pressed="true"] {
+  color: #ff7088;
   animation: pop 320ms var(--morph-ease);
 }
 
@@ -819,7 +820,7 @@ body,
   position: absolute;
   inset: 71px 0 auto;
   line-height: 34px;
-  font-size: 15px;
+  font-size: 13.5px;
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
   transform: translateY(calc(var(--at) * 34px));
@@ -829,7 +830,7 @@ body,
 }
 
 .lyrics-line span {
-  --grow: 1.32;
+  --grow: 1.42;
   display: inline-block;
   max-width: calc(100% / var(--grow));
   overflow: hidden;
@@ -840,11 +841,11 @@ body,
 }
 
 .lyrics-line[data-long] span {
-  --grow: 1.06;
+  --grow: 1.18;
 }
 
-.lyrics-line[data-long="very"] {
-  font-size: 13px;
+.lyrics-line[data-long="very"] span {
+  --grow: 1.02;
 }
 
 .lyrics-line[data-current="true"] {

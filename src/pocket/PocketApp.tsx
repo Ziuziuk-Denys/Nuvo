@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type WheelEvent } from "react";
 import { useTranslation } from "@/i18n";
 import type { NotchLyrics, NotchState } from "@/notch/contracts";
+import { NEUTRAL, type CoverLight } from "@/ui/light/readLight";
+import { lightVars } from "@/ui/light/useLightVars";
 import { positionAt, predicted, type PositionSample } from "@/notch/lib/playback";
 import type { PocketBridge } from "../../electron/app/preload-pocket";
 import { Back } from "./Back";
@@ -26,7 +28,7 @@ export default function PocketApp() {
   const [feed, setFeed] = useState<PocketFeed | null>(null);
   const [frame, setFrame] = useState<Frame | null>(null);
   const [wantedFace, setWantedFace] = useState<PocketFace>("cover");
-  const [light, setLight] = useState<{ url: string | null; color: string }>({ url: null, color: "#ffffff" });
+  const [light, setLight] = useState<CoverLight>(NEUTRAL);
   const [volume, setVolume] = useState<{ step: number; louder: boolean } | null>(null);
   const awake = useAwake(frame?.margin ?? 0);
   const wheel = useRef(0);
@@ -126,7 +128,7 @@ export default function PocketApp() {
   const style = {
     "--margin": `${frame.margin}px`,
     "--grain": grain(),
-    "--light": light.url === coverUrl && coverUrl ? light.color : "transparent",
+    ...lightVars(light),
     ...(look ? { "--field": look.field, "--ink": look.ink } : {}),
   } as CSSProperties;
 
@@ -156,7 +158,7 @@ export default function PocketApp() {
           turnTo={faces[1] ?? null}
           onAction={act}
           onFace={setWantedFace}
-          onLight={(color) => setLight({ url: coverUrl, color })}
+          onLight={setLight}
           onClose={() => bridge()?.close()}
         />
         <Back

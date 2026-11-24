@@ -10,13 +10,14 @@ interface DeckProps {
   track: NotchTrack;
   page: NotchPage;
   next: NotchPage | null;
+  beside: NotchPage | null;
   ahead: number;
   nudge: boolean;
   onPage: (page: NotchPage) => void;
   onFocusApp: () => void;
 }
 
-export function Deck({ track, page, next, ahead, nudge, onPage, onFocusApp }: DeckProps) {
+export function Deck({ track, page, next, beside, ahead, nudge, onPage, onFocusApp }: DeckProps) {
   const { t } = useTranslation();
   const front = page === "now";
   const coverLabel = !front ? t("ui.notch.back") : next ? t("ui.notch.show", { page: t(NAMES[next]) }) : t("ui.notch.open_app");
@@ -46,9 +47,9 @@ export function Deck({ track, page, next, ahead, nudge, onPage, onFocusApp }: De
           <span>{track.title}</span>
           <span>{track.artist}</span>
         </button>
-        {next && !front && (
-          <button type="button" className="deck-next" onClick={() => onPage(next)}>
-            {t(NAMES[next])}
+        {beside && !front && (
+          <button type="button" className="deck-next" onClick={() => onPage(beside)}>
+            {t(NAMES[beside])}
           </button>
         )}
       </div>

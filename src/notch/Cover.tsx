@@ -1,24 +1,7 @@
 import { useState } from "react";
 import { Icon } from "@/ui/icons/Icon";
-import { accentFromPixels } from "./lib/accent";
-
-const SAMPLE = 16;
-const FALLBACK_ACCENT = "#ffffff";
-
-function sampleAccent(img: HTMLImageElement): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = SAMPLE;
-  canvas.height = SAMPLE;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return FALLBACK_ACCENT;
-  try {
-    context.drawImage(img, 0, 0, SAMPLE, SAMPLE);
-    return accentFromPixels(context.getImageData(0, 0, SAMPLE, SAMPLE).data);
-  } catch {
-    // A cover served without CORS headers taints the canvas.
-    return FALLBACK_ACCENT;
-  }
-}
+import { cssColour, NEUTRAL } from "@/ui/light/readLight";
+import { coverLight } from "./lib/coverLight";
 
 interface CoverProps {
   src: string | null;
@@ -47,10 +30,10 @@ export function Cover({ src, size, radius, onAccent }: CoverProps) {
       style={style}
       crossOrigin="anonymous"
       draggable={false}
-      onLoad={onAccent ? (event) => onAccent(sampleAccent(event.currentTarget)) : undefined}
+      onLoad={onAccent ? (event) => onAccent(cssColour((coverLight(event.currentTarget) ?? NEUTRAL).key)) : undefined}
       onError={() => {
         setFailedSrc(src);
-        onAccent?.(FALLBACK_ACCENT);
+        onAccent?.(cssColour(NEUTRAL.key));
       }}
     />
   );

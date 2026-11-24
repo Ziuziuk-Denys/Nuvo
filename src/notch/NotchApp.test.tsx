@@ -366,7 +366,9 @@ describe("NotchApp", () => {
     click(host.querySelector(".deck-next")!);
     expect(view()).toBe("upNext");
     expect(sheets()).toBe(0);
-    expect(host.querySelector(".deck-next")).toBeNull();
+    expect(host.querySelector(".deck-next")!.textContent).toBe("Lyrics");
+    click(host.querySelector(".deck-next")!);
+    expect(view()).toBe("lyrics");
     click(cover());
     expect(view()).toBe("now");
     expect(harness.api.notchAction).not.toHaveBeenCalled();
