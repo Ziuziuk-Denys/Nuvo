@@ -113,7 +113,9 @@ export function EntityHead({
 
   return (
     <header className={styles.head} data-shape={shape}>
-      <div className={styles.cover}>{cover}</div>
+      <div className={styles.cover} data-hero-cover="">
+        {cover}
+      </div>
       <div className={styles.column}>
         <div className={styles.titleLine}>
           <h1 className={`${look.pageTitle} ${styles.title}`}>{title}</h1>

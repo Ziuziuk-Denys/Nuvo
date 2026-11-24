@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arcPath, artistArcs, dayRows, parsePeriod, pastPeriods, periodName, periodOf } from "./replayModel";
+import { arcPath, artistArcs, comparable, compareTime, dayRows, parsePeriod, pastPeriods, periodName, periodOf, previousSpan } from "./replayModel";
 
 const TODAY = "2026-11-24";
 
@@ -87,5 +87,32 @@ describe("day rows", () => {
     const rows = dayRows(days, run, { from: "2026-01-01", to: "2026-12-31" }, TODAY, "en");
     expect(rows).toHaveLength(12);
     expect(rows[1].days).toHaveLength(28);
+  });
+});
+
+describe("against the period before", () => {
+  it("a running month is held against the same days of the last one, a finished one against all of it", () => {
+    expect(previousSpan(periodOf("month", TODAY, "en"), TODAY, "en")).toEqual({ from: "2026-10-01", to: "2026-10-24" });
+    expect(previousSpan(periodOf("month", "2026-03-31", "en"), "2026-03-31", "en")).toEqual({ from: "2026-02-01", to: "2026-02-28" });
+    expect(previousSpan(periodOf("month", "2026-09-05", "en"), TODAY, "en")).toEqual({ from: "2026-08-01", to: "2026-08-31" });
+    expect(previousSpan(periodOf("all", TODAY, "en"), TODAY, "en")).toBeNull();
+  });
+
+  it("speaks in plain numbers and stays silent where they would shout", () => {
+    expect(compareTime(100, 97)).toEqual({ kind: "same" });
+    expect(compareTime(150, 100)).toEqual({ kind: "more", ms: 50 });
+    expect(compareTime(40, 100)).toEqual({ kind: "less", ms: 60 });
+    expect(compareTime(278, 100)).toEqual({ kind: "almost", times: 3 });
+    expect(compareTime(205, 100)).toEqual({ kind: "about", times: 2 });
+    expect(compareTime(340, 100)).toEqual({ kind: "over", times: 3 });
+    expect(compareTime(1200, 100)).toBeNull();
+    expect(compareTime(100, 0)).toBeNull();
+  });
+
+  it("needs a whole previous period with enough days of music", () => {
+    expect(comparable("month", "2026-10-01", "2026-09-01", 12)).toBe(true);
+    expect(comparable("month", "2026-10-01", "2026-10-20", 12)).toBe(false);
+    expect(comparable("month", "2026-10-01", "2026-09-01", 4)).toBe(false);
+    expect(comparable("month", "2026-10-01", null, 12)).toBe(false);
   });
 });

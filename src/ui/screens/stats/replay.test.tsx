@@ -128,8 +128,9 @@ it("more songs add the list, and the top song plays with the rest that can play 
 it("a period still running is asked for up to today, a finished one whole", () => {
   mocks.data = overview(0);
   open("/stats?kind=year");
-  expect(mocks.asked.at(-1)).toEqual({ from: `${today.slice(0, 4)}-01-01`, to: today });
+  expect(mocks.asked[0]).toEqual({ from: `${today.slice(0, 4)}-01-01`, to: today });
+  mocks.asked = [];
   open("/stats?kind=month&at=2020-02-10");
-  expect(mocks.asked.at(-1)).toEqual({ from: "2020-02-01", to: "2020-02-29" });
+  expect(mocks.asked[0]).toEqual({ from: "2020-02-01", to: "2020-02-29" });
   expect(host.querySelector("[data-testid=stats-empty]")).not.toBeNull();
 });

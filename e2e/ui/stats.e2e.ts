@@ -270,6 +270,13 @@ describe("the Statistics page", () => {
       expect(spill, `${size.width}: nothing runs past the edge`).toEqual([]);
     }
     await live.setSize(W1200);
+    const scrolled = () => live.page.evaluate(() => document.querySelector(".n-scroll")!.scrollTop);
+    await live.page.mouse.move(600, 400);
+    await live.page.mouse.wheel(0, 240);
+    await live.page.waitForTimeout(600);
+    expect(await scrolled(), "a small turn of the wheel stays where it was put").toBeGreaterThan(200);
+    await live.page.keyboard.press("PageDown");
+    await expect.poll(() => live.page.evaluate(() => (document.activeElement as HTMLElement).dataset.replayScreen), { timeout: 5_000 }).toBe("song");
     await shot(live, "replay-light", W1200, true);
     await live.page.getByRole("button", { name: "Share image", exact: true }).first().click();
     const canvas = live.page.locator("canvas[data-drawn]");
@@ -281,8 +288,14 @@ describe("the Statistics page", () => {
     const png = await canvas.evaluate((node) => (node as HTMLCanvasElement).toDataURL("image/png").length);
     expect(png).toBeGreaterThan(50_000);
     await live.page.keyboard.press("Escape");
+    const minutes = Number((await live.page.locator("[data-testid=replay-minutes]").innerText()).replace(/\D/g, ""));
+    const best = await live.page.locator("[data-replay-screen=song] h2").innerText();
+    const asked = live.page.waitForResponse((response) => response.url().includes("/v1/stats/overview"));
     await live.page.getByRole("button", { name: "All numbers", exact: true }).first().click();
     await live.page.locator("[data-testid=stats-lead]").waitFor({ timeout: 15_000 });
+    const numbers = (await (await asked).json()) as { totals: { listenedMs: number } };
+    expect(Math.round(numbers.totals.listenedMs / 60_000), "the same minutes in All numbers").toBe(minutes);
+    await expect.poll(() => live.page.locator("[data-stats-section=top] [data-stats-row]").first().innerText(), { timeout: 10_000 }).toContain(best);
     await openStats(live, "year");
   });
 

@@ -10,23 +10,11 @@ import { useUnavailable } from "../entity/EntityTracks";
 import look from "../look.module.css";
 import { arcPath, artistArcs, dayRows, minutesOf, type DayMark, type ReplayPeriod } from "./replayModel";
 import { artistHref, trackHref, useSongMenu } from "./StatsRows";
-import {
-  buckets,
-  change,
-  dateOf,
-  dayProfile,
-  filled,
-  formatDay,
-  formatTime,
-  isoDate,
-  MIN_CHART_BUCKETS,
-  MIN_CHART_DAYS,
-  peakIndex,
-  weekdays,
-} from "./statsModel";
+import { buckets, dateOf, dayProfile, filled, formatDay, formatTime, isoDate, MIN_CHART_BUCKETS, MIN_CHART_DAYS, peakIndex, weekdays } from "./statsModel";
 import styles from "./Replay.module.css";
 
 const SONGS_SHOWN = 10;
+const STACK = 3;
 const ARC_W = 1000;
 const ARC_H = 360;
 
@@ -35,15 +23,18 @@ export interface ScreenProps {
   period: ReplayPeriod;
   name: string;
   today: string;
+  against: string | null;
 }
 
 export function Screen({
   id,
+  label,
   cover,
   onLit,
   children,
 }: {
   id: string;
+  label: string;
   cover?: string;
   onLit: (cover: string | undefined) => void;
   children: ReactNode;
@@ -56,7 +47,7 @@ export function Screen({
     return () => watch.disconnect();
   }, [cover, onLit]);
   return (
-    <section ref={box} className={styles.screen} data-replay-screen={id}>
+    <section ref={box} className={styles.screen} data-replay-screen={id} tabIndex={0} aria-label={label}>
       {children}
     </section>
   );
@@ -67,11 +58,10 @@ function firstHeard({ range, firstPlayedAt, days }: StatsOverview): string {
   return firstPlayedAt && days.length > 0 && isoDate(new Date(firstPlayedAt)) >= from ? days[0].day : from;
 }
 
-export function TimeScreen({ stats, period, name }: ScreenProps): JSX.Element {
+export function TimeScreen({ stats, period, name, against }: ScreenProps): JSX.Element {
   const { t, locale } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
   const minutes = minutesOf(stats.totals.listenedMs);
-  const delta = change(stats.totals.listenedMs, stats.previous?.listenedMs);
   const items = useMemo(() => (stats.days.length > 0 ? buckets(stats.days, firstHeard(stats), stats.range.to, locale) : []), [stats, locale]);
   const max = Math.max(1, ...items.map((item) => item.listenedMs));
   const peak = peakIndex(items.map((item) => item.listenedMs));
@@ -87,23 +77,25 @@ export function TimeScreen({ stats, period, name }: ScreenProps): JSX.Element {
   return (
     <>
       <div className={styles.time}>
-        <p className={styles.giant} data-testid="replay-minutes">
-          {minutes.toLocaleString(locale)}
-        </p>
-        <h2 className={styles.line}>
-          {t(period.kind === "all" ? "ui.replay.minutes_all" : period.kind === "week" ? "ui.replay.minutes_week" : "ui.replay.minutes", {
-            count: minutes,
-            name,
-          })}
-        </h2>
-        {habit || delta !== null ? (
-          <p className={styles.note}>
-            {habit}
-            {delta !== null
-              ? ` ${t("ui.replay.change", { delta: new Intl.NumberFormat(locale, { style: "percent", signDisplay: "exceptZero" }).format(delta / 100) })}`
-              : ""}
+        <div className={styles.timeText}>
+          <p className={styles.giant} data-testid="replay-minutes">
+            {minutes.toLocaleString(locale)}
           </p>
-        ) : null}
+          <h2 className={styles.line}>
+            {t(period.kind === "all" ? "ui.replay.minutes_all" : period.kind === "week" ? "ui.replay.minutes_week" : "ui.replay.minutes", {
+              count: minutes,
+              name,
+            })}
+          </h2>
+          {habit || against ? <p className={styles.note}>{[against, habit].filter(Boolean).join(" ")}</p> : null}
+        </div>
+        <div className={styles.stack} aria-hidden="true">
+          {stats.top.tracks.slice(0, STACK).map((row, index) => (
+            <span key={row.id} className={styles.object} style={{ "--i": index } as CSSProperties}>
+              <Cover src={row.coverUrl ?? ""} size={360} />
+            </span>
+          ))}
+        </div>
       </div>
       {stats.days.length >= MIN_CHART_DAYS && shown ? (
         <div className={styles.rhythm} role="img" aria-label={t("ui.stats.rhythm")} onPointerLeave={() => setHover(null)}>
@@ -146,7 +138,7 @@ export function SongScreen({ stats }: ScreenProps): JSX.Element {
   const play = usePlay(stats.top.tracks);
   return (
     <div className={styles.song}>
-      <div className={styles.object} style={{ "--size": "min(58cqh, 40cqw)" } as CSSProperties}>
+      <div className={styles.object} data-hero-cover="" style={{ "--size": "min(58cqh, 40cqw)" } as CSSProperties}>
         <Cover src={top.coverUrl ?? ""} size={560} fetchPriority="high" />
       </div>
       <div className={styles.songText}>
@@ -290,17 +282,56 @@ const DIAL_IN = 92;
 const DIAL_OUT = 194;
 const DIAL_HOURS = 74;
 
+function dialPoint(hour: number, radius: number): [number, number] {
+  const angle = ((hour * 15 - 90) * Math.PI) / 180;
+  return [DIAL + radius * Math.cos(angle), DIAL + radius * Math.sin(angle)];
+}
+
+export function Dial({ byHour, shown, onHover }: { byHour: readonly number[]; shown: number; onHover?: (hour: number) => void }): JSX.Element {
+  const max = Math.max(1, ...byHour);
+  return (
+    <svg viewBox="0 0 400 400" aria-hidden="true">
+      {byHour.map((ms, hour) => {
+        const [x1, y1] = dialPoint(hour, DIAL_IN);
+        const [x2, y2] = dialPoint(hour, DIAL_IN + 2 + (ms / max) * (DIAL_OUT - DIAL_IN));
+        return (
+          <line
+            key={hour}
+            className={styles.ray}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            data-on={hour === shown ? "" : undefined}
+            data-silent={ms === 0 ? "" : undefined}
+            style={{ "--v": ms / max } as CSSProperties}
+          />
+        );
+      })}
+      {onHover
+        ? byHour.map((_, hour) => {
+            const [x1, y1] = dialPoint(hour, DIAL_HOURS);
+            const [x2, y2] = dialPoint(hour, DIAL_OUT);
+            return <line key={hour} className={styles.rayHit} x1={x1} y1={y1} x2={x2} y2={y2} onPointerEnter={() => onHover(hour)} />;
+          })
+        : null}
+      {[0, 6, 12, 18].map((hour) => {
+        const [x, y] = dialPoint(hour, DIAL_HOURS);
+        return (
+          <text key={hour} className={styles.dialHour} x={x} y={y} textAnchor="middle" dominantBaseline="central">
+            {hour}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
 export function HoursScreen({ stats }: ScreenProps): JSX.Element {
   const { t, locale } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
-  const max = Math.max(1, ...stats.byHour);
-  const peak = peakIndex(stats.byHour);
-  const shown = hover ?? peak;
+  const shown = hover ?? peakIndex(stats.byHour);
   const lead = dayProfile(stats.byHour).reduce((best, item) => (item.share > best.share ? item : best));
-  const point = (hour: number, radius: number) => {
-    const angle = ((hour * 15 - 90) * Math.PI) / 180;
-    return [DIAL + radius * Math.cos(angle), DIAL + radius * Math.sin(angle)];
-  };
   return (
     <div className={styles.hours}>
       <div className={styles.hoursText}>
@@ -310,39 +341,7 @@ export function HoursScreen({ stats }: ScreenProps): JSX.Element {
         </p>
       </div>
       <div className={styles.dial} role="img" aria-label={t("ui.stats.by_hour")} onPointerLeave={() => setHover(null)}>
-        <svg viewBox="0 0 400 400" aria-hidden="true">
-          {stats.byHour.map((ms, hour) => {
-            const value = ms / max;
-            const [x1, y1] = point(hour, DIAL_IN);
-            const [x2, y2] = point(hour, DIAL_IN + 2 + value * (DIAL_OUT - DIAL_IN));
-            return (
-              <line
-                key={hour}
-                className={styles.ray}
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                data-on={hour === shown ? "" : undefined}
-                data-silent={ms === 0 ? "" : undefined}
-                style={{ "--v": value } as CSSProperties}
-              />
-            );
-          })}
-          {stats.byHour.map((_, hour) => {
-            const [x1, y1] = point(hour, DIAL_HOURS);
-            const [x2, y2] = point(hour, DIAL_OUT);
-            return <line key={hour} className={styles.rayHit} x1={x1} y1={y1} x2={x2} y2={y2} onPointerEnter={() => setHover(hour)} />;
-          })}
-          {[0, 6, 12, 18].map((hour) => {
-            const [x, y] = point(hour, DIAL_HOURS);
-            return (
-              <text key={hour} className={styles.dialHour} x={x} y={y} textAnchor="middle" dominantBaseline="central">
-                {hour}
-              </text>
-            );
-          })}
-        </svg>
+        <Dial byHour={stats.byHour} shown={shown} onHover={setHover} />
         <div className={styles.dialCenter}>
           <strong>{`${String(shown).padStart(2, "0")}:00`}</strong>
           <span>{formatTime(stats.byHour[shown], t)}</span>

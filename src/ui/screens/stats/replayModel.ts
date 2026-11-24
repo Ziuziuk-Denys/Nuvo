@@ -70,7 +70,6 @@ const ARC_MIN_WIDTH = 0.06;
 const ARC_EDGE = 0.14;
 const ARC_STEP = 0.19;
 
-/** One arc per artist, from the first to the last day it played, its top where the listening was thickest. */
 export function artistArcs(artists: readonly { id: string; days: readonly StatsDay[] }[], from: string, to: string): Arc[] {
   const span = daysBetween(from, to) + 1;
   const reach = Math.max(0, Math.round(span / 24));
@@ -105,7 +104,6 @@ export interface DayMark {
   future: boolean;
 }
 
-/** The days of the period as rows: one for a week, calendar weeks for a month, months for a year. */
 export function dayRows(
   days: readonly StatsDay[],
   run: { from: string | null; to: string | null },
@@ -135,4 +133,40 @@ export function dayRows(
 
 export function minutesOf(ms: number): number {
   return Math.round(ms / 60_000);
+}
+
+export function previousSpan(period: ReplayPeriod, today: string, locale: string): { from: string; to: string } | null {
+  if (period.kind === "all") return null;
+  const previous = periodOf(period.kind, addDays(period.from, -1), locale);
+  if (period.to <= today) return { from: previous.from, to: previous.to };
+  const sameDay = addDays(previous.from, daysBetween(period.from, today));
+  return { from: previous.from, to: sameDay < previous.to ? sameDay : previous.to };
+}
+
+export type Comparison = { kind: "same" } | { kind: "more" | "less"; ms: number } | { kind: "almost" | "about" | "over"; times: number };
+
+const SAME = 0.08;
+const TIMES_FROM = 1.7;
+const TIMES_TO = 9.7;
+
+export function compareTime(now: number, before: number): Comparison | null {
+  if (now <= 0 || before <= 0) return null;
+  const ratio = now / before;
+  if (Math.abs(ratio - 1) <= SAME) return { kind: "same" };
+  if (ratio < TIMES_FROM) return { kind: ratio > 1 ? "more" : "less", ms: Math.abs(now - before) };
+  if (ratio >= TIMES_TO) return null;
+  const whole = Math.floor(ratio);
+  if (ratio - whole >= 0.7) return { kind: "almost", times: whole + 1 };
+  return { kind: ratio - whole <= 0.1 ? "about" : "over", times: whole };
+}
+
+const MIN_PREVIOUS_DAYS: Record<ReplayKind, number> = { week: 3, month: 5, year: 20, all: 0 };
+
+export function comparable(kind: ReplayKind, previousFrom: string, firstDay: string | null, activeDays: number): boolean {
+  return firstDay !== null && firstDay <= previousFrom && activeDays >= MIN_PREVIOUS_DAYS[kind];
+}
+
+export function askedDays(period: ReplayPeriod, today: string): { from?: string; to?: string } {
+  if (period.kind === "all") return {};
+  return { from: period.from, to: period.to < today ? period.to : today };
 }

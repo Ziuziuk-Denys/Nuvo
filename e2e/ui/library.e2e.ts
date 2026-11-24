@@ -214,7 +214,7 @@ describe("Library", () => {
       await expectCentred(live.page, `library ${size.width}`);
     }
     await both("library-empty", empty);
-    await live.go("#/stats");
+    await live.go("#/stats/all");
     await live.page.locator("[data-testid=stats-empty] [data-empty-state]").waitFor({ timeout: 15_000 });
     await expectCentred(live.page, "stats");
     await live.go("#/");

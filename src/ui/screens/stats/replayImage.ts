@@ -72,7 +72,6 @@ function drawCover(ctx: Context, image: HTMLImageElement | null, x: number, y: n
   ctx.stroke();
 }
 
-/** The cover's colour falling into a dark room: inverse square, with grain so eight bits do not band. */
 function drawRoom(ctx: Context, color: string, lampX: number, lampY: number, reach: number, height: number): void {
   const picture = ctx.createImageData(WIDTH, height);
   const [r, g, b] = (color.match(/\d+/g) ?? ["128", "144", "176"]).map(Number);
@@ -80,6 +79,7 @@ function drawRoom(ctx: Context, color: string, lampX: number, lampY: number, rea
     for (let x = 0; x < WIDTH; x += 1) {
       const distance = Math.hypot(x - lampX, y - lampY) / reach;
       const light = 0.5 / (1 + distance * distance * 5);
+      // without grain eight bits show bands
       const grain = Math.random() + Math.random() - 1;
       const at = (y * WIDTH + x) * 4;
       picture.data[at] = 11 + r * light + grain;
@@ -148,15 +148,15 @@ function drawFooter(ctx: Context, image: ReplayImage, height: number): void {
 
 function drawSong(ctx: Context, image: ReplayImage, cover: HTMLImageElement | null, height: number): void {
   const story = image.format === "story";
-  const size = story ? WIDTH - EDGE * 2 : 560;
-  const top = story ? 330 : 190;
+  const size = story ? WIDTH - EDGE * 2 : 520;
+  const top = story ? 330 : 178;
   drawCover(ctx, cover, EDGE, top, size, story ? 36 : 28, true);
   const width = WIDTH - EDGE * 2;
   const titleSize = story ? 92 : 64;
   ctx.font = `700 ${titleSize}px ${image.font}`;
   ctx.letterSpacing = `${titleSize * -0.03}px`;
   const lines = wrapText(ctx, image.song.title, width, story ? 2 : 1);
-  let y = top + size + titleSize + (story ? 56 : 28);
+  let y = top + size + titleSize + (story ? 56 : 20);
   for (const line of lines) {
     write(ctx, line, EDGE, y, titleSize, 700, INK, image.font, -0.03);
     y += titleSize * 1.08;
@@ -166,12 +166,7 @@ function drawSong(ctx: Context, image: ReplayImage, cover: HTMLImageElement | nu
   ctx.letterSpacing = "0px";
   write(ctx, fitText(ctx, image.song.artist, width), EDGE, y, story ? 44 : 34, 500, INK, image.font);
   const plays = story ? 38 : 30;
-  if (story) write(ctx, image.song.plays, EDGE, y + 64, plays, 400, DIM, image.font);
-  else {
-    ctx.textAlign = "right";
-    write(ctx, image.song.plays, WIDTH - EDGE, height - EDGE, plays, 400, DIM, image.font);
-    ctx.textAlign = "left";
-  }
+  write(ctx, image.song.plays, EDGE, y + (story ? 64 : 48), plays, 400, DIM, image.font);
 }
 
 function drawTime(ctx: Context, image: ReplayImage, covers: (HTMLImageElement | null)[], height: number): void {
