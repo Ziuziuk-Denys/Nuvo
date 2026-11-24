@@ -451,8 +451,9 @@ export function runMain(startYoutube: StartYoutubeService | null): void {
     ipc.handle(CHANNELS.pocketStatus, "main", () => pocket?.status() ?? null);
     ipc.on(CHANNELS.pocketFeed, "main", (payload) => {
       const feed = validateFeed(payload);
-      if (feed) pocket?.setFeed(feed);
-      else refusals.refuse(CHANNELS.pocketFeed, "shape");
+      if (!feed) return refusals.refuse(CHANNELS.pocketFeed, "shape");
+      pocket?.setFeed(feed);
+      notch?.setFeed(feed);
     });
     ipc.handle(CHANNELS.pocketHello, "pocket", () => pocket?.hello() ?? null);
     ipc.on(CHANNELS.pocketAction, "pocket", (payload) => {

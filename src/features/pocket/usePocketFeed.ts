@@ -3,6 +3,7 @@ import { CORE_BASE_URL } from "@/data/core/request";
 import { coverUrl } from "@/data/covers/coverUrl";
 import type { NotchTrack } from "@/notch/contracts";
 import { POCKET_MAX, POCKET_QUEUE_MAX, type PocketFeed, type PocketLook } from "@/pocket/contracts";
+import { useNotchSettingsStore } from "../notch/store/notchSettingsStore";
 import { usePocketStore } from "./pocketStore";
 
 export interface PocketTrack {
@@ -49,6 +50,8 @@ export function pocketFeed(current: PocketTrack | null, queue: readonly PocketTr
 
 export function usePocketFeed(current: PocketTrack | null, queue: readonly PocketTrack[], index: number): void {
   const open = usePocketStore((state) => state.open);
+  const notch = useNotchSettingsStore((state) => state.mode !== "off");
+  const wanted = open || notch;
   const [look, setLook] = useState<PocketLook | null>(null);
 
   useEffect(() => {
@@ -60,15 +63,15 @@ export function usePocketFeed(current: PocketTrack | null, queue: readonly Pocke
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!wanted) return;
     const read = () => setLook(readLook());
     read();
     const observer = new MutationObserver(read);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "data-theme", "data-look"] });
     return () => observer.disconnect();
-  }, [open]);
+  }, [wanted]);
 
   useEffect(() => {
-    if (open && look) window.nuvoShell?.pocketUpdateFeed(pocketFeed(current, queue, index, look));
-  }, [open, current, queue, index, look?.light, look?.field, look?.ink]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (wanted && look) window.nuvoShell?.pocketUpdateFeed(pocketFeed(current, queue, index, look));
+  }, [wanted, current, queue, index, look?.light, look?.field, look?.ink]); // eslint-disable-line react-hooks/exhaustive-deps
 }
