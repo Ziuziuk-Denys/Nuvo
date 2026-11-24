@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { createCoverColors, DEFAULT_COVER_COLORS, pickCoverColors, type CoverColors } from "./colors";
+import { createCoverColors, DEFAULT_COVER_COLORS, pickCoverColors, readCoverPixels, type CoverColors } from "./colors";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -29,6 +29,25 @@ describe("pickCoverColors", () => {
     expect(pickCoverColors(pixels([4, [128, 128, 128, 255]]))).toEqual({ color2: "rgb(128, 128, 128)", color1: "rgb(64, 64, 64)" });
     expect(pickCoverColors(pixels([4, [255, 0, 0, 0]]))).toBeNull();
   });
+});
+
+it("readCoverPixels asks the core for an outside picture and takes a local one as it is", async () => {
+  const asked: string[] = [];
+  vi.stubGlobal(
+    "Image",
+    class {
+      src = "";
+      decode() {
+        asked.push(this.src);
+        return Promise.reject(new Error("no picture here"));
+      }
+    },
+  );
+  const outside = "https://is1-ssl.mzstatic.com/a.jpg";
+  const daemon = `nuvo-core://local/v1/covers?src=${encodeURIComponent(outside)}&size=64`;
+  for (const url of [outside, daemon, "nuvo-core://local/v1/local/tracks/local:a/cover"]) await expect(readCoverPixels(url)).rejects.toThrow();
+  expect(asked).toEqual([daemon, daemon, "nuvo-core://local/v1/local/tracks/local:a/cover"]);
+  vi.unstubAllGlobals();
 });
 
 describe("createCoverColors", () => {
