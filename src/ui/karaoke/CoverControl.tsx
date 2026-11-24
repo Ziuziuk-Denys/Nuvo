@@ -1,6 +1,7 @@
 import { useRef, type JSX, type PointerEvent, type WheelEvent } from "react";
 import { Cover } from "../components/Cover";
 import { MorphPlayIcon } from "../components/MorphPlayIcon";
+import { useLightObject } from "../light/objects";
 import { playerEngine, toVolumeGain, toVolumeLevel, usePlayerStore } from "../ports/player";
 import styles from "./Karaoke.module.css";
 
@@ -8,10 +9,13 @@ const LEVEL_PER_PIXEL = 0.0004;
 const PIXELS_PER_LINE = 40;
 
 export function CoverControl({ src, playing }: { src: string; playing: boolean }): JSX.Element {
+  const cover = useRef<HTMLDivElement>(null);
   const glyph = useRef<HTMLSpanElement>(null);
   const volume = useRef<HTMLSpanElement>(null);
   const wakingTap = useRef(false);
   const level = usePlayerStore((state) => toVolumeLevel(state.volume ?? 1));
+
+  useLightObject(cover, { hero: true, room: "karaoke", lift: 16 });
 
   const show = (element: HTMLElement | null, holdMs: number) => {
     for (const mark of [glyph.current, volume.current]) mark?.getAnimations().forEach((animation) => animation.cancel());
@@ -33,7 +37,7 @@ export function CoverControl({ src, playing }: { src: string; playing: boolean }
   };
 
   return (
-    <div className={styles.cover} aria-hidden="true" onPointerDownCapture={onPointerDown} onClick={toggle} onWheel={onWheel} data-no-window-drag>
+    <div ref={cover} className={styles.cover} aria-hidden="true" onPointerDownCapture={onPointerDown} onClick={toggle} onWheel={onWheel} data-no-window-drag>
       <Cover src={src} size={400} radius={12} />
       <span ref={glyph} className={styles.mark}>
         <MorphPlayIcon playing={playing} size={72} />

@@ -2,9 +2,7 @@ import { useEffect } from "react";
 import { create } from "zustand";
 
 export interface BackdropOptions {
-  blur?: number;
-  dim?: number;
-  sky?: "live" | "still";
+  scene?: "room" | "page" | "wall";
   banner?: string;
   portrait?: string;
 }
@@ -20,18 +18,16 @@ export const usePageBackdropStore = create<BackdropState>(() => ({ coverUrl: nul
 let lastOwner = 0;
 
 export function usePageBackdrop(cover: string | null | undefined, options?: BackdropOptions): void {
-  const blur = options?.blur;
-  const dim = options?.dim;
-  const sky = options?.sky;
+  const scene = options?.scene;
   const banner = options?.banner;
   const portrait = options?.portrait;
   useEffect(() => {
     if (!cover) return;
     lastOwner += 1;
     const owner = lastOwner;
-    usePageBackdropStore.setState({ coverUrl: cover, options: { blur, dim, sky, banner, portrait }, owner });
+    usePageBackdropStore.setState({ coverUrl: cover, options: { scene, banner, portrait }, owner });
     return () => {
       if (usePageBackdropStore.getState().owner === owner) usePageBackdropStore.setState({ coverUrl: null, options: {}, owner: 0 });
     };
-  }, [cover, blur, dim, sky, banner, portrait]);
+  }, [cover, scene, banner, portrait]);
 }

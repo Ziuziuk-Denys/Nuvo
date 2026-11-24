@@ -12,7 +12,7 @@
   inset: 0;
   overflow: hidden;
   color: var(--k-ink);
-  background: rgb(16, 19, 32);
+  background: #08090d;
   user-select: none;
 }
 

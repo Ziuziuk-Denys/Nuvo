@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 
 const REST_AFTER_MS = 3_000;
 const FIRST_VIEW_MS = 6_000;
@@ -7,7 +7,8 @@ const HOLDS = "[data-hold]:hover, [data-hold]:active, :focus-visible, [aria-expa
 
 let seen = false;
 
-export function useRest(root: RefObject<HTMLElement | null>, awake: boolean): void {
+export function useRest(root: RefObject<HTMLElement | null>, awake: boolean): boolean {
+  const [resting, setResting] = useState(false);
   useEffect(() => {
     const view = root.current;
     if (!view || awake) return;
@@ -20,12 +21,16 @@ export function useRest(root: RefObject<HTMLElement | null>, awake: boolean): vo
       const left = last + REST_AFTER_MS - performance.now();
       if (left > 0) timer = window.setTimeout(check, left);
       else if (view.querySelector(HOLDS)) timer = window.setTimeout(check, HELD_CHECK_MS);
-      else view.dataset.rest = "";
+      else {
+        view.dataset.rest = "";
+        setResting(true);
+      }
     };
     const wake = () => {
       last = Math.max(last, performance.now());
       if (!("rest" in view.dataset)) return;
       delete view.dataset.rest;
+      setResting(false);
       timer = window.setTimeout(check, REST_AFTER_MS);
     };
     const onMove = (event: PointerEvent) => {
@@ -44,6 +49,7 @@ export function useRest(root: RefObject<HTMLElement | null>, awake: boolean): vo
     return () => {
       clearTimeout(timer);
       delete view.dataset.rest;
+      setResting(false);
       view.removeEventListener("pointermove", onMove);
       view.removeEventListener("pointerdown", wake);
       view.removeEventListener("wheel", wake);
@@ -51,4 +57,5 @@ export function useRest(root: RefObject<HTMLElement | null>, awake: boolean): vo
       window.removeEventListener("keydown", wake);
     };
   }, [root, awake]);
+  return resting;
 }

@@ -12,9 +12,9 @@ const VIEWS = ["visuals", "performance"] as const;
 export function LookPreview(): JSX.Element | null {
   const asked = useEffectsStore((state) => state.lookAsked);
   const touring = useTour((state) => state.phase !== "off");
-  const sky = usePageBackdropStore(({ options }) => options?.sky !== undefined && !options.banner && !options.portrait);
+  const room = usePageBackdropStore(({ options }) => options.scene === "room");
   const reduced = useReducedEffects();
-  if (asked || touring || !sky || reduced) return null;
+  if (asked || touring || !room || reduced) return null;
   return <Chooser />;
 }
 
