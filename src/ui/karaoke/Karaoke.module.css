@@ -542,13 +542,13 @@
 .offer {
   position: absolute;
   z-index: 1;
-  bottom: max(12px, calc(50% - 350px));
+  bottom: max(12px, calc(50% - 380px));
   inset-inline: 24px;
   display: flex;
-  flex-wrap: wrap;
+  flex-flow: column;
   align-items: center;
   justify-content: center;
-  gap: 2px 6px;
+  gap: 6px;
   margin: 0;
   font-size: 14px;
   line-height: 20px;
@@ -563,8 +563,15 @@
   pointer-events: auto;
 }
 
-.offer > p + .sources {
-  margin-inline-start: 4px;
+.root .sources > .textButton:first-child {
+  color: var(--k-ink);
+}
+
+/* no room for two rows under the controls */
+@media (max-height: 800px) {
+  .offer {
+    flex-flow: wrap;
+  }
 }
 
 .root[data-rest] .offer[data-hold] {
@@ -588,6 +595,7 @@
 
 .root .offer .textButton {
   display: inline-flex;
+  font-size: 14px;
   align-items: center;
   gap: 7px;
 }
