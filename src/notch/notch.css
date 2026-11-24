@@ -554,7 +554,17 @@ body,
   font-size: 12px;
   font-weight: 600;
   border-radius: inherit;
-  background: linear-gradient(transparent 52%, rgba(0, 0, 0, 0.64));
+  background: linear-gradient(
+    transparent 46%,
+    rgba(0, 0, 0, 0.03) 52%,
+    rgba(0, 0, 0, 0.1) 58%,
+    rgba(0, 0, 0, 0.23) 64%,
+    rgba(0, 0, 0, 0.41) 70%,
+    rgba(0, 0, 0, 0.57) 76%,
+    rgba(0, 0, 0, 0.68) 83%,
+    rgba(0, 0, 0, 0.76) 91%,
+    rgba(0, 0, 0, 0.8)
+  );
   opacity: 0;
   transition: opacity 180ms var(--ease-out);
 }
