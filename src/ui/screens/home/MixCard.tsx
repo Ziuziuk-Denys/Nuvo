@@ -1,15 +1,14 @@
 import type { JSX } from "react";
 import { Button } from "../../components/Button";
-import { Cover } from "../../components/Cover";
 import { Icon } from "../../icons/Icon";
+import { MixArt } from "../../icons/MixArt";
 import { useTranslation } from "../../ports/i18n";
-import { useCoverFluidColors } from "../../ports/covers";
 import type { HomeMix } from "../../ports/recs";
-import { mosaicCovers } from "./homeModel";
 import styles from "./MixCard.module.css";
 
 export interface MixCardProps {
   mix: HomeMix;
+  cover: string;
   number: number;
   title: string;
   subtitle: string;
@@ -22,12 +21,9 @@ export interface MixCardProps {
 const LEAD_SIZE = 240;
 const DAILY_SIZE = 175;
 
-export function MixCard({ mix, number, title, subtitle, lead = false, names, onOpen, onPlay }: MixCardProps): JSX.Element {
+export function MixCard({ mix, cover, number, title, subtitle, lead = false, names, onOpen, onPlay }: MixCardProps): JSX.Element {
   const size = lead ? LEAD_SIZE : DAILY_SIZE;
-  const covers = mosaicCovers(mix.tracks);
-  const cell = covers.length === 4 ? Math.floor(size / 2) : size;
   const { t } = useTranslation();
-  const { color1, logoColor } = useCoverFluidColors(covers[0]);
 
   return (
     <div
@@ -45,19 +41,7 @@ export function MixCard({ mix, number, title, subtitle, lead = false, names, onO
       }}
     >
       <div className={styles.cover} style={{ width: size, height: size }}>
-        <div className={styles.art} data-mosaic={covers.length === 4 ? "" : undefined}>
-          {covers.map((url) => (
-            <Cover key={url} src={url} size={cell} radius={0} />
-          ))}
-        </div>
-        <div className={styles.shade} style={{ background: `linear-gradient(45deg, ${color1} 0%, rgb(0 0 0 / 0.2) 100%)` }} />
-        <span className={styles.mark} style={{ color: logoColor }}>
-          <Icon name="nuvo-mark" size={lead ? 20 : 16} />
-        </span>
-        <span className={styles.word}>MIX</span>
-        <span className={styles.number} data-mix-number>
-          {number}
-        </span>
+        <MixArt covers={[cover]} number={number} size={size} />
       </div>
       {lead ? (
         <div className={styles.leadCaption}>

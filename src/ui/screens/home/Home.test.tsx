@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { useImportsUi } from "../imports/importsUi";
 import { useHomeLayout } from "./arrange/homeLayout";
 import { Home } from "./Home";
-import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mosaicCovers, starterGenres } from "./homeModel";
+import { arrangeMixes, byOthers, freshFirst, homeSongs, likeArtists, mixCovers, mosaicCovers, starterGenres } from "./homeModel";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 globalThis.ResizeObserver = class {
@@ -56,7 +56,7 @@ vi.mock("../../ports/covers", () => ({
   coverSrc: (src: string) => src,
   useCoverFluidColors: () => ({ color1: "rgb(0, 0, 0)", logoColor: "rgb(255, 255, 255)" }),
 }));
-vi.mock("./ColdStart", () => ({ ColdStart: () => <p>cold-start</p> }));
+vi.mock("./ColdStart", () => ({ ColdStart: ({ ring }: { ring: unknown[] | null }) => <p data-ring={ring?.length ?? "none"}>cold-start</p> }));
 vi.mock("../local/addMusic", () => ({ useAddMusic: () => mocks.addMusic }));
 vi.mock("../../ports/network", () => ({
   useOfflineMode: () => mocks.network.offlineMode,
@@ -146,10 +146,10 @@ describe("Home mixes", () => {
     expect(host.querySelector("[data-discover-stub]")?.textContent).toBe("5");
   });
 
-  it("draws the For you cover as a 2 x 2 collage", async () => {
-    mocks.homeMixes.mockResolvedValue([{ id: "daily-mix-for-you", title: "For you", description: "", tracks: tracks("f", 8) }]);
-    await mount();
-    expect(host.querySelectorAll("[data-mix=daily-mix-for-you] [data-mosaic] img")).toHaveLength(4);
+  it("gives each mix a cover of its own while there is one left", () => {
+    const mix = (id: string, songs: ReturnType<typeof tracks>) => ({ id, title: "", description: "", tracks: songs });
+    const shared = tracks("f", 2);
+    expect(mixCovers([mix("a", shared), mix("b", shared), mix("c", shared), mix("d", [])])).toEqual(["cover-f0", "cover-f1", "cover-f0", ""]);
   });
 });
 
@@ -215,6 +215,7 @@ describe("Home first run", () => {
       "ui.home.genre.rock",
       "ui.home.genre.electronic",
     ]);
+    expect(host.querySelector<HTMLElement>("[data-ring]")!.dataset.ring).toBe("24");
     expect(host.querySelector("[data-slot=cold-start]")!.compareDocumentPosition(shelves[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -228,10 +229,19 @@ describe("Home first run", () => {
         (node) => `${node.getAttribute("aria-label")}${node.hasAttribute("data-shelf-waiting") ? " waiting" : ""}`,
       );
     expect(order()).toEqual(["ui.home.genre.pop waiting", "ui.home.genre.hiphop waiting", "ui.home.genre.rock waiting", "ui.home.genre.electronic waiting"]);
+    expect(host.querySelector<HTMLElement>("[data-ring]")!.dataset.ring).toBe("none");
     await act(async () => pending.get("Queen")!(tracks("q", 6)));
     expect(order()).toEqual(["ui.home.genre.pop waiting", "ui.home.genre.hiphop waiting", "ui.home.genre.rock", "ui.home.genre.electronic waiting"]);
     await act(async () => pending.get("The Weeknd")!([]));
     expect(order()).toEqual(["ui.home.genre.hiphop waiting", "ui.home.genre.rock", "ui.home.genre.electronic waiting"]);
+  });
+
+  it("shows one song per album art on a genre shelf", async () => {
+    mocks.homeMixes.mockResolvedValue([]);
+    const same = tracks("p", 6).map((track, index) => ({ ...track, coverUrl: index < 3 ? `https://art/one=w120-h${120 + index}-l90` : track.coverUrl }));
+    mocks.genreSongs.mockImplementation(async (query: string) => (query === "Queen" ? same : []));
+    await mount();
+    expect(shelfSongs("genre")).toEqual(["p0", "p3", "p4", "p5"]);
   });
 
   it("adds a shelf in the user's language first", () => {

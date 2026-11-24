@@ -15,12 +15,13 @@ import { EmptyRoom } from "./discover/EmptyRoom";
 import { ringTracks } from "./discover/ring";
 import { ArrangeHome } from "./arrange/ArrangeHome";
 import { useHomeLayout, type SectionId } from "./arrange/homeLayout";
-import { arrangeMixes, likeArtists, mixNames, mixText, starterGenres } from "./homeModel";
+import { arrangeMixes, likeArtists, mixCovers, mixNames, mixText } from "./homeModel";
 import { MixCard } from "./MixCard";
 import { Continue } from "./moments/Continue";
 import { Memory } from "./moments/Memory";
 import { MoodPad } from "./mood/MoodPad";
 import { GenreShelf, LikeShelf, ShuffleShelf, SongsForYou, StyleShelf } from "./Shelves";
+import { useStarters } from "./useStarters";
 import { ColdStartSlot, HiddenLinkSlot } from "./slots";
 import styles from "./Home.module.css";
 
@@ -77,18 +78,21 @@ export function Home(): JSX.Element | null {
   const mixes = offline ? (kept?.mixes ?? null) : all;
   const ring = useMemo(() => (mixes ? ringTracks(mixes) : []), [mixes]);
 
+  const starter = !offline && mixes?.length === 0;
+  const starters = useStarters(starter, locale);
+
   if (mixes === null) return null;
   const open = (href: string) => navigateWithTransition(navigate, href);
 
   const sections: Array<{ key: string; node: ReactNode; own?: boolean }> = [];
-  const starter = !offline && mixes.length === 0;
   if (starter) {
-    sections.push({ key: "cold-start", node: <ColdStartSlot />, own: true });
-    for (const { genre, query } of starterGenres(locale)) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} query={query} /> });
+    sections.push({ key: "cold-start", node: <ColdStartSlot ring={starters.ring} />, own: true });
+    for (const { genre, pool } of starters.genres) sections.push({ key: `genre:${genre}`, node: <GenreShelf genre={genre} pool={pool} /> });
   }
   if (ring.length > 0)
     sections.push({ key: "discover", node: <DiscoverArc tracks={ring} title={t(offline ? "ui.home.offline.ring" : "ui.recs.home.discover")} /> });
   const [firstArtist, secondArtist] = offline ? [] : likeArtists(mixes, LIKE_SHELVES);
+  const covers = mixCovers(mixes);
   const parts: Record<SectionId, Array<{ key: string; node: ReactNode }>> = {
     mixes:
       mixes.length === 0
@@ -102,6 +106,7 @@ export function Home(): JSX.Element | null {
                     <MixCard
                       key={mix.id}
                       mix={mix}
+                      cover={covers[index]}
                       number={index + 1}
                       lead={index === 0}
                       names={index === 0 ? mixNames(mix, t) : undefined}
@@ -123,15 +128,18 @@ export function Home(): JSX.Element | null {
     style: [{ key: "style", node: <StyleShelf /> }],
   };
   for (const id of order) if (!hidden.includes(id)) sections.push(...parts[id]);
-  if (offline && mixes.length === 0 && (kept?.songs.length ?? 0) < OFFLINE_MIN_SONGS) {
+  const nothingHere = offline && mixes.length === 0 && (kept?.songs.length ?? 0) < OFFLINE_MIN_SONGS;
+  if (nothingHere) {
     sections.push({
       key: "offline",
       node: (
-        <EmptyRoom title={t("ui.home.offline.title")} message={t("ui.home.offline.message")}>
-          <Button variant="primary" onClick={() => void addMusic()}>
-            {t("ui.local.add_files")}
-          </Button>
-        </EmptyRoom>
+        <div data-tour="home-start">
+          <EmptyRoom title={t("ui.home.offline.title")} message={t("ui.home.offline.message")}>
+            <Button variant="primary" onClick={() => void addMusic()}>
+              {t("ui.local.add_files")}
+            </Button>
+          </EmptyRoom>
+        </div>
       ),
     });
   } else if (!starter && !offline && libraryEmpty) {
@@ -157,7 +165,7 @@ export function Home(): JSX.Element | null {
         ),
       )}
       <HiddenLinkSlot />
-      {starter ? null : <ArrangeHome />}
+      {starter || nothingHere ? null : <ArrangeHome />}
     </div>
   );
 }

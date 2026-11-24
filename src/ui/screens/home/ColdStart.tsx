@@ -5,15 +5,17 @@ import { Icon } from "../../icons/Icon";
 import { useTranslation } from "../../ports/i18n";
 import { openImportSheet } from "../../ports/importSources";
 import { useModalStore } from "../../ports/navigation";
-import { useWarmup, warmHome } from "../../ports/recs";
+import { useWarmup, warmHome, type Track } from "../../ports/recs";
 import { ServiceMark } from "../../tour/ServiceMark";
 import { useAddMusic } from "../local/addMusic";
+import { DiscoverArc } from "./discover/DiscoverArc";
 import { EmptyRoom } from "./discover/EmptyRoom";
+import { MIN_TRACKS } from "./discover/ring";
 import styles from "./ColdStart.module.css";
 
 const IMPORT_LINKS = ["spotify", "apple", "youtube"] as const;
 
-function BringMusic(): JSX.Element {
+function BringMusic({ ring }: { ring: Track[] | null }): JSX.Element {
   const { t } = useTranslation();
   const addMusic = useAddMusic();
   const first = useFirstVisit("home-bring");
@@ -21,7 +23,10 @@ function BringMusic(): JSX.Element {
     first ? { className: `${className} n-enter`, style: { "--n-i": index } as CSSProperties } : { className };
   return (
     <div data-bring="" data-tour="home-start">
-      <EmptyRoom title={t("ui.home.bring.title")}>
+      <EmptyRoom
+        title={t("ui.home.bring.title")}
+        stage={ring === null ? null : ring.length < MIN_TRACKS ? undefined : <DiscoverArc tracks={ring} title={t("ui.home.bring.songs")} compact />}
+      >
         <p {...rise(styles.line, 0)}>
           <span>{t("ui.home.bring.from")}</span>
           <span className={styles.sources}>
@@ -46,13 +51,13 @@ function BringMusic(): JSX.Element {
   );
 }
 
-export function ColdStart(): JSX.Element {
+export function ColdStart({ ring = null }: { ring?: Track[] | null }): JSX.Element {
   const { t } = useTranslation();
   const warmup = useWarmup((state) => state.phase);
   if (warmup === "building") {
     return (
       <div role="status" data-building="">
-        <EmptyRoom title={t("ui.recs.home.building")} />
+        <EmptyRoom title={t("ui.recs.home.building")} stage={null} />
       </div>
     );
   }
@@ -68,5 +73,5 @@ export function ColdStart(): JSX.Element {
       </EmptyRoom>
     );
   }
-  return <BringMusic />;
+  return <BringMusic ring={ring} />;
 }

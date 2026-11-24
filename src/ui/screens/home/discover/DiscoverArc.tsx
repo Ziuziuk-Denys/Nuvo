@@ -6,7 +6,7 @@ import { usePageBackdrop } from "../../../ports/backdrop";
 import { playSongs } from "../../../ports/homeShelves";
 import { coverSrc } from "../../../ports/covers";
 import type { Track } from "../../../ports/recs";
-import { useThemeMode } from "../../../ports/theme";
+import { useLook } from "../../../ports/theme";
 import { ShelfHeading } from "../ShelfHeading";
 import { floorOf, PERSPECTIVE, place, ringFor, ringHeight, ringOffset, ringSlots } from "./ring";
 import { createRoom, type Room, type RoomCard } from "./room";
@@ -14,19 +14,24 @@ import { ArtistLinks } from "../../../shell/ArtistLinks";
 import styles from "./DiscoverArc.module.css";
 
 const FLOOR_ROOM = 20;
+const COMPACT_HEIGHT = 330;
+const CAPTION_ROOM = 84;
 const CLEAR_TOP = 64;
 const STIFFNESS = 15;
 const LONGEST_STEP_S = 1 / 30;
 const DETENT = 0.45;
+const LANDING = 1.4;
 const LEAN_PER_SPEED = 1.6;
 const MAX_LEAN = 9;
-const POINTER_TILT = 7;
-const TILT_MS = 120;
+const POINTER_TILT = 5;
+const TILT_MS = 140;
+const UNTILT_MS = 420;
 const WHEEL_PER_TRACK = 100;
 const WHEEL_SETTLE_MS = 140;
 const DRAG_SLOP = 4;
 const THROW_MS = 240;
 const CONTEXT = "home:discover";
+const STARTER_CONTEXT = "home:starter";
 
 interface Drag {
   x: number;
@@ -37,9 +42,9 @@ interface Drag {
   velocity: number;
 }
 
-export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string }): JSX.Element {
+export function DiscoverArc({ tracks, title, compact = false }: { tracks: Track[]; title: string; compact?: boolean }): JSX.Element {
   const reduced = useReducedEffects();
-  const light = useThemeMode() === "light";
+  const light = useLook().mode === "light";
   const rootRef = useRef<HTMLElement>(null);
   const items = useRef<Array<HTMLLIElement | null>>([]);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -58,8 +63,8 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
   const [settled, setSettled] = useState(0);
   const count = ringSlots(tracks.length);
   const slots = useMemo(() => Array.from({ length: count }, (_, slot) => tracks[slot % tracks.length]), [count, tracks]);
-  const ring = useMemo(() => ringFor(width, ringHeight(width), CLEAR_TOP), [width]);
-  const height = ringHeight(width) + FLOOR_ROOM;
+  const ring = useMemo(() => (compact ? ringFor(width, COMPACT_HEIGHT, 0) : ringFor(width, ringHeight(width), CLEAR_TOP)), [compact, width]);
+  const height = compact ? floorOf(ring) + CAPTION_ROOM : ringHeight(width) + FLOOR_ROOM;
   const wrap = (index: number) => ((index % count) + count) % count;
 
   const paint = (now = performance.now()): boolean => {
@@ -114,16 +119,16 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
         position.current += speed.current * step;
       }
       const { tilt, x, y, on } = hover.current;
-      const ease = 1 - Math.exp(-(now - last) / TILT_MS);
+      const ease = 1 - Math.exp(-(now - last) / (on ? TILT_MS : UNTILT_MS));
       tilt.x += ((on ? x * POINTER_TILT : 0) - tilt.x) * ease;
-      tilt.y += ((on ? x * 2 + y : tilt.y) - tilt.y) * ease;
+      tilt.y += ((on ? x * 0.883 + y * 0.469 : tilt.y) - tilt.y) * ease;
       tilt.amount += ((on ? 1 : 0) - tilt.amount) * ease;
       const tilting = !reduced && (Math.abs((on ? x * POINTER_TILT : 0) - tilt.x) > 0.02 || Math.abs((on ? 1 : 0) - tilt.amount) > 0.004);
       last = now;
       const fading = paintRef.current(now);
       setCentre(wrap(Math.round(position.current)));
       const resting = position.current === target.current && !drag.current?.moved;
-      if (resting) setSettled(wrap(target.current));
+      if (!drag.current?.moved && Math.abs(target.current - position.current) < LANDING) setSettled(wrap(Math.round(target.current)));
       frame.current = resting && !fading && !tilting ? 0 : requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
@@ -283,16 +288,18 @@ export function DiscoverArc({ tracks, title }: { tracks: Track[]; title: string 
       return;
     }
     if (index !== centre) turnTo(index);
-    playSongs(tracks, index % tracks.length, CONTEXT);
+    playSongs(tracks, index % tracks.length, compact ? STARTER_CONTEXT : CONTEXT);
   };
 
   const current = slots[Math.min(centre, count - 1)];
   usePageBackdrop(slots[Math.min(settled, count - 1)].coverUrl, { scene: "room" });
   return (
     <section ref={rootRef} className={styles.arc} data-arc="" style={{ height }}>
-      <div className={styles.heading}>
-        <ShelfHeading title={title} />
-      </div>
+      {compact ? null : (
+        <div className={styles.heading}>
+          <ShelfHeading title={title} />
+        </div>
+      )}
       <div ref={stageRef} className={styles.room} aria-hidden="true" />
       <ul
         className={styles.ring}

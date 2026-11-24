@@ -22,6 +22,7 @@ export interface RoomView {
   lean: number;
   tilt: { x: number; y: number; amount: number };
   light: boolean;
+  paper?: readonly [number, number, number];
 }
 
 export interface Room {
@@ -169,6 +170,7 @@ export function createRoom(canvas: HTMLCanvasElement, changed: () => void): Room
     }
 
     gl.useProgram(cards.id);
+    gl.uniform3fv(cards.at.paper, view.paper ?? (view.light ? [0.93, 0.93, 0.93] : [0.07, 0.07, 0.07]));
     gl.uniform1f(cards.at.ratio, ratio);
     gl.uniform1f(cards.at.radius, RADIUS);
     gl.uniform1f(cards.at.bright, view.light ? 1 : 0);

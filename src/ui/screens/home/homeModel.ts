@@ -99,3 +99,37 @@ export function mixNames(mix: HomeMix, t: TFunction): string {
   const names = [...new Set(mix.tracks.map((track) => firstArtist(track)).filter(Boolean))].slice(0, 3);
   return names.length > 1 ? t("ui.home.shuffle_names", { names: names.join(", ") }) : "";
 }
+
+export function mixCovers(mixes: readonly HomeMix[]): string[] {
+  const used = new Set<string>();
+  return mixes.map((mix) => {
+    const covers = mix.tracks.map((track) => track.coverUrl).filter(Boolean);
+    const cover = covers.find((url) => !used.has(url)) ?? covers[0] ?? "";
+    used.add(cover);
+    return cover;
+  });
+}
+
+const SIZE_SUFFIX = /=(?:w\d+-h\d+|s\d+)\S*$/;
+
+export function onePerArt(tracks: readonly Track[]): Track[] {
+  const shown = new Set<string>();
+  return tracks.filter((track) => {
+    const art = track.coverUrl.replace(SIZE_SUFFIX, "") || track.id;
+    return !shown.has(art) && shown.add(art);
+  });
+}
+
+// Singles often share their album's art under another address, so one artist's songs stand far apart
+export function apart(tracks: readonly Track[]): Track[] {
+  const heard = new Map<string, number>();
+  const rounds = tracks.map((track) => {
+    const round = heard.get(firstArtist(track)) ?? 0;
+    heard.set(firstArtist(track), round + 1);
+    return round;
+  });
+  return tracks
+    .map((track, index) => ({ track, round: rounds[index] }))
+    .sort((left, right) => left.round - right.round)
+    .map(({ track }) => track);
+}

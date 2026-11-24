@@ -49,6 +49,7 @@ uniform vec3 sweep;
 uniform float mirrorGain;
 uniform float bright;
 uniform float shown;
+uniform vec3 paper;
 uniform float lit;
 out vec4 color;
 
@@ -80,19 +81,19 @@ void main() {
   float aa = max(0.75 / (scale * ratio), soft);
   float inside = 1.0 - smoothstep(-aa, aa * 0.6, d);
   if (inside < 0.002) discard;
-  vec3 bare = mix(vec3(0.07), vec3(0.93), bright);
+  vec3 bare = paper;
   bare += (1.0 - bright) * lit * 0.2 * exp(-dot(uv - vec2(0.5, 0.0), uv - vec2(0.5, 0.0)) * 3.2);
   vec3 paint = mix(bare, sampleArt(uv, soft), ready);
   if (slab > 0.0) {
-    paint = mix(mix(vec3(0.3), vec3(0.8), bright), mix(textureLod(art, clamp(uv, 0.02, 0.98), 4.0).rgb, vec3(0.5), 0.25), ready);
+    paint = mix(mix(paper * 3.6, paper * 0.86, bright), mix(textureLod(art, clamp(uv, 0.02, 0.98), 4.0).rgb, vec3(0.5), 0.25), ready);
     float facing = 0.35 + 0.65 * max(0.0, dot(normalize(uv - 0.5 + 1e-4), lamp));
     paint *= mix(0.22, 0.6, facing) * mix(1.0, 1.75, bright);
   } else {
     float rim = 1.0 - smoothstep(0.0, 1.3, -d - 0.2);
     vec2 outward = normalize((uv - 0.5) * abs(uv - 0.5) + 1e-4);
     paint += rim * max(0.0, dot(outward, lamp)) * 0.32 * (1.0 - bright * 0.6);
-    float band = dot(uv - 0.5, vec2(0.82, 0.57)) - sweep.x;
-    paint += sweep.z * (0.11 * exp(-band * band * 46.0) + 0.07 * exp(-band * band * 900.0));
+    float band = dot(uv - 0.5, vec2(0.883, 0.469)) - sweep.x;
+    paint += sweep.z * 0.2 * exp(-band * band * 141.0);
     paint *= 1.0 + sweep.z * 0.05 * (0.5 - uv.y);
   }
   paint *= dim;
