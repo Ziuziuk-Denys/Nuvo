@@ -1,4 +1,6 @@
 .art {
+  --wall: oklch(from var(--key) clamp(0.26, l, 0.46) min(c, 0.16) h);
+
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -6,10 +8,10 @@
   height: var(--size);
   background: radial-gradient(
     120% 120% at 14% 4%,
-    color-mix(in oklab, var(--key) 92%, #fff) 0%,
-    color-mix(in oklab, var(--key) 78%, #000) 30%,
-    color-mix(in oklab, var(--key) 50%, #000) 62%,
-    color-mix(in oklab, var(--key) 30%, #000) 100%
+    color-mix(in oklab, var(--wall) 94%, #fff) 0%,
+    color-mix(in oklab, var(--wall) 82%, #000) 30%,
+    color-mix(in oklab, var(--wall) 56%, #000) 62%,
+    color-mix(in oklab, var(--wall) 36%, #000) 100%
   );
 }
 
@@ -17,7 +19,7 @@
   position: absolute;
   top: calc(var(--size) * 0.045);
   left: calc(var(--size) * 0.055);
-  color: color-mix(in oklab, var(--key) 22%, #fff);
+  color: color-mix(in oklab, var(--key) 14%, #fff);
   font-family: var(--n-font);
   font-size: calc(var(--size) * 0.56);
   font-weight: 640;
