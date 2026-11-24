@@ -1,29 +1,191 @@
 .scrubber {
   position: absolute;
-  z-index: 0;
-  inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
+  z-index: 2;
+  top: -6px;
+  right: 18px;
+  left: 18px;
+  height: 22px;
   cursor: pointer;
+  touch-action: none;
+}
+
+.scrubber:hover,
+.scrubber[data-dragging] {
+  top: -16px;
+  height: 32px;
 }
 
 .scrubber:focus-visible {
-  outline: 2px solid var(--n-focus-halo);
-  outline-offset: -2px;
+  outline: none;
 }
 
-/* Moved, not resized, so position updates only recomposite; the fixed fade keeps the leading edge soft at any progress */
-.fill {
+.line {
+  position: absolute;
+  right: 0;
+  bottom: -6px;
+  left: 0;
+  height: 28px;
+  overflow: clip;
+  pointer-events: none;
+  transition: transform var(--n-t-base) var(--n-spring);
+}
+
+.rest,
+.window,
+.still {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, var(--tint) calc(100% - 72px), transparent);
+}
+
+.window {
+  overflow: hidden;
+}
+
+.rest {
+  color: color-mix(in srgb, var(--n-ink) 24%, transparent);
+}
+
+.ahead {
+  color: color-mix(in srgb, var(--n-ink) 34%, transparent);
+}
+
+.played {
+  color: var(--n-ink);
+}
+
+.hair {
+  position: absolute;
+  top: calc(50% - 0.5px);
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  transition: opacity var(--n-t-base) var(--n-ease-out);
+}
+
+.scrubber:is(:hover, :focus-visible, [data-dragging]) .line[data-cut] .hair {
+  opacity: 0.3;
+}
+
+.line:not([data-cut]) .hair {
+  top: calc(50% - 0.75px);
+  height: 1.5px;
+  border-radius: 1px;
+}
+
+.swell {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleY(0.3);
+  mask: repeating-linear-gradient(90deg, #000 0 1px, transparent 1px 3px);
+  transition: transform var(--n-t-base) var(--n-spring);
+  animation: cut var(--n-t-entrance) var(--n-spring);
+}
+
+@keyframes cut {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.scrubber:is(:hover, :focus-visible, [data-dragging]) .swell {
+  transform: scaleY(0.86);
+}
+
+.scrubber:is(:hover, :focus-visible, [data-dragging]) .line {
+  transform: translateY(-9px);
+}
+
+.track {
+  position: absolute;
+  right: 0;
+  bottom: -6px;
+  left: 0;
+  height: 28px;
+  pointer-events: none;
+}
+
+.needle {
+  position: absolute;
+  top: 9px;
+  left: -1px;
+  width: 2px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--n-ink);
+  box-shadow: 0 0 0 1.5px var(--n-plate);
+  transition: transform var(--n-t-base) var(--n-spring);
+}
+
+.scrubber:is(:hover, :focus-visible, [data-dragging]) .needle {
+  transform: translateY(-9px) scaleY(2.6);
 }
 
 .loop {
   position: absolute;
-  inset-block: 0;
+  top: 9px;
   box-sizing: border-box;
-  border-inline: 2px solid currentColor;
-  background: color-mix(in srgb, currentColor 22%, transparent);
+  height: 10px;
+  border-inline: 1.5px solid var(--n-accent);
+  background: color-mix(in srgb, var(--n-accent) 22%, transparent);
   pointer-events: none;
+}
+
+.scrubber:is(:hover, [data-dragging]) .loop {
+  top: 10px;
+}
+
+.tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: var(--x);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  box-sizing: border-box;
+  max-width: min(420px, 60vw);
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: var(--n-pop);
+  box-shadow: var(--n-panel-shadow);
+  color: var(--n-ink);
+  white-space: nowrap;
+  transform: translateX(clamp(calc(-1 * var(--x)), -50%, calc(var(--far) - var(--x) - 100%)));
+  pointer-events: none;
+  animation: tip-in var(--n-t-quick) var(--n-ease-out);
+}
+
+.time {
+  flex: none;
+  color: var(--n-ink-2);
+  font: var(--n-type-numeral);
+  font-variant-numeric: tabular-nums;
+}
+
+.lyric {
+  min-width: 0;
+  overflow: hidden;
+  font: var(--n-type-label);
+  text-overflow: ellipsis;
+}
+
+@keyframes tip-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swell {
+    animation: none;
+  }
+
+  .swell,
+  .line,
+  .needle {
+    transition: none;
+  }
 }

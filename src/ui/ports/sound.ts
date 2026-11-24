@@ -16,6 +16,7 @@ export { TEMPO_PRESETS, presetOf, type TempoPresetKey } from "@/features/sound/l
 export { MOVING_PRESETS, TURN_SECONDS, type MovingPreset, type MovingSpeed } from "@/engine/audio/movingSound";
 export { applyTempo, readPlayerTempo } from "@/features/sound/useTempoSync";
 export { selectArtist } from "@/features/sound/useSoundSync";
+export { useLoudnessShape } from "@/features/sound/loudnessShape";
 export { useAbLoopStore } from "@/features/sound/useAbLoop";
 export { armSleepTimer, cancelSleepTimer, formatSleepClock, useSleepTimer } from "@/features/sound/useSleepTimer";
 export type { SleepTarget } from "@/features/sound/lib/sleepTimer";

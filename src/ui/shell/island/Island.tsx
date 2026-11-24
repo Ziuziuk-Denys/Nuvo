@@ -8,7 +8,6 @@ import { Popover } from "../../components/Popover";
 import { Tooltip } from "../../components/Tooltip";
 import { ISLAND, POPOVER } from "../../geometry";
 import { useCachedTrackIds } from "../../ports/catalog";
-import { coverAccent } from "../../ports/color";
 import { useTranslation } from "../../ports/i18n";
 import { MorphPlayIcon } from "../../ports/karaoke";
 import { useIsTrackLiked, useLikeTrack, useUnlikeTrack } from "../../ports/library";
@@ -35,7 +34,6 @@ import { NotInterestedMenu } from "../../recs/NotInterestedMenu";
 import { useNotInterestedStore } from "../../recs/notInterested";
 import { reasonText } from "../../recs/reasonText";
 import { noticeText, UndoNotice } from "../../recs/UndoNotice";
-import { useLook } from "../../ports/theme";
 import { useTourDemo } from "../../tour/demo";
 import { ArtistLinks } from "../ArtistLinks";
 import { AddToPlaylistPopover } from "../popovers/AddToPlaylistPopover";
@@ -44,7 +42,7 @@ import { VolumePopover, wheelVolume } from "../popovers/VolumePopover";
 import { useShellStore } from "../shellStore";
 import { QUEUE_ID } from "../queue/QueuePanel";
 import styles from "./Island.module.css";
-import { Scrubber } from "./Scrubber";
+import { formatTime, Scrubber } from "./Scrubber";
 import { stateLine, type StateLine } from "./stateLine";
 import { VolumeLadder } from "./VolumeLadder";
 
@@ -53,42 +51,6 @@ type Panel = "add" | "sound" | "volume";
 const WITH_ARTIST: ReadonlySet<StateLine["kind"]> = new Set(["reason", "radio-seed", "radio-queue"]);
 
 const CODEC_NAMES: Record<string, string> = { opus: "Opus", aac: "AAC", mp3: "MP3" };
-
-export function coverWash(accent: string, light: boolean): string {
-  return `color-mix(in srgb, ${accent} ${light ? 9 : 18}%, transparent)`;
-}
-
-function useCoverTint(url: string | undefined, light: boolean): string {
-  const fallback = light ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)";
-  const [tint, setTint] = useState<{ key: string; value: string } | null>(null);
-  const key = `${url ?? ""}|${light}`;
-
-  useEffect(() => {
-    if (!url) return;
-    let live = true;
-    const image = new Image();
-    image.crossOrigin = "anonymous";
-    image.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = 64;
-        canvas.height = 64;
-        const context = canvas.getContext("2d", { willReadFrequently: true });
-        if (!context || !live) return;
-        context.drawImage(image, 0, 0, 64, 64);
-        setTint({ key, value: coverWash(coverAccent(context.getImageData(0, 0, 64, 64).data, light), light) });
-      } catch {
-        // a tainted canvas keeps the grey wash
-      }
-    };
-    image.src = url;
-    return () => {
-      live = false;
-    };
-  }, [url, light, key]);
-
-  return tint?.key === key ? tint.value : fallback;
-}
 
 export function Island(): JSX.Element | null {
   const { t } = useTranslation();
@@ -109,9 +71,7 @@ export function Island(): JSX.Element | null {
   const loopA = useAbLoopStore((state) => state.a);
   const loopB = useAbLoopStore((state) => state.b);
   const saving = useDownloadProgress();
-  const look = useLook();
   const controls = useCustomizationStore((state) => state.playerControls);
-  const tint = useCoverTint(track?.coverUrl || undefined, look.mode === "light");
   // shortcut: probed once per track, so a stream that finishes caching mid-play says so from the next play
   const cachedIds = useCachedTrackIds(player.currentTrack ? [player.currentTrack.id] : [], Boolean(player.currentTrack));
 
@@ -217,13 +177,7 @@ export function Island(): JSX.Element | null {
   const width = shared.current === "sound" ? (SOUND_TABS.find((entry) => entry.id === soundTab)?.width ?? POPOVER.sound) : POPOVER.narrow;
 
   return (
-    <div
-      className={styles.bar}
-      data-island=""
-      data-controls={controls}
-      data-notice={notice || player.outputSilent ? "" : undefined}
-      {...{ [LAYER_ATTRIBUTE]: "" }}
-    >
+    <div className={styles.bar} data-island="" data-controls={controls} {...{ [LAYER_ATTRIBUTE]: "" }}>
       <div className={styles.now}>
         <div
           className={styles.open}
@@ -291,6 +245,9 @@ export function Island(): JSX.Element | null {
 
       <div className={styles.centre}>
         <div className={styles.transport}>
+          <span className={styles.clock} data-clock="">
+            {formatTime(player.positionMs)}
+          </span>
           <IconButton className={styles.skip} icon="previous" label={t("ui.island.previous")} onClick={() => void playerEngine.skipPrevious()} />
           <Tooltip text={playing ? t("ui.island.pause") : t("ui.island.play")}>
             <button
@@ -306,6 +263,7 @@ export function Island(): JSX.Element | null {
             </button>
           </Tooltip>
           <IconButton className={styles.skip} icon="next" label={t("ui.island.next")} onClick={() => void playerEngine.skipNext()} />
+          <span className={styles.clock}>{formatTime(durationMs)}</span>
         </div>
       </div>
 
@@ -363,7 +321,7 @@ export function Island(): JSX.Element | null {
         />
       ) : null}
 
-      <Scrubber positionMs={player.positionMs} durationMs={durationMs} tint={tint} loop={{ a: loopA, b: loopB }} />
+      <Scrubber trackId={track.id} positionMs={player.positionMs} durationMs={durationMs} loop={{ a: loopA, b: loopB }} />
 
       <VolumePopover open={open && panel === "volume"} anchor={anchor} onClose={() => setOpen(false)} onWheel={onVolumeWheel} />
       <Popover

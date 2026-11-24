@@ -83,7 +83,9 @@ vi.mock("../../ports/player", () => ({
 vi.mock("../../ports/recs", () => ({ recsEnabled: true, useCurrentPick: () => mocks.pick, dislike, recs: { undo: vi.fn() } }));
 vi.mock("../../ports/catalog", () => ({ useCachedTrackIds: () => mocks.cache.ids }));
 vi.mock("../../ports/network", () => ({ useStreamingReachable: () => mocks.network.reachable }));
+vi.mock("../../ports/lyrics", () => ({ useLyrics: () => null }));
 vi.mock("../../ports/sound", () => ({
+  useLoudnessShape: () => null,
   useSleepTimer: () => ({ remainingMs: null }),
   useAbLoopStore: (select: (state: { a: null; b: null }) => unknown) => select({ a: null, b: null }),
 }));
@@ -386,7 +388,7 @@ describe("Island", () => {
     expect(mocks.player.setFullscreen).not.toHaveBeenCalledWith(true);
   });
 
-  it("seeks 5 s with ArrowRight and tints the played part from the left", () => {
+  it("seeks 5 s with ArrowRight and lights the played part from the left", () => {
     mount();
     const scrubber = document.querySelector<HTMLElement>('[role="slider"][aria-label="ui.island.seek"]')!;
     act(() => {
@@ -397,9 +399,8 @@ describe("Island", () => {
       scrubber.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", bubbles: true }));
     });
     expect(mocks.engine.seek).toHaveBeenLastCalledWith(12_000);
-    const fill = scrubber.firstElementChild as HTMLElement;
+    const fill = scrubber.querySelector<HTMLElement>("[data-played]")!;
     expect(parseFloat(fill.style.transform.replace("translateX(", "")) / 100 + 1).toBeCloseTo(42_000 / 330_000, 5);
-    expect(fill.style.getPropertyValue("--tint")).toBe("rgba(255, 255, 255, 0.12)");
   });
 
   it("marks Queue pressed while the store has the queue open", () => {
