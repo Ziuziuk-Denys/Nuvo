@@ -9,6 +9,7 @@ export default defineConfig({
         "notch-press": "e2e/windows/notch-press.ts",
         "notch-zorder": "e2e/windows/notch-zorder.ts",
         thumbar: "e2e/windows/thumbar.ts",
+        "window-icon": "e2e/windows/window-icon.ts",
       },
       output: { entryFileNames: "[name].mjs" },
     },

@@ -71,6 +71,14 @@ function ours(file: string): boolean {
   }
 }
 
+function sameBytes(file: string, bytes: Buffer): boolean {
+  try {
+    return fs.readFileSync(file).equals(bytes);
+  } catch {
+    return false;
+  }
+}
+
 function writeAtomic(file: string, bytes: Buffer | string): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.tmp`;
@@ -110,9 +118,10 @@ export async function syncDesktopEntry(on: boolean, deps: DesktopEntryDeps): Pro
   } catch {}
   // a hand-made entry under the same name is the user's, never replaced
   if (current !== null && !current.split("\n").includes(MARK)) return "skipped";
-  const iconsPresent = ENTRY_SIZES.every((size) => fs.existsSync(where.icon(size)));
-  if (current === text && iconsPresent) return "current";
-  for (const size of ENTRY_SIZES) writeAtomic(where.icon(size), deps.icon(size));
+  // an update keeps the entry's text, so only the bytes tell that an icon is an older version's
+  const stale = ENTRY_SIZES.filter((size) => !sameBytes(where.icon(size), deps.icon(size)));
+  if (current === text && stale.length === 0) return "current";
+  for (const size of stale) writeAtomic(where.icon(size), deps.icon(size));
   writeAtomic(where.entry, text);
   await deps.refreshCache(where.theme).catch(() => undefined);
   return "written";
