@@ -51,6 +51,7 @@ type Panel = "add" | "sound" | "volume";
 
 const WITH_ARTIST: ReadonlySet<StateLine["kind"]> = new Set(["reason", "radio-seed", "radio-queue"]);
 
+const ADDED_MARK_MS = 1_200;
 const CODEC_NAMES: Record<string, string> = { opus: "Opus", aac: "AAC", mp3: "MP3" };
 
 export function Island(): JSX.Element | null {
@@ -67,6 +68,7 @@ export function Island(): JSX.Element | null {
   const unlikeTrack = useUnlikeTrack();
   const liking = useRef(false);
   const [pop, setPop] = useState(false);
+  const [added, setAdded] = useState(false);
   const reachable = useStreamingReachable();
   const sleep = useSleepTimer();
   const loopA = useAbLoopStore((state) => state.a);
@@ -88,6 +90,12 @@ export function Island(): JSX.Element | null {
   const notice = useNotInterestedStore((state) => state.notice);
   const [dislikeMenu, setDislikeMenu] = useState({ open: false, at: { x: 0, y: 0 } });
   const hasTrack = Boolean(track);
+
+  useEffect(() => {
+    if (!added) return;
+    const timer = window.setTimeout(() => setAdded(false), ADDED_MARK_MS);
+    return () => window.clearTimeout(timer);
+  }, [added]);
 
   useEffect(() => {
     if (!hasTrack) useNotInterestedStore.getState().setNotice(null);
@@ -273,6 +281,7 @@ export function Island(): JSX.Element | null {
           <IconButton
             icon="shuffle"
             label={player.shuffle ? t("player.shuffle_on") : t("player.shuffle_off")}
+            filled={player.shuffle}
             className={player.shuffle ? styles.on : undefined}
             onClick={() => playerEngine.setShuffle(!player.shuffle)}
           />
@@ -283,7 +292,13 @@ export function Island(): JSX.Element | null {
             onClick={() => playerEngine.setRepeat(nextRepeatMode(player.repeat, isRadioContext(player.playbackContext)))}
           />
           <IconButton icon="equalizer" label={t("ui.island.sound")} {...expanded("sound")} data-tour="sound" onClick={toggle("sound")} />
-          <IconButton icon="playlist-add" label={t("ui.island.add")} {...expanded("add")} data-tour="add" onClick={toggle("add")} />
+          <IconButton
+            icon={added ? "playlist-added" : "playlist-add"}
+            label={t("ui.island.add")}
+            {...expanded("add")}
+            data-tour="add"
+            onClick={toggle("add")}
+          />
           <VolumeLadder level={volumeLevel} label={t("ui.island.volume")} {...expanded("volume")} onClick={toggle("volume")} onWheel={onVolumeWheel} />
           <IconButton icon="now-playing" label={t("player.open_player")} onClick={openPlayer} />
           <PocketButton />
@@ -337,7 +352,7 @@ export function Island(): JSX.Element | null {
         {shared.current === "sound" ? (
           <SoundPopover tab={soundTab} onTab={setSoundTab} />
         ) : (
-          <AddToPlaylistPopover track={track} onDone={() => setOpen(false)} />
+          <AddToPlaylistPopover track={track} onDone={() => setOpen(false)} onAdded={() => setAdded(true)} />
         )}
       </Popover>
     </div>
