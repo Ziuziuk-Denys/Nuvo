@@ -14,6 +14,7 @@ interface FrontProps {
   track: NotchTrack | null;
   coverUrl: string | null;
   sample: PositionSample;
+  shape: number[] | null;
   awake: boolean;
   hidden: boolean;
   turnTo: PocketFace | null;
@@ -57,7 +58,7 @@ export function Front(props: FrontProps) {
             <span className="now-artist">{t("ui.pocket.nothing")}</span>
           )}
         </div>
-        {track ? <Seek sample={sample} live={awake && !hidden} onSeek={(positionMs) => onAction({ type: "seek", positionMs })} /> : null}
+        {track ? <Seek sample={sample} shape={props.shape} live={awake && !hidden} onSeek={(positionMs) => onAction({ type: "seek", positionMs })} /> : null}
         <div className="transport" aria-disabled={!track || undefined}>
           <button
             type="button"

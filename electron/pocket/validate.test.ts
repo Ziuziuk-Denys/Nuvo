@@ -4,12 +4,12 @@ import { validateFeed, validateMenu } from "./validate";
 
 const LOOK = { light: false, field: "#101320", ink: "rgba(244, 247, 255, 0.9)" };
 const TRACK = { id: "q", title: "T", artist: "A", coverUrl: "nuvo-core://local/v1/covers?src=x&size=128", durationMs: 1000 };
-const FEED = { trackId: "t", coverUrl: "https://i.ytimg.com/x.jpg", upNext: [TRACK], look: LOOK };
+const FEED = { trackId: "t", coverUrl: "https://i.ytimg.com/x.jpg", upNext: [TRACK], shape: [0.1, 1], look: LOOK };
 
 describe("validateFeed", () => {
   it("passes a feed through without extra fields", () => {
     expect(validateFeed({ ...FEED, extra: 1, upNext: [{ ...TRACK, extra: 1 }] })).toEqual(FEED);
-    expect(validateFeed({ trackId: null, coverUrl: null, upNext: [], look: LOOK })).not.toBeNull();
+    expect(validateFeed({ trackId: null, coverUrl: null, upNext: [], shape: null, look: LOOK })).not.toBeNull();
   });
 
   it("refuses other cover schemes, long queues and colours that are not colours", () => {
@@ -19,6 +19,7 @@ describe("validateFeed", () => {
     }
     expect(validateFeed({ ...FEED, upNext: Array.from({ length: 21 }, () => TRACK) })).toBeNull();
     for (const field of ["red;}", "url(x)", "#12", ""]) expect(validateFeed({ ...FEED, look: { ...LOOK, field } })).toBeNull();
+    for (const shape of [undefined, "x", [2], [Number.NaN], Array.from({ length: 201 }, () => 0)]) expect(validateFeed({ ...FEED, shape })).toBeNull();
     expect(validateFeed(null)).toBeNull();
   });
 });

@@ -153,6 +153,7 @@ export default function PocketApp() {
           track={track}
           coverUrl={coverUrl}
           sample={sample}
+          shape={fed?.shape ?? null}
           awake={awake}
           hidden={face !== "cover"}
           turnTo={faces[1] ?? null}

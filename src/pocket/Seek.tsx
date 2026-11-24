@@ -1,15 +1,37 @@
-import { useEffect, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { memo, useEffect, useMemo, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useTranslation } from "@/i18n";
+import { GROOVE_HEIGHT, groovePath } from "@/ui/shell/island/groovePath";
 import { formatTime, positionAt, type PositionSample } from "@/notch/lib/playback";
 
 const KEY_STEP_MS = 5000;
 const TICK_MS = 250;
 
-export function Seek({ sample, live, onSeek }: { sample: PositionSample; live: boolean; onSeek: (positionMs: number) => void }) {
+interface SeekProps {
+  sample: PositionSample;
+  shape: number[] | null;
+  live: boolean;
+  onSeek: (positionMs: number) => void;
+}
+
+const Groove = memo(function Groove({ path }: { path: string }) {
+  return (
+    <>
+      <span className="seek-hair" />
+      {path ? (
+        <svg className="seek-swell" viewBox={`0 0 1000 ${GROOVE_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true">
+          <path d={path} fill="currentColor" />
+        </svg>
+      ) : null}
+    </>
+  );
+});
+
+export function Seek({ sample, shape, live, onSeek }: SeekProps) {
   const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
   const [drag, setDrag] = useState<{ ms: number; sample: PositionSample; held: boolean } | null>(null);
   const duration = sample.durationMs;
+  const path = useMemo(() => groovePath(shape ?? []), [shape]);
 
   useEffect(() => {
     if (!live) return;
@@ -63,7 +85,12 @@ export function Seek({ sample, live, onSeek }: { sample: PositionSample; live: b
     >
       <span className="seek-time">{formatTime(position)}</span>
       <span className="seek-line">
-        <span className="seek-played" style={{ transform: `scaleX(${part})` }} />
+        <Groove path={path} />
+        <span className="seek-played" style={{ transform: `translateX(${(part - 1) * 100}%)` }}>
+          <span className="seek-still" style={{ transform: `translateX(${(1 - part) * 100}%)` }}>
+            <Groove path={path} />
+          </span>
+        </span>
       </span>
       <span className="seek-time">−{formatTime(Math.max(0, duration - position))}</span>
     </div>

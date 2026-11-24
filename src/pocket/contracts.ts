@@ -6,6 +6,7 @@ export const POCKET_SIZES = { small: 220, medium: 300, large: 420 } as const;
 export type PocketSize = keyof typeof POCKET_SIZES;
 
 export const POCKET_QUEUE_MAX = 20;
+export const POCKET_SHAPE_MAX = 200;
 
 export type PocketFace = "cover" | "lyrics" | "queue";
 
@@ -13,6 +14,7 @@ export interface PocketFeed {
   trackId: string | null;
   coverUrl: string | null;
   upNext: NotchTrack[];
+  shape: number[] | null;
   look: PocketLook;
 }
 

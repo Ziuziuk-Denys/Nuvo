@@ -383,30 +383,56 @@ body,
 .seek-line {
   position: relative;
   flex: 1;
-  height: 1.5px;
+  height: 14px;
   overflow: hidden;
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--ink) 14%, transparent);
-  transition: transform 160ms var(--out);
+  color: color-mix(in srgb, var(--ink) 22%, transparent);
 }
 
-.seek:hover .seek-line,
-.seek:focus-visible .seek-line,
-.seek[data-held] .seek-line {
+.seek-hair,
+.seek-swell,
+.seek-played,
+.seek-still {
+  position: absolute;
+  inset: 0;
+}
+
+.seek-hair {
+  top: calc(50% - 0.75px);
+  bottom: auto;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 180ms var(--out);
+}
+
+.seek-swell {
+  width: 100%;
+  height: 100%;
+  transform: scaleY(0.22);
+  transition: transform 220ms var(--out);
+}
+
+.seek:hover .seek-swell,
+.seek:focus-visible .seek-swell,
+.seek[data-held] .seek-swell {
+  transform: none;
+}
+
+.seek:hover .seek-hair:only-child,
+.seek:focus-visible .seek-hair:only-child,
+.seek[data-held] .seek-hair:only-child {
   transform: scaleY(2.4);
 }
 
 .seek-played {
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--ink) 62%, transparent);
-  transform-origin: 0 50%;
-  transition: background-color 140ms var(--out);
+  overflow: hidden;
+  color: color-mix(in srgb, var(--ink) 74%, transparent);
+  transition: color 140ms var(--out);
 }
 
 .seek:hover .seek-played,
 .seek[data-held] .seek-played {
-  background: var(--ink);
+  color: var(--ink);
 }
 
 .seek-time {
