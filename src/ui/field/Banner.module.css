@@ -52,22 +52,24 @@
     linear-gradient(to top, color-mix(in srgb, var(--n-deep) 86%, transparent), transparent 66%);
 }
 
-[data-mode="light"] .shade {
-  background:
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--n-deep) 90%, transparent),
-      color-mix(in srgb, var(--n-deep) 56%, transparent) 18%,
-      color-mix(in srgb, var(--n-deep) 16%, transparent) 40%,
-      transparent 60%
-    ),
-    linear-gradient(
-      to top,
-      color-mix(in srgb, var(--n-deep) 94%, transparent),
-      color-mix(in srgb, var(--n-deep) 66%, transparent) 34%,
-      color-mix(in srgb, var(--n-deep) 30%, transparent) 56%,
-      transparent 84%
-    );
+/* on a white wall the photo hangs as a print: below the top bar, whole, with the name inside its foot */
+[data-mode="light"] .banner[data-banner="wide"] {
+  top: 62px;
+  right: calc(12px + var(--n-gutter));
+  left: calc(6px + var(--rail-space, 0px) + var(--n-gutter));
+  height: calc(var(--n-hero) - 140px);
+  border-radius: 14px;
+  mask-image: none;
+  box-shadow: 0 18px 40px -22px rgba(var(--n-contact), 0.5);
+}
+
+[data-mode="light"] .banner[data-banner="wide"] .shade {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.62) 58%, rgba(0, 0, 0, 0.5) 80%, transparent);
+  opacity: clamp(0.5, 0.5 + var(--n-cover-bright, 1) * 1.4, 1);
+}
+
+[data-mode="light"] .banner[data-banner="portrait"] .shade {
+  background: linear-gradient(to top, var(--n-deep), color-mix(in srgb, var(--n-deep) 66%, transparent) 34%, transparent 70%);
 }
 
 @media (prefers-reduced-motion: reduce) {

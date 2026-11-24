@@ -20,7 +20,7 @@ export interface ArtistHeroProps {
 export function ArtistHero({ name, banner, cover, actions, aside }: ArtistHeroProps): JSX.Element {
   usePageBackdrop(banner || cover || undefined, { scene: "wall", banner, portrait: banner ? undefined : cover || undefined });
   return (
-    <header className={styles.hero}>
+    <header className={styles.hero} data-photo={banner ? "" : undefined}>
       <h1 className={`${look.pageTitle} ${styles.name}`} style={{ "--name": nameWidth(name) } as CSSProperties}>
         {name}
       </h1>

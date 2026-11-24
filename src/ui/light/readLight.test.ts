@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readLight, toScreen } from "./readLight";
+import { lightVars } from "./useLightVars";
 
 type Paint = (x: number, y: number) => [number, number, number];
 
@@ -39,5 +40,13 @@ describe("readLight", () => {
     expect(rim[0]).toBeGreaterThan(rim[2]);
     expect(cells[2]).toBeGreaterThan(cells[0]);
     expect(cells[9]).toBeGreaterThan(cells[11]);
+  });
+});
+
+describe("lightVars", () => {
+  it("tells how bright the cover gets, so ink over a photo can be shaded for it", () => {
+    const dark = readLight(cover((x, y) => (x < 8 && y >= 24 ? [255, 255, 255] : [0, 0, 0])));
+    expect(Number(lightVars(dark)["--n-cover-bright"])).toBeCloseTo(1, 1);
+    expect(Number(lightVars(readLight(cover(() => [10, 10, 10])))["--n-cover-bright"])).toBeLessThan(0.01);
   });
 });
