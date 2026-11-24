@@ -684,3 +684,38 @@ async function nearEnd2(s: ReturnType<typeof setup>) {
   s.elements[0].dispatch("timeupdate");
   await flush();
 }
+
+describe("a seek while a song starts", () => {
+  it("is kept when it lands in the tail of the previous song", async () => {
+    const s = setup();
+    await playing(s);
+    const loaded = s.decks.load({ token: 2, trackId: "b", source: source("https://rr1.googlevideo.com/b"), positionMs: 0, tempo, play: true });
+    await vi.advanceTimersByTimeAsync(10);
+    s.decks.seek(8_000);
+    await vi.advanceTimersByTimeAsync(60);
+    await loaded;
+    expect(s.elements[0].src).toBe("https://rr1.googlevideo.com/b");
+    expect(Math.floor(s.elements[0].currentTime)).toBe(8);
+  });
+
+  it("is kept when the same file starts again", async () => {
+    const s = setup();
+    await playing(s);
+    const loaded = s.decks.load({ token: 2, trackId: "a", source: source("https://rr1.googlevideo.com/a"), positionMs: 0, tempo, play: true });
+    await vi.advanceTimersByTimeAsync(10);
+    s.decks.seek(8_000);
+    await vi.advanceTimersByTimeAsync(60);
+    await loaded;
+    expect(Math.floor(s.elements[0].currentTime)).toBe(8);
+  });
+
+  it("wins over the saved position that waits for the metadata", async () => {
+    const s = setup();
+    const loaded = s.decks.load({ token: 1, trackId: "a", source: source("https://rr1.googlevideo.com/a"), positionMs: 5_000, tempo, play: true });
+    expect(s.elements[0].readyState).toBe(0);
+    s.decks.seek(8_000);
+    await vi.advanceTimersByTimeAsync(60);
+    await loaded;
+    expect(Math.floor(s.elements[0].currentTime)).toBe(8);
+  });
+});
