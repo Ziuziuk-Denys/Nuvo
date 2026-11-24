@@ -76,7 +76,7 @@ export function ExpandedFace(props: ExpandedFaceProps) {
         if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(event.clientY - from.y)) onFlip(-Math.sign(dx));
       }}
     >
-      <span className="lamp" style={{ "--light": accent } as CSSProperties} aria-hidden="true" />
+      <span className="lamp" style={{ "--light": state.track.coverUrl ? accent : "transparent" } as CSSProperties} aria-hidden="true" />
       <div className="pages">
         {turn.count > 0 && <span key={turn.count} className="flying-sheet" data-from={turn.from} data-forward={turn.forward} aria-hidden="true" />}
         <div {...layer("now")}>
