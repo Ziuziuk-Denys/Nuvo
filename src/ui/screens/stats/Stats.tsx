@@ -250,13 +250,13 @@ function Top({ stats }: { stats: StatsOverview }): JSX.Element {
             type="button"
             role="tab"
             aria-selected={item === shownKind}
-            className={`${look.pill} ${item === shownKind ? look.solid : look.glass}`}
+            className={look.tab}
             onClick={() => {
               setKind(item);
               setAll(false);
             }}
           >
-            {item === shownKind ? <Lens group="stats-top" value={shownKind} radius={10} className={look.solidLens} /> : null}
+            {item === shownKind ? <Lens group="stats-top" value={shownKind} radius={10} className={look.fillLens} /> : null}
             {t(`ui.stats.top_${item}`)}
           </button>
         ))}
@@ -562,15 +562,8 @@ export function Stats(): JSX.Element {
         <div className={styles.bar} hidden={state === "never"}>
           <div className={`${styles.ranges} ${look.segments}`} role="tablist" aria-label={t("ui.stats.range")}>
             {RANGE_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={key === range}
-                className={`${look.pill} ${key === range ? look.solid : look.glass}`}
-                onClick={(event) => pick(key, event.currentTarget)}
-              >
-                {key === range ? <Lens group="stats-range" value={range} radius={10} className={look.solidLens} /> : null}
+              <button key={key} type="button" role="tab" aria-selected={key === range} className={look.tab} onClick={(event) => pick(key, event.currentTarget)}>
+                {key === range ? <Lens group="stats-range" value={range} radius={10} className={look.fillLens} /> : null}
                 {key === "custom" ? customLabel : t(`ui.stats.range_${key}`)}
               </button>
             ))}

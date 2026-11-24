@@ -298,11 +298,6 @@
   box-shadow: none;
 }
 
-.solidLens {
-  background: var(--btn-primary-bg);
-  box-shadow: none;
-}
-
 .fillLens {
   background: var(--n-fill);
   box-shadow: none;

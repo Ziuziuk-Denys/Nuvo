@@ -27,8 +27,8 @@
   padding: 0 14px;
   border: 0;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--n-ink) 5%, transparent);
-  color: var(--n-ink);
+  background: transparent;
+  color: var(--n-ink-2);
   cursor: pointer;
   font: 500 13px/1 var(--n-font);
   transition: background-color 0.15s;
@@ -49,11 +49,11 @@
 .scope[aria-selected="true"],
 :global(:root[data-theme="dark"]) .scope[aria-selected="true"] {
   background: transparent;
-  color: var(--n-field);
+  color: var(--n-ink);
 }
 
 .scopeLens {
-  background: color-mix(in srgb, var(--n-ink) 70%, transparent);
+  background: var(--n-fill);
   box-shadow: none;
 }
 
@@ -64,7 +64,7 @@
 }
 
 .scope[aria-selected="true"] .count {
-  color: color-mix(in srgb, var(--n-field) 60%, transparent);
+  color: var(--n-ink-2);
 }
 
 .tools {

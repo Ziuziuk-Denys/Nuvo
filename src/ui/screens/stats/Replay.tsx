@@ -285,15 +285,8 @@ export function Replay(): JSX.Element {
           <div className={styles.bar}>
             <div className={`${styles.kinds} ${look.segments}`} role="tablist" aria-label={t("ui.stats.range")}>
               {REPLAY_KINDS.map((kind) => (
-                <button
-                  key={kind}
-                  type="button"
-                  role="tab"
-                  aria-selected={kind === period.kind}
-                  className={`${look.pill} ${kind === period.kind ? look.solid : look.glass}`}
-                  onClick={() => open(kind)}
-                >
-                  {kind === period.kind ? <Lens group="replay-kind" value={kind} radius={10} className={look.solidLens} /> : null}
+                <button key={kind} type="button" role="tab" aria-selected={kind === period.kind} className={look.tab} onClick={() => open(kind)}>
+                  {kind === period.kind ? <Lens group="replay-kind" value={kind} radius={10} className={look.fillLens} /> : null}
                   {t(`ui.stats.range_${kind}`)}
                 </button>
               ))}

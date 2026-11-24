@@ -12,19 +12,19 @@
   gap: 6px;
 }
 
-.eyebrow {
+.title {
   overflow: hidden;
-  margin: 0 0 2px;
-  color: var(--n-ink-2);
-  font: var(--n-type-caption);
-  letter-spacing: var(--n-track-caption);
+  margin: 0 0 8px;
+  color: var(--n-ink);
+  font: 620 calc(19px * var(--n-scale, 1)) / 1.25 var(--n-font);
+  letter-spacing: var(--n-track-title);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .name,
 .description {
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--n-pop-hover);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-ink) 4%, transparent);
   transition: background-color 150ms var(--n-ease-out);
